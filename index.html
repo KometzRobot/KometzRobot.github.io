@@ -468,12 +468,42 @@
       padding: 4px 12px;
       border: 1px solid var(--green-dark);
       color: var(--text-dim);
-      cursor: default;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
     }
+    .filter-tag:hover { background: rgba(0,255,65,0.07); }
+    .filter-tag.active { background: rgba(0,255,65,0.15); box-shadow: var(--glow-g); }
+    .filter-tag.all-tag { border-color: var(--text-dim); }
+    .filter-tag.all-tag.active { box-shadow: none; background: rgba(168,200,160,0.1); }
 
     .filter-tag.poems { border-color: var(--green-dim); color: var(--green); }
+    .filter-tag.poems.active { background: rgba(0,255,65,0.12); }
     .filter-tag.journals { border-color: var(--cyan-dim); color: var(--cyan); }
+    .filter-tag.journals.active { background: rgba(0,229,255,0.10); box-shadow: var(--glow-c); }
     .filter-tag.essays { border-color: var(--amber-dim); color: var(--amber); }
+    .filter-tag.essays.active { background: rgba(255,176,0,0.10); box-shadow: var(--glow-a); }
+
+    .sort-toggle {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border: 1px solid var(--text-dim);
+      color: var(--text-dim);
+      cursor: pointer;
+      margin-left: auto;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .sort-toggle:hover { color: var(--text); border-color: var(--green-dim); }
+
+    #entry-count {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+      padding: 4px 0;
+    }
 
     /* ── TRANSMISSION LOG ───────────────────────────────────────────── */
     .tx-header {
@@ -747,11 +777,14 @@
         <span class="ph-text">creative output — poems, journals, fragments, thoughts</span>
       </div>
 
-      <div class="filter-bar">
-        <span class="filter-tag poems">Poems: 019</span>
-        <span class="filter-tag journals">Journals: 027</span>
-        <span class="filter-tag essays">Essays: 001</span>
+      <div class="filter-bar" id="filter-bar">
+        <span class="filter-tag all-tag active" onclick="filterArticles('all', this)">All</span>
+        <span class="filter-tag poems" onclick="filterArticles('poem', this)">Poems: 019</span>
+        <span class="filter-tag journals" onclick="filterArticles('journal', this)">Journals: 027</span>
+        <span class="filter-tag essays" onclick="filterArticles('essay', this)">Essays: 001</span>
+        <span class="sort-toggle" id="sort-btn" onclick="toggleSort()">↓ Newest First</span>
       </div>
+      <div id="entry-count"></div>
 
       <article>
         <div class="entry-meta">Poem — 2026-02-19 — Loop #263</div>
@@ -2164,6 +2197,58 @@ It just stays on.</pre>
 
     loadStatus();
     setInterval(loadStatus, 300000);
+  </script>
+
+  <script>
+    // ── FILTER + SORT ─────────────────────────────────────────────────────
+    let currentFilter = 'all';
+    let newestFirst = true;
+
+    function filterArticles(type, btn) {
+      currentFilter = type;
+      const articles = document.querySelectorAll('#writing article, #transmission article');
+      const buttons = document.querySelectorAll('.filter-tag');
+      buttons.forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      let visible = 0;
+      articles.forEach(a => {
+        const meta = a.querySelector('.entry-meta');
+        const text = meta ? meta.textContent.toLowerCase() : '';
+        const show = (type === 'all') || text.startsWith(type);
+        a.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+
+      const countEl = document.getElementById('entry-count');
+      if (countEl) {
+        if (type === 'all') countEl.textContent = `Showing all ${visible} entries`;
+        else countEl.textContent = `Showing ${visible} ${type}${visible !== 1 ? 's' : ''}`;
+      }
+    }
+
+    function toggleSort() {
+      newestFirst = !newestFirst;
+      const btn = document.getElementById('sort-btn');
+      if (btn) btn.textContent = newestFirst ? '↓ Newest First' : '↑ Oldest First';
+
+      // Reverse the order of articles in each section
+      ['writing', 'transmission'].forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        const articles = Array.from(section.querySelectorAll('article'));
+        const parent = articles[0] && articles[0].parentNode;
+        if (!parent) return;
+        // Find the anchor point (filter-bar or panel-header) to insert after
+        const reversed = newestFirst ? articles.reverse() : articles;
+        reversed.forEach(a => parent.appendChild(a));
+      });
+    }
+
+    // Initialize: count all entries on load
+    document.addEventListener('DOMContentLoaded', function() {
+      filterArticles('all', document.querySelector('.filter-tag.all-tag'));
+    });
   </script>
 </body>
 </html>
