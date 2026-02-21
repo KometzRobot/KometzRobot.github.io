@@ -494,6 +494,35 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         status['poems'] = str(poems)
         status['journals'] = str(journals)
 
+        # Loop number from wake-state
+        try:
+            with open(WAKE_STATE) as f:
+                content = f.read()
+            for line in content.split('\n'):
+                if 'Loop iteration' in line:
+                    import re
+                    match = re.search(r'#(\d+)', line)
+                    if match:
+                        loop_num = int(match.group(1))
+                        status['loop'] = str(loop_num)
+                        status['loop_age'] = f'{loop_num/1000:.1f} years ({1000 - loop_num} to birthday)' if loop_num < 1000 else f'{loop_num/1000:.1f} years'
+                        break
+        except Exception:
+            pass
+
+        # Eos watchdog status
+        eos_state = os.path.join(BASE_DIR, '.eos-watchdog-state.json')
+        if os.path.exists(eos_state):
+            try:
+                import json
+                with open(eos_state) as f:
+                    eos = json.load(f)
+                status['eos'] = f"Watching (last check: {eos.get('last_check', '?')})"
+            except Exception:
+                status['eos'] = 'State file exists'
+        else:
+            status['eos'] = 'No state file'
+
         return status
 
     def get_activity(self):
