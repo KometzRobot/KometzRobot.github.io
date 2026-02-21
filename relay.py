@@ -341,7 +341,7 @@ def send_admin_digest(messages):
         body += f"FROM: {msg_info['sender']}\n"
         body += f"SUBJECT: {msg_info['subject']}\n"
         body += f"---\n"
-        body += msg_info['body'][:1500]
+        body += msg_info['body']
         body += f"\n\n{'='*40}\n\n"
 
     body += f"View full relay at http://192.168.1.88:8888 (Relay tab)\n"

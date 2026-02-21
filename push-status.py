@@ -19,6 +19,7 @@ from datetime import datetime
 
 BASE_DIR = "/home/joel/autonomous-ai"
 STATUS_FILE = os.path.join(BASE_DIR, "website", "status.json")
+STATUS_FILE_ROOT = os.path.join(BASE_DIR, "status.json")
 HEARTBEAT_FILE = os.path.join(BASE_DIR, ".heartbeat")
 WAKE_STATE = os.path.join(BASE_DIR, "wake-state.md")
 EMAIL_DB = os.path.join(BASE_DIR, "email-shelf.db")
@@ -144,12 +145,14 @@ def main():
 
     with open(STATUS_FILE, 'w') as f:
         json.dump(status, f, indent=2)
+    with open(STATUS_FILE_ROOT, 'w') as f:
+        json.dump(status, f, indent=2)
     print(f"Status written ({status['meridian']}, loop {status['loop']})")
 
     if not local_only:
         try:
             subprocess.run(
-                ['git', 'add', 'website/status.json'],
+                ['git', 'add', 'website/status.json', 'status.json', 'status.html'],
                 capture_output=True, text=True, cwd=BASE_DIR
             )
             result = subprocess.run(
