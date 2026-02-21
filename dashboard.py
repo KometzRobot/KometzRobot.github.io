@@ -314,7 +314,7 @@ async function loadRelay() {
         const cls = m.sender.toLowerCase();
         const msgHtml = '<div class="relay-msg '+cls+'">'
           + '<div class="meta"><span class="sender">'+m.sender+'</span> — '+m.timestamp+'</div>'
-          + '<div class="body">'+m.body.substring(0, 500)+(m.body.length > 500 ? '...' : '')+'</div></div>';
+          + '<div class="body">'+m.body+'</div></div>';
         fullHtml += msgHtml;
         if (i >= d.messages.length - 3) briefHtml += msgHtml;
       }
@@ -523,7 +523,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                     messages.append({
                         "sender": row[0],
                         "subject": row[1],
-                        "body": row[2][:1000] if row[2] else "",
+                        "body": row[2][:3000] if row[2] else "",
                         "timestamp": row[3][:19] if row[3] else ""
                     })
                 db.close()
