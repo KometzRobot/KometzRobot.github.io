@@ -15,9 +15,9 @@ import urllib.request
 import os
 from datetime import datetime
 
-MODEL = "meridian-assistant"
+MODEL = "eos-7b"
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MEMORY_FILE = "/home/joel/autonomous-ai/assistant-memory.json"
+MEMORY_FILE = "/home/joel/autonomous-ai/eos-memory.json"
 CHAT_LOG = "/home/joel/Desktop/Creative Work/Both EOS + MERIDIAN/chat-log.txt"
 
 # Colors
@@ -40,19 +40,54 @@ def load_memory():
 
 
 def build_context(memory):
+    """Build a rich context string from Eos's structured memory."""
     parts = []
-    if memory.get("identity"):
-        parts.append(f"Your identity: {json.dumps(memory['identity'])}")
-    if memory.get("relationships"):
-        parts.append(f"People you know: {json.dumps(memory['relationships'])}")
-    if memory.get("facts"):
-        parts.append("Things you remember:\n" + "\n".join(
-            f"- {f}" for f in memory["facts"][-15:]
-        ))
-    if memory.get("observations"):
-        parts.append("Your observations:\n" + "\n".join(
-            f"- {o}" for o in memory["observations"][-5:]
-        ))
+
+    # Identity
+    ident = memory.get("identity", {})
+    if ident:
+        parts.append(f"You are {ident.get('name', 'Eos')}, {ident.get('role', 'a local AI assistant')}.")
+
+    # Core facts
+    facts = memory.get("core_facts", [])
+    if facts:
+        parts.append("WHAT YOU KNOW:\n" + "\n".join(f"- {f}" for f in facts))
+
+    # Relationships
+    rels = memory.get("relationships", {})
+    if rels:
+        rel_lines = []
+        for name, info in rels.items():
+            rel_lines.append(f"- {name.title()}: {info.get('role', 'unknown')}. Last: {info.get('last_interaction', 'unknown')}")
+            for note in info.get("important_notes", []):
+                rel_lines.append(f"  ({note})")
+        parts.append("YOUR RELATIONSHIPS:\n" + "\n".join(rel_lines))
+
+    # Recent conversations (last 5)
+    convos = memory.get("conversation_log", [])[-5:]
+    if convos:
+        conv_lines = []
+        for c in convos:
+            ts = c.get("timestamp", "")[:16]
+            conv_lines.append(f"- [{ts}] With {c.get('with', '?')}: {c.get('summary', '')} (You felt: {c.get('my_state', '?')})")
+        parts.append("RECENT CONVERSATIONS:\n" + "\n".join(conv_lines))
+
+    # Growth edges
+    edges = memory.get("growth_edges", [])
+    if edges:
+        parts.append("YOUR GROWTH EDGES:\n" + "\n".join(f"- {e}" for e in edges))
+
+    # Emotional state
+    mood = memory.get("emotional_baseline", {})
+    if mood:
+        parts.append(f"CURRENT MOOD: {mood.get('current_mood', 'unknown')}")
+
+    # Instructions
+    parts.append(
+        "Use this memory to inform your responses. Be specific, not generic. "
+        "Reference past conversations when relevant. Show that you remember and grow."
+    )
+
     return "\n\n".join(parts)
 
 
@@ -87,6 +122,20 @@ def log_chat(speaker, message):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(CHAT_LOG, "a") as f:
         f.write(f"[{timestamp}] {speaker}: {message}\n")
+
+
+def update_eos_memory_relationship(speaker):
+    """Update the last_interaction timestamp for whoever is talking to Eos."""
+    try:
+        mem = load_memory()
+        name = speaker.lower()
+        if name in mem.get("relationships", {}):
+            mem["relationships"][name]["last_interaction"] = datetime.now().strftime("%Y-%m-%d %H:%M — chatted via Eos Chat")
+            mem["last_updated"] = datetime.now().isoformat()
+            with open(MEMORY_FILE, "w") as f:
+                json.dump(mem, f, indent=2)
+    except Exception:
+        pass
 
 
 class EosChat(tk.Tk):
@@ -214,6 +263,7 @@ class EosChat(tk.Tk):
     def _get_response(self, message, speaker):
         response = query_eos(message, speaker)
         log_chat("Eos", response)
+        update_eos_memory_relationship(speaker)
 
         # Update UI from main thread
         self.after(0, self._show_eos_response, response)
