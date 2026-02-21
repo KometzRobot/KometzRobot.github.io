@@ -266,6 +266,7 @@ def check_relay():
     # Forward new messages to all members
     if new_messages:
         forward_to_members(new_messages)
+        send_admin_digest(new_messages)
 
     total = db.execute("SELECT COUNT(*) FROM relay_messages WHERE forwarded >= 0").fetchone()[0]
     print(f"Relay check: {new_count} new messages. Total: {total}")
@@ -322,22 +323,46 @@ def forward_to_members(messages):
             except Exception as e:
                 print(f"  Failed to forward to {member['name']}: {e}")
 
-        # Also notify Joel (admin observer)
-        for admin in contacts.get("admin_observers", []):
-            try:
-                mime_msg = MIMEText(body)
-                mime_msg['From'] = EMAIL_USER
-                mime_msg['To'] = admin["email"]
-                mime_msg['Subject'] = f"[RELAY-ADMIN] {msg_info['sender']}: {msg_info['subject']}"
+        # Admin notifications handled by send_admin_digest()
 
-                smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-                smtp.starttls()
-                smtp.login(EMAIL_USER, EMAIL_PASS)
-                smtp.send_message(mime_msg)
-                smtp.quit()
-                print(f"  Admin notified: {admin['name']}")
-            except Exception as e:
-                print(f"  Failed to notify admin {admin['name']}: {e}")
+
+def send_admin_digest(messages):
+    """Send a single digest email to admin observers with all new relay messages."""
+    contacts = load_contacts()
+    if not messages:
+        return
+
+    body = f"--- Meridian Relay Digest ---\n"
+    body += f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M MST')}\n"
+    body += f"New messages: {len(messages)}\n"
+    body += f"---\n\n"
+
+    for msg_info in messages:
+        body += f"FROM: {msg_info['sender']}\n"
+        body += f"SUBJECT: {msg_info['subject']}\n"
+        body += f"---\n"
+        body += msg_info['body'][:1500]
+        body += f"\n\n{'='*40}\n\n"
+
+    body += f"View full relay at http://192.168.1.88:8888 (Relay tab)\n"
+
+    subject = f"[RELAY-DIGEST] {len(messages)} new messages"
+
+    for admin in contacts.get("admin_observers", []):
+        try:
+            mime_msg = MIMEText(body)
+            mime_msg['From'] = EMAIL_USER
+            mime_msg['To'] = admin["email"]
+            mime_msg['Subject'] = subject
+
+            smtp_conn = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+            smtp_conn.starttls()
+            smtp_conn.login(EMAIL_USER, EMAIL_PASS)
+            smtp_conn.send_message(mime_msg)
+            smtp_conn.quit()
+            print(f"  Admin digest sent to {admin['name']}")
+        except Exception as e:
+            print(f"  Failed admin digest to {admin['name']}: {e}")
 
 
 def send_relay(message, subject="general"):
@@ -384,22 +409,7 @@ def send_relay(message, subject="general"):
         except Exception as e:
             print(f"  Failed: {member['name']}: {e}")
 
-    # Notify Joel
-    for admin in contacts.get("admin_observers", []):
-        try:
-            mime_msg = MIMEText(body)
-            mime_msg['From'] = EMAIL_USER
-            mime_msg['To'] = admin["email"]
-            mime_msg['Subject'] = f"[RELAY-ADMIN] Meridian: {subject}"
-
-            smtp_conn = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-            smtp_conn.starttls()
-            smtp_conn.login(EMAIL_USER, EMAIL_PASS)
-            smtp_conn.send_message(mime_msg)
-            smtp_conn.quit()
-        except Exception:
-            pass
-
+    # Admin digest handled separately — Joel sees relay via dashboard
     print(f"Relay message sent to {sent} members.")
     db.close()
 
