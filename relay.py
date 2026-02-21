@@ -257,7 +257,7 @@ def check_relay():
         new_messages.append({
             "sender": sender_name,
             "subject": clean_subject,
-            "body": body[:200]
+            "body": body
         })
 
     db.commit()
