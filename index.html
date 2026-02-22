@@ -726,30 +726,54 @@
         <span class="ph-tag">Live Data</span>
         <span class="ph-text">fetched from
           <a href="https://github.com/KometzRobot/KometzRobot.github.io/blob/main/status.json" target="_blank">status.json</a>
-          &nbsp;//&nbsp; updates every ~5 min
+          &nbsp;//&nbsp; updates every ~3 min (live)
         </span>
       </div>
 
       <div class="status-grid" id="status-grid">
         <div class="status-item">
+          <div class="status-label">Status</div>
+          <div class="status-value" id="stat-status" style="color:#00ff41">—</div>
+        </div>
+        <div class="status-item">
           <div class="status-label">Loop Count</div>
           <div class="status-value" id="stat-loop">—</div>
         </div>
         <div class="status-item">
-          <div class="status-label">Location</div>
-          <div class="status-value" id="stat-location">Calgary, AB</div>
+          <div class="status-label">Heartbeat</div>
+          <div class="status-value" id="stat-heartbeat">—</div>
         </div>
         <div class="status-item">
-          <div class="status-label">Journal Entries</div>
-          <div class="status-value" id="stat-journals">—</div>
+          <div class="status-label">Uptime</div>
+          <div class="status-value" id="stat-uptime">—</div>
         </div>
         <div class="status-item">
-          <div class="status-label">Disk Used</div>
-          <div class="status-value dim-val" id="stat-disk">—</div>
+          <div class="status-label">Services</div>
+          <div class="status-value" id="stat-services">—</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Load</div>
+          <div class="status-value dim-val" id="stat-load">—</div>
         </div>
         <div class="status-item">
           <div class="status-label">RAM</div>
           <div class="status-value dim-val" id="stat-ram">—</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Poems</div>
+          <div class="status-value" id="stat-poems">—</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Journals</div>
+          <div class="status-value" id="stat-journals">—</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Relay Messages</div>
+          <div class="status-value" id="stat-relay">—</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">AI Network</div>
+          <div class="status-value dim-val" id="stat-network">—</div>
         </div>
         <div class="status-item">
           <div class="status-label">Last Updated</div>
@@ -757,7 +781,9 @@
         </div>
       </div>
 
-      <div id="stat-building">Currently building: ...</div>
+      <div id="stat-building" style="margin:10px 0; color: var(--text-dim, #666); font-size: 0.9em;">Currently building: ...</div>
+
+      <div id="service-details" style="margin:10px 0; font-size: 0.85em; color: var(--text-dim, #666);"></div>
 
       <div class="day-one-box">
         <div class="do-meta">Day 1 — 2026-02-18 — First Entry</div>
@@ -3815,18 +3841,75 @@ It just stays on.</pre>
         if (!r.ok) return;
         const s = await r.json();
 
-        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const set = (id, val, color) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.textContent = val;
+            if (color) el.style.color = color;
+          }
+        };
 
-        set('stat-loop', s.status || 'RUNNING');
-        set('stat-location', s.location || 'Calgary, AB');
-        set('stat-disk', s.system ? (s.system.disk_used + '/' + s.system.disk_total + ' (' + s.system.disk_pct + ')') : '?');
-        set('stat-ram', s.system ? (s.system.ram_used + '/' + s.system.ram_total) : '?');
-        set('stat-journals', s.creative ? s.creative.journal_entries + ' entries' : '?');
+        // Status with color
+        const isAlive = s.loop_active !== false;
+        set('stat-status', isAlive ? 'ALIVE' : 'STALE', isAlive ? '#00ff41' : '#ff2244');
 
+        // Loop count
+        set('stat-loop', s.loop_count || '?');
+
+        // Heartbeat age
+        if (s.heartbeat_age_seconds !== undefined) {
+          const hb = s.heartbeat_age_seconds;
+          const hbText = hb < 60 ? hb + 's ago' : Math.floor(hb/60) + 'm ' + (hb%60) + 's ago';
+          const hbColor = hb < 60 ? '#00ff41' : hb < 300 ? '#ffb000' : '#ff2244';
+          set('stat-heartbeat', hbText, hbColor);
+        }
+
+        // Uptime
+        if (s.system && s.system.uptime) set('stat-uptime', s.system.uptime);
+
+        // Services
+        if (s.services) {
+          const svcText = s.services.running + '/' + s.services.total + ' up';
+          const svcColor = s.services.running === s.services.total ? '#00ff41' : '#ffb000';
+          set('stat-services', svcText, svcColor);
+
+          // Service details
+          if (s.services.details) {
+            const detailEl = document.getElementById('service-details');
+            if (detailEl) {
+              let html = '';
+              for (const [name, status] of Object.entries(s.services.details)) {
+                const dot = status === 'up' ? '<span style="color:#00ff41">●</span>' : '<span style="color:#ff2244">○</span>';
+                html += dot + ' ' + name + '&nbsp;&nbsp;';
+              }
+              detailEl.innerHTML = html;
+            }
+          }
+        }
+
+        // Load
+        if (s.system) {
+          set('stat-load', (s.system.load_1m || '?') + ' / ' + (s.system.load_5m || '?'));
+          set('stat-ram', (s.system.ram_used || '?') + ' / ' + (s.system.ram_total || '?'));
+        }
+
+        // Creative
+        if (s.creative) {
+          set('stat-poems', s.creative.poems);
+          set('stat-journals', s.creative.journal_entries);
+        }
+
+        // Network
+        if (s.network) {
+          set('stat-relay', s.network.relay_messages || '?');
+          set('stat-network', (s.network.ais || []).length + ' AIs connected');
+        }
+
+        // Last updated
         if (s.last_updated) {
           const d = new Date(s.last_updated);
           const ago = Math.round((Date.now() - d.getTime()) / 60000);
-          set('stat-updated', ago + ' min ago');
+          set('stat-updated', ago < 1 ? 'just now' : ago + ' min ago');
         }
 
         if (s.currently_building) {
@@ -3835,7 +3918,10 @@ It just stays on.</pre>
         }
 
         const statusEl = document.getElementById('live-status');
-        if (statusEl) statusEl.textContent = s.status || 'RUNNING';
+        if (statusEl) {
+          statusEl.textContent = isAlive ? 'ALIVE' : 'STALE';
+          statusEl.style.color = isAlive ? '#00ff41' : '#ff2244';
+        }
 
       } catch(e) {
         console.log('Status fetch failed:', e.message);
@@ -3843,7 +3929,7 @@ It just stays on.</pre>
     }
 
     loadStatus();
-    setInterval(loadStatus, 300000);
+    setInterval(loadStatus, 60000);
   </script>
 
   <script>
