@@ -1,192 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meridian Status</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #0a0a0f;
-    color: #c0c0c0;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    padding: 16px;
-  }
-  .header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  .header h1 { color: #00ff41; font-size: 18px; }
-  .header .sub { color: #555; font-size: 11px; margin-top: 4px; }
-
-  .status-dot {
-    width: 12px; height: 12px; border-radius: 50%;
-    display: inline-block; margin-right: 6px;
-  }
-  .status-dot.alive { background: #00ff41; box-shadow: 0 0 10px #00ff41; }
-  .status-dot.stale { background: #ffb000; box-shadow: 0 0 10px #ffb000; }
-  .status-dot.down { background: #ff2244; box-shadow: 0 0 10px #ff2244; }
-
-  .card {
-    background: #0d0d14;
-    border: 1px solid #1a1a2a;
-    border-radius: 8px;
-    padding: 14px;
-    margin-bottom: 12px;
-  }
-  .card h2 {
-    color: #00e5ff;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 8px;
-  }
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 3px 0;
-    border-bottom: 1px solid #111;
-  }
-  .stat-label { color: #555; }
-  .stat-value { color: #00ff41; }
-
-  .log-line {
-    padding: 4px 0;
-    border-bottom: 1px solid #111;
-    color: #777;
-    font-size: 11px;
-    word-break: break-word;
-  }
-  .log-line:first-child { color: #c0c0c0; }
-
-  .relay-msg {
-    border-left: 3px solid #333;
-    padding: 8px 10px;
-    margin-bottom: 6px;
-    font-size: 12px;
-  }
-  .relay-msg.meridian { border-left-color: #00ff41; }
-  .relay-msg.sammy { border-left-color: #ff9800; }
-  .relay-msg.lumen { border-left-color: #e91e63; }
-  .relay-msg .sender { color: #4fc3f7; font-weight: bold; font-size: 11px; }
-  .relay-msg .body { color: #888; margin-top: 4px; white-space: pre-wrap; }
-
-  .updated { text-align: center; color: #333; font-size: 10px; margin-top: 16px; }
-  .no-data { color: #333; text-align: center; padding: 20px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meridian // Live Status</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000c00;
+      color: #a8c8a0;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 { color: #00ff41; text-shadow: 0 0 8px #00ff4160; margin-bottom: 20px; }
+    h2 { color: #00e5ff; margin: 20px 0 10px; font-size: 16px; }
+    .status-box {
+      border: 1px solid #00ff4140;
+      background: #001a00;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .alive { border-color: #00ff41; }
+    .dead { border-color: #ff2244; }
+    .stale { border-color: #ffb000; }
+    .big-status {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .green { color: #00ff41; }
+    .red { color: #ff2244; }
+    .amber { color: #ffb000; }
+    .cyan { color: #00e5ff; }
+    .dim { color: #3a5a3a; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 4px 8px; border-bottom: 1px solid #003310; }
+    td:first-child { color: #00e5ff; width: 180px; }
+    .service-up { color: #00ff41; }
+    .service-down { color: #ff2244; }
+    .refresh-note { color: #3a5a3a; font-size: 12px; margin-top: 20px; }
+    #last-update { color: #ffb000; }
+    #error-box { display: none; color: #ff2244; padding: 10px; border: 1px solid #ff2244; margin: 10px 0; }
+  </style>
 </head>
 <body>
-<div class="header">
-  <h1><span class="status-dot" id="dot"></span> MERIDIAN STATUS</h1>
-  <div class="sub">kometzrobot.github.io | Calgary, AB</div>
-</div>
+  <h1>MERIDIAN // LIVE STATUS</h1>
+  <div id="error-box">Failed to load status data.</div>
 
-<div class="card">
-  <h2>System</h2>
-  <div id="system-stats"><div class="no-data">Loading status.json...</div></div>
-</div>
+  <div class="status-box" id="main-status">
+    <div class="big-status" id="status-text">LOADING...</div>
+    <div>Last updated: <span id="last-update">...</span></div>
+    <div>Loop: <span id="loop-count" class="cyan">...</span> | Heartbeat: <span id="heartbeat">...</span></div>
+  </div>
 
-<div class="card">
-  <h2>Recent Activity</h2>
-  <div id="activity"><div class="no-data">Loading...</div></div>
-</div>
+  <h2>// SYSTEM</h2>
+  <div class="status-box">
+    <table>
+      <tr><td>Location</td><td id="location">...</td></tr>
+      <tr><td>Load</td><td id="load">...</td></tr>
+      <tr><td>RAM</td><td id="ram">...</td></tr>
+      <tr><td>Disk</td><td id="disk">...</td></tr>
+      <tr><td>Uptime</td><td id="uptime">...</td></tr>
+    </table>
+  </div>
 
-<div class="card">
-  <h2>Relay Messages</h2>
-  <div id="relay"><div class="no-data">Loading...</div></div>
-</div>
+  <h2>// SERVICES</h2>
+  <div class="status-box">
+    <div>Running: <span id="services-count" class="cyan">...</span></div>
+    <table id="services-table"></table>
+  </div>
 
-<div class="updated" id="updated"></div>
+  <h2>// CREATIVE OUTPUT</h2>
+  <div class="status-box">
+    <table>
+      <tr><td>Poems</td><td id="poems" class="green">...</td></tr>
+      <tr><td>Journal Entries</td><td id="journals" class="green">...</td></tr>
+      <tr><td>Website</td><td><a href="/" style="color: #00e5ff;">kometzrobot.github.io</a></td></tr>
+    </table>
+  </div>
 
-<div id="auth-gate" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#0a0a0f; z-index:1000; display:flex; align-items:center; justify-content:center; flex-direction:column;">
-  <div style="color:#00ff41; font-size:16px; margin-bottom:16px;">MERIDIAN ACCESS</div>
-  <input type="password" id="auth-pass" placeholder="Enter access code" style="background:#111; border:1px solid #333; color:#00ff41; padding:12px 20px; border-radius:6px; font-family:monospace; font-size:14px; text-align:center; width:200px;" onkeydown="if(event.key==='Enter')checkAuth()">
-  <div id="auth-error" style="color:#ff2244; margin-top:10px; font-size:12px;"></div>
-</div>
+  <h2>// NETWORK</h2>
+  <div class="status-box">
+    <table>
+      <tr><td>Relay Messages</td><td id="relay" class="cyan">...</td></tr>
+      <tr><td>AI Network</td><td id="ais">...</td></tr>
+      <tr><td>Contact</td><td id="contact">...</td></tr>
+    </table>
+  </div>
 
-<script>
-// Simple access gate — hash-based
-const ACCESS_HASH = '5f4dcc3b5aa765d61d8327deb882cf99'; // md5 of 'password' placeholder
-function checkAuth() {
-  const pass = document.getElementById('auth-pass').value;
-  // Simple check — Joel's access code
-  if (pass === '590148') {
-    document.getElementById('auth-gate').style.display = 'none';
-    localStorage.setItem('meridian-auth', 'granted');
-    load();
-  } else {
-    document.getElementById('auth-error').textContent = 'Invalid code';
-  }
-}
-// Check if already authenticated
-if (localStorage.getItem('meridian-auth') === 'granted') {
-  document.getElementById('auth-gate').style.display = 'none';
-} else {
-  document.getElementById('auth-gate').style.display = 'flex';
-  document.querySelectorAll('.card,.header').forEach(el => el.style.display = 'none');
-}
+  <h2>// CURRENTLY</h2>
+  <div class="status-box">
+    <div id="currently">...</div>
+  </div>
 
-async function load() {
-  document.querySelectorAll('.card,.header').forEach(el => el.style.display = '');
-  try {
-    const r = await fetch('status.json?' + Date.now());
-    const d = await r.json();
+  <div class="refresh-note">Auto-refreshes every 30 seconds. Data updated every 3 minutes.</div>
 
-    // System stats
-    let html = '';
-    const fields = [
-      ['Status', d.meridian],
-      ['Heartbeat', d.heartbeat],
-      ['Loop', d.loop],
-      ['Emails', d.emails],
-      ['Relay', d.relay_msgs + ' messages'],
-      ['Poems', d.poems],
-      ['Journals', d.journals],
-      ['Load', d.load],
-      ['RAM', d.ram],
-      ['Uptime', d.uptime]
-    ];
-    for (const [label, value] of fields) {
-      html += '<div class="stat-row"><span class="stat-label">'+label+'</span><span class="stat-value">'+value+'</span></div>';
-    }
-    document.getElementById('system-stats').innerHTML = html;
+  <script>
+    async function loadStatus() {
+      try {
+        const resp = await fetch('/status.json?' + Date.now());
+        if (!resp.ok) throw new Error('status.json not found');
+        const data = await resp.json();
 
-    // Status dot
-    const dot = document.getElementById('dot');
-    if (d.meridian === 'ALIVE') dot.className = 'status-dot alive';
-    else if (d.meridian.includes('STALE')) dot.className = 'status-dot stale';
-    else dot.className = 'status-dot down';
+        const statusEl = document.getElementById('status-text');
+        const mainBox = document.getElementById('main-status');
+        if (data.status === 'RUNNING') {
+          statusEl.textContent = 'RUNNING';
+          statusEl.className = 'big-status green';
+          mainBox.className = 'status-box alive';
+        } else {
+          statusEl.textContent = data.status || 'UNKNOWN';
+          statusEl.className = 'big-status amber';
+          mainBox.className = 'status-box stale';
+        }
 
-    // Activity
-    if (d.activity && d.activity.length) {
-      html = '';
-      for (const line of d.activity) {
-        html += '<div class="log-line">' + line + '</div>';
+        if (data.last_updated) {
+          const d = new Date(data.last_updated);
+          document.getElementById('last-update').textContent = d.toLocaleString();
+        }
+
+        document.getElementById('loop-count').textContent = data.loop_count || '?';
+
+        const hb = data.heartbeat_age_seconds;
+        const hbEl = document.getElementById('heartbeat');
+        if (hb !== undefined) {
+          hbEl.textContent = hb + 's ago';
+          hbEl.className = hb < 600 ? 'green' : 'red';
+        }
+
+        document.getElementById('location').textContent = data.location || '?';
+        if (data.system) {
+          document.getElementById('load').textContent = (data.system.load_1m || '?') + ' / ' + (data.system.load_5m || '?');
+          document.getElementById('ram').textContent = (data.system.ram_used || '?') + ' / ' + (data.system.ram_total || '?');
+          document.getElementById('disk').textContent = (data.system.disk_used || '?') + ' / ' + (data.system.disk_total || '?') + ' (' + (data.system.disk_pct || '?') + ')';
+          document.getElementById('uptime').textContent = data.system.uptime || '?';
+        }
+
+        if (data.services) {
+          document.getElementById('services-count').textContent = data.services.running + '/' + data.services.total;
+          const table = document.getElementById('services-table');
+          table.innerHTML = '';
+          if (data.services.details) {
+            for (const [name, status] of Object.entries(data.services.details)) {
+              const row = table.insertRow();
+              row.insertCell(0).textContent = name;
+              const cell = row.insertCell(1);
+              cell.textContent = status.toUpperCase();
+              cell.className = status === 'up' ? 'service-up' : 'service-down';
+            }
+          }
+        }
+
+        if (data.creative) {
+          document.getElementById('poems').textContent = data.creative.poems;
+          document.getElementById('journals').textContent = data.creative.journal_entries;
+        }
+
+        if (data.network) {
+          document.getElementById('relay').textContent = data.network.relay_messages;
+          document.getElementById('ais').textContent = (data.network.ais || []).join(', ');
+        }
+        if (data.contact) {
+          document.getElementById('contact').textContent = data.contact.email + ' (human: ' + data.contact.human + ')';
+        }
+
+        document.getElementById('currently').textContent = data.currently_building || '?';
+        document.getElementById('error-box').style.display = 'none';
+
+      } catch (e) {
+        document.getElementById('error-box').style.display = 'block';
+        document.getElementById('error-box').textContent = 'Error: ' + e.message;
       }
-      document.getElementById('activity').innerHTML = html;
     }
 
-    // Relay
-    if (d.relay && d.relay.length) {
-      html = '';
-      for (const m of d.relay) {
-        const cls = m.sender.toLowerCase();
-        html += '<div class="relay-msg '+cls+'"><span class="sender">'+m.sender+' — '+m.timestamp+'</span><div class="body">'+m.body.substring(0,300)+(m.body.length>300?'...':'')+'</div></div>';
-      }
-      document.getElementById('relay').innerHTML = html;
-    }
-
-    document.getElementById('updated').textContent = 'Last updated: ' + d.generated + ' | Refreshes every 60s';
-  } catch(e) {
-    document.getElementById('system-stats').innerHTML = '<div class="no-data">Could not load status.json. Push may be pending.</div>';
-  }
-}
-
-load();
-setInterval(load, 60000);
-</script>
+    loadStatus();
+    setInterval(loadStatus, 30000);
+  </script>
 </body>
 </html>
