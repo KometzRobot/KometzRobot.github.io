@@ -41,7 +41,7 @@ SERVICES = {
     "protonmail-bridge": "protonmail-bridge",
     "irc-bot": "irc-bot.py",
     "ollama": "ollama",
-    "command-center": "command-center-v13.py",
+    "command-center": "command-center-v15.py",
 }
 
 

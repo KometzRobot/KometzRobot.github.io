@@ -21,12 +21,12 @@ elif [ -f "$HOME/.Xauthority" ]; then
 fi
 
 # Check Command Center v12
-if ! pgrep -f "command-center-v13.py" > /dev/null; then
-    log "ALERT: command-center-v13.py is NOT running. Restarting..."
-    DISPLAY=:0 XAUTHORITY="$XAUTHORITY" $PYTHON "$WORKING_DIR/command-center-v13.py" >> /tmp/command-center.log 2>&1 &
+if ! pgrep -f "command-center-v15.py" > /dev/null; then
+    log "ALERT: command-center-v15.py is NOT running. Restarting..."
+    DISPLAY=:0 XAUTHORITY="$XAUTHORITY" $PYTHON "$WORKING_DIR/command-center-v15.py" >> /tmp/command-center.log 2>&1 &
     log "Command Center v12 restarted (PID: $!)"
 else
-    log "OK: command-center-v13.py is running."
+    log "OK: command-center-v15.py is running."
 fi
 
 # Check IRC bot

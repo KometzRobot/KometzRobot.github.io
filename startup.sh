@@ -70,8 +70,8 @@ else
 fi
 
 # 4. Command Center v13 — dashboard layout, all-in-one view
-if ! pgrep -f "command-center-v13.py" > /dev/null; then
-    DISPLAY=:0 XAUTHORITY="$XAUTHORITY" $PYTHON "$WORKING_DIR/command-center-v13.py" >> /tmp/command-center.log 2>&1 &
+if ! pgrep -f "command-center-v15.py" > /dev/null; then
+    DISPLAY=:0 XAUTHORITY="$XAUTHORITY" $PYTHON "$WORKING_DIR/command-center-v15.py" >> /tmp/command-center.log 2>&1 &
     log "Command Center v13 started (dashboard + Eos chat)"
 else
     log "Command Center v13 already running"
