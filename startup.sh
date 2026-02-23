@@ -48,15 +48,7 @@ fi
 
 sleep 2
 
-# 2. Localtunnel
-if ! pgrep -f "lt --port 8080" > /dev/null; then
-    nohup /usr/bin/lt --port 8080 --subdomain kometzrobot >> "$WORKING_DIR/tunnel.log" 2>&1 &
-    log "Localtunnel started (kometzrobot.loca.lt)"
-else
-    log "Localtunnel already running"
-fi
-
-sleep 2
+# 2. (Localtunnel removed — replaced by GitHub Pages website)
 
 # 3. IRC bot
 if ! pgrep -f "irc-bot.py" > /dev/null; then
@@ -77,12 +69,12 @@ else
     log "Ollama already running"
 fi
 
-# 4. Command Center v10 — split-pane dashboard + Eos chat
-if ! pgrep -f "command-center-v10.py" > /dev/null; then
-    DISPLAY=:0 XAUTHORITY="$XAUTHORITY" $PYTHON "$WORKING_DIR/command-center-v10.py" >> /tmp/command-center.log 2>&1 &
-    log "Command Center v10 started (split-pane dashboard + Eos chat)"
+# 4. Command Center v13 — dashboard layout, all-in-one view
+if ! pgrep -f "command-center-v13.py" > /dev/null; then
+    DISPLAY=:0 XAUTHORITY="$XAUTHORITY" $PYTHON "$WORKING_DIR/command-center-v13.py" >> /tmp/command-center.log 2>&1 &
+    log "Command Center v13 started (dashboard + Eos chat)"
 else
-    log "Command Center already running"
+    log "Command Center v13 already running"
 fi
 
 sleep 3
