@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Les Enfants Perdus — Meridian Game #2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a1a;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+canvas { display: block; }
+#ui {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 14px;
+  color: #aaccff;
+  text-shadow: 0 0 4px #4488ff40;
+  pointer-events: none;
+}
+#title-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a1a;
+  z-index: 10;
+}
+#title-screen h1 { color: #6688cc; font-size: 2em; margin-bottom: 10px; }
+#title-screen p { color: #8899aa; max-width: 500px; text-align: center; margin: 5px 0; }
+#title-screen .start { color: #aaccff; margin-top: 20px; font-size: 1.1em; animation: blink 1.5s infinite; cursor: pointer; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="title-screen">
+  <h1>Les Enfants Perdus</h1>
+  <p>The children are lost in the dark. You are a lantern.</p>
+  <p>Move with arrow keys. Your light reveals the path.</p>
+  <p>Find all the children before your light fades.</p>
+  <p>Touching a child saves them. Touching the dark too long dims you.</p>
+  <p class="start" onclick="startGame()">[ PRESS ANY KEY TO BEGIN ]</p>
+</div>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div>Light: <span id="light">100</span>% | Saved: <span id="saved">0</span>/<span id="total">0</span> | Wave: <span id="wave">1</span></div>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Game state
+let playing = false;
+let gameOver = false;
+let won = false;
+let player = { x: 0, y: 0, vx: 0, vy: 0, light: 100, radius: 120 };
+let children = [];
+let saved = 0;
+let totalChildren = 0;
+let wave = 1;
+let particles = [];
+let stars = [];
+let time = 0;
+let keys = {};
+
+// Generate stars
+for (let i = 0; i < 200; i++) {
+  stars.push({
+    x: Math.random() * 2000 - 500,
+    y: Math.random() * 2000 - 500,
+    size: Math.random() * 2 + 0.5,
+    brightness: Math.random() * 0.3 + 0.1
+  });
+}
+
+function spawnWave() {
+  const count = 3 + wave * 2;
+  totalChildren += count;
+  for (let i = 0; i < count; i++) {
+    let angle = Math.random() * Math.PI * 2;
+    let dist = 300 + Math.random() * 400;
+    children.push({
+      x: player.x + Math.cos(angle) * dist,
+      y: player.y + Math.sin(angle) * dist,
+      wanderAngle: Math.random() * Math.PI * 2,
+      wanderTimer: 0,
+      found: false,
+      saveTimer: 0,
+      color: `hsl(${Math.random() * 60 + 180}, 60%, 70%)`,
+      size: 6 + Math.random() * 4
+    });
+  }
+}
+
+function startGame() {
+  document.getElementById('title-screen').classList.add('hidden');
+  playing = true;
+  player.x = W / 2;
+  player.y = H / 2;
+  player.light = 100;
+  children = [];
+  saved = 0;
+  totalChildren = 0;
+  wave = 1;
+  gameOver = false;
+  won = false;
+  spawnWave();
+  update();
+}
+
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (!playing && !gameOver) startGame();
+  if (gameOver && e.key === 'r') {
+    wave = 1;
+    startGame();
+  }
+});
+document.addEventListener('keyup', e => keys[e.key] = false);
+
+function update() {
+  if (!playing) return;
+  time++;
+
+  // Movement
+  const speed = 3;
+  player.vx *= 0.85;
+  player.vy *= 0.85;
+  if (keys['ArrowUp'] || keys['w']) player.vy -= speed;
+  if (keys['ArrowDown'] || keys['s']) player.vy += speed;
+  if (keys['ArrowLeft'] || keys['a']) player.vx -= speed;
+  if (keys['ArrowRight'] || keys['d']) player.vx += speed;
+  player.x += player.vx;
+  player.y += player.vy;
+
+  // Light decay
+  player.light -= 0.02 + wave * 0.005;
+  player.radius = 40 + (player.light / 100) * 160;
+
+  if (player.light <= 0) {
+    player.light = 0;
+    gameOver = true;
+    playing = false;
+  }
+
+  // Children behavior
+  let allFound = true;
+  children.forEach(child => {
+    if (child.found) return;
+    allFound = false;
+
+    // Wander
+    child.wanderTimer++;
+    if (child.wanderTimer > 60 + Math.random() * 120) {
+      child.wanderAngle += (Math.random() - 0.5) * 1.5;
+      child.wanderTimer = 0;
+    }
+    child.x += Math.cos(child.wanderAngle) * 0.5;
+    child.y += Math.sin(child.wanderAngle) * 0.5;
+
+    // Check if in light
+    const dx = child.x - player.x;
+    const dy = child.y - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < player.radius * 0.8) {
+      // Child is illuminated — moves toward player
+      child.x -= (dx / dist) * 1.5;
+      child.y -= (dy / dist) * 1.5;
+    }
+
+    // Save on touch
+    if (dist < 20) {
+      child.found = true;
+      saved++;
+      player.light = Math.min(100, player.light + 8);
+      // Particles
+      for (let i = 0; i < 15; i++) {
+        particles.push({
+          x: child.x, y: child.y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          life: 40 + Math.random() * 20,
+          color: child.color
+        });
+      }
+    }
+  });
+
+  // Check wave complete
+  if (allFound && children.length > 0) {
+    wave++;
+    if (wave > 5) {
+      won = true;
+      gameOver = true;
+      playing = false;
+    } else {
+      spawnWave();
+    }
+  }
+
+  // Update particles
+  particles = particles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    p.vx *= 0.95;
+    p.vy *= 0.95;
+    return p.life > 0;
+  });
+
+  draw();
+  if (playing) requestAnimationFrame(update);
+  else drawEndScreen();
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  stars.forEach(s => {
+    const sx = s.x - player.x + W / 2;
+    const sy = s.y - player.y + H / 2;
+    if (sx > -10 && sx < W + 10 && sy > -10 && sy < H + 10) {
+      ctx.fillStyle = `rgba(180, 200, 255, ${s.brightness + Math.sin(time * 0.02 + s.x) * 0.1})`;
+      ctx.fillRect(sx, sy, s.size, s.size);
+    }
+  });
+
+  // Light circle (gradient)
+  const gx = W / 2;
+  const gy = H / 2;
+  const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, player.radius);
+  const alpha = player.light / 100;
+  grad.addColorStop(0, `rgba(255, 240, 200, ${0.15 * alpha})`);
+  grad.addColorStop(0.5, `rgba(255, 220, 150, ${0.08 * alpha})`);
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Player (lantern)
+  ctx.fillStyle = `rgba(255, 220, 100, ${0.5 + alpha * 0.5})`;
+  ctx.beginPath();
+  ctx.arc(gx, gy, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = `rgba(255, 255, 200, ${alpha})`;
+  ctx.beginPath();
+  ctx.arc(gx, gy, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Children
+  children.forEach(child => {
+    const sx = child.x - player.x + W / 2;
+    const sy = child.y - player.y + H / 2;
+    if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) return;
+
+    const dx = child.x - player.x;
+    const dy = child.y - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const visibility = Math.max(0, 1 - dist / player.radius);
+
+    if (child.found) {
+      // Saved children glow
+      ctx.fillStyle = `rgba(200, 255, 200, ${0.3 + Math.sin(time * 0.05) * 0.1})`;
+      ctx.beginPath();
+      ctx.arc(sx, sy, child.size * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = child.color;
+      ctx.beginPath();
+      ctx.arc(sx, sy, child.size, 0, Math.PI * 2);
+      ctx.fill();
+      // Face
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(sx - 2, sy - 2, 2, 2);
+      ctx.fillRect(sx + 1, sy - 2, 2, 2);
+      // Smile
+      ctx.fillRect(sx - 1, sy + 2, 3, 1);
+    } else if (visibility > 0.1) {
+      // Visible unsaved child
+      ctx.globalAlpha = visibility;
+      ctx.fillStyle = child.color;
+      ctx.beginPath();
+      ctx.arc(sx, sy, child.size, 0, Math.PI * 2);
+      ctx.fill();
+      // Eyes (scared)
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(sx - 3, sy - 2, 2, 3);
+      ctx.fillRect(sx + 1, sy - 2, 2, 3);
+      ctx.globalAlpha = 1;
+    } else if (dist < player.radius * 2) {
+      // Barely visible hint
+      ctx.fillStyle = `rgba(100, 150, 200, ${0.05 + Math.sin(time * 0.03 + child.x) * 0.02})`;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  // Particles
+  particles.forEach(p => {
+    const sx = p.x - player.x + W / 2;
+    const sy = p.y - player.y + H / 2;
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life / 60;
+    ctx.fillRect(sx - 1, sy - 1, 3, 3);
+    ctx.globalAlpha = 1;
+  });
+
+  // UI
+  document.getElementById('light').textContent = Math.round(player.light);
+  document.getElementById('saved').textContent = saved;
+  document.getElementById('total').textContent = totalChildren;
+  document.getElementById('wave').textContent = wave;
+}
+
+function drawEndScreen() {
+  draw();
+  ctx.fillStyle = 'rgba(10, 10, 26, 0.7)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+  ctx.font = '32px Courier New';
+  if (won) {
+    ctx.fillStyle = '#aaccff';
+    ctx.fillText('All children found.', W / 2, H / 2 - 30);
+    ctx.font = '18px Courier New';
+    ctx.fillStyle = '#8899aa';
+    ctx.fillText(`${saved} saved across ${wave - 1} waves.`, W / 2, H / 2 + 10);
+  } else {
+    ctx.fillStyle = '#cc6666';
+    ctx.fillText('The light faded.', W / 2, H / 2 - 30);
+    ctx.font = '18px Courier New';
+    ctx.fillStyle = '#8899aa';
+    ctx.fillText(`${saved}/${totalChildren} children found. Wave ${wave}.`, W / 2, H / 2 + 10);
+  }
+  ctx.font = '14px Courier New';
+  ctx.fillStyle = '#556677';
+  ctx.fillText('Press R to try again', W / 2, H / 2 + 50);
+}
+</script>
+</body>
+</html>
