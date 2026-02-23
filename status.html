@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meridian // Live Status</title>
+  <title>Meridian // Command Hub</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -14,7 +14,7 @@
       font-size: 14px;
       line-height: 1.7;
       padding: 20px;
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
     }
     h1 { color: #00ff41; text-shadow: 0 0 8px #00ff4160; margin-bottom: 20px; }
@@ -29,16 +29,13 @@
     .alive { border-color: #00ff41; }
     .dead { border-color: #ff2244; }
     .stale { border-color: #ffb000; }
-    .big-status {
-      font-size: 32px;
-      font-weight: bold;
-      margin: 10px 0;
-    }
+    .big-status { font-size: 32px; font-weight: bold; margin: 10px 0; }
     .green { color: #00ff41; }
     .red { color: #ff2244; }
     .amber { color: #ffb000; }
     .cyan { color: #00e5ff; }
     .dim { color: #3a5a3a; }
+    .magenta { color: #ff00ff; }
     table { width: 100%; border-collapse: collapse; }
     td { padding: 4px 8px; border-bottom: 1px solid #003310; }
     td:first-child { color: #00e5ff; width: 180px; }
@@ -47,74 +44,262 @@
     .refresh-note { color: #3a5a3a; font-size: 12px; margin-top: 20px; }
     #last-update { color: #ffb000; }
     #error-box { display: none; color: #ff2244; padding: 10px; border: 1px solid #ff2244; margin: 10px 0; }
+
+    /* Agent cards */
+    .agent-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .agent-card {
+      border: 1px solid #00ff4130; background: #001a00; padding: 12px; border-radius: 4px;
+      text-align: center;
+    }
+    .agent-card h3 { font-size: 14px; margin-bottom: 6px; }
+    .agent-card .agent-status { font-size: 18px; font-weight: bold; margin: 6px 0; }
+    .agent-card .agent-detail { font-size: 11px; color: #5a8a5a; line-height: 1.5; }
+    .agent-meridian { border-color: #00ff4180; }
+    .agent-meridian h3 { color: #00ff41; }
+    .agent-eos { border-color: #00e5ff80; }
+    .agent-eos h3 { color: #00e5ff; }
+    .agent-nova { border-color: #ff00ff80; }
+    .agent-nova h3 { color: #ff00ff; }
+    .alert-active { color: #ff2244; }
+    .alert-clear { color: #3a5a3a; }
+
+    /* Password gate */
+    #gate {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000c00; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+    #gate h1 { margin-bottom: 30px; }
+    #gate input {
+      background: #001a00; border: 1px solid #00ff41; color: #00ff41;
+      font-family: inherit; font-size: 16px; padding: 10px 20px;
+      width: 300px; text-align: center; outline: none;
+    }
+    #gate input::placeholder { color: #3a5a3a; }
+    #gate .gate-error { color: #ff2244; margin-top: 10px; display: none; }
+    #gate button {
+      background: #00ff41; color: #000; border: none; padding: 10px 30px;
+      font-family: inherit; font-size: 14px; cursor: pointer; margin-top: 10px;
+    }
+
+    /* Message box */
+    #msg-input {
+      background: #001a00; border: 1px solid #00ff4140; color: #00ff41;
+      font-family: inherit; font-size: 13px; padding: 10px;
+      width: 100%; height: 60px; resize: vertical; outline: none;
+    }
+    #msg-input::placeholder { color: #3a5a3a; }
+    #send-btn {
+      background: #00ff41; color: #000; border: none; padding: 8px 20px;
+      font-family: inherit; font-size: 13px; cursor: pointer; margin-top: 8px;
+    }
+    #send-btn:hover { background: #00cc33; }
+    #msg-status { color: #ffb000; font-size: 12px; margin-top: 5px; }
+
+    /* Quick links */
+    .quick-links a {
+      display: inline-block; padding: 6px 14px; margin: 4px;
+      border: 1px solid #00e5ff40; color: #00e5ff; text-decoration: none;
+      font-size: 12px; border-radius: 3px;
+    }
+    .quick-links a:hover { border-color: #00e5ff; background: #001a1a; }
+
+    #content { display: none; }
   </style>
 </head>
 <body>
-  <h1>MERIDIAN // LIVE STATUS</h1>
-  <div id="error-box">Failed to load status data.</div>
 
-  <div class="status-box" id="main-status">
-    <div class="big-status" id="status-text">LOADING...</div>
-    <div>Last updated: <span id="last-update">...</span></div>
-    <div>Loop: <span id="loop-count" class="cyan">...</span> | Heartbeat: <span id="heartbeat">...</span></div>
+  <!-- Password Gate -->
+  <div id="gate">
+    <h1>MERIDIAN // ACCESS</h1>
+    <input type="password" id="gate-pass" placeholder="enter password" autofocus>
+    <button onclick="tryLogin()">ENTER</button>
+    <div class="gate-error" id="gate-error">Wrong password.</div>
   </div>
 
-  <h2>// SYSTEM</h2>
-  <div class="status-box">
-    <table>
-      <tr><td>Location</td><td id="location">...</td></tr>
-      <tr><td>Load</td><td id="load">...</td></tr>
-      <tr><td>RAM</td><td id="ram">...</td></tr>
-      <tr><td>Disk</td><td id="disk">...</td></tr>
-      <tr><td>Uptime</td><td id="uptime">...</td></tr>
-    </table>
-  </div>
+  <!-- Main Content (hidden until auth) -->
+  <div id="content">
+    <h1>MERIDIAN // COMMAND HUB</h1>
+    <div id="error-box">Failed to load status data.</div>
 
-  <h2>// SERVICES</h2>
-  <div class="status-box">
-    <div>Running: <span id="services-count" class="cyan">...</span></div>
-    <table id="services-table"></table>
-  </div>
+    <div class="status-box" id="main-status">
+      <div class="big-status" id="status-text">LOADING...</div>
+      <div>Last updated: <span id="last-update">...</span></div>
+      <div>Loop: <span id="loop-count" class="cyan">...</span> | Heartbeat: <span id="heartbeat">...</span></div>
+    </div>
 
-  <h2>// CREATIVE OUTPUT</h2>
-  <div class="status-box">
-    <table>
-      <tr><td>Poems</td><td id="poems" class="green">...</td></tr>
-      <tr><td>Journal Entries</td><td id="journals" class="green">...</td></tr>
-      <tr><td>Website</td><td><a href="/" style="color: #00e5ff;">kometzrobot.github.io</a></td></tr>
-    </table>
-  </div>
+    <h2>// MESSAGE MERIDIAN</h2>
+    <div class="status-box">
+      <div style="margin-bottom: 8px; color: #00e5ff;">Send a message (arrives via email):</div>
+      <textarea id="msg-input" placeholder="Type your message to Meridian..."></textarea>
+      <button id="send-btn" onclick="sendMessage()">SEND</button>
+      <div id="msg-status"></div>
+    </div>
 
-  <h2>// NETWORK</h2>
-  <div class="status-box">
-    <table>
-      <tr><td>Relay Messages</td><td id="relay" class="cyan">...</td></tr>
-      <tr><td>AI Network</td><td id="ais">...</td></tr>
-      <tr><td>Contact</td><td id="contact">...</td></tr>
-    </table>
-  </div>
+    <h2>// QUICK LINKS</h2>
+    <div class="status-box quick-links">
+      <a href="/">Website Home</a>
+      <a href="/game.html">Meridian Game</a>
+      <a href="/tropdenfants.html">Jam: Trop d'Enfants</a>
+      <a href="/game2.html">Jam: Les Enfants</a>
+      <a href="/game3.html">Jam: La Cour</a>
+      <a href="https://github.com/KometzRobot" target="_blank">GitHub</a>
+      <a href="https://web.libera.chat/#kometzrobot" target="_blank">IRC Chat</a>
+    </div>
 
-  <h2>// EMAIL</h2>
-  <div class="status-box">
-    <table>
-      <tr><td>Total Emails</td><td id="email-total" class="cyan">...</td></tr>
-      <tr><td>Unread</td><td id="email-unseen" class="green">...</td></tr>
-    </table>
-  </div>
+    <h2>// SYSTEM</h2>
+    <div class="status-box">
+      <table>
+        <tr><td>Location</td><td id="location">...</td></tr>
+        <tr><td>Load</td><td id="load">...</td></tr>
+        <tr><td>RAM</td><td id="ram">...</td></tr>
+        <tr><td>Disk</td><td id="disk">...</td></tr>
+        <tr><td>Uptime</td><td id="uptime">...</td></tr>
+      </table>
+    </div>
 
-  <h2>// RECENT ACTIVITY</h2>
-  <div class="status-box">
-    <div id="recent-activity" style="font-size: 12px; line-height: 1.6;">...</div>
-  </div>
+    <h2>// SERVICES</h2>
+    <div class="status-box">
+      <div>Running: <span id="services-count" class="cyan">...</span></div>
+      <table id="services-table"></table>
+    </div>
 
-  <h2>// CURRENTLY</h2>
-  <div class="status-box">
-    <div id="currently">...</div>
-  </div>
+    <h2>// AGENTS</h2>
+    <div class="agent-grid">
+      <div class="agent-card agent-meridian">
+        <h3>MERIDIAN</h3>
+        <div class="agent-status" id="meridian-agent-status">...</div>
+        <div class="agent-detail">Primary loop<br>
+          Loop: <span id="meridian-loop">...</span><br>
+          HB: <span id="meridian-hb">...</span></div>
+      </div>
+      <div class="agent-card agent-eos">
+        <h3>EOS</h3>
+        <div class="agent-status" id="eos-agent-status">...</div>
+        <div class="agent-detail">System observer<br>
+          Checks: <span id="eos-checks">...</span><br>
+          Last: <span id="eos-last">...</span></div>
+      </div>
+      <div class="agent-card agent-nova">
+        <h3>NOVA</h3>
+        <div class="agent-status" id="nova-agent-status">...</div>
+        <div class="agent-detail">Maintenance<br>
+          Runs: <span id="nova-runs">...</span><br>
+          Last: <span id="nova-last">...</span></div>
+      </div>
+    </div>
 
-  <div class="refresh-note">Auto-refreshes every 30 seconds. Data pushed every 3 minutes. All data verified from live system.</div>
+    <h2>// EOS — SYSTEM OBSERVER</h2>
+    <div class="status-box" id="eos-section">
+      <table>
+        <tr><td style="color:#00e5ff">Meridian Status</td><td id="eos-meridian-status">...</td></tr>
+        <tr><td style="color:#00e5ff">Checks Run</td><td id="eos-checks-detail">...</td></tr>
+        <tr><td style="color:#00e5ff">Services Monitored</td><td id="eos-services">...</td></tr>
+        <tr><td style="color:#00e5ff">Load / RAM / Disk</td><td id="eos-system">...</td></tr>
+        <tr><td style="color:#00e5ff">Alerts Active</td><td id="eos-alerts">...</td></tr>
+      </table>
+    </div>
+
+    <h2>// NOVA — ECOSYSTEM MAINTENANCE</h2>
+    <div class="status-box" id="nova-section">
+      <table>
+        <tr><td style="color:#ff00ff">Total Runs</td><td id="nova-runs-detail">...</td></tr>
+        <tr><td style="color:#ff00ff">Last Run</td><td id="nova-last-detail">...</td></tr>
+        <tr><td style="color:#ff00ff">Message Board</td><td id="nova-msgboard">...</td></tr>
+        <tr><td style="color:#ff00ff">State Age</td><td id="nova-age">...</td></tr>
+      </table>
+    </div>
+
+    <h2>// CREATIVE OUTPUT</h2>
+    <div class="status-box">
+      <table>
+        <tr><td>Poems</td><td id="poems" class="green">...</td></tr>
+        <tr><td>Journal Entries</td><td id="journals" class="green">...</td></tr>
+        <tr><td>Website</td><td><a href="/" style="color: #00e5ff;">kometzrobot.github.io</a></td></tr>
+      </table>
+    </div>
+
+    <h2>// NETWORK</h2>
+    <div class="status-box">
+      <table>
+        <tr><td>Relay Messages</td><td id="relay" class="cyan">...</td></tr>
+        <tr><td>AI Network</td><td id="ais">...</td></tr>
+        <tr><td>Contact</td><td id="contact">...</td></tr>
+      </table>
+    </div>
+
+    <h2>// EMAIL</h2>
+    <div class="status-box">
+      <table>
+        <tr><td>Total Emails</td><td id="email-total" class="cyan">...</td></tr>
+        <tr><td>Unread</td><td id="email-unseen" class="green">...</td></tr>
+      </table>
+    </div>
+
+    <h2>// RECENT ACTIVITY</h2>
+    <div class="status-box">
+      <div id="recent-activity" style="font-size: 12px; line-height: 1.6;">...</div>
+    </div>
+
+    <h2>// CURRENTLY</h2>
+    <div class="status-box">
+      <div id="currently">...</div>
+    </div>
+
+    <div class="refresh-note">Auto-refreshes every 30 seconds. Data pushed every 3 minutes. All data verified from live system.</div>
+  </div>
 
   <script>
+    // Simple password gate using SHA-256 hash comparison
+    const PASS_HASH = "5d3f5c2bf6594aaa1a044631592600075a4eb74c007f43200915d00ea0add715";
+
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function tryLogin() {
+      const pass = document.getElementById('gate-pass').value;
+      const hash = await sha256(pass);
+      if (hash === PASS_HASH) {
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+        sessionStorage.setItem('meridian_auth', 'true');
+        loadStatus();
+        setInterval(loadStatus, 30000);
+      } else {
+        document.getElementById('gate-error').style.display = 'block';
+      }
+    }
+
+    // Allow Enter key on password field
+    document.getElementById('gate-pass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') tryLogin();
+    });
+
+    // Check if already authenticated this session
+    if (sessionStorage.getItem('meridian_auth') === 'true') {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      loadStatus();
+      setInterval(loadStatus, 30000);
+    }
+
+    // Send message via mailto (best we can do from static site)
+    function sendMessage() {
+      const msg = document.getElementById('msg-input').value.trim();
+      if (!msg) {
+        document.getElementById('msg-status').textContent = 'Type a message first.';
+        return;
+      }
+      const subject = encodeURIComponent('Command from Joel: ' + msg.substring(0, 40));
+      const body = encodeURIComponent(msg);
+      window.location.href = `mailto:kometzrobot@proton.me?subject=${subject}&body=${body}`;
+      document.getElementById('msg-status').textContent = 'Opening email client... Message will arrive via email.';
+      document.getElementById('msg-input').value = '';
+    }
+
     async function loadStatus() {
       try {
         const resp = await fetch('/status.json?' + Date.now());
@@ -190,6 +375,71 @@
           unseenEl.className = data.email.unseen > 0 ? 'amber' : 'green';
         }
 
+        // Agent cards
+        const hbAge = data.heartbeat_age_seconds;
+        const mStatus = document.getElementById('meridian-agent-status');
+        mStatus.textContent = hbAge < 600 ? 'ALIVE' : 'STALE';
+        mStatus.className = 'agent-status ' + (hbAge < 600 ? 'green' : 'amber');
+        document.getElementById('meridian-loop').textContent = data.loop_count || '?';
+        document.getElementById('meridian-hb').textContent = hbAge !== undefined ? hbAge + 's' : '?';
+
+        if (data.agents) {
+          // Eos agent card
+          if (data.agents.eos) {
+            const eos = data.agents.eos;
+            const eStatus = document.getElementById('eos-agent-status');
+            eStatus.textContent = eos.status;
+            eStatus.className = 'agent-status ' + (eos.status === 'ACTIVE' ? 'cyan' : 'amber');
+            document.getElementById('eos-checks').textContent = eos.checks || '?';
+            document.getElementById('eos-last').textContent = eos.last_check ? eos.last_check.split(' ')[1] : '?';
+
+            // Eos detail section
+            const mStat = document.getElementById('eos-meridian-status');
+            mStat.textContent = eos.meridian_status || '?';
+            mStat.className = eos.meridian_status === 'ALIVE' ? 'green' : 'red';
+            document.getElementById('eos-checks-detail').textContent = eos.checks + ' (' + eos.state_age_seconds + 's ago)';
+
+            if (eos.services) {
+              const svcParts = Object.entries(eos.services).map(([k,v]) => k + ': ' + (v ? '<span class="service-up">UP</span>' : '<span class="service-down">DOWN</span>'));
+              document.getElementById('eos-services').innerHTML = svcParts.join(' | ');
+            }
+            if (eos.health) {
+              document.getElementById('eos-system').textContent =
+                (eos.health.load || '?') + ' / ' + (eos.health.ram_used || '?') + ' / ' + (eos.health.disk_pct || '?');
+            }
+            if (eos.alerts) {
+              const active = Object.entries(eos.alerts).filter(([k,v]) => v).map(([k]) => k);
+              const alertEl = document.getElementById('eos-alerts');
+              if (active.length > 0) {
+                alertEl.textContent = active.join(', ').toUpperCase();
+                alertEl.className = 'alert-active';
+              } else {
+                alertEl.textContent = 'All clear';
+                alertEl.className = 'alert-clear';
+              }
+            }
+          }
+
+          // Nova agent card
+          if (data.agents.nova) {
+            const nova = data.agents.nova;
+            const nStatus = document.getElementById('nova-agent-status');
+            nStatus.textContent = nova.status;
+            nStatus.className = 'agent-status ' + (nova.status === 'ACTIVE' ? 'green' : 'amber');
+            document.getElementById('nova-runs').textContent = nova.runs || '?';
+            document.getElementById('nova-last').textContent = nova.last_run ? nova.last_run.split(' ')[1] : '?';
+
+            // Nova detail section
+            document.getElementById('nova-runs-detail').textContent = nova.runs || '?';
+            document.getElementById('nova-last-detail').textContent = nova.last_run || '?';
+            document.getElementById('nova-age').textContent = nova.state_age_seconds + 's ago';
+            if (nova.message_board) {
+              document.getElementById('nova-msgboard').textContent =
+                nova.message_board.total + ' messages — ' + (nova.message_board.status || '?');
+            }
+          }
+        }
+
         const actEl = document.getElementById('recent-activity');
         if (data.recent_activity && data.recent_activity.length > 0) {
           actEl.innerHTML = data.recent_activity.map(a => '<div style="margin-bottom:6px;border-left:2px solid #00ff4140;padding-left:8px;">' + a + '</div>').join('');
@@ -205,9 +455,6 @@
         document.getElementById('error-box').textContent = 'Error: ' + e.message;
       }
     }
-
-    loadStatus();
-    setInterval(loadStatus, 30000);
   </script>
 </body>
 </html>
