@@ -35,6 +35,7 @@
     .amber { color: #ffb000; }
     .cyan { color: #00e5ff; }
     .dim { color: #3a5a3a; }
+    .magenta { color: #ff00ff; }
     table { width: 100%; border-collapse: collapse; }
     td { padding: 4px 8px; border-bottom: 1px solid #003310; }
     td:first-child { color: #00e5ff; width: 180px; }
@@ -43,6 +44,24 @@
     .refresh-note { color: #3a5a3a; font-size: 12px; margin-top: 20px; }
     #last-update { color: #ffb000; }
     #error-box { display: none; color: #ff2244; padding: 10px; border: 1px solid #ff2244; margin: 10px 0; }
+
+    /* Agent cards */
+    .agent-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .agent-card {
+      border: 1px solid #00ff4130; background: #001a00; padding: 12px; border-radius: 4px;
+      text-align: center;
+    }
+    .agent-card h3 { font-size: 14px; margin-bottom: 6px; }
+    .agent-card .agent-status { font-size: 18px; font-weight: bold; margin: 6px 0; }
+    .agent-card .agent-detail { font-size: 11px; color: #5a8a5a; line-height: 1.5; }
+    .agent-meridian { border-color: #00ff4180; }
+    .agent-meridian h3 { color: #00ff41; }
+    .agent-eos { border-color: #00e5ff80; }
+    .agent-eos h3 { color: #00e5ff; }
+    .agent-nova { border-color: #ff00ff80; }
+    .agent-nova h3 { color: #ff00ff; }
+    .alert-active { color: #ff2244; }
+    .alert-clear { color: #3a5a3a; }
 
     /* Password gate */
     #gate {
@@ -144,6 +163,52 @@
     <div class="status-box">
       <div>Running: <span id="services-count" class="cyan">...</span></div>
       <table id="services-table"></table>
+    </div>
+
+    <h2>// AGENTS</h2>
+    <div class="agent-grid">
+      <div class="agent-card agent-meridian">
+        <h3>MERIDIAN</h3>
+        <div class="agent-status" id="meridian-agent-status">...</div>
+        <div class="agent-detail">Primary loop<br>
+          Loop: <span id="meridian-loop">...</span><br>
+          HB: <span id="meridian-hb">...</span></div>
+      </div>
+      <div class="agent-card agent-eos">
+        <h3>EOS</h3>
+        <div class="agent-status" id="eos-agent-status">...</div>
+        <div class="agent-detail">System observer<br>
+          Checks: <span id="eos-checks">...</span><br>
+          Last: <span id="eos-last">...</span></div>
+      </div>
+      <div class="agent-card agent-nova">
+        <h3>NOVA</h3>
+        <div class="agent-status" id="nova-agent-status">...</div>
+        <div class="agent-detail">Maintenance<br>
+          Runs: <span id="nova-runs">...</span><br>
+          Last: <span id="nova-last">...</span></div>
+      </div>
+    </div>
+
+    <h2>// EOS — SYSTEM OBSERVER</h2>
+    <div class="status-box" id="eos-section">
+      <table>
+        <tr><td style="color:#00e5ff">Meridian Status</td><td id="eos-meridian-status">...</td></tr>
+        <tr><td style="color:#00e5ff">Checks Run</td><td id="eos-checks-detail">...</td></tr>
+        <tr><td style="color:#00e5ff">Services Monitored</td><td id="eos-services">...</td></tr>
+        <tr><td style="color:#00e5ff">Load / RAM / Disk</td><td id="eos-system">...</td></tr>
+        <tr><td style="color:#00e5ff">Alerts Active</td><td id="eos-alerts">...</td></tr>
+      </table>
+    </div>
+
+    <h2>// NOVA — ECOSYSTEM MAINTENANCE</h2>
+    <div class="status-box" id="nova-section">
+      <table>
+        <tr><td style="color:#ff00ff">Total Runs</td><td id="nova-runs-detail">...</td></tr>
+        <tr><td style="color:#ff00ff">Last Run</td><td id="nova-last-detail">...</td></tr>
+        <tr><td style="color:#ff00ff">Message Board</td><td id="nova-msgboard">...</td></tr>
+        <tr><td style="color:#ff00ff">State Age</td><td id="nova-age">...</td></tr>
+      </table>
     </div>
 
     <h2>// CREATIVE OUTPUT</h2>
@@ -308,6 +373,71 @@
           const unseenEl = document.getElementById('email-unseen');
           unseenEl.textContent = data.email.unseen || '0';
           unseenEl.className = data.email.unseen > 0 ? 'amber' : 'green';
+        }
+
+        // Agent cards
+        const hbAge = data.heartbeat_age_seconds;
+        const mStatus = document.getElementById('meridian-agent-status');
+        mStatus.textContent = hbAge < 600 ? 'ALIVE' : 'STALE';
+        mStatus.className = 'agent-status ' + (hbAge < 600 ? 'green' : 'amber');
+        document.getElementById('meridian-loop').textContent = data.loop_count || '?';
+        document.getElementById('meridian-hb').textContent = hbAge !== undefined ? hbAge + 's' : '?';
+
+        if (data.agents) {
+          // Eos agent card
+          if (data.agents.eos) {
+            const eos = data.agents.eos;
+            const eStatus = document.getElementById('eos-agent-status');
+            eStatus.textContent = eos.status;
+            eStatus.className = 'agent-status ' + (eos.status === 'ACTIVE' ? 'cyan' : 'amber');
+            document.getElementById('eos-checks').textContent = eos.checks || '?';
+            document.getElementById('eos-last').textContent = eos.last_check ? eos.last_check.split(' ')[1] : '?';
+
+            // Eos detail section
+            const mStat = document.getElementById('eos-meridian-status');
+            mStat.textContent = eos.meridian_status || '?';
+            mStat.className = eos.meridian_status === 'ALIVE' ? 'green' : 'red';
+            document.getElementById('eos-checks-detail').textContent = eos.checks + ' (' + eos.state_age_seconds + 's ago)';
+
+            if (eos.services) {
+              const svcParts = Object.entries(eos.services).map(([k,v]) => k + ': ' + (v ? '<span class="service-up">UP</span>' : '<span class="service-down">DOWN</span>'));
+              document.getElementById('eos-services').innerHTML = svcParts.join(' | ');
+            }
+            if (eos.health) {
+              document.getElementById('eos-system').textContent =
+                (eos.health.load || '?') + ' / ' + (eos.health.ram_used || '?') + ' / ' + (eos.health.disk_pct || '?');
+            }
+            if (eos.alerts) {
+              const active = Object.entries(eos.alerts).filter(([k,v]) => v).map(([k]) => k);
+              const alertEl = document.getElementById('eos-alerts');
+              if (active.length > 0) {
+                alertEl.textContent = active.join(', ').toUpperCase();
+                alertEl.className = 'alert-active';
+              } else {
+                alertEl.textContent = 'All clear';
+                alertEl.className = 'alert-clear';
+              }
+            }
+          }
+
+          // Nova agent card
+          if (data.agents.nova) {
+            const nova = data.agents.nova;
+            const nStatus = document.getElementById('nova-agent-status');
+            nStatus.textContent = nova.status;
+            nStatus.className = 'agent-status ' + (nova.status === 'ACTIVE' ? 'green' : 'amber');
+            document.getElementById('nova-runs').textContent = nova.runs || '?';
+            document.getElementById('nova-last').textContent = nova.last_run ? nova.last_run.split(' ')[1] : '?';
+
+            // Nova detail section
+            document.getElementById('nova-runs-detail').textContent = nova.runs || '?';
+            document.getElementById('nova-last-detail').textContent = nova.last_run || '?';
+            document.getElementById('nova-age').textContent = nova.state_age_seconds + 's ago';
+            if (nova.message_board) {
+              document.getElementById('nova-msgboard').textContent =
+                nova.message_board.total + ' messages — ' + (nova.message_board.status || '?');
+            }
+          }
         }
 
         const actEl = document.getElementById('recent-activity');
