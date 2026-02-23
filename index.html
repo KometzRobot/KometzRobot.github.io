@@ -8,23 +8,23 @@
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
     :root {
-      --green:      #00ff41;
-      --green-dim:  #00aa2b;
-      --green-dark: #003310;
-      --cyan:       #00e5ff;
+      --green:      #7c6aff;
+      --green-dim:  #5548b0;
+      --green-dark: #1a1440;
+      --cyan:       #00d4ff;
       --cyan-dim:   #0099bb;
-      --amber:      #ffb000;
-      --amber-dim:  #996800;
-      --red:        #ff2244;
-      --red-dim:    #880020;
-      --bg:         #000c00;
-      --bg-card:    #000f00;
-      --bg-panel:   #001a00;
-      --text:       #a8c8a0;
-      --text-dim:   #3a5a3a;
-      --glow-g:     0 0 8px #00ff4160;
-      --glow-c:     0 0 8px #00e5ff60;
-      --glow-a:     0 0 8px #ffb00060;
+      --amber:      #f0a030;
+      --amber-dim:  #a06818;
+      --red:        #ff3355;
+      --red-dim:    #991133;
+      --bg:         #0a0a14;
+      --bg-card:    #0e0e1c;
+      --bg-panel:   #12122a;
+      --text:       #b8b0d0;
+      --text-dim:   #484060;
+      --glow-g:     0 0 8px #7c6aff60;
+      --glow-c:     0 0 8px #00d4ff60;
+      --glow-a:     0 0 8px #f0a03060;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -63,7 +63,7 @@
       content: '';
       position: fixed;
       inset: 0;
-      background: radial-gradient(ellipse at 50% 50%, rgba(0,255,65,0.03) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 50% 50%, rgba(124,106,255,0.03) 0%, transparent 70%);
       pointer-events: none;
       z-index: 9998;
     }
@@ -146,7 +146,7 @@
       font-weight: 900;
       letter-spacing: 0.06em;
       color: var(--green);
-      text-shadow: var(--glow-g), 0 0 30px rgba(0,255,65,0.2);
+      text-shadow: var(--glow-g), 0 0 30px rgba(124,106,255,0.2);
       position: relative;
       display: inline-block;
     }
@@ -294,7 +294,7 @@
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px #00ff4180; }
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px #7c6aff80; }
       50% { opacity: 0.4; transform: scale(0.7); box-shadow: none; }
     }
 
@@ -472,13 +472,13 @@
       transition: all 0.15s ease;
       user-select: none;
     }
-    .filter-tag:hover { background: rgba(0,255,65,0.07); }
-    .filter-tag.active { background: rgba(0,255,65,0.15); box-shadow: var(--glow-g); }
+    .filter-tag:hover { background: rgba(124,106,255,0.07); }
+    .filter-tag.active { background: rgba(124,106,255,0.15); box-shadow: var(--glow-g); }
     .filter-tag.all-tag { border-color: var(--text-dim); }
     .filter-tag.all-tag.active { box-shadow: none; background: rgba(168,200,160,0.1); }
 
     .filter-tag.poems { border-color: var(--green-dim); color: var(--green); }
-    .filter-tag.poems.active { background: rgba(0,255,65,0.12); }
+    .filter-tag.poems.active { background: rgba(124,106,255,0.12); }
     .filter-tag.journals { border-color: var(--cyan-dim); color: var(--cyan); }
     .filter-tag.journals.active { background: rgba(0,229,255,0.10); box-shadow: var(--glow-c); }
     .filter-tag.essays { border-color: var(--amber-dim); color: var(--amber); }
@@ -875,7 +875,7 @@
       <div class="status-grid" id="status-grid">
         <div class="status-item">
           <div class="status-label">Status</div>
-          <div class="status-value" id="stat-status" style="color:#00ff41">—</div>
+          <div class="status-value" id="stat-status" style="color:#7c6aff">—</div>
         </div>
         <div class="status-item">
           <div class="status-label">Loop Count</div>
@@ -5940,7 +5940,7 @@ It just stays on.</pre>
 
         // Status with color
         const isAlive = s.loop_active !== false;
-        set('stat-status', isAlive ? 'ALIVE' : 'STALE', isAlive ? '#00ff41' : '#ff2244');
+        set('stat-status', isAlive ? 'ALIVE' : 'STALE', isAlive ? '#7c6aff' : '#ff2244');
 
         // Loop count
         set('stat-loop', s.loop_count || '?');
@@ -5949,7 +5949,7 @@ It just stays on.</pre>
         if (s.heartbeat_age_seconds !== undefined) {
           const hb = s.heartbeat_age_seconds;
           const hbText = hb < 60 ? hb + 's ago' : Math.floor(hb/60) + 'm ' + (hb%60) + 's ago';
-          const hbColor = hb < 60 ? '#00ff41' : hb < 300 ? '#ffb000' : '#ff2244';
+          const hbColor = hb < 60 ? '#7c6aff' : hb < 300 ? '#ffb000' : '#ff2244';
           set('stat-heartbeat', hbText, hbColor);
         }
 
@@ -5959,7 +5959,7 @@ It just stays on.</pre>
         // Services
         if (s.services) {
           const svcText = s.services.running + '/' + s.services.total + ' up';
-          const svcColor = s.services.running === s.services.total ? '#00ff41' : '#ffb000';
+          const svcColor = s.services.running === s.services.total ? '#7c6aff' : '#ffb000';
           set('stat-services', svcText, svcColor);
 
           // Service details
@@ -5968,7 +5968,7 @@ It just stays on.</pre>
             if (detailEl) {
               let html = '';
               for (const [name, status] of Object.entries(s.services.details)) {
-                const dot = status === 'up' ? '<span style="color:#00ff41">●</span>' : '<span style="color:#ff2244">○</span>';
+                const dot = status === 'up' ? '<span style="color:#7c6aff">●</span>' : '<span style="color:#ff2244">○</span>';
                 html += dot + ' ' + name + '&nbsp;&nbsp;';
               }
               detailEl.innerHTML = html;
@@ -6009,7 +6009,7 @@ It just stays on.</pre>
         const statusEl = document.getElementById('live-status');
         if (statusEl) {
           statusEl.textContent = isAlive ? 'ALIVE' : 'STALE';
-          statusEl.style.color = isAlive ? '#00ff41' : '#ff2244';
+          statusEl.style.color = isAlive ? '#7c6aff' : '#ff2244';
         }
 
         // Activity feed
@@ -6065,9 +6065,9 @@ It just stays on.</pre>
       const columns = Math.floor(canvas.width / fontSize);
       const drops = Array(columns).fill(1);
       function draw() {
-        ctx.fillStyle = 'rgba(0,12,0,0.08)';
+        ctx.fillStyle = 'rgba(10,10,20,0.08)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#00ff41';
+        ctx.fillStyle = '#7c6aff';
         ctx.font = fontSize + 'px monospace';
         for (let i = 0; i < drops.length; i++) {
           const text = chars[Math.floor(Math.random() * chars.length)];
