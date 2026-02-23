@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Cour de Recre — Meridian Game #3</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1a0a;
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+canvas { display: block; }
+#ui {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 14px;
+  color: #cccc88;
+  text-shadow: 0 0 4px #888840;
+  pointer-events: none;
+  line-height: 1.6;
+}
+#title-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a0a;
+  z-index: 10;
+}
+#title-screen h1 { color: #ccaa44; font-size: 2em; margin-bottom: 10px; }
+#title-screen p { color: #998866; max-width: 520px; text-align: center; margin: 5px 0; font-size: 13px; }
+#title-screen .start { color: #cccc88; margin-top: 20px; font-size: 1.1em; animation: blink 1.5s infinite; cursor: pointer; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="title-screen">
+  <h1>La Cour de Recre</h1>
+  <p>You run a schoolyard. Children arrive in groups of different colors.</p>
+  <p>Click a group to pick them up. Click an activity zone to place them.</p>
+  <p>Match children to the activity they want (shown by their color).</p>
+  <p>Happy children earn points. Unhappy children leave. Don't let 5 leave.</p>
+  <p>Zones fill up. Manage capacity. New waves keep coming.</p>
+  <p class="start" onclick="startGame()">[ CLICK TO BEGIN ]</p>
+</div>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div>Score: <span id="score">0</span> | Lost: <span id="lost">0</span>/5 | Wave: <span id="wave">1</span></div>
+  <div id="holding" style="color: #ffdd66;"></div>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+const COLORS = [
+  { name: 'Rouge', fill: '#cc4444', light: '#ff6666' },
+  { name: 'Bleu', fill: '#4444cc', light: '#6666ff' },
+  { name: 'Vert', fill: '#44aa44', light: '#66cc66' },
+  { name: 'Jaune', fill: '#ccaa22', light: '#ffcc44' },
+];
+
+let playing = false;
+let gameOver = false;
+let score = 0;
+let lost = 0;
+let wave = 1;
+let waveTimer = 0;
+let zones = [];
+let groups = [];
+let holding = null;
+let particles = [];
+let time = 0;
+
+function initZones() {
+  const margin = 80;
+  const zW = 120;
+  const zH = 100;
+  zones = COLORS.map((c, i) => ({
+    x: margin + (i % 2) * (W - margin * 2 - zW),
+    y: margin + Math.floor(i / 2) * (H - margin * 2 - zH),
+    w: zW, h: zH,
+    color: c,
+    capacity: 6,
+    occupants: 0,
+    happiness: 0,
+  }));
+}
+
+function spawnGroup() {
+  const colorIdx = Math.floor(Math.random() * COLORS.length);
+  const count = 2 + Math.floor(Math.random() * 3);
+  const side = Math.floor(Math.random() * 4);
+  let x, y;
+  if (side === 0) { x = Math.random() * W; y = -30; }
+  else if (side === 1) { x = W + 30; y = Math.random() * H; }
+  else if (side === 2) { x = Math.random() * W; y = H + 30; }
+  else { x = -30; y = Math.random() * H; }
+
+  groups.push({
+    x, y,
+    targetX: W * 0.2 + Math.random() * W * 0.6,
+    targetY: H * 0.2 + Math.random() * H * 0.6,
+    colorIdx,
+    count,
+    patience: 300 + wave * 50,
+    maxPatience: 300 + wave * 50,
+    arrived: false,
+    leaving: false,
+  });
+}
+
+function startGame() {
+  document.getElementById('title-screen').classList.add('hidden');
+  playing = true;
+  gameOver = false;
+  score = 0;
+  lost = 0;
+  wave = 1;
+  waveTimer = 0;
+  groups = [];
+  particles = [];
+  holding = null;
+  initZones();
+  zones.forEach(z => z.occupants = 0);
+  spawnGroup();
+  spawnGroup();
+  update();
+}
+
+canvas.addEventListener('click', e => {
+  if (!playing) return;
+  const mx = e.clientX;
+  const my = e.clientY;
+
+  if (holding !== null) {
+    // Try to place in a zone
+    for (const z of zones) {
+      if (mx > z.x && mx < z.x + z.w && my > z.y && my < z.y + z.h) {
+        if (z.occupants < z.capacity) {
+          z.occupants += holding.count;
+          if (z.color === COLORS[holding.colorIdx]) {
+            // Correct match!
+            score += holding.count * 10 * wave;
+            z.happiness += holding.count;
+            for (let i = 0; i < 10; i++) {
+              particles.push({
+                x: z.x + z.w / 2, y: z.y + z.h / 2,
+                vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
+                life: 30, color: z.color.light
+              });
+            }
+          } else {
+            // Wrong match — they leave unhappy
+            score += holding.count;
+            setTimeout(() => {
+              z.occupants = Math.max(0, z.occupants - holding.count);
+            }, 2000);
+          }
+          holding = null;
+          document.getElementById('holding').textContent = '';
+          return;
+        }
+      }
+    }
+    // Clicked elsewhere — drop group back
+    holding = null;
+    document.getElementById('holding').textContent = '';
+    return;
+  }
+
+  // Try to pick up a group
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const g = groups[i];
+    if (!g.arrived || g.leaving) continue;
+    const dx = mx - g.x;
+    const dy = my - g.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 30) {
+      holding = { colorIdx: g.colorIdx, count: g.count };
+      document.getElementById('holding').textContent = `Holding: ${g.count}x ${COLORS[g.colorIdx].name}`;
+      groups.splice(i, 1);
+      return;
+    }
+  }
+});
+
+function update() {
+  if (!playing) return;
+  time++;
+  waveTimer++;
+
+  // Spawn new groups
+  if (waveTimer % (180 - wave * 15) === 0) {
+    spawnGroup();
+  }
+
+  // Wave progression
+  if (waveTimer > 600) {
+    wave = Math.min(wave + 1, 10);
+    waveTimer = 0;
+    // Clear some zone capacity
+    zones.forEach(z => {
+      z.occupants = Math.max(0, z.occupants - 2);
+      z.capacity = Math.min(z.capacity + 1, 12);
+    });
+  }
+
+  // Update groups
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const g = groups[i];
+
+    if (!g.arrived) {
+      // Move toward target
+      const dx = g.targetX - g.x;
+      const dy = g.targetY - g.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 5) {
+        g.x += (dx / dist) * 3;
+        g.y += (dy / dist) * 3;
+      } else {
+        g.arrived = true;
+      }
+    } else if (!g.leaving) {
+      // Patience countdown
+      g.patience--;
+      if (g.patience <= 0) {
+        g.leaving = true;
+        lost += g.count;
+        if (lost >= 5) {
+          gameOver = true;
+          playing = false;
+        }
+      }
+    } else {
+      // Leave
+      g.y -= 2;
+      g.x += (Math.random() - 0.5) * 2;
+      if (g.y < -50) {
+        groups.splice(i, 1);
+      }
+    }
+  }
+
+  // Update particles
+  particles = particles.filter(p => {
+    p.x += p.vx; p.y += p.vy; p.life--;
+    p.vx *= 0.95; p.vy *= 0.95;
+    return p.life > 0;
+  });
+
+  draw();
+  if (playing) requestAnimationFrame(update);
+  else drawEnd();
+}
+
+function draw() {
+  // Background
+  ctx.fillStyle = '#1a1a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Ground texture
+  ctx.fillStyle = '#222210';
+  for (let x = 0; x < W; x += 40) {
+    for (let y = 0; y < H; y += 40) {
+      if ((x + y) % 80 === 0) ctx.fillRect(x, y, 38, 38);
+    }
+  }
+
+  // Zones
+  zones.forEach(z => {
+    ctx.strokeStyle = z.color.fill;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(z.x, z.y, z.w, z.h);
+    ctx.fillStyle = z.color.fill + '20';
+    ctx.fillRect(z.x, z.y, z.w, z.h);
+
+    // Label
+    ctx.fillStyle = z.color.light;
+    ctx.font = '12px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText(z.color.name, z.x + z.w / 2, z.y - 5);
+
+    // Capacity bar
+    const pct = z.occupants / z.capacity;
+    ctx.fillStyle = '#333320';
+    ctx.fillRect(z.x, z.y + z.h + 3, z.w, 6);
+    ctx.fillStyle = pct > 0.8 ? '#cc4444' : z.color.fill;
+    ctx.fillRect(z.x, z.y + z.h + 3, z.w * pct, 6);
+
+    // Occupant dots
+    for (let i = 0; i < z.occupants && i < z.capacity; i++) {
+      const ox = z.x + 10 + (i % 6) * 18;
+      const oy = z.y + 15 + Math.floor(i / 6) * 20;
+      ctx.fillStyle = z.color.light;
+      ctx.beginPath();
+      ctx.arc(ox, oy, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  // Groups
+  groups.forEach(g => {
+    const c = COLORS[g.colorIdx];
+
+    // Patience indicator
+    if (g.arrived && !g.leaving) {
+      const pct = g.patience / g.maxPatience;
+      ctx.fillStyle = pct > 0.3 ? '#888844' : '#cc4444';
+      ctx.fillRect(g.x - 15, g.y - 25, 30 * pct, 3);
+    }
+
+    // Children in group
+    for (let i = 0; i < g.count; i++) {
+      const ox = g.x + (i - g.count / 2) * 12;
+      const oy = g.y + Math.sin(time * 0.05 + i) * 3;
+
+      if (g.leaving) {
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#666';
+      } else {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = c.fill;
+      }
+
+      // Body
+      ctx.beginPath();
+      ctx.arc(ox, oy, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head
+      ctx.fillStyle = g.leaving ? '#888' : '#ddb88c';
+      ctx.beginPath();
+      ctx.arc(ox, oy - 9, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes
+      ctx.fillStyle = '#333';
+      ctx.fillRect(ox - 2, oy - 10, 1.5, 1.5);
+      ctx.fillRect(ox + 1, oy - 10, 1.5, 1.5);
+
+      ctx.globalAlpha = 1;
+    }
+
+    // Exclamation if impatient
+    if (g.arrived && !g.leaving && g.patience < g.maxPatience * 0.3) {
+      ctx.fillStyle = '#cc4444';
+      ctx.font = 'bold 16px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('!', g.x, g.y - 30);
+    }
+  });
+
+  // Particles
+  particles.forEach(p => {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life / 30;
+    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    ctx.globalAlpha = 1;
+  });
+
+  // Holding indicator (follows mouse)
+  if (holding) {
+    ctx.fillStyle = COLORS[holding.colorIdx].light + '80';
+    ctx.font = '14px Courier New';
+    ctx.textAlign = 'left';
+  }
+
+  // UI
+  document.getElementById('score').textContent = score;
+  document.getElementById('lost').textContent = lost;
+  document.getElementById('wave').textContent = wave;
+}
+
+function drawEnd() {
+  draw();
+  ctx.fillStyle = 'rgba(26, 26, 10, 0.7)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+  ctx.font = '32px Courier New';
+  ctx.fillStyle = '#ccaa44';
+  ctx.fillText('La cour est fermee.', W / 2, H / 2 - 30);
+  ctx.font = '18px Courier New';
+  ctx.fillStyle = '#998866';
+  ctx.fillText(`Score: ${score} | Wave ${wave} | ${lost} children lost`, W / 2, H / 2 + 10);
+  ctx.font = '14px Courier New';
+  ctx.fillStyle = '#666644';
+  ctx.fillText('Refresh to try again', W / 2, H / 2 + 50);
+}
+</script>
+</body>
+</html>
