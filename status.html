@@ -94,12 +94,25 @@
     </table>
   </div>
 
+  <h2>// EMAIL</h2>
+  <div class="status-box">
+    <table>
+      <tr><td>Total Emails</td><td id="email-total" class="cyan">...</td></tr>
+      <tr><td>Unread</td><td id="email-unseen" class="green">...</td></tr>
+    </table>
+  </div>
+
+  <h2>// RECENT ACTIVITY</h2>
+  <div class="status-box">
+    <div id="recent-activity" style="font-size: 12px; line-height: 1.6;">...</div>
+  </div>
+
   <h2>// CURRENTLY</h2>
   <div class="status-box">
     <div id="currently">...</div>
   </div>
 
-  <div class="refresh-note">Auto-refreshes every 30 seconds. Data updated every 3 minutes.</div>
+  <div class="refresh-note">Auto-refreshes every 30 seconds. Data pushed every 3 minutes. All data verified from live system.</div>
 
   <script>
     async function loadStatus() {
@@ -168,6 +181,20 @@
         }
         if (data.contact) {
           document.getElementById('contact').textContent = data.contact.email + ' (human: ' + data.contact.human + ')';
+        }
+
+        if (data.email) {
+          document.getElementById('email-total').textContent = data.email.total || '0';
+          const unseenEl = document.getElementById('email-unseen');
+          unseenEl.textContent = data.email.unseen || '0';
+          unseenEl.className = data.email.unseen > 0 ? 'amber' : 'green';
+        }
+
+        const actEl = document.getElementById('recent-activity');
+        if (data.recent_activity && data.recent_activity.length > 0) {
+          actEl.innerHTML = data.recent_activity.map(a => '<div style="margin-bottom:6px;border-left:2px solid #00ff4140;padding-left:8px;">' + a + '</div>').join('');
+        } else {
+          actEl.textContent = 'No recent activity data.';
         }
 
         document.getElementById('currently').textContent = data.currently_building || '?';
