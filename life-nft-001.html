@@ -27,7 +27,7 @@ let _rs = SEED;
 function srng() { _rs = (_rs * 48271) % 2147483647; return (_rs - 1) / 2147483646; }
 
 // Grid
-const CELL = 4;
+const CELL = 5;
 const COLS = Math.floor(W / CELL);
 const ROWS = Math.floor(H / CELL);
 
@@ -142,7 +142,7 @@ initGrid();
 let generation = 0;
 let population = 0;
 let paused = false;
-let speed = 1; // frames per step
+let speed = 3; // frames per step (slowed down for visibility)
 
 function step() {
   next.fill(0);
@@ -211,16 +211,16 @@ function render() {
 
       let h, s, l, alpha;
       if (alive) {
-        h = (hueAlive + age * 20) % 360;
-        s = 70;
-        l = 25 + Math.min(age * 10, 40);
+        h = (hueAlive + age * 15) % 360;
+        s = 80;
+        l = 40 + Math.min(age * 8, 35);
         alpha = 1;
       } else {
-        // Trail/ghost
+        // Trail/ghost — brighter, more visible
         h = hueDead;
-        s = 30;
-        l = 5 + age * 15;
-        alpha = age * 2;
+        s = 50;
+        l = 10 + age * 20;
+        alpha = Math.min(1, age * 3);
       }
       alpha = Math.min(1, alpha);
 
