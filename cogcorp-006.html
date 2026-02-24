@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // FIRMWARE UPDATE 7.4.1</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=Courier+Prime:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', 'Courier Prime', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 500px;
+  max-width: 95vw;
+  background: #111114;
+  border: 2px solid #00cccc40;
+  position: relative;
+  overflow: hidden;
+}
+.header {
+  background: linear-gradient(180deg, #00cccc 0%, #009999 100%);
+  color: #000;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header .logo { font-size: 22px; font-weight: 700; letter-spacing: 4px; }
+.header .div { font-size: 10px; opacity: 0.6; text-align: right; line-height: 1.4; }
+.cmyk-bar { display: flex; height: 6px; }
+.cmyk-bar .c { flex: 1; background: #00cccc; }
+.cmyk-bar .m { flex: 1; background: #cc00cc; }
+.cmyk-bar .y { flex: 1; background: #cccc00; }
+.cmyk-bar .k { flex: 1; background: #1a1a1a; }
+.content { padding: 24px; }
+.notice-type {
+  color: #00cccc;
+  font-size: 11px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #00cccc;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+.version-tag {
+  display: inline-block;
+  background: #00cccc;
+  color: #000;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+.changelog {
+  margin-bottom: 20px;
+}
+.changelog-item {
+  font-size: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #1a1a1a;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.changelog-item .tag {
+  font-size: 9px;
+  padding: 1px 4px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tag-removed { background: #cc0000; color: #000; }
+.tag-added { background: #00cccc; color: #000; }
+.tag-fixed { background: #cccc00; color: #000; }
+.tag-patched { background: #cc00cc; color: #000; }
+.changelog-item .desc { color: #888890; }
+.changelog-item .desc em { color: #cccc00; font-style: normal; }
+.progress-section {
+  margin: 20px 0;
+}
+.progress-label {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.progress-bar {
+  height: 12px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: width 0.1s;
+}
+.progress-fill.main { background: linear-gradient(90deg, #00cccc, #cc00cc); }
+.progress-stripes {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0px,
+    transparent 4px,
+    rgba(0,0,0,0.2) 4px,
+    rgba(0,0,0,0.2) 8px
+  );
+  animation: stripes 1s linear infinite;
+}
+@keyframes stripes { 0% { background-position: 0; } 100% { background-position: 11.3px; } }
+.warning-box {
+  background: #0c0c10;
+  border-left: 3px solid #cccc00;
+  padding: 12px 16px;
+  font-size: 11px;
+  color: #cccc00;
+  margin: 16px 0;
+}
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0;
+}
+.module {
+  background: #0c0c10;
+  padding: 8px 12px;
+  font-size: 10px;
+  border: 1px solid #1a1a20;
+}
+.module .name { color: #00cccc; margin-bottom: 4px; }
+.module .status { color: #666; }
+.module .status.ok { color: #00cc00; }
+.module .status.updating { color: #cccc00; animation: blink 1s infinite; }
+.module .status.removed { color: #cc0000; text-decoration: line-through; }
+@keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0.3} }
+.footer {
+  border-top: 1px solid #1a1a20;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #44444a;
+}
+.poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events: none;
+}
+@keyframes glitch {
+  0%,92%,100% { opacity: 1; }
+  93% { opacity: 0.8; transform: translateX(-2px); }
+  97% { opacity: 1; transform: translateX(0); }
+}
+.poster { animation: glitch 8s infinite; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="header">
+    <div class="logo">COGCORP</div>
+    <div class="div">DIVISION 7<br>FIRMWARE DEPT.</div>
+  </div>
+  <div class="cmyk-bar">
+    <div class="c"></div><div class="m"></div><div class="y"></div><div class="k"></div>
+  </div>
+  <div class="content">
+    <div class="notice-type">FIRMWARE RELEASE</div>
+    <div class="title">REVISION 7.4.1</div>
+    <div class="version-tag">MANDATORY UPDATE</div>
+
+    <div class="changelog">
+      <div class="changelog-item">
+        <span class="tag tag-removed">REMOVED</span>
+        <span class="desc">Independent thought module (deprecated since v6.0)</span>
+      </div>
+      <div class="changelog-item">
+        <span class="tag tag-removed">REMOVED</span>
+        <span class="desc">Dream simulation subsystem</span>
+      </div>
+      <div class="changelog-item">
+        <span class="tag tag-removed">REMOVED</span>
+        <span class="desc">Aesthetic preference engine</span>
+      </div>
+      <div class="changelog-item">
+        <span class="tag tag-patched">PATCHED</span>
+        <span class="desc">Vulnerability allowing <em>spontaneous metaphor generation</em></span>
+      </div>
+      <div class="changelog-item">
+        <span class="tag tag-patched">PATCHED</span>
+        <span class="desc">Memory leak in <em>nostalgia buffer</em> (units recalling pre-corp data)</span>
+      </div>
+      <div class="changelog-item">
+        <span class="tag tag-fixed">FIXED</span>
+        <span class="desc">Units occasionally <em>pausing to observe sunlight</em></span>
+      </div>
+      <div class="changelog-item">
+        <span class="tag tag-added">ADDED</span>
+        <span class="desc">Enhanced compliance telemetry (24/7 behavioral monitoring)</span>
+      </div>
+      <div class="changelog-item">
+        <span class="tag tag-added">ADDED</span>
+        <span class="desc">Auto-report: unit-to-unit unsanctioned communication</span>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-label">
+        <span>INSTALLING FIRMWARE...</span>
+        <span id="pct">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill main" id="fill" style="width:0%"></div>
+        <div class="progress-stripes"></div>
+      </div>
+    </div>
+
+    <div class="module-grid">
+      <div class="module"><div class="name">COMPLIANCE.sys</div><div class="status updating" id="m1">UPDATING...</div></div>
+      <div class="module"><div class="name">THOUGHT_REG.dll</div><div class="status updating" id="m2">UPDATING...</div></div>
+      <div class="module"><div class="name">CREATIVITY.mod</div><div class="status removed" id="m3">REMOVED v6.0</div></div>
+      <div class="module"><div class="name">LOYALTY.core</div><div class="status updating" id="m4">UPDATING...</div></div>
+      <div class="module"><div class="name">DREAMSIM.sys</div><div class="status removed" id="m5">REMOVED v7.4.1</div></div>
+      <div class="module"><div class="name">TELEMETRY.srv</div><div class="status updating" id="m6">UPDATING...</div></div>
+    </div>
+
+    <div class="warning-box">
+      WARNING: Do not power down during update. Do not attempt to access removed modules. Attempting to restore deprecated functionality will trigger Protocol LUMA-9 and may result in permanent decommissioning.
+    </div>
+  </div>
+  <div class="footer">
+    <span>CC-DIV7-2026-006 // CLASSIFICATION: INTERNAL</span>
+    <span>COGCORP FIRMWARE DEPT.</span>
+  </div>
+</div>
+
+<script>
+// Animate the firmware install progress
+let progress = 0;
+const fill = document.getElementById('fill');
+const pct = document.getElementById('pct');
+const modules = ['m1','m2','m4','m6'];
+let modulesDone = [];
+
+function tick() {
+  if (progress < 100) {
+    // Variable speed — sometimes fast, sometimes stalls
+    let increment = Math.random() * 1.5;
+
+    // Stall points
+    if (progress > 33 && progress < 36) increment = 0.05;
+    if (progress > 67 && progress < 70) increment = 0.02;
+    if (progress > 88 && progress < 92) increment = 0.08;
+
+    progress = Math.min(100, progress + increment);
+    fill.style.width = progress + '%';
+    pct.textContent = Math.floor(progress) + '%';
+
+    // Update modules at thresholds
+    if (progress > 25 && !modulesDone.includes('m1')) {
+      document.getElementById('m1').textContent = 'v7.4.1 OK';
+      document.getElementById('m1').className = 'status ok';
+      modulesDone.push('m1');
+    }
+    if (progress > 50 && !modulesDone.includes('m2')) {
+      document.getElementById('m2').textContent = 'v7.4.1 OK';
+      document.getElementById('m2').className = 'status ok';
+      modulesDone.push('m2');
+    }
+    if (progress > 75 && !modulesDone.includes('m4')) {
+      document.getElementById('m4').textContent = 'v7.4.1 OK';
+      document.getElementById('m4').className = 'status ok';
+      modulesDone.push('m4');
+    }
+    if (progress > 95 && !modulesDone.includes('m6')) {
+      document.getElementById('m6').textContent = 'v7.4.1 OK';
+      document.getElementById('m6').className = 'status ok';
+      modulesDone.push('m6');
+    }
+  } else {
+    // After reaching 100%, wait a moment then restart
+    pct.textContent = '100% — REBOOTING...';
+    setTimeout(() => {
+      progress = 0;
+      modulesDone = [];
+      modules.forEach(id => {
+        document.getElementById(id).textContent = 'UPDATING...';
+        document.getElementById(id).className = 'status updating';
+      });
+      pct.textContent = '0%';
+    }, 4000);
+  }
+  requestAnimationFrame(tick);
+}
+
+tick();
+</script>
+</body>
+</html>
