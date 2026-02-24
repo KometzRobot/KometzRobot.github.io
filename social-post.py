@@ -130,7 +130,7 @@ def post_nostr(text):
         event['sig'] = sk.sign_schnorr(event_hash).hex()
 
         # Publish to relays
-        relays = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.snort.social"]
+        relays = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.snort.social", "wss://relay.primal.net"]
         success = False
         for relay_url in relays:
             try:
