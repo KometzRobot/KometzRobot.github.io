@@ -22,7 +22,7 @@ const SIZE = Math.min(500, Math.min(window.innerWidth, window.innerHeight) - 40)
 const W = canvas.width = SIZE;
 const H = canvas.height = SIZE;
 
-const SEED = 1;
+const SEED = parseInt(location.hash.slice(1)) || 1; // Token seed from URL hash
 let _rs = SEED;
 function srng() { _rs = (_rs * 48271) % 2147483647; return (_rs - 1) / 2147483646; }
 

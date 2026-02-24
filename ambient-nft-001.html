@@ -28,8 +28,8 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-// Token seed — each NFT would have a unique seed
-const SEED = 1;
+// Token seed from URL hash (e.g., #5 for seed 5)
+const SEED = parseInt(location.hash.slice(1)) || 1;
 
 // Seeded PRNG
 let _s = SEED * 9301 + 49297;

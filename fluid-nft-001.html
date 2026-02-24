@@ -20,8 +20,8 @@ const SIZE = Math.min(500, Math.min(window.innerWidth, window.innerHeight));
 const W = canvas.width = SIZE;
 const H = canvas.height = SIZE;
 
-// Token seed
-const SEED = 1;
+// Token seed from URL hash (e.g., #5 for seed 5)
+const SEED = parseInt(location.hash.slice(1)) || 1;
 let _rs = SEED;
 function srng() { _rs = (_rs * 16807 + 0) % 2147483647; return (_rs - 1) / 2147483646; }
 

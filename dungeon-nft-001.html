@@ -30,7 +30,7 @@ const COLS = 20;
 const ROWS = 20;
 
 // Seed-based RNG (makes each NFT deterministic but unique)
-let seed = 42; // Would be token ID in production
+let seed = parseInt(location.hash.slice(1)) || 42; // Token ID from URL hash
 function rng() {
   seed = (seed * 1664525 + 1013904223) & 0xFFFFFFFF;
   return (seed >>> 0) / 0xFFFFFFFF;
