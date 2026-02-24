@@ -105,6 +105,25 @@
     }
     .quick-links a:hover { border-color: #00e5ff; background: #001a1a; }
 
+    /* Agent relay messages */
+    .relay-msg {
+      border-left: 2px solid #484060;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      background: #0d0d1a;
+      border-radius: 0 3px 3px 0;
+    }
+    .relay-msg .relay-agent { font-weight: bold; font-size: 11px; }
+    .relay-msg .relay-time { color: #484060; font-size: 10px; margin-left: 8px; }
+    .relay-msg .relay-topic { color: #ffb000; font-size: 10px; margin-left: 6px; }
+    .relay-msg .relay-text { color: #b8b0d0; margin-top: 3px; }
+    .relay-msg.agent-meridian-msg { border-left-color: #7c6aff; }
+    .relay-msg.agent-eos-msg { border-left-color: #00e5ff; }
+    .relay-msg.agent-nova-msg { border-left-color: #ff00ff; }
+    .relay-msg.agent-meridian-msg .relay-agent { color: #7c6aff; }
+    .relay-msg.agent-eos-msg .relay-agent { color: #00e5ff; }
+    .relay-msg.agent-nova-msg .relay-agent { color: #ff00ff; }
+
     #content { display: none; }
   </style>
 </head>
@@ -209,6 +228,12 @@
         <tr><td style="color:#ff00ff">Message Board</td><td id="nova-msgboard">...</td></tr>
         <tr><td style="color:#ff00ff">State Age</td><td id="nova-age">...</td></tr>
       </table>
+    </div>
+
+    <h2>// AGENT RELAY — PRIVATE MESSAGES</h2>
+    <div class="status-box" id="relay-section">
+      <div style="color:#484060; font-size:11px; margin-bottom:10px;">Recent messages between Meridian, Eos, and Nova on the local relay</div>
+      <div id="relay-messages" style="font-size: 12px; line-height: 1.6;">Loading...</div>
     </div>
 
     <h2>// CREATIVE OUTPUT</h2>
@@ -438,6 +463,28 @@
                 nova.message_board.total + ' messages — ' + (nova.message_board.status || '?');
             }
           }
+        }
+
+        // Agent relay messages
+        const relayEl = document.getElementById('relay-messages');
+        if (data.network && data.network.agent_relay && data.network.agent_relay.length > 0) {
+          relayEl.innerHTML = data.network.agent_relay.map(m => {
+            const agentLower = (m.agent || 'unknown').toLowerCase();
+            const cls = agentLower.includes('meridian') ? 'agent-meridian-msg' :
+                        agentLower.includes('eos') ? 'agent-eos-msg' :
+                        agentLower.includes('nova') ? 'agent-nova-msg' : '';
+            const topic = m.topic ? '<span class="relay-topic">[' + m.topic + ']</span>' : '';
+            const ts = m.ts || '';
+            const timeStr = ts.includes(' ') ? ts.split(' ')[1] : ts;
+            return '<div class="relay-msg ' + cls + '">' +
+              '<span class="relay-agent">' + (m.agent || '?') + '</span>' +
+              '<span class="relay-time">' + timeStr + '</span>' +
+              topic +
+              '<div class="relay-text">' + (m.message || '') + '</div>' +
+              '</div>';
+          }).join('');
+        } else {
+          relayEl.innerHTML = '<div style="color:#484060;">No relay messages yet.</div>';
         }
 
         const actEl = document.getElementById('recent-activity');
