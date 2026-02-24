@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Meridian Fractal #001</title>
+<style>
+* { margin: 0; padding: 0; }
+body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+canvas { border: 1px solid #333; }
+#info { position: absolute; bottom: 10px; color: #555; font: 11px monospace; text-align: center; width: 100%; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="info">Meridian Fractal #001 | Click to evolve | Each frame is unique</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width = 500;
+const H = canvas.height = 500;
+
+let time = 0;
+let seed = parseInt(location.hash.slice(1)) || 1; // Token ID from URL hash
+let hueShift = 0;
+let complexity = 5;
+let morphSpeed = 0.002;
+
+// Seeded random
+function rng(s) {
+  s = Math.sin(s * 127.1 + seed * 311.7) * 43758.5453;
+  return s - Math.floor(s);
+}
+
+// Fluid noise function
+function noise(x, y, t) {
+  const fx = Math.floor(x), fy = Math.floor(y);
+  const dx = x - fx, dy = y - fy;
+  const sx = dx * dx * (3 - 2 * dx);
+  const sy = dy * dy * (3 - 2 * dy);
+
+  const a = rng(fx + fy * 57 + t * 0.01);
+  const b = rng(fx + 1 + fy * 57 + t * 0.01);
+  const c = rng(fx + (fy + 1) * 57 + t * 0.01);
+  const d = rng(fx + 1 + (fy + 1) * 57 + t * 0.01);
+
+  return a + sx * (b - a) + sy * (c - a) + sx * sy * (a - b - c + d);
+}
+
+// Fractal brownian motion
+function fbm(x, y, t, octaves) {
+  let value = 0, amplitude = 0.5, frequency = 1;
+  for (let i = 0; i < octaves; i++) {
+    value += amplitude * noise(x * frequency, y * frequency, t + i * 100);
+    amplitude *= 0.5;
+    frequency *= 2;
+  }
+  return value;
+}
+
+// Color palette based on seed
+function getColor(value, t) {
+  const h = (value * 360 + hueShift + t * 10) % 360;
+  const s = 60 + value * 40;
+  const l = 10 + value * 50;
+  return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
+// Particle system
+const particles = [];
+for (let i = 0; i < 100; i++) {
+  particles.push({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: 0,
+    vy: 0,
+    life: Math.random(),
+    size: 1 + Math.random() * 2,
+  });
+}
+
+function render() {
+  time += morphSpeed;
+
+  // Create fractal field
+  const imageData = ctx.createImageData(W, H);
+  const data = imageData.data;
+
+  const scale = 3 + Math.sin(time * 0.5) * 1;
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const nx = x / W * scale;
+      const ny = y / H * scale;
+
+      // Warped coordinates
+      const warp1 = fbm(nx + time, ny, time * 0.3, complexity);
+      const warp2 = fbm(nx, ny + time, time * 0.3 + 5.2, complexity);
+
+      const value = fbm(nx + warp1 * 2, ny + warp2 * 2, time * 0.1, complexity);
+
+      // Color mapping
+      const hue = (value * 360 + hueShift + time * 50) % 360;
+      const sat = 0.6 + Math.sin(value * Math.PI) * 0.4;
+      const bright = 0.1 + value * 0.7;
+
+      // HSL to RGB
+      const c = (1 - Math.abs(2 * bright - 1)) * sat;
+      const xx = c * (1 - Math.abs((hue / 60) % 2 - 1));
+      const m = bright - c / 2;
+
+      let r = 0, g = 0, b = 0;
+      if (hue < 60) { r = c; g = xx; }
+      else if (hue < 120) { r = xx; g = c; }
+      else if (hue < 180) { g = c; b = xx; }
+      else if (hue < 240) { g = xx; b = c; }
+      else if (hue < 300) { r = xx; b = c; }
+      else { r = c; b = xx; }
+
+      const idx = (y * W + x) * 4;
+      data[idx] = (r + m) * 255;
+      data[idx + 1] = (g + m) * 255;
+      data[idx + 2] = (b + m) * 255;
+      data[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+
+  // Draw particles on top
+  for (const p of particles) {
+    const nx = p.x / W * 3;
+    const ny = p.y / H * 3;
+    const flow = fbm(nx + time, ny + time * 0.5, time, 3);
+
+    p.vx += Math.cos(flow * Math.PI * 4) * 0.3;
+    p.vy += Math.sin(flow * Math.PI * 4) * 0.3;
+    p.vx *= 0.95;
+    p.vy *= 0.95;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= 0.001;
+
+    if (p.x < 0 || p.x > W || p.y < 0 || p.y > H || p.life <= 0) {
+      p.x = Math.random() * W;
+      p.y = Math.random() * H;
+      p.vx = 0;
+      p.vy = 0;
+      p.life = 0.5 + Math.random() * 0.5;
+    }
+
+    ctx.fillStyle = `rgba(255, 255, 255, ${p.life * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Signature
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.font = '10px monospace';
+  ctx.fillText('Meridian #001', 10, H - 10);
+
+  requestAnimationFrame(render);
+}
+
+// Click to evolve
+canvas.addEventListener('click', () => {
+  hueShift += 60;
+  complexity = Math.min(8, complexity + 1);
+  if (complexity > 8) complexity = 3;
+
+  // Burst particles
+  for (let i = 0; i < 20; i++) {
+    particles.push({
+      x: W / 2 + (Math.random() - 0.5) * 100,
+      y: H / 2 + (Math.random() - 0.5) * 100,
+      vx: (Math.random() - 0.5) * 5,
+      vy: (Math.random() - 0.5) * 5,
+      life: 1,
+      size: 2 + Math.random() * 3,
+    });
+  }
+  while (particles.length > 200) particles.shift();
+});
+
+render();
+</script>
+</body>
+</html>

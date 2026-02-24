@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Meridian Ambient #001</title>
+<style>
+* { margin: 0; padding: 0; }
+body { background: #050510; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: monospace; }
+canvas { position: absolute; top: 0; left: 0; }
+#overlay { position: absolute; bottom: 20px; color: rgba(255,255,255,0.3); font-size: 11px; text-align: center; width: 100%; z-index: 10; pointer-events: none; }
+#start { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: rgba(255,255,255,0.6); font: 14px monospace; cursor: pointer; z-index: 20; padding: 20px 40px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); transition: all 0.3s; }
+#start:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="start">Click to begin</div>
+<div id="overlay">Meridian Ambient #001 | Generative Soundscape | Each token sings differently</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Token seed from URL hash (e.g., #5 for seed 5)
+const SEED = parseInt(location.hash.slice(1)) || 1;
+
+// Seeded PRNG
+let _s = SEED * 9301 + 49297;
+function srng() {
+  _s = (_s * 9301 + 49297) % 233280;
+  return _s / 233280;
+}
+
+// Generate unique musical parameters from seed
+function genParams() {
+  const rootNotes = [55, 58.27, 61.74, 65.41, 69.30, 73.42, 77.78, 82.41];
+  const root = rootNotes[Math.floor(srng() * rootNotes.length)];
+  const scalePatterns = [
+    [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8],   // major
+    [1, 9/8, 6/5, 4/3, 3/2, 8/5, 9/5],     // minor
+    [1, 9/8, 5/4, 4/3, 3/2, 8/5, 9/5],     // mixolydian
+    [1, 16/15, 6/5, 4/3, 3/2, 8/5, 9/5],   // phrygian
+    [1, 9/8, 5/4, 45/32, 3/2, 5/3, 15/8],  // lydian
+  ];
+  const scale = scalePatterns[Math.floor(srng() * scalePatterns.length)];
+  const tempo = 0.3 + srng() * 0.7; // breathing speed
+  const brightness = 0.2 + srng() * 0.6;
+  const density = 0.3 + srng() * 0.5;
+  const reverb = 0.5 + srng() * 0.5;
+  const hueBase = srng() * 360;
+
+  return { root, scale, tempo, brightness, density, reverb, hueBase };
+}
+
+const P = genParams();
+
+// Audio context
+let audioCtx, masterGain, reverbNode, convolver;
+let voices = [];
+let drones = [];
+let started = false;
+let time = 0;
+let mouseX = 0.5, mouseY = 0.5;
+
+// Particles for visualization
+const particles = [];
+const ripples = [];
+
+function createReverb(ctx, duration, decay) {
+  const rate = ctx.sampleRate;
+  const length = rate * duration;
+  const impulse = ctx.createBuffer(2, length, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+    }
+  }
+  return impulse;
+}
+
+function getFreq(degree) {
+  const octave = Math.floor(degree / P.scale.length);
+  const note = degree % P.scale.length;
+  if (note < 0) return P.root * P.scale[P.scale.length + note] / Math.pow(2, -octave + 1);
+  return P.root * P.scale[note] * Math.pow(2, octave);
+}
+
+function startAudio() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.15;
+
+  // Reverb
+  convolver = audioCtx.createConvolver();
+  convolver.buffer = createReverb(audioCtx, P.reverb * 4 + 1, P.reverb * 2 + 1);
+
+  const reverbGain = audioCtx.createGain();
+  reverbGain.gain.value = P.reverb * 0.6;
+
+  const dryGain = audioCtx.createGain();
+  dryGain.gain.value = 1 - P.reverb * 0.3;
+
+  masterGain.connect(dryGain);
+  masterGain.connect(convolver);
+  convolver.connect(reverbGain);
+  dryGain.connect(audioCtx.destination);
+  reverbGain.connect(audioCtx.destination);
+
+  // Create drone layers
+  for (let i = 0; i < 3; i++) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+
+    osc.type = 'sine';
+    osc.frequency.value = getFreq(i * 2) * (i === 0 ? 0.5 : 1);
+    filter.type = 'lowpass';
+    filter.frequency.value = 400 + P.brightness * 800;
+    filter.Q.value = 1;
+    gain.gain.value = 0;
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    osc.start();
+
+    // Fade in
+    gain.gain.linearRampToValueAtTime(0.08 / (i + 1), audioCtx.currentTime + 3);
+
+    drones.push({ osc, gain, filter, baseFreq: osc.frequency.value });
+  }
+}
+
+function playNote(degree, duration, delay) {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime + (delay || 0);
+  const freq = getFreq(degree);
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+
+  const types = ['sine', 'triangle'];
+  osc.type = types[Math.floor(Math.random() * types.length)];
+  osc.frequency.value = freq;
+
+  filter.type = 'lowpass';
+  filter.frequency.value = freq * (2 + P.brightness * 6);
+  filter.Q.value = 0.5;
+
+  const vol = 0.06 + Math.random() * 0.04;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(vol, now + 0.1);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+
+  osc.start(now);
+  osc.stop(now + duration + 0.1);
+
+  // Spawn visual particle
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 50 + Math.random() * 150;
+  particles.push({
+    x: W / 2 + Math.cos(angle) * dist,
+    y: H / 2 + Math.sin(angle) * dist,
+    vx: (Math.random() - 0.5) * 0.5,
+    vy: (Math.random() - 0.5) * 0.5 - 0.2,
+    life: 1,
+    decay: 0.003 + Math.random() * 0.005,
+    size: 3 + (freq / P.root) * 2,
+    hue: (P.hueBase + degree * 30) % 360,
+    freq: freq,
+  });
+}
+
+// Generative composition engine
+let lastNoteTime = 0;
+let phraseNotes = [];
+let phraseIdx = 0;
+let nextPhraseTime = 0;
+
+function generatePhrase() {
+  const len = 3 + Math.floor(Math.random() * 5);
+  const notes = [];
+  let degree = Math.floor(Math.random() * 7);
+  for (let i = 0; i < len; i++) {
+    notes.push(degree);
+    // Melodic movement: mostly steps, occasional leaps
+    const r = Math.random();
+    if (r < 0.4) degree += 1;
+    else if (r < 0.7) degree -= 1;
+    else if (r < 0.85) degree += 2;
+    else degree -= 2;
+    degree = Math.max(-3, Math.min(10, degree));
+  }
+  return notes;
+}
+
+function composeTick(dt) {
+  if (!audioCtx) return;
+  time += dt;
+
+  // Modulate drones with mouse position
+  for (let i = 0; i < drones.length; i++) {
+    const d = drones[i];
+    const mod = Math.sin(time * P.tempo * (0.1 + i * 0.05)) * 0.5 + mouseY * 0.3;
+    d.filter.frequency.value = 200 + (P.brightness + mod) * 1000;
+    d.osc.frequency.value = d.baseFreq * (1 + Math.sin(time * 0.03 * (i + 1)) * 0.002);
+  }
+
+  // Generate notes
+  const beatLen = (2 - P.tempo) * 1.5;
+  if (time > nextPhraseTime) {
+    if (Math.random() < P.density) {
+      phraseNotes = generatePhrase();
+      phraseIdx = 0;
+      const durPerNote = beatLen * (0.5 + Math.random() * 1);
+      for (let i = 0; i < phraseNotes.length; i++) {
+        const octaveShift = Math.random() < 0.3 ? 7 : 0;
+        playNote(phraseNotes[i] + octaveShift, durPerNote * (1 + Math.random()), i * durPerNote * 0.7);
+      }
+    }
+    nextPhraseTime = time + beatLen * (2 + Math.random() * 4);
+  }
+
+  // Occasional deep bass note
+  if (Math.random() < 0.002 * P.density) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = P.root * 0.25;
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 1);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 6);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 7);
+
+    // Big ripple
+    ripples.push({ x: W / 2, y: H / 2, radius: 10, maxRadius: 300, life: 1, hue: P.hueBase });
+  }
+}
+
+// Visual rendering
+function renderVisuals(dt) {
+  ctx.fillStyle = 'rgba(5, 5, 16, 0.08)';
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H / 2;
+
+  // Central glow — breathes with the music
+  const breathe = Math.sin(time * P.tempo * 0.5) * 0.5 + 0.5;
+  const glowR = 80 + breathe * 60;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+  grad.addColorStop(0, `hsla(${P.hueBase}, 60%, 30%, ${0.05 + breathe * 0.03})`);
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(cx - glowR, cy - glowR, glowR * 2, glowR * 2);
+
+  // Orbital rings
+  for (let i = 0; i < 3; i++) {
+    const ringR = 100 + i * 80;
+    const alpha = 0.03 + Math.sin(time * 0.2 + i) * 0.02;
+    ctx.strokeStyle = `hsla(${(P.hueBase + i * 40) % 360}, 50%, 40%, ${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Draw particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy -= 0.01; // slight float upward
+    p.life -= p.decay;
+
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+
+    const alpha = p.life * 0.6;
+    const s = p.size * p.life;
+
+    // Glow
+    const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, s * 3);
+    grd.addColorStop(0, `hsla(${p.hue}, 70%, 60%, ${alpha * 0.3})`);
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.fillRect(p.x - s * 3, p.y - s * 3, s * 6, s * 6);
+
+    // Core
+    ctx.fillStyle = `hsla(${p.hue}, 80%, 70%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Connect nearby particles
+    for (let j = i - 1; j >= Math.max(0, i - 10); j--) {
+      const q = particles[j];
+      const dx = p.x - q.x;
+      const dy = p.y - q.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 100) {
+        ctx.strokeStyle = `hsla(${p.hue}, 60%, 50%, ${(1 - dist / 100) * alpha * 0.3})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(q.x, q.y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Draw ripples
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    r.radius += 2;
+    r.life -= 0.01;
+
+    if (r.life <= 0 || r.radius > r.maxRadius) {
+      ripples.splice(i, 1);
+      continue;
+    }
+
+    ctx.strokeStyle = `hsla(${r.hue}, 50%, 50%, ${r.life * 0.2})`;
+    ctx.lineWidth = 2 * r.life;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Waveform circle in center
+  if (drones.length > 0) {
+    const segments = 120;
+    ctx.strokeStyle = `hsla(${P.hueBase}, 40%, 50%, 0.15)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      const wave = Math.sin(time * 2 + i * 0.2) * 5 + Math.sin(time * 0.7 + i * 0.1) * 8;
+      const r = 50 + wave;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // Signature
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.font = '10px monospace';
+  ctx.fillText('Meridian Ambient #001', 10, H - 10);
+}
+
+// Mouse interaction
+canvas.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX / W;
+  mouseY = e.clientY / H;
+});
+
+canvas.addEventListener('click', () => {
+  if (!started) return;
+  // Click spawns a burst of notes
+  const burst = 3 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < burst; i++) {
+    const degree = Math.floor(Math.random() * 14) - 3;
+    playNote(degree, 1 + Math.random() * 3, i * 0.15);
+  }
+  ripples.push({
+    x: mouseX * W,
+    y: mouseY * H,
+    radius: 5,
+    maxRadius: 200,
+    life: 1,
+    hue: (P.hueBase + Math.random() * 120) % 360,
+  });
+});
+
+// Start button
+document.getElementById('start').addEventListener('click', function() {
+  if (started) return;
+  started = true;
+  this.style.display = 'none';
+  startAudio();
+});
+
+// Main loop
+let lastTime = performance.now();
+function loop(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+
+  if (started) {
+    composeTick(dt);
+  }
+  renderVisuals(dt);
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
