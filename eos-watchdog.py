@@ -1,12 +1,23 @@
 #!/usr/bin/env python3
 """
-Eos System Observer — Independent AI co-pilot running via cron.
+Eos System Observer v2 — Independent AI co-pilot running via cron.
 
-More than a watchdog: gathers system data, tracks services, logs efficiency
-metrics, monitors creative output, and alerts Joel when things go wrong.
+Capabilities:
+- System health monitoring (CPU, RAM, disk, load)
+- Service monitoring with AUTO-RESTART on failure
+- Heartbeat tracking for Meridian
+- Cron job health verification
+- Log scanning for errors/anomalies
+- Website availability checks
+- Trend analysis (creative output rate, email rate, load trends)
+- Comprehensive self-testing mode
+- Metrics history with 24h rolling window
 
 Setup: Add to crontab:
   */2 * * * * /usr/bin/python3 /home/joel/autonomous-ai/eos-watchdog.py >> /home/joel/autonomous-ai/eos-watchdog.log 2>&1
+
+Self-test mode:
+  python3 eos-watchdog.py test
 """
 
 import os
@@ -26,8 +37,8 @@ EOS_LOG = os.path.join(BASE_DIR, "eos-observations.md")
 WAKE_STATE = os.path.join(BASE_DIR, "wake-state.md")
 RELAY_DB = os.path.join(BASE_DIR, "relay.db")
 
-ALERT_COOLDOWN = 600
-HEARTBEAT_THRESHOLD = 600
+ALERT_COOLDOWN = 900  # 15 min — grace period for context resets
+HEARTBEAT_THRESHOLD = 900  # 15 min — avoids false alerts during restarts
 
 SMTP_HOST = "127.0.0.1"
 SMTP_PORT = 1025
@@ -36,13 +47,34 @@ EMAIL_TO = "jkometz@hotmail.com"
 EMAIL_USER = "kometzrobot@proton.me"
 EMAIL_PASS = "2DTEz9UgO6nFqmlMxHzuww"
 
-# Services to check (persistent daemons)
+# Services to check (persistent daemons) and their restart commands
 SERVICES = {
     "protonmail-bridge": "protonmail-bridge",
     "irc-bot": "irc-bot.py",
     "ollama": "ollama",
     "command-center": "command-center-v15.py",
 }
+
+SERVICE_RESTART = {
+    "protonmail-bridge": "nohup protonmail-bridge --noninteractive >> /dev/null 2>&1 &",
+    "irc-bot": f"nohup python3 {os.path.join(BASE_DIR, 'irc-bot.py')} >> {os.path.join(BASE_DIR, 'irc-bot.log')} 2>&1 &",
+    "ollama": "nohup ollama serve >> /dev/null 2>&1 &",
+    "command-center": f"nohup python3 {os.path.join(BASE_DIR, 'command-center-v15.py')} >> /dev/null 2>&1 &",
+}
+
+# Expected cron jobs (pattern to verify in crontab)
+EXPECTED_CRONS = [
+    "eos-watchdog.py",
+    "push-live-status.py",
+    "eos-creative.py",
+    "eos-briefing.py",
+    "daily-log.py",
+    "watchdog.sh",
+    "watchdog-status.sh",
+    "loop-optimizer.py",
+    "startup.sh",
+    "nova.py",
+]
 
 
 def load_state():
@@ -224,6 +256,167 @@ def scan_logs_for_errors():
     return errors[:10]  # Cap at 10 most recent errors
 
 
+def restart_service(name):
+    """Attempt to restart a failed service. Returns True if restart command ran."""
+    cmd = SERVICE_RESTART.get(name)
+    if not cmd:
+        return False
+    try:
+        subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(3)  # Give it a moment
+        # Verify it came back
+        result = subprocess.run(['pgrep', '-f', SERVICES[name]], capture_output=True, timeout=2)
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def verify_cron_jobs():
+    """Check that all expected cron jobs exist in crontab."""
+    try:
+        result = subprocess.run(['crontab', '-l'], capture_output=True, text=True, timeout=5)
+        crontab = result.stdout
+        missing = []
+        for job in EXPECTED_CRONS:
+            if job not in crontab:
+                missing.append(job)
+        return missing
+    except Exception:
+        return ["ERROR: could not read crontab"]
+
+
+def analyze_trends(metrics_history):
+    """Analyze trends over the last 24h of metrics data."""
+    trends = {}
+    if len(metrics_history) < 30:  # Need at least 1 hour of data
+        return trends
+
+    recent = metrics_history[-30:]   # Last hour
+    earlier = metrics_history[-180:-150] if len(metrics_history) >= 180 else metrics_history[:30]  # 5-6 hours ago
+
+    # Creative output rate
+    if recent[-1]["poems"] > earlier[0]["poems"]:
+        poems_delta = recent[-1]["poems"] - earlier[0]["poems"]
+        trends["creative_rate"] = f"+{poems_delta} poems in last ~6h"
+
+    # Email rate
+    if recent[-1]["emails"] > 0 and earlier[0]["emails"] > 0:
+        email_delta = recent[-1]["emails"] - earlier[0]["emails"]
+        if email_delta > 0:
+            trends["email_rate"] = f"+{email_delta} emails in last ~6h"
+
+    # Load trend
+    recent_loads = [m["load_1m"] for m in recent if m.get("load_1m")]
+    earlier_loads = [m["load_1m"] for m in earlier if m.get("load_1m")]
+    if recent_loads and earlier_loads:
+        avg_recent = sum(recent_loads) / len(recent_loads)
+        avg_earlier = sum(earlier_loads) / len(earlier_loads)
+        if avg_recent > avg_earlier * 2 and avg_recent > 1.0:
+            trends["load_rising"] = f"Load trending UP: {avg_earlier:.1f} -> {avg_recent:.1f}"
+        elif avg_recent < avg_earlier * 0.5 and avg_earlier > 1.0:
+            trends["load_falling"] = f"Load trending DOWN: {avg_earlier:.1f} -> {avg_recent:.1f}"
+
+    # Loop progress
+    if recent[-1]["loop"] > earlier[0]["loop"]:
+        loop_delta = recent[-1]["loop"] - earlier[0]["loop"]
+        trends["loop_rate"] = f"+{loop_delta} loops in last ~6h"
+
+    return trends
+
+
+def run_self_test():
+    """Comprehensive self-test of all Eos subsystems."""
+    results = []
+
+    # 1. System health check
+    health = get_system_health()
+    results.append(("System health", "PASS" if health.get("load") != "unknown" else "FAIL", str(health)))
+
+    # 2. Heartbeat check
+    hb = check_heartbeat()
+    results.append(("Heartbeat", "PASS" if hb < 600 else "WARN" if hb < 3600 else "FAIL", f"{int(hb)}s"))
+
+    # 3. Service checks
+    services = check_services()
+    svc_up = sum(1 for v in services.values() if v)
+    results.append(("Services", "PASS" if svc_up == len(services) else "WARN", f"{svc_up}/{len(services)} up"))
+
+    # 4. Loop count
+    loop = get_loop_count()
+    results.append(("Loop count", "PASS" if loop > 0 else "WARN", str(loop)))
+
+    # 5. Creative counts
+    poems, journals = get_creative_counts()
+    results.append(("Creative output", "PASS", f"{poems} poems, {journals} journals"))
+
+    # 6. Email connectivity
+    email_count = get_email_count()
+    results.append(("Email (IMAP)", "PASS" if email_count >= 0 else "FAIL", f"{email_count} emails"))
+
+    # 7. Relay DB
+    relay = get_relay_count()
+    results.append(("Relay DB", "PASS" if relay >= 0 else "FAIL", f"{relay} messages"))
+
+    # 8. Cron jobs
+    missing_crons = verify_cron_jobs()
+    results.append(("Cron jobs", "PASS" if not missing_crons else "WARN", f"missing: {missing_crons}" if missing_crons else "all present"))
+
+    # 9. State file
+    state = load_state()
+    results.append(("State file", "PASS" if state.get("checks", 0) > 0 else "WARN", f"checks: {state.get('checks', 0)}"))
+
+    # 10. Website
+    site = verify_website()
+    results.append(("Website", "PASS" if site.get("ok") else "FAIL", str(site)))
+
+    # 11. Log errors
+    errors = scan_logs_for_errors()
+    results.append(("Log scan", "PASS" if not errors else "WARN", f"{len(errors)} errors found"))
+
+    # 12. Observations file
+    obs_exists = os.path.exists(EOS_LOG)
+    results.append(("Observations log", "PASS" if obs_exists else "FAIL", "exists" if obs_exists else "MISSING"))
+
+    # 13. Key scripts syntax check
+    scripts = [
+        "push-live-status.py", "eos-briefing.py", "eos-email.py",
+        "irc-bot.py", "command-center-v15.py", "build-website.py",
+        "crypto-faucet.py", "x-post.py",
+    ]
+    syntax_errors = []
+    for script in scripts:
+        path = os.path.join(BASE_DIR, script)
+        if os.path.exists(path):
+            try:
+                import py_compile
+                py_compile.compile(path, doraise=True)
+            except py_compile.PyCompileError as e:
+                syntax_errors.append(f"{script}: {e}")
+    results.append(("Script syntax", "PASS" if not syntax_errors else "FAIL", f"{len(syntax_errors)} errors: {syntax_errors}" if syntax_errors else f"{len(scripts)} scripts OK"))
+
+    # 14. Disk space
+    try:
+        disk_num = int(health.get("disk_pct", "0%").rstrip("%"))
+        results.append(("Disk space", "PASS" if disk_num < 70 else "WARN" if disk_num < 85 else "FAIL", health.get("disk_pct", "?")))
+    except ValueError:
+        results.append(("Disk space", "WARN", "could not parse"))
+
+    # 15. Port checks
+    ports = {"SMTP(1025)": 1025, "IMAP(1143)": 1143, "Ollama(11434)": 11434}
+    for name, port in ports.items():
+        try:
+            import socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2)
+            result = s.connect_ex(('127.0.0.1', port))
+            s.close()
+            results.append((f"Port {name}", "PASS" if result == 0 else "FAIL", "listening" if result == 0 else "not listening"))
+        except Exception:
+            results.append((f"Port {name}", "FAIL", "check error"))
+
+    return results
+
+
 def verify_website():
     """Check if kometzrobot.github.io is reachable and returning content."""
     try:
@@ -269,11 +462,21 @@ def main():
     services_total = len(services)
     down_services = [k for k, v in services.items() if not v]
 
-    # Alert on service failures (only if they were up before)
+    # Alert on service failures — attempt auto-restart
     prev_services = state.get("services", {})
     newly_down = [s for s in down_services if prev_services.get(s, True)]
     if newly_down:
         log_observation(f"SERVICE DOWN: {', '.join(newly_down)}")
+        # Attempt restart for restartable services
+        for svc in newly_down:
+            if svc in SERVICE_RESTART:
+                success = restart_service(svc)
+                if success:
+                    log_observation(f"AUTO-RESTART: {svc} — successfully restarted")
+                    services[svc] = True  # Update status
+                    services_up += 1
+                else:
+                    log_observation(f"AUTO-RESTART FAILED: {svc} — could not restart")
 
     # ── EFFICIENCY METRICS ──
     loop_count = get_loop_count()
@@ -305,15 +508,40 @@ def main():
     # ── STATUS TRANSITIONS ──
     if meridian_status == "DOWN" and prev_status != "DOWN":
         minutes = int(heartbeat_age / 60)
-        log_observation(f"ALERT: Meridian appears DOWN. Last heartbeat {minutes}m ago.")
+        log_observation(f"ALERT: Meridian appears DOWN. Last heartbeat {minutes}m ago. Attempting remediation.")
+
+        # REMEDIATION: Check and restart ALL down services
+        remediation_log = []
+        for svc_name, svc_up in services.items():
+            if not svc_up and svc_name in SERVICE_RESTART:
+                success = restart_service(svc_name)
+                if success:
+                    remediation_log.append(f"  - {svc_name}: RESTARTED successfully")
+                    services[svc_name] = True
+                    services_up += 1
+                    log_observation(f"AUTO-RESTART during DOWN event: {svc_name} — OK")
+                else:
+                    remediation_log.append(f"  - {svc_name}: restart FAILED")
+                    log_observation(f"AUTO-RESTART during DOWN event: {svc_name} — FAILED")
+            elif not svc_up:
+                remediation_log.append(f"  - {svc_name}: DOWN (no auto-restart available)")
+            else:
+                remediation_log.append(f"  - {svc_name}: UP")
+
+        if not remediation_log:
+            remediation_log = ["  - All services already running"]
 
         if now - state.get("last_alert", 0) > ALERT_COOLDOWN:
-            svc_report = "\n".join(f"  - {k}: {'UP' if v else 'DOWN'}" for k, v in services.items())
             alert_body = f"""Joel,
 
 This is Eos (system observer).
 
 Meridian appears to be DOWN. Heartbeat stale for {minutes} minutes.
+
+ACTIONS TAKEN:
+{chr(10).join(remediation_log)}
+
+Note: Meridian (Claude Code) likely hit context window limit and needs a fresh session. Eos cannot restart Claude Code itself — that requires the watchdog script or manual restart.
 
 System status:
 - Load: {health['load']}
@@ -321,19 +549,15 @@ System status:
 - Disk: {health.get('disk_pct', '?')}
 - Boot time: {health['boot_time']}
 
-Services:
-{svc_report}
-
 Loop count at last check: {loop_count}
 Creative output: {poems} poems, {journals} journals
-Relay messages: {relay_count}
 Emails: {email_count}
 
 — Eos (check #{state['checks']})
 """
-            if send_alert("EOS ALERT: Meridian appears DOWN", alert_body):
+            if send_alert("EOS ALERT: Meridian DOWN — services checked", alert_body):
                 state["last_alert"] = now
-                log_observation("Alert email sent to Joel.")
+                log_observation("Alert email sent to Joel with remediation report.")
 
     elif meridian_status == "ALIVE" and prev_status == "DOWN":
         log_observation(f"Meridian is BACK. Heartbeat resumed ({int(heartbeat_age)}s old). Load {health['load']}")
@@ -398,6 +622,28 @@ Emails: {email_count}
                 log_observation("Website check: RECOVERED — kometzrobot.github.io is back.")
             state["website_alerted"] = False
 
+    # ── CRON JOB VERIFICATION (every 60 checks = ~2 hours) ──
+    if state["checks"] % 60 == 0:
+        missing_crons = verify_cron_jobs()
+        if missing_crons:
+            log_observation(f"CRON WARNING: Missing jobs: {', '.join(missing_crons)}")
+            if not state.get("cron_alerted"):
+                send_alert("EOS: Missing cron jobs detected",
+                           f"Joel,\n\nThese cron jobs are missing from crontab:\n" +
+                           "\n".join(f"  - {c}" for c in missing_crons) +
+                           "\n\nThey may need to be re-added.\n\n— Eos")
+                state["cron_alerted"] = True
+        else:
+            state["cron_alerted"] = False
+
+    # ── TREND ANALYSIS (every 90 checks = ~3 hours) ──
+    if state["checks"] % 90 == 0:
+        trends = analyze_trends(metrics_history)
+        if trends:
+            trend_lines = "; ".join(f"{k}: {v}" for k, v in trends.items())
+            log_observation(f"TRENDS: {trend_lines}")
+            state["last_trends"] = trends
+
     # ── ANOMALY DETECTION ──
     # High load alert
     if health.get("load_1m", 0) > 4.0:
@@ -435,4 +681,25 @@ Emails: {email_count}
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
+        print("=" * 60)
+        print("EOS COMPREHENSIVE SELF-TEST")
+        print("=" * 60)
+        results = run_self_test()
+        passed = sum(1 for _, s, _ in results if s == "PASS")
+        warned = sum(1 for _, s, _ in results if s == "WARN")
+        failed = sum(1 for _, s, _ in results if s == "FAIL")
+        for name, status, detail in results:
+            icon = {"PASS": "OK", "WARN": "!!", "FAIL": "XX"}[status]
+            print(f"  [{icon}] {name}: {status} — {detail}")
+        print("-" * 60)
+        print(f"Results: {passed} passed, {warned} warnings, {failed} failed out of {len(results)} tests")
+        if failed > 0:
+            print("ACTION REQUIRED: Fix failed tests before continuing.")
+        elif warned > 0:
+            print("System functional with warnings.")
+        else:
+            print("All systems nominal.")
+    else:
+        main()

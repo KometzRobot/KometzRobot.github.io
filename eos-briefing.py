@@ -125,17 +125,60 @@ def get_meridian_status():
 
 
 def get_overnight_activity():
-    """Get activity entries from the last 12 hours."""
+    """Get activity entries from the last 12 hours — full detail."""
     wake = read_file(WAKE)
     entries = []
     for line in wake.split('\n'):
         if re.match(r'^- Loop iteration', line):
-            entries.append(line.strip('- ')[:120])
-            if len(entries) >= 8:
+            entries.append(line.strip('- ')[:250])
+            if len(entries) >= 6:
                 break
     if entries:
-        return "Recent activity:\n" + '\n'.join(f"  {e}" for e in entries)
+        return "What Meridian did overnight:\n" + '\n'.join(f"  - {e}" for e in entries)
     return "No recent activity logged."
+
+
+def get_pending_messages():
+    """Check if there are unread messages from Joel in the message board."""
+    try:
+        import sqlite3
+        db = os.path.join(BASE, "messages.db")
+        if not os.path.exists(db):
+            return ""
+        conn = sqlite3.connect(db)
+        c = conn.cursor()
+        state_file = os.path.join(BASE, ".message-state.json")
+        last_id = 0
+        if os.path.exists(state_file):
+            with open(state_file) as f:
+                last_id = json.load(f).get('last_message_id', 0)
+        c.execute("SELECT COUNT(*) FROM messages WHERE id > ? AND sender = 'Joel'", (last_id,))
+        count = c.fetchone()[0]
+        conn.close()
+        if count > 0:
+            return f"WARNING: {count} unread message(s) from Joel in command center!"
+        return "Message board: all caught up."
+    except Exception:
+        return ""
+
+
+def get_outstanding_issues():
+    """Pull outstanding issues from wake-state."""
+    wake = read_file(WAKE)
+    in_issues = False
+    issues = []
+    for line in wake.split('\n'):
+        if '### Outstanding Issues' in line:
+            in_issues = True
+            continue
+        if in_issues:
+            if line.startswith('##'):
+                break
+            if line.startswith('- '):
+                issues.append(line.strip('- ')[:150])
+    if issues:
+        return "Outstanding issues:\n" + '\n'.join(f"  - {i}" for i in issues[:6])
+    return "No outstanding issues tracked."
 
 
 def get_creative_summary():
@@ -221,31 +264,44 @@ def build_briefing():
     now = datetime.now()
     date_str = now.strftime("%A, %B %d, %Y")
 
+    pending = get_pending_messages()
+
     sections = [
         f"Good morning Joel.\n\nDaily briefing for {date_str}.",
-        "",
-        "=== SYSTEM ===",
-        get_system_health(),
-        "",
-        get_services(),
+    ]
+
+    # Priority alert if there are unread messages
+    if "WARNING" in pending:
+        sections.extend(["", "!!! " + pending + " !!!"])
+
+    sections.extend([
         "",
         "=== MERIDIAN ===",
         get_meridian_status(),
         "",
         get_overnight_activity(),
         "",
-        "=== CREATIVE ===",
-        get_creative_summary(),
+        "=== SYSTEM ===",
+        get_system_health(),
+        "",
+        get_services(),
         "",
         "=== COMMUNICATIONS ===",
         get_email_summary(),
         get_relay_summary(),
+        pending if "WARNING" not in pending else "",
+        "",
+        "=== CREATIVE ===",
+        get_creative_summary(),
+        "",
+        "=== OUTSTANDING ===",
+        get_outstanding_issues(),
         "",
         "=== EOS ===",
         get_eos_summary(),
         "",
         "— Eos (automated morning briefing)"
-    ]
+    ])
 
     return '\n'.join(sections)
 

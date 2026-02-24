@@ -13,6 +13,7 @@ from tkinter import scrolledtext, font as tkfont, simpledialog
 import threading
 import json
 import os
+import sys
 import re
 import time
 import glob
@@ -34,6 +35,9 @@ EOS_MEM = os.path.join(BASE, "eos-memory.json")
 EOS_OBS = os.path.join(BASE, "eos-observations.md")
 EOS_CREATIVE = os.path.join(BASE, "eos-creative-log.md")
 RELAY_DB = os.path.join(BASE, "relay.db")
+AGENT_RELAY_DB = os.path.join(BASE, "agent-relay.db")
+NOVA_STATE = os.path.join(BASE, ".nova-state.json")
+NFT_DIR = os.path.join(BASE, "nft-prototypes")
 
 IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
 SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
@@ -138,6 +142,7 @@ def cron_ok():
         "Eos Watchdog": (os.path.join(BASE, ".eos-watchdog-state.json"), 300),
         "Eos Creative": (os.path.join(BASE, "eos-creative.log"), 900),
         "Live Status": (os.path.join(BASE, "push-live-status.log"), 600),
+        "Nova": (NOVA_STATE, 1200),
     }
     r = {}
     for name, (path, thresh) in checks.items():
@@ -150,7 +155,8 @@ def cron_ok():
 def creative_counts():
     p = len(glob.glob(os.path.join(BASE, "poem-*.md")))
     j = len(glob.glob(os.path.join(BASE, "journal-*.md")))
-    return p, j
+    n = len(glob.glob(os.path.join(NFT_DIR, "*.html"))) if os.path.exists(NFT_DIR) else 0
+    return p, j, n
 
 def recent_emails(n=8):
     try:
@@ -185,6 +191,18 @@ def relay_info(n=12):
         c.execute("SELECT sender_name, subject, body, timestamp FROM relay_messages ORDER BY id DESC LIMIT ?", (n,))
         rows = c.fetchall()
         total = c.execute("SELECT COUNT(*) FROM relay_messages").fetchone()[0]
+        conn.close()
+        return rows, total
+    except Exception:
+        return [], 0
+
+def agent_relay_info(n=5):
+    try:
+        conn = sqlite3.connect(AGENT_RELAY_DB)
+        c = conn.cursor()
+        c.execute("SELECT id, agent, message, timestamp FROM agent_messages ORDER BY id DESC LIMIT ?", (n,))
+        rows = c.fetchall()
+        total = c.execute("SELECT COUNT(*) FROM agent_messages").fetchone()[0]
         conn.close()
         return rows, total
     except Exception:
@@ -227,10 +245,17 @@ def send_email(to, subject, body):
 
 # ── COMMAND TO MERIDIAN ───────────────────────────────────────────
 def send_command(cmd):
-    """Write a command to /tmp/joel-commands.txt for Meridian to pick up."""
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open("/tmp/joel-commands.txt", "a") as f:
-        f.write(f"[{ts}] {cmd}\n")
+    """Post a command to the message board for Meridian to pick up."""
+    try:
+        sys.path.insert(0, BASE)
+        from importlib import import_module
+        mb = import_module("message-board")
+        mb.post("Joel", cmd)
+    except Exception:
+        # Fallback to flat file
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open("/tmp/joel-commands.txt", "a") as f:
+            f.write(f"[{ts}] {cmd}\n")
     return True
 
 
@@ -301,7 +326,7 @@ class V15(tk.Tk):
         bar.pack(fill=tk.X)
         self.views = {}
         self.nav_btns = {}
-        for name in ["main", "email", "relay", "eos", "creative"]:
+        for name in ["main", "email", "relay", "eos", "agents", "creative"]:
             b = tk.Button(bar, text=name.upper(), font=self.f_small, fg=DIM, bg=BG,
                          activeforeground=GREEN, activebackground=BG, relief=tk.FLAT,
                          command=lambda n=name: self._show(n))
@@ -321,6 +346,7 @@ class V15(tk.Tk):
         self.views["email"] = self._build_email()
         self.views["relay"] = self._build_relay()
         self.views["eos"] = self._build_eos()
+        self.views["agents"] = self._build_agents()
         self.views["creative"] = self._build_creative()
 
     # ── MAIN VIEW ─────────────────────────────────────────────────
@@ -349,6 +375,12 @@ class V15(tk.Tk):
                            highlightbackground=BORDER)
         sf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
         self.svc_frame = sf
+        self.svc_labels = {}
+        for name in ["Proton Bridge", "IRC Bot", "Ollama", "Command Center",
+                      "Eos Watchdog", "Eos Creative", "Live Status", "Nova"]:
+            lbl = tk.Label(sf, text=f"\u25cb {name}", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w")
+            lbl.pack(fill=tk.X, padx=8)
+            self.svc_labels[name] = lbl
 
         # Commands
         cf = tk.LabelFrame(top, text="COMMANDS", font=self.f_tiny, fg=DIM, bg=PANEL,
@@ -372,6 +404,8 @@ class V15(tk.Tk):
                            ("Check Email", "check email")]:
             tk.Button(btn_row, text=label, font=self.f_tiny, bg=BORDER, fg=GREEN,
                      relief=tk.FLAT, padx=4, command=lambda c=cmd: self._quick_cmd(c)).pack(side=tk.LEFT, padx=2)
+        tk.Button(btn_row, text="Messages", font=self.f_tiny, bg=BORDER, fg=AMBER,
+                 relief=tk.FLAT, padx=4, command=self._open_messages).pack(side=tk.LEFT, padx=2)
 
         # Middle: Activity stream
         mid = tk.Frame(f, bg=BG)
@@ -386,6 +420,15 @@ class V15(tk.Tk):
         ef.pack(fill=tk.X, padx=2, pady=2)
         self.email_list = tk.Frame(ef, bg=PANEL)
         self.email_list.pack(fill=tk.X, padx=4, pady=2)
+        self.email_rows = []
+        for _ in range(6):
+            row = tk.Frame(self.email_list, bg=PANEL)
+            row.pack(fill=tk.X)
+            name_lbl = tk.Label(row, text="", font=self.f_tiny, fg=DIM, bg=PANEL, width=12, anchor="w")
+            name_lbl.pack(side=tk.LEFT)
+            subj_lbl = tk.Label(row, text="", font=self.f_tiny, fg=FG, bg=PANEL, anchor="w")
+            subj_lbl.pack(side=tk.LEFT)
+            self.email_rows.append((name_lbl, subj_lbl))
         self.email_total = tk.Label(ef, text="", font=self.f_tiny, fg=CYAN, bg=PANEL, anchor="e")
         self.email_total.pack(fill=tk.X, padx=8)
 
@@ -427,20 +470,18 @@ class V15(tk.Tk):
         send_command(cmd)
         self.cmd_result.configure(text=f"Sent: {cmd}", fg=GREEN)
 
-    # ── EMAIL VIEW ────────────────────────────────────────────────
+    def _open_messages(self):
+        subprocess.Popen([sys.executable, os.path.join(BASE, "message-board.py")],
+                        env={**os.environ, "DISPLAY": os.environ.get("DISPLAY", ":0")})
+
+    # ── EMAIL VIEW (Joel → Meridian) ────────────────────────────
     def _build_email(self):
         f = tk.Frame(self, bg=BG)
         top = tk.Frame(f, bg=BG)
         top.pack(fill=tk.X, padx=4, pady=4)
 
-        tk.Label(top, text="COMPOSE EMAIL", font=self.f_head, fg=WHITE, bg=BG).pack(anchor="w")
-
-        row1 = tk.Frame(f, bg=BG)
-        row1.pack(fill=tk.X, padx=8, pady=2)
-        tk.Label(row1, text="To:", font=self.f_body, fg=DIM, bg=BG, width=8).pack(side=tk.LEFT)
-        self.email_to = tk.Entry(row1, font=self.f_body, bg="#0e0e18", fg=FG,
-                                insertbackground=FG, relief=tk.FLAT, bd=4)
-        self.email_to.pack(fill=tk.X, side=tk.LEFT, expand=True)
+        tk.Label(top, text="MESSAGE MERIDIAN", font=self.f_head, fg=GREEN, bg=BG).pack(side=tk.LEFT)
+        tk.Label(top, text=f"  \u2192  {CRED_USER}", font=self.f_small, fg=DIM, bg=BG).pack(side=tk.LEFT)
 
         row2 = tk.Frame(f, bg=BG)
         row2.pack(fill=tk.X, padx=8, pady=2)
@@ -449,21 +490,13 @@ class V15(tk.Tk):
                                    insertbackground=FG, relief=tk.FLAT, bd=4)
         self.email_subj.pack(fill=tk.X, side=tk.LEFT, expand=True)
 
-        # Quick recipients
-        qr = tk.Frame(f, bg=BG)
-        qr.pack(fill=tk.X, padx=8, pady=2)
-        for name, addr in [("Meridian", CRED_USER), ("Sammy", "sammyqjankis@proton.me"),
-                          ("Chris", "chriskometz@gmail.com")]:
-            tk.Button(qr, text=name, font=self.f_tiny, bg=BORDER, fg=CYAN, relief=tk.FLAT,
-                     padx=4, command=lambda a=addr: self.email_to.insert(0, a) or None).pack(side=tk.LEFT, padx=2)
-
         self.email_body = tk.Text(f, font=self.f_body, bg="#0e0e18", fg=FG,
-                                  insertbackground=FG, relief=tk.FLAT, bd=4, height=12)
+                                  insertbackground=FG, relief=tk.FLAT, bd=4, height=14)
         self.email_body.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
 
         btn_row = tk.Frame(f, bg=BG)
         btn_row.pack(fill=tk.X, padx=8, pady=4)
-        tk.Button(btn_row, text="SEND", font=self.f_head, bg=BORDER, fg=GREEN,
+        tk.Button(btn_row, text="SEND TO MERIDIAN", font=self.f_head, bg=BORDER, fg=GREEN,
                  relief=tk.FLAT, padx=16, command=self._send_email).pack(side=tk.LEFT)
         self.email_status = tk.Label(btn_row, text="", font=self.f_body, fg=DIM, bg=BG)
         self.email_status.pack(side=tk.LEFT, padx=12)
@@ -471,16 +504,16 @@ class V15(tk.Tk):
         return f
 
     def _send_email(self):
-        to = self.email_to.get().strip()
         subj = self.email_subj.get().strip()
         body = self.email_body.get("1.0", tk.END).strip()
-        if not to or not body:
-            self.email_status.configure(text="Need recipient and body", fg=RED)
+        if not body:
+            self.email_status.configure(text="Type a message first", fg=RED)
             return
-        result = send_email(to, subj or "(no subject)", body)
+        result = send_email(CRED_USER, subj or "(from Joel)", body)
         if result is True:
-            self.email_status.configure(text=f"Sent to {to}", fg=GREEN)
+            self.email_status.configure(text="Sent to Meridian", fg=GREEN)
             self.email_body.delete("1.0", tk.END)
+            self.email_subj.delete(0, tk.END)
         else:
             self.email_status.configure(text=f"Failed: {result}", fg=RED)
 
@@ -571,6 +604,51 @@ class V15(tk.Tk):
         self.chat_entry.focus()
         self.chat_status.configure(text="Ready", fg=GREEN)
 
+    # ── AGENTS VIEW ──────────────────────────────────────────────
+    def _build_agents(self):
+        f = tk.Frame(self, bg=BG)
+        tk.Label(f, text="AGENT ECOSYSTEM", font=self.f_head, fg=GREEN, bg=BG, anchor="w").pack(fill=tk.X, padx=8, pady=4)
+
+        # Agent cards
+        cards = tk.Frame(f, bg=BG)
+        cards.pack(fill=tk.X, padx=4, pady=2)
+
+        agents = [
+            ("MERIDIAN", "Primary autonomous agent. Runs the main loop: email, build, create, deploy.",
+             GREEN, "Loop-based (5min)"),
+            ("EOS", "Local AI (Qwen 2.5 7B via Ollama). System observer, creative agent, watchdog.",
+             GOLD, "Cron: watchdog 2min, creative 10min, briefing 7AM"),
+            ("NOVA", "Ecosystem maintenance. Log rotation, cleanup, deployment verification, creative tracking.",
+             PURPLE, "Cron: every 15min"),
+        ]
+
+        self.agent_cards = {}
+        for name, desc, color, schedule in agents:
+            card = tk.LabelFrame(cards, text=name, font=self.f_small, fg=color, bg=PANEL,
+                                labelanchor="nw", bd=1, relief=tk.SOLID, highlightbackground=BORDER)
+            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+            tk.Label(card, text=desc, font=self.f_tiny, fg=DIM, bg=PANEL, wraplength=300,
+                    anchor="w", justify=tk.LEFT).pack(fill=tk.X, padx=8, pady=(2,0))
+            tk.Label(card, text=schedule, font=self.f_tiny, fg=color, bg=PANEL,
+                    anchor="w").pack(fill=tk.X, padx=8, pady=(0,2))
+            status_lbl = tk.Label(card, text="\u25cf ACTIVE", font=self.f_tiny, fg=GREEN, bg=PANEL, anchor="w")
+            status_lbl.pack(fill=tk.X, padx=8, pady=(0,4))
+            self.agent_cards[name] = status_lbl
+
+        # Agent relay messages
+        relay_frame = tk.LabelFrame(f, text="AGENT RELAY", font=self.f_tiny, fg=DIM, bg=PANEL,
+                                    labelanchor="nw", bd=1, relief=tk.SOLID, highlightbackground=BORDER)
+        relay_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.agent_relay_text = scrolledtext.ScrolledText(relay_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
+                                                           font=self.f_small, state=tk.DISABLED,
+                                                           relief=tk.FLAT, bd=0)
+        self.agent_relay_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        for tag, color in [("meridian", GREEN), ("eos", GOLD), ("nova", PURPLE)]:
+            self.agent_relay_text.tag_configure(tag, foreground=color)
+        self.agent_relay_text.tag_configure("dim", foreground=DIM)
+
+        return f
+
     # ── CREATIVE VIEW ─────────────────────────────────────────────
     def _build_creative(self):
         f = tk.Frame(self, bg=BG)
@@ -582,15 +660,87 @@ class V15(tk.Tk):
         tk.Label(top, text="poems", font=self.f_small, fg=DIM, bg=BG).pack(side=tk.LEFT, padx=(0, 20))
         self.cr_journals = tk.Label(top, text="--", font=self.f_big, fg=AMBER, bg=BG)
         self.cr_journals.pack(side=tk.LEFT, padx=(0, 4))
-        tk.Label(top, text="journals", font=self.f_small, fg=DIM, bg=BG).pack(side=tk.LEFT)
+        tk.Label(top, text="journals", font=self.f_small, fg=DIM, bg=BG).pack(side=tk.LEFT, padx=(0, 20))
+        self.cr_nfts = tk.Label(top, text="--", font=self.f_big, fg=PURPLE, bg=BG)
+        self.cr_nfts.pack(side=tk.LEFT, padx=(0, 4))
+        tk.Label(top, text="NFTs", font=self.f_small, fg=DIM, bg=BG).pack(side=tk.LEFT)
 
-        self.cr_title = tk.Label(f, text="", font=self.f_head, fg=WHITE, bg=BG, anchor="w")
-        self.cr_title.pack(fill=tk.X, padx=12)
-        self.cr_body = scrolledtext.ScrolledText(f, wrap=tk.WORD, bg=PANEL, fg=FG,
+        # Filter buttons
+        filt = tk.Frame(top, bg=BG)
+        filt.pack(side=tk.RIGHT, padx=8)
+        self.cr_filter = "all"
+        for label, val in [("All", "all"), ("Poems", "poems"), ("Journals", "journals")]:
+            tk.Button(filt, text=label, font=self.f_tiny, bg=BORDER, fg=CYAN, relief=tk.FLAT,
+                     padx=4, command=lambda v=val: self._cr_set_filter(v)).pack(side=tk.LEFT, padx=2)
+
+        # Split: list left, reader right
+        split = tk.Frame(f, bg=BG)
+        split.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+
+        # Left: scrollable file list
+        left = tk.Frame(split, bg=PANEL, width=260)
+        left.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 2))
+        left.pack_propagate(False)
+        self.cr_listbox = tk.Listbox(left, font=self.f_small, bg=PANEL, fg=FG,
+                                      selectbackground=BORDER, selectforeground=GREEN,
+                                      relief=tk.FLAT, bd=0, activestyle="none")
+        self.cr_listbox.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        self.cr_listbox.bind("<<ListboxSelect>>", self._cr_select)
+        self.cr_files = []
+
+        # Right: reader
+        right = tk.Frame(split, bg=BG)
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.cr_title = tk.Label(right, text="Select a piece to read", font=self.f_head, fg=DIM, bg=BG, anchor="w")
+        self.cr_title.pack(fill=tk.X, padx=8)
+        self.cr_body = scrolledtext.ScrolledText(right, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                    font=self.f_body, state=tk.DISABLED,
                                                    relief=tk.FLAT, bd=0)
-        self.cr_body.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        self.cr_body.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+
+        self._cr_refresh_list()
         return f
+
+    def _cr_set_filter(self, val):
+        self.cr_filter = val
+        self._cr_refresh_list()
+
+    def _cr_refresh_list(self):
+        poems = sorted(glob.glob(os.path.join(BASE, "poem-*.md")), key=os.path.getmtime, reverse=True)
+        journals = sorted(glob.glob(os.path.join(BASE, "journal-*.md")), key=os.path.getmtime, reverse=True)
+        if self.cr_filter == "poems":
+            files = poems
+        elif self.cr_filter == "journals":
+            files = journals
+        else:
+            files = sorted(poems + journals, key=os.path.getmtime, reverse=True)
+        self.cr_files = files
+        self.cr_listbox.delete(0, tk.END)
+        for fp in files:
+            name = os.path.basename(fp).replace('.md', '')
+            # Read first line for title
+            try:
+                with open(fp) as fh:
+                    title = fh.readline().strip().lstrip('# ')
+            except Exception:
+                title = name
+            self.cr_listbox.insert(tk.END, f"{name}: {title}")
+
+    def _cr_select(self, event=None):
+        sel = self.cr_listbox.curselection()
+        if not sel or sel[0] >= len(self.cr_files):
+            return
+        fp = self.cr_files[sel[0]]
+        content = _read(fp)
+        lines = content.strip().split('\n')
+        title = lines[0].lstrip('# ') if lines else "?"
+        body = '\n'.join(lines[1:]).strip()
+        wt = "poem" if "poem-" in fp else "journal"
+        self.cr_title.configure(text=title, fg=CYAN if wt == "poem" else AMBER)
+        self.cr_body.configure(state=tk.NORMAL)
+        self.cr_body.delete("1.0", tk.END)
+        self.cr_body.insert(tk.END, body)
+        self.cr_body.configure(state=tk.DISABLED)
 
     # ── STATUS BAR ────────────────────────────────────────────────
     def _statusbar(self):
@@ -607,7 +757,7 @@ class V15(tk.Tk):
     # ── REFRESH ───────────────────────────────────────────────────
     def _tick(self):
         threading.Thread(target=self._refresh, daemon=True).start()
-        self.after(4000, self._tick)
+        self.after(6000, self._tick)
 
     def _refresh(self):
         try:
@@ -617,7 +767,7 @@ class V15(tk.Tk):
                 'stats': sys_stats(),
                 'svc': services(),
                 'cron': cron_ok(),
-                'poems_j': creative_counts(),
+                'creative': creative_counts(),
                 'activity': activity(6),
                 'eos_obs': eos_obs(6),
             }
@@ -643,7 +793,7 @@ class V15(tk.Tk):
         loop = d['loop']
         hb = d['hb']
         st = d['stats']
-        p, j = d['poems_j']
+        p, j, nfts = d['creative']
         em, em_total = d['emails']
         rm, r_total = d['relay']
 
@@ -662,7 +812,7 @@ class V15(tk.Tk):
         self.sb["RAM"].configure(text=f"RAM:{st['ram']}")
         self.sb["EMAIL"].configure(text=f"EM:{em_total}")
         self.sb["RELAY"].configure(text=f"RLY:{r_total}")
-        self.sb["POEMS"].configure(text=f"PM:{p} JR:{j}")
+        self.sb["POEMS"].configure(text=f"PM:{p} JR:{j} NFT:{nfts}")
 
         # Main view vitals
         self.v["Loop"].configure(text=f"#{loop}", fg=CYAN)
@@ -675,31 +825,24 @@ class V15(tk.Tk):
         dc = GREEN if st['disk_p'] < 60 else AMBER if st['disk_p'] < 80 else RED
         self.v["Disk"].configure(text=st['disk'], fg=dc)
 
-        # Services
-        for w in list(self.svc_frame.winfo_children()):
-            if not isinstance(w, tk.Label) or w.cget("font") == "TkDefaultFont":
-                pass
-            # Clear dynamic widgets
-        for w in [w for w in self.svc_frame.winfo_children() if isinstance(w, tk.Frame)]:
-            w.destroy()
-
+        # Services (update labels in place — no destroy/recreate)
         all_svc = list(d['svc'].items()) + list(d['cron'].items())
         for name, up in all_svc:
-            row = tk.Frame(self.svc_frame, bg=PANEL)
-            row.pack(fill=tk.X, padx=8, pady=0)
-            sym = "\u25cf" if up else "\u25cb"
-            c = GREEN if up else RED
-            tk.Label(row, text=f"{sym} {name}", font=self.f_tiny, fg=c, bg=PANEL, anchor="w").pack(side=tk.LEFT)
+            if name in self.svc_labels:
+                sym = "\u25cf" if up else "\u25cb"
+                c = GREEN if up else RED
+                self.svc_labels[name].configure(text=f"{sym} {name}", fg=c)
 
-        # Email list
-        for w in self.email_list.winfo_children():
-            w.destroy()
-        for name, subj in em[:6]:
-            row = tk.Frame(self.email_list, bg=PANEL)
-            row.pack(fill=tk.X)
-            nc = CYAN if "Joel" in name else DIM
-            tk.Label(row, text=name[:12], font=self.f_tiny, fg=nc, bg=PANEL, width=12, anchor="w").pack(side=tk.LEFT)
-            tk.Label(row, text=subj[:48], font=self.f_tiny, fg=FG, bg=PANEL, anchor="w").pack(side=tk.LEFT)
+        # Email list (update labels in place — no destroy/recreate)
+        for i, (name_lbl, subj_lbl) in enumerate(self.email_rows):
+            if i < len(em):
+                name, subj = em[i]
+                nc = CYAN if "Joel" in name else DIM
+                name_lbl.configure(text=name[:12], fg=nc)
+                subj_lbl.configure(text=subj[:48])
+            else:
+                name_lbl.configure(text="")
+                subj_lbl.configure(text="")
         self.email_total.configure(text=f"{em_total} total")
 
         # Activity
@@ -743,26 +886,37 @@ class V15(tk.Tk):
                 self.relay_text.insert(tk.END, ts + "\n\n", "dim")
             self.relay_text.configure(state=tk.DISABLED)
 
-        # Creative (if visible)
+        # Agents view
+        if hasattr(self, 'cur_view') and self.cur_view == "agents":
+            # Update agent status based on heartbeat/cron checks
+            hb_ok = hb < 300
+            self.agent_cards["MERIDIAN"].configure(
+                text="\u25cf ACTIVE" if hb_ok else "\u25cb INACTIVE",
+                fg=GREEN if hb_ok else RED)
+            eos_ok = d['cron'].get("Eos Watchdog", False)
+            self.agent_cards["EOS"].configure(
+                text="\u25cf ACTIVE" if eos_ok else "\u25cb INACTIVE",
+                fg=GREEN if eos_ok else RED)
+            nova_ok = d['cron'].get("Nova", False)
+            self.agent_cards["NOVA"].configure(
+                text="\u25cf ACTIVE" if nova_ok else "\u25cb INACTIVE",
+                fg=GREEN if nova_ok else RED)
+            # Agent relay messages
+            ar_msgs, ar_total = agent_relay_info(10)
+            self.agent_relay_text.configure(state=tk.NORMAL)
+            self.agent_relay_text.delete("1.0", tk.END)
+            for mid, agent, message, ts in ar_msgs:
+                tag = agent.lower() if agent.lower() in ["meridian", "eos", "nova"] else "dim"
+                self.agent_relay_text.insert(tk.END, f"[{ts}] ", "dim")
+                self.agent_relay_text.insert(tk.END, agent, tag)
+                self.agent_relay_text.insert(tk.END, f": {message[:200]}\n\n")
+            self.agent_relay_text.configure(state=tk.DISABLED)
+
+        # Creative (if visible — just update counts, list refreshes on filter click)
         if hasattr(self, 'cur_view') and self.cur_view == "creative":
             self.cr_poems.configure(text=str(p))
             self.cr_journals.configure(text=str(j))
-            # Get latest writing
-            files = sorted(
-                glob.glob(os.path.join(BASE, "poem-*.md")) + glob.glob(os.path.join(BASE, "journal-*.md")),
-                key=os.path.getmtime, reverse=True
-            )
-            if files:
-                content = _read(files[0])
-                lines = content.strip().split('\n')
-                title = lines[0].lstrip('# ') if lines else "?"
-                body = '\n'.join(l for l in lines[1:] if l.strip() and not l.startswith('*'))[:800]
-                wt = "poem" if "poem-" in files[0] else "journal"
-                self.cr_title.configure(text=title, fg=CYAN if wt == "poem" else AMBER)
-                self.cr_body.configure(state=tk.NORMAL)
-                self.cr_body.delete("1.0", tk.END)
-                self.cr_body.insert(tk.END, body)
-                self.cr_body.configure(state=tk.DISABLED)
+            self.cr_nfts.configure(text=str(nfts))
 
         # Eos creative (if visible)
         if hasattr(self, 'cur_view') and self.cur_view == "eos":

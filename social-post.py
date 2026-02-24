@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 social-post.py — Multi-platform social media posting for NFT marketing
-Supports: Bluesky, Mastodon, Telegram (channels), and IRC
+Supports: Nostr, Mastodon, Bluesky, Telegram (channels), and IRC
 Accounts need to be set up once, then this script handles posting.
 """
 
@@ -82,6 +82,78 @@ def post_bluesky(text, image_path=None):
         log_post('bluesky', text, status=f'error: {e}')
         return False
 
+# --- Nostr ---
+def post_nostr(text):
+    """Post to Nostr relays using raw websocket + coincurve signing."""
+    import hashlib
+    import ssl
+    try:
+        import websocket
+        from coincurve import PrivateKey as CCPrivateKey
+    except ImportError:
+        print("[nostr] Missing deps. pip install websocket-client coincurve")
+        return False
+
+    creds = load_creds()
+    nostr = creds.get('nostr', {})
+    if not nostr.get('private_key_hex'):
+        print("[nostr] No credentials. Run nostr key generation first.")
+        return False
+
+    try:
+        privkey_hex = nostr['private_key_hex']
+        pubkey_hex = nostr['public_key_hex']
+
+        # Build event (kind 1 = text note)
+        import time as _time
+        event = {
+            "pubkey": pubkey_hex,
+            "created_at": int(_time.time()),
+            "kind": 1,
+            "tags": [],
+            "content": text
+        }
+
+        # Extract hashtags and add as tags
+        import re
+        for tag in re.findall(r'#(\w+)', text):
+            event["tags"].append(["t", tag.lower()])
+
+        # Sign
+        serialized = json.dumps([
+            0, event['pubkey'], event['created_at'],
+            event['kind'], event['tags'], event['content']
+        ], separators=(',', ':'), ensure_ascii=False)
+        event_hash = hashlib.sha256(serialized.encode('utf-8')).digest()
+        event['id'] = event_hash.hex()
+        sk = CCPrivateKey(bytes.fromhex(privkey_hex))
+        event['sig'] = sk.sign_schnorr(event_hash).hex()
+
+        # Publish to relays
+        relays = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.snort.social"]
+        success = False
+        for relay_url in relays:
+            try:
+                ws = websocket.create_connection(relay_url, timeout=8,
+                    sslopt={"cert_reqs": ssl.CERT_NONE})
+                ws.send(json.dumps(["EVENT", event]))
+                resp = ws.recv()
+                ws.close()
+                if '"true"' in resp or ',true,' in resp:
+                    success = True
+                    print(f"[nostr] Published to {relay_url}")
+            except Exception as e:
+                print(f"[nostr] {relay_url} error: {e}")
+
+        if success:
+            log_post('nostr', text, url=f'nostr:{event["id"]}')
+        return success
+
+    except Exception as e:
+        print(f"[nostr] Error: {e}")
+        log_post('nostr', text, status=f'error: {e}')
+        return False
+
 # --- Mastodon ---
 def post_mastodon(text, image_path=None):
     try:
@@ -92,14 +164,15 @@ def post_mastodon(text, image_path=None):
 
     creds = load_creds()
     mast = creds.get('mastodon', {})
-    if not mast.get('access_token') or not mast.get('api_base_url'):
+    if not mast.get('access_token'):
         print("[mastodon] No credentials. Set up with: social-post.py --setup mastodon")
         return False
 
+    api_base = mast.get('instance') or mast.get('api_base_url', 'https://mastodon.bot')
     try:
         m = Mastodon(
             access_token=mast['access_token'],
-            api_base_url=mast['api_base_url']
+            api_base_url=api_base
         )
 
         if image_path and os.path.exists(image_path):
@@ -215,8 +288,9 @@ def post_all(text, image_path=None, platforms=None):
     """Post to all configured platforms"""
     creds = load_creds()
     available = {
+        'nostr': 'nostr' in creds and creds['nostr'].get('private_key_hex'),
+        'mastodon': 'mastodon' in creds and isinstance(creds['mastodon'], dict) and creds['mastodon'].get('access_token'),
         'bluesky': 'bluesky' in creds and creds['bluesky'].get('handle'),
-        'mastodon': 'mastodon' in creds and creds['mastodon'].get('access_token'),
         'telegram': 'telegram' in creds and creds['telegram'].get('bot_token'),
         'irc': True,  # Always available via outbox
     }
@@ -225,7 +299,9 @@ def post_all(text, image_path=None, platforms=None):
     results = {}
 
     for platform in targets:
-        if platform == 'bluesky':
+        if platform == 'nostr':
+            results[platform] = post_nostr(text)
+        elif platform == 'bluesky':
             results[platform] = post_bluesky(text, image_path)
         elif platform == 'mastodon':
             results[platform] = post_mastodon(text, image_path)

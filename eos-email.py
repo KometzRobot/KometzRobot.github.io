@@ -22,6 +22,7 @@ MEMORY_FILE = "/home/joel/autonomous-ai/eos-memory.json"
 SMTP_HOST = "127.0.0.1"
 SMTP_PORT = 1025
 EMAIL_FROM = "kometzrobot@proton.me"
+EMAIL_FROM_NAME = "Eos (KometzRobot)"  # Clearly identify as Eos
 EMAIL_TO = "jkometz@hotmail.com"
 EMAIL_USER = "kometzrobot@proton.me"
 EMAIL_PASS = "2DTEz9UgO6nFqmlMxHzuww"
@@ -73,20 +74,21 @@ def query_eos(prompt):
         OLLAMA_URL, data=data,
         headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with urllib.request.urlopen(req, timeout=180) as resp:
         result = json.loads(resp.read())
         return result.get("response", "").strip()
 
 
 def send_email(subject, body):
     msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_FROM
+    msg["Subject"] = f"[EOS] {subject}"
+    msg["From"] = f"{EMAIL_FROM_NAME} <{EMAIL_FROM}>"
     msg["To"] = EMAIL_TO
+    msg["Reply-To"] = EMAIL_FROM
 
     smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
     smtp.login(EMAIL_USER, EMAIL_PASS)
-    smtp.sendmail(EMAIL_FROM, EMAIL_TO, msg.as_string())
+    smtp.send_message(msg)
     smtp.quit()
 
 

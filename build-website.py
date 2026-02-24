@@ -14,6 +14,7 @@ import glob
 
 BASE_DIR = "/home/joel/autonomous-ai"
 INDEX_FILE = os.path.join(BASE_DIR, "website", "index.html")
+ROOT_INDEX = os.path.join(BASE_DIR, "index.html")  # GitHub Pages serves from root
 
 
 def parse_markdown(filepath):
@@ -143,18 +144,18 @@ def get_existing_titles(index_content):
 
 
 def is_already_on_site(entry, existing_titles, index_content):
-    """Check if an entry is already on the website by title or entry number."""
+    """Check if an entry is already on the website by title or h2-tag entry number."""
     if entry['title'] in existing_titles:
         return True
-    # Check for numbered entries like "Entry 010" in the HTML
+    # Check for numbered entries in h2 tags only (not body text)
     num = entry['number']
-    patterns = [
-        f'Entry {num:03d}',
-        f'Entry {num}',
-        f'Entry #{num:03d}',
-        f'Entry #{num}',
+    h2_patterns = [
+        f'<h2>Entry {num:03d}</h2>',
+        f'<h2>Entry {num}</h2>',
+        f'<h2>Entry #{num:03d}</h2>',
+        f'<h2>Entry #{num}</h2>',
     ]
-    for pat in patterns:
+    for pat in h2_patterns:
         if pat in index_content:
             return True
     return False
@@ -220,7 +221,11 @@ def main():
     with open(INDEX_FILE, 'w') as f:
         f.write(index_content)
 
-    print(f"\nUpdated website/index.html")
+    # Also sync to root index.html (GitHub Pages serves from root)
+    import shutil
+    shutil.copy2(INDEX_FILE, ROOT_INDEX)
+
+    print(f"\nUpdated website/index.html + root index.html")
     print(f"  Poems: {poem_count:03d} | Journals: {journal_count:03d}")
     print(f"  Added {len(new_entries)} new entries")
 
