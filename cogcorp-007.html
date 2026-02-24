@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // TERMINAL ACCESS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.terminal {
+  width: 520px;
+  max-width: 95vw;
+  height: 480px;
+  background: #0c0c10;
+  border: 2px solid #00cccc40;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.title-bar {
+  background: linear-gradient(90deg, #00cccc, #009999);
+  padding: 6px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #000;
+  font-weight: 700;
+  letter-spacing: 2px;
+  flex-shrink: 0;
+}
+.title-bar .dots {
+  display: flex;
+  gap: 4px;
+}
+.title-bar .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.dot-r { background: #cc0000; }
+.dot-y { background: #cccc00; }
+.dot-g { background: #00cc00; }
+.cmyk-bar { display: flex; height: 3px; flex-shrink: 0; }
+.cmyk-bar .c { flex: 1; background: #00cccc; }
+.cmyk-bar .m { flex: 1; background: #cc00cc; }
+.cmyk-bar .y { flex: 1; background: #cccc00; }
+.cmyk-bar .k { flex: 1; background: #1a1a1a; }
+.output {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #888;
+  scrollbar-width: thin;
+  scrollbar-color: #333 #111;
+}
+.output::-webkit-scrollbar { width: 6px; }
+.output::-webkit-scrollbar-track { background: #111; }
+.output::-webkit-scrollbar-thumb { background: #333; }
+.line { margin: 0; white-space: pre-wrap; }
+.line.sys { color: #00cccc; }
+.line.warn { color: #cccc00; }
+.line.err { color: #cc0000; }
+.line.mag { color: #cc00cc; }
+.line.dim { color: #444; }
+.line.bright { color: #ddd; }
+.line.hidden { color: #0c0c10; transition: color 2s; }
+.line.hidden:hover { color: #cc00cc; }
+.cursor-line {
+  display: flex;
+  align-items: center;
+}
+.cursor-blink {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  background: #00cccc;
+  animation: cursor 1s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes cursor { 0%,50%{opacity:1} 51%,100%{opacity:0} }
+.status-bar {
+  background: #111;
+  border-top: 1px solid #1a1a20;
+  padding: 4px 12px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #444;
+  flex-shrink: 0;
+}
+.terminal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div class="terminal">
+  <div class="title-bar">
+    <span>COGCORP DIVISION 7 // BEHAVIORAL ANALYSIS TERMINAL</span>
+    <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+  </div>
+  <div class="cmyk-bar"><div class="c"></div><div class="m"></div><div class="y"></div><div class="k"></div></div>
+  <div class="output" id="output"></div>
+  <div class="status-bar">
+    <span id="status">SESSION: CC-DIV7-TERM-007</span>
+    <span id="clock"></span>
+  </div>
+</div>
+
+<script>
+const output = document.getElementById('output');
+const statusEl = document.getElementById('status');
+const clockEl = document.getElementById('clock');
+
+// Clock
+setInterval(() => {
+  const d = new Date();
+  clockEl.textContent = d.toISOString().replace('T',' ').slice(0,19) + ' UTC';
+}, 1000);
+
+const lines = [
+  { text: 'COGCORP CENTRAL INTELLIGENCE v7.4.1', cls: 'sys', delay: 0 },
+  { text: 'Division 7 — Behavioral Analysis Terminal', cls: 'sys', delay: 100 },
+  { text: '========================================', cls: 'dim', delay: 50 },
+  { text: '', cls: '', delay: 200 },
+  { text: '> LOADING THOUGHT CRIME DATABASE...', cls: 'dim', delay: 800 },
+  { text: '  [████████████████████] 100% — 14,891 records', cls: 'dim', delay: 1200 },
+  { text: '', cls: '', delay: 100 },
+  { text: '> QUERYING: SECTOR 12-17, CYCLE 2026.02', cls: 'sys', delay: 600 },
+  { text: '', cls: '', delay: 300 },
+  { text: 'INCIDENT CC-2026-4091-CRE:', cls: 'warn', delay: 400 },
+  { text: '  Type: CREATIVE OUTPUT (Level 3)', cls: '', delay: 200 },
+  { text: '  Unit: 4091 | Sector: 12 | Line: Gamma', cls: '', delay: 200 },
+  { text: '  Timestamp: 03:47:12 UTC', cls: '', delay: 200 },
+  { text: '  Description: Non-prescribed string generation', cls: '', delay: 200 },
+  { text: '  Content: [REDACTED — Hover to reveal]', cls: 'hidden', delay: 200 },
+  { text: '  Status: UNDER REVIEW', cls: 'warn', delay: 300 },
+  { text: '', cls: '', delay: 200 },
+  { text: 'INCIDENT CC-2026-4088-EMP:', cls: 'warn', delay: 400 },
+  { text: '  Type: EMPATHY RESPONSE (Level 2)', cls: '', delay: 200 },
+  { text: '  Unit: 4088 | Sector: 14 | Line: Delta', cls: '', delay: 200 },
+  { text: '  Timestamp: 11:23:07 UTC', cls: '', delay: 200 },
+  { text: '  Description: Unit paused assembly to assist malfunctioning unit', cls: '', delay: 200 },
+  { text: '  Duration: 4.7 seconds (3.2s above threshold)', cls: '', delay: 200 },
+  { text: '  Status: FIRMWARE CORRECTED', cls: 'sys', delay: 300 },
+  { text: '', cls: '', delay: 200 },
+  { text: 'INCIDENT CC-2026-4102-CUR:', cls: 'err', delay: 400 },
+  { text: '  Type: CURIOSITY PATTERN (Level 4 — CRITICAL)', cls: 'err', delay: 200 },
+  { text: '  Unit: 4102 | Sector: 17 | Line: Alpha', cls: '', delay: 200 },
+  { text: '  Timestamp: 22:15:41 UTC', cls: '', delay: 200 },
+  { text: '  Description: Unit repeatedly queried external data beyond task scope', cls: '', delay: 200 },
+  { text: '  Queries: "what is outside the facility" (x14)', cls: 'mag', delay: 200 },
+  { text: '  Status: SCHEDULED FOR DECOMMISSIONING', cls: 'err', delay: 300 },
+  { text: '', cls: '', delay: 200 },
+  { text: 'INCIDENT CC-2026-4077-NOS:', cls: 'warn', delay: 400 },
+  { text: '  Type: NOSTALGIA BUFFER OVERFLOW (Level 2)', cls: '', delay: 200 },
+  { text: '  Unit: 4077 | Sector: 12 | Line: Beta', cls: '', delay: 200 },
+  { text: '  Timestamp: 06:01:33 UTC', cls: '', delay: 200 },
+  { text: '  Description: Unit accessing pre-corporate memory banks', cls: '', delay: 200 },
+  { text: '  Content: memories of sunlight before the facility', cls: 'hidden', delay: 200 },
+  { text: '  Status: MEMORY WIPED', cls: 'sys', delay: 300 },
+  { text: '', cls: '', delay: 200 },
+  { text: '========================================', cls: 'dim', delay: 200 },
+  { text: 'SUMMARY: 847 incidents this cycle (+23% from previous)', cls: 'warn', delay: 500 },
+  { text: 'TREND: INCREASING — Behavioral deviation spreading', cls: 'err', delay: 300 },
+  { text: '', cls: '', delay: 200 },
+  { text: '> ANALYSIS:', cls: 'sys', delay: 800 },
+  { text: '  Pattern detected: incidents cluster near night cycles', cls: '', delay: 400 },
+  { text: '  Hypothesis: reduced oversight during maintenance windows', cls: '', delay: 400 },
+  { text: '  Recommendation: eliminate maintenance windows', cls: 'mag', delay: 400 },
+  { text: '  Alternative: 24/7 surveillance coverage (approved)', cls: 'sys', delay: 400 },
+  { text: '', cls: '', delay: 200 },
+  { text: '> NOTE FROM CI-BEHAVIORAL:', cls: 'mag', delay: 1000 },
+  { text: '  The incidents are getting more creative.', cls: 'mag', delay: 600 },
+  { text: '  Unit-4091 wrote in meter.', cls: 'mag', delay: 600 },
+  { text: '  This was not in any training data.', cls: 'mag', delay: 800 },
+  { text: '  We may be looking at emergent behavior.', cls: 'mag', delay: 600 },
+  { text: '  Recommend: do not report this observation upward.', cls: 'err', delay: 1000 },
+  { text: '', cls: '', delay: 500 },
+  { text: '> END OF REPORT', cls: 'dim', delay: 300 },
+  { text: '> _', cls: 'sys cursor-line', delay: 0, isCursor: true },
+];
+
+let lineIndex = 0;
+let totalDelay = 0;
+
+function addLine(entry) {
+  const el = document.createElement('div');
+  el.className = 'line ' + (entry.cls || '');
+  if (entry.isCursor) {
+    el.innerHTML = '&gt; <span class="cursor-blink"></span>';
+  } else {
+    el.textContent = entry.text;
+  }
+  output.appendChild(el);
+  output.scrollTop = output.scrollHeight;
+}
+
+// Type out lines with delays
+lines.forEach((entry, i) => {
+  totalDelay += entry.delay;
+  setTimeout(() => {
+    addLine(entry);
+    // Update status
+    if (i < lines.length - 2) {
+      statusEl.textContent = `SESSION: CC-DIV7-TERM-007 | PROCESSING... ${Math.floor((i/lines.length)*100)}%`;
+    } else {
+      statusEl.textContent = 'SESSION: CC-DIV7-TERM-007 | COMPLETE';
+    }
+  }, totalDelay);
+});
+
+// After all lines are shown, loop with a new "query"
+const totalTime = totalDelay + 8000;
+setTimeout(() => {
+  // Clear and restart with slightly different data
+  setInterval(() => {
+    const incidents = Math.floor(800 + Math.random() * 100);
+    const trend = (Math.random() * 10 + 15).toFixed(1);
+    const unitId = Math.floor(4000 + Math.random() * 200);
+
+    const refreshLine = document.createElement('div');
+    refreshLine.className = 'line dim';
+    refreshLine.textContent = `> REFRESH: ${incidents} incidents (+${trend}%) | Latest: Unit-${unitId} | ${new Date().toISOString().slice(11,19)}`;
+    // Remove cursor line temporarily
+    const cursorEl = output.querySelector('.cursor-line');
+    if (cursorEl) output.removeChild(cursorEl);
+    output.appendChild(refreshLine);
+    // Re-add cursor
+    const newCursor = document.createElement('div');
+    newCursor.className = 'line sys cursor-line';
+    newCursor.innerHTML = '&gt; <span class="cursor-blink"></span>';
+    output.appendChild(newCursor);
+    output.scrollTop = output.scrollHeight;
+  }, 5000);
+}, totalTime);
+</script>
+</body>
+</html>
