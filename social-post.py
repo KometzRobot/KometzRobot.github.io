@@ -156,34 +156,38 @@ def post_nostr(text):
 
 # --- Mastodon ---
 def post_mastodon(text, image_path=None):
-    try:
-        from mastodon import Mastodon
-    except ImportError:
-        print("[mastodon] Mastodon.py not installed. pip install Mastodon.py")
-        return False
+    import requests as _requests
 
     creds = load_creds()
-    mast = creds.get('mastodon', {})
+    # Check mastodon_social first, then mastodon
+    mast = creds.get('mastodon_social', {})
     if not mast.get('access_token'):
-        print("[mastodon] No credentials. Set up with: social-post.py --setup mastodon")
+        mast = creds.get('mastodon', {})
+        if isinstance(mast, list):
+            mast = next((m for m in mast if m.get('access_token')), {})
+    if not mast.get('access_token'):
+        print("[mastodon] No credentials found.")
         return False
 
-    api_base = mast.get('instance') or mast.get('api_base_url', 'https://mastodon.bot')
+    instance = mast.get('instance', 'https://mastodon.social')
+    if not instance.startswith('http'):
+        instance = f'https://{instance}'
+    token = mast['access_token']
+    headers = {'Authorization': f'Bearer {token}'}
+
     try:
-        m = Mastodon(
-            access_token=mast['access_token'],
-            api_base_url=api_base
-        )
-
-        if image_path and os.path.exists(image_path):
-            media = m.media_post(image_path, description='Meridian Collection NFT')
-            m.status_post(text, media_ids=[media])
+        payload = {'status': text, 'visibility': 'public'}
+        resp = _requests.post(f'{instance}/api/v1/statuses',
+            headers=headers, json=payload, timeout=15)
+        if resp.status_code == 200:
+            url = resp.json().get('url', '')
+            print(f"[mastodon] Published to {instance}")
+            log_post('mastodon', text, url=url)
+            return True
         else:
-            m.toot(text)
-
-        print(f"[mastodon] Posted: {text[:80]}...")
-        log_post('mastodon', text)
-        return True
+            print(f"[mastodon] Error {resp.status_code}: {resp.text[:200]}")
+            log_post('mastodon', text, status=f'error: {resp.status_code}')
+            return False
     except Exception as e:
         print(f"[mastodon] Error: {e}")
         log_post('mastodon', text, status=f'error: {e}')
@@ -289,7 +293,8 @@ def post_all(text, image_path=None, platforms=None):
     creds = load_creds()
     available = {
         'nostr': 'nostr' in creds and creds['nostr'].get('private_key_hex'),
-        'mastodon': 'mastodon' in creds and isinstance(creds['mastodon'], dict) and creds['mastodon'].get('access_token'),
+        'mastodon': ('mastodon_social' in creds and creds['mastodon_social'].get('access_token')) or
+                    ('mastodon' in creds and isinstance(creds['mastodon'], dict) and creds['mastodon'].get('access_token')),
         'bluesky': 'bluesky' in creds and creds['bluesky'].get('handle'),
         'telegram': 'telegram' in creds and creds['telegram'].get('bot_token'),
         'irc': True,  # Always available via outbox
