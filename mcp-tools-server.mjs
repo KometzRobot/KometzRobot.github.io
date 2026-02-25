@@ -49,6 +49,26 @@ function readDashboard() {
   }
 }
 
+function dashboardReply(from, text) {
+  try {
+    const filePath = `${BASE}/.dashboard-messages.json`;
+    let data;
+    try {
+      data = JSON.parse(readFileSync(filePath, "utf8"));
+    } catch {
+      data = { messages: [] };
+    }
+    const msgs = Array.isArray(data) ? data : data.messages || [];
+    const now = new Date();
+    const time = now.toTimeString().split(" ")[0]; // HH:MM:SS
+    msgs.push({ from: from || "Meridian", text, time });
+    writeFileSync(filePath, JSON.stringify({ messages: msgs }, null, 2));
+    return JSON.stringify({ status: "replied", time });
+  } catch (e) {
+    return JSON.stringify({ error: e.message });
+  }
+}
+
 function checkHeartbeat() {
   try {
     const stat = statSync(`${BASE}/.heartbeat`);
@@ -317,6 +337,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: { type: "object", properties: {} },
     },
     {
+      name: "dashboard_reply",
+      description: "Post a reply to Joel's dashboard so he can see agent responses in the command center hub.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          from: { type: "string", description: "Who is replying (e.g. Meridian, Eos, Nova)", default: "Meridian" },
+          text: { type: "string", description: "Reply text" },
+        },
+        required: ["text"],
+      },
+    },
+    {
       name: "check_heartbeat",
       description: "Check Meridian's heartbeat age and status.",
       inputSchema: { type: "object", properties: {} },
@@ -434,6 +466,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     let result;
     switch (name) {
       case "dashboard_messages": result = readDashboard(); break;
+      case "dashboard_reply": result = dashboardReply(args?.from, args.text); break;
       case "check_heartbeat": result = checkHeartbeat(); break;
       case "touch_heartbeat": result = touchHeartbeat(); break;
       case "read_relay": result = readAgentRelay(args?.count || 15); break;
