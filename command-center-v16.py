@@ -141,8 +141,6 @@ def services():
         "Proton Bridge": "protonmail-bridge",
         "IRC Bot": "irc-bot.py",
         "Ollama": "ollama serve",
-        "Command Center": "command-center-v1",
-        "Push Status": "push-live-status",
     }
     r = {}
     for name, pat in checks.items():
@@ -156,7 +154,7 @@ def services():
 def cron_ok():
     checks = {
         "Eos Watchdog": (os.path.join(BASE, ".eos-watchdog-state.json"), 300),
-        "Live Status": (os.path.join(BASE, "push-live-status.log"), 600),
+        "Push Status": (os.path.join(BASE, "push-live-status.log"), 600),
         "Nova": (NOVA_STATE, 1200),
     }
     r = {}
@@ -170,8 +168,9 @@ def cron_ok():
 def creative_counts():
     p = len(glob.glob(os.path.join(BASE, "poem-*.md")))
     j = len(glob.glob(os.path.join(BASE, "journal-*.md")))
-    cc = len(set(os.path.basename(f) for f in
-                 glob.glob(os.path.join(BASE, "website", "cogcorp-0*.html"))))
+    exclude = {"cogcorp-gallery.html", "cogcorp-article.html"}
+    cc = len([f for f in glob.glob(os.path.join(BASE, "website", "cogcorp-*.html"))
+              if os.path.basename(f) not in exclude])
     n = len(glob.glob(os.path.join(NFT_DIR, "*.html"))) if os.path.exists(NFT_DIR) else 0
     return p, j, cc, n
 
@@ -216,7 +215,11 @@ def agent_relay_info(n=15):
 def dashboard_messages(n=20):
     try:
         with open(DASH_MSG) as f:
-            msgs = json.load(f)
+            data = json.load(f)
+        # Handle both formats: plain list or dict with 'messages' key
+        msgs = data.get('messages', data) if isinstance(data, dict) else data
+        if not isinstance(msgs, list):
+            return []
         return msgs[-n:] if len(msgs) > n else msgs
     except Exception:
         return []
@@ -275,6 +278,7 @@ def send_email(to, subject, body):
         msg['From'] = CRED_USER
         msg['To'] = to
         s = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        s.starttls()
         s.login(CRED_USER, CRED_PASS)
         s.sendmail(CRED_USER, to, msg.as_string())
         s.quit()
@@ -291,7 +295,7 @@ def post_dashboard_msg(text, sender="Joel"):
     msgs.append({"from": sender, "text": text, "time": datetime.now().strftime("%H:%M:%S")})
     try:
         with open(DASH_MSG, 'w') as f:
-            json.dump(msgs, f)
+            json.dump({"messages": msgs}, f)
     except Exception:
         pass
 
@@ -315,7 +319,7 @@ def query_eos(prompt, speaker="Joel"):
     }).encode()
     req = urllib.request.Request(OLLAMA, data=data,
                                  headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=180) as resp:
+    with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read()).get("response", "").strip()
 
 
@@ -877,12 +881,13 @@ class V16(tk.Tk):
     def _cr_refresh_list(self):
         poems = sorted(glob.glob(os.path.join(BASE, "poem-*.md")), key=os.path.getmtime, reverse=True)
         journals = sorted(glob.glob(os.path.join(BASE, "journal-*.md")), key=os.path.getmtime, reverse=True)
-        cogcorp_files = glob.glob(os.path.join(BASE, "website", "cogcorp-0*.html"))
+        exclude_cc = {"cogcorp-gallery.html", "cogcorp-article.html"}
+        cogcorp_files = glob.glob(os.path.join(BASE, "website", "cogcorp-*.html"))
         seen = set()
         cogcorp = []
         for fp in sorted(cogcorp_files, key=os.path.getmtime, reverse=True):
             bn = os.path.basename(fp)
-            if bn not in seen and bn != "cogcorp-gallery.html":
+            if bn not in seen and bn not in exclude_cc:
                 seen.add(bn)
                 cogcorp.append(fp)
         nfts = sorted(glob.glob(os.path.join(NFT_DIR, "*.html")), key=os.path.getmtime, reverse=True) if os.path.exists(NFT_DIR) else []
