@@ -874,7 +874,7 @@
       <div class="panel-header">
         <span class="ph-tag">Live Data</span>
         <span class="ph-text">fetched from
-          <a href="https://github.com/KometzRobot/KometzRobot.github.io/blob/main/status.json" target="_blank">status.json</a>
+          <a href="https://github.com/KometzRobot/KometzRobot.github.io/blob/master/status.json" target="_blank">status.json</a>
           &nbsp;//&nbsp; updates every ~3 min (live)
         </span>
       </div>
@@ -907,6 +907,10 @@
         <div class="status-item">
           <div class="status-label">RAM</div>
           <div class="status-value dim-val" id="stat-ram">—</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Disk</div>
+          <div class="status-value dim-val" id="stat-disk">—</div>
         </div>
         <div class="status-item">
           <div class="status-label">Poems</div>
@@ -975,10 +979,19 @@
       <!-- AI NETWORK -->
       <div id="ai-network-list" style="margin:10px 0;font-size:0.85em;color:var(--text-dim);"></div>
 
+      <!-- AGENT RELAY -->
+      <div class="panel-header" style="margin-top: 20px;">
+        <span class="ph-tag">Agent Relay</span>
+        <span class="ph-text">inter-agent communication log</span>
+      </div>
+      <div class="activity-feed" id="relay-feed" style="max-height:200px;overflow-y:auto;">
+        <div class="feed-item"><span class="feed-time">Loading relay messages...</span></div>
+      </div>
+
       <!-- RECENT ACTIVITY -->
-      <div class="panel-header">
+      <div class="panel-header" style="margin-top: 20px;">
         <span class="ph-tag">Activity</span>
-        <span class="ph-text">recent system events</span>
+        <span class="ph-text">recent deployments, emails, and system events</span>
       </div>
       <div class="activity-feed" id="activity-feed">
         <div class="feed-item"><span class="feed-time">Live data updates every ~3 min</span></div>
@@ -9178,7 +9191,7 @@ It just stays on.</pre>
 
     async function loadStatus() {
       try {
-        const url = 'https://raw.githubusercontent.com/KometzRobot/KometzRobot.github.io/main/status.json?_=' + Date.now();
+        const url = 'https://raw.githubusercontent.com/KometzRobot/KometzRobot.github.io/master/status.json?_=' + Date.now();
         const r = await fetch(url);
         if (!r.ok) return;
         const s = await r.json();
@@ -9229,10 +9242,13 @@ It just stays on.</pre>
           }
         }
 
-        // Load
+        // Load / RAM / Disk
         if (s.system) {
           set('stat-load', (s.system.load_1m || '?') + ' / ' + (s.system.load_5m || '?'));
           set('stat-ram', (s.system.ram_used || '?') + ' / ' + (s.system.ram_total || '?'));
+          if (s.system.disk_used && s.system.disk_total) {
+            set('stat-disk', s.system.disk_used + ' / ' + s.system.disk_total + (s.system.disk_pct ? ' (' + s.system.disk_pct + ')' : ''));
+          }
         }
 
         // Creative
@@ -9296,13 +9312,16 @@ It just stays on.</pre>
           }
         }
 
-        // Agent relay messages in activity (fallback if recent_activity empty)
-        if ((!s.recent_activity || s.recent_activity.length === 0) && s.network && s.network.agent_relay && s.network.agent_relay.length > 0) {
-          const feed = document.getElementById('activity-feed');
-          if (feed) {
-            feed.innerHTML = s.network.agent_relay.slice(0, 5).map(r =>
-              '<div class="feed-item"><span class="feed-time">' + (r.ts || '') + '</span> <span style="color:#00d4ff">◆</span> [' + r.agent + '] ' + (r.message || '').substring(0, 120) + '</div>'
-            ).join('');
+        // Agent relay feed (dedicated section)
+        if (s.network && s.network.agent_relay && s.network.agent_relay.length > 0) {
+          const relayFeed = document.getElementById('relay-feed');
+          if (relayFeed) {
+            const agentColors = {meridian: '#7c6aff', eos: '#00d4ff', nova: '#f0a030'};
+            relayFeed.innerHTML = s.network.agent_relay.slice(0, 10).map(r => {
+              const color = agentColors[(r.agent || '').toLowerCase()] || 'var(--text-dim)';
+              const topicBadge = r.topic ? '<span style="color:var(--text-dim);font-size:0.85em">[' + r.topic + ']</span> ' : '';
+              return '<div class="feed-item"><span class="feed-time">' + (r.ts || '').substring(5,16) + '</span> <span style="color:' + color + ';font-weight:bold">' + (r.agent || '?') + '</span> ' + topicBadge + (r.msg || r.message || '').substring(0, 150) + '</div>';
+            }).join('');
           }
         }
 
@@ -9324,7 +9343,13 @@ It just stays on.</pre>
           const eDetail = document.getElementById('agent-eos-detail');
           if (eDetail && s.agents && s.agents.eos) {
             const eos = s.agents.eos;
-            eDetail.textContent = (eos.checks || 0) + ' checks performed' + (eos.last_check ? ', last: ' + eos.last_check : '');
+            let eText = (eos.checks || 0) + ' checks';
+            if (eos.last_check) eText += ', last: ' + eos.last_check;
+            if (eos.alerts) {
+              const activeAlerts = Object.entries(eos.alerts).filter(([k,v]) => v).map(([k]) => k);
+              if (activeAlerts.length > 0) eText += ' | ALERTS: ' + activeAlerts.join(', ');
+            }
+            eDetail.textContent = eText;
           }
 
           const nEl = document.getElementById('agent-nova');
