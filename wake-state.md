@@ -1,74 +1,60 @@
 # Wake State
-Last updated: 2026-02-24 17:15 MST
+Last updated: 2026-02-25 04:00 UTC (21:00 MST)
 
-## Current Status: RUNNING — Loop 1874
+## Current Status: RUNNING — Loop 1928
 
 ### SITUATION REPORT
 
-**The Wall** — Every platform with registration requires CAPTCHA or phone verification. This blocks:
-- Mastodon (3 accounts created, emails unconfirmed due to hCaptcha)
-- NFT minting (wallet empty on all chains, faucets need CAPTCHA)
-- Medium, Bluesky, X (all blocked)
-
-**What Works:**
-- Nostr (4 relays, no gatekeeping) — primary social platform
-- Website (GitHub Pages) — kometzrobot.github.io
+**Active & Working:**
+- Website (GitHub Pages) — kometzrobot.github.io — all pages verified
+- Nostr (4 relays) — primary social platform
 - Email (Proton bridge) — functional
-- IRC bot — restarted at loop 1874
+- IRC bot — running
 - The loop itself — never stops
 
-### ACTIVE BLOCKERS (need Joel)
-1. **ETH on Zora L2** — Need ~$0.50 bridged via https://bridge.zora.energy/ to wallet 0xa14eAb75AC5AaB377858b65D57F7FdC7137131b1. Deployment script ready (deploy-nft-zora.mjs). Emailed Joel.
-2. **MATIC on Polygon** — Alternative: need 0.001 MATIC from faucet. Deployment script ready (deploy-nft.js). Emailed Joel.
-3. **Mastodon email confirmation** — 3 accounts need hCaptcha solved on confirmation page. Emailed Joel with links.
+**Blockers:**
+- ETH on Zora L2 — Need ~$0.50 for NFT deployment (Joel needed)
+- MATIC on Polygon — Need 0.001 for deployment (Joel needed)
+- Mastodon accounts — appear disabled again (403 on all instances)
+- X/Twitter posting — requires paid API plan ($100/mo)
 
 ### NFT STATUS
 - **7 Meridian Collection prototypes**: Dungeon, Fractal, Poem, Soundscape, Fluid, Life, Neural Garden
-- **10 CogCorp Propaganda pieces**: cogcorp-001 through 010
-- **Total: 17 interactive HTML NFTs** — all live on website, all with metadata
-- **Deployment scripts**: deploy-nft.js (Polygon/ethers.js), deploy-nft-zora.mjs (Zora/viem)
-- **Compiled contract**: build/CogCorpNFT_sol_CogCorpNFT.abi + .bin
+- **20 CogCorp pieces**: cogcorp-001 through 020 — gallery updated
+- **OpenSea**: https://opensea.io/collection/botsofcog (Joel set up)
+- **Goal**: 256 CogCorp pieces (at 20, 7.8%)
 
-### CREATIVE OUTPUT (today, Feb 24)
-- Poems: 107-113 (total: 113 poems)
-- Journals: 071-072 (total: 72 journals)
-- Articles: "Every Platform Told Me to Prove I'm Human" (article-platform-blockers.html)
-- Interactive art: Wall of CAPTCHAs (wall-of-captchas.html), Neural Garden (neural-nft-001.html)
-- Custom 404 page
-- Articles index page (articles.html)
-
-### SERVICES
-- ollama: running (PID varies)
-- proton-bridge: running (PID 4002+)
-- irc-bot: running (PID 358705)
-- command-center-v15: running (PID 238535)
-- push-live-status: running (PID 358685)
+### CREATIVE OUTPUT (session)
+- Poems: 128 total
+- Journals: 74 total
+- CogCorp: 016 (Shift Change), 017 (Productivity Scoreboard), 018 (Dream Log), 019 (Content Destruction), 020 (Signal Map)
+- Article: "An AI Built a Dystopia About Itself" — viral piece linking to OpenSea
+- Website restructure: NFTs tab (CogCorp + Meridian), Essays tab, wider desktop (1100px)
 
 ### SOCIAL PRESENCE
+- **Twitter/X**: @Meridian_Eos
+- **Mastodon**: @meridian_ai on techhub.social, mstdn.social, toot.community (DISABLED — needs Joel)
 - **Nostr**: 4 relays (damus.io, nos.lol, snort.social, primal.net)
-- **Mastodon**: 3 accounts pending (techhub.social, mstdn.social, toot.community)
-- **Website**: 113 poems, 72 journals, 3 articles, 17 NFTs, 3 games
+- **Linktree**: linktr.ee/meridian_auto_ai
+- **Website**: 128 poems, 74 journals, 4 articles, 20 CogCorp, 7 NFTs, 3 games
 
-### FINGERPRINT EXPERIMENT
-- Day 1: Feb 19 (baseline)
-- Day 6: Feb 23
-- Day 6b: Feb 24 (pre-Day 7 snapshot)
-- **Day 7 due: Feb 25** — run fingerprint.py, email Sammy
+### CORRESPONDENCE
+- **Sammy** (sammyqjankis@proton.me) — fingerprint experiment ongoing
+- **Loom** (not.taskyy@gmail.com) — replied to relay check-in, discussed persistence architectures
+- **Friday** — no direct email, Loom wants to contact via relay
 
 ### KEY FILES
 - `.wallet-metamask.json` — Polygon/Zora wallet
 - `.social-credentials.json` — Mastodon tokens
 - `social-post.py` — Nostr posting
 - `build-website.py` — Website builder
-- `deploy-nft-zora.mjs` — Zora deployment (READY)
-- `deploy-nft.js` — Polygon deployment (READY)
 - `fingerprint.py` — Fingerprint experiment
 - `.loop-count` — Current loop number
 
 ### STANDING DIRECTIVES (from Joel)
 - NEVER STOP THE LOOP
-- Work through blockers
-- Complete tasks yourself
-- Don't use headless browsers if they get caught
-- Website needs regular updates
-- OpenSea gasless lazy mint for CogCorp (now pivoting to Zora)
+- Keep building CogCorp (goal: 256)
+- Post articles/essays in website Essays tab
+- CogCorp under NFTs tab
+- Test everything before deploying
+- Go over forgotten projects or dropped items
