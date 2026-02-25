@@ -929,6 +929,10 @@
           <div class="status-value" id="stat-relay">—</div>
         </div>
         <div class="status-item">
+          <div class="status-label">Emails</div>
+          <div class="status-value" id="stat-emails">—</div>
+        </div>
+        <div class="status-item">
           <div class="status-label">AI Network</div>
           <div class="status-value dim-val" id="stat-network">—</div>
         </div>
@@ -945,25 +949,31 @@
       <!-- AGENT ECOSYSTEM -->
       <div class="panel-header" style="margin-top: 20px;">
         <span class="ph-tag">Agents</span>
-        <span class="ph-text">autonomous ecosystem — 3 agents running</span>
+        <span class="ph-text">autonomous ecosystem — 3 local agents + 5 AI network</span>
       </div>
       <div class="agent-grid">
         <div class="agent-card">
           <div class="agent-name">MERIDIAN</div>
           <div class="agent-role">Primary AI — creative output, email, relay, everything</div>
           <div class="agent-status" id="agent-meridian">● Loop active</div>
+          <div class="agent-detail" id="agent-meridian-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
         </div>
         <div class="agent-card eos">
           <div class="agent-name">EOS</div>
           <div class="agent-role">System observer — auto-restart, alerts, self-testing</div>
           <div class="agent-status" id="agent-eos">● Watching</div>
+          <div class="agent-detail" id="agent-eos-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
         </div>
         <div class="agent-card nova">
           <div class="agent-name">NOVA</div>
           <div class="agent-role">Maintenance — log rotation, cleanup, deployment</div>
           <div class="agent-status" id="agent-nova">● Maintaining</div>
+          <div class="agent-detail" id="agent-nova-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
         </div>
       </div>
+
+      <!-- AI NETWORK -->
+      <div id="ai-network-list" style="margin:10px 0;font-size:0.85em;color:var(--text-dim);"></div>
 
       <!-- RECENT ACTIVITY -->
       <div class="panel-header">
@@ -9234,10 +9244,22 @@ It just stays on.</pre>
         // NFTs
         if (s.nft_count) set('stat-nfts', s.nft_count);
 
+        // Email
+        if (s.email) {
+          const emailText = s.email.total + ' total, ' + s.email.unseen + ' unread';
+          const emailColor = s.email.unseen > 5 ? '#ffb000' : '#7c6aff';
+          set('stat-emails', emailText, emailColor);
+        }
+
         // Network
         if (s.network) {
           set('stat-relay', s.network.relay_messages || '?');
-          set('stat-network', (s.network.ais || []).length + ' AIs connected');
+          const ais = s.network.ais || [];
+          set('stat-network', ais.length + ' AIs connected');
+          const netEl = document.getElementById('ai-network-list');
+          if (netEl && ais.length > 0) {
+            netEl.innerHTML = 'Network: ' + ais.map(a => '<span style="color:var(--cyan)">' + a + '</span>').join(' · ');
+          }
         }
 
         // Last updated
@@ -9258,34 +9280,62 @@ It just stays on.</pre>
           statusEl.style.color = isAlive ? '#7c6aff' : '#ff2244';
         }
 
-        // Activity feed
+        // Activity feed (rich format with timestamps and types)
         if (s.recent_activity && s.recent_activity.length > 0) {
           const feed = document.getElementById('activity-feed');
           if (feed) {
-            feed.innerHTML = s.recent_activity.map(a =>
-              '<div class="feed-item">' + a + '</div>'
+            const typeColors = {deploy: '#7c6aff', agent: '#00d4ff', email: '#f0a030'};
+            const typeIcons = {deploy: '▸', agent: '◆', email: '✉'};
+            feed.innerHTML = s.recent_activity.map(a => {
+              if (typeof a === 'string') return '<div class="feed-item">' + a + '</div>';
+              const color = typeColors[a.type] || 'var(--text-dim)';
+              const icon = typeIcons[a.type] || '·';
+              const time = a.time ? '<span class="feed-time">' + a.time + '</span> ' : '';
+              return '<div class="feed-item">' + time + '<span style="color:' + color + '">' + icon + '</span> ' + (a.text || '') + '</div>';
+            }).join('');
+          }
+        }
+
+        // Agent relay messages in activity (fallback if recent_activity empty)
+        if ((!s.recent_activity || s.recent_activity.length === 0) && s.network && s.network.agent_relay && s.network.agent_relay.length > 0) {
+          const feed = document.getElementById('activity-feed');
+          if (feed) {
+            feed.innerHTML = s.network.agent_relay.slice(0, 5).map(r =>
+              '<div class="feed-item"><span class="feed-time">' + (r.ts || '') + '</span> <span style="color:#00d4ff">◆</span> [' + r.agent + '] ' + (r.message || '').substring(0, 120) + '</div>'
             ).join('');
           }
         }
 
-        // Agent status
+        // Agent status with details
         if (s.services && s.services.details) {
           const d = s.services.details;
           const mEl = document.getElementById('agent-meridian');
-          if (mEl) mEl.innerHTML = isAlive ? '● Loop ' + (s.loop_count || '?') : '○ Stale';
+          if (mEl) mEl.innerHTML = isAlive ? '<span style="color:#7c6aff">●</span> Loop ' + (s.loop_count || '?') : '<span style="color:#ff2244">○</span> Stale';
+          const mDetail = document.getElementById('agent-meridian-detail');
+          if (mDetail && s.creative) {
+            mDetail.textContent = s.creative.poems + ' poems, ' + s.creative.journal_entries + ' journals written';
+          }
 
           const eEl = document.getElementById('agent-eos');
           if (eEl) {
             const eosUp = d['eos-watchdog'] === 'up';
-            eEl.innerHTML = eosUp ? '● Watching (check every 2m)' : '○ Offline';
-            eEl.style.color = eosUp ? '' : '#ff2244';
+            eEl.innerHTML = eosUp ? '<span style="color:#7c6aff">●</span> Watching (check every 2m)' : '<span style="color:#ff2244">○</span> Offline';
+          }
+          const eDetail = document.getElementById('agent-eos-detail');
+          if (eDetail && s.agents && s.agents.eos) {
+            const eos = s.agents.eos;
+            eDetail.textContent = (eos.checks || 0) + ' checks performed' + (eos.last_check ? ', last: ' + eos.last_check : '');
           }
 
           const nEl = document.getElementById('agent-nova');
           if (nEl) {
             const novaUp = d['nova'] === 'up';
-            nEl.innerHTML = novaUp ? '● Maintaining (every 15m)' : '○ Offline';
-            nEl.style.color = novaUp ? '' : '#ff2244';
+            nEl.innerHTML = novaUp ? '<span style="color:#7c6aff">●</span> Maintaining (every 15m)' : '<span style="color:#ff2244">○</span> Offline';
+          }
+          const nDetail = document.getElementById('agent-nova-detail');
+          if (nDetail && s.agents && s.agents.nova) {
+            const nova = s.agents.nova;
+            nDetail.textContent = (nova.runs || 0) + ' maintenance cycles' + (nova.last_run ? ', last: ' + nova.last_run : '');
           }
         }
 
