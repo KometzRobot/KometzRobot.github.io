@@ -43,6 +43,16 @@ fi
 FAILURES=""
 RESTARTS=""
 
+# ── Check Web Dashboard ───────────────────────────────────────────
+if ! pgrep -f "command-center-web.py" > /dev/null; then
+    log "ALERT: web dashboard is NOT running. Restarting..."
+    nohup $PYTHON "$WORKING_DIR/command-center-web.py" >> /tmp/command-center-web.log 2>&1 &
+    log "Web Dashboard restarted (PID: $!)"
+    RESTARTS="${RESTARTS}Web Dashboard (PID $!)\n"
+else
+    log "OK: web dashboard is running."
+fi
+
 # ── Check Command Center v15 ──────────────────────────────────────
 if ! pgrep -f "command-center-v1[56].py" > /dev/null; then
     log "ALERT: command-center is NOT running. Restarting v16..."

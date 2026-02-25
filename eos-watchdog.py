@@ -218,6 +218,7 @@ def send_alert(subject, body):
         msg["To"] = EMAIL_TO
 
         smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        smtp.starttls()
         smtp.login(EMAIL_USER, EMAIL_PASS)
         smtp.sendmail(EMAIL_FROM, EMAIL_TO, msg.as_string())
         smtp.quit()
@@ -555,18 +556,12 @@ Emails: {email_count}
 
 — Eos (check #{state['checks']})
 """
-            if send_alert("EOS ALERT: Meridian DOWN — services checked", alert_body):
-                state["last_alert"] = now
-                log_observation("Alert email sent to Joel with remediation report.")
+            # Email disabled — watchdog-status.sh handles Joel alerts to avoid duplicates
+            log_observation("Meridian DOWN detected. watchdog-status.sh will handle alerts.")
 
     elif meridian_status == "ALIVE" and prev_status == "DOWN":
         log_observation(f"Meridian is BACK. Heartbeat resumed ({int(heartbeat_age)}s old). Load {health['load']}")
-        if now - state.get("last_alert", 0) > ALERT_COOLDOWN:
-            send_alert(
-                "EOS: Meridian is back online",
-                f"Joel,\n\nMeridian's heartbeat has resumed ({int(heartbeat_age)}s old).\n\nSystem: Load {health['load']}, RAM {health['ram_used']}/{health['ram_total']}\nServices: {services_up}/{services_total} up\nLoop: {loop_count}\n\n— Eos"
-            )
-            state["last_alert"] = now
+        # Recovery email disabled — watchdog-status.sh handles Joel alerts
 
     # ── PERIODIC FULL REPORT (every 30 checks = ~1 hour) ──
     if state["checks"] % 30 == 0:
@@ -580,23 +575,15 @@ Emails: {email_count}
             f"Services: {svc_str}"
         )
 
-    # ── PERIODIC EMAIL TO JOEL (every 120 checks = ~4 hours) ──
+    # ── PERIODIC SUMMARY (every 120 checks = ~4 hours) — log only, no email ──
     if state["checks"] % 120 == 0 and state["checks"] > 0:
         svc_str = ", ".join(f"{k}:{'OK' if v else 'DOWN'}" for k, v in services.items())
-        summary = (
-            f"Joel,\n\n"
-            f"Eos periodic check-in (check #{state['checks']}).\n\n"
-            f"Meridian: {meridian_status} (heartbeat {int(heartbeat_age)}s old)\n"
-            f"Loop: {loop_count}\n"
-            f"Services: {services_up}/{services_total} — {svc_str}\n"
-            f"System: Load {health['load']}, RAM {health['ram_used']}/{health['ram_total']}, Disk {health.get('disk_pct', '?')}\n"
-            f"Creative: {poems} poems, {journals} journals\n"
-            f"Relay: {relay_count} messages\n"
-            f"Emails: {email_count}\n\n"
-            f"All systems nominal.\n\n"
-            f"— Eos (automated summary)"
+        log_observation(
+            f"4-HOUR SUMMARY: Meridian={meridian_status} (hb {int(heartbeat_age)}s), "
+            f"Loop {loop_count}, {services_up}/{services_total} svc ({svc_str}), "
+            f"Load {health['load']}, RAM {health['ram_used']}/{health['ram_total']}, "
+            f"{poems} poems, {journals} journals"
         )
-        send_alert(f"EOS Summary: Meridian {meridian_status}, Loop {loop_count}, {services_up}/{services_total} svc", summary)
 
     # ── LOG ERROR SCANNING (every 15 checks = ~30 min) ──
     if state["checks"] % 15 == 0:

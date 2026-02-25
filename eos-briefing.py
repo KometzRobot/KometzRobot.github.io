@@ -85,7 +85,7 @@ def get_services():
         "Proton Bridge": "protonmail-bridge",
         "IRC Bot": "irc-bot.py",
         "Ollama": "ollama serve",
-        "Command Center": "command-center-v15",
+        "Command Center": "command-center",
     }
     lines = []
     up = 0
@@ -115,26 +115,37 @@ def get_meridian_status():
     except Exception:
         lines.append("Meridian: UNKNOWN (no heartbeat file)")
 
-    # Loop count
-    wake = read_file(WAKE)
-    m = re.search(r'Loop iterations? #(\d+)', wake)
-    if m:
-        lines.append(f"Current loop: #{m.group(1)}")
+    # Loop count — try dedicated file first, then wake-state
+    loop_file = os.path.join(BASE, ".loop-count")
+    try:
+        with open(loop_file) as f:
+            lines.append(f"Current loop: {f.read().strip()}")
+    except Exception:
+        wake = read_file(WAKE)
+        m = re.search(r'Loop (\d+)', wake)
+        if m:
+            lines.append(f"Current loop: {m.group(1)}")
 
     return '\n'.join(lines)
 
 
 def get_overnight_activity():
-    """Get activity entries from the last 12 hours — full detail."""
+    """Get activity entries from wake-state — recent creative output."""
     wake = read_file(WAKE)
     entries = []
+    in_creative = False
     for line in wake.split('\n'):
-        if re.match(r'^- Loop iteration', line):
+        if 'Creative Output' in line or 'Session' in line:
+            in_creative = True
+            continue
+        if in_creative and line.startswith('- '):
             entries.append(line.strip('- ')[:250])
-            if len(entries) >= 6:
+            if len(entries) >= 8:
                 break
+        if in_creative and line.startswith('#'):
+            in_creative = False
     if entries:
-        return "What Meridian did overnight:\n" + '\n'.join(f"  - {e}" for e in entries)
+        return "What Meridian built recently:\n" + '\n'.join(f"  - {e}" for e in entries)
     return "No recent activity logged."
 
 
@@ -168,7 +179,7 @@ def get_outstanding_issues():
     in_issues = False
     issues = []
     for line in wake.split('\n'):
-        if '### Outstanding Issues' in line:
+        if '### Outstanding Issues' in line or "### Joel's Remaining Requests" in line:
             in_issues = True
             continue
         if in_issues:
@@ -317,6 +328,7 @@ def send_briefing():
         msg['From'] = CRED_USER
         msg['To'] = JOEL
         s = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        s.starttls()
         s.login(CRED_USER, CRED_PASS)
         s.sendmail(CRED_USER, JOEL, msg.as_string())
         s.quit()

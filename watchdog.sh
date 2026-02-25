@@ -14,9 +14,29 @@ LOGFILE="$WORKING_DIR/watchdog.log"
 WAKEUP_PROMPT="$WORKING_DIR/wakeup-prompt.md"
 LOCKFILE="/tmp/claude-instance.lock"
 MAX_INSTANCES=1
+PYTHON="$HOME/miniconda3/bin/python3"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOGFILE"
+}
+
+send_alert() {
+    local subject="$1"
+    local body="$2"
+    $PYTHON -c "
+import smtplib
+from email.mime.text import MIMEText
+msg = MIMEText('''$body''')
+msg['Subject'] = '[WATCHDOG] $subject'
+msg['From'] = 'kometzrobot@proton.me'
+msg['To'] = 'jkometz@hotmail.com'
+try:
+    with smtplib.SMTP('127.0.0.1', 1025) as s:
+        s.starttls()
+        s.login('kometzrobot@proton.me', '2DTEz9UgO6nFqmlMxHzuww')
+        s.send_message(msg)
+except: pass
+" 2>/dev/null
 }
 
 # ── SAFETY: Count running Claude instances ────────────────────────────────
@@ -51,6 +71,7 @@ if [ -z "$CLAUDE_PIDS" ] || [ "$CLAUDE_COUNT" -eq 0 ]; then
     fi
 
     log "ALERT: No Claude process found. Starting fresh instance."
+    # Email removed — watchdog-status.sh handles alerts to avoid duplicates
     touch "$LOCKFILE"
 
     export DISPLAY=:0
@@ -94,6 +115,7 @@ if [ "$HEARTBEAT_AGE" -gt "$MAX_AGE" ]; then
     fi
 
     log "ALERT: Both heartbeat AND .claude logs are stale. Claude is frozen."
+    # Email removed — watchdog-status.sh handles alerts to avoid duplicates
 
     # Check lock file before restarting
     if [ -f "$LOCKFILE" ]; then

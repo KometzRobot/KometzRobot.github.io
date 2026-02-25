@@ -67,7 +67,7 @@ def query_ollama(prompt, max_tokens=300, temperature=0.9):
     try:
         req = urllib.request.Request(OLLAMA_URL, data=data,
                                      headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:
             result = json.loads(resp.read())
             return result.get("response", "").strip()
     except Exception as e:

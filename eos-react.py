@@ -38,7 +38,7 @@ BASE = "/home/joel/autonomous-ai"
 OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 MODEL = "eos-7b"
 STATE_FILE = os.path.join(BASE, ".eos-react-state.json")
-MAX_STEPS = 6  # Max reason-act cycles per run
+MAX_STEPS = 3  # Max reason-act cycles per run (reduced from 6 to prevent timeouts)
 
 # --- Tool implementations ---
 
@@ -268,7 +268,7 @@ def query_ollama(prompt, system=None):
             data=json.dumps(payload).encode(),
             headers={"Content-Type": "application/json"},
         )
-        resp = urllib.request.urlopen(req, timeout=60)
+        resp = urllib.request.urlopen(req, timeout=30)
         data = json.loads(resp.read())
         return data.get("response", "").strip()
     except Exception as e:

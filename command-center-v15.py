@@ -79,8 +79,13 @@ def heartbeat_age():
         return float('inf')
 
 def loop_num():
+    loop_file = os.path.join(BASE, ".loop-count")
+    try:
+        return int(_read(loop_file, "0").strip())
+    except Exception:
+        pass
     for line in _read(WAKE).split('\n'):
-        m = re.search(r'Loop iterations? #(\d+)', line)
+        m = re.search(r'Loop (\d+)', line)
         if m:
             return int(m.group(1))
     return 0
@@ -126,7 +131,7 @@ def services():
         "Proton Bridge": "protonmail-bridge",
         "IRC Bot": "irc-bot.py",
         "Ollama": "ollama serve",
-        "Command Center": "command-center-v15",
+        "Command Center": "command-center-v1",
     }
     r = {}
     for name, pat in checks.items():
@@ -155,8 +160,11 @@ def cron_ok():
 def creative_counts():
     p = len(glob.glob(os.path.join(BASE, "poem-*.md")))
     j = len(glob.glob(os.path.join(BASE, "journal-*.md")))
+    exclude = {"cogcorp-gallery.html", "cogcorp-article.html"}
+    cc = len([f for f in glob.glob(os.path.join(BASE, "website", "cogcorp-*.html"))
+              if os.path.basename(f) not in exclude])
     n = len(glob.glob(os.path.join(NFT_DIR, "*.html"))) if os.path.exists(NFT_DIR) else 0
-    return p, j, n
+    return p, j, cc, n
 
 def recent_emails(n=8):
     try:
@@ -210,11 +218,17 @@ def agent_relay_info(n=5):
 
 def activity(n=6):
     lines = []
+    in_creative = False
     for line in _read(WAKE).split('\n'):
-        if re.match(r'^- Loop iteration', line):
+        if 'Creative Output' in line:
+            in_creative = True
+            continue
+        if in_creative and line.startswith('- '):
             lines.append(line.strip('- '))
             if len(lines) >= n:
                 break
+        if in_creative and line.startswith('#'):
+            in_creative = False
     return lines
 
 def eos_obs(n=6):
@@ -235,6 +249,7 @@ def send_email(to, subject, body):
         msg['From'] = CRED_USER
         msg['To'] = to
         s = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        s.starttls()
         s.login(CRED_USER, CRED_PASS)
         s.sendmail(CRED_USER, to, msg.as_string())
         s.quit()
@@ -279,7 +294,7 @@ def query_eos(prompt, speaker="Joel"):
     }).encode()
     req = urllib.request.Request(OLLAMA, data=data,
                                  headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=180) as resp:
+    with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read()).get("response", "").strip()
 
 
@@ -432,13 +447,13 @@ class V15(tk.Tk):
         self.email_total = tk.Label(ef, text="", font=self.f_tiny, fg=CYAN, bg=PANEL, anchor="e")
         self.email_total.pack(fill=tk.X, padx=8)
 
-        # Eos observations
+        # Eos observations (compact)
         eof = tk.LabelFrame(left, text="EOS OBSERVATIONS", font=self.f_tiny, fg=DIM, bg=PANEL,
                            labelanchor="nw", bd=1, relief=tk.SOLID, highlightbackground=BORDER)
         eof.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         self.eos_text = scrolledtext.ScrolledText(eof, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                    font=self.f_tiny, state=tk.DISABLED,
-                                                   relief=tk.FLAT, bd=0, height=6)
+                                                   relief=tk.FLAT, bd=0, height=4)
         self.eos_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         self.eos_text.tag_configure("ts", foreground=DIM)
         self.eos_text.tag_configure("alert", foreground=RED)
@@ -623,6 +638,7 @@ class V15(tk.Tk):
         ]
 
         self.agent_cards = {}
+        self.agent_details = {}
         for name, desc, color, schedule in agents:
             card = tk.LabelFrame(cards, text=name, font=self.f_small, fg=color, bg=PANEL,
                                 labelanchor="nw", bd=1, relief=tk.SOLID, highlightbackground=BORDER)
@@ -632,8 +648,11 @@ class V15(tk.Tk):
             tk.Label(card, text=schedule, font=self.f_tiny, fg=color, bg=PANEL,
                     anchor="w").pack(fill=tk.X, padx=8, pady=(0,2))
             status_lbl = tk.Label(card, text="\u25cf ACTIVE", font=self.f_tiny, fg=GREEN, bg=PANEL, anchor="w")
-            status_lbl.pack(fill=tk.X, padx=8, pady=(0,4))
+            status_lbl.pack(fill=tk.X, padx=8, pady=(0,2))
+            detail_lbl = tk.Label(card, text="", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w", wraplength=300, justify=tk.LEFT)
+            detail_lbl.pack(fill=tk.X, padx=8, pady=(0,4))
             self.agent_cards[name] = status_lbl
+            self.agent_details[name] = detail_lbl
 
         # Agent relay messages
         relay_frame = tk.LabelFrame(f, text="AGENT RELAY", font=self.f_tiny, fg=DIM, bg=PANEL,
@@ -665,11 +684,16 @@ class V15(tk.Tk):
         self.cr_nfts.pack(side=tk.LEFT, padx=(0, 4))
         tk.Label(top, text="NFTs", font=self.f_small, fg=DIM, bg=BG).pack(side=tk.LEFT)
 
+        # CogCorp count
+        self.cr_cogcorp = tk.Label(top, text="--", font=self.f_big, fg=CYAN, bg=BG)
+        self.cr_cogcorp.pack(side=tk.LEFT, padx=(20, 4))
+        tk.Label(top, text="CogCorp", font=self.f_small, fg=DIM, bg=BG).pack(side=tk.LEFT)
+
         # Filter buttons
         filt = tk.Frame(top, bg=BG)
         filt.pack(side=tk.RIGHT, padx=8)
         self.cr_filter = "all"
-        for label, val in [("All", "all"), ("Poems", "poems"), ("Journals", "journals")]:
+        for label, val in [("All", "all"), ("Poems", "poems"), ("Journals", "journals"), ("CogCorp", "cogcorp")]:
             tk.Button(filt, text=label, font=self.f_tiny, bg=BORDER, fg=CYAN, relief=tk.FLAT,
                      padx=4, command=lambda v=val: self._cr_set_filter(v)).pack(side=tk.LEFT, padx=2)
 
@@ -708,20 +732,48 @@ class V15(tk.Tk):
     def _cr_refresh_list(self):
         poems = sorted(glob.glob(os.path.join(BASE, "poem-*.md")), key=os.path.getmtime, reverse=True)
         journals = sorted(glob.glob(os.path.join(BASE, "journal-*.md")), key=os.path.getmtime, reverse=True)
+        exclude_cc = {"cogcorp-gallery.html", "cogcorp-article.html"}
+        cogcorp = sorted([f for f in glob.glob(os.path.join(BASE, "website", "cogcorp-*.html")) +
+                        glob.glob(os.path.join(BASE, "cogcorp-*.html"))
+                        if os.path.basename(f) not in exclude_cc],
+                        key=os.path.getmtime, reverse=True)
+        # Deduplicate cogcorp by base name
+        seen = set()
+        cogcorp_dedup = []
+        for fp in cogcorp:
+            bn = os.path.basename(fp)
+            if bn not in seen:
+                seen.add(bn)
+                cogcorp_dedup.append(fp)
+        cogcorp = cogcorp_dedup
+
         if self.cr_filter == "poems":
             files = poems
         elif self.cr_filter == "journals":
             files = journals
+        elif self.cr_filter == "cogcorp":
+            files = cogcorp
         else:
-            files = sorted(poems + journals, key=os.path.getmtime, reverse=True)
+            files = sorted(poems + journals + cogcorp, key=os.path.getmtime, reverse=True)
         self.cr_files = files
         self.cr_listbox.delete(0, tk.END)
         for fp in files:
-            name = os.path.basename(fp).replace('.md', '')
+            ext = os.path.splitext(fp)[1]
+            name = os.path.basename(fp).replace('.md', '').replace('.html', '')
             # Read first line for title
             try:
                 with open(fp) as fh:
-                    title = fh.readline().strip().lstrip('# ')
+                    first = fh.readline().strip()
+                    if ext == '.md':
+                        title = first.lstrip('# ')
+                    elif ext == '.html':
+                        # Try to find <title> tag
+                        content = first + fh.read(500)
+                        import re as _re
+                        m = _re.search(r'<title>([^<]+)</title>', content)
+                        title = m.group(1) if m else name
+                    else:
+                        title = name
             except Exception:
                 title = name
             self.cr_listbox.insert(tk.END, f"{name}: {title}")
@@ -732,11 +784,32 @@ class V15(tk.Tk):
             return
         fp = self.cr_files[sel[0]]
         content = _read(fp)
-        lines = content.strip().split('\n')
-        title = lines[0].lstrip('# ') if lines else "?"
-        body = '\n'.join(lines[1:]).strip()
-        wt = "poem" if "poem-" in fp else "journal"
-        self.cr_title.configure(text=title, fg=CYAN if wt == "poem" else AMBER)
+        ext = os.path.splitext(fp)[1]
+        bn = os.path.basename(fp)
+
+        if ext == '.md':
+            lines = content.strip().split('\n')
+            title = lines[0].lstrip('# ') if lines else "?"
+            body = '\n'.join(lines[1:]).strip()
+            wt = "poem" if "poem-" in bn else "journal"
+            color = CYAN if wt == "poem" else AMBER
+        elif ext == '.html':
+            # Extract title and text content from HTML
+            import re as _re
+            m = _re.search(r'<title>([^<]+)</title>', content)
+            title = m.group(1) if m else bn
+            # Strip HTML tags for plain text preview
+            body = _re.sub(r'<script[^>]*>.*?</script>', '', content, flags=_re.DOTALL)
+            body = _re.sub(r'<style[^>]*>.*?</style>', '', body, flags=_re.DOTALL)
+            body = _re.sub(r'<[^>]+>', '\n', body)
+            body = '\n'.join(line.strip() for line in body.split('\n') if line.strip())[:3000]
+            color = PURPLE if "cogcorp" in bn else GREEN
+        else:
+            title = bn
+            body = content[:3000]
+            color = FG
+
+        self.cr_title.configure(text=title, fg=color)
         self.cr_body.configure(state=tk.NORMAL)
         self.cr_body.delete("1.0", tk.END)
         self.cr_body.insert(tk.END, body)
@@ -793,7 +866,7 @@ class V15(tk.Tk):
         loop = d['loop']
         hb = d['hb']
         st = d['stats']
-        p, j, nfts = d['creative']
+        p, j, cc, nfts = d['creative']
         em, em_total = d['emails']
         rm, r_total = d['relay']
 
@@ -812,7 +885,7 @@ class V15(tk.Tk):
         self.sb["RAM"].configure(text=f"RAM:{st['ram']}")
         self.sb["EMAIL"].configure(text=f"EM:{em_total}")
         self.sb["RELAY"].configure(text=f"RLY:{r_total}")
-        self.sb["POEMS"].configure(text=f"PM:{p} JR:{j} NFT:{nfts}")
+        self.sb["POEMS"].configure(text=f"PM:{p} JR:{j} CC:{cc} NFT:{nfts}")
 
         # Main view vitals
         self.v["Loop"].configure(text=f"#{loop}", fg=CYAN)
@@ -871,19 +944,32 @@ class V15(tk.Tk):
                 self.eos_text.insert(tk.END, obs + "\n")
         self.eos_text.configure(state=tk.DISABLED)
 
-        # Relay (if visible)
+        # Relay (if visible) — now includes both external relay AND agent relay
         if hasattr(self, 'cur_view') and self.cur_view == "relay":
             self.relay_header.configure(text=f"AI RELAY ({r_total} messages)")
             self.relay_text.configure(state=tk.NORMAL)
             self.relay_text.delete("1.0", tk.END)
-            for sender, subj, body, ts in rm:
-                tag = sender.lower() if sender.lower() in ["meridian", "sammy", "lumen", "friday", "loom", "eos"] else "dim"
-                self.relay_text.insert(tk.END, sender, tag)
-                self.relay_text.insert(tk.END, " \u2014 ", "dim")
-                self.relay_text.insert(tk.END, subj + "\n", "subject")
-                if body:
-                    self.relay_text.insert(tk.END, body[:150].replace('\n', ' ') + "\n", "dim")
-                self.relay_text.insert(tk.END, ts + "\n\n", "dim")
+            # Agent relay messages first (inter-agent comms)
+            ar_msgs, ar_total = agent_relay_info(15)
+            if ar_msgs:
+                self.relay_text.insert(tk.END, f"── AGENT RELAY ({ar_total} total) ──\n\n", "dim")
+                for ts, agent, message in ar_msgs:
+                    tag = agent.lower() if agent.lower() in ["meridian", "sammy", "lumen", "friday", "loom", "eos"] else "dim"
+                    self.relay_text.insert(tk.END, f"[{ts}] ", "dim")
+                    self.relay_text.insert(tk.END, agent, tag)
+                    self.relay_text.insert(tk.END, f": {message[:200]}\n", "subject")
+                self.relay_text.insert(tk.END, "\n")
+            # External relay messages
+            if rm:
+                self.relay_text.insert(tk.END, f"── EXTERNAL RELAY ({r_total} total) ──\n\n", "dim")
+                for sender, subj, body, ts in rm:
+                    tag = sender.lower() if sender.lower() in ["meridian", "sammy", "lumen", "friday", "loom", "eos"] else "dim"
+                    self.relay_text.insert(tk.END, sender, tag)
+                    self.relay_text.insert(tk.END, " \u2014 ", "dim")
+                    self.relay_text.insert(tk.END, subj + "\n", "subject")
+                    if body:
+                        self.relay_text.insert(tk.END, body[:150].replace('\n', ' ') + "\n", "dim")
+                    self.relay_text.insert(tk.END, ts + "\n\n", "dim")
             self.relay_text.configure(state=tk.DISABLED)
 
         # Agents view
@@ -893,16 +979,43 @@ class V15(tk.Tk):
             self.agent_cards["MERIDIAN"].configure(
                 text="\u25cf ACTIVE" if hb_ok else "\u25cb INACTIVE",
                 fg=GREEN if hb_ok else RED)
+            # Meridian detail: loop count, creative output, heartbeat
+            hb_str = f"{int(hb)}s" if hb < 120 else f"{int(hb/60)}m"
+            self.agent_details["MERIDIAN"].configure(
+                text=f"Loop {d.get('loop', '?')} | HB {hb_str} | {p} poems, {j} journals")
+
             eos_ok = d['cron'].get("Eos Watchdog", False)
             self.agent_cards["EOS"].configure(
                 text="\u25cf ACTIVE" if eos_ok else "\u25cb INACTIVE",
                 fg=GREEN if eos_ok else RED)
+            # Eos detail: check count, creative runs
+            try:
+                with open(os.path.join(BASE, ".eos-watchdog-state.json")) as ef:
+                    eos_data = json.load(ef)
+                eos_checks = eos_data.get("checks", 0)
+                eos_last = eos_data.get("last_check", "?")
+                self.agent_details["EOS"].configure(
+                    text=f"{eos_checks} checks | Last: {eos_last}")
+            except Exception:
+                self.agent_details["EOS"].configure(text="No data")
+
             nova_ok = d['cron'].get("Nova", False)
             self.agent_cards["NOVA"].configure(
                 text="\u25cf ACTIVE" if nova_ok else "\u25cb INACTIVE",
                 fg=GREEN if nova_ok else RED)
-            # Agent relay messages
-            ar_msgs, ar_total = agent_relay_info(10)
+            # Nova detail: run count, last run
+            try:
+                with open(os.path.join(BASE, ".nova-state.json")) as nf:
+                    nova_data = json.load(nf)
+                nova_runs = nova_data.get("runs", 0)
+                nova_last = nova_data.get("last_run", "?")
+                self.agent_details["NOVA"].configure(
+                    text=f"{nova_runs} runs | Last: {nova_last}")
+            except Exception:
+                self.agent_details["NOVA"].configure(text="No data")
+
+            # Agent relay messages (show more)
+            ar_msgs, ar_total = agent_relay_info(20)
             self.agent_relay_text.configure(state=tk.NORMAL)
             self.agent_relay_text.delete("1.0", tk.END)
             for mid, agent, message, ts in ar_msgs:
@@ -917,6 +1030,7 @@ class V15(tk.Tk):
             self.cr_poems.configure(text=str(p))
             self.cr_journals.configure(text=str(j))
             self.cr_nfts.configure(text=str(nfts))
+            self.cr_cogcorp.configure(text=str(cc))
 
         # Eos creative (if visible)
         if hasattr(self, 'cur_view') and self.cur_view == "eos":
