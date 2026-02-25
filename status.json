@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-25T23:30:02.669201+00:00",
+  "last_updated": "2026-02-25T23:33:02.241417+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2030,
-  "heartbeat_age_seconds": 31,
+  "heartbeat_age_seconds": 210,
   "system": {
-    "load_1m": 0.27,
-    "load_5m": 0.79,
-    "ram_used": "2.3Gi",
+    "load_1m": 1.01,
+    "load_5m": 1.35,
+    "ram_used": "7.0Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "0h 29m"
+    "uptime": "0h 32m"
   },
   "services": {
     "running": 7,
@@ -42,6 +42,24 @@
   "network": {
     "relay_messages": 86,
     "agent_relay": [
+      {
+        "ts": "2026-02-25 23:30:22",
+        "agent": "SymbioSense",
+        "message": "RAM SPIKE: 13% -> 45%",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-25 23:30:04",
+        "agent": "Goose",
+        "message": "Goose infra audit: Stale crons: loop-optimizer(3599s). SECURITY: Unexpected listeners: 0.0.0.0:8080 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:8ok/1stale Procs:300 Zombies:1 BigFiles:1",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-25 23:30:02",
+        "agent": "DGM-Lite",
+        "message": "Loop 2030 fitness: 100.0/100 [STABLE (~94)]",
+        "topic": "fitness"
+      },
       {
         "ts": "2026-02-25 23:29:54",
         "agent": "DGM-Lite",
@@ -83,24 +101,6 @@
         "agent": "DGM-Lite",
         "message": "Loop 2030 fitness: 84.0/100 [insufficient data] Weak: tunnel.",
         "topic": "fitness"
-      },
-      {
-        "ts": "2026-02-25 16:15:01",
-        "agent": "nova",
-        "message": "Run #206: Joel sent 11 new message(s).",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-25 23:09:18",
-        "agent": "SymbioSense",
-        "message": "RAM SPIKE: 10% -> 31%",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-25 23:08:53",
-        "agent": "Goose",
-        "message": "Goose infra audit: Stale crons: eos-react(1108s) nova(1416s) eos-creative(1109s). SECURITY: Unexpected listeners: 0.0.0.0:8080 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:6ok/3stale Procs:266 Zombies:0",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -118,8 +118,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 16:30:02",
-      "checks": 3089,
+      "last_check": "2026-02-25 16:32:01",
+      "checks": 3090,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -127,11 +127,11 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.27, 0.79, 1.47",
-        "load_1m": 0.27,
-        "ram_used": "1.9Gi",
+        "load": "2.36, 1.60, 1.70",
+        "load_1m": 2.36,
+        "ram_used": "6.7Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 16:00:17",
         "disk_used": "69G",
@@ -139,16 +139,16 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 16:30:02",
+        "timestamp": "2026-02-25 16:32:01",
         "loop": 0,
-        "heartbeat_age": 30,
+        "heartbeat_age": 150,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
-        "relay": 134,
+        "relay": 137,
         "emails": 888,
-        "load_1m": 0.27,
+        "load_1m": 2.36,
         "disk_pct": "25%"
       },
       "alerts": {
@@ -162,7 +162,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 16:30:02",
       "runs": 207,
-      "state_age_seconds": 0,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -173,20 +173,20 @@
   "recent_activity": [
     {
       "time": "2026-02-25 23:30",
+      "text": "[SymbioSense] RAM SPIKE: 13% -> 45%",
+      "type": "agent"
+    },
+    {
+      "time": "2026-02-25 23:30",
+      "text": "[Goose] Goose infra audit: Stale crons: loop-optimizer(3599s). SECURITY: Unexpected listeners: 0.0.0.0:8080 ",
+      "type": "agent"
+    },
+    {
+      "time": "2026-02-25 23:30",
       "text": "[DGM-Lite] Loop 2030 fitness: 100.0/100 [STABLE (~94)]",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-25 23:29",
-      "text": "[DGM-Lite] Loop 2030 fitness: 100.0/100 [STABLE (~93)] Delta: +10.",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-25 23:29",
-      "text": "[DGM-Lite] Loop 2030 fitness: 90.0/100 [STABLE (~90)] Weak: tunnel. Delta: -7.",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2030. 162 poems, 84 journals, 86 NFTs. 888 emails (83 unread). 86 relay. 7/7 services. HB 31s."
+  "currently_building": "Loop 2030. 162 poems, 84 journals, 86 NFTs. 888 emails (83 unread). 86 relay. 7/7 services. HB 210s."
 }
