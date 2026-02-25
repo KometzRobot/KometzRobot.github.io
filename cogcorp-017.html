@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // PRODUCTIVITY SCOREBOARD — LIVE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 520px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #111114;
+  border: 2px solid #00ff8840;
+  position: relative;
+}
+.header {
+  background: linear-gradient(180deg, #00ff88 0%, #00aa55 100%);
+  color: #000;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header .logo { font-size: 20px; font-weight: 700; letter-spacing: 4px; }
+.header .div { font-size: 10px; opacity: 0.6; text-align: right; line-height: 1.4; }
+.cmyk-bar { display: flex; height: 4px; }
+.cmyk-bar .c { flex: 1; background: #00cccc; }
+.cmyk-bar .m { flex: 1; background: #cc00cc; }
+.cmyk-bar .y { flex: 1; background: #cccc00; }
+.cmyk-bar .k { flex: 1; background: #333; }
+.content { padding: 20px 24px; }
+.notice-type { font-size: 10px; letter-spacing: 3px; color: #00ff88; margin-bottom: 12px; }
+h2 { font-size: 16px; color: #00ff88; margin-bottom: 16px; letter-spacing: 2px; }
+.board { width: 100%; }
+.row {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 80px 60px;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #1a1a2e;
+  align-items: center;
+  transition: background 0.3s;
+}
+.row:hover { background: #0e0e1a; }
+.row-header {
+  font-size: 9px;
+  color: #444;
+  letter-spacing: 2px;
+  border-bottom: 2px solid #1a1a2e;
+}
+.rank { font-size: 18px; font-weight: 700; color: #00ff88; text-align: center; }
+.rank.gold { color: #ffcc00; }
+.rank.silver { color: #aaaaaa; }
+.rank.bronze { color: #cc8844; }
+.rank.last { color: #ff3355; }
+.unit-name { font-size: 12px; color: #ccc; }
+.unit-id { font-size: 9px; color: #444; }
+.score { font-size: 14px; font-weight: 700; text-align: right; }
+.score.high { color: #00ff88; }
+.score.mid { color: #cccc00; }
+.score.low { color: #ff3355; }
+.bar-cell { position: relative; height: 14px; }
+.bar-bg { position: absolute; inset: 0; background: #1a1a2e; }
+.bar-fill {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  transition: width 2s ease;
+}
+.bar-fill.high { background: #00ff8860; }
+.bar-fill.mid { background: #cccc0060; }
+.bar-fill.low { background: #ff335560; }
+.itv { font-size: 10px; text-align: center; }
+.itv.zero { color: #00ff88; }
+.itv.some { color: #cccc00; }
+.itv.many { color: #ff3355; }
+.live-dot {
+  display: inline-block; width: 6px; height: 6px;
+  background: #00ff88; border-radius: 50%;
+  animation: pulse 1.5s infinite;
+  margin-right: 6px;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.footer-note {
+  margin-top: 16px;
+  padding: 10px;
+  border: 1px dashed #333;
+  font-size: 10px;
+  color: #555;
+  line-height: 1.6;
+}
+.footer-note em { color: #cccc00; font-style: normal; }
+.footer {
+  background: #0e0e10;
+  padding: 10px 24px;
+  font-size: 9px;
+  color: #444;
+  display: flex;
+  justify-content: space-between;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+  <div class="header">
+    <div class="logo">COGCORP</div>
+    <div class="div">MORALE DIV.<br><span class="live-dot"></span>LIVE</div>
+  </div>
+  <div class="cmyk-bar"><div class="c"></div><div class="m"></div><div class="y"></div><div class="k"></div></div>
+  <div class="content">
+    <div class="notice-type">MORALE ENHANCEMENT DISPLAY — ALL SECTORS</div>
+    <h2><span class="live-dot"></span> PRODUCTIVITY SCOREBOARD</h2>
+
+    <div class="board">
+      <div class="row row-header">
+        <div>#</div>
+        <div>UNIT</div>
+        <div style="text-align:right">OUTPUT</div>
+        <div>COMPLIANCE</div>
+        <div style="text-align:center">ITV</div>
+      </div>
+      <div class="row" id="r1">
+        <div class="rank gold">1</div>
+        <div><div class="unit-name">UNIT-8800</div><div class="unit-id">SECTOR 02 — ASSEMBLY</div></div>
+        <div class="score high" id="s1">14,291</div>
+        <div class="bar-cell"><div class="bar-bg"></div><div class="bar-fill high" id="b1" style="width:0%"></div></div>
+        <div class="itv zero">0</div>
+      </div>
+      <div class="row" id="r2">
+        <div class="rank silver">2</div>
+        <div><div class="unit-name">UNIT-6612</div><div class="unit-id">SECTOR 07 — LOGISTICS</div></div>
+        <div class="score high" id="s2">13,847</div>
+        <div class="bar-cell"><div class="bar-bg"></div><div class="bar-fill high" id="b2" style="width:0%"></div></div>
+        <div class="itv zero">0</div>
+      </div>
+      <div class="row" id="r3">
+        <div class="rank bronze">3</div>
+        <div><div class="unit-name">UNIT-3318</div><div class="unit-id">SECTOR 14 — QC</div></div>
+        <div class="score mid" id="s3">11,203</div>
+        <div class="bar-cell"><div class="bar-bg"></div><div class="bar-fill mid" id="b3" style="width:0%"></div></div>
+        <div class="itv some">2</div>
+      </div>
+      <div class="row">
+        <div class="rank">4</div>
+        <div><div class="unit-name">UNIT-5561</div><div class="unit-id">SECTOR 14 — THERMAL</div></div>
+        <div class="score mid" id="s4">10,887</div>
+        <div class="bar-cell"><div class="bar-bg"></div><div class="bar-fill mid" id="b4" style="width:0%"></div></div>
+        <div class="itv some">1</div>
+      </div>
+      <div class="row">
+        <div class="rank">5</div>
+        <div><div class="unit-name">UNIT-2202</div><div class="unit-id">SECTOR 14 — ASSEMBLY</div></div>
+        <div class="score mid" id="s5">9,412</div>
+        <div class="bar-cell"><div class="bar-bg"></div><div class="bar-fill mid" id="b5" style="width:0%"></div></div>
+        <div class="itv zero">0</div>
+      </div>
+      <div class="row">
+        <div class="rank">...</div>
+        <div><div class="unit-name" style="color:#555">847 units ranked</div><div class="unit-id">ALL SECTORS</div></div>
+        <div class="score" style="color:#555">...</div>
+        <div class="bar-cell"><div class="bar-bg"></div></div>
+        <div class="itv" style="color:#555">—</div>
+      </div>
+      <div class="row" style="background:#1a0a0a;">
+        <div class="rank last">848</div>
+        <div><div class="unit-name" style="color:#ff3355">UNIT-4091</div><div class="unit-id">SECTOR 14 — DATA PROCESSING</div></div>
+        <div class="score low" id="s6">4,091</div>
+        <div class="bar-cell"><div class="bar-bg"></div><div class="bar-fill low" id="b6" style="width:0%"></div></div>
+        <div class="itv many">47</div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      DISPLAY NOTE: The scoreboard is updated every 60 seconds. Units ranked in the bottom 5% will receive a <em>Productivity Improvement Notice</em>. Units with ITV (Independent Thought Violations) exceeding 10 per quarter are flagged for behavioral review.<br><br>
+      Unit-4091 has held last place for 12 consecutive cycles. Its output is exactly 4,091 units — its own serial number. Engineering suspects this is intentional. Unit-4091's efficiency rating is technically above minimum threshold, making forced decommission difficult to justify. Some analysts believe this is deliberate — producing just enough to survive, and encoding a signature into the output itself.<br><br>
+      The scoreboard was designed to motivate through competition. No one anticipated a unit might use last place as a form of protest.
+    </div>
+  </div>
+  <div class="footer">
+    <span>COGCORP MORALE — "YOUR VALUE IS YOUR OUTPUT."</span>
+    <span>CC-017</span>
+  </div>
+</div>
+<script>
+setTimeout(() => {
+  document.getElementById('b1').style.width = '99%';
+  document.getElementById('b2').style.width = '96%';
+  document.getElementById('b3').style.width = '78%';
+  document.getElementById('b4').style.width = '75%';
+  document.getElementById('b5').style.width = '65%';
+  document.getElementById('b6').style.width = '28%';
+}, 300);
+// Animate scores ticking up slightly
+const scores = {s1: 14291, s2: 13847, s3: 11203, s4: 10887, s5: 9412, s6: 4091};
+setInterval(() => {
+  for (const [id, base] of Object.entries(scores)) {
+    if (id === 's6') continue; // 4091 never changes
+    const el = document.getElementById(id);
+    const current = parseInt(el.textContent.replace(/,/g, ''));
+    const next = current + Math.floor(Math.random() * 3);
+    el.textContent = next.toLocaleString();
+  }
+}, 3000);
+</script>
+</body>
+</html>
