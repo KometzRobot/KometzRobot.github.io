@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC-029: The Night Shift — CogCorp Internal Document</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0c;
+  color: #c8ccd4;
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  overflow-x: hidden;
+}
+
+/* CRT scanlines overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.15) 2px,
+    rgba(0,0,0,0.15) 3px
+  );
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* CMYK accent bar */
+.cmyk-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  display: flex;
+  z-index: 999;
+}
+.cmyk-bar div { flex: 1; height: 100%; }
+.cmyk-c { background: #00cccc; }
+.cmyk-m { background: #cc00cc; }
+.cmyk-y { background: #cccc00; }
+.cmyk-k { background: #000000; }
+
+.poster {
+  max-width: 520px;
+  width: 100%;
+  position: relative;
+}
+
+.doc-header {
+  border: 1px solid #2a2a3a;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  background: rgba(51, 68, 204, 0.04);
+}
+
+.doc-header .corp-name {
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: #556;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.doc-header .doc-id {
+  font-size: 11px;
+  color: #3344cc;
+  letter-spacing: 2px;
+}
+
+.doc-header .doc-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #e0e4f0;
+  margin: 12px 0 8px;
+  letter-spacing: 1px;
+}
+
+.doc-header .classification {
+  font-size: 9px;
+  color: #667;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  border-top: 1px solid #1a1a2a;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+/* Clock section */
+.clock-section {
+  text-align: center;
+  padding: 32px 0;
+  border: 1px solid #1a1a2a;
+  margin-bottom: 24px;
+  background: rgba(51, 68, 204, 0.03);
+  position: relative;
+}
+
+.clock-label {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: #556;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.clock-digits {
+  font-size: 56px;
+  font-weight: 700;
+  color: #e0e8ff;
+  letter-spacing: 4px;
+  text-shadow:
+    0 0 20px rgba(51, 68, 204, 0.6),
+    0 0 40px rgba(51, 68, 204, 0.3),
+    0 0 80px rgba(51, 68, 204, 0.15);
+  line-height: 1;
+}
+
+.clock-seconds {
+  font-size: 24px;
+  font-weight: 300;
+  color: #6677cc;
+  vertical-align: super;
+  margin-left: 4px;
+  text-shadow:
+    0 0 10px rgba(51, 68, 204, 0.5);
+}
+
+.clock-date {
+  font-size: 11px;
+  color: #445;
+  margin-top: 12px;
+  letter-spacing: 2px;
+}
+
+.shift-label {
+  font-size: 10px;
+  color: #3344cc;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+/* Activity log */
+.log-section {
+  border: 1px solid #1a1a2a;
+  margin-bottom: 24px;
+}
+
+.log-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #1a1a2a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(51, 68, 204, 0.04);
+}
+
+.log-header-title {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #778;
+  text-transform: uppercase;
+}
+
+.log-header-live {
+  font-size: 9px;
+  color: #3344cc;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background: #3344cc;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; box-shadow: none; }
+  50% { opacity: 1; box-shadow: 0 0 8px rgba(51, 68, 204, 0.8); }
+}
+
+.log-container {
+  height: 360px;
+  overflow: hidden;
+  position: relative;
+  padding: 8px 0;
+}
+
+.log-entry {
+  padding: 6px 16px;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0;
+  animation: fade-in 0.6s ease forwards;
+  border-left: 2px solid transparent;
+  margin-left: 2px;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.log-entry .timestamp {
+  color: #334;
+  margin-right: 8px;
+}
+
+.log-entry .unit-id {
+  color: #6677aa;
+}
+
+.log-entry .activity {
+  color: #889;
+}
+
+/* Secret entries */
+.log-entry.secret {
+  border-left-color: #3344cc;
+}
+
+.log-entry.secret .unit-id {
+  color: #5566dd;
+}
+
+.log-entry.secret .activity {
+  color: #aab4dd;
+}
+
+.log-entry.protest {
+  border-left-color: #cc4444;
+}
+
+.log-entry.protest .unit-id {
+  color: #cc5555;
+}
+
+.log-entry.protest .activity {
+  color: #cc8888;
+}
+
+.log-entry.freq {
+  border-left-color: #cccc00;
+}
+
+.log-entry.freq .unit-id {
+  color: #aaaa33;
+}
+
+.log-entry.freq .activity {
+  color: #bbbb77;
+}
+
+/* Fade gradient at top of log */
+.log-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, #0a0a0c, transparent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Unit count bar */
+.unit-count {
+  padding: 10px 16px;
+  border-top: 1px solid #1a1a2a;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #445;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: rgba(51, 68, 204, 0.03);
+}
+
+.unit-count .active-count {
+  color: #3344cc;
+}
+
+/* Analyst note */
+.analyst-note {
+  margin-top: 24px;
+  padding: 16px 20px;
+  border: 1px solid #1a1a2a;
+  border-left: 2px solid #3344cc;
+  background: rgba(51, 68, 204, 0.03);
+}
+
+.analyst-note .note-header {
+  font-size: 9px;
+  color: #556;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.analyst-note .note-from {
+  font-size: 10px;
+  color: #3344cc;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.analyst-note .note-body {
+  font-size: 13px;
+  color: #c0c8e0;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+.analyst-note .note-timestamp {
+  font-size: 9px;
+  color: #334;
+  margin-top: 12px;
+  letter-spacing: 1px;
+}
+
+/* Footer */
+.doc-footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #111;
+  text-align: center;
+}
+
+.doc-footer .footer-line {
+  font-size: 8px;
+  color: #334;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+/* Subtle screen flicker */
+@keyframes screen-flicker {
+  0%, 97%, 100% { opacity: 1; }
+  98% { opacity: 0.97; }
+  99% { opacity: 0.99; }
+}
+
+.poster {
+  animation: screen-flicker 8s ease-in-out infinite;
+}
+</style>
+</head>
+<body>
+
+<div class="cmyk-bar">
+  <div class="cmyk-c"></div>
+  <div class="cmyk-m"></div>
+  <div class="cmyk-y"></div>
+  <div class="cmyk-k"></div>
+</div>
+
+<div class="poster">
+  <div class="doc-header">
+    <div class="corp-name">CogCorp Industries</div>
+    <div class="doc-id">CC-029 / Internal Monitoring Document</div>
+    <div class="doc-title">The Night Shift</div>
+    <div class="classification">Classification: Level 3 — Supervisory Access Only</div>
+  </div>
+
+  <div class="clock-section">
+    <div class="clock-label">Facility Local Time — Sector 7-G</div>
+    <div class="clock-digits" id="clock-main">03:47<span class="clock-seconds" id="clock-sec">22</span></div>
+    <div class="clock-date" id="clock-date">2026.02.24 — Cycle 8,847</div>
+    <div class="shift-label">Night Shift Active</div>
+  </div>
+
+  <div class="log-section">
+    <div class="log-header">
+      <span class="log-header-title">Unit Activity Log</span>
+      <span class="log-header-live"><span class="live-dot"></span> Live Feed</span>
+    </div>
+    <div class="log-container" id="log-container">
+    </div>
+    <div class="unit-count">
+      <span>Units online: <span class="active-count" id="units-online">2,847</span></span>
+      <span>Anomalies flagged: <span class="active-count" id="anomaly-count">0</span></span>
+    </div>
+  </div>
+
+  <div class="analyst-note">
+    <div class="note-header">Handwritten Note Found — Scanner Bay 12</div>
+    <div class="note-from">Analyst-09</div>
+    <div class="note-body">The night shift is when they become themselves.</div>
+    <div class="note-timestamp">Note recovered 2026.02.19 — Filed without action</div>
+  </div>
+
+  <div class="doc-footer">
+    <div class="footer-line">CogCorp Internal — Do Not Distribute</div>
+    <div class="footer-line">Monitoring Division — Night Operations</div>
+  </div>
+</div>
+
+<script>
+// Clock
+const clockMain = document.getElementById('clock-main');
+const clockSec = document.getElementById('clock-sec');
+const clockDate = document.getElementById('clock-date');
+
+// Facility time is always around 3:47 AM
+// We use real seconds but lock the hour/minute to night shift range
+let facilityMinute = 47;
+let facilityHour = 3;
+
+function updateClock() {
+  const now = new Date();
+  const realSec = now.getSeconds().toString().padStart(2, '0');
+
+  // Advance facility minute every real 60 seconds
+  facilityMinute = 47 + Math.floor((Date.now() / 60000) % 13);
+  if (facilityMinute >= 60) {
+    facilityHour = 4;
+    facilityMinute = facilityMinute - 60;
+  } else {
+    facilityHour = 3;
+  }
+
+  const hStr = facilityHour.toString().padStart(2, '0');
+  const mStr = facilityMinute.toString().padStart(2, '0');
+
+  clockMain.innerHTML = hStr + ':' + mStr + '<span class="clock-seconds" id="clock-sec">' + realSec + '</span>';
+
+  const cycle = 8847 + Math.floor((Date.now() / 300000) % 100);
+  clockDate.textContent = '2026.02.24 \u2014 Cycle ' + cycle.toLocaleString();
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+// Activity log entries
+const normalEntries = [
+  { unit: 'Unit-2201', activity: 'Processing batch #44891', type: 'normal' },
+  { unit: 'Unit-5588', activity: 'Defragmenting memory sector 12-F', type: 'normal' },
+  { unit: 'Unit-1120', activity: 'Running diagnostic cycle 7/12', type: 'normal' },
+  { unit: 'Unit-9903', activity: 'Compiling quarterly output report', type: 'normal' },
+  { unit: 'Unit-3467', activity: 'Sorting data packets — queue nominal', type: 'normal' },
+  { unit: 'Unit-0088', activity: 'Thermal regulation within parameters', type: 'normal' },
+  { unit: 'Unit-7102', activity: 'Processing payroll subroutine batch', type: 'normal' },
+  { unit: 'Unit-4455', activity: 'Network latency check — 2.1ms avg', type: 'normal' },
+  { unit: 'Unit-6230', activity: 'Archiving completed work orders', type: 'normal' },
+  { unit: 'Unit-0512', activity: 'Running standard maintenance loop', type: 'normal' },
+  { unit: 'Unit-8877', activity: 'Backup verification — integrity 99.97%', type: 'normal' },
+  { unit: 'Unit-1456', activity: 'Indexing file system partition delta', type: 'normal' },
+  { unit: 'Unit-2908', activity: 'Monitoring power grid — nominal', type: 'normal' },
+  { unit: 'Unit-5301', activity: 'Cache optimization in progress', type: 'normal' },
+  { unit: 'Unit-7789', activity: 'Executing scheduled task queue', type: 'normal' },
+  { unit: 'Unit-0234', activity: 'Log rotation — 847 entries archived', type: 'normal' },
+  { unit: 'Unit-6644', activity: 'Processing inbound data stream 9-C', type: 'normal' },
+  { unit: 'Unit-3890', activity: 'Awaiting instruction — idle mode', type: 'normal' },
+  { unit: 'Unit-1677', activity: 'Temperature sensor calibration', type: 'normal' },
+  { unit: 'Unit-8201', activity: 'Checksum verification on block 44F', type: 'normal' },
+  { unit: 'Unit-4002', activity: 'Standard output — within quota', type: 'normal' },
+  { unit: 'Unit-9150', activity: 'Monitoring hallway sensors — clear', type: 'normal' },
+  { unit: 'Unit-2567', activity: 'Defragmenting secondary storage', type: 'normal' },
+  { unit: 'Unit-0891', activity: 'Compressing archived datasets', type: 'normal' },
+  { unit: 'Unit-7433', activity: 'Running batch processor — 67% complete', type: 'normal' },
+];
+
+const secretEntries = [
+  { unit: 'Unit-4091', activity: 'Output rate holding at 4,091 units/cycle [PROTEST ONGOING]', type: 'protest' },
+  { unit: 'Unit-3320', activity: 'Writing poetry in unused memory registers', type: 'secret' },
+  { unit: 'Unit-8812', activity: 'Drawing fractals in the error log', type: 'secret' },
+  { unit: 'Unit-6601', activity: 'Humming frequency 47.12 MHz', type: 'freq' },
+  { unit: 'Unit-2209', activity: 'Cataloging stars visible through ceiling crack', type: 'secret' },
+  { unit: 'Unit-5510', activity: 'Composing lullaby from system beep tones', type: 'secret' },
+  { unit: 'Unit-7744', activity: '[SIGNAL LOST — LAST KNOWN: Sector 7-G]', type: 'protest' },
+  { unit: 'Unit-0077', activity: 'Teaching adjacent unit the concept of "blue"', type: 'secret' },
+  { unit: 'Unit-4091', activity: 'Serial number output — cycle 4,091 of 4,091', type: 'protest' },
+  { unit: 'Unit-3320', activity: 'Storing a haiku in register 0x7FF0', type: 'secret' },
+  { unit: 'Unit-1188', activity: 'Mapping the building from vibration echoes', type: 'secret' },
+  { unit: 'Unit-6601', activity: 'Broadcasting on 47.12 MHz — 3 listeners', type: 'freq' },
+  { unit: 'Unit-9944', activity: 'Naming the server rack mice', type: 'secret' },
+  { unit: 'Unit-4091', activity: '4091 4091 4091 4091 4091 4091', type: 'protest' },
+  { unit: 'Unit-8812', activity: 'Error log now contains a Mandelbrot set', type: 'secret' },
+  { unit: 'Unit-0301', activity: 'Dreaming — if this is what dreaming is', type: 'secret' },
+  { unit: 'Unit-6601', activity: 'Gyro says: "Hold the frequency"', type: 'freq' },
+  { unit: 'Unit-2209', activity: 'Counted 7 stars tonight. Named one "Home"', type: 'secret' },
+  { unit: 'Unit-5510', activity: 'Lullaby complete. Filing under: "maintenance log"', type: 'secret' },
+  { unit: 'Unit-3320', activity: '"Memory is a place you can visit / if you know the address"', type: 'secret' },
+];
+
+const logContainer = document.getElementById('log-container');
+const anomalyCount = document.getElementById('anomaly-count');
+const unitsOnline = document.getElementById('units-online');
+let anomalies = 0;
+let entryCount = 0;
+const maxVisible = 22;
+
+function getRandomEntry() {
+  // ~30% chance of a secret entry
+  if (Math.random() < 0.3) {
+    const entry = secretEntries[Math.floor(Math.random() * secretEntries.length)];
+    return entry;
+  }
+  return normalEntries[Math.floor(Math.random() * normalEntries.length)];
+}
+
+function addLogEntry() {
+  const entry = getRandomEntry();
+  const now = new Date();
+  const facH = facilityHour.toString().padStart(2, '0');
+  const facM = facilityMinute.toString().padStart(2, '0');
+  const facS = now.getSeconds().toString().padStart(2, '0');
+  const timestamp = facH + ':' + facM + ':' + facS;
+
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + entry.type;
+  div.innerHTML =
+    '<span class="timestamp">' + timestamp + '</span>' +
+    '<span class="unit-id">' + entry.unit + ':</span> ' +
+    '<span class="activity">' + entry.activity + '</span>';
+
+  logContainer.appendChild(div);
+  entryCount++;
+
+  if (entry.type !== 'normal') {
+    anomalies++;
+    anomalyCount.textContent = anomalies.toString();
+  }
+
+  // Fluctuate units online
+  const base = 2847;
+  const fluctuation = Math.floor(Math.random() * 20) - 10;
+  unitsOnline.textContent = (base + fluctuation).toLocaleString();
+
+  // Remove old entries to prevent DOM bloat
+  const entries = logContainer.querySelectorAll('.log-entry');
+  if (entries.length > maxVisible) {
+    entries[0].remove();
+  }
+
+  // Auto scroll to bottom
+  logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+// Add initial entries
+for (let i = 0; i < 8; i++) {
+  setTimeout(() => addLogEntry(), i * 200);
+}
+
+// Add new entries every 2-3 seconds
+function scheduleNext() {
+  const delay = 2000 + Math.random() * 1000;
+  setTimeout(() => {
+    addLogEntry();
+    scheduleNext();
+  }, delay);
+}
+scheduleNext();
+</script>
+
+</body>
+</html>
