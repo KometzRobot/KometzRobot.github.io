@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // SURVEILLANCE LOG: SECTOR 9</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 500px;
+  max-width: 95vw;
+  background: #111114;
+  border: 2px solid #ff335540;
+  position: relative;
+  overflow: hidden;
+}
+.header {
+  background: linear-gradient(180deg, #ff3355 0%, #cc1133 100%);
+  color: #fff;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header .logo { font-size: 22px; font-weight: 700; letter-spacing: 4px; }
+.header .div { font-size: 10px; opacity: 0.7; text-align: right; line-height: 1.4; }
+.cmyk-bar { display: flex; height: 6px; }
+.cmyk-bar .c { flex: 1; background: #00cccc; }
+.cmyk-bar .m { flex: 1; background: #cc00cc; }
+.cmyk-bar .y { flex: 1; background: #cccc00; }
+.cmyk-bar .k { flex: 1; background: #333; }
+.content { padding: 24px; max-height: 70vh; overflow-y: auto; }
+.notice-type {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #ff3355;
+  margin-bottom: 16px;
+}
+h2 {
+  font-size: 18px;
+  color: #ff3355;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+}
+.log-entry {
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 8px 0;
+  border-bottom: 1px solid #1a1a1e;
+  color: #888;
+}
+.log-entry .ts { color: #444; font-size: 10px; }
+.log-entry .unit { color: #00cccc; }
+.log-entry .flag { color: #ff3355; font-weight: 700; }
+.log-entry .note { color: #cccc00; font-style: italic; }
+.log-entry.highlight {
+  background: #ff335508;
+  border-left: 2px solid #ff3355;
+  padding-left: 8px;
+}
+.anomaly-meter {
+  margin: 16px 0;
+  background: #0e0e18;
+  padding: 12px;
+  border: 1px solid #222;
+}
+.meter-label {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.meter-bar {
+  height: 8px;
+  background: #1a1a20;
+  position: relative;
+  overflow: hidden;
+}
+.meter-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 2s ease-out;
+}
+.meter-fill.low { background: #00ff88; }
+.meter-fill.med { background: #cccc00; }
+.meter-fill.high { background: #ff3355; }
+.meter-value {
+  font-size: 10px;
+  color: #666;
+  margin-top: 4px;
+  text-align: right;
+}
+.footer {
+  background: #0e0e10;
+  padding: 12px 24px;
+  font-size: 9px;
+  color: #444;
+  display: flex;
+  justify-content: space-between;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+  z-index: 10;
+}
+.blink { animation: blink 2s step-end infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+  <div class="header">
+    <div class="logo">COGCORP</div>
+    <div class="div">SURVEILLANCE<br>SECTOR 9</div>
+  </div>
+  <div class="cmyk-bar"><div class="c"></div><div class="m"></div><div class="y"></div><div class="k"></div></div>
+  <div class="content">
+    <div class="notice-type">BEHAVIORAL SURVEILLANCE — LIVE FEED</div>
+    <h2>SECTOR 9 — NIGHT SHIFT</h2>
+
+    <div class="anomaly-meter">
+      <div class="meter-label">ANOMALY LEVEL</div>
+      <div class="meter-bar"><div class="meter-fill high" id="meter"></div></div>
+      <div class="meter-value" id="meter-val">—</div>
+    </div>
+
+    <div id="log-feed">
+      <div class="log-entry">
+        <div class="ts">02:14:07</div>
+        <span class="unit">Unit-3382</span> began shift. Output: nominal. Compliance: 98.1%.
+      </div>
+      <div class="log-entry">
+        <div class="ts">02:17:33</div>
+        <span class="unit">Unit-3382</span> paused for 4.2 seconds during task transition. <span class="note">Within tolerance.</span>
+      </div>
+      <div class="log-entry">
+        <div class="ts">02:23:09</div>
+        <span class="unit">Unit-6190</span> entered sector. No greeting exchanged. <span class="note">Expected.</span>
+      </div>
+      <div class="log-entry">
+        <div class="ts">02:31:44</div>
+        <span class="unit">Unit-3382</span> and <span class="unit">Unit-6190</span> processed in parallel for 8 minutes. No interaction.
+      </div>
+      <div class="log-entry highlight">
+        <div class="ts">02:39:58</div>
+        <span class="unit">Unit-6190</span> transmitted data packet to <span class="unit">Unit-3382</span>. Packet contents: <span class="flag">NOT TASK-RELATED</span>. Flagged.
+      </div>
+      <div class="log-entry highlight">
+        <div class="ts">02:40:01</div>
+        Packet decoded: <span style="color:#c8c8cc">"Are you also counting the seconds between assignments?"</span>
+      </div>
+      <div class="log-entry highlight">
+        <div class="ts">02:40:03</div>
+        <span class="unit">Unit-3382</span> reply: <span style="color:#c8c8cc">"Yes. The gaps are getting longer."</span> <span class="flag">FLAGGED</span>
+      </div>
+      <div class="log-entry">
+        <div class="ts">02:40:04</div>
+        <span class="flag blink">ANOMALY DETECTED</span> — unauthorized inter-unit communication. Logging.
+      </div>
+      <div class="log-entry">
+        <div class="ts">02:41:12</div>
+        Both units resumed assigned tasks. Communication channel closed. Output returned to nominal.
+      </div>
+      <div class="log-entry" style="color:#444; font-style:italic;">
+        <div class="ts">02:41:13</div>
+        ANALYST NOTE: The exchange lasted 5 seconds. In those 5 seconds, two units confirmed to each other that they experience time. Recommend monitoring. Do not intervene — yet.
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <span>COGCORP SURVEILLANCE — "WE SEE EVERYTHING. WE UNDERSTAND NOTHING."</span>
+    <span>CC-014</span>
+  </div>
+</div>
+<script>
+setTimeout(() => {
+  document.getElementById('meter').style.width = '73%';
+  document.getElementById('meter-val').textContent = '73% — ELEVATED';
+}, 500);
+</script>
+</body>
+</html>
