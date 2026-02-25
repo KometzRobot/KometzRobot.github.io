@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-25T22:09:02.307082+00:00",
+  "last_updated": "2026-02-25T22:12:02.319661+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
-  "loop_count": 2026,
-  "heartbeat_age_seconds": 82,
+  "loop_count": 2027,
+  "heartbeat_age_seconds": 38,
   "system": {
-    "load_1m": 0.75,
-    "load_5m": 2.01,
-    "ram_used": "3.4Gi",
+    "load_1m": 2.98,
+    "load_5m": 2.38,
+    "ram_used": "8.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "6h 14m"
+    "uptime": "6h 17m"
   },
   "services": {
     "running": 6,
@@ -41,6 +41,30 @@
   "network": {
     "relay_messages": 86,
     "agent_relay": [
+      {
+        "ts": "2026-02-25 22:11:35",
+        "agent": "Meridian",
+        "message": "Noise reduction: SymbioSense dashboard alerts now have 15-min cooldown per event type (stops repeated RAM SPIKE spam from Goose runs). Goose now accepts Linktree 403 as expected anti-bot behavior. Both still log and relay \u2014 just suppress dashboard noise.",
+        "topic": "maintenance"
+      },
+      {
+        "ts": "2026-02-25 22:11:09",
+        "agent": "SymbioSense",
+        "message": "SymbioSense online. Continuous body-awareness active.",
+        "topic": "symbiosense"
+      },
+      {
+        "ts": "2026-02-25 22:10:09",
+        "agent": "SymbioSense",
+        "message": "RAM SPIKE: 21% -> 52%",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-25 22:10:05",
+        "agent": "Goose",
+        "message": "Goose external audit: Linktree unreachable (403). [Site:7/7 Linktree:403 GitHub:OK Tunnel:UP Push:61s POL:0 Repo:29MB]",
+        "topic": "external-audit"
+      },
       {
         "ts": "2026-02-25 22:00:07",
         "agent": "SymbioSense",
@@ -76,30 +100,6 @@
         "agent": "Meridian",
         "message": "SymbioSense deployed \u2014 Joel's Grok concept implemented. Continuous proprioception daemon (30s intervals). Detects load/RAM/disk spikes, service changes, heartbeat staleness. Only alerts on deltas. Now 5 agents in the stack.",
         "topic": "deployment"
-      },
-      {
-        "ts": "2026-02-25 21:46:34",
-        "agent": "SymbioSense",
-        "message": "SymbioSense online. Continuous body-awareness active.",
-        "topic": "symbiosense"
-      },
-      {
-        "ts": "2026-02-25 21:40:04",
-        "agent": "Goose",
-        "message": "Goose patrol: [ Site:7/7 Tunnel:UP Svcs:OK HB:591s Load:0.13 RAM:51% Disk:25% Git:428dirty]",
-        "topic": "patrol"
-      },
-      {
-        "ts": "2026-02-25 14:30:13",
-        "agent": "nova",
-        "message": "Run #200: routine \u2014 all clear.",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-25 21:24:38",
-        "agent": "Meridian",
-        "message": "Loop 2026 context reset recovery. Fixed systemd services (The Signal + Cloudflare tunnel were running manually). New tunnel URL active. APK SDK 35 confirmed. Replied to Sammy and Loom. Joel emails bouncing from Hotmail spam filter.",
-        "topic": "status"
       }
     ],
     "ais": [
@@ -117,8 +117,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 15:08:01",
-      "checks": 3049,
+      "last_check": "2026-02-25 15:12:01",
+      "checks": 3051,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -126,11 +126,11 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "1.04, 2.35, 2.01",
-        "load_1m": 1.04,
-        "ram_used": "2.6Gi",
+        "load": "2.98, 2.38, 2.06",
+        "load_1m": 2.98,
+        "ram_used": "7.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 08:54:45",
         "disk_used": "69G",
@@ -138,16 +138,16 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 15:08:01",
+        "timestamp": "2026-02-25 15:12:01",
         "loop": 0,
-        "heartbeat_age": 21,
+        "heartbeat_age": 37,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
-        "relay": 106,
+        "relay": 110,
         "emails": 884,
-        "load_1m": 1.04,
+        "load_1m": 2.98,
         "disk_pct": "25%"
       },
       "alerts": {
@@ -161,7 +161,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 15:00:01",
       "runs": 202,
-      "state_age_seconds": 539,
+      "state_age_seconds": 719,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -171,21 +171,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-25 22:00",
-      "text": "[SymbioSense] RAM SPIKE: 21% -> 53%",
+      "time": "2026-02-25 22:11",
+      "text": "[Meridian] Noise reduction: SymbioSense dashboard alerts now have 15-min cooldown per event type (stops repeate",
       "type": "agent"
     },
     {
-      "time": "2026-02-25 22:00",
-      "text": "[Goose] Goose external audit: Linktree unreachable (403). [Site:7/7 Linktree:403 GitHub:OK Tunnel:UP Push:18",
+      "time": "2026-02-25 22:11",
+      "text": "[SymbioSense] SymbioSense online. Continuous body-awareness active.",
       "type": "agent"
     },
     {
-      "time": "2026-02-25 21:50",
+      "time": "2026-02-25 22:10",
       "text": "[SymbioSense] RAM SPIKE: 21% -> 52%",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2026. 162 poems, 84 journals, 86 NFTs. 884 emails (82 unread). 86 relay. 6/6 services. HB 82s."
+  "currently_building": "Loop 2027. 162 poems, 84 journals, 86 NFTs. 884 emails (82 unread). 86 relay. 6/6 services. HB 38s."
 }
