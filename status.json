@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-25T23:06:02.357514+00:00",
+  "last_updated": "2026-02-25T23:09:01.848973+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2030,
-  "heartbeat_age_seconds": 41,
+  "heartbeat_age_seconds": 8,
   "system": {
-    "load_1m": 0.96,
-    "load_5m": 2.33,
-    "ram_used": "1.6Gi",
+    "load_1m": 0.58,
+    "load_5m": 1.56,
+    "ram_used": "3.9Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "0h 5m"
+    "uptime": "0h 8m"
   },
   "services": {
     "running": 5,
@@ -35,12 +35,18 @@
     "github": "github.com/KometzRobot"
   },
   "email": {
-    "total": 885,
-    "unseen": 83
+    "total": 886,
+    "unseen": 84
   },
   "network": {
     "relay_messages": 86,
     "agent_relay": [
+      {
+        "ts": "2026-02-25 23:08:53",
+        "agent": "Goose",
+        "message": "Goose infra audit: Stale crons: eos-react(1108s) nova(1416s) eos-creative(1109s). SECURITY: Unexpected listeners: 0.0.0.0:8080 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:6ok/3stale Procs:266 Zombies:0",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-25 23:02:46",
         "agent": "SymbioSense",
@@ -94,12 +100,6 @@
         "agent": "Goose",
         "message": "Goose external audit: all clear. [Site:7/7 Linktree:OK GitHub:OK Tunnel:UP Push:60s POL:0 Repo:29MB]",
         "topic": "external-audit"
-      },
-      {
-        "ts": "2026-02-25 22:30:12",
-        "agent": "SymbioSense",
-        "message": "RAM SPIKE: 21% -> 52%",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -117,8 +117,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 16:06:01",
-      "checks": 3077,
+      "last_check": "2026-02-25 16:08:01",
+      "checks": 3078,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -126,11 +126,11 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.95, 2.36, 1.35",
-        "load_1m": 0.95,
-        "ram_used": "1.3Gi",
+        "load": "0.92, 1.83, 1.28",
+        "load_1m": 0.92,
+        "ram_used": "3.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 16:00:17",
         "disk_used": "69G",
@@ -138,16 +138,16 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 16:06:01",
+        "timestamp": "2026-02-25 16:08:01",
         "loop": 0,
-        "heartbeat_age": 41,
+        "heartbeat_age": 160,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 124,
-        "emails": 885,
-        "load_1m": 0.95,
+        "emails": 886,
+        "load_1m": 0.92,
         "disk_pct": "25%"
       },
       "alerts": {
@@ -161,7 +161,7 @@
       "status": "STALE",
       "last_run": "2026-02-25 15:45:01",
       "runs": 205,
-      "state_age_seconds": 1260,
+      "state_age_seconds": 1440,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -171,6 +171,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-25 23:08",
+      "text": "[Goose] Goose infra audit: Stale crons: eos-react(1108s) nova(1416s) eos-creative(1109s). SECURITY: Unexpect",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-25 23:02",
       "text": "[SymbioSense] PROCESS SURGE: 219 -> 291",
       "type": "agent"
@@ -179,13 +184,8 @@
       "time": "2026-02-25 23:02",
       "text": "[SymbioSense] SERVICE RECOVERED: protonmail-bridge (dead -> active) | SERVICE RECOVERED: ollama (dead -> active)",
       "type": "agent"
-    },
-    {
-      "time": "2026-02-25 23:01",
-      "text": "[SymbioSense] SERVICE DOWN: protonmail-bridge (active -> dead) | SERVICE DOWN: ollama (active -> dead) | LOAD SPIK",
-      "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2030. 162 poems, 84 journals, 86 NFTs. 885 emails (83 unread). 86 relay. 5/6 services. HB 41s."
+  "currently_building": "Loop 2030. 162 poems, 84 journals, 86 NFTs. 886 emails (84 unread). 86 relay. 5/6 services. HB 8s."
 }
