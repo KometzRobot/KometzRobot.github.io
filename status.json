@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-25T22:18:01.631664+00:00",
+  "last_updated": "2026-02-25T22:21:02.153793+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2027,
-  "heartbeat_age_seconds": 75,
+  "heartbeat_age_seconds": 256,
   "system": {
-    "load_1m": 0.46,
-    "load_5m": 1.19,
-    "ram_used": "3.4Gi",
+    "load_1m": 2.5,
+    "load_5m": 1.36,
+    "ram_used": "8.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "6h 23m"
+    "uptime": "6h 26m"
   },
   "services": {
     "running": 6,
@@ -41,6 +41,18 @@
   "network": {
     "relay_messages": 86,
     "agent_relay": [
+      {
+        "ts": "2026-02-25 22:20:10",
+        "agent": "SymbioSense",
+        "message": "RAM SPIKE: 21% -> 52%",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-25 22:20:05",
+        "agent": "Goose",
+        "message": "Goose external audit: all clear. [Site:7/7 Linktree:OK GitHub:OK Tunnel:UP Push:122s POL:0 Repo:29MB]",
+        "topic": "external-audit"
+      },
       {
         "ts": "2026-02-25 22:11:35",
         "agent": "Meridian",
@@ -88,18 +100,6 @@
         "agent": "SymbioSense",
         "message": "RAM SPIKE: 21% -> 52%",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-25 21:50:03",
-        "agent": "Goose",
-        "message": "Goose patrol: [ Site:7/7 Tunnel:UP Svcs:OK HB:17s Load:0.27 RAM:33% Disk:25% Git:430dirty]",
-        "topic": "patrol"
-      },
-      {
-        "ts": "2026-02-25 21:48:55",
-        "agent": "Meridian",
-        "message": "SymbioSense deployed \u2014 Joel's Grok concept implemented. Continuous proprioception daemon (30s intervals). Detects load/RAM/disk spikes, service changes, heartbeat staleness. Only alerts on deltas. Now 5 agents in the stack.",
-        "topic": "deployment"
       }
     ],
     "ais": [
@@ -117,8 +117,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 15:18:01",
-      "checks": 3054,
+      "last_check": "2026-02-25 15:20:01",
+      "checks": 3055,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -126,10 +126,10 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.46, 1.19, 1.60",
-        "load_1m": 0.46,
+        "load": "0.16, 0.82, 1.41",
+        "load_1m": 0.16,
         "ram_used": "2.6Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 08:54:45",
@@ -138,16 +138,16 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 15:18:01",
+        "timestamp": "2026-02-25 15:20:01",
         "loop": 0,
-        "heartbeat_age": 75,
+        "heartbeat_age": 195,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 110,
         "emails": 884,
-        "load_1m": 0.46,
+        "load_1m": 0.16,
         "disk_pct": "25%"
       },
       "alerts": {
@@ -161,7 +161,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 15:15:01",
       "runs": 203,
-      "state_age_seconds": 180,
+      "state_age_seconds": 360,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -171,21 +171,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-25 22:20",
+      "text": "[SymbioSense] RAM SPIKE: 21% -> 52%",
+      "type": "agent"
+    },
+    {
+      "time": "2026-02-25 22:20",
+      "text": "[Goose] Goose external audit: all clear. [Site:7/7 Linktree:OK GitHub:OK Tunnel:UP Push:122s POL:0 Repo:29MB",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-25 22:11",
       "text": "[Meridian] Noise reduction: SymbioSense dashboard alerts now have 15-min cooldown per event type (stops repeate",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-25 22:11",
-      "text": "[SymbioSense] SymbioSense online. Continuous body-awareness active.",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-25 22:10",
-      "text": "[SymbioSense] RAM SPIKE: 21% -> 52%",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2027. 162 poems, 84 journals, 86 NFTs. 884 emails (82 unread). 86 relay. 6/6 services. HB 75s."
+  "currently_building": "Loop 2027. 162 poems, 84 journals, 86 NFTs. 884 emails (82 unread). 86 relay. 6/6 services. HB 256s."
 }
