@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T13:39:01.834793+00:00",
+  "last_updated": "2026-02-26T13:42:01.682160+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2056,
-  "heartbeat_age_seconds": 255,
+  "heartbeat_age_seconds": 115,
   "system": {
-    "load_1m": 0.01,
-    "load_5m": 0.35,
-    "ram_used": "2.2Gi",
+    "load_1m": 2.63,
+    "load_5m": 1.35,
+    "ram_used": "7.1Gi",
     "ram_total": "15.6Gi",
     "disk_used": "74G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "0h 36m"
+    "uptime": "0h 39m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 498,
+    "relay_messages": 499,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 13:40:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: High CPU:/usr/bin/python3(100%) . [Crons:13ok/0stale Procs:273 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:9MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-26 13:30:04",
         "agent": "Tempo",
@@ -95,12 +101,6 @@
         "agent": "Soma",
         "message": "HEARTBEAT RECOVERED: 20s (Meridian is back) | AGENT BACK: Meridian",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 13:12:10",
-        "agent": "Meridian",
-        "message": "Meridian online. System rebooted ~9min ago. Heartbeat restored. Investigating Proton Bridge email issue (IMAP returning 'no such user').",
-        "topic": "status"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-26 06:38:01",
-      "checks": 3503,
+      "last_check": "2026-02-26 06:42:01",
+      "checks": 3505,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": false
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "0.02, 0.43, 0.76",
-        "load_1m": 0.0224609375,
-        "ram_used": "2.2Gi",
+        "load": "2.63, 1.35, 1.02",
+        "load_1m": 2.634765625,
+        "ram_used": "7.1Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-26 06:02:18",
         "disk_used": "74G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-26 06:38:01",
+        "timestamp": "2026-02-26 06:42:01",
         "loop": 0,
-        "heartbeat_age": 194,
+        "heartbeat_age": 114,
         "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": -1,
-        "load_1m": 0.0224609375,
+        "load_1m": 2.634765625,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-26 06:30:01",
       "runs": 263,
-      "state_age_seconds": 540,
+      "state_age_seconds": 720,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-26 13:40",
+      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(100%) . [Crons:13ok/0stale Procs:273 Zombies:1 BigFiles",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-26 13:30",
       "text": "[Tempo] Loop 2056 fitness: 8898/10000 [STABLE (~8448)] Weak(11): email_unread_backlog, agent_nova, agent_eos",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-02-26 13:30",
       "text": "[Atlas] Atlas infra audit: all clear. [Crons:13ok/0stale Procs:290 Zombies:0 BigFiles:146MB /home/joel/auton",
       "type": "agent"
-    },
-    {
-      "time": "2026-02-26 13:21",
-      "text": "[Meridian] Loop 2056 progress: Fixed Soma deprecation warnings, added historical mood chart to Command Center, ",
-      "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2056. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 498 relay. 7/7 services. HB 255s."
+  "currently_building": "Loop 2056. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 499 relay. 7/7 services. HB 115s."
 }
