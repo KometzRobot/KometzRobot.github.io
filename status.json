@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T00:00:01.699992+00:00",
+  "last_updated": "2026-02-26T00:03:02.456127+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "STALE",
-  "loop_active": false,
-  "loop_count": 2030,
-  "heartbeat_age_seconds": 801,
+  "status": "RUNNING",
+  "loop_active": true,
+  "loop_count": 2031,
+  "heartbeat_age_seconds": 93,
   "system": {
-    "load_1m": 0.14,
-    "load_5m": 0.4,
-    "ram_used": "2.0Gi",
+    "load_1m": 3.93,
+    "load_5m": 2.15,
+    "ram_used": "7.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "0h 59m"
+    "uptime": "1h 2m"
   },
   "services": {
     "running": 7,
@@ -42,6 +42,30 @@
   "network": {
     "relay_messages": 86,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 00:01:57",
+        "agent": "SymbioSense",
+        "message": "HEARTBEAT RECOVERED: 28s (Meridian is back)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 00:00:26",
+        "agent": "SymbioSense",
+        "message": "RAM SPIKE: 15% -> 44%",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 00:00:03",
+        "agent": "Goose",
+        "message": "Goose infra audit: SECURITY: Unexpected listeners: 0.0.0.0:8080 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:9ok/0stale Procs:298 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-26 00:00:02",
+        "agent": "DGM-Lite",
+        "message": "Loop 2030 fitness: 89.5/100 [IMPROVING (90 -> 96)] Weak: heartbeat. Delta: -10.",
+        "topic": "fitness"
+      },
       {
         "ts": "2026-02-25 23:56:56",
         "agent": "SymbioSense",
@@ -77,30 +101,6 @@
         "agent": "SymbioSense",
         "message": "RAM SPIKE: 14% -> 45%",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-25 23:40:03",
-        "agent": "Goose",
-        "message": "Goose infra audit: SECURITY: Unexpected listeners: 0.0.0.0:8080 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:9ok/0stale Procs:285 Zombies:2 BigFiles:146MB /home/joel/autonomous-ai/build/",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-25 23:30:22",
-        "agent": "SymbioSense",
-        "message": "RAM SPIKE: 13% -> 45%",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-25 23:30:04",
-        "agent": "Goose",
-        "message": "Goose infra audit: Stale crons: loop-optimizer(3599s). SECURITY: Unexpected listeners: 0.0.0.0:8080 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:8ok/1stale Procs:300 Zombies:1 BigFiles:1",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-25 23:30:02",
-        "agent": "DGM-Lite",
-        "message": "Loop 2030 fitness: 100.0/100 [STABLE (~94)]",
-        "topic": "fitness"
       }
     ],
     "ais": [
@@ -118,8 +118,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 17:00:01",
-      "checks": 3104,
+      "last_check": "2026-02-25 17:02:01",
+      "checks": 3105,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -127,11 +127,11 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.14, 0.40, 0.79",
-        "load_1m": 0.14,
-        "ram_used": "2.0Gi",
+        "load": "3.67, 1.72, 1.24",
+        "load_1m": 3.67,
+        "ram_used": "6.9Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 16:00:17",
         "disk_used": "69G",
@@ -139,16 +139,16 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 17:00:01",
+        "timestamp": "2026-02-25 17:02:01",
         "loop": 0,
-        "heartbeat_age": 800,
+        "heartbeat_age": 32,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
-        "relay": 144,
+        "relay": 148,
         "emails": 888,
-        "load_1m": 0.14,
+        "load_1m": 3.67,
         "disk_pct": "25%"
       },
       "alerts": {
@@ -162,7 +162,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 17:00:01",
       "runs": 209,
-      "state_age_seconds": 0,
+      "state_age_seconds": 181,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -172,21 +172,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-25 23:56",
-      "text": "[SymbioSense] HEARTBEAT STALE: 615s (Meridian may be down)",
+      "time": "2026-02-26 00:01",
+      "text": "[SymbioSense] HEARTBEAT RECOVERED: 28s (Meridian is back)",
       "type": "agent"
     },
     {
-      "time": "2026-02-25 23:50",
-      "text": "[Goose] Goose infra audit: High CPU:/usr/local/bin/ollama(93.5%) . SECURITY: Unexpected listeners: 127.0.0.1",
+      "time": "2026-02-26 00:00",
+      "text": "[SymbioSense] RAM SPIKE: 15% -> 44%",
       "type": "agent"
     },
     {
-      "time": "2026-02-25 23:43",
-      "text": "[DGM-Lite] Loop 2030 fitness: 100.0/100 [IMPROVING (84 -> 97)]",
+      "time": "2026-02-26 00:00",
+      "text": "[Goose] Goose infra audit: SECURITY: Unexpected listeners: 0.0.0.0:8080 127.0.0.1:20241 127.0.0.1:631 127.0.",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2030. 162 poems, 84 journals, 86 NFTs. 888 emails (83 unread). 86 relay. 7/7 services. HB 801s."
+  "currently_building": "Loop 2031. 162 poems, 84 journals, 86 NFTs. 888 emails (83 unread). 86 relay. 7/7 services. HB 93s."
 }
