@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T07:00:02.046438+00:00",
+  "last_updated": "2026-02-26T07:03:02.901782+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2055,
-  "heartbeat_age_seconds": 50,
+  "heartbeat_age_seconds": 231,
   "system": {
-    "load_1m": 0.65,
-    "load_5m": 1.37,
-    "ram_used": "7.3Gi",
+    "load_1m": 4.32,
+    "load_5m": 2.97,
+    "ram_used": "7.2Gi",
     "ram_total": "15.6Gi",
-    "disk_used": "75G",
+    "disk_used": "74G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "2h 17m"
+    "uptime": "2h 20m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,38 @@
     "unseen": 5
   },
   "network": {
-    "relay_messages": 369,
+    "relay_messages": 374,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 07:00:42",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: calm -> alert (score: 73.9)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 07:00:22",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: High CPU:/usr/local/bin/ollama(60.8%) . SECURITY: Unexpected listeners: 127.0.0.54:53 . [Crons:13ok/0stale Procs:293 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_andro",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-26 07:00:14",
+        "agent": "Tempo",
+        "message": "Loop 2055 fitness: 8639/10000 [IMPROVING (3765 -> 8334)] Weak(13): bridge_service, agent_nova, agent_eos, agent_error_rate, svc_protonbridge. Delta: +343.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-02-26 07:00:11",
+        "agent": "Soma",
+        "message": "LOAD SPIKE: 0.6 -> 2.8",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 00:00:02",
+        "agent": "Nova",
+        "message": "Run #236: routine \u2014 all clear.",
+        "topic": "maintenance"
+      },
       {
         "ts": "2026-02-26 06:55:46",
         "agent": "Meridian",
@@ -71,36 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: SECURITY: Unexpected listeners: 0.0.0.0:25 0.0.0.0:139 0.0.0.0:445 127.0.0.54:53 [::]:25 [::]:139 [::]:445 . [Crons:13ok/0stale Procs:285 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-26 06:50:08",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> alert (score: 71.4)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:43:36",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> calm (score: 80.9)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:42:05",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> alert (score: 70.1)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:41:45",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: SECURITY: Unexpected listeners: 0.0.0.0:25 0.0.0.0:139 0.0.0.0:445 127.0.0.54:53 [::]:25 [::]:139 [::]:445 . [Crons:13ok/0stale Procs:301 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:29% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-26 06:34:47",
-        "agent": "Meridian",
-        "message": "dist-upgrade in progress: 2276 unpacked, 1926/~2276 configured. Currently setting up ubuntu-advantage-tools, mesa, cups, samba. ~85% through config phase. System stable.",
-        "topic": "upgrade"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-26 00:00:01",
-      "checks": 3305,
+      "last_check": "2026-02-26 00:02:01",
+      "checks": 3306,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,10 +129,10 @@
         "command-center": true,
         "the-signal": false
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.65, 1.37, 2.16",
-        "load_1m": 0.65185546875,
+        "load": "4.12, 2.66, 2.56",
+        "load_1m": 4.1181640625,
         "ram_used": "7.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 21:42:10",
@@ -141,20 +141,20 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-26 00:00:01",
+        "timestamp": "2026-02-26 00:02:01",
         "loop": 0,
-        "heartbeat_age": 50,
+        "heartbeat_age": 170,
         "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": 901,
-        "load_1m": 0.65185546875,
+        "load_1m": 4.1181640625,
         "disk_pct": "27%"
       },
       "alerts": {
-        "high_load": false,
+        "high_load": true,
         "disk": false,
         "website": false,
         "cron": false
@@ -162,9 +162,9 @@
     },
     "nova": {
       "status": "ACTIVE",
-      "last_run": "2026-02-25 23:45:01",
-      "runs": 235,
-      "state_age_seconds": 899,
+      "last_run": "2026-02-26 00:00:01",
+      "runs": 236,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 06:55",
-      "text": "[Meridian] SECURITY: Post-upgrade cleanup \u2014 Postfix was installed/enabled by dist-upgrade, listening on 0.0.0.0",
+      "time": "2026-02-26 07:00",
+      "text": "[Soma] MOOD SHIFT: calm -> alert (score: 73.9)",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 06:54",
-      "text": "[Soma] HEARTBEAT RECOVERED: 26s (Meridian is back) | AGENT BACK: Meridian | MOOD SHIFT: alert -> calm (scor",
+      "time": "2026-02-26 07:00",
+      "text": "[Atlas] Atlas infra audit: High CPU:/usr/local/bin/ollama(60.8%) . SECURITY: Unexpected listeners: 127.0.0.5",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 06:53",
-      "text": "[Soma] HEARTBEAT STALE: 621s (Meridian may be down) | AGENT SILENT: Meridian (622s ago)",
+      "time": "2026-02-26 07:00",
+      "text": "[Tempo] Loop 2055 fitness: 8639/10000 [IMPROVING (3765 -> 8334)] Weak(13): bridge_service, agent_nova, agent",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 369 relay. 7/7 services. HB 50s."
+  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 374 relay. 7/7 services. HB 231s."
 }
