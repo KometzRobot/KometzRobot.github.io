@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T02:03:02.254598+00:00",
+  "last_updated": "2026-02-26T02:06:02.028306+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2038,
-  "heartbeat_age_seconds": 79,
+  "heartbeat_age_seconds": 259,
   "system": {
-    "load_1m": 3.89,
-    "load_5m": 2.11,
+    "load_1m": 4.16,
+    "load_5m": 3.01,
     "ram_used": "7.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "3h 2m"
+    "uptime": "3h 5m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 85
   },
   "network": {
-    "relay_messages": 191,
+    "relay_messages": 192,
     "agent_relay": [
+      {
+        "ts": "2026-02-25 19:06:01",
+        "agent": "Eos",
+        "message": "HIGH LOAD: 4.16, 3.01, 1.84 \u2014 may indicate runaway process",
+        "topic": "alert"
+      },
       {
         "ts": "2026-02-26 02:01:46",
         "agent": "Meridian",
@@ -95,12 +101,6 @@
         "agent": "SymbioSense",
         "message": "RAM SPIKE: 13% -> 47%",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 01:40:04",
-        "agent": "Goose",
-        "message": "Goose infra audit: Ko-fi unreachable (403). [Crons:13ok/0stale Procs:296 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:25% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 19:02:01",
-      "checks": 3165,
+      "last_check": "2026-02-25 19:06:01",
+      "checks": 3167,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "3.71, 1.68, 1.17",
-        "load_1m": 3.71,
-        "ram_used": "7.0Gi",
+        "load": "4.16, 3.01, 1.84",
+        "load_1m": 4.16,
+        "ram_used": "6.8Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 16:00:17",
         "disk_used": "69G",
@@ -141,20 +141,20 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 19:02:01",
+        "timestamp": "2026-02-25 19:06:01",
         "loop": 0,
-        "heartbeat_age": 18,
+        "heartbeat_age": 258,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 191,
         "emails": 890,
-        "load_1m": 3.71,
+        "load_1m": 4.16,
         "disk_pct": "25%"
       },
       "alerts": {
-        "high_load": false,
+        "high_load": true,
         "disk": false,
         "website": false,
         "cron": false
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 19:00:01",
       "runs": 217,
-      "state_age_seconds": 180,
+      "state_age_seconds": 360,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -190,5 +190,5 @@
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2038. 162 poems, 84 journals, 86 NFTs. 890 emails (85 unread). 191 relay. 7/7 services. HB 79s."
+  "currently_building": "Loop 2038. 162 poems, 84 journals, 86 NFTs. 890 emails (85 unread). 192 relay. 7/7 services. HB 259s."
 }
