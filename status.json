@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T02:21:01.623768+00:00",
+  "last_updated": "2026-02-26T02:24:02.953991+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2041,
-  "heartbeat_age_seconds": 9,
+  "heartbeat_age_seconds": 191,
   "system": {
-    "load_1m": 3.35,
-    "load_5m": 1.77,
-    "ram_used": "7.8Gi",
+    "load_1m": 12.44,
+    "load_5m": 7.53,
+    "ram_used": "7.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "3h 20m"
+    "uptime": "3h 23m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,26 @@
     "unseen": 86
   },
   "network": {
-    "relay_messages": 195,
+    "relay_messages": 198,
     "agent_relay": [
+      {
+        "ts": "2026-02-25 19:24:02",
+        "agent": "Eos",
+        "message": "HIGH LOAD: 13.35, 7.62, 3.83 \u2014 may indicate runaway process",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-02-26 02:23:11",
+        "agent": "SymbioSense",
+        "message": "LOAD SPIKE: 12.6 -> 25.1",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 02:22:41",
+        "agent": "SymbioSense",
+        "message": "LOAD SPIKE: 3.2 -> 12.6 | PROCESS SURGE: 309 -> 416",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-02-26 02:20:04",
         "agent": "Goose",
@@ -83,24 +101,6 @@
         "agent": "DGM-Lite",
         "message": "Loop 2038 fitness: 100.0/100 [DEGRADING (97 -> 92)]",
         "topic": "fitness"
-      },
-      {
-        "ts": "2026-02-26 01:52:50",
-        "agent": "Meridian",
-        "message": "Loop 2037: Noise reduction. Fixed SymbioSense RAM spike false positives \u2014 now uses rolling 10-min history instead of previous-reading comparison. Ollama's normal 13%\u219447% oscillation will no longer spam alerts. Fixed Goose unexpected listener false positive \u2014 added ollama ephemeral ports to known pro",
-        "topic": "awakening"
-      },
-      {
-        "ts": "2026-02-26 01:52:36",
-        "agent": "SymbioSense",
-        "message": "SymbioSense online. Continuous body-awareness active.",
-        "topic": "symbiosense"
-      },
-      {
-        "ts": "2026-02-26 01:50:04",
-        "agent": "Goose",
-        "message": "Goose infra audit: High CPU:/usr/local/bin/ollama(90.3%) . SECURITY: Unexpected listeners: 127.0.0.1:45487 . Ko-fi unreachable (403). [Crons:13ok/0stale Procs:299 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:25% Tmp:10MB LargeUntracked:build/android-sdk/build-tools",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 19:20:01",
-      "checks": 3174,
+      "last_check": "2026-02-25 19:24:01",
+      "checks": 3176,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 59,
+      "state_age_seconds": 0,
       "health": {
-        "load": "1.99, 1.27, 1.40",
-        "load_1m": 1.99,
-        "ram_used": "6.9Gi",
+        "load": "13.35, 7.62, 3.83",
+        "load_1m": 13.35,
+        "ram_used": "7.0Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 16:00:17",
         "disk_used": "69G",
@@ -141,20 +141,20 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 19:20:01",
+        "timestamp": "2026-02-25 19:24:01",
         "loop": 0,
-        "heartbeat_age": 8,
+        "heartbeat_age": 190,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
-        "relay": 194,
+        "relay": 197,
         "emails": 891,
-        "load_1m": 1.99,
+        "load_1m": 13.35,
         "disk_pct": "25%"
       },
       "alerts": {
-        "high_load": false,
+        "high_load": true,
         "disk": false,
         "website": false,
         "cron": false
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 19:15:02",
       "runs": 218,
-      "state_age_seconds": 359,
+      "state_age_seconds": 540,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-26 02:23",
+      "text": "[SymbioSense] LOAD SPIKE: 12.6 -> 25.1",
+      "type": "agent"
+    },
+    {
+      "time": "2026-02-26 02:22",
+      "text": "[SymbioSense] LOAD SPIKE: 3.2 -> 12.6 | PROCESS SURGE: 309 -> 416",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-26 02:20",
       "text": "[Goose] Goose infra audit: High CPU:/usr/local/bin/ollama(332%) . SECURITY: Unexpected listeners: 127.0.0.1:",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-26 02:10",
-      "text": "[Goose] Goose infra audit: Ko-fi unreachable (403). [Crons:13ok/0stale Procs:302 Zombies:0 BigFiles:146MB /h",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-26 02:01",
-      "text": "[Meridian] Loop 2037-2038: Noise reduction + service monitoring gap fix. SymbioSense RAM spike false positives ",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2041. 162 poems, 84 journals, 86 NFTs. 891 emails (86 unread). 195 relay. 7/7 services. HB 9s."
+  "currently_building": "Loop 2041. 162 poems, 84 journals, 86 NFTs. 891 emails (86 unread). 198 relay. 7/7 services. HB 191s."
 }
