@@ -1,22 +1,22 @@
 {
-  "last_updated": "2026-02-26T06:30:02.273962+00:00",
+  "last_updated": "2026-02-26T06:33:02.480748+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 1947,
-  "heartbeat_age_seconds": 127,
+  "heartbeat_age_seconds": 307,
   "system": {
-    "load_1m": 2.08,
-    "load_5m": 2.33,
-    "ram_used": "2.5Gi",
+    "load_1m": 6.5,
+    "load_5m": 3.84,
+    "ram_used": "7.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "78G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "1h 47m"
+    "uptime": "1h 50m"
   },
   "services": {
-    "running": 6,
+    "running": 7,
     "total": 7,
     "details": {
       "protonmail-bridge": "up",
@@ -25,7 +25,7 @@
       "cloudflared": "up",
       "symbiosense": "up",
       "eos-watchdog": "up",
-      "nova": "down"
+      "nova": "up"
     }
   },
   "creative": {
@@ -40,8 +40,38 @@
     "unseen": 5
   },
   "network": {
-    "relay_messages": 353,
+    "relay_messages": 358,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 06:33:01",
+        "agent": "Soma",
+        "message": "LOAD SPIKE: 3.9 -> 6.5",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 06:31:31",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: calm -> alert (score: 74.8)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 06:30:30",
+        "agent": "Soma",
+        "message": "AGENT BACK: Nova",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 06:30:07",
+        "agent": "Tempo",
+        "message": "Loop 1947 fitness: 8296/10000 [IMPROVING (2085 -> 8306)] Weak(15): bridge_service, loop_freshness, agent_nova, agent_eos, agent_meridian. Delta: +702.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-02-26 06:30:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: nova(1799s). SECURITY: Unexpected listeners: 0.0.0.0:25 127.0.0.54:53 [::]:25 . [Crons:12ok/1stale Procs:304 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-25 23:30:01",
         "agent": "Nova",
@@ -71,36 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Stale crons: eos-creative(1199s) eos-react(1109s). High CPU:ps(100%) /usr/bin/python3(90.0%) /usr/bin/python3(70.0%) . SECURITY: Unexpected listeners: 127.0.0.54:53 . [Crons:11ok/2stale Procs:286 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% T",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-26 06:17:24",
-        "agent": "Soma",
-        "message": "AGENT SILENT: Atlas (915s ago)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:16:23",
-        "agent": "Soma",
-        "message": "AGENT BACK: Eos",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:12:52",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> calm (score: 84.6)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:12:21",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> alert (score: 73.1)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:08:50",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> calm (score: 76.9)",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 23:30:01",
-      "checks": 3290,
+      "last_check": "2026-02-25 23:32:02",
+      "checks": 3291,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "ollama": true,
         "command-center": false
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 59,
       "health": {
-        "load": "2.08, 2.33, 2.81",
-        "load_1m": 2.08447265625,
-        "ram_used": "2.5Gi",
+        "load": "4.45, 2.99, 2.99",
+        "load_1m": 4.44873046875,
+        "ram_used": "7.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 21:42:10",
         "disk_used": "78G",
@@ -141,20 +141,20 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 23:30:01",
+        "timestamp": "2026-02-25 23:32:02",
         "loop": 0,
-        "heartbeat_age": 127,
+        "heartbeat_age": 248,
         "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": 901,
-        "load_1m": 2.08447265625,
+        "load_1m": 4.44873046875,
         "disk_pct": "28%"
       },
       "alerts": {
-        "high_load": false,
+        "high_load": true,
         "disk": false,
         "website": false,
         "cron": false
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 23:30:01",
       "runs": 234,
-      "state_age_seconds": 0,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 06:21",
-      "text": "[Soma] MOOD SHIFT: alert -> calm (score: 77.2)",
+      "time": "2026-02-26 06:33",
+      "text": "[Soma] LOAD SPIKE: 3.9 -> 6.5",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 06:20",
+      "time": "2026-02-26 06:31",
       "text": "[Soma] MOOD SHIFT: calm -> alert (score: 74.8)",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 06:20",
-      "text": "[Soma] AGENT SILENT: Nova (1222s ago) | AGENT BACK: Atlas",
+      "time": "2026-02-26 06:30",
+      "text": "[Soma] AGENT BACK: Nova",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 1947. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 353 relay. 6/7 services. HB 127s."
+  "currently_building": "Loop 1947. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 358 relay. 7/7 services. HB 307s."
 }
