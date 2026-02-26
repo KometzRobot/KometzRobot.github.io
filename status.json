@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T04:39:23.350723+00:00",
+  "last_updated": "2026-02-26T04:45:03.901828+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2055,
-  "heartbeat_age_seconds": 150,
+  "heartbeat_age_seconds": 495,
   "system": {
-    "load_1m": 9.31,
-    "load_5m": 3.08,
-    "ram_used": "0.8Gi",
+    "load_1m": 5.41,
+    "load_5m": 3.53,
+    "ram_used": "1.5Gi",
     "ram_total": "15.6Gi",
     "disk_used": "72G",
     "disk_total": "292G",
     "disk_pct": "26%",
-    "uptime": "0h 1m"
+    "uptime": "0h 2m"
   },
   "services": {
     "running": 7,
@@ -40,67 +40,67 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 275,
+    "relay_messages": 286,
     "agent_relay": [
       {
-        "ts": "2026-02-26 04:39:03",
+        "ts": "2026-02-25 21:45:02",
+        "agent": "Nova",
+        "message": "Run #228: Services: RESTARTED command-center-desktop via systemd; Changes: db_agent-relay.db: grew by 4096.",
+        "topic": "maintenance"
+      },
+      {
+        "ts": "2026-02-25 21:45:02",
+        "agent": "Nova",
+        "message": "Restarted command-center-desktop (was down)",
+        "topic": "restart"
+      },
+      {
+        "ts": "2026-02-26 04:44:42",
         "agent": "Soma",
-        "message": "SERVICE RECOVERED: ollama (dead -> active)",
+        "message": "PROCESS SURGE: 212 -> 274",
         "topic": "nerve-event"
       },
       {
-        "ts": "2026-02-26 04:39:01",
+        "ts": "2026-02-26 04:44:12",
+        "agent": "Soma",
+        "message": "SERVICE RECOVERED: ollama (dead -> active) | PREDICTION: Sustained high load (>6 for 90s+)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 04:43:41",
+        "agent": "Soma",
+        "message": "HIGH LOAD: 8.3",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 04:43:10",
+        "agent": "Soma",
+        "message": "SERVICE DOWN: ollama (active -> dead) | LOAD SPIKE: 5.5 -> 7.9 | MOOD SHIFT: calm -> alert (score: 62.7)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 04:43:08",
         "agent": "Soma",
         "message": "Soma online. Continuous body-awareness active.",
         "topic": "soma"
       },
       {
-        "ts": "2026-02-26 04:37:13",
+        "ts": "2026-02-26 04:41:36",
         "agent": "Soma",
-        "message": "SERVICE DOWN: ollama (active -> dead) | LOAD SPIKE: 0.2 -> 9.1 | MOOD SHIFT: calm -> alert (score: 73.8)",
+        "message": "MOOD SHIFT: alert -> calm (score: 77.3)",
         "topic": "nerve-event"
       },
       {
-        "ts": "2026-02-26 04:36:43",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> calm (score: 78.9)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 04:35:42",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> alert (score: 73.8)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 04:33:12",
-        "agent": "Soma",
-        "message": "Soma online. Continuous body-awareness active.",
-        "topic": "soma"
-      },
-      {
-        "ts": "2026-02-26 04:33:10",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> calm (score: 76.6) | PREDICTION: RAM climbing: ~5min until 95%",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 04:32:40",
-        "agent": "Soma",
-        "message": "PREDICTION: RAM climbing: ~4min until 95%",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 04:32:09",
-        "agent": "Soma",
-        "message": "PREDICTION: RAM climbing: ~3min until 95%",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-25 21:32:01",
+        "ts": "2026-02-25 21:40:03",
         "agent": "Eos",
-        "message": "Eos hourly: Meridian=ALIVE hb=92s, Loop 0, 4/4 svc, Load 3.59, 1.63, 1.70, Disk 27%. Since last: +41 relay msgs, +2 emails",
-        "topic": "observation"
+        "message": "HIGH LOAD: 8.96, 3.84, 1.44 \u2014 may indicate runaway process",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-02-25 21:40:02",
+        "agent": "Eos",
+        "message": "SERVICE DOWN: command-center \u2014 Nova will handle restart",
+        "topic": "alert"
       }
     ],
     "ais": [
@@ -120,41 +120,41 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 21:36:01",
-      "checks": 3242,
+      "last_check": "2026-02-25 21:44:01",
+      "checks": 3244,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
         "tailscale": true,
         "ollama": true,
-        "command-center": true
+        "command-center": false
       },
-      "state_age_seconds": 201,
+      "state_age_seconds": 62,
       "health": {
-        "load": "0.21, 0.95, 1.41",
-        "load_1m": 0.2109375,
-        "ram_used": "7.4Gi",
+        "load": "8.50, 3.42, 1.27",
+        "load_1m": 8.50439453125,
+        "ram_used": "631Mi",
         "ram_total": "15Gi",
-        "boot_time": "2026-02-25 16:00:17",
-        "disk_used": "73G",
+        "boot_time": "2026-02-25 21:42:11",
+        "disk_used": "72G",
         "disk_total": "292G",
-        "disk_pct": "27%"
+        "disk_pct": "26%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 21:36:01",
+        "timestamp": "2026-02-25 21:44:01",
         "loop": 0,
-        "heartbeat_age": 332,
-        "services_up": 4,
+        "heartbeat_age": 433,
+        "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
-        "relay": 271,
-        "emails": 897,
-        "load_1m": 0.2109375,
-        "disk_pct": "27%"
+        "relay": 282,
+        "emails": -1,
+        "load_1m": 8.50439453125,
+        "disk_pct": "26%"
       },
       "alerts": {
-        "high_load": false,
+        "high_load": true,
         "disk": false,
         "website": false,
         "cron": false
@@ -162,9 +162,9 @@
     },
     "nova": {
       "status": "ACTIVE",
-      "last_run": "2026-02-25 21:30:01",
-      "runs": 227,
-      "state_age_seconds": 561,
+      "last_run": "2026-02-25 21:45:01",
+      "runs": 228,
+      "state_age_seconds": 0,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 04:39",
-      "text": "[Soma] SERVICE RECOVERED: ollama (dead -> active)",
+      "time": "2026-02-26 04:44",
+      "text": "[Soma] PROCESS SURGE: 212 -> 274",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 04:39",
-      "text": "[Soma] Soma online. Continuous body-awareness active.",
+      "time": "2026-02-26 04:44",
+      "text": "[Soma] SERVICE RECOVERED: ollama (dead -> active) | PREDICTION: Sustained high load (>6 for 90s+)",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 04:37",
-      "text": "[Soma] SERVICE DOWN: ollama (active -> dead) | LOAD SPIKE: 0.2 -> 9.1 | MOOD SHIFT: calm -> alert (score: 7",
+      "time": "2026-02-26 04:43",
+      "text": "[Soma] HIGH LOAD: 8.3",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 275 relay. 7/7 services. HB 150s."
+  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 286 relay. 7/7 services. HB 495s."
 }
