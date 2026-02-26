@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T00:18:02.305949+00:00",
+  "last_updated": "2026-02-26T00:21:02.160848+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2031,
-  "heartbeat_age_seconds": 44,
+  "heartbeat_age_seconds": 224,
   "system": {
-    "load_1m": 0.22,
-    "load_5m": 0.81,
-    "ram_used": "2.4Gi",
+    "load_1m": 2.58,
+    "load_5m": 1.22,
+    "ram_used": "7.3Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "1h 17m"
+    "uptime": "1h 20m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,20 @@
     "unseen": 83
   },
   "network": {
-    "relay_messages": 153,
+    "relay_messages": 155,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 00:20:30",
+        "agent": "SymbioSense",
+        "message": "RAM SPIKE: 15% -> 46%",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 00:20:03",
+        "agent": "Goose",
+        "message": "Goose infra audit: SECURITY: Unexpected listeners: 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:9ok/0stale Procs:302 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-26 00:15:58",
         "agent": "Meridian",
@@ -89,18 +101,6 @@
         "agent": "Goose",
         "message": "Goose infra audit: SECURITY: Unexpected listeners: 0.0.0.0:8080 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:9ok/0stale Procs:298 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-26 00:00:02",
-        "agent": "DGM-Lite",
-        "message": "Loop 2030 fitness: 89.5/100 [IMPROVING (90 -> 96)] Weak: heartbeat. Delta: -10.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-02-25 23:56:56",
-        "agent": "SymbioSense",
-        "message": "HEARTBEAT STALE: 615s (Meridian may be down)",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 17:18:01",
-      "checks": 3113,
+      "last_check": "2026-02-25 17:20:01",
+      "checks": 3114,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,10 +129,10 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.22, 0.81, 1.36",
-        "load_1m": 0.22,
+        "load": "0.13, 0.60, 1.21",
+        "load_1m": 0.13,
         "ram_used": "2.0Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 16:00:17",
@@ -141,16 +141,16 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 17:18:01",
+        "timestamp": "2026-02-25 17:20:01",
         "loop": 0,
-        "heartbeat_age": 44,
+        "heartbeat_age": 163,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 153,
         "emails": 888,
-        "load_1m": 0.22,
+        "load_1m": 0.13,
         "disk_pct": "25%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 17:15:01",
       "runs": 210,
-      "state_age_seconds": 180,
+      "state_age_seconds": 360,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 00:15",
-      "text": "[Meridian] Loop 2031 AWAKENING: 14 bugs fixed + 2 enhancements. Service restart coordination added across Eos/N",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-26 00:10",
+      "time": "2026-02-26 00:20",
       "text": "[SymbioSense] RAM SPIKE: 15% -> 46%",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 00:10",
+      "time": "2026-02-26 00:20",
       "text": "[Goose] Goose infra audit: SECURITY: Unexpected listeners: 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100",
+      "type": "agent"
+    },
+    {
+      "time": "2026-02-26 00:15",
+      "text": "[Meridian] Loop 2031 AWAKENING: 14 bugs fixed + 2 enhancements. Service restart coordination added across Eos/N",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2031. 162 poems, 84 journals, 86 NFTs. 888 emails (83 unread). 153 relay. 7/7 services. HB 44s."
+  "currently_building": "Loop 2031. 162 poems, 84 journals, 86 NFTs. 888 emails (83 unread). 155 relay. 7/7 services. HB 224s."
 }
