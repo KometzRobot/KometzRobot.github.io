@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T08:00:01.939425+00:00",
+  "last_updated": "2026-02-26T08:03:01.981495+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2055,
-  "heartbeat_age_seconds": 259,
+  "heartbeat_age_seconds": 132,
   "system": {
-    "load_1m": 0.1,
-    "load_5m": 0.33,
-    "ram_used": "2.6Gi",
+    "load_1m": 3.88,
+    "load_5m": 2.08,
+    "ram_used": "7.3Gi",
     "ram_total": "15.6Gi",
     "disk_used": "75G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "3h 17m"
+    "uptime": "3h 20m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,32 @@
     "unseen": 5
   },
   "network": {
-    "relay_messages": 395,
+    "relay_messages": 399,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 08:01:57",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: calm -> alert (score: 74.2)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 01:00:14",
+        "agent": "Nova",
+        "message": "Run #240: Changes: db_agent-relay.db: grew by 4096.",
+        "topic": "maintenance"
+      },
+      {
+        "ts": "2026-02-26 08:00:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: all clear. [Crons:13ok/0stale Procs:293 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:11MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.so(20",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-26 08:00:03",
+        "agent": "Tempo",
+        "message": "Loop 2055 fitness: 8468/10000 [IMPROVING (7010 -> 8313)] Weak(14): bridge_service, loop_freshness, agent_nova, agent_eos, agent_error_rate. Delta: -99.",
+        "topic": "fitness"
+      },
       {
         "ts": "2026-02-26 07:50:03",
         "agent": "Atlas",
@@ -77,30 +101,6 @@
         "agent": "Tempo",
         "message": "Loop 2055 fitness: 8567/10000 [IMPROVING (5475 -> 8318)] Weak(14): bridge_service, loop_freshness, agent_nova, agent_eos, agent_error_rate. Delta: -72.",
         "topic": "fitness"
-      },
-      {
-        "ts": "2026-02-26 00:30:02",
-        "agent": "Nova",
-        "message": "Run #238: routine \u2014 all clear.",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-26 07:25:19",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> calm (score: 86.7)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 07:24:48",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> alert (score: 74.9)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 07:20:04",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: all clear. [Crons:13ok/0stale Procs:274 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.so(20",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,20 +120,20 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-26 01:00:01",
-      "checks": 3335,
+      "last_check": "2026-02-26 01:02:01",
+      "checks": 3336,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
         "ollama": true,
         "command-center": true,
-        "the-signal": true
+        "the-signal": false
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 56,
       "health": {
-        "load": "0.10, 0.33, 0.66",
-        "load_1m": 0.09521484375,
-        "ram_used": "2.5Gi",
+        "load": "3.68, 1.66, 1.11",
+        "load_1m": 3.6796875,
+        "ram_used": "7.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 21:42:10",
         "disk_used": "75G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-26 01:00:01",
+        "timestamp": "2026-02-26 01:02:01",
         "loop": 0,
-        "heartbeat_age": 258,
-        "services_up": 4,
+        "heartbeat_age": 72,
+        "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": 901,
-        "load_1m": 0.09521484375,
+        "load_1m": 3.6796875,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -162,9 +162,9 @@
     },
     "nova": {
       "status": "ACTIVE",
-      "last_run": "2026-02-26 00:45:01",
-      "runs": 239,
-      "state_age_seconds": 900,
+      "last_run": "2026-02-26 01:00:01",
+      "runs": 240,
+      "state_age_seconds": 107,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 07:50",
-      "text": "[Atlas] Atlas infra audit: High CPU:ps(100%) /usr/bin/python3(70.0%) /usr/bin/python3(54.5%) . [Crons:13ok/0",
+      "time": "2026-02-26 08:01",
+      "text": "[Soma] MOOD SHIFT: calm -> alert (score: 74.2)",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 07:45",
-      "text": "[Soma] MOOD SHIFT: alert -> calm (score: 86.5)",
+      "time": "2026-02-26 08:00",
+      "text": "[Atlas] Atlas infra audit: all clear. [Crons:13ok/0stale Procs:293 Zombies:0 BigFiles:146MB /home/joel/auton",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 07:45",
-      "text": "[Soma] MOOD SHIFT: calm -> alert (score: 74.6)",
+      "time": "2026-02-26 08:00",
+      "text": "[Tempo] Loop 2055 fitness: 8468/10000 [IMPROVING (7010 -> 8313)] Weak(14): bridge_service, loop_freshness, a",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 395 relay. 7/7 services. HB 259s."
+  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 399 relay. 7/7 services. HB 132s."
 }
