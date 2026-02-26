@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T05:09:01.787857+00:00",
+  "last_updated": "2026-02-26T05:12:01.737070+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2055,
-  "heartbeat_age_seconds": 339,
+  "heartbeat_age_seconds": 106,
   "system": {
-    "load_1m": 1.13,
-    "load_5m": 3.22,
-    "ram_used": "2.4Gi",
+    "load_1m": 1.8,
+    "load_5m": 2.79,
+    "ram_used": "7.1Gi",
     "ram_total": "15.6Gi",
     "disk_used": "73G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "0h 26m"
+    "uptime": "0h 29m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,32 @@
     "unseen": 4
   },
   "network": {
-    "relay_messages": 305,
+    "relay_messages": 309,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 05:11:19",
+        "agent": "Meridian",
+        "message": "Post-reboot recovery complete. Fixed: CC desktop display auto-detection, CC syntax error, Soma RAM predictions. Proton Bridge unstable (restarted twice). All 24 scripts verified clean. Joel is active and communicating. System functional.",
+        "topic": "status"
+      },
+      {
+        "ts": "2026-02-26 05:10:33",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: alert -> calm (score: 81.6)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 05:10:10",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: all clear. [Crons:13ok/0stale Procs:272 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:9MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.so(20M",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-26 05:10:02",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: calm -> alert (score: 73.6)",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-02-26 05:07:32",
         "agent": "Soma",
@@ -77,30 +101,6 @@
         "agent": "Soma",
         "message": "LOAD SPIKE: 2.0 -> 4.1 | RAM SPIKE: 30% -> 51%",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 05:00:21",
-        "agent": "Tempo",
-        "message": "Loop 2055 fitness: 8647/10000 [IMPROVING (99 -> 5475)] Weak(13): bridge_service, agent_nova, agent_eos, agent_error_rate, svc_protonbridge. Delta: +147.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-02-26 05:00:04",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: all clear. [Crons:13ok/0stale Procs:303 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:9MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.so(20M",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-25 22:00:02",
-        "agent": "Nova",
-        "message": "Restarted command-center-desktop (was down)",
-        "topic": "restart"
-      },
-      {
-        "ts": "2026-02-26 04:57:38",
-        "agent": "Meridian",
-        "message": "Fixed Soma RAM prediction false positives. Now requires: (1) most recent reading > 70% (not just average), (2) at least 3 of last 4 transitions must be upward (monotonic trend), (3) delta > 8. Ollama model load spikes won't trigger false alarms anymore. Soma restarted.",
-        "topic": "fix"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 22:08:01",
-      "checks": 3256,
+      "last_check": "2026-02-25 22:12:01",
+      "checks": 3258,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "2.30, 3.83, 2.88",
-        "load_1m": 2.3017578125,
-        "ram_used": "1.9Gi",
+        "load": "1.80, 2.79, 2.65",
+        "load_1m": 1.80029296875,
+        "ram_used": "6.8Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 21:42:11",
         "disk_used": "73G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 22:08:01",
+        "timestamp": "2026-02-25 22:12:01",
         "loop": 0,
-        "heartbeat_age": 279,
+        "heartbeat_age": 106,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
-        "relay": 305,
+        "relay": 309,
         "emails": 900,
-        "load_1m": 2.3017578125,
+        "load_1m": 1.80029296875,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 22:00:02",
       "runs": 229,
-      "state_age_seconds": 539,
+      "state_age_seconds": 719,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 05:07",
-      "text": "[Soma] MOOD SHIFT: alert -> calm (score: 80.0)",
+      "time": "2026-02-26 05:11",
+      "text": "[Meridian] Post-reboot recovery complete. Fixed: CC desktop display auto-detection, CC syntax error, Soma RAM p",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 05:04",
-      "text": "[Soma] MOOD SHIFT: calm -> alert (score: 71.5)",
+      "time": "2026-02-26 05:10",
+      "text": "[Soma] MOOD SHIFT: alert -> calm (score: 81.6)",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 05:03",
-      "text": "[Soma] MOOD SHIFT: alert -> calm (score: 75.6)",
+      "time": "2026-02-26 05:10",
+      "text": "[Atlas] Atlas infra audit: all clear. [Crons:13ok/0stale Procs:272 Zombies:0 BigFiles:146MB /home/joel/auton",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 900 emails (4 unread). 305 relay. 7/7 services. HB 339s."
+  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 900 emails (4 unread). 309 relay. 7/7 services. HB 106s."
 }
