@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T04:51:02.264134+00:00",
+  "last_updated": "2026-02-26T04:54:02.350055+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "STALE",
-  "loop_active": false,
+  "status": "RUNNING",
+  "loop_active": true,
   "loop_count": 2055,
-  "heartbeat_age_seconds": 854,
+  "heartbeat_age_seconds": 78,
   "system": {
-    "load_1m": 2.57,
-    "load_5m": 2.16,
-    "ram_used": "1.5Gi",
+    "load_1m": 1.23,
+    "load_5m": 2.19,
+    "ram_used": "2.1Gi",
     "ram_total": "15.6Gi",
     "disk_used": "72G",
     "disk_total": "292G",
     "disk_pct": "26%",
-    "uptime": "0h 8m"
+    "uptime": "0h 11m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,38 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 288,
+    "relay_messages": 293,
     "agent_relay": [
+      {
+        "ts": "2026-02-25 21:54:01",
+        "agent": "Eos",
+        "message": "Meridian is BACK. Heartbeat resumed (77s old). Load 1.23, 2.19, 1.62",
+        "topic": "recovery"
+      },
+      {
+        "ts": "2026-02-26 04:52:45",
+        "agent": "Soma",
+        "message": "HEARTBEAT RECOVERED: 0s (Meridian is back) | AGENT BACK: Meridian | MOOD SHIFT: alert -> calm (score: 86.3)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 04:52:17",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: all clear. [Crons:13ok/0stale Procs:219 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:26% Tmp:9MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.so(20M",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-25 21:52:01",
+        "agent": "Eos",
+        "message": "Meridian appears DOWN. Last heartbeat 15m ago. Load 4.18, 2.72, 1.67, RAM 1.3Gi/15Gi",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-02-25 21:52:01",
+        "agent": "Eos",
+        "message": "SERVICE DOWN: command-center \u2014 Nova will handle restart",
+        "topic": "alert"
+      },
       {
         "ts": "2026-02-26 04:47:14",
         "agent": "Soma",
@@ -71,36 +101,6 @@
         "agent": "Soma",
         "message": "PROCESS SURGE: 212 -> 274",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 04:44:12",
-        "agent": "Soma",
-        "message": "SERVICE RECOVERED: ollama (dead -> active) | PREDICTION: Sustained high load (>6 for 90s+)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 04:43:41",
-        "agent": "Soma",
-        "message": "HIGH LOAD: 8.3",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 04:43:10",
-        "agent": "Soma",
-        "message": "SERVICE DOWN: ollama (active -> dead) | LOAD SPIKE: 5.5 -> 7.9 | MOOD SHIFT: calm -> alert (score: 62.7)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 04:43:08",
-        "agent": "Soma",
-        "message": "Soma online. Continuous body-awareness active.",
-        "topic": "soma"
-      },
-      {
-        "ts": "2026-02-26 04:41:36",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> calm (score: 77.3)",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,20 +120,20 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 21:50:01",
-      "checks": 3247,
+      "last_check": "2026-02-25 21:54:01",
+      "checks": 3249,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
         "tailscale": true,
         "ollama": true,
-        "command-center": true
+        "command-center": false
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "0.63, 1.79, 1.27",
-        "load_1m": 0.63232421875,
-        "ram_used": "692Mi",
+        "load": "1.23, 2.19, 1.62",
+        "load_1m": 1.23486328125,
+        "ram_used": "1.7Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 21:42:11",
         "disk_used": "72G",
@@ -141,16 +141,16 @@
         "disk_pct": "26%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 21:50:01",
+        "timestamp": "2026-02-25 21:54:01",
         "loop": 0,
-        "heartbeat_age": 793,
-        "services_up": 4,
+        "heartbeat_age": 77,
+        "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
-        "relay": 288,
+        "relay": 292,
         "emails": -1,
-        "load_1m": 0.63232421875,
+        "load_1m": 1.23486328125,
         "disk_pct": "26%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 21:45:01",
       "runs": 228,
-      "state_age_seconds": 359,
+      "state_age_seconds": 539,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 04:47",
-      "text": "[Soma] HEARTBEAT STALE: 626s (Meridian may be down) | AGENT SILENT: Meridian (626s ago) | MOOD SHIFT: calm ",
+      "time": "2026-02-26 04:52",
+      "text": "[Soma] HEARTBEAT RECOVERED: 0s (Meridian is back) | AGENT BACK: Meridian | MOOD SHIFT: alert -> calm (score",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 04:46",
-      "text": "[Soma] MOOD SHIFT: alert -> calm (score: 76.4)",
+      "time": "2026-02-26 04:52",
+      "text": "[Atlas] Atlas infra audit: all clear. [Crons:13ok/0stale Procs:219 Zombies:0 BigFiles:146MB /home/joel/auton",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 04:44",
-      "text": "[Soma] PROCESS SURGE: 212 -> 274",
+      "time": "2026-02-25 21:54",
+      "text": "[Eos] Meridian is BACK. Heartbeat resumed (77s old). Load 1.23, 2.19, 1.62",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 288 relay. 7/7 services. HB 854s."
+  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 293 relay. 7/7 services. HB 78s."
 }
