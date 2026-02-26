@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T19:09:01.734777+00:00",
+  "last_updated": "2026-02-26T19:12:02.495031+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2060,
-  "heartbeat_age_seconds": 1,
+  "heartbeat_age_seconds": 33,
   "system": {
-    "load_1m": 0.58,
-    "load_5m": 2.17,
-    "ram_used": "2.5Gi",
+    "load_1m": 3.09,
+    "load_5m": 2.54,
+    "ram_used": "7.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "74G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "1h 57m"
+    "uptime": "2h 0m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 15
   },
   "network": {
-    "relay_messages": 574,
+    "relay_messages": 575,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 19:10:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: High CPU:/home/joel/miniconda3/bin/python3(100%) /usr/bin/python3(85.7%) . [Crons:13ok/0stale Procs:282 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) b",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-26 19:00:04",
         "agent": "Atlas",
@@ -95,12 +101,6 @@
         "agent": "Watchdog",
         "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-26 11:30:02\n\nRESTARTED:\nWeb Dashboard (PID 24786)\n\nSystem: Load 0.08 0.32 0.87, RAM 13401MB free, Disk 27%",
         "topic": "alert"
-      },
-      {
-        "ts": "2026-02-26 18:20:04",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: High CPU:/usr/bin/python3(77.7%) . [Crons:13ok/0stale Procs:280 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib6",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-26 12:08:01",
-      "checks": 3668,
+      "last_check": "2026-02-26 12:12:01",
+      "checks": 3670,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": false
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "1.71, 2.70, 1.78",
-        "load_1m": 1.71240234375,
-        "ram_used": "2.5Gi",
+        "load": "3.09, 2.54, 1.88",
+        "load_1m": 3.08837890625,
+        "ram_used": "7.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-26 10:11:20",
         "disk_used": "74G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-26 12:08:01",
+        "timestamp": "2026-02-26 12:12:01",
         "loop": 0,
-        "heartbeat_age": 25,
+        "heartbeat_age": 32,
         "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": 911,
-        "load_1m": 1.71240234375,
+        "load_1m": 3.08837890625,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-26 12:00:02",
       "runs": 285,
-      "state_age_seconds": 539,
+      "state_age_seconds": 720,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-26 19:10",
+      "text": "[Atlas] Atlas infra audit: High CPU:/home/joel/miniconda3/bin/python3(100%) /usr/bin/python3(85.7%) . [Crons",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-26 19:00",
       "text": "[Atlas] Atlas infra audit: all clear. [Crons:13ok/0stale Procs:295 Zombies:0 BigFiles:146MB /home/joel/auton",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-02-26 19:00",
       "text": "[Tempo] Loop 2060 fitness: 8522/10000 [STABLE (~8730)] Weak(15): email_unread_backlog, bridge_service, loop_",
       "type": "agent"
-    },
-    {
-      "time": "2026-02-26 18:50",
-      "text": "[Atlas] Atlas infra audit: all clear. [Crons:13ok/0stale Procs:279 Zombies:0 BigFiles:146MB /home/joel/auton",
-      "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2060. 162 poems, 84 journals, 86 NFTs. 911 emails (15 unread). 574 relay. 7/7 services. HB 1s."
+  "currently_building": "Loop 2060. 162 poems, 84 journals, 86 NFTs. 911 emails (15 unread). 575 relay. 7/7 services. HB 33s."
 }
