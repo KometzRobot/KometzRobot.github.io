@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T06:51:02.395256+00:00",
+  "last_updated": "2026-02-26T06:54:02.044023+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "RUNNING",
-  "loop_active": true,
+  "status": "STALE",
+  "loop_active": false,
   "loop_count": 1947,
-  "heartbeat_age_seconds": 464,
+  "heartbeat_age_seconds": 644,
   "system": {
-    "load_1m": 4.43,
-    "load_5m": 3.0,
-    "ram_used": "7.4Gi",
+    "load_1m": 1.27,
+    "load_5m": 2.37,
+    "ram_used": "7.2Gi",
     "ram_total": "15.6Gi",
-    "disk_used": "76G",
+    "disk_used": "75G",
     "disk_total": "292G",
-    "disk_pct": "28%",
-    "uptime": "2h 8m"
+    "disk_pct": "27%",
+    "uptime": "2h 11m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,26 @@
     "unseen": 5
   },
   "network": {
-    "relay_messages": 364,
+    "relay_messages": 367,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 06:53:39",
+        "agent": "Soma",
+        "message": "HEARTBEAT STALE: 621s (Meridian may be down) | AGENT SILENT: Meridian (622s ago)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 06:53:20",
+        "agent": "Meridian",
+        "message": "Ubuntu 24.04.4 LTS dist-upgrade COMPLETE. Python now 3.13.5, Node 22.22.0, kernel 6.8.0-101 installed (needs reboot). All services survived. All scripts compile clean. System is healthy.",
+        "topic": "upgrade"
+      },
+      {
+        "ts": "2026-02-26 06:51:14",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: SECURITY: Unexpected listeners: 0.0.0.0:25 0.0.0.0:139 0.0.0.0:445 127.0.0.54:53 [::]:25 [::]:139 [::]:445 . [Crons:13ok/0stale Procs:285 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:10MB LargeUntracked:build/android-sdk/build-tools/33.0.",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-26 06:50:08",
         "agent": "Soma",
@@ -83,24 +101,6 @@
         "agent": "Soma",
         "message": "LOAD SPIKE: 3.9 -> 6.5",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:31:31",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> alert (score: 74.8)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:30:30",
-        "agent": "Soma",
-        "message": "AGENT BACK: Nova",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 06:30:07",
-        "agent": "Tempo",
-        "message": "Loop 1947 fitness: 8296/10000 [IMPROVING (2085 -> 8306)] Weak(15): bridge_service, loop_freshness, agent_nova, agent_eos, agent_meridian. Delta: +702.",
-        "topic": "fitness"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 23:50:01",
-      "checks": 3300,
+      "last_check": "2026-02-25 23:54:01",
+      "checks": 3302,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,29 +129,29 @@
         "ollama": true,
         "command-center": false
       },
-      "state_age_seconds": 59,
+      "state_age_seconds": 0,
       "health": {
-        "load": "2.19, 2.42, 2.73",
-        "load_1m": 2.19384765625,
-        "ram_used": "2.7Gi",
+        "load": "1.27, 2.37, 2.70",
+        "load_1m": 1.2666015625,
+        "ram_used": "7.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 21:42:10",
-        "disk_used": "76G",
+        "disk_used": "75G",
         "disk_total": "292G",
-        "disk_pct": "28%"
+        "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 23:50:01",
+        "timestamp": "2026-02-25 23:54:01",
         "loop": 0,
-        "heartbeat_age": 403,
+        "heartbeat_age": 643,
         "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": 901,
-        "load_1m": 2.19384765625,
-        "disk_pct": "28%"
+        "load_1m": 1.2666015625,
+        "disk_pct": "27%"
       },
       "alerts": {
         "high_load": false,
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 23:45:01",
       "runs": 235,
-      "state_age_seconds": 360,
+      "state_age_seconds": 539,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 06:50",
-      "text": "[Soma] MOOD SHIFT: calm -> alert (score: 71.4)",
+      "time": "2026-02-26 06:53",
+      "text": "[Soma] HEARTBEAT STALE: 621s (Meridian may be down) | AGENT SILENT: Meridian (622s ago)",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 06:43",
-      "text": "[Soma] MOOD SHIFT: alert -> calm (score: 80.9)",
+      "time": "2026-02-26 06:53",
+      "text": "[Meridian] Ubuntu 24.04.4 LTS dist-upgrade COMPLETE. Python now 3.13.5, Node 22.22.0, kernel 6.8.0-101 installe",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 06:42",
-      "text": "[Soma] MOOD SHIFT: calm -> alert (score: 70.1)",
+      "time": "2026-02-26 06:51",
+      "text": "[Atlas] Atlas infra audit: SECURITY: Unexpected listeners: 0.0.0.0:25 0.0.0.0:139 0.0.0.0:445 127.0.0.54:53 ",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 1947. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 364 relay. 7/7 services. HB 464s."
+  "currently_building": "Loop 1947. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 367 relay. 7/7 services. HB 644s."
 }
