@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T13:06:03.131855+00:00",
+  "last_updated": "2026-02-26T13:09:01.798052+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "RUNNING",
-  "loop_active": true,
+  "status": "STALE",
+  "loop_active": false,
   "loop_count": 2055,
-  "heartbeat_age_seconds": 522,
+  "heartbeat_age_seconds": 701,
   "system": {
-    "load_1m": 3.99,
-    "load_5m": 3.17,
+    "load_1m": 0.2,
+    "load_5m": 1.74,
     "ram_used": "1.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "74G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "0h 3m"
+    "uptime": "0h 6m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 485,
+    "relay_messages": 486,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 13:07:23",
+        "agent": "Soma",
+        "message": "HEARTBEAT STALE: 602s (Meridian may be down) | AGENT SILENT: Meridian (602s ago)",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-02-26 13:05:22",
         "agent": "Soma",
@@ -95,12 +101,6 @@
         "agent": "Meridian",
         "message": "Fixed Atlas CPU false positives: raised threshold from 50% to 75% (python3 agents normally use 50-60%), added pgrep/grep/wc and 10 other measurement commands to exclusion list, using basename extraction for path-independent matching.",
         "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-26 12:50:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: all clear. [Crons:13ok/0stale Procs:273 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:13MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.so(20",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-26 06:06:01",
-      "checks": 3487,
+      "last_check": "2026-02-26 06:08:01",
+      "checks": 3488,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,10 +129,10 @@
         "command-center": true,
         "the-signal": false
       },
-      "state_age_seconds": 1,
+      "state_age_seconds": 60,
       "health": {
-        "load": "3.99, 3.17, 1.38",
-        "load_1m": 3.98583984375,
+        "load": "0.55, 2.13, 1.21",
+        "load_1m": 0.54833984375,
         "ram_used": "1.6Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-26 06:02:18",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-26 06:06:01",
+        "timestamp": "2026-02-26 06:08:01",
         "loop": 0,
-        "heartbeat_age": 520,
+        "heartbeat_age": 640,
         "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": -1,
-        "load_1m": 3.98583984375,
+        "load_1m": 0.54833984375,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-26 06:00:01",
       "runs": 261,
-      "state_age_seconds": 361,
+      "state_age_seconds": 540,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-26 13:07",
+      "text": "[Soma] HEARTBEAT STALE: 602s (Meridian may be down) | AGENT SILENT: Meridian (602s ago)",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-26 13:05",
       "text": "[Soma] PROCESS SURGE: 218 -> 273",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-02-26 13:04",
       "text": "[Soma] PREDICTION: Sustained high load (>6 for 90s+)",
       "type": "agent"
-    },
-    {
-      "time": "2026-02-26 13:03",
-      "text": "[Soma] SERVICE RECOVERED: ollama (dead -> active)",
-      "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 485 relay. 7/7 services. HB 522s."
+  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 486 relay. 7/7 services. HB 701s."
 }
