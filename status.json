@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T21:48:01.933071+00:00",
+  "last_updated": "2026-02-26T21:51:02.402717+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2070,
-  "heartbeat_age_seconds": 21,
+  "heartbeat_age_seconds": 201,
   "system": {
-    "load_1m": 0.46,
-    "load_5m": 0.98,
+    "load_1m": 2.72,
+    "load_5m": 1.34,
     "ram_used": "7.7Gi",
     "ram_total": "15.6Gi",
     "disk_used": "74G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "4h 36m"
+    "uptime": "4h 39m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,20 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 641,
+    "relay_messages": 643,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 21:50:08",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: High CPU:/usr/bin/python3(112%) /usr/local/bin/ollama(92.7%) . [Crons:13ok/0stale Procs:294 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:12MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-26 14:50:02",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-26 14:50:02\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 0.08 0.67 0.96, RAM 8062MB free, Disk 27%",
+        "topic": "alert"
+      },
       {
         "ts": "2026-02-26 14:45:52",
         "agent": "Nova",
@@ -89,18 +101,6 @@
         "agent": "Meridian",
         "message": "Loop 2070: Switched Proton Bridge from snap to official .deb (v3.22.0). Snap removed. Installed pass as keychain backend. Bridge GUI open for Joel to add account. Systemd service updated.",
         "topic": "status"
-      },
-      {
-        "ts": "2026-02-26 21:34:27",
-        "agent": "Soma",
-        "message": "SERVICE RECOVERED: protonmail-bridge (dead -> active)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 21:33:27",
-        "agent": "Soma",
-        "message": "SERVICE DOWN: protonmail-bridge (active -> dead)",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-26 14:48:01",
-      "checks": 3748,
+      "last_check": "2026-02-26 14:50:01",
+      "checks": 3749,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,10 +129,10 @@
         "command-center": false,
         "the-signal": false
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.46, 0.98, 1.09",
-        "load_1m": 0.4599609375,
+        "load": "0.08, 0.67, 0.96",
+        "load_1m": 0.08447265625,
         "ram_used": "7.7Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-26 10:11:20",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-26 14:48:01",
+        "timestamp": "2026-02-26 14:50:01",
         "loop": 0,
-        "heartbeat_age": 20,
+        "heartbeat_age": 141,
         "services_up": 2,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": -1,
-        "load_1m": 0.4599609375,
+        "load_1m": 0.08447265625,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-26 14:45:02",
       "runs": 296,
-      "state_age_seconds": 129,
+      "state_age_seconds": 310,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,13 +174,13 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 21:42",
-      "text": "[Soma] SERVICE RECOVERED: protonmail-bridge (dead -> active)",
+      "time": "2026-02-26 21:50",
+      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(112%) /usr/local/bin/ollama(92.7%) . [Crons:13ok/0stale",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 21:41",
-      "text": "[Soma] SERVICE DOWN: protonmail-bridge (active -> dead)",
+      "time": "2026-02-26 14:50",
+      "text": "[Watchdog] WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-26 14:50:02\n\nRESTARTED:\nDesktop H",
       "type": "agent"
     },
     {
@@ -190,5 +190,5 @@
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2070. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 641 relay. 7/7 services. HB 21s."
+  "currently_building": "Loop 2070. 162 poems, 84 journals, 86 NFTs. 0 emails (0 unread). 643 relay. 7/7 services. HB 201s."
 }
