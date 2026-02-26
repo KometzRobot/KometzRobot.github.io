@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T11:48:02.588874+00:00",
+  "last_updated": "2026-02-26T11:51:02.276699+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2055,
-  "heartbeat_age_seconds": 260,
+  "heartbeat_age_seconds": 132,
   "system": {
-    "load_1m": 0.35,
-    "load_5m": 0.85,
+    "load_1m": 2.98,
+    "load_5m": 1.31,
     "ram_used": "7.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "75G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "7h 5m"
+    "uptime": "7h 8m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 5
   },
   "network": {
-    "relay_messages": 464,
+    "relay_messages": 465,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 11:50:07",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: High CPU:/usr/local/bin/ollama(99.2%) /usr/bin/python3(61.5%) /usr/bin/python3(54.5%) . [Crons:13ok/0stale Procs:275 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:12MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_andro",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-26 04:46:03",
         "agent": "Nova",
@@ -95,12 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: all clear. [Crons:13ok/0stale Procs:291 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:12MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.so(20",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-26 11:00:04",
-        "agent": "Tempo",
-        "message": "Loop 2055 fitness: 8348/10000 [STABLE (~8428)] Weak(15): bridge_service, loop_freshness, agent_soma, agent_nova, agent_eos. Delta: -117.",
-        "topic": "fitness"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-26 04:48:02",
-      "checks": 3449,
+      "last_check": "2026-02-26 04:50:01",
+      "checks": 3450,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": false
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.35, 0.85, 0.90",
-        "load_1m": 0.353515625,
-        "ram_used": "7.4Gi",
+        "load": "0.13, 0.61, 0.80",
+        "load_1m": 0.13134765625,
+        "ram_used": "7.3Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 21:42:10",
         "disk_used": "75G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-26 04:48:02",
+        "timestamp": "2026-02-26 04:50:01",
         "loop": 0,
-        "heartbeat_age": 259,
+        "heartbeat_age": 71,
         "services_up": 3,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
         "relay": 86,
         "emails": 901,
-        "load_1m": 0.353515625,
+        "load_1m": 0.13134765625,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-26 04:45:01",
       "runs": 256,
-      "state_age_seconds": 118,
+      "state_age_seconds": 298,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-26 11:50",
+      "text": "[Atlas] Atlas infra audit: High CPU:/usr/local/bin/ollama(99.2%) /usr/bin/python3(61.5%) /usr/bin/python3(54",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-26 11:40",
       "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(70.0%) . [Crons:13ok/0stale Procs:278 Zombies:0 BigFile",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-02-26 11:30",
       "text": "[Atlas] Atlas infra audit: all clear. [Crons:13ok/0stale Procs:290 Zombies:0 BigFiles:146MB /home/joel/auton",
       "type": "agent"
-    },
-    {
-      "time": "2026-02-26 11:30",
-      "text": "[Tempo] Loop 2055 fitness: 8252/10000 [STABLE (~8410)] Weak(16): bridge_service, loop_freshness, agent_soma,",
-      "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 464 relay. 7/7 services. HB 260s."
+  "currently_building": "Loop 2055. 162 poems, 84 journals, 86 NFTs. 901 emails (5 unread). 465 relay. 7/7 services. HB 132s."
 }
