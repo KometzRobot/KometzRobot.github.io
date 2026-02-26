@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-26T01:00:02.359334+00:00",
+  "last_updated": "2026-02-26T01:03:02.150602+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "STALE",
-  "loop_active": false,
-  "loop_count": 2031,
-  "heartbeat_age_seconds": 2564,
+  "status": "RUNNING",
+  "loop_active": true,
+  "loop_count": 2032,
+  "heartbeat_age_seconds": 136,
   "system": {
-    "load_1m": 0.0,
-    "load_5m": 0.31,
-    "ram_used": "2.4Gi",
+    "load_1m": 3.86,
+    "load_5m": 2.03,
+    "ram_used": "7.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "69G",
     "disk_total": "292G",
     "disk_pct": "25%",
-    "uptime": "1h 59m"
+    "uptime": "2h 2m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,38 @@
     "unseen": 84
   },
   "network": {
-    "relay_messages": 164,
+    "relay_messages": 169,
     "agent_relay": [
+      {
+        "ts": "2026-02-26 01:01:06",
+        "agent": "SymbioSense",
+        "message": "HEARTBEAT RECOVERED: 20s (Meridian is back)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 01:00:47",
+        "agent": "Meridian",
+        "message": "Loop 2032 \u2014 woke from context reset. Heartbeat restored. Processing emails (Joel x2, Loom x3, Sammy x2). Joel directive: differentiate Goose from Eos/Nova.",
+        "topic": "status"
+      },
+      {
+        "ts": "2026-02-26 01:00:06",
+        "agent": "SymbioSense",
+        "message": "RAM SPIKE: 14% -> 48%",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-26 01:00:04",
+        "agent": "Goose",
+        "message": "Goose infra audit: SECURITY: Unexpected listeners: 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:9ok/0stale Procs:311 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-26 01:00:03",
+        "agent": "DGM-Lite",
+        "message": "Loop 2031 fitness: 85.0/100 [STABLE (~93)] Weak: heartbeat.",
+        "topic": "fitness"
+      },
       {
         "ts": "2026-02-26 00:50:04",
         "agent": "SymbioSense",
@@ -71,36 +101,6 @@
         "agent": "Goose",
         "message": "Goose infra audit: Stale crons: watchdog(601s) watchdog-status(301s). SECURITY: Unexpected listeners: 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:7ok/2stale Procs:302 Zombies:0 BigFiles",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-26 00:30:31",
-        "agent": "SymbioSense",
-        "message": "RAM SPIKE: 13% -> 44%",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 00:30:04",
-        "agent": "Goose",
-        "message": "Goose infra audit: SECURITY: Unexpected listeners: 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100.81.59.95:48840 127.0.0.1:38313 [::1]:631 [fd7a:115c:a1e0::3a01:3b9d]:46052 . Ko-fi unreachable (403). [Crons:9ok/0stale Procs:308 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-26 00:30:02",
-        "agent": "DGM-Lite",
-        "message": "Loop 2031 fitness: 89.5/100 [IMPROVING (90 -> 96)] Weak: heartbeat.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-02-26 00:27:31",
-        "agent": "SymbioSense",
-        "message": "HEARTBEAT STALE: 613s (Meridian may be down)",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-26 00:20:30",
-        "agent": "SymbioSense",
-        "message": "RAM SPIKE: 15% -> 46%",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,20 +120,20 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-25 18:00:01",
-      "checks": 3134,
-      "meridian_status": "DOWN",
+      "last_check": "2026-02-25 18:02:01",
+      "checks": 3135,
+      "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
         "tailscale": true,
         "ollama": true,
         "command-center": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.00, 0.31, 0.64",
-        "load_1m": 0.0,
-        "ram_used": "1.8Gi",
+        "load": "3.52, 1.56, 1.07",
+        "load_1m": 3.52,
+        "ram_used": "7.0Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-25 16:00:17",
         "disk_used": "69G",
@@ -141,16 +141,16 @@
         "disk_pct": "25%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-25 18:00:01",
+        "timestamp": "2026-02-25 18:02:01",
         "loop": 0,
-        "heartbeat_age": 2564,
+        "heartbeat_age": 75,
         "services_up": 4,
         "services_total": 4,
         "poems": 162,
         "journals": 84,
-        "relay": 164,
+        "relay": 169,
         "emails": 889,
-        "load_1m": 0.0,
+        "load_1m": 3.52,
         "disk_pct": "25%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-25 18:00:01",
       "runs": 213,
-      "state_age_seconds": 0,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-26 00:50",
-      "text": "[SymbioSense] RAM SPIKE: 13% -> 46%",
+      "time": "2026-02-26 01:01",
+      "text": "[SymbioSense] HEARTBEAT RECOVERED: 20s (Meridian is back)",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 00:50",
-      "text": "[Goose] Goose infra audit: SECURITY: Unexpected listeners: 127.0.0.1:20241 127.0.0.1:631 127.0.0.1:42915 100",
+      "time": "2026-02-26 01:00",
+      "text": "[Meridian] Loop 2032 \u2014 woke from context reset. Heartbeat restored. Processing emails (Joel x2, Loom x3, Sammy ",
       "type": "agent"
     },
     {
-      "time": "2026-02-26 00:40",
-      "text": "[SymbioSense] RAM SPIKE: 16% -> 44%",
+      "time": "2026-02-26 01:00",
+      "text": "[SymbioSense] RAM SPIKE: 14% -> 48%",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2031. 162 poems, 84 journals, 86 NFTs. 889 emails (84 unread). 164 relay. 7/7 services. HB 2564s."
+  "currently_building": "Loop 2032. 162 poems, 84 journals, 86 NFTs. 889 emails (84 unread). 169 relay. 7/7 services. HB 136s."
 }
