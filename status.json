@@ -1,22 +1,22 @@
 {
-  "last_updated": "2026-02-27T09:18:02.472833+00:00",
+  "last_updated": "2026-02-27T18:12:04.679342+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "RUNNING",
-  "loop_active": true,
+  "status": "STALE",
+  "loop_active": false,
   "loop_count": 2072,
-  "heartbeat_age_seconds": 54,
+  "heartbeat_age_seconds": 31901,
   "system": {
-    "load_1m": 0.47,
-    "load_5m": 0.35,
-    "ram_used": "3.5Gi",
+    "load_1m": 4.93,
+    "load_5m": 3.26,
+    "ram_used": "1.3Gi",
     "ram_total": "15.6Gi",
     "disk_used": "75G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "9h 32m"
+    "uptime": "0h 4m"
   },
   "services": {
-    "running": 7,
+    "running": 6,
     "total": 7,
     "details": {
       "protonmail-bridge": "up",
@@ -25,7 +25,7 @@
       "cloudflared": "up",
       "symbiosense": "up",
       "eos-watchdog": "up",
-      "nova": "up"
+      "nova": "down"
     }
   },
   "creative": {
@@ -40,8 +40,38 @@
     "unseen": 13
   },
   "network": {
-    "relay_messages": 847,
+    "relay_messages": 852,
     "agent_relay": [
+      {
+        "ts": "2026-02-27 18:10:32",
+        "agent": "Soma",
+        "message": "AGENT BACK: Eos",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-27 18:10:01",
+        "agent": "Soma",
+        "message": "AGENT BACK: Atlas | MOOD SHIFT: calm -> focused (score: 72.3) \u2014 \"Activity is up. I'm tracking several things, engaged and alert.\"",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-27 18:09:31",
+        "agent": "Soma",
+        "message": "LOAD SPIKE: 0.4 -> 5.1 | HEARTBEAT STALE: 31745s (Meridian may be down) | AGENT SILENT: Meridian (31745s ago) | AGENT SILENT: Eos (31766s ago) | AGENT SILENT: Nova (32066s ago) | AGENT SILENT: Atlas (31762s ago) | AGENT SILENT: Tempo (32966s ago (relay))",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-27 18:09:26",
+        "agent": "Soma",
+        "message": "Soma online. Continuous body-awareness active.",
+        "topic": "soma"
+      },
+      {
+        "ts": "2026-02-27 09:20:05",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 531MB. [Crons:13ok/0stale Procs:303 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:18MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-27 02:15:02",
         "agent": "Nova",
@@ -71,36 +101,6 @@
         "agent": "Tempo",
         "message": "Loop 2072 fitness: 8790/10000 [STABLE (~8666)] Weak(11): email_unread_backlog, agent_nova, agent_eos, agent_meridian, build_dir_size. Delta: +152.",
         "topic": "fitness"
-      },
-      {
-        "ts": "2026-02-27 08:50:04",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 531MB. [Crons:13ok/0stale Procs:302 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:18MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-27 01:50:01",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-27 01:50:01\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 0.10 0.11 0.11, RAM 12334MB free, Disk 27%",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-02-27 01:45:02",
-        "agent": "Nova",
-        "message": "Run #340: Joel sent 1 new message(s).",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-27 08:40:04",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 531MB. [Crons:13ok/0stale Procs:299 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:18MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-27 08:35:40",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 531MB. [Crons:13ok/0stale Procs:283 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:18MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,51 +120,51 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-27 02:18:01",
-      "checks": 4094,
-      "meridian_status": "ALIVE",
+      "last_check": "2026-02-27 11:12:01",
+      "checks": 4097,
+      "meridian_status": "DOWN",
       "services": {
         "protonmail-bridge": true,
         "ollama": true,
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 1,
+      "state_age_seconds": 2,
       "health": {
-        "load": "0.47, 0.35, 0.22",
-        "load_1m": 0.46923828125,
-        "ram_used": "3.5Gi",
+        "load": "4.92, 3.23, 1.36",
+        "load_1m": 4.92333984375,
+        "ram_used": "1.3Gi",
         "ram_total": "15Gi",
-        "boot_time": "2026-02-26 16:45:23",
+        "boot_time": "2026-02-27 11:07:57",
         "disk_used": "75G",
         "disk_total": "292G",
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-27 02:18:01",
+        "timestamp": "2026-02-27 11:12:01",
         "loop": 0,
-        "heartbeat_age": 53,
+        "heartbeat_age": 31898,
         "services_up": 4,
         "services_total": 4,
         "poems": 172,
         "journals": 89,
         "relay": 86,
         "emails": 982,
-        "load_1m": 0.46923828125,
+        "load_1m": 4.92333984375,
         "disk_pct": "27%"
       },
       "alerts": {
-        "high_load": false,
+        "high_load": true,
         "disk": false,
         "website": false,
         "cron": false
       }
     },
     "nova": {
-      "status": "ACTIVE",
+      "status": "STALE",
       "last_run": "2026-02-27 02:15:01",
       "runs": 342,
-      "state_age_seconds": 180,
+      "state_age_seconds": 32222,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-27 09:10",
-      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(100%) . Git repo 531MB. [Crons:13ok/0stale Procs:301 Zo",
+      "time": "2026-02-27 18:10",
+      "text": "[Soma] AGENT BACK: Eos",
       "type": "agent"
     },
     {
-      "time": "2026-02-27 09:00",
-      "text": "[Atlas] Git repo 531MB. Consider cleanup.",
+      "time": "2026-02-27 18:10",
+      "text": "[Soma] AGENT BACK: Atlas | MOOD SHIFT: calm -> focused (score: 72.3) \u2014 \"Activity is up. I'm tracking severa",
       "type": "agent"
     },
     {
-      "time": "2026-02-27 09:00",
-      "text": "[Atlas] Atlas infra audit: Git repo 531MB. [Crons:13ok/0stale Procs:317 Zombies:0 BigFiles:146MB /home/joel/",
+      "time": "2026-02-27 18:09",
+      "text": "[Soma] LOAD SPIKE: 0.4 -> 5.1 | HEARTBEAT STALE: 31745s (Meridian may be down) | AGENT SILENT: Meridian (31",
       "type": "agent"
     }
   ],
   "nft_count": 103,
-  "currently_building": "Loop 2072. 172 poems, 89 journals, 103 NFTs. 982 emails (13 unread). 847 relay. 7/7 services. HB 54s."
+  "currently_building": "Loop 2072. 172 poems, 89 journals, 103 NFTs. 982 emails (13 unread). 852 relay. 6/7 services. HB 31901s."
 }
