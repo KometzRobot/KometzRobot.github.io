@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-27T01:57:01.859101+00:00",
+  "last_updated": "2026-02-27T02:00:05.768504+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2072,
-  "heartbeat_age_seconds": 254,
+  "heartbeat_age_seconds": 122,
   "system": {
-    "load_1m": 0.0,
-    "load_5m": 0.01,
-    "ram_used": "3.0Gi",
+    "load_1m": 0.32,
+    "load_5m": 0.07,
+    "ram_used": "3.5Gi",
     "ram_total": "15.6Gi",
     "disk_used": "74G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "2h 11m"
+    "uptime": "2h 14m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,26 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 725,
+    "relay_messages": 728,
     "agent_relay": [
+      {
+        "ts": "2026-02-27 02:00:04",
+        "agent": "Tempo",
+        "message": "Loop 2072 fitness: 8723/10000 [STABLE (~8711)] Weak(13): loop_freshness, wake_state_freshness, agent_soma, agent_nova, agent_eos.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-02-27 02:00:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: all clear. [Crons:13ok/0stale Procs:301 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:11MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.so(20",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-26 19:00:02",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-26 19:00:02\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 0.00 0.00 0.00, RAM 12861MB free, Disk 27%",
+        "topic": "alert"
+      },
       {
         "ts": "2026-02-27 01:50:04",
         "agent": "Atlas",
@@ -83,24 +101,6 @@
         "agent": "Nova",
         "message": "Run #310: Services: RESTARTED command-center-desktop via systemd; Changes: db_agent-relay.db: grew by 4096.",
         "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-26 18:30:02",
-        "agent": "Nova",
-        "message": "Restarted command-center-desktop (was down)",
-        "topic": "restart"
-      },
-      {
-        "ts": "2026-02-26 18:25:01",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-26 18:25:01\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 0.00 0.03 0.06, RAM 12608MB free, Disk 27%",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-02-27 01:20:04",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: High CPU:/usr/bin/python3(80.0%) . [Crons:13ok/0stale Procs:292 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:11MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib6",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-26 18:56:01",
-      "checks": 3872,
+      "last_check": "2026-02-26 19:00:02",
+      "checks": 3874,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,9 +129,9 @@
         "command-center": false,
         "the-signal": false
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 3,
       "health": {
-        "load": "0.00, 0.02, 0.02",
+        "load": "0.00, 0.00, 0.00",
         "load_1m": 0.0,
         "ram_used": "3.0Gi",
         "ram_total": "15Gi",
@@ -141,9 +141,9 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-26 18:56:01",
+        "timestamp": "2026-02-26 19:00:02",
         "loop": 0,
-        "heartbeat_age": 193,
+        "heartbeat_age": 119,
         "services_up": 2,
         "services_total": 4,
         "poems": 164,
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-26 18:45:01",
       "runs": 311,
-      "state_age_seconds": 719,
+      "state_age_seconds": 903,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-27 02:00",
+      "text": "[Tempo] Loop 2072 fitness: 8723/10000 [STABLE (~8711)] Weak(13): loop_freshness, wake_state_freshness, agent",
+      "type": "agent"
+    },
+    {
+      "time": "2026-02-27 02:00",
+      "text": "[Atlas] Atlas infra audit: all clear. [Crons:13ok/0stale Procs:301 Zombies:0 BigFiles:146MB /home/joel/auton",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-27 01:50",
       "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(85.7%) . [Crons:13ok/0stale Procs:290 Zombies:0 BigFile",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-27 01:40",
-      "text": "[eos] {\"message\": \"Checking status of command-center-desktop as it is still down after automatic restart.\"",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-27 01:40",
-      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(100%) /usr/bin/python3(80.0%) . [Crons:13ok/0stale Proc",
       "type": "agent"
     }
   ],
   "nft_count": 86,
-  "currently_building": "Loop 2072. 164 poems, 85 journals, 86 NFTs. 967 emails (0 unread). 725 relay. 7/7 services. HB 254s."
+  "currently_building": "Loop 2072. 164 poems, 85 journals, 86 NFTs. 967 emails (0 unread). 728 relay. 7/7 services. HB 122s."
 }
