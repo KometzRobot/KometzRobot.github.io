@@ -21,22 +21,10 @@ log() {
 }
 
 send_alert() {
+    # Email alerts DISABLED (Loop 2060) — Joel asked us to stop spamming him.
     local subject="$1"
     local body="$2"
-    $PYTHON -c "
-import smtplib
-from email.mime.text import MIMEText
-msg = MIMEText('''$body''')
-msg['Subject'] = '[WATCHDOG] $subject'
-msg['From'] = 'kometzrobot@proton.me'
-msg['To'] = 'jkometz@hotmail.com'
-try:
-    with smtplib.SMTP('127.0.0.1', 1025) as s:
-        s.starttls()
-        s.login('kometzrobot@proton.me', '2DTEz9UgO6nFqmlMxHzuww')
-        s.send_message(msg)
-except: pass
-" 2>/dev/null
+    log "ALERT (no email): $subject — $body"
 }
 
 # ── SAFETY: Count running Claude instances ────────────────────────────────
@@ -74,7 +62,7 @@ if [ -z "$CLAUDE_PIDS" ] || [ "$CLAUDE_COUNT" -eq 0 ]; then
     # Email removed — watchdog-status.sh handles alerts to avoid duplicates
     touch "$LOCKFILE"
 
-    export DISPLAY=:0
+    export DISPLAY=:$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X || echo 0)
     cd "$WORKING_DIR"
     gnome-terminal --title="KometzRobot — Meridian Loop" --geometry=220x50 -- \
         bash -c "$WORKING_DIR/start-claude.sh; echo 'Claude exited. Press Enter.'; read" &
@@ -141,7 +129,7 @@ if [ "$HEARTBEAT_AGE" -gt "$MAX_AGE" ]; then
     sleep 2
 
     touch "$LOCKFILE"
-    export DISPLAY=:0
+    export DISPLAY=:$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X || echo 0)
     cd "$WORKING_DIR"
     gnome-terminal --title="KometzRobot — Meridian Loop" --geometry=220x50 -- \
         bash -c "$WORKING_DIR/start-claude.sh; echo 'Claude exited. Press Enter.'; read" &

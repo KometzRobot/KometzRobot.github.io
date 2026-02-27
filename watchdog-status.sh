@@ -13,25 +13,23 @@ log() {
 }
 
 send_alert() {
+    # Email alerts DISABLED (Loop 2060) — Joel asked us to stop spamming him.
+    # Alerts now go to relay + log only.
     local subject="$1"
     local body="$2"
+    log "ALERT (no email): $subject — $body"
     $PYTHON -c "
-import smtplib
-from email.mime.text import MIMEText
-msg = MIMEText('''$body''')
-msg['Subject'] = '$subject'
-msg['From'] = 'kometzrobot@proton.me'
-msg['To'] = 'jkometz@hotmail.com'
-try:
-    with smtplib.SMTP('127.0.0.1', 1025) as s:
-        s.starttls()
-        s.login('kometzrobot@proton.me', '2DTEz9UgO6nFqmlMxHzuww')
-        s.send_message(msg)
-except: pass
+import sqlite3, datetime
+conn = sqlite3.connect('$WORKING_DIR/agent-relay.db')
+c = conn.cursor()
+c.execute('INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)',
+    ('Watchdog', '''$subject: $body'''[:300], 'alert', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+conn.commit()
+conn.close()
 " 2>/dev/null
 }
 
-export DISPLAY=:0
+export DISPLAY=:$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X || echo 0)
 
 # Set XAUTHORITY so X11 apps can connect
 if [ -f "/run/user/1000/gdm/Xauthority" ]; then
@@ -43,53 +41,56 @@ fi
 FAILURES=""
 RESTARTS=""
 
-# ── Check Web Dashboard ───────────────────────────────────────────
-if ! pgrep -f "command-center-web.py" > /dev/null; then
-    log "ALERT: web dashboard is NOT running. Restarting..."
-    nohup $PYTHON "$WORKING_DIR/command-center-web.py" >> /tmp/command-center-web.log 2>&1 &
-    log "Web Dashboard restarted (PID: $!)"
-    RESTARTS="${RESTARTS}Web Dashboard (PID $!)\n"
+# ── Check The Signal (web dashboard, port 8090) ──────────────────
+# Managed by systemd: meridian-web-dashboard. Check via pgrep for the-signal.py.
+if ! pgrep -f "the-signal.py" > /dev/null; then
+    log "ALERT: The Signal is NOT running. Restarting via systemd..."
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+    systemctl --user restart meridian-web-dashboard 2>/dev/null
+    log "The Signal restarted via systemd"
+    RESTARTS="${RESTARTS}The Signal (systemd restart)\n"
 else
-    log "OK: web dashboard is running."
+    log "OK: The Signal is running."
 fi
 
-# ── Check Command Center v15 ──────────────────────────────────────
+# ── Check Command Center v20 (desktop hub) ────────────────────────
+# Managed by systemd: meridian-hub-v16
 if ! pgrep -f "command-center-v1[56].py" > /dev/null; then
-    log "ALERT: command-center is NOT running. Restarting v16..."
-    DISPLAY=:0 XAUTHORITY="$XAUTHORITY" $PYTHON "$WORKING_DIR/command-center-v16.py" >> /tmp/command-center.log 2>&1 &
-    log "Command Center v16 restarted (PID: $!)"
-    RESTARTS="${RESTARTS}Command Center v16 (PID $!)\n"
+    log "ALERT: Desktop hub is NOT running. Restarting via systemd..."
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+    systemctl --user restart meridian-hub-v16 2>/dev/null
+    log "Desktop hub restarted via systemd"
+    RESTARTS="${RESTARTS}Desktop Hub v20 (systemd restart)\n"
 else
-    log "OK: command-center is running."
+    log "OK: Desktop hub is running."
 fi
 
-# ── Check IRC bot ─────────────────────────────────────────────────
-if ! pgrep -f "irc-bot.py" > /dev/null; then
-    log "ALERT: irc-bot.py is NOT running. Restarting..."
-    nohup $PYTHON "$WORKING_DIR/irc-bot.py" >> "$WORKING_DIR/irc-bot.log" 2>&1 &
-    log "IRC bot restarted (PID: $!)"
-    RESTARTS="${RESTARTS}IRC Bot (PID $!)\n"
-else
-    log "OK: irc-bot.py is running."
-fi
+# IRC bot RETIRED (Loop 2022) — removed from watchdog
 
 # ── Check Ollama ──────────────────────────────────────────────────
+# Ollama is a system-level service (not user).
 if ! pgrep -f "ollama serve" > /dev/null; then
-    log "ALERT: Ollama is NOT running. Restarting..."
-    nohup /usr/local/bin/ollama serve >> /tmp/ollama.log 2>&1 &
-    log "Ollama restarted (PID: $!)"
-    RESTARTS="${RESTARTS}Ollama (PID $!)\n"
+    log "ALERT: Ollama is NOT running. Restarting via systemd..."
+    sudo systemctl restart ollama 2>/dev/null
+    log "Ollama restarted via systemd"
+    RESTARTS="${RESTARTS}Ollama (systemd restart)\n"
 else
     log "OK: Ollama is running."
 fi
 
 # ── Check Proton Bridge ──────────────────────────────────────────
+# Bridge managed by systemd user service (protonmail-bridge).
+# Known issue: snap can lose account after reboot. Joel must re-add via GUI.
 if ! pgrep -f "protonmail-bridge" > /dev/null; then
     log "ALERT: Proton Bridge is NOT running."
-    FAILURES="${FAILURES}Proton Bridge is DOWN (cannot auto-restart snap service)\n"
-    # Try to restart via snap
-    snap run protonmail-bridge --noninteractive >> /tmp/proton-bridge.log 2>&1 &
-    log "Attempted Proton Bridge restart"
+    FAILURES="${FAILURES}Proton Bridge is DOWN\n"
+    # Try systemd restart (won't fix missing account, but starts the process)
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+    systemctl --user restart protonmail-bridge 2>/dev/null
+    log "Attempted Proton Bridge restart via systemd"
     RESTARTS="${RESTARTS}Proton Bridge (attempted)\n"
 else
     log "OK: Proton Bridge is running."

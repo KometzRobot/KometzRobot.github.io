@@ -1,7 +1,11 @@
 #!/bin/bash
 # KometzRobot startup script
 # Called at @reboot via crontab
-# Starts all services that make me alive
+# Starts supplementary services not managed by systemd
+#
+# SYSTEMD HANDLES: Command Center v22, The Signal, Cloudflare tunnel, Soma
+# DESKTOP AUTOSTART: ProtonMail Bridge (systemd service disabled — conflicts with GUI)
+# THIS SCRIPT: Ollama (if not already running), watchdog trigger
 
 WORKING_DIR="$HOME/autonomous-ai"
 LOG="$WORKING_DIR/startup.log"
@@ -13,73 +17,23 @@ log() {
 
 log "=== STARTUP INITIATED ==="
 
-# Wait for desktop to be ready
+# Wait for desktop + systemd user services to be ready
 sleep 20
 
-export DISPLAY=:0
-
-# Set XAUTHORITY — try user gdm auth first, then fallback
-if [ -f "/run/user/1000/gdm/Xauthority" ]; then
-    export XAUTHORITY="/run/user/1000/gdm/Xauthority"
-elif [ -f "$HOME/.Xauthority" ]; then
-    export XAUTHORITY="$HOME/.Xauthority"
-fi
-log "XAUTHORITY: $XAUTHORITY"
-
-# 0. ProtonMail Bridge (required for email — must start first)
-# Set DBUS_SESSION_BUS_ADDRESS so bridge can access gnome-keyring for vault unlock
-export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus"
-if ! pgrep -f "protonmail-bridge" > /dev/null; then
-    DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus" nohup /snap/bin/protonmail-bridge --noninteractive >> "$WORKING_DIR/bridge.log" 2>&1 &
-    log "ProtonMail Bridge started (headless mode, dbus keyring enabled)"
-    sleep 8  # Give bridge time to connect before we need IMAP
-else
-    log "ProtonMail Bridge already running"
-fi
-
-# 1. HTTP server for local website
-if ! pgrep -f "http.server 8080" > /dev/null; then
-    cd "$WORKING_DIR/website"
-    nohup $PYTHON -m http.server 8080 >> "$WORKING_DIR/http-server.log" 2>&1 &
-    log "HTTP server started (port 8080)"
-else
-    log "HTTP server already running"
-fi
-
-sleep 2
-
-# 2. (Localtunnel removed — replaced by GitHub Pages website)
-
-# 3. IRC bot
-if ! pgrep -f "irc-bot.py" > /dev/null; then
-    nohup $PYTHON "$WORKING_DIR/irc-bot.py" >> "$WORKING_DIR/irc-bot.log" 2>&1 &
-    log "IRC bot started"
-else
-    log "IRC bot already running"
-fi
-
-sleep 3
-
-# 3.5. Ollama (local AI model server)
+# Ollama (local AI model server) — system service
 if ! pgrep -f "ollama serve" > /dev/null; then
-    nohup /usr/local/bin/ollama serve >> "$WORKING_DIR/ollama.log" 2>&1 &
-    log "Ollama started (local AI model server)"
-    sleep 5  # Give Ollama time to load
+    # Try systemd first (preferred). If that fails, DON'T start manually — it'll conflict later.
+    if sudo -n systemctl start ollama 2>/dev/null; then
+        log "Ollama started via systemd"
+    else
+        log "WARNING: Could not start Ollama (sudo needs password). Will retry next watchdog cycle."
+    fi
+    sleep 5
 else
     log "Ollama already running"
 fi
 
-# 4. Command Center v13 — dashboard layout, all-in-one view
-if ! pgrep -f "command-center-v15.py" > /dev/null; then
-    DISPLAY=:0 XAUTHORITY="$XAUTHORITY" $PYTHON "$WORKING_DIR/command-center-v15.py" >> /tmp/command-center.log 2>&1 &
-    log "Command Center v13 started (dashboard + Eos chat)"
-else
-    log "Command Center v13 already running"
-fi
-
-sleep 3
-
-# 5. Start Claude (main AI loop) via watchdog
+# Start Claude (main AI loop) via watchdog
 log "Triggering watchdog to start Claude..."
 bash "$WORKING_DIR/watchdog.sh"
 
