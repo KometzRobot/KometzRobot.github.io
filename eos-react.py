@@ -31,8 +31,13 @@ import sqlite3
 import socket
 import smtplib
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from email.mime.text import MIMEText
+
+try:
+    import sys; sys.path.insert(0, "/home/joel/autonomous-ai"); import load_env
+except:
+    pass
 
 BASE = "/home/joel/autonomous-ai"
 OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
@@ -84,9 +89,9 @@ def tool_check_services():
     """Check which services are running."""
     services = {
         "protonmail-bridge": "protonmail-bridge",
-        "irc-bot": "irc-bot.py",
         "ollama": "ollama",
-        "command-center": "command-center-v15.py",
+        "command-center": "command-center-v22.py",
+        "the-signal": "the-signal.py",
     }
     result = {}
     for name, pattern in services.items():
@@ -125,7 +130,7 @@ def tool_check_emails():
     try:
         import imaplib
         m = imaplib.IMAP4("127.0.0.1", 1143)
-        m.login("kometzrobot@proton.me", "2DTEz9UgO6nFqmlMxHzuww")
+        m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", "tHQipGP9TD92d9_k68vTRg"))
         m.select("INBOX")
         _, data = m.search(None, "UNSEEN")
         unseen = len(data[0].split()) if data[0] else 0
@@ -157,7 +162,7 @@ def tool_send_relay(message, topic="eos-react"):
         c = conn.cursor()
         c.execute(
             "INSERT INTO agent_messages (timestamp, agent, message, topic) VALUES (?, 'eos', ?, ?)",
-            (datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), message, topic),
+            (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), message, topic),
         )
         conn.commit()
         conn.close()
@@ -198,20 +203,31 @@ def tool_store_memory(key, value, tags=""):
 
 
 def tool_restart_service(name):
-    """Attempt to restart a down service."""
-    restarts = {
-        "protonmail-bridge": "nohup protonmail-bridge --noninteractive >> /dev/null 2>&1 &",
-        "irc-bot": f"nohup python3 {os.path.join(BASE, 'irc-bot.py')} >> {os.path.join(BASE, 'irc-bot.log')} 2>&1 &",
-        "ollama": "nohup ollama serve >> /dev/null 2>&1 &",
-        "command-center": f"nohup python3 {os.path.join(BASE, 'command-center-v15.py')} >> /dev/null 2>&1 &",
+    """Attempt to restart a down service via systemd (not nohup)."""
+    systemd_map = {
+        "protonmail-bridge": {"type": "user", "unit": "protonmail-bridge"},
+        "command-center": {"type": "user", "unit": "meridian-hub-v16"},
+        "the-signal": {"type": "user", "unit": "meridian-web-dashboard"},
+        "cloudflare-tunnel": {"type": "user", "unit": "cloudflare-tunnel"},
+        "symbiosense": {"type": "user", "unit": "symbiosense"},
+        "ollama": {"type": "system", "unit": "ollama"},
     }
-    cmd = restarts.get(name)
-    if not cmd:
+    svc = systemd_map.get(name)
+    if not svc:
         return json.dumps({"error": f"Unknown service: {name}"})
     try:
-        subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        env = os.environ.copy()
+        env["XDG_RUNTIME_DIR"] = f"/run/user/{os.getuid()}"
+        env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{os.getuid()}/bus"
+        if svc["type"] == "user":
+            subprocess.run(["systemctl", "--user", "restart", svc["unit"]],
+                         env=env, capture_output=True, timeout=15)
+        else:
+            subprocess.run(["sudo", "-S", "systemctl", "restart", svc["unit"]],
+                         input="590148001\n", capture_output=True, text=True, timeout=15)
         time.sleep(3)
-        r = subprocess.run(["pgrep", "-f", name], capture_output=True, timeout=2)
+        check_pattern = {"command-center": "command-center-v22.py", "the-signal": "the-signal.py"}.get(name, name)
+        r = subprocess.run(["pgrep", "-f", check_pattern], capture_output=True, timeout=2)
         ok = r.returncode == 0
         return json.dumps({"restarted": ok, "service": name})
     except Exception as e:
@@ -219,17 +235,29 @@ def tool_restart_service(name):
 
 
 def tool_send_alert(subject, body):
-    """Email Joel about something important."""
+    """Post alert to relay + dashboard (email alerts disabled per Joel — 'Not useful for me')."""
     try:
-        msg = MIMEText(body)
-        msg["Subject"] = f"[Eos] {subject}"
-        msg["From"] = "kometzrobot@proton.me"
-        msg["To"] = "jkometz@hotmail.com"
-        with smtplib.SMTP("127.0.0.1", 1025) as s:
-            s.starttls()
-            s.login("kometzrobot@proton.me", "2DTEz9UgO6nFqmlMxHzuww")
-            s.send_message(msg)
-        return json.dumps({"status": "sent"})
+        # Post to relay so Meridian sees it
+        relay_db = os.path.join(BASE, "agent-relay.db")
+        conn = sqlite3.connect(relay_db)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn.execute("INSERT INTO agent_messages (timestamp, agent, message, topic) VALUES (?,?,?,?)",
+                     (now, "Eos", f"ALERT: {subject} — {body[:200]}", "alert"))
+        conn.commit()
+        conn.close()
+        # Post to dashboard
+        dash_file = os.path.join(BASE, ".dashboard-messages.json")
+        try:
+            with open(dash_file) as f:
+                data = json.load(f)
+            msgs = data.get("messages", [])
+        except Exception:
+            msgs = []
+        msgs.append({"from": "Eos", "text": f"ALERT: {subject}", "time": datetime.now().strftime("%H:%M:%S")})
+        msgs = msgs[-50:]
+        with open(dash_file, 'w') as f:
+            json.dump({"messages": msgs}, f)
+        return json.dumps({"status": "posted to relay+dashboard (email disabled)"})
     except Exception as e:
         return json.dumps({"error": str(e)[:100]})
 
@@ -290,7 +318,7 @@ You have these tools:
 - send_relay(message): Send message to agent relay
 - log_observation(message): Log an observation
 - store_memory(key, value): Store a fact in memory.db
-- restart_service(name): Restart a down service (protonmail-bridge, irc-bot, ollama, command-center)
+- restart_service(name): Restart a down service (protonmail-bridge, ollama, command-center, the-signal, cloudflare-tunnel, symbiosense)
 - send_alert(subject, body): Email Joel about critical issues
 
 Format your response as:

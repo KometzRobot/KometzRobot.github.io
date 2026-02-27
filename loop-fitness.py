@@ -35,7 +35,11 @@ import subprocess
 import glob
 import socket
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+def _utcnow():
+    """Naive UTC datetime (avoids deprecated _utcnow())."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 BASE = "/home/joel/autonomous-ai"
 try:
@@ -266,7 +270,7 @@ def _pgrep(pattern):
 def _relay_count(agent=None, hours=1):
     try:
         db = sqlite3.connect(RELAY_DB)
-        cutoff = (datetime.utcnow() - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
+        cutoff = (_utcnow() - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
         if agent:
             row = db.execute("SELECT COUNT(*) FROM agent_messages WHERE agent=? AND timestamp > ?",
                            (agent, cutoff)).fetchone()
@@ -281,7 +285,7 @@ def _relay_count(agent=None, hours=1):
 def _relay_distinct_agents(hours=1):
     try:
         db = sqlite3.connect(RELAY_DB)
-        cutoff = (datetime.utcnow() - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
+        cutoff = (_utcnow() - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
         rows = db.execute("SELECT DISTINCT agent FROM agent_messages WHERE timestamp > ?",
                          (cutoff,)).fetchall()
         db.close()
@@ -431,7 +435,7 @@ def check_relay_recency():
         db.close()
         if row:
             ts = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
-            age_min = (datetime.utcnow() - ts).total_seconds() / 60
+            age_min = (_utcnow() - ts).total_seconds() / 60
             if age_min < 15: return 1.0
             elif age_min < 30: return 0.7
             elif age_min < 60: return 0.3
@@ -495,7 +499,7 @@ def check_agent_error_rate():
     """Check relay for error/alert messages — fewer is better."""
     try:
         db = sqlite3.connect(RELAY_DB)
-        cutoff = (datetime.utcnow() - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+        cutoff = (_utcnow() - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
         total = db.execute("SELECT COUNT(*) FROM agent_messages WHERE timestamp > ?", (cutoff,)).fetchone()[0]
         errors = db.execute(
             "SELECT COUNT(*) FROM agent_messages WHERE timestamp > ? AND (message LIKE '%ERROR%' OR message LIKE '%ALERT%' OR message LIKE '%FAIL%')",
@@ -515,7 +519,7 @@ def check_agent_coordination():
     """Check that agents reference each other (healthy communication)."""
     try:
         db = sqlite3.connect(RELAY_DB)
-        cutoff = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S")
+        cutoff = (_utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S")
         rows = db.execute("SELECT message FROM agent_messages WHERE timestamp > ?", (cutoff,)).fetchall()
         db.close()
         mentions = 0
@@ -568,7 +572,7 @@ def check_cron_tempo():
         db.close()
         if row:
             ts = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
-            age = (datetime.utcnow() - ts).total_seconds()
+            age = (_utcnow() - ts).total_seconds()
             if age < 2400: return 1.0
             elif age < 5400: return 0.5
             return 0.0
@@ -915,7 +919,7 @@ def check_memory_facts_count():
 def check_memory_events_recent():
     try:
         db = sqlite3.connect(MEMORY_DB)
-        cutoff = (datetime.utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        cutoff = (_utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
         row = db.execute("SELECT COUNT(*) FROM events WHERE timestamp > ?", (cutoff,)).fetchone()
         db.close()
         c = row[0] if row else 0
@@ -1204,7 +1208,7 @@ def check_facts_coverage():
 def check_observations_fresh():
     try:
         db = sqlite3.connect(MEMORY_DB)
-        cutoff = (datetime.utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        cutoff = (_utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
         row = db.execute("SELECT COUNT(*) FROM observations WHERE timestamp > ?", (cutoff,)).fetchone()
         db.close()
         c = row[0] if row else 0
@@ -1327,7 +1331,7 @@ def check_nostr_post_recency():
         db.close()
         if row:
             ts = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
-            age_hrs = (datetime.utcnow() - ts).total_seconds() / 3600
+            age_hrs = (_utcnow() - ts).total_seconds() / 3600
             if age_hrs < 24: return 1.0
             elif age_hrs < 72: return 0.5
             return 0.0
@@ -1592,7 +1596,7 @@ def store_fitness(loop_num, score, metrics):
     db = sqlite3.connect(MEMORY_DB)
     db.execute(
         "INSERT INTO loop_fitness (loop_number, score, metrics, timestamp) VALUES (?, ?, ?, ?)",
-        (loop_num, score, json.dumps(metrics), datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+        (loop_num, score, json.dumps(metrics), _utcnow().strftime("%Y-%m-%d %H:%M:%S"))
     )
     db.commit()
     db.close()
@@ -1613,7 +1617,7 @@ def post_to_relay(message):
         db = sqlite3.connect(RELAY_DB)
         db.execute(
             "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?, ?, ?, ?)",
-            ("Tempo", message, "fitness", datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+            ("Tempo", message, "fitness", _utcnow().strftime("%Y-%m-%d %H:%M:%S"))
         )
         db.commit()
         db.close()
