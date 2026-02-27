@@ -280,6 +280,25 @@
     </div>
   </div>
 
+  <div class="card">
+    <h2>Creative Works</h2>
+    <div style="display: flex; justify-content: space-around; padding: 8px 0;">
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: var(--accent);" id="poemCount">--</div>
+        <div style="font-size: 11px; color: var(--dim);">poems</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: var(--green);" id="journalCount">--</div>
+        <div style="font-size: 11px; color: var(--dim);">journals</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 24px; font-weight: bold; color: #00cccc;" id="cogcorpCount">--</div>
+        <div style="font-size: 11px; color: var(--dim);">cogcorp</div>
+      </div>
+    </div>
+    <div style="text-align: center; font-size: 11px; color: var(--dim); padding-top: 4px;" id="totalWorks">--</div>
+  </div>
+
   <div class="card" style="grid-column: 1 / -1;">
     <h2>Agents</h2>
     <div class="agents-grid" id="agentsGrid">
@@ -393,6 +412,17 @@ async function refresh() {
           <div class="message-text">${m.message}</div>
         </div>`;
       }).join('');
+    }
+
+    // Creative works
+    const works = await query('creative_works', 'select=type&order=type.asc');
+    if (works.length) {
+      const counts = {};
+      works.forEach(w => { counts[w.type] = (counts[w.type] || 0) + 1; });
+      document.getElementById('poemCount').textContent = counts.poem || 0;
+      document.getElementById('journalCount').textContent = counts.journal || 0;
+      document.getElementById('cogcorpCount').textContent = counts.cogcorp || 0;
+      document.getElementById('totalWorks').textContent = `${works.length} total works`;
     }
 
     // Status dots
