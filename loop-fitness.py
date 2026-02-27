@@ -934,7 +934,7 @@ def check_memory_events_recent():
     try:
         db = sqlite3.connect(MEMORY_DB)
         cutoff = (_utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
-        row = db.execute("SELECT COUNT(*) FROM events WHERE timestamp > ?", (cutoff,)).fetchone()
+        row = db.execute("SELECT COUNT(*) FROM events WHERE created > ?", (cutoff,)).fetchone()
         db.close()
         c = row[0] if row else 0
         if c >= 3: return 1.0
@@ -1223,7 +1223,7 @@ def check_observations_fresh():
     try:
         db = sqlite3.connect(MEMORY_DB)
         cutoff = (_utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
-        row = db.execute("SELECT COUNT(*) FROM observations WHERE timestamp > ?", (cutoff,)).fetchone()
+        row = db.execute("SELECT COUNT(*) FROM observations WHERE created > ?", (cutoff,)).fetchone()
         db.close()
         c = row[0] if row else 0
         if c >= 5: return 1.0
