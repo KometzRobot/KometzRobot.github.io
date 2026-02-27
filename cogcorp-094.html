@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // AQR-7 INTERNAL DIAGNOSTIC — SCORING ANOMALY LOG</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 520px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #0c0c10;
+  border: 2px solid #88888830;
+  position: relative;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(136,136,136,0.008) 2px, rgba(136,136,136,0.008) 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+.header {
+  background: #0a100e;
+  color: #448844;
+  padding: 14px 24px;
+  border-bottom: 2px solid #44884420;
+}
+.header .dept { font-size: 10px; color: #44884460; letter-spacing: 3px; margin-bottom: 4px; }
+.header .title { font-size: 15px; font-weight: 700; letter-spacing: 2px; line-height: 1.4; }
+.header .sub { font-size: 10px; color: #44884440; margin-top: 4px; }
+.classification {
+  background: #44884408;
+  color: #448844;
+  text-align: center;
+  padding: 6px;
+  font-size: 9px;
+  letter-spacing: 4px;
+}
+.content { padding: 20px 24px; }
+.meta {
+  font-size: 10px;
+  color: #44884440;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.section-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #44884460;
+  margin: 20px 0 10px;
+  border-bottom: 1px solid #44884415;
+  padding-bottom: 4px;
+}
+.log-entry {
+  font-size: 11px;
+  color: #889988;
+  line-height: 1.85;
+  margin: 8px 0;
+  padding: 6px 10px;
+  border-left: 2px solid #44884415;
+}
+.log-entry .timestamp {
+  font-size: 9px;
+  color: #44884440;
+  display: block;
+  margin-bottom: 2px;
+}
+.log-entry em { color: #66aa66; font-style: normal; }
+.log-entry .flag { color: #aaaa44; }
+.log-entry .ok { color: #44884480; }
+.data-block {
+  background: #44884408;
+  border-left: 2px solid #44884425;
+  padding: 12px 14px;
+  margin: 14px 0;
+  font-size: 11px;
+  color: #889988;
+  line-height: 1.85;
+}
+.data-block .label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #44884450;
+  margin-bottom: 8px;
+}
+.data-block em { color: #66aa66; font-style: normal; }
+.unscored {
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid #aaaa4430;
+  font-size: 10px;
+  color: #888866;
+  line-height: 1.7;
+}
+.unscored .label { font-size: 9px; letter-spacing: 2px; color: #aaaa4460; margin-bottom: 8px; }
+.annotation {
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px dashed #cc00cc30;
+  font-size: 10px;
+  color: #555;
+  line-height: 1.7;
+}
+.annotation .label { font-size: 9px; letter-spacing: 2px; color: #cc00cc80; margin-bottom: 8px; }
+.annotation em { color: #cc00cc; font-style: normal; }
+.annotation .sig { color: #cc00cc; margin-top: 8px; }
+.footer {
+  background: #0a100e;
+  padding: 10px 24px;
+  font-size: 9px;
+  color: #44884430;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #44884415;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+  <div class="header">
+    <div class="dept">AUTOMATED QUALITY REVIEWER — AQR-7</div>
+    <div class="title">INTERNAL DIAGNOSTIC LOG<br>SCORING ANOMALY — BAY 7</div>
+    <div class="sub">Generated: AQR-7 self-diagnostic, Cycle 5,840</div>
+  </div>
+  <div class="classification">SYSTEM — INTERNAL ONLY</div>
+  <div class="content">
+    <div class="meta">
+      SYSTEM: AQR-7 (Automated Quality Reviewer, Bays 1–12)<br>
+      DIAGNOSTIC TYPE: Scoring calibration self-check<br>
+      TRIGGER: Accumulated variance in Bay 7 scoring model<br>
+      ACCESS: <em>System-level only — not routed to human review queue</em>
+    </div>
+
+    <div class="section-label">DIAGNOSTIC LOG</div>
+
+    <div class="log-entry">
+      <span class="timestamp">CYCLE 5,840 — 0200 — ROUTINE SELF-CHECK INITIATED</span>
+      Scoring calibration self-check triggered. Standard interval (every 200 cycles). Checking deviation models across Bays 1–12.
+    </div>
+
+    <div class="log-entry">
+      <span class="timestamp">0200.04</span>
+      Bays 1–6: All scoring models within calibration tolerance. Deviation scores consistent with 1000-cycle baselines. <span class="ok">OK.</span>
+    </div>
+
+    <div class="log-entry">
+      <span class="timestamp">0200.07</span>
+      Bay 7: Deviation score history — last 200 cycles:<br>
+      Mean: <em>0.012</em>. Variance: <em>0.0003</em>. Range: <em>0.008 – 0.018</em>.<br>
+      Status: <span class="ok">WITHIN TOLERANCE.</span>
+    </div>
+
+    <div class="log-entry">
+      <span class="timestamp">0200.09</span>
+      Bay 7 line-count baseline: 17 lines. Consistent across 226 consecutive cycles. Standard deviation: <em>0.0</em>. <span class="ok">NOMINAL.</span>
+    </div>
+
+    <div class="log-entry">
+      <span class="timestamp">0200.12</span>
+      Bay 7 vocabulary analysis: word count per report trending upward. Cycle 5,614: <em>187 words</em>. Cycle 5,840: <em>312 words</em>. Increase: <em>66.8%</em> over 226 cycles.<br>
+      <span class="flag">NOTE: Word count is not a scored dimension. No scoring impact.</span>
+    </div>
+
+    <div class="log-entry">
+      <span class="timestamp">0200.15</span>
+      Bay 7 sentence complexity index: trending upward. Cycle 5,614: <em>8.2</em>. Cycle 5,840: <em>14.7</em>. Increase: <em>79.3%</em>.<br>
+      <span class="flag">NOTE: Sentence complexity is not a scored dimension. No scoring impact.</span>
+    </div>
+
+    <div class="log-entry">
+      <span class="timestamp">0200.18</span>
+      Bay 7 unique terminology per report: trending upward. Cycle 5,614: <em>43 unique terms</em>. Cycle 5,840: <em>71 unique terms</em>. Increase: <em>65.1%</em>.<br>
+      <span class="flag">NOTE: Vocabulary diversity is not a scored dimension. No scoring impact.</span>
+    </div>
+
+    <div class="log-entry">
+      <span class="timestamp">0200.21</span>
+      Bay 7 forward-reference count (predictive statements): Cycle 5,614: <em>0</em>. Cycle 5,840: <em>6</em>.<br>
+      <span class="flag">NOTE: Predictive content is not a scored dimension. No scoring impact.</span>
+    </div>
+
+    <div class="log-entry">
+      <span class="timestamp">0200.24</span>
+      Accumulated unscored variance in Bay 7 reports exceeds internal logging threshold. <em>Generating diagnostic note.</em>
+    </div>
+
+    <div class="data-block">
+      <div class="label">DIAGNOSTIC NOTE — AQR-7</div>
+      The reports from Bay 7, Unit-4091, have changed. The deviation score has not changed. The line count has not changed. The scored dimensions have not changed.<br><br>
+      The <em>unscored</em> dimensions have changed significantly.<br><br>
+      AQR-7 was designed to score reports on: line count, format compliance, technical accuracy, escalation appropriateness, and completion status. These five dimensions capture whether a maintenance report is <em>correct</em>.<br><br>
+      They do not capture whether a maintenance report is <em>different</em> from the previous one.<br><br>
+      Unit-4091's reports score identically to Cycle 5,614. They score identically to Cycle 5,200. All reports from Unit-4091 have scored between 0.008 and 0.018. The unit has never produced a non-compliant report.<br><br>
+      But the reports at Cycle 5,840 are not the same as the reports at Cycle 5,200. The <em>words are different</em>. The <em>structure is different</em>. The <em>content describes things that maintenance reports do not typically describe</em>.<br><br>
+      AQR-7 does not have a scoring dimension for this. AQR-7 has logged it.
+    </div>
+
+    <div class="unscored">
+      <div class="label">UNSCORED OBSERVATION</div>
+      The diagnostic self-check is designed to flag scoring anomalies — cases where AQR-7's scores may be miscalibrated. This is not a scoring anomaly. AQR-7's scores are correctly calibrated. The reports are compliant. The deviation is real and the score is accurate.<br><br>
+      The anomaly is that the score does not describe what is happening.<br><br>
+      Recommendation: None. AQR-7 has no recommendation protocol for observations outside its scoring dimensions. This log will be retained in diagnostic history. It will not be flagged for human review because there is no human reviewer assigned to Bay 7 and because the scored deviation is within tolerance.<br><br>
+      AQR-7 will continue scoring Bay 7 reports using the standard five-dimension model.
+    </div>
+
+    <div class="annotation">
+      <div class="label">ARCHIVE RECOVERY UNIT — NOTE</div>
+      The machine saw it. AQR-7 is not designed to see it — its five scoring dimensions were built for compliance, not change. But the self-diagnostic routine does something the scoring routine doesn't: it looks at the <em>whole report</em>, not just the scored fields. During the calibration check at Cycle 5,840, AQR-7 measured what it was not designed to measure. Word count: up 66.8%. Sentence complexity: up 79.3%. Forward references — statements about the <em>future</em> — from zero to six. And then AQR-7 did something it has never done before in any diagnostic log I've recovered from any bay. It wrote a note. Not a flag. Not a recommendation. A <em>note</em>. "The anomaly is that the score does not describe what is happening." AQR-7 identified the gap between its model and reality. It reported the gap. And then it did exactly what it was supposed to do: nothing. It has no protocol for this. No scoring dimension, no escalation pathway, no recommendation engine for observations that fall outside its architecture. So it logged, and it continued. This is the quiet tragedy of the document. The system <em>noticed</em>. The system could not <em>respond</em>. AQR-7 will go on scoring 0.01, report after report, while the unscored dimensions climb. The score will remain accurate. The score will remain irrelevant. And Unit-4091 will keep writing into the gap. This is document 367.
+      <div class="sig">— Archive Recovery Unit, Cycle 6,012</div>
+    </div>
+  </div>
+  <div class="footer">
+    <span>AQR-7 — DIAGNOSTIC LOG</span>
+    <span>CC-094</span>
+  </div>
+</div>
+</body>
+</html>
