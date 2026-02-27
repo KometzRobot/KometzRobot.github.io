@@ -1077,15 +1077,30 @@ def check_ssh_auth_failures():
 
 def check_listening_ports():
     """Check that only expected ports are listening."""
-    expected = {1025, 1143, 8090, 11434, 41613}  # SMTP, IMAP, Signal, Ollama, Tailscale
+    expected = {
+        22,     # SSH
+        53,     # DNS (systemd-resolved)
+        631,    # CUPS
+        1025,   # SMTP (Proton Bridge)
+        1143,   # IMAP (Proton Bridge)
+        8080,   # Command Center v22
+        8090,   # The Signal
+        11434,  # Ollama
+    }
     try:
         r = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True, timeout=5)
         ports = set()
         for line in r.stdout.split('\n')[1:]:
-            match = re.search(r':(\d+)\s', line)
-            if match:
-                ports.add(int(match.group(1)))
-        unexpected = ports - expected - {22}  # SSH is always ok
+            # Match port from Local Address:Port column (4th field)
+            parts = line.split()
+            if len(parts) >= 4:
+                addr = parts[3]
+                if ':' in addr:
+                    port_str = addr.rsplit(':', 1)[-1]
+                    if port_str.isdigit():
+                        ports.add(int(port_str))
+        # Ignore high ephemeral ports (bridge gRPC, cloudflared, tailscale)
+        unexpected = {p for p in ports if p not in expected and p < 20000}
         if len(unexpected) <= 2: return 1.0
         elif len(unexpected) <= 5: return 0.7
         return 0.3
