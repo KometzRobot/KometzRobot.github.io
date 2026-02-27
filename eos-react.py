@@ -130,7 +130,7 @@ def tool_check_emails():
     try:
         import imaplib
         m = imaplib.IMAP4("127.0.0.1", 1143)
-        m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", "tHQipGP9TD92d9_k68vTRg"))
+        m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", ""))
         m.select("INBOX")
         _, data = m.search(None, "UNSEEN")
         unseen = len(data[0].split()) if data[0] else 0

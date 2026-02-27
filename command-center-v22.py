@@ -50,7 +50,7 @@ PINNED_FILE = os.path.join(BASE, ".pinned-files.json")
 IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
 SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
 CRED_USER = os.environ.get("MERIDIAN_EMAIL_USER", "kometzrobot@proton.me")
-CRED_PASS = os.environ.get("MERIDIAN_EMAIL_PASS", "tHQipGP9TD92d9_k68vTRg")
+CRED_PASS = os.environ.get("MERIDIAN_EMAIL_PASS", "")
 JOEL = "jkometz@hotmail.com"
 
 OLLAMA = "http://localhost:11434/api/generate"

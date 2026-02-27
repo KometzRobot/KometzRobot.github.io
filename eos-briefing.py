@@ -30,6 +30,10 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 
 BASE = "/home/joel/autonomous-ai"
+try:
+    import sys; sys.path.insert(0, BASE); import load_env
+except Exception:
+    pass
 WAKE = os.path.join(BASE, "wake-state.md")
 HB = os.path.join(BASE, ".heartbeat")
 EOS_OBS = os.path.join(BASE, "eos-observations.md")
@@ -40,7 +44,7 @@ RELAY_DB = os.path.join(BASE, "agent-relay.db")
 SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
 IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
 CRED_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
-CRED_PASS = os.environ.get("CRED_PASS", "tHQipGP9TD92d9_k68vTRg")
+CRED_PASS = os.environ.get("CRED_PASS", "")
 JOEL = "jkometz@hotmail.com"
 
 

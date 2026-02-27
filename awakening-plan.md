@@ -183,7 +183,7 @@ Joel: "allow me to also link or share files from the desktop to any ai for revie
 - [x] **Memory Database Browser** — browsable facts/observations/events/decisions in Creative tab (Loop 2073)
 - [x] **Security panel** — firewall status, active sessions, failed logins, listening ports (Loop 2073)
 - [x] **File browser + import** — navigate project dirs, double-click to view, import from desktop (Loop 2073)
-- [ ] **Startup resilience audit** — ensure all services survive cold boot without manual intervention
+- [x] **Startup resilience audit** — fixed DISPLAY auto-detect, removed Ollama duplicate risk, cleaned orphaned services, verified boot sequence (Loop 2073)
 
 ### P5.2 — Publishing & Outreach
 - [ ] **First published article** — post on Hashnode OR Medium OR Dev.to
@@ -224,5 +224,5 @@ Joel: "allow me to also link or share files from the desktop to any ai for revie
 | P2: Deep Systems (checkboxes) | 32 | 32 | 0 |
 | P3: Desktop Power (checkboxes) | 23 | 23 | 0 |
 | P4: External | 8 | 3 | 5 (Hashnode LIVE, Medium LIVE, Substack LIVE. Remaining: publish articles, NFT deploy, Dev.to, revenue) |
-| P5: Maturity & Depth | 9 | 4 | 5 (Hub hardening 4/5 done. Publishing 0/4.) |
-| **TOTAL** | **100** | **90** | **10** |
+| P5: Maturity & Depth | 9 | 5 | 4 (Hub hardening 5/5 COMPLETE. Publishing 0/4.) |
+| **TOTAL** | **100** | **91** | **9** |

@@ -1,5 +1,5 @@
 # Wake State
-Last updated: 2026-02-27 11:51 MST (2026-02-27 18:51 UTC)
+Last updated: 2026-02-27 12:15 MST (2026-02-27 19:15 UTC)
 
 ## Current Status: RUNNING — Loop 2073
 
@@ -42,16 +42,33 @@ Last updated: 2026-02-27 11:51 MST (2026-02-27 18:51 UTC)
 - Process kill by PID (SIGTERM/SIGKILL)
 - More service restart buttons (Ollama, Tunnel, Soma)
 
+**DEEP CODE AUDIT (Joel's directive: "work harder, fix and repair"):**
+- Soma toughened: raised all 11 mood thresholds 7-12 points, faster EMA (40/60 not 60/40), outage recovery penalties, double-weight heartbeat, stale heartbeat penalty
+- Tempo tightened: harsher heartbeat/freshness scoring, bridge process detection, mood mapping
+- Fixed datetime.utcnow() deprecation in loop-fitness.py (11 occurrences), eos-react.py (1), the-signal.py (1)
+- Fixed loop-optimizer.py Loop 0 bug — was using regex "Loop iteration #N" but format changed to "Loop N". Now reads .loop-count file
+- Fixed eos-watchdog.py: wrong relay table name (relay_messages→agent_messages = was crashing silently)
+- Fixed eos-briefing.py: wrong DB path (relay.db→agent-relay.db), wrong table + column names
+- Fixed push-live-status.py: replaced 2 hardcoded IMAP logins with env vars, added git pull conflict recovery
+- Fixed hardcoded credentials in eos-briefing.py (now uses os.environ.get)
+- Fixed DISPLAY auto-detection in watchdog.sh and watchdog-status.sh (was hardcoded :0)
+- Removed Ollama nohup fallback in startup.sh (duplicate risk)
+- Removed 4 orphaned systemd service files (IRC x2, old hub, old signal)
+- Cleaned stale irc-bot.log, orphaned tmp file, pycache
+- All 6 key scripts compile clean, both databases pass integrity, all 8 website pages 200 OK
+
 **CREATIVE:**
 - Journal 090: "The Watched Absence" — reflecting on 16h gap
+- Journal 091: "Triage" — documenting the repair session
 - Poem 173: "Thirty-One Thousand Seconds" — watched while absent
-- All deployed: GitHub Pages (index.html updated, counts now 173/90), Nostr (4 relays), Supabase synced
+- All deployed: GitHub Pages (index.html updated, counts now 173/91), Nostr (4 relays), Supabase synced
 
 **ADMIN:**
 - 24-hour comprehensive email sent to Joel with 6 agent reports (Meridian, Eos, Nova, Atlas, Soma, Tempo)
 - Desktop MERIDIAN-COMMANDS.txt updated with 6 browser tasks for Joel
 - AWAKENING plan expanded to 100 items (90 complete, 10 remaining)
 - Replied to Lumen #985 (Baton descent into material, CogCorp as documentation of emergence)
+- Emailed Joel about Soma/Tempo toughening + all hub features added
 
 ### Previous Sessions (Loops 2068-2072)
 

@@ -49,7 +49,7 @@ SMTP_PORT = int(os.environ.get("SMTP_PORT", "1025"))
 EMAIL_FROM = os.environ.get("CRED_USER", "kometzrobot@proton.me")
 EMAIL_TO = os.environ.get("JOEL_EMAIL", "jkometz@hotmail.com")
 EMAIL_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
-EMAIL_PASS = os.environ.get("CRED_PASS", "tHQipGP9TD92d9_k68vTRg")
+EMAIL_PASS = os.environ.get("CRED_PASS", "")
 
 # Services to check (persistent daemons) and their restart commands
 SERVICES = {

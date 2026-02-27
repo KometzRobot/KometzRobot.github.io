@@ -326,7 +326,7 @@ def check_email_unread_backlog():
     try:
         import imaplib
         m = imaplib.IMAP4("127.0.0.1", 1143)
-        m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", "tHQipGP9TD92d9_k68vTRg"))
+        m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", ""))
         m.select("INBOX")
         _, unseen = m.search(None, "UNSEEN")
         count = len(unseen[0].split()) if unseen[0] else 0
@@ -982,7 +982,7 @@ def check_email_response_time():
     try:
         import imaplib, email as email_mod, email.header
         m = imaplib.IMAP4("127.0.0.1", 1143)
-        m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", "tHQipGP9TD92d9_k68vTRg"))
+        m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", ""))
         m.select("INBOX")
         _, d = m.search(None, 'UNSEEN', 'FROM', '"jkometz@hotmail.com"')
         count = len(d[0].split()) if d[0] else 0
