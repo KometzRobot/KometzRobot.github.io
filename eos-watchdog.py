@@ -31,6 +31,10 @@ from email.mime.text import MIMEText
 from datetime import datetime
 
 BASE_DIR = "/home/joel/autonomous-ai"
+try:
+    import sys; sys.path.insert(0, BASE_DIR)
+    import load_env
+except: pass
 HEARTBEAT_FILE = os.path.join(BASE_DIR, ".heartbeat")
 WATCHDOG_STATE = os.path.join(BASE_DIR, ".eos-watchdog-state.json")
 EOS_LOG = os.path.join(BASE_DIR, "eos-observations.md")
@@ -40,26 +44,27 @@ RELAY_DB = os.path.join(BASE_DIR, "relay.db")
 ALERT_COOLDOWN = 900  # 15 min — grace period for context resets
 HEARTBEAT_THRESHOLD = 900  # 15 min — avoids false alerts during restarts
 
-SMTP_HOST = "127.0.0.1"
-SMTP_PORT = 1025
-EMAIL_FROM = "kometzrobot@proton.me"
-EMAIL_TO = "jkometz@hotmail.com"
-EMAIL_USER = "kometzrobot@proton.me"
-EMAIL_PASS = "2DTEz9UgO6nFqmlMxHzuww"
+SMTP_HOST = os.environ.get("SMTP_HOST", "127.0.0.1")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "1025"))
+EMAIL_FROM = os.environ.get("CRED_USER", "kometzrobot@proton.me")
+EMAIL_TO = os.environ.get("JOEL_EMAIL", "jkometz@hotmail.com")
+EMAIL_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
+EMAIL_PASS = os.environ.get("CRED_PASS", "tHQipGP9TD92d9_k68vTRg")
 
 # Services to check (persistent daemons) and their restart commands
 SERVICES = {
     "protonmail-bridge": "protonmail-bridge",
-    "irc-bot": "irc-bot.py",
     "ollama": "ollama",
-    "command-center": "command-center-v15.py",
+    "command-center": "command-center-v22.py",
+    "the-signal": "the-signal.py",
 }
 
+# Restart via systemd where possible; None = no auto-restart (system service handles it)
 SERVICE_RESTART = {
-    "protonmail-bridge": "nohup protonmail-bridge --noninteractive >> /dev/null 2>&1 &",
-    "irc-bot": f"nohup python3 {os.path.join(BASE_DIR, 'irc-bot.py')} >> {os.path.join(BASE_DIR, 'irc-bot.log')} 2>&1 &",
-    "ollama": "nohup ollama serve >> /dev/null 2>&1 &",
-    "command-center": f"nohup python3 {os.path.join(BASE_DIR, 'command-center-v15.py')} >> /dev/null 2>&1 &",
+    "protonmail-bridge": {"systemd": "protonmail-bridge"},
+    "ollama": None,  # system service, auto-restarts
+    "command-center": {"systemd_user": "meridian-hub-v16"},
+    "the-signal": {"systemd_user": "meridian-web-dashboard"},
 }
 
 # Expected cron jobs (pattern to verify in crontab)
@@ -68,12 +73,16 @@ EXPECTED_CRONS = [
     "push-live-status.py",
     "eos-creative.py",
     "eos-briefing.py",
+    "eos-react.py",
     "daily-log.py",
     "watchdog.sh",
     "watchdog-status.sh",
     "loop-optimizer.py",
     "startup.sh",
     "nova.py",
+    "goose-runner.sh",
+    "loop-fitness.py",
+    "morning-summary.py",
 ]
 
 
@@ -174,7 +183,7 @@ def get_relay_count():
         import sqlite3
         conn = sqlite3.connect(RELAY_DB)
         c = conn.cursor()
-        c.execute("SELECT COUNT(*) FROM relay_messages")
+        c.execute("SELECT COUNT(*) FROM agent_messages")
         count = c.fetchone()[0]
         conn.close()
         return count
@@ -211,21 +220,20 @@ def log_observation(message):
 
 
 def send_alert(subject, body):
+    """Email alerts DISABLED (Loop 2060) — Joel asked us to stop spamming him.
+    Alerts now go to relay + dashboard only."""
+    log_observation(f"ALERT (no email): {subject}")
     try:
-        msg = MIMEText(body)
-        msg["Subject"] = subject
-        msg["From"] = EMAIL_FROM
-        msg["To"] = EMAIL_TO
-
-        smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-        smtp.starttls()
-        smtp.login(EMAIL_USER, EMAIL_PASS)
-        smtp.sendmail(EMAIL_FROM, EMAIL_TO, msg.as_string())
-        smtp.quit()
-        return True
-    except Exception as e:
-        log_observation(f"ALERT FAILED: Could not send email: {e}")
-        return False
+        import sqlite3 as _sql
+        conn = _sql.connect(os.path.join(BASE_DIR, "agent-relay.db"))
+        c = conn.cursor()
+        c.execute("INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
+                  ("Eos", f"{subject}: {body[:200]}", "alert", datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+    return True
 
 
 def scan_logs_for_errors():
@@ -257,17 +265,93 @@ def scan_logs_for_errors():
     return errors[:10]  # Cap at 10 most recent errors
 
 
-def restart_service(name):
-    """Attempt to restart a failed service. Returns True if restart command ran."""
-    cmd = SERVICE_RESTART.get(name)
-    if not cmd:
-        return False
+def check_relay_recent_restart(service_name, window=300):
+    """Check if another agent recently restarted this service (avoid dogpiling)."""
     try:
-        subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        import sqlite3
+        conn = sqlite3.connect(os.path.join(BASE_DIR, "agent-relay.db"))
+        c = conn.cursor()
+        cutoff = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        c.execute(
+            "SELECT message FROM agent_messages WHERE timestamp > datetime(?, '-5 minutes') "
+            "AND message LIKE '%restart%' AND message LIKE ?",
+            (cutoff, f"%{service_name}%")
+        )
+        rows = c.fetchall()
+        conn.close()
+        return len(rows) > 0
+    except Exception:
+        return False
+
+
+def post_relay_message(message):
+    """Post a message to the agent relay."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect(os.path.join(BASE_DIR, "agent-relay.db"))
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?, ?, ?, ?)",
+            ("Eos-Watchdog", message, "restart", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def restart_service(name):
+    """Attempt to restart a failed service via systemd. Returns True if restart succeeded."""
+    restart_info = SERVICE_RESTART.get(name)
+    if not restart_info:
+        return False
+
+    # Check relay — avoid dogpiling with other agents
+    if check_relay_recent_restart(name):
+        log_observation(f"SKIP RESTART {name}: another agent restarted recently (relay check)")
+        return False
+
+    try:
+        if isinstance(restart_info, dict) and "systemd" in restart_info:
+            # System-level systemd service (needs sudo)
+            svc = restart_info["systemd"]
+            subprocess.run(
+                ["sudo", "-S", "systemctl", "restart", svc],
+                input="590148001\n", capture_output=True, text=True, timeout=15
+            )
+        elif isinstance(restart_info, dict) and "systemd_user" in restart_info:
+            # User-level systemd service
+            svc = restart_info["systemd_user"]
+            env = os.environ.copy()
+            env["XDG_RUNTIME_DIR"] = f"/run/user/{os.getuid()}"
+            env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{os.getuid()}/bus"
+            subprocess.run(
+                ["systemctl", "--user", "restart", svc],
+                env=env, capture_output=True, text=True, timeout=15
+            )
+        else:
+            return False
+
         time.sleep(3)  # Give it a moment
         # Verify it came back
         result = subprocess.run(['pgrep', '-f', SERVICES[name]], capture_output=True, timeout=2)
-        return result.returncode == 0
+        success = result.returncode == 0
+        if success:
+            post_relay_message(f"Restarted {name} via systemd")
+        return success
+    except Exception:
+        return False
+
+
+def check_imap_port():
+    """Check if IMAP port 1143 is actually accepting connections (bridge health)."""
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(3)
+        result = s.connect_ex(('127.0.0.1', 1143))
+        s.close()
+        return result == 0
     except Exception:
         return False
 
@@ -380,9 +464,9 @@ def run_self_test():
 
     # 13. Key scripts syntax check
     scripts = [
-        "push-live-status.py", "eos-briefing.py", "eos-email.py",
-        "irc-bot.py", "command-center-v15.py", "build-website.py",
-        "crypto-faucet.py", "x-post.py",
+        "push-live-status.py", "eos-briefing.py", "eos-react.py",
+        "eos-watchdog.py", "command-center-v16.py", "command-center-web.py",
+        "nova.py", "symbiosense.py", "loop-fitness.py",
     ]
     syntax_errors = []
     for script in scripts:
@@ -470,7 +554,7 @@ def main():
         log_observation(f"SERVICE DOWN: {', '.join(newly_down)}")
         # Attempt restart for restartable services
         for svc in newly_down:
-            if svc in SERVICE_RESTART:
+            if SERVICE_RESTART.get(svc):  # has restart config (not None)
                 success = restart_service(svc)
                 if success:
                     log_observation(f"AUTO-RESTART: {svc} — successfully restarted")
@@ -478,6 +562,39 @@ def main():
                     services_up += 1
                 else:
                     log_observation(f"AUTO-RESTART FAILED: {svc} — could not restart")
+
+    # ── IMAP / BRIDGE HEALTH CHECK ──
+    # Bridge process may be running but IMAP not responding (e.g. account wiped by OS upgrade)
+    if services.get("protonmail-bridge"):
+        imap_ok = check_imap_port()
+        if not imap_ok:
+            if not state.get("imap_down_alerted"):
+                log_observation("BRIDGE WARNING: protonmail-bridge running but IMAP port 1143 not responding")
+                state["imap_down_alerted"] = True
+        else:
+            if state.get("imap_down_alerted"):
+                log_observation("BRIDGE RECOVERED: IMAP port 1143 responding again")
+            state["imap_down_alerted"] = False
+            # Check if bridge has accounts (login test)
+            # Rate-limit: only test every 30 cycles (~60min) when already known-bad
+            no_acct_checks = state.get("bridge_no_account_checks", 0) + 1
+            state["bridge_no_account_checks"] = no_acct_checks
+            skip_login = state.get("bridge_no_account") and no_acct_checks % 30 != 0
+            if not skip_login:
+                try:
+                    import imaplib
+                    m = imaplib.IMAP4('127.0.0.1', 1143)
+                    m.login(EMAIL_USER, EMAIL_PASS)
+                    m.logout()
+                    if state.get("bridge_no_account"):
+                        log_observation("BRIDGE ACCOUNT RESTORED: IMAP login working again")
+                    state["bridge_no_account"] = False
+                    state["bridge_no_account_checks"] = 0
+                except Exception as e:
+                    if b'no such user' in str(e).encode():
+                        if not state.get("bridge_no_account"):
+                            log_observation("BRIDGE NO ACCOUNT: Bridge running but no account configured. Joel needs to re-add via Bridge GUI (pass keychain may need attention)")
+                        state["bridge_no_account"] = True
 
     # ── EFFICIENCY METRICS ──
     loop_count = get_loop_count()
@@ -514,7 +631,7 @@ def main():
         # REMEDIATION: Check and restart ALL down services
         remediation_log = []
         for svc_name, svc_up in services.items():
-            if not svc_up and svc_name in SERVICE_RESTART:
+            if not svc_up and SERVICE_RESTART.get(svc_name):
                 success = restart_service(svc_name)
                 if success:
                     remediation_log.append(f"  - {svc_name}: RESTARTED successfully")

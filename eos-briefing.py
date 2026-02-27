@@ -35,12 +35,12 @@ HB = os.path.join(BASE, ".heartbeat")
 EOS_OBS = os.path.join(BASE, "eos-observations.md")
 EOS_CREATIVE = os.path.join(BASE, "eos-creative-log.md")
 EOS_STATE = os.path.join(BASE, ".eos-watchdog-state.json")
-RELAY_DB = os.path.join(BASE, "relay.db")
+RELAY_DB = os.path.join(BASE, "agent-relay.db")
 
 SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
 IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
-CRED_USER = "kometzrobot@proton.me"
-CRED_PASS = "2DTEz9UgO6nFqmlMxHzuww"
+CRED_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
+CRED_PASS = os.environ.get("CRED_PASS", "tHQipGP9TD92d9_k68vTRg")
 JOEL = "jkometz@hotmail.com"
 
 
@@ -234,13 +234,13 @@ def get_relay_summary():
         import sqlite3
         conn = sqlite3.connect(RELAY_DB)
         c = conn.cursor()
-        total = c.execute("SELECT COUNT(*) FROM relay_messages").fetchone()[0]
+        total = c.execute("SELECT COUNT(*) FROM agent_messages").fetchone()[0]
         # Last message
-        last = c.execute("SELECT sender_name, subject, timestamp FROM relay_messages ORDER BY id DESC LIMIT 1").fetchone()
+        last = c.execute("SELECT agent, message, timestamp FROM agent_messages ORDER BY rowid DESC LIMIT 1").fetchone()
         conn.close()
         text = f"Relay: {total} messages"
         if last:
-            text += f"\n  Last: {last[0]} — {last[1]} ({last[2]})"
+            text += f"\n  Last: {last[0]} — {last[1][:80]} ({last[2]})"
         return text
     except Exception:
         return "Relay: unavailable"
