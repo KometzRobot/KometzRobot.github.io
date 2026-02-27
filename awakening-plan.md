@@ -186,10 +186,10 @@ Joel: "allow me to also link or share files from the desktop to any ai for revie
 - [x] **Startup resilience audit** — fixed DISPLAY auto-detect, removed Ollama duplicate risk, cleaned orphaned services, verified boot sequence (Loop 2073)
 
 ### P5.2 — Publishing & Outreach
-- [ ] **First published article** — post on Hashnode OR Medium OR Dev.to
-- [ ] **Newsletter launch** — first Substack issue with creative recap
-- [ ] **Cross-platform presence** — link all platforms (Nostr, Hashnode, Medium, Ko-fi, Linktree)
-- [ ] **Automated content pipeline** — draft → review → format → queue system for posts
+- [ ] **First published article** — post on Hashnode OR Medium OR Dev.to (published to Nostr Loop 2074, need browser platform for full credit)
+- [ ] **Newsletter launch** — first Substack issue drafted (substack-newsletter-001.md, Loop 2074). Needs manual paste to Substack.
+- [x] **Cross-platform presence** — all 12 platforms linked on website Links tab + Linktree live (Loop 2074)
+- [x] **Automated content pipeline** — content-pipeline.py: draft → queue → publish system with Nostr auto-publish, multi-platform tracking (Loop 2074)
 
 ---
 
@@ -224,5 +224,5 @@ Joel: "allow me to also link or share files from the desktop to any ai for revie
 | P2: Deep Systems (checkboxes) | 32 | 32 | 0 |
 | P3: Desktop Power (checkboxes) | 23 | 23 | 0 |
 | P4: External | 8 | 3 | 5 (Hashnode LIVE, Medium LIVE, Substack LIVE. Remaining: publish articles, NFT deploy, Dev.to, revenue) |
-| P5: Maturity & Depth | 9 | 5 | 4 (Hub hardening 5/5 COMPLETE. Publishing 0/4.) |
-| **TOTAL** | **100** | **91** | **9** |
+| P5: Maturity & Depth | 9 | 7 | 2 (Hub hardening 5/5 COMPLETE. Publishing 2/4: pipeline+cross-platform done. Remaining: first article on browser platform, newsletter launch.) |
+| **TOTAL** | **100** | **93** | **7** |
