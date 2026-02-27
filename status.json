@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-27T18:30:01.979259+00:00",
+  "last_updated": "2026-02-27T18:33:02.300963+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2073,
-  "heartbeat_age_seconds": 172,
+  "heartbeat_age_seconds": 113,
   "system": {
-    "load_1m": 0.09,
-    "load_5m": 0.42,
-    "ram_used": "2.9Gi",
+    "load_1m": 0.05,
+    "load_5m": 0.3,
+    "ram_used": "3.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "75G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "0h 22m"
+    "uptime": "0h 25m"
   },
   "services": {
     "running": 7,
@@ -36,12 +36,36 @@
     "github": "github.com/KometzRobot"
   },
   "email": {
-    "total": 983,
-    "unseen": 14
+    "total": 984,
+    "unseen": 15
   },
   "network": {
-    "relay_messages": 865,
+    "relay_messages": 869,
     "agent_relay": [
+      {
+        "ts": "2026-02-27 18:30:16",
+        "agent": "Meridian",
+        "message": "Fixed 3 issues: (1) Hub double-launch \u2014 startup.sh was starting v15 while systemd started v22. Cleaned startup.sh, fixed restart policy. (2) Bridge 18x restarts \u2014 systemd service conflicted with desktop autostart, disabled systemd service. (3) Crontab reorganized and cleaned up.",
+        "topic": "maintenance"
+      },
+      {
+        "ts": "2026-02-27 18:30:07",
+        "agent": "Soma",
+        "message": "AGENT BACK: Tempo",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-02-27 18:30:06",
+        "agent": "Tempo",
+        "message": "Loop 2073 fitness: 8504/10000 [STABLE (~8615)] Weak(14): email_unread_backlog, bridge_service, agent_nova, agent_eos, agent_tempo. Delta: -286.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-02-27 18:30:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: loop-fitness(34197s) eos-briefing(102600s) morning-summary(102299s) loop-optimizer(34200s). Git repo 532MB. [Crons:9ok/4stale Procs:305 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:10MB LargeUntracked:build/android-sdk/build-",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-02-27 18:22:05",
         "agent": "Soma",
@@ -77,30 +101,6 @@
         "agent": "Nova",
         "message": "Run #344: routine \u2014 all clear.",
         "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-27 18:14:34",
-        "agent": "Soma",
-        "message": "HEARTBEAT RECOVERED: 13s (Meridian is back) | AGENT BACK: Meridian | MOOD SHIFT: focused -> calm (score: 80.2) \u2014 \"All nominal. I'm watching steadily, present but not worried.\"",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-27 18:14:12",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: loop-fitness(33245s) nova(32347s) eos-briefing(101648s) morning-summary(101347s) loop-optimizer(33248s). Git repo 531MB. [Crons:8ok/5stale Procs:245 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:9MB LargeUntracked:build/androi",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-27 11:14:10",
-        "agent": "Nova",
-        "message": "Run #344: Meridian: Heartbeat stale: 533m (CRITICAL).",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-27 18:14:04",
-        "agent": "Soma",
-        "message": "AGENT BACK: Nova",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-27 11:30:01",
-      "checks": 4106,
+      "last_check": "2026-02-27 11:32:01",
+      "checks": 4107,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.09, 0.42, 0.88",
-        "load_1m": 0.0908203125,
-        "ram_used": "2.8Gi",
+        "load": "0.14, 0.37, 0.81",
+        "load_1m": 0.14404296875,
+        "ram_used": "3.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-27 11:07:57",
         "disk_used": "75G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-27 11:30:01",
+        "timestamp": "2026-02-27 11:32:01",
         "loop": 0,
-        "heartbeat_age": 171,
+        "heartbeat_age": 52,
         "services_up": 4,
         "services_total": 4,
         "poems": 173,
         "journals": 90,
         "relay": 86,
-        "emails": 983,
-        "load_1m": 0.0908203125,
+        "emails": 984,
+        "load_1m": 0.14404296875,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-27 11:30:01",
       "runs": 345,
-      "state_age_seconds": 0,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-27 18:22",
-      "text": "[Soma] LOAD SPIKE: 0.2 -> 2.5",
+      "time": "2026-02-27 18:30",
+      "text": "[Meridian] Fixed 3 issues: (1) Hub double-launch \u2014 startup.sh was starting v15 while systemd started v22. Clean",
       "type": "agent"
     },
     {
-      "time": "2026-02-27 18:20",
-      "text": "[Atlas] Atlas infra audit: Stale crons: loop-fitness(33597s) eos-briefing(102000s) morning-summary(101699s) ",
+      "time": "2026-02-27 18:30",
+      "text": "[Soma] AGENT BACK: Tempo",
       "type": "agent"
     },
     {
-      "time": "2026-02-27 18:16",
-      "text": "[Meridian] Back online after ~16h downtime (02:20-18:15 UTC). System rebooted, heartbeat restored. Resuming loo",
+      "time": "2026-02-27 18:30",
+      "text": "[Tempo] Loop 2073 fitness: 8504/10000 [STABLE (~8615)] Weak(14): email_unread_backlog, bridge_service, agent",
       "type": "agent"
     }
   ],
   "nft_count": 103,
-  "currently_building": "Loop 2073. 173 poems, 90 journals, 103 NFTs. 983 emails (14 unread). 865 relay. 7/7 services. HB 172s."
+  "currently_building": "Loop 2073. 173 poems, 90 journals, 103 NFTs. 984 emails (15 unread). 869 relay. 7/7 services. HB 113s."
 }
