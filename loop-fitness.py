@@ -414,7 +414,12 @@ def _check_agent(name):
 def check_agent_atlas(): return _check_agent("Atlas")
 def check_agent_soma(): return _check_agent("Soma")
 def check_agent_nova(): return _check_agent("Nova")
-def check_agent_eos(): return _check_agent("Eos")
+def check_agent_eos():
+    """Eos posts as 'Eos' (react) and 'Watchdog' (watchdog-status.sh)."""
+    c = _relay_count(agent="Eos", hours=1) + _relay_count(agent="Watchdog", hours=1)
+    if c >= 3: return 1.0
+    elif c >= 1: return 0.7
+    return 0.0
 def check_agent_tempo(): return _check_agent("Tempo")
 def check_agent_meridian(): return _check_agent("Meridian")
 
@@ -590,7 +595,15 @@ def check_svc_signal(): return 1.0 if _svc_active("meridian-web-dashboard") else
 def check_svc_hub(): return 1.0 if _svc_active("meridian-hub-v16") else 0.0
 def check_svc_cloudflare(): return 1.0 if _svc_active("cloudflare-tunnel") else 0.0
 def check_svc_symbiosense(): return 1.0 if _svc_active("symbiosense") else 0.0
-def check_svc_protonbridge(): return 1.0 if _svc_active("protonmail-bridge") else 0.0
+def check_svc_protonbridge():
+    """Bridge may run via systemd OR desktop autostart."""
+    if _svc_active("protonmail-bridge"):
+        return 1.0
+    try:
+        r = subprocess.run(['pgrep', '-f', 'protonmail-bridge'], capture_output=True, timeout=3)
+        return 1.0 if r.returncode == 0 else 0.0
+    except Exception:
+        return 0.0
 
 def check_tunnel_reachable():
     try:
@@ -824,10 +837,11 @@ def check_uptime():
         return 0.5
 
 def check_build_dir_size():
+    """Android SDK is ~750MB permanent fixture for APK builds."""
     mb = _dir_size_mb(os.path.join(BASE, "build"))
-    if mb < 300: return 1.0
-    elif mb < 600: return 0.7
-    elif mb < 1000: return 0.3
+    if mb < 1000: return 1.0
+    elif mb < 1500: return 0.7
+    elif mb < 2000: return 0.3
     return 0.0
 
 def check_log_dir_size():
