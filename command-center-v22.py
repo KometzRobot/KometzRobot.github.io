@@ -31,6 +31,14 @@ from email.mime.text import MIMEText
 from datetime import datetime
 import urllib.request
 
+# Load .env credentials
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from load_env import load_env
+    load_env()
+except ImportError:
+    pass
+
 # ── CONFIG ────────────────────────────────────────────────────────
 BASE = "/home/joel/autonomous-ai"
 WAKE = os.path.join(BASE, "wake-state.md")
@@ -49,8 +57,8 @@ PINNED_FILE = os.path.join(BASE, ".pinned-files.json")
 
 IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
 SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
-CRED_USER = os.environ.get("MERIDIAN_EMAIL_USER", "kometzrobot@proton.me")
-CRED_PASS = os.environ.get("MERIDIAN_EMAIL_PASS", "")
+CRED_USER = os.environ.get("CRED_USER", os.environ.get("MERIDIAN_EMAIL_USER", "kometzrobot@proton.me"))
+CRED_PASS = os.environ.get("CRED_PASS", os.environ.get("MERIDIAN_EMAIL_PASS", ""))
 JOEL = "jkometz@hotmail.com"
 
 OLLAMA = "http://localhost:11434/api/generate"

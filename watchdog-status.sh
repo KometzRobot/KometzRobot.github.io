@@ -54,9 +54,9 @@ else
     log "OK: The Signal is running."
 fi
 
-# ── Check Command Center v20 (desktop hub) ────────────────────────
+# ── Check Command Center v22 (desktop hub) ────────────────────────
 # Managed by systemd: meridian-hub-v16
-if ! pgrep -f "command-center-v1[56].py" > /dev/null; then
+if ! pgrep -f "command-center-v2[02].py" > /dev/null; then
     log "ALERT: Desktop hub is NOT running. Restarting via systemd..."
     export XDG_RUNTIME_DIR=/run/user/$(id -u)
     export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
