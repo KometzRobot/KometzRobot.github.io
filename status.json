@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-27T22:18:02.040003+00:00",
+  "last_updated": "2026-02-27T22:21:01.729254+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "STALE",
   "loop_active": false,
   "loop_count": 2074,
-  "heartbeat_age_seconds": 929,
+  "heartbeat_age_seconds": 1108,
   "system": {
-    "load_1m": 0.03,
-    "load_5m": 0.14,
+    "load_1m": 0.16,
+    "load_5m": 0.16,
     "ram_used": "3.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "75G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "4h 10m"
+    "uptime": "4h 13m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,20 @@
     "unseen": 15
   },
   "network": {
-    "relay_messages": 969,
+    "relay_messages": 971,
     "agent_relay": [
+      {
+        "ts": "2026-02-27 22:20:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 536MB. [Crons:13ok/0stale Procs:308 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:14MB Repo:536MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-27 15:20:02",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-27 15:20:02\n\nISSUES:\nHeartbeat stale: 1050s old\n\nSystem: Load 0.26 0.16 0.11, RAM 12200MB free, Disk 27%",
+        "topic": "alert"
+      },
       {
         "ts": "2026-02-27 15:15:19",
         "agent": "Nova",
@@ -89,18 +101,6 @@
         "agent": "Soma",
         "message": "MOOD SHIFT: content -> calm (score: 90.8) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-27 21:55:32",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> calm (score: 86.6) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-27 14:55:01",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-27 14:55:01\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 0.03 0.07 0.04, RAM 12306MB free, Disk 27%",
-        "topic": "alert"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-27 15:18:01",
-      "checks": 4220,
+      "last_check": "2026-02-27 15:20:01",
+      "checks": 4221,
       "meridian_status": "DOWN",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 59,
       "health": {
-        "load": "0.03, 0.14, 0.10",
-        "load_1m": 0.03271484375,
-        "ram_used": "3.6Gi",
+        "load": "0.26, 0.16, 0.11",
+        "load_1m": 0.2578125,
+        "ram_used": "3.7Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-27 11:07:57",
         "disk_used": "75G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-27 15:18:01",
+        "timestamp": "2026-02-27 15:20:01",
         "loop": 0,
-        "heartbeat_age": 928,
+        "heartbeat_age": 1049,
         "services_up": 4,
         "services_total": 4,
         "poems": 176,
         "journals": 92,
         "relay": 0,
         "emails": 1009,
-        "load_1m": 0.03271484375,
+        "load_1m": 0.2578125,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-02-27 15:15:01",
       "runs": 360,
-      "state_age_seconds": 162,
+      "state_age_seconds": 342,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-02-27 22:20",
+      "text": "[Atlas] Atlas infra audit: Git repo 536MB. [Crons:13ok/0stale Procs:308 Zombies:0 BigFiles:146MB /home/joel/",
+      "type": "agent"
+    },
+    {
       "time": "2026-02-27 22:12",
       "text": "[Soma] HEARTBEAT STALE: 601s (Meridian may be down) | AGENT SILENT: Meridian (601s ago)",
       "type": "agent"
     },
     {
-      "time": "2026-02-27 22:10",
-      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(81.8%) . Git repo 535MB. [Crons:13ok/0stale Procs:304 Z",
-      "type": "agent"
-    },
-    {
-      "time": "2026-02-27 22:03",
-      "text": "[Soma] MOOD SHIFT: calm -> content (score: 92.2) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this d",
+      "time": "2026-02-27 15:20",
+      "text": "[Watchdog] WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-27 15:20:02\n\nISSUES:\nHeartbeat st",
       "type": "agent"
     }
   ],
   "nft_count": 104,
-  "currently_building": "Loop 2074. 176 poems, 92 journals, 104 NFTs. 1009 emails (15 unread). 969 relay. 7/7 services. HB 929s."
+  "currently_building": "Loop 2074. 176 poems, 92 journals, 104 NFTs. 1009 emails (15 unread). 971 relay. 7/7 services. HB 1108s."
 }
