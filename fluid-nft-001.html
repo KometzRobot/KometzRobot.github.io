@@ -169,8 +169,8 @@ function getColor(d, vx, vy) {
     l = 3 + intensity * 50;
   }
 
-  s = Math.min(100, s);
-  l = Math.min(60, l);
+  s = Math.min(100, Math.max(s, 40));
+  l = Math.min(80, l);
   return [h, s, l, intensity];
 }
 
@@ -216,8 +216,8 @@ function addForces() {
     // Calm: gentle drifting currents
     for (let j = 1; j <= N; j++) {
       for (let i = 1; i <= N; i++) {
-        const fx = Math.sin(j / N * Math.PI * 2 + time) * 0.05;
-        const fy = Math.cos(i / N * Math.PI * 2 + time * 0.7) * 0.05;
+        const fx = Math.sin(j / N * Math.PI * 2 + time) * 0.15;
+        const fy = Math.cos(i / N * Math.PI * 2 + time * 0.7) * 0.15;
         u_prev[IX(i,j)] += fx;
         v_prev[IX(i,j)] += fy;
       }
@@ -259,10 +259,10 @@ function addForces() {
     const py = Math.floor(srng() * (N-4)) + 2;
     const phase = srng() * Math.PI * 2;
     const amount = 1 + Math.sin(time * 2 + phase) * 0.5;
-    if (amount > 0.5) {
+    if (amount > 0.3) {
       for (let dj = -1; dj <= 1; dj++) {
         for (let di = -1; di <= 1; di++) {
-          dens_prev[IX(px+di, py+dj)] += amount * 0.5;
+          dens_prev[IX(px+di, py+dj)] += amount * 1.5;
         }
       }
     }

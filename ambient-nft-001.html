@@ -97,7 +97,7 @@ function getFreq(degree) {
 function startAudio() {
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.7;
+  masterGain.gain.value = 0.5;
 
   // Reverb
   convolver = audioCtx.createConvolver();
@@ -400,10 +400,6 @@ document.getElementById('start').addEventListener('click', function() {
   started = true;
   this.style.display = 'none';
   startAudio();
-  // Ensure AudioContext is running (some browsers suspend it)
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
 });
 
 // Main loop
