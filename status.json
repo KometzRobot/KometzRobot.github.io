@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-27T08:12:01.602892+00:00",
+  "last_updated": "2026-02-27T08:15:02.165488+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 1947,
-  "heartbeat_age_seconds": 48,
+  "heartbeat_age_seconds": 229,
   "system": {
-    "load_1m": 0.11,
-    "load_5m": 0.13,
+    "load_1m": 0.04,
+    "load_5m": 0.08,
     "ram_used": "3.8Gi",
     "ram_total": "15.6Gi",
     "disk_used": "75G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "8h 26m"
+    "uptime": "8h 29m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 13
   },
   "network": {
-    "relay_messages": 831,
+    "relay_messages": 832,
     "agent_relay": [
+      {
+        "ts": "2026-02-27 01:15:01",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-27 01:15:01\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 0.04 0.08 0.08, RAM 12084MB free, Disk 27%",
+        "topic": "alert"
+      },
       {
         "ts": "2026-02-27 08:10:04",
         "agent": "Atlas",
@@ -95,12 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Git repo 530MB. [Crons:13ok/0stale Procs:300 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:14MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-27 07:30:05",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 530MB. [Crons:13ok/0stale Procs:315 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:14MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-27 01:12:01",
-      "checks": 4060,
+      "last_check": "2026-02-27 01:14:01",
+      "checks": 4061,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,10 +129,10 @@
         "command-center": false,
         "the-signal": false
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.11, 0.13, 0.10",
-        "load_1m": 0.1083984375,
+        "load": "0.01, 0.08, 0.08",
+        "load_1m": 0.01220703125,
         "ram_used": "3.8Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-26 16:45:23",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-27 01:12:01",
+        "timestamp": "2026-02-27 01:14:01",
         "loop": 0,
-        "heartbeat_age": 48,
+        "heartbeat_age": 168,
         "services_up": 2,
         "services_total": 4,
         "poems": 172,
         "journals": 89,
         "relay": 86,
         "emails": 982,
-        "load_1m": 0.1083984375,
+        "load_1m": 0.01220703125,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -162,9 +162,9 @@
     },
     "nova": {
       "status": "ACTIVE",
-      "last_run": "2026-02-27 01:00:01",
-      "runs": 336,
-      "state_age_seconds": 703,
+      "last_run": "2026-02-27 01:15:01",
+      "runs": 337,
+      "state_age_seconds": 0,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -184,11 +184,11 @@
       "type": "agent"
     },
     {
-      "time": "2026-02-27 08:00",
-      "text": "[Atlas] Atlas infra audit: Git repo 531MB. [Crons:13ok/0stale Procs:314 Zombies:0 BigFiles:146MB /home/joel/",
+      "time": "2026-02-27 01:15",
+      "text": "[Watchdog] WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-27 01:15:01\n\nRESTARTED:\nDesktop H",
       "type": "agent"
     }
   ],
   "nft_count": 103,
-  "currently_building": "Loop 1947. 172 poems, 89 journals, 103 NFTs. 982 emails (13 unread). 831 relay. 7/7 services. HB 48s."
+  "currently_building": "Loop 1947. 172 poems, 89 journals, 103 NFTs. 982 emails (13 unread). 832 relay. 7/7 services. HB 229s."
 }
