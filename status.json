@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-27T07:12:02.106760+00:00",
+  "last_updated": "2026-02-27T07:15:01.931195+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 1947,
-  "heartbeat_age_seconds": 66,
+  "heartbeat_age_seconds": 246,
   "system": {
-    "load_1m": 0.1,
-    "load_5m": 0.15,
+    "load_1m": 0.0,
+    "load_5m": 0.08,
     "ram_used": "3.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "75G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "7h 26m"
+    "uptime": "7h 29m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 11
   },
   "network": {
-    "relay_messages": 817,
+    "relay_messages": 818,
     "agent_relay": [
+      {
+        "ts": "2026-02-27 00:15:01",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-02-27 00:15:01\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 0.00 0.08 0.19, RAM 12245MB free, Disk 27%",
+        "topic": "alert"
+      },
       {
         "ts": "2026-02-27 07:10:02",
         "agent": "Atlas",
@@ -95,12 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Git repo 530MB. [Crons:13ok/0stale Procs:314 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:13MB LargeUntracked:build/android-sdk/build-tools/33.0.2/lib64/libLLVM_android.so(30MB) build/android-sdk/build-tools/33.0.2/lib64/libclang_android.",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-27 06:30:04",
-        "agent": "Tempo",
-        "message": "Loop 1947 fitness: 8826/10000 [STABLE (~8833)] Weak(10): agent_nova, agent_eos, agent_meridian, build_dir_size, memory_events_recent. Delta: -103.",
-        "topic": "fitness"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-27 00:12:01",
-      "checks": 4030,
+      "last_check": "2026-02-27 00:14:01",
+      "checks": 4031,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": false,
         "the-signal": false
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.10, 0.15, 0.24",
-        "load_1m": 0.10302734375,
-        "ram_used": "3.7Gi",
+        "load": "0.01, 0.10, 0.21",
+        "load_1m": 0.0107421875,
+        "ram_used": "3.6Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-26 16:45:23",
         "disk_used": "75G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-27 00:12:01",
+        "timestamp": "2026-02-27 00:14:01",
         "loop": 0,
-        "heartbeat_age": 66,
+        "heartbeat_age": 185,
         "services_up": 2,
         "services_total": 4,
         "poems": 170,
         "journals": 88,
         "relay": 86,
         "emails": 980,
-        "load_1m": 0.10302734375,
+        "load_1m": 0.0107421875,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -162,9 +162,9 @@
     },
     "nova": {
       "status": "ACTIVE",
-      "last_run": "2026-02-27 00:00:01",
-      "runs": 332,
-      "state_age_seconds": 719,
+      "last_run": "2026-02-27 00:15:01",
+      "runs": 333,
+      "state_age_seconds": 0,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -190,5 +190,5 @@
     }
   ],
   "nft_count": 99,
-  "currently_building": "Loop 1947. 170 poems, 88 journals, 99 NFTs. 980 emails (11 unread). 817 relay. 7/7 services. HB 66s."
+  "currently_building": "Loop 1947. 170 poems, 88 journals, 99 NFTs. 980 emails (11 unread). 818 relay. 7/7 services. HB 246s."
 }
