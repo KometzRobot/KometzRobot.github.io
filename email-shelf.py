@@ -20,11 +20,16 @@ import re
 import os
 from datetime import datetime
 
+try:
+    sys.path.insert(0, "/home/joel/autonomous-ai"); import load_env
+except Exception:
+    pass
+
 DB_PATH = "/home/joel/autonomous-ai/email-shelf.db"
 IMAP_HOST = "127.0.0.1"
 IMAP_PORT = 1143
-EMAIL_USER = "kometzrobot@proton.me"
-EMAIL_PASS = "2DTEz9UgO6nFqmlMxHzuww"
+EMAIL_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
+EMAIL_PASS = os.environ.get("CRED_PASS", "")
 
 
 def get_db():

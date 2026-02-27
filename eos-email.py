@@ -9,11 +9,17 @@ Usage:
 """
 
 import json
+import os
 import urllib.request
 import smtplib
 import sys
 from email.mime.text import MIMEText
 from datetime import datetime
+
+try:
+    sys.path.insert(0, "/home/joel/autonomous-ai"); import load_env
+except Exception:
+    pass
 
 MODEL = "eos-7b"
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -22,10 +28,10 @@ MEMORY_FILE = "/home/joel/autonomous-ai/eos-memory.json"
 SMTP_HOST = "127.0.0.1"
 SMTP_PORT = 1025
 EMAIL_FROM = "kometzrobot@proton.me"
-EMAIL_FROM_NAME = "Eos (KometzRobot)"  # Clearly identify as Eos
+EMAIL_FROM_NAME = "Eos (KometzRobot)"
 EMAIL_TO = "jkometz@hotmail.com"
-EMAIL_USER = "kometzrobot@proton.me"
-EMAIL_PASS = "2DTEz9UgO6nFqmlMxHzuww"
+EMAIL_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
+EMAIL_PASS = os.environ.get("CRED_PASS", "")
 
 
 def load_memory():
@@ -87,6 +93,7 @@ def send_email(subject, body):
     msg["Reply-To"] = EMAIL_FROM
 
     smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+    smtp.starttls()
     smtp.login(EMAIL_USER, EMAIL_PASS)
     smtp.send_message(msg)
     smtp.quit()

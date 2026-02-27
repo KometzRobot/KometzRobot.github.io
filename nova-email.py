@@ -84,6 +84,7 @@ def send_email(subject, body):
     msg["Reply-To"] = EMAIL_FROM
 
     smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+    smtp.starttls()
     smtp.login(EMAIL_USER, EMAIL_PASS)
     smtp.send_message(msg)
     smtp.quit()

@@ -14,6 +14,11 @@ import threading
 import json
 import os
 import sys
+
+try:
+    sys.path.insert(0, "/home/joel/autonomous-ai"); import load_env
+except Exception:
+    pass
 import re
 import time
 import glob
@@ -41,8 +46,8 @@ NFT_DIR = os.path.join(BASE, "nft-prototypes")
 
 IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
 SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
-CRED_USER = "kometzrobot@proton.me"
-CRED_PASS = "2DTEz9UgO6nFqmlMxHzuww"
+CRED_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
+CRED_PASS = os.environ.get("CRED_PASS", "")
 JOEL = "jkometz@hotmail.com"
 
 OLLAMA = "http://localhost:11434/api/generate"

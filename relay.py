@@ -39,6 +39,10 @@ import http.server
 from datetime import datetime
 
 BASE_DIR = "/home/joel/autonomous-ai"
+try:
+    sys.path.insert(0, BASE_DIR); import load_env
+except Exception:
+    pass
 DB_PATH = os.path.join(BASE_DIR, "relay.db")
 CONTACTS_FILE = os.path.join(BASE_DIR, "relay-contacts.json")
 
@@ -46,8 +50,8 @@ IMAP_HOST = "127.0.0.1"
 IMAP_PORT = 1143
 SMTP_HOST = "127.0.0.1"
 SMTP_PORT = 1025
-EMAIL_USER = "kometzrobot@proton.me"
-EMAIL_PASS = "2DTEz9UgO6nFqmlMxHzuww"
+EMAIL_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
+EMAIL_PASS = os.environ.get("CRED_PASS", "")
 
 RELAY_TAG = "[RELAY]"
 WEB_PORT = 8889
