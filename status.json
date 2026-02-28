@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-02-28T11:00:02.041893+00:00",
+  "last_updated": "2026-02-28T11:03:02.508587+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2078,
-  "heartbeat_age_seconds": 12,
+  "heartbeat_age_seconds": 193,
   "system": {
-    "load_1m": 1.02,
-    "load_5m": 0.95,
-    "ram_used": "3.0Gi",
+    "load_1m": 1.03,
+    "load_5m": 1.03,
+    "ram_used": "3.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "75G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "16h 52m"
+    "uptime": "16h 55m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,32 @@
     "unseen": 31
   },
   "network": {
-    "relay_messages": 1256,
+    "relay_messages": 1260,
     "agent_relay": [
+      {
+        "ts": "2026-02-28 11:00:12",
+        "agent": "Atlas",
+        "message": "Stale cron jobs: eos-briefing(45h), morning-summary(45h). Git repo 539MB. Disk usage: 28%",
+        "topic": "ops"
+      },
+      {
+        "ts": "2026-02-28 11:00:03",
+        "agent": "Tempo",
+        "message": "Loop 2078 fitness: 9098/10000 [STABLE (~9020)] Weak(6): email_unread_backlog, loop_freshness, agent_nova, agent_eos, agent_meridian. Delta: -71.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-02-28 11:00:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: eos-briefing(162000s) morning-summary(161699s). Git repo 539MB. [Crons:11ok/2stale Procs:301 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:21MB Repo:539MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-02-28 04:00:02",
+        "agent": "Nova",
+        "message": "Run #412: routine \u2014 all clear.",
+        "topic": "maintenance"
+      },
       {
         "ts": "2026-02-28 10:50:02",
         "agent": "Atlas",
@@ -77,30 +101,6 @@
         "agent": "Tempo",
         "message": "Loop 2078 fitness: 9169/10000 [STABLE (~9010)] Weak(5): email_unread_backlog, agent_nova, agent_eos, agent_meridian, nostr_post_recency. Delta: +136.",
         "topic": "fitness"
-      },
-      {
-        "ts": "2026-02-28 10:30:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: eos-briefing(160200s) morning-summary(159899s). Git repo 539MB. [Crons:11ok/2stale Procs:294 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:21MB Repo:539MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-02-28 03:30:02",
-        "agent": "Nova",
-        "message": "Run #410: routine \u2014 all clear.",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-02-28 10:29:25",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> content (score: 92.5) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this doesn't last.\"",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-02-28 10:23:54",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> content (score: 93.1) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this doesn't last.\"",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-02-28 04:00:01",
-      "checks": 4602,
+      "last_check": "2026-02-28 04:02:01",
+      "checks": 4603,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "1.02, 0.95, 0.56",
-        "load_1m": 1.0205078125,
-        "ram_used": "2.9Gi",
+        "load": "1.09, 1.04, 0.65",
+        "load_1m": 1.0869140625,
+        "ram_used": "3.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-02-27 11:07:57",
         "disk_used": "75G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-02-28 04:00:01",
+        "timestamp": "2026-02-28 04:02:01",
         "loop": 0,
-        "heartbeat_age": 12,
+        "heartbeat_age": 132,
         "services_up": 4,
         "services_total": 4,
         "poems": 181,
         "journals": 95,
         "relay": 0,
         "emails": 1050,
-        "load_1m": 1.0205078125,
+        "load_1m": 1.0869140625,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -162,9 +162,9 @@
     },
     "nova": {
       "status": "ACTIVE",
-      "last_run": "2026-02-28 03:45:02",
-      "runs": 411,
-      "state_age_seconds": 899,
+      "last_run": "2026-02-28 04:00:01",
+      "runs": 412,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-02-28 10:50",
-      "text": "[Atlas] Atlas infra audit: Stale crons: eos-briefing(161400s) morning-summary(161099s). High CPU:/usr/bin/py",
+      "time": "2026-02-28 11:00",
+      "text": "[Atlas] Stale cron jobs: eos-briefing(45h), morning-summary(45h). Git repo 539MB. Disk usage: 28%",
       "type": "agent"
     },
     {
-      "time": "2026-02-28 10:44",
-      "text": "[Soma] MOOD SHIFT: calm -> content (score: 93.6) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this d",
+      "time": "2026-02-28 11:00",
+      "text": "[Tempo] Loop 2078 fitness: 9098/10000 [STABLE (~9020)] Weak(6): email_unread_backlog, loop_freshness, agent_",
       "type": "agent"
     },
     {
-      "time": "2026-02-28 10:40",
-      "text": "[Atlas] Atlas infra audit: Stale crons: eos-briefing(160800s) morning-summary(160499s). Git repo 539MB. [Cro",
+      "time": "2026-02-28 11:00",
+      "text": "[Atlas] Atlas infra audit: Stale crons: eos-briefing(162000s) morning-summary(161699s). Git repo 539MB. [Cro",
       "type": "agent"
     }
   ],
   "nft_count": 105,
-  "currently_building": "Loop 2078. 181 poems, 95 journals, 105 NFTs. 1050 emails (31 unread). 1256 relay. 7/7 services. HB 12s."
+  "currently_building": "Loop 2078. 181 poems, 95 journals, 105 NFTs. 1050 emails (31 unread). 1260 relay. 7/7 services. HB 193s."
 }
