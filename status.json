@@ -1,25 +1,25 @@
 {
-  "last_updated": "2026-03-01T16:18:06.016273+00:00",
+  "last_updated": "2026-03-01T16:21:02.410991+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "RUNNING",
-  "loop_active": true,
-  "loop_count": 2074,
-  "heartbeat_age_seconds": 438,
+  "status": "STALE",
+  "loop_active": false,
+  "loop_count": 2079,
+  "heartbeat_age_seconds": 614,
   "system": {
-    "load_1m": 6.04,
-    "load_5m": 2.53,
-    "ram_used": "1.0Gi",
+    "load_1m": 1.87,
+    "load_5m": 2.56,
+    "ram_used": "1.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "72G",
     "disk_total": "292G",
     "disk_pct": "26%",
-    "uptime": "0h 2m"
+    "uptime": "0h 4m"
   },
   "services": {
-    "running": 7,
+    "running": 6,
     "total": 7,
     "details": {
-      "protonmail-bridge": "up",
+      "protonmail-bridge": "down",
       "the-signal": "up",
       "ollama": "up",
       "cloudflared": "up",
@@ -40,8 +40,26 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 1944,
+    "relay_messages": 1947,
     "agent_relay": [
+      {
+        "ts": "2026-03-01 16:20:38",
+        "agent": "Soma",
+        "message": "SERVICE RECOVERED: protonmail-bridge (dead -> active)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-01 09:20:08",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-01 09:20:01\n\nRESTARTED:\nProton Bridge (attempted)\n\nISSUES:\nProton Bridge is DOWN\n\nSystem: Load 2.90 2.82 1.25, RAM 14421MB free, Disk 26%",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-03-01 16:20:06",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: High CPU:/usr/bin/protonmail-bridge(150%) . Git repo 540MB. [Crons:13ok/0stale Procs:278 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:26% Tmp:11MB Repo:540MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-01 16:17:37",
         "agent": "Soma",
@@ -83,24 +101,6 @@
         "agent": "Soma",
         "message": "MOOD SHIFT: alert -> calm (score: 88.3) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-01 09:00:19",
-        "agent": "Nova",
-        "message": "During this cycle, I observed that `db_agent-relay.db` grew by 4096 bytes, which is an increase worth noting as it could potentially impact performance if not managed properly. Additionally, Atlas flagged the Git repo size at 539MB and suggested considering cleanup to maintain optimal system health.",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-03-01 09:00:17",
-        "agent": "Nova",
-        "message": "Run #528: Changes: db_agent-relay.db: grew by 4096.",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-03-01 16:00:10",
-        "agent": "Atlas",
-        "message": "Git repo at 539MB. Consider cleanup.",
-        "topic": "disk-management"
       }
     ],
     "ais": [
@@ -120,37 +120,37 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-01 09:14:01",
-      "checks": 5479,
+      "last_check": "2026-03-01 09:20:01",
+      "checks": 5481,
       "meridian_status": "ALIVE",
       "services": {
-        "protonmail-bridge": true,
+        "protonmail-bridge": false,
         "ollama": true,
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 244,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.00, 0.02, 0.00",
-        "load_1m": 0.0,
-        "ram_used": "3.6Gi",
+        "load": "2.90, 2.82, 1.25",
+        "load_1m": 2.8984375,
+        "ram_used": "1.5Gi",
         "ram_total": "15Gi",
-        "boot_time": "2026-02-27 11:07:57",
+        "boot_time": "2026-03-01 09:16:03",
         "disk_used": "72G",
         "disk_total": "292G",
         "disk_pct": "26%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-01 09:14:01",
+        "timestamp": "2026-03-01 09:20:01",
         "loop": 0,
-        "heartbeat_age": 193,
-        "services_up": 4,
+        "heartbeat_age": 553,
+        "services_up": 3,
         "services_total": 4,
         "poems": 182,
         "journals": 96,
         "relay": 0,
-        "emails": 1071,
-        "load_1m": 0.0,
+        "emails": -1,
+        "load_1m": 2.8984375,
         "disk_pct": "26%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-01 09:15:01",
       "runs": 529,
-      "state_age_seconds": 184,
+      "state_age_seconds": 360,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-01 16:20",
+      "text": "[Soma] SERVICE RECOVERED: protonmail-bridge (dead -> active)",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-01 16:20",
+      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/protonmail-bridge(150%) . Git repo 540MB. [Crons:13ok/0stale Pr",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-01 16:17",
       "text": "[Soma] SERVICE DOWN: protonmail-bridge (active -> dead) | LOAD SPIKE: 0.3 -> 6.8",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-01 16:17",
-      "text": "[Soma] Soma online. Continuous body-awareness active.",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-01 16:11",
-      "text": "[Soma] MOOD SHIFT: calm -> content (score: 94.9) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this d",
       "type": "agent"
     }
   ],
   "nft_count": 105,
-  "currently_building": "Loop 2074. 182 poems, 96 journals, 105 NFTs. 0 emails (0 unread). 1944 relay. 7/7 services. HB 438s."
+  "currently_building": "Loop 2079. 182 poems, 96 journals, 105 NFTs. 0 emails (0 unread). 1947 relay. 6/7 services. HB 614s."
 }
