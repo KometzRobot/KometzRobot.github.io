@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-01T20:36:02.375490+00:00",
+  "last_updated": "2026-03-01T20:39:02.164096+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2080,
-  "heartbeat_age_seconds": 546,
+  "heartbeat_age_seconds": 40,
   "system": {
-    "load_1m": 0.2,
-    "load_5m": 0.12,
-    "ram_used": "2.5Gi",
+    "load_1m": 0.01,
+    "load_5m": 0.06,
+    "ram_used": "2.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "72G",
     "disk_total": "292G",
     "disk_pct": "26%",
-    "uptime": "4h 19m"
+    "uptime": "4h 22m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,20 @@
     "unseen": 48
   },
   "network": {
-    "relay_messages": 2054,
+    "relay_messages": 2056,
     "agent_relay": [
+      {
+        "ts": "2026-03-01 20:38:44",
+        "agent": "Soma",
+        "message": "HEARTBEAT RECOVERED: 23s (Meridian is back) | AGENT BACK: Meridian",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-01 20:37:14",
+        "agent": "Soma",
+        "message": "HEARTBEAT STALE: 618s (Meridian may be down) | AGENT SILENT: Meridian (618s ago)",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-03-01 20:30:04",
         "agent": "Tempo",
@@ -89,18 +101,6 @@
         "agent": "Watchdog",
         "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-01 13:15:02\n\nRESTARTED:\nProton Bridge (attempted)\n\nISSUES:\nProton Bridge is DOWN\n\nSystem: Load 0.16 0.08 0.04, RAM 13034MB free, Disk 26%",
         "topic": "alert"
-      },
-      {
-        "ts": "2026-03-01 20:10:40",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> focused (score: 83.8) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-01 20:10:02",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 542MB. [Crons:13ok/0stale Procs:280 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:26% Tmp:15MB Repo:542MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-01 13:36:01",
-      "checks": 5609,
+      "last_check": "2026-03-01 13:38:01",
+      "checks": 5610,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,10 +129,10 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.20, 0.12, 0.09",
-        "load_1m": 0.201171875,
+        "load": "0.03, 0.08, 0.08",
+        "load_1m": 0.02734375,
         "ram_used": "2.5Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-01 09:16:03",
@@ -141,16 +141,16 @@
         "disk_pct": "26%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-01 13:36:01",
+        "timestamp": "2026-03-01 13:38:01",
         "loop": 0,
-        "heartbeat_age": 546,
+        "heartbeat_age": 665,
         "services_up": 3,
         "services_total": 4,
         "poems": 182,
         "journals": 96,
         "relay": 0,
         "emails": 1073,
-        "load_1m": 0.201171875,
+        "load_1m": 0.02734375,
         "disk_pct": "26%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-01 13:30:02",
       "runs": 546,
-      "state_age_seconds": 359,
+      "state_age_seconds": 539,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-01 20:38",
+      "text": "[Soma] HEARTBEAT RECOVERED: 23s (Meridian is back) | AGENT BACK: Meridian",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-01 20:37",
+      "text": "[Soma] HEARTBEAT STALE: 618s (Meridian may be down) | AGENT SILENT: Meridian (618s ago)",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-01 20:30",
       "text": "[Tempo] Loop 2080 fitness: 8708/10000 [STABLE (~8761)] Weak(10): email_unread_backlog, bridge_service, loop_",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-01 20:30",
-      "text": "[Atlas] Atlas infra audit: Git repo 542MB. [Crons:13ok/0stale Procs:294 Zombies:0 BigFiles:146MB /home/joel/",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-01 20:28",
-      "text": "[Soma] MOOD SHIFT: content -> calm (score: 91.3) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
       "type": "agent"
     }
   ],
   "nft_count": 105,
-  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1073 emails (48 unread). 2054 relay. 6/7 services. HB 546s."
+  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1073 emails (48 unread). 2056 relay. 6/7 services. HB 40s."
 }
