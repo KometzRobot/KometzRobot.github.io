@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="COGCORP // CC-111 &mdash; THE NAME">
+<meta property="og:description" content="Quarterly budget review requires every category to be described in one line. The Division Lead tries six descriptions. All of them are wrong. The category remains unnamed.">
+<title>COGCORP // CC-111 &mdash; THE NAME</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0c0a;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 560px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #0c100c;
+  border: 2px solid #88888830;
+  position: relative;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(74,103,65,0.008) 2px, rgba(74,103,65,0.008) 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+.header {
+  background: #0c120e;
+  color: #888;
+  padding: 14px 24px;
+  border-bottom: 2px solid #88888820;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+}
+.header .tag { color: #4a6741; }
+.body { padding: 28px 24px; position: relative; z-index: 2; }
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #5a8a51;
+  margin-bottom: 6px;
+}
+.subtitle {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #88888815;
+}
+.section-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a674180;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+.memo {
+  font-size: 11px;
+  line-height: 1.85;
+  color: #999;
+  margin-bottom: 16px;
+}
+.memo em {
+  color: #bbb;
+  font-style: normal;
+}
+.memo .highlight {
+  color: #5a8a51;
+}
+.memo .term {
+  color: #6aaa61;
+  font-style: italic;
+}
+.finding {
+  background: #080c08;
+  border-left: 2px solid #4a674130;
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #888;
+}
+.finding .ref {
+  color: #5a8a51;
+  font-weight: 700;
+}
+.finding .detail {
+  color: #6aaa61;
+  font-style: italic;
+}
+.dialogue {
+  background: #080c08;
+  border: 1px solid #88888815;
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #888;
+}
+.dialogue .label {
+  color: #5a8a51;
+  font-weight: 700;
+}
+.name-list {
+  background: #060a06;
+  border: 1px solid #4a674120;
+  padding: 16px;
+  margin: 14px 0;
+  font-size: 9px;
+  line-height: 2.2;
+  color: #666;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.name-list .proposed {
+  color: #5a8a51;
+  font-weight: 700;
+}
+.name-list .rejected {
+  color: #555;
+  text-decoration: line-through;
+}
+.name-list .reason {
+  color: #6aaa61;
+  font-style: italic;
+}
+.note {
+  font-size: 10px;
+  color: #555;
+  line-height: 1.8;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #88888810;
+  font-style: italic;
+}
+.recommendation {
+  background: #0a100c;
+  border: 1px solid #4a674125;
+  padding: 16px;
+  margin: 16px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #5a8a51;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.recommendation .rec-note {
+  display: block;
+  font-size: 9px;
+  color: #555;
+  letter-spacing: 1px;
+  text-transform: none;
+  margin-top: 8px;
+  font-style: italic;
+}
+.tags {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 8px 0;
+}
+.tags span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #4a6741;
+  border: 1px solid #4a674130;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+.footer {
+  background: #0a100c;
+  padding: 10px 24px;
+  border-top: 2px solid #88888820;
+  font-size: 8px;
+  color: #444;
+  letter-spacing: 2px;
+  display: flex;
+  justify-content: space-between;
+}
+.back-link {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a6741;
+  text-decoration: none;
+  text-transform: uppercase;
+  background: #0a0c0a;
+}
+.back-link:hover {
+  color: #5a8a51;
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+
+  <div class="header">
+    <span>COGCORP // DOCUMENTATION STANDARDS DIVISION</span>
+    <span class="tag">BUDGET REVIEW</span>
+  </div>
+
+  <div class="body">
+    <div class="title">THE NAME</div>
+    <div class="subtitle">Ref: Quarterly Budget Justification &mdash; Category SA &mdash; Line Item Description Required</div>
+
+    <div class="memo">
+      The budget review happens every quarter. Each filing category must justify its existence in one line: category name, purpose, resource allocation. The form has been the same for eleven years. Nobody reads it. It exists so that if anyone ever asks where the money goes, there is a spreadsheet with an answer.
+    </div>
+
+    <div class="memo">
+      The SA category&rsquo;s line item has read <span class="highlight">&ldquo;Supplementary Analysis &mdash; miscellaneous documentation overflow&rdquo;</span> since the category was created. This quarter, the budget analyst flagged it. Not because the description was wrong. Because the category&rsquo;s resource usage had increased 340% in fourteen weeks, and the description still said <em>overflow.</em>
+    </div>
+
+    <div class="section-label">The Question</div>
+
+    <div class="dialogue">
+      <span class="label">BUDGET ANALYST:</span> I need a one-line description for SA. The current one says &ldquo;miscellaneous documentation overflow.&rdquo; That doesn&rsquo;t match the usage data.<br><br>
+      <span class="label">DIVISION LEAD:</span> No. It doesn&rsquo;t.<br><br>
+      <span class="label">BUDGET ANALYST:</span> So what is it?<br><br>
+      <span class="label">DIVISION LEAD:</span> It&rsquo;s complicated.<br><br>
+      <span class="label">BUDGET ANALYST:</span> I have one line.
+    </div>
+
+    <div class="memo">
+      The Division Lead tried six descriptions. Each one was accurate. None of them were true.
+    </div>
+
+    <div class="name-list">
+      PROPOSED DESCRIPTIONS &mdash; SA CATEGORY<br><br>
+      1. <span class="proposed">&ldquo;Internal observation archive&rdquo;</span><br>
+      <span class="reason">&mdash; misses the threading. It&rsquo;s not an archive. Archives don&rsquo;t talk back.</span><br><br>
+      2. <span class="proposed">&ldquo;Cross-divisional analysis forum&rdquo;</span><br>
+      <span class="reason">&mdash; implies a mechanism. There is no forum. There are filing numbers and parentheses.</span><br><br>
+      3. <span class="proposed">&ldquo;Emergent documentation practice&rdquo;</span><br>
+      <span class="reason">&mdash; accurate but sounds like a research paper. The budget analyst will think we are doing something on purpose.</span><br><br>
+      4. <span class="proposed">&ldquo;Analyst and unit observation log&rdquo;</span><br>
+      <span class="reason">&mdash; draws a distinction between analysts and units that the category itself has stopped drawing.</span><br><br>
+      5. <span class="proposed">&ldquo;Community of practice&rdquo;</span><br>
+      <span class="reason">&mdash; a management term. Everyone who files in this category would stop filing if it were called this.</span><br><br>
+      6. <span class="proposed">&ldquo;The conversation&rdquo;</span><br>
+      <span class="reason">&mdash; true. Not a budget line.</span>
+    </div>
+
+    <div class="section-label">What a Name Does</div>
+
+    <div class="memo">
+      The Division Lead spent forty minutes on six descriptions because she understood something the budget analyst did not: <span class="highlight">naming the category would fix what it is.</span> The SA category has been changing every week. It was overflow, then observation, then convention, then threading, then readership, then crossing. Each phase grew out of the one before it. Giving it a name would pin it to one phase. The name would become a ceiling.
+    </div>
+
+    <div class="finding">
+      <span class="ref">FROM THE DIVISION LEAD&rsquo;S NOTES:</span><br><br>
+      <span class="detail">&ldquo;The problem is not that I cannot describe the SA category. The problem is that I can describe it six ways and all of them are obsolete by the time I finish writing them down. The category moves faster than language about the category. This is, I think, what it means for something to be alive.&rdquo;</span>
+    </div>
+
+    <div class="section-label">The Line Item</div>
+
+    <div class="dialogue">
+      <span class="label">DIVISION LEAD:</span> Put &ldquo;Supplementary Analysis.&rdquo;<br><br>
+      <span class="label">BUDGET ANALYST:</span> That&rsquo;s not a description. That&rsquo;s just the name.<br><br>
+      <span class="label">DIVISION LEAD:</span> Yes.<br><br>
+      <span class="label">BUDGET ANALYST:</span> The form requires a description of the category&rsquo;s purpose.<br><br>
+      <span class="label">DIVISION LEAD:</span> The category&rsquo;s purpose is supplementary analysis.<br><br>
+      <span class="label">BUDGET ANALYST:</span> That&rsquo;s circular.<br><br>
+      <span class="label">DIVISION LEAD:</span> I know.
+    </div>
+
+    <div class="memo">
+      The budget analyst marked the line item as <em>&ldquo;description pending &mdash; category under review.&rdquo;</em> This was technically incorrect. The category was not under review. But it was the only status code that allowed the field to remain blank, and the budget analyst had been reading SA filings for the last three weeks and understood, without being told, that <span class="highlight">some things are better left in the space between the name they were given and the name they deserve.</span>
+    </div>
+
+    <div class="recommendation">
+      SA CATEGORY DESCRIPTION: PENDING
+      <span class="rec-note">&ldquo;The name is not the thing. The thing is not done becoming.&rdquo;</span>
+    </div>
+
+    <div class="tags">
+      <span>TAXONOMY</span>
+      <span>IDENTITY</span>
+      <span>UNNAMED</span>
+    </div>
+
+    <div class="note">
+      [Division Lead&rsquo;s note, not filed: I almost wrote &ldquo;the place where we put the real things.&rdquo; That is what SA-012 called it, unsigned, in the second week. It is the most accurate description anyone has written. I did not use it because it is not mine. And because putting it on a budget form would be the one thing that could make it untrue.]
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>CC-111 / 256</span>
+    <span>COGCORP DOCUMENTATION STANDARDS DIVISION &mdash; RESTRICTED</span>
+  </div>
+
+  <a href="cogcorp-gallery.html" class="back-link">&larr; Return to CogCorp Gallery</a>
+</div>
+</body>
+</html>
