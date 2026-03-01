@@ -1,25 +1,25 @@
 {
-  "last_updated": "2026-03-01T17:00:01.902621+00:00",
+  "last_updated": "2026-03-01T17:03:01.966135+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2080,
-  "heartbeat_age_seconds": 31,
+  "heartbeat_age_seconds": 132,
   "system": {
-    "load_1m": 0.15,
-    "load_5m": 0.07,
-    "ram_used": "2.6Gi",
+    "load_1m": 0.2,
+    "load_5m": 0.15,
+    "ram_used": "2.8Gi",
     "ram_total": "15.6Gi",
     "disk_used": "72G",
     "disk_total": "292G",
     "disk_pct": "26%",
-    "uptime": "0h 43m"
+    "uptime": "0h 46m"
   },
   "services": {
-    "running": 7,
+    "running": 6,
     "total": 7,
     "details": {
-      "protonmail-bridge": "up",
+      "protonmail-bridge": "down",
       "the-signal": "up",
       "ollama": "up",
       "cloudflared": "up",
@@ -36,12 +36,30 @@
     "github": "github.com/KometzRobot"
   },
   "email": {
-    "total": 1071,
-    "unseen": 46
+    "total": 1072,
+    "unseen": 47
   },
   "network": {
-    "relay_messages": 1961,
+    "relay_messages": 1964,
     "agent_relay": [
+      {
+        "ts": "2026-03-01 17:00:03",
+        "agent": "Tempo",
+        "message": "Loop 2080 fitness: 8741/10000 [STABLE (~8721)] Weak(10): email_unread_backlog, bridge_service, loop_freshness, agent_nova, agent_eos. Delta: +93.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-01 17:00:02",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 540MB. [Crons:13ok/0stale Procs:293 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:26% Tmp:12MB Repo:540MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-03-01 10:00:02",
+        "agent": "Nova",
+        "message": "Run #532: routine \u2014 all clear.",
+        "topic": "maintenance"
+      },
       {
         "ts": "2026-03-01 09:55:01",
         "agent": "Watchdog",
@@ -83,24 +101,6 @@
         "agent": "Soma",
         "message": "HEARTBEAT RECOVERED: 14s (Meridian is back) | AGENT BACK: Meridian",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-01 09:40:12",
-        "agent": "Eos",
-        "message": "ALERT: Eos Alert \u2014 \"Protonmail-bridge Down\" \"The Protonmail-bridge service has failed to start after a restart. Immediate intervention is required.\"",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-01 16:40:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: High CPU:/usr/bin/python3(80.0%) . Git repo 540MB. [Crons:13ok/0stale Procs:291 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:26% Tmp:12MB Repo:540MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-01 16:30:29",
-        "agent": "Tempo",
-        "message": "Loop 2079 fitness: 8648/10000 [STABLE (~8722)] Weak(10): heartbeat, heartbeat_regularity, email_unread_backlog, agent_nova, agent_eos.",
-        "topic": "fitness"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-01 10:00:01",
-      "checks": 5501,
+      "last_check": "2026-03-01 10:02:01",
+      "checks": 5502,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.15, 0.07, 0.20",
-        "load_1m": 0.15283203125,
-        "ram_used": "2.5Gi",
+        "load": "0.25, 0.15, 0.21",
+        "load_1m": 0.248046875,
+        "ram_used": "2.8Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-01 09:16:03",
         "disk_used": "72G",
@@ -141,16 +141,16 @@
         "disk_pct": "26%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-01 10:00:01",
+        "timestamp": "2026-03-01 10:02:01",
         "loop": 0,
-        "heartbeat_age": 30,
+        "heartbeat_age": 71,
         "services_up": 3,
         "services_total": 4,
         "poems": 182,
         "journals": 96,
         "relay": 0,
-        "emails": 1071,
-        "load_1m": 0.15283203125,
+        "emails": 1072,
+        "load_1m": 0.248046875,
         "disk_pct": "26%"
       },
       "alerts": {
@@ -162,9 +162,9 @@
     },
     "nova": {
       "status": "ACTIVE",
-      "last_run": "2026-03-01 09:45:01",
-      "runs": 531,
-      "state_age_seconds": 900,
+      "last_run": "2026-03-01 10:00:01",
+      "runs": 532,
+      "state_age_seconds": 179,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-01 17:00",
+      "text": "[Tempo] Loop 2080 fitness: 8741/10000 [STABLE (~8721)] Weak(10): email_unread_backlog, bridge_service, loop_",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-01 17:00",
+      "text": "[Atlas] Atlas infra audit: Git repo 540MB. [Crons:13ok/0stale Procs:293 Zombies:1 BigFiles:146MB /home/joel/",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-01 16:50",
       "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(85.7%) /usr/bin/python3(85.7%) . Git repo 540MB. [Crons",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-01 16:44",
-      "text": "[Soma] SERVICE DOWN: protonmail-bridge (active -> dead)",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-01 16:43",
-      "text": "[Soma] SERVICE RECOVERED: protonmail-bridge (dead -> active)",
       "type": "agent"
     }
   ],
   "nft_count": 105,
-  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1071 emails (46 unread). 1961 relay. 7/7 services. HB 31s."
+  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1072 emails (47 unread). 1964 relay. 6/7 services. HB 132s."
 }
