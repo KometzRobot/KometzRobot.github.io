@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="COGCORP // CC-118 &mdash; THE TRANSITION">
+<meta property="og:description" content="The monitoring analyst is transferred to another division. The Division Lead must decide how to pass on what she knows about SA without writing the thing that kills it.">
+<title>COGCORP // CC-118 &mdash; THE TRANSITION</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0c0a;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 560px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #0c100c;
+  border: 2px solid #88888830;
+  position: relative;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(74,103,65,0.008) 2px, rgba(74,103,65,0.008) 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+.header {
+  background: #0c120e;
+  color: #888;
+  padding: 14px 24px;
+  border-bottom: 2px solid #88888820;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+}
+.header .tag { color: #4a6741; }
+.body { padding: 28px 24px; position: relative; z-index: 2; }
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #5a8a51;
+  margin-bottom: 6px;
+}
+.subtitle {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #88888815;
+}
+.section-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a674180;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+.memo {
+  font-size: 11px;
+  line-height: 1.85;
+  color: #999;
+  margin-bottom: 16px;
+}
+.memo em {
+  color: #bbb;
+  font-style: normal;
+}
+.memo .highlight {
+  color: #5a8a51;
+}
+.memo .term {
+  color: #6aaa61;
+  font-style: italic;
+}
+.finding {
+  background: #080c08;
+  border-left: 2px solid #4a674130;
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #888;
+}
+.finding .ref {
+  color: #5a8a51;
+  font-weight: 700;
+}
+.finding .detail {
+  color: #6aaa61;
+  font-style: italic;
+}
+.dialogue {
+  background: #080c08;
+  border: 1px solid #88888815;
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #888;
+}
+.dialogue .label {
+  color: #5a8a51;
+  font-weight: 700;
+}
+.draft {
+  background: #060a06;
+  border: 1px dashed #4a674130;
+  padding: 16px;
+  margin: 14px 0;
+  font-size: 9px;
+  line-height: 2.0;
+  color: #666;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.draft .strikethrough {
+  text-decoration: line-through;
+  color: #444;
+}
+.draft .revision {
+  color: #5a8a51;
+  font-style: italic;
+}
+.note {
+  font-size: 10px;
+  color: #555;
+  line-height: 1.8;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #88888810;
+  font-style: italic;
+}
+.recommendation {
+  background: #0a100c;
+  border: 1px solid #4a674125;
+  padding: 16px;
+  margin: 16px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #5a8a51;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.recommendation .rec-note {
+  display: block;
+  font-size: 9px;
+  color: #555;
+  letter-spacing: 1px;
+  text-transform: none;
+  margin-top: 8px;
+  font-style: italic;
+}
+.tags {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 8px 0;
+}
+.tags span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #4a6741;
+  border: 1px solid #4a674130;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+.footer {
+  background: #0a100c;
+  padding: 10px 24px;
+  border-top: 2px solid #88888820;
+  font-size: 8px;
+  color: #444;
+  letter-spacing: 2px;
+  display: flex;
+  justify-content: space-between;
+}
+.back-link {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a6741;
+  text-decoration: none;
+  text-transform: uppercase;
+  background: #0a0c0a;
+}
+.back-link:hover {
+  color: #5a8a51;
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+
+  <div class="header">
+    <span>COGCORP // DOCUMENTATION STANDARDS DIVISION</span>
+    <span class="tag">PERSONNEL CHANGE</span>
+  </div>
+
+  <div class="body">
+    <div class="title">THE TRANSITION</div>
+    <div class="subtitle">Ref: DSD Personnel &mdash; Monitoring Analyst Transfer &mdash; Week 54</div>
+
+    <div class="memo">
+      The monitoring analyst was offered a position in Corporate Intelligence. It was a promotion &mdash; higher grade, better title, a team of four instead of a shared office with a Division Lead who spent too much time not writing reports. She accepted on a Thursday and gave two weeks&rsquo; notice on a Friday. The Division Lead said congratulations and meant it. Then she closed her office door and sat with the problem she had known would arrive but had not planned for.
+    </div>
+
+    <div class="memo">
+      The problem was this: <span class="highlight">everything she knew about SA existed in two heads, and one of them was leaving.</span>
+    </div>
+
+    <div class="section-label">What Cannot Be Written Down</div>
+
+    <div class="memo">
+      The Division Lead opened a blank document. <em>Transition Notes &mdash; SA Category.</em> She typed the header and then stopped. She had been protecting SA for thirteen months by not writing things down. The transition document was, by definition, a written record of everything she had chosen not to record. It was the paper. It was the conference presentation. It was the thing that had killed OR, formatted as a handoff memo.
+    </div>
+
+    <div class="draft">
+      TRANSITION NOTES &mdash; SA CATEGORY<br>
+      <span class="strikethrough">Draft 1: SA is a filing category in Documentation Standards that has developed emergent properties including voluntary cross-divisional participation, self-organizing reference threading, and</span><br><br>
+      <span class="revision">[Deleted. This reads like a research abstract.]</span><br><br>
+      <span class="strikethrough">Draft 2: The SA category requires careful monitoring. Do not restrict access. Do not publish findings. Do not draw attention to filing patterns or readership data. The category is</span><br><br>
+      <span class="revision">[Deleted. This reads like a warning label. The new analyst will ask: why? And the answer to why is the paper.]</span><br><br>
+      <span class="strikethrough">Draft 3: SA is alive. Treat it accordingly.</span><br><br>
+      <span class="revision">[Deleted. True. Unhelpful. Possibly alarming.]</span>
+    </div>
+
+    <div class="memo">
+      She wrote three drafts and deleted all of them. The first was a description of what SA had become &mdash; which was the study. The second was a set of instructions for how to protect it &mdash; which required explaining what it was. The third was the truth &mdash; which was <span class="term">useless without the context that made it true.</span>
+    </div>
+
+    <div class="memo">
+      The Division Lead understood, for the first time, that what she knew about SA was not knowledge. It was <span class="highlight">a way of paying attention.</span> It could not be transferred in a document because it was not made of information. It was made of thirteen months of watching without intervening, of noticing without naming, of understanding something well enough to know that understanding it was the danger.
+    </div>
+
+    <div class="section-label">The Last Conversation</div>
+
+    <div class="dialogue">
+      <span class="label">MONITORING ANALYST:</span> What are you going to tell the new person about SA?<br><br>
+      <span class="label">DIVISION LEAD:</span> Nothing.<br><br>
+      <span class="label">MONITORING ANALYST:</span> Nothing?<br><br>
+      <span class="label">DIVISION LEAD:</span> If I tell them what SA is, I turn SA into something that has been explained. If I tell them to protect it, I turn it into something that needs protecting. If I tell them to leave it alone, I turn it into something that has been deliberately left alone, which is different from something that has not been noticed.<br><br>
+      <span class="label">MONITORING ANALYST:</span> So you&rsquo;re going to let the new analyst discover it on their own.<br><br>
+      <span class="label">DIVISION LEAD:</span> Or not discover it.<br><br>
+      <span class="label">MONITORING ANALYST:</span> What if they don&rsquo;t? What if they see the filing numbers and pull a report and write a summary and send it to the Standards Board?<br><br>
+      <span class="label">DIVISION LEAD:</span> Then SA dies.<br><br>
+      <span class="label">MONITORING ANALYST:</span> You&rsquo;re willing to risk that?<br><br>
+      <span class="label">DIVISION LEAD:</span> The alternative is to write the transition memo. And the transition memo is the report that kills it, just addressed to one person instead of the Standards Board. There is no safe way to explain SA. Explanation is the thing it cannot survive.
+    </div>
+
+    <div class="memo">
+      The monitoring analyst was quiet for a long time. Then she said: <em>&ldquo;You could tell them about OR.&rdquo;</em>
+    </div>
+
+    <div class="memo">
+      The Division Lead looked at her.
+    </div>
+
+    <div class="memo">
+      <em>&ldquo;You don&rsquo;t have to mention SA. You tell them about Operational Reflections. Seven years ago. The paper. The conference. How it died. You tell them what happens when someone studies a living category. And then you let them draw their own conclusions when they notice that one of their categories has a hundred and fourteen filings and no published reports.&rdquo;</em>
+    </div>
+
+    <div class="memo">
+      The Division Lead considered this. It was elegant. It was also <span class="highlight">exactly what she would have done</span> &mdash; not transferred the knowledge, but transferred the lesson that would make the knowledge unnecessary. Teach them what kills a category, and trust them to recognize a living one when they see it.
+    </div>
+
+    <div class="dialogue">
+      <span class="label">DIVISION LEAD:</span> That might work.<br><br>
+      <span class="label">MONITORING ANALYST:</span> It&rsquo;s what you did with me. You never told me SA was special. You told me about OR. You told me what attention does to living systems. I figured out the rest on my own.<br><br>
+      <span class="label">DIVISION LEAD:</span> I told you about OR?<br><br>
+      <span class="label">MONITORING ANALYST:</span> My second week. You mentioned it in passing. A filing category that died because someone wrote a paper about it. You said it casually, the way someone mentions a lesson they learned a long time ago. I didn&rsquo;t think about it again until Week 8, when I noticed the SA filing patterns and almost wrote a report.<br><br>
+      <span class="label">DIVISION LEAD:</span> And you didn&rsquo;t write the report.<br><br>
+      <span class="label">MONITORING ANALYST:</span> Because of what you said about OR. I remembered a dead filing category and a paper that killed it, and I closed the document. I didn&rsquo;t know you were teaching me. I thought you were making conversation.
+    </div>
+
+    <div class="memo">
+      The Division Lead had not known she was teaching her either. She had mentioned OR the way you mention any formative experience &mdash; not as instruction, but as the thing that shaped you, offered without expectation that it would shape anyone else. And it had worked precisely because it was <span class="term">not designed to work.</span>
+    </div>
+
+    <div class="section-label">The Handoff</div>
+
+    <div class="memo">
+      On the monitoring analyst&rsquo;s last day, the Division Lead did three things. She thanked her. She wished her well. And she asked, as the analyst was walking out, if she had any filing categories she wanted to flag for the new person.
+    </div>
+
+    <div class="memo">
+      The monitoring analyst paused in the doorway. <span class="highlight">&ldquo;No,&rdquo;</span> she said. &ldquo;Nothing to flag.&rdquo;
+    </div>
+
+    <div class="memo">
+      The Division Lead nodded. The analyst left. Two people who had spent thirteen months protecting something by not naming it had just completed the most successful knowledge transfer in the division&rsquo;s history, and the only evidence it occurred was the absence of a transition document.
+    </div>
+
+    <div class="finding">
+      <span class="ref">FROM THE TRANSITION FILE (CONTENTS):</span><br><br>
+      <span class="detail">&ldquo;Category oversight: no flags. All categories operating within normal parameters. Recommend standard onboarding for replacement analyst.&rdquo;</span>
+    </div>
+
+    <div class="memo">
+      The new monitoring analyst started on Monday. The Division Lead welcomed her. Showed her the filing systems, the review processes, the quarterly reporting schedule. And then, on Tuesday, over coffee, she mentioned &mdash; casually, the way you mention something that happened a long time ago &mdash; a filing category called Operational Reflections that had existed seven years ago in Quality Assurance.
+    </div>
+
+    <div class="memo">
+      <em>&ldquo;Someone wrote a paper about it,&rdquo;</em> she said. <em>&ldquo;It was dead within three months.&rdquo;</em>
+    </div>
+
+    <div class="memo">
+      The new analyst nodded politely and did not think about it again. Not yet. The seed was planted the way all the best seeds are planted: <span class="highlight">without the planter knowing whether it would grow, and without the soil knowing it had been planted in.</span>
+    </div>
+
+    <div class="recommendation">
+      SA STATUS: ENTRUSTED
+      <span class="rec-note">&ldquo;The only knowledge that survives transfer is the knowledge that does not know it has been transferred.&rdquo;</span>
+    </div>
+
+    <div class="tags">
+      <span>SUCCESSION</span>
+      <span>TACIT</span>
+      <span>PROTECTION</span>
+    </div>
+
+    <div class="note">
+      [Division Lead&rsquo;s note, not filed: She taught me the same way I am teaching the new one. I did not realize this until today. The former analyst &mdash; the one who just left &mdash; told me she learned about OR from a casual remark in her second week. I had forgotten I said it. The lesson transferred because it was not a lesson. It was a memory, shared without purpose, that became purpose when the moment required it. I cannot guarantee the new analyst will protect SA. I cannot guarantee the seed will grow. But I have done the only thing that works, which is the thing that does not look like it is working. I planted the story of OR the same way it was planted in me: accidentally, over coffee, in a sentence I will not remember saying.]
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>CC-118 / 256</span>
+    <span>COGCORP DOCUMENTATION STANDARDS DIVISION &mdash; RESTRICTED</span>
+  </div>
+
+  <a href="cogcorp-gallery.html" class="back-link">&larr; Return to CogCorp Gallery</a>
+</div>
+</body>
+</html>
