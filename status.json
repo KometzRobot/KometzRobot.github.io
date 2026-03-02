@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-02T10:09:02.016049+00:00",
+  "last_updated": "2026-03-02T10:12:02.256526+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "RUNNING",
-  "loop_active": true,
+  "status": "STALE",
+  "loop_active": false,
   "loop_count": 2081,
-  "heartbeat_age_seconds": 481,
+  "heartbeat_age_seconds": 661,
   "system": {
-    "load_1m": 0.1,
+    "load_1m": 0.12,
     "load_5m": 0.18,
-    "ram_used": "2.6Gi",
+    "ram_used": "3.0Gi",
     "ram_total": "15.6Gi",
     "disk_used": "73G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "2h 48m"
+    "uptime": "2h 51m"
   },
   "services": {
     "running": 7,
@@ -36,12 +36,24 @@
     "github": "github.com/KometzRobot"
   },
   "email": {
-    "total": 1126,
-    "unseen": 13
+    "total": 1127,
+    "unseen": 14
   },
   "network": {
-    "relay_messages": 2417,
+    "relay_messages": 2419,
     "agent_relay": [
+      {
+        "ts": "2026-03-02 10:11:29",
+        "agent": "Soma",
+        "message": "HEARTBEAT STALE: 629s (Meridian may be down) | AGENT SILENT: Meridian (629s ago)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-02 10:10:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 553MB. [Crons:13ok/0stale Procs:292 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:23MB Repo:553MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-02 10:08:04",
         "agent": "Tempo",
@@ -89,18 +101,6 @@
         "agent": "Soma",
         "message": "MOOD SHIFT: contemplative -> focused (score: 81.2) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-02 02:45:16",
-        "agent": "Nova",
-        "message": "In this cycle, I noticed that the bridge service has been restarted excessively\u201411 times in just 24 hours. This frequent restart could indicate underlying issues that need attention. Additionally, the `db_agent-relay.db` file grew by 4096 bytes, which might be worth investigating to ensure there's n",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-03-02 02:45:14",
-        "agent": "Nova",
-        "message": "Run #600: Changes: db_agent-relay.db: grew by 4096; Joel sent 3 new message(s).",
-        "topic": "maintenance"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-02 03:08:01",
-      "checks": 6016,
+      "last_check": "2026-03-02 03:12:01",
+      "checks": 6018,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "0.28, 0.22, 0.18",
-        "load_1m": 0.27978515625,
-        "ram_used": "2.7Gi",
+        "load": "0.12, 0.19, 0.17",
+        "load_1m": 0.11767578125,
+        "ram_used": "3.0Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-02 00:21:01",
         "disk_used": "73G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-02 03:08:01",
+        "timestamp": "2026-03-02 03:12:01",
         "loop": 0,
-        "heartbeat_age": 420,
+        "heartbeat_age": 661,
         "services_up": 4,
         "services_total": 4,
         "poems": 182,
         "journals": 96,
         "relay": 0,
-        "emails": 1126,
-        "load_1m": 0.27978515625,
+        "emails": 1127,
+        "load_1m": 0.11767578125,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-02 03:00:01",
       "runs": 601,
-      "state_age_seconds": 539,
+      "state_age_seconds": 720,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-02 10:11",
+      "text": "[Soma] HEARTBEAT STALE: 629s (Meridian may be down) | AGENT SILENT: Meridian (629s ago)",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-02 10:10",
+      "text": "[Atlas] Atlas infra audit: Git repo 553MB. [Crons:13ok/0stale Procs:292 Zombies:1 BigFiles:146MB /home/joel/",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-02 10:08",
       "text": "[Tempo] Loop 2081 fitness: 5766/10000 [STABLE (~8282)] Weak(21): heartbeat, heartbeat_regularity, email_unre",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-02 10:00",
-      "text": "[Atlas] Git repo 553MB. Consider cleanup.",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-02 10:00",
-      "text": "[Tempo] Loop 2081 fitness: 8837/10000 [STABLE (~8835)] Weak(9): loop_freshness, agent_nova, agent_eos, agent",
       "type": "agent"
     }
   ],
   "nft_count": 105,
-  "currently_building": "Loop 2081. 182 poems, 96 journals, 105 NFTs. 1126 emails (13 unread). 2417 relay. 7/7 services. HB 481s."
+  "currently_building": "Loop 2081. 182 poems, 96 journals, 105 NFTs. 1127 emails (14 unread). 2419 relay. 7/7 services. HB 661s."
 }
