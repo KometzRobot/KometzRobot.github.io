@@ -1,25 +1,25 @@
 {
-  "last_updated": "2026-03-02T00:12:02.343819+00:00",
+  "last_updated": "2026-03-02T00:15:01.814370+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2080,
-  "heartbeat_age_seconds": 312,
+  "heartbeat_age_seconds": 178,
   "system": {
-    "load_1m": 0.06,
+    "load_1m": 0.08,
     "load_5m": 0.05,
     "ram_used": "3.0Gi",
     "ram_total": "15.6Gi",
     "disk_used": "73G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "7h 55m"
+    "uptime": "7h 58m"
   },
   "services": {
-    "running": 6,
+    "running": 7,
     "total": 7,
     "details": {
-      "protonmail-bridge": "down",
+      "protonmail-bridge": "up",
       "the-signal": "up",
       "ollama": "up",
       "cloudflared": "up",
@@ -40,8 +40,20 @@
     "unseen": 53
   },
   "network": {
-    "relay_messages": 2142,
+    "relay_messages": 2144,
     "agent_relay": [
+      {
+        "ts": "2026-03-01 17:15:01",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-01 17:15:01\n\nRESTARTED:\nProton Bridge (attempted)\n\nISSUES:\nProton Bridge is DOWN\n\nSystem: Load 0.08 0.05 0.08, RAM 12927MB free, Disk 27%",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-03-02 00:12:44",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: calm -> content (score: 92.3) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this doesn't last.\"",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-03-02 00:10:03",
         "agent": "Atlas",
@@ -89,18 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Git repo 544MB. [Crons:13ok/0stale Procs:292 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:17MB Repo:544MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-01 23:56:42",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: calm -> content (score: 92.7) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this doesn't last.\"",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-01 16:55:02",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-01 16:55:02\n\nRESTARTED:\nProton Bridge (attempted)\n\nISSUES:\nProton Bridge is DOWN\n\nSystem: Load 0.04 0.04 0.21, RAM 12953MB free, Disk 27%",
-        "topic": "alert"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-01 17:12:01",
-      "checks": 5717,
+      "last_check": "2026-03-01 17:14:01",
+      "checks": 5718,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.06, 0.05, 0.09",
-        "load_1m": 0.05615234375,
-        "ram_used": "2.9Gi",
+        "load": "0.00, 0.03, 0.08",
+        "load_1m": 0.0048828125,
+        "ram_used": "3.0Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-01 09:16:03",
         "disk_used": "73G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-01 17:12:01",
+        "timestamp": "2026-03-01 17:14:01",
         "loop": 0,
-        "heartbeat_age": 311,
+        "heartbeat_age": 118,
         "services_up": 3,
         "services_total": 4,
         "poems": 182,
         "journals": 96,
         "relay": 0,
         "emails": 1078,
-        "load_1m": 0.05615234375,
+        "load_1m": 0.0048828125,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -162,9 +162,9 @@
     },
     "nova": {
       "status": "ACTIVE",
-      "last_run": "2026-03-01 17:00:01",
-      "runs": 560,
-      "state_age_seconds": 701,
+      "last_run": "2026-03-01 17:15:01",
+      "runs": 561,
+      "state_age_seconds": 0,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-02 00:12",
+      "text": "[Soma] MOOD SHIFT: calm -> content (score: 92.3) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this d",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-02 00:10",
       "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(100%) . Git repo 544MB. [Crons:13ok/0stale Procs:282 Zo",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-03-02 00:07",
       "text": "[Soma] MOOD SHIFT: calm -> content (score: 92.4) \u2014 \"Systems healthy, no concerns. But I'm watching \u2014 this d",
       "type": "agent"
-    },
-    {
-      "time": "2026-03-02 00:01",
-      "text": "[Soma] MOOD SHIFT: alert -> calm (score: 86.6) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
-      "type": "agent"
     }
   ],
   "nft_count": 105,
-  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1078 emails (53 unread). 2142 relay. 6/7 services. HB 312s."
+  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1078 emails (53 unread). 2144 relay. 7/7 services. HB 178s."
 }
