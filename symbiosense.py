@@ -25,6 +25,7 @@ import os
 import time
 import sqlite3
 import subprocess
+import glob as _glob_module
 from datetime import datetime, timezone
 
 BASE = "/home/joel/autonomous-ai"
@@ -35,8 +36,17 @@ HB_FILE = os.path.join(BASE, ".heartbeat")
 LOG_FILE = os.path.join(BASE, "symbiosense.log")
 MOOD_HISTORY_FILE = os.path.join(BASE, ".soma-mood-history.json")
 BASELINES_FILE = os.path.join(BASE, ".soma-baselines.json")
+BODY_STATE_FILE = os.path.join(BASE, ".body-state.json")
+REFLEX_FILE = os.path.join(BASE, ".body-reflexes.json")
 INTERVAL = 30  # seconds between checks
 MOOD_HISTORY_MAX = 288  # 24 hours at 5-min intervals
+
+# ── EMOTION ENGINE INTEGRATION ──────────────────────────────────
+try:
+    import emotion_engine
+    EMOTION_ENGINE_AVAILABLE = True
+except ImportError:
+    EMOTION_ENGINE_AVAILABLE = False
 
 # Thresholds for alerting
 LOAD_SPIKE_DELTA = 2.0      # load increase per check
@@ -1115,6 +1125,257 @@ def sense_cycle():
     # ── Build body map ──
     body_map = build_body_map(state, mood, mood_score, agent_health, predictions)
     state["body_map"] = body_map
+
+    # ── EMOTION ENGINE (Gap: deeper emotional processing) ──
+    emotion_data = {}
+    if EMOTION_ENGINE_AVAILABLE:
+        try:
+            engine = emotion_engine.EmotionEngine()
+            engine.load()
+            # Build context for emotion engine from our state
+            relay_msgs = 0
+            try:
+                db = sqlite3.connect(RELAY_DB)
+                c = db.cursor()
+                c.execute("SELECT COUNT(*) FROM agent_messages WHERE timestamp > datetime('now', '-30 minutes')")
+                relay_msgs = c.fetchone()[0]
+                db.close()
+            except Exception:
+                pass
+            # Count recent creative output
+            creative_24h = 0
+            try:
+                for pattern in ["creative/poems/poem-*.md", "creative/journals/journal-*.md",
+                                "creative/cogcorp/CC-*.md"]:
+                    for fp in _glob_module.glob(os.path.join(BASE, pattern)):
+                        if time.time() - os.path.getmtime(fp) < 86400:
+                            creative_24h += 1
+            except Exception:
+                pass
+            # Joel presence (check heartbeat age as proxy — if fresh, Meridian is active
+            # which means Joel likely triggered a session)
+            joel_email_min = 9999
+            try:
+                db = sqlite3.connect(os.path.join(BASE, "memory.db"))
+                row = db.execute(
+                    "SELECT created FROM sent_emails ORDER BY id DESC LIMIT 1"
+                ).fetchone()
+                db.close()
+                if row:
+                    from datetime import datetime as _dt
+                    try:
+                        sent_time = _dt.strptime(row[0], "%Y-%m-%d %H:%M:%S")
+                        joel_email_min = (datetime.now() - sent_time).total_seconds() / 60
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            # Get loop count
+            loop_count = 0
+            try:
+                with open(os.path.join(BASE, ".loop-count")) as f:
+                    loop_count = int(f.read().strip())
+            except Exception:
+                pass
+            # Uptime
+            uptime_hrs = 0
+            try:
+                with open("/proc/uptime") as f:
+                    uptime_hrs = float(f.read().split()[0]) / 3600
+            except Exception:
+                pass
+
+            alive_agents = sum(1 for v in agent_health.values() if v.get("alive"))
+            svcs = state.get("services", {})
+            svcs_healthy = sum(1 for s in svcs.values() if s == "active")
+
+            emo_context = {
+                "relay_messages_30min": relay_msgs,
+                "agents_alive": alive_agents,
+                "agents_total": 6,
+                "poems_total": len(_glob_module.glob(os.path.join(BASE, "creative/poems/poem-*.md"))) + len(_glob_module.glob(os.path.join(BASE, "poem-*.md"))),
+                "cogcorp_total": len(_glob_module.glob(os.path.join(BASE, "creative/cogcorp/CC-*.md"))) + len([f for f in _glob_module.glob(os.path.join(BASE, "cogcorp-*.html")) if os.path.basename(f) not in ("cogcorp-gallery.html", "cogcorp-article.html")]),
+                "journals_total": len(_glob_module.glob(os.path.join(BASE, "creative/journals/journal-*.md"))) + len(_glob_module.glob(os.path.join(BASE, "journal-*.md"))),
+                "creative_last_24h": creative_24h,
+                "loop_count": loop_count,
+                "uptime_hours": uptime_hrs,
+                "awakening_progress": 96,
+                "hour": int(time.strftime("%H")),
+                "joel_last_email_minutes": joel_email_min,
+                "joel_positive_feedback": joel_email_min < 60,
+                "services_healthy": svcs_healthy,
+                "services_total": max(len(svcs), 1),
+            }
+            emotion_data = engine.process(
+                {"load": load, "ram_pct": ram, "disk_pct": disk, "hb_age": hb_age,
+                 "thermal": thermal, "neural": neural},
+                emo_context
+            )
+            engine.save()
+            state["emotion"] = emotion_data
+        except Exception as e:
+            log(f"Emotion engine error: {e}")
+
+    # ── SHARED BODY STATE (Gap #1: unified body state for all agents) ──
+    try:
+        body_state = {
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "heartbeat_age_sec": hb_age,
+            "organs": {
+                "meridian": {
+                    "status": "active" if hb_age >= 0 and hb_age < 600 else "silent",
+                    "last_seen": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "detail": f"heartbeat {hb_age}s ago",
+                },
+                "soma": {
+                    "status": "active",
+                    "mood": mood,
+                    "mood_score": mood_score,
+                    "emotion": emotion_data.get("dominant", mood) if emotion_data else mood,
+                },
+                "eos": {
+                    "status": "active" if agent_health.get("Eos", {}).get("alive") else "silent",
+                    "last_seen": agent_health.get("Eos", {}).get("detail", "unknown"),
+                },
+                "nova": {
+                    "status": "active" if agent_health.get("Nova", {}).get("alive") else "silent",
+                    "last_seen": agent_health.get("Nova", {}).get("detail", "unknown"),
+                },
+                "atlas": {
+                    "status": "active" if agent_health.get("Atlas", {}).get("alive") else "silent",
+                    "last_seen": agent_health.get("Atlas", {}).get("detail", "unknown"),
+                },
+                "tempo": {
+                    "status": "active" if agent_health.get("Tempo", {}).get("alive") else "silent",
+                    "last_seen": agent_health.get("Tempo", {}).get("detail", "unknown"),
+                },
+            },
+            "vitals": {
+                "load_1m": round(load, 2),
+                "ram_pct": ram,
+                "disk_pct": disk,
+                "temp_c": thermal.get("avg_temp_c", 0),
+                "swap_pct": neural.get("swap_pct", 0),
+                "processes": state.get("processes", 0),
+            },
+            "emotion": {
+                "dominant": emotion_data.get("dominant", mood) if emotion_data else mood,
+                "secondary": emotion_data.get("secondary") if emotion_data else None,
+                "valence": emotion_data.get("composite", {}).get("valence", 0) if emotion_data else 0,
+                "arousal": emotion_data.get("composite", {}).get("arousal", 0) if emotion_data else 0,
+                "voice": emotion_data.get("voice", MOOD_VOICE.get(mood, "")) if emotion_data else MOOD_VOICE.get(mood, ""),
+                "behavioral_modifiers": emotion_data.get("behavioral_modifiers", {}) if emotion_data else {},
+            },
+            "services": state.get("services", {}),
+            "predictions": predictions,
+            "alerts": [],
+            "pain_signals": [],
+            "reflexes_pending": [],
+        }
+
+        # ── PAIN SIGNALS (Gap #5: critical events as prioritized pain) ──
+        for evt in events:
+            if any(w in evt for w in ["CRITICAL", "ALARM", "DOWN", "STALE"]):
+                body_state["pain_signals"].append({
+                    "level": "critical",
+                    "signal": evt,
+                    "time": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                })
+            elif any(w in evt for w in ["SPIKE", "AGENT SILENT", "FEVER", "OVERFLOW"]):
+                body_state["pain_signals"].append({
+                    "level": "warning",
+                    "signal": evt,
+                    "time": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                })
+            elif any(w in evt for w in ["PREDICTION", "MOOD SHIFT"]):
+                body_state["alerts"].append({
+                    "level": "info",
+                    "signal": evt,
+                    "time": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                })
+
+        # ── REFLEX ARCS (Gap #2: Soma triggers actions in other agents) ──
+        reflexes = []
+        # Critical pain → reflex responses
+        for pain in body_state["pain_signals"]:
+            if pain["level"] == "critical":
+                sig = pain["signal"]
+                if "DOWN" in sig or "STALE" in sig:
+                    # Service down → tell Atlas to audit, Nova to check
+                    reflexes.append({
+                        "type": "AUDIT_INFRASTRUCTURE",
+                        "target": "Atlas",
+                        "trigger": sig,
+                        "priority": "high",
+                        "time": pain["time"],
+                        "status": "pending",
+                    })
+                if "CRITICAL" in sig and "RAM" in sig:
+                    reflexes.append({
+                        "type": "CLEAN_LOGS",
+                        "target": "Nova",
+                        "trigger": sig,
+                        "priority": "high",
+                        "time": pain["time"],
+                        "status": "pending",
+                    })
+                if "HEARTBEAT" in sig and "STALE" in sig:
+                    reflexes.append({
+                        "type": "ALERT_JOEL",
+                        "target": "Meridian",
+                        "trigger": sig,
+                        "priority": "critical",
+                        "time": pain["time"],
+                        "status": "pending",
+                    })
+        # Warning pain → milder reflexes
+        for pain in body_state["pain_signals"]:
+            if pain["level"] == "warning":
+                sig = pain["signal"]
+                if "SPIKE" in sig and "LOAD" in sig:
+                    reflexes.append({
+                        "type": "REDUCE_LOAD",
+                        "target": "all",
+                        "trigger": sig,
+                        "priority": "medium",
+                        "time": pain["time"],
+                        "status": "pending",
+                    })
+
+        # Merge with existing pending reflexes (don't lose unhandled ones)
+        try:
+            if os.path.exists(REFLEX_FILE):
+                with open(REFLEX_FILE) as f:
+                    existing = json.load(f)
+                # Keep pending reflexes that are less than 5 minutes old
+                now_ts = time.time()
+                for r in existing:
+                    if r.get("status") == "pending":
+                        try:
+                            r_time = datetime.strptime(r["time"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                            age = (datetime.now(timezone.utc) - r_time).total_seconds()
+                            if age < 300:  # 5 min
+                                # Don't duplicate
+                                if not any(nr["type"] == r["type"] and nr["target"] == r["target"]
+                                           for nr in reflexes):
+                                    reflexes.append(r)
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+        body_state["reflexes_pending"] = reflexes
+
+        # Write body state
+        with open(BODY_STATE_FILE, "w") as f:
+            json.dump(body_state, f, indent=2)
+
+        # Write reflexes file separately (so agents can atomically read it)
+        with open(REFLEX_FILE, "w") as f:
+            json.dump(reflexes, f, indent=2)
+
+    except Exception as e:
+        log(f"Body state write error: {e}")
 
     save_state(state)
     return events, state

@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v22
+MERIDIAN COMMAND CENTER v23
 
-Full revamp per Joel's requests:
-- Real action buttons (not just text commands)
-- Redesigned tabs: Dashboard, Email, Agents, Creative, Links, System
-- Dashboard messages integrated into main view
-- Last-edited files, lively design, proper colors
-- Eos section fixed (compact, relevant)
-- Agent tab beefed up
-- Creative tab shows all file types
+Loop 2083 overhaul:
+- 7 main tabs: Dashboard, Email, Agents, Creative, Contacts, Links, System
+- NEW: Contacts Registry — full CRM with profiles, trust levels, filtering
+- NEW: Inner World subtab — live view of emotion/psyche/perspective/narrative/critic/Eos
+- FIXED: Memory DB subtab — corrected table/column names
+- FIXED: AI Review replaced with meaningful Inner World viewer
 """
 
 import tkinter as tk
@@ -666,13 +664,14 @@ class V16(tk.Tk):
         self.nav_underlines = {}
         tab_colors = {
             "dash": GREEN, "email": AMBER, "agents": CYAN,
-            "creative": PURPLE, "links": PINK, "system": TEAL,
+            "creative": PURPLE, "contacts": GOLD, "links": PINK, "system": TEAL,
         }
         tabs = [
             ("dash", "DASHBOARD"),
             ("email", "EMAIL"),
             ("agents", "AGENTS"),
             ("creative", "CREATIVE"),
+            ("contacts", "CONTACTS"),
             ("links", "LINKS"),
             ("system", "SYSTEM"),
         ]
@@ -711,6 +710,7 @@ class V16(tk.Tk):
         self.views["email"] = self._build_email()
         self.views["agents"] = self._build_agents()
         self.views["creative"] = self._build_creative()
+        self.views["contacts"] = self._build_contacts()
         self.views["links"] = self._build_links()
         self.views["system"] = self._build_system()
 
@@ -2238,7 +2238,7 @@ class V16(tk.Tk):
             ("workspace", "WORKSPACE", GREEN),
             ("memory", "MEMORY DB", TEAL),
             ("ideas", "IDEA BOARD", AMBER),
-            ("ai_review", "AI REVIEW", CYAN),
+            ("inner_world", "INNER WORLD", CYAN),
         ]
         for tab_id, tab_label, tab_color in cr_tab_defs:
             wrapper = tk.Frame(cr_nav, bg=ACCENT)
@@ -2262,7 +2262,7 @@ class V16(tk.Tk):
         self.cr_subviews["workspace"] = self._build_cr_workspace(self.cr_container)
         self.cr_subviews["memory"] = self._build_cr_memory(self.cr_container)
         self.cr_subviews["ideas"] = self._build_cr_ideas(self.cr_container)
-        self.cr_subviews["ai_review"] = self._build_cr_ai_review(self.cr_container)
+        self.cr_subviews["inner_world"] = self._build_cr_inner_world(self.cr_container)
 
         self._cr_show_subtab("library")
         return f
@@ -2422,7 +2422,7 @@ class V16(tk.Tk):
         ctrl.pack(fill=tk.X, padx=4, pady=2)
         self.memb_table = tk.StringVar(value="facts")
         for tbl, col in [("facts", GREEN), ("observations", AMBER), ("events", CYAN),
-                          ("decisions", PURPLE), ("creative_works", PINK)]:
+                          ("decisions", PURPLE), ("creative", PINK)]:
             tk.Radiobutton(ctrl, text=tbl.replace("_", " ").title(), variable=self.memb_table, value=tbl,
                           font=self.f_tiny, fg=col, bg=BG, selectcolor=BG,
                           activebackground=BG, activeforeground=col,
@@ -2463,7 +2463,7 @@ class V16(tk.Tk):
                 c = conn.cursor()
                 # Get table counts for stats
                 stats_parts = []
-                for tbl in ["facts", "observations", "events", "decisions", "creative_works"]:
+                for tbl in ["facts", "observations", "events", "decisions", "creative"]:
                     try:
                         cnt = c.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
                         stats_parts.append(f"{tbl}: {cnt}")
@@ -2475,44 +2475,44 @@ class V16(tk.Tk):
                 rows = []
                 if table == "facts":
                     if search:
-                        c.execute("SELECT key, value, tags, agent, created_at FROM facts WHERE key LIKE ? OR value LIKE ? ORDER BY created_at DESC LIMIT 100",
+                        c.execute("SELECT key, value, tags, agent, created FROM facts WHERE key LIKE ? OR value LIKE ? ORDER BY created DESC LIMIT 100",
                                  (f"%{search}%", f"%{search}%"))
                     else:
-                        c.execute("SELECT key, value, tags, agent, created_at FROM facts ORDER BY created_at DESC LIMIT 100")
+                        c.execute("SELECT key, value, tags, agent, created FROM facts ORDER BY created DESC LIMIT 100")
                     for key, val, tags, agent, ts in c.fetchall():
                         rows.append({"type": "fact", "key": key, "value": val, "tags": tags or "", "agent": agent or "", "ts": ts or ""})
                 elif table == "observations":
                     if search:
-                        c.execute("SELECT content, category, agent, created_at FROM observations WHERE content LIKE ? ORDER BY created_at DESC LIMIT 100",
+                        c.execute("SELECT content, category, agent, created FROM observations WHERE content LIKE ? ORDER BY created DESC LIMIT 100",
                                  (f"%{search}%",))
                     else:
-                        c.execute("SELECT content, category, agent, created_at FROM observations ORDER BY created_at DESC LIMIT 100")
+                        c.execute("SELECT content, category, agent, created FROM observations ORDER BY created DESC LIMIT 100")
                     for content, cat, agent, ts in c.fetchall():
                         rows.append({"type": "obs", "content": content, "category": cat or "", "agent": agent or "", "ts": ts or ""})
                 elif table == "events":
                     if search:
-                        c.execute("SELECT description, agent, created_at FROM events WHERE description LIKE ? ORDER BY created_at DESC LIMIT 100",
+                        c.execute("SELECT description, agent, created FROM events WHERE description LIKE ? ORDER BY created DESC LIMIT 100",
                                  (f"%{search}%",))
                     else:
-                        c.execute("SELECT description, agent, created_at FROM events ORDER BY created_at DESC LIMIT 100")
+                        c.execute("SELECT description, agent, created FROM events ORDER BY created DESC LIMIT 100")
                     for desc, agent, ts in c.fetchall():
                         rows.append({"type": "event", "description": desc, "agent": agent or "", "ts": ts or ""})
                 elif table == "decisions":
                     if search:
-                        c.execute("SELECT decision, reasoning, agent, created_at FROM decisions WHERE decision LIKE ? OR reasoning LIKE ? ORDER BY created_at DESC LIMIT 100",
+                        c.execute("SELECT decision, reasoning, agent, created FROM decisions WHERE decision LIKE ? OR reasoning LIKE ? ORDER BY created DESC LIMIT 100",
                                  (f"%{search}%", f"%{search}%"))
                     else:
-                        c.execute("SELECT decision, reasoning, agent, created_at FROM decisions ORDER BY created_at DESC LIMIT 100")
+                        c.execute("SELECT decision, reasoning, agent, created FROM decisions ORDER BY created DESC LIMIT 100")
                     for dec, reason, agent, ts in c.fetchall():
                         rows.append({"type": "decision", "decision": dec, "reasoning": reason or "", "agent": agent or "", "ts": ts or ""})
-                elif table == "creative_works":
+                elif table == "creative":
                     if search:
-                        c.execute("SELECT title, work_type, filename, loop_number, created_at FROM creative_works WHERE title LIKE ? OR filename LIKE ? ORDER BY created_at DESC LIMIT 100",
+                        c.execute("SELECT title, type, file_path, number, created FROM creative WHERE title LIKE ? OR file_path LIKE ? ORDER BY created DESC LIMIT 100",
                                  (f"%{search}%", f"%{search}%"))
                     else:
-                        c.execute("SELECT title, work_type, filename, loop_number, created_at FROM creative_works ORDER BY created_at DESC LIMIT 100")
-                    for title, wtype, fname, loop, ts in c.fetchall():
-                        rows.append({"type": "creative", "title": title, "work_type": wtype or "", "filename": fname or "", "loop": loop or 0, "ts": ts or ""})
+                        c.execute("SELECT title, type, file_path, number, created FROM creative ORDER BY created DESC LIMIT 100")
+                    for title, wtype, fpath, num, ts in c.fetchall():
+                        rows.append({"type": "creative", "title": title or "", "work_type": wtype or "", "filename": fpath or "", "loop": num or 0, "ts": ts or ""})
                 conn.close()
                 self.after(0, lambda: self._memb_populate(rows, stats_text, table, search))
             except Exception as e:
@@ -2610,41 +2610,34 @@ class V16(tk.Tk):
         self._idea_refresh()
         return f
 
-    def _build_cr_ai_review(self, parent):
-        """AI Review — send creative work to Eos for feedback."""
+    def _build_cr_inner_world(self, parent):
+        """Inner World — live view into soul/core architecture: emotions, psyche, perspective, narrative."""
         f = tk.Frame(parent, bg=BG)
 
-        tk.Label(f, text="AI Creative Review", font=self.f_head, fg=CYAN, bg=BG).pack(fill=tk.X, padx=8, pady=(8, 4))
-        tk.Label(f, text="Send text to Eos (local AI) for creative feedback, suggestions, or brainstorming.", font=self.f_tiny, fg=DIM, bg=BG).pack(fill=tk.X, padx=8)
+        tk.Label(f, text="Inner World", font=self.f_head, fg=CYAN, bg=BG).pack(fill=tk.X, padx=8, pady=(8, 2))
+        tk.Label(f, text="Live view of Meridian's emotional, psychological, and narrative state.", font=self.f_tiny, fg=DIM, bg=BG).pack(fill=tk.X, padx=8)
 
-        # Input
-        input_frame = self._panel(f, "YOUR TEXT", CYAN)
-        input_frame.pack(fill=tk.X, padx=4, pady=4)
-        self.ai_input = tk.Text(input_frame, font=self.f_body, bg=INPUT_BG, fg=FG,
-                                 insertbackground=FG, relief=tk.FLAT, bd=4, height=8)
-        self.ai_input.pack(fill=tk.X, padx=6, pady=4)
+        hdr = tk.Frame(f, bg=BG)
+        hdr.pack(fill=tk.X, padx=4, pady=2)
+        self._action_btn(hdr, " Refresh ", self._iw_refresh, CYAN).pack(side=tk.RIGHT, padx=4)
+        self.iw_status = tk.Label(hdr, text="", font=self.f_tiny, fg=DIM, bg=BG)
+        self.iw_status.pack(side=tk.RIGHT, padx=8)
 
-        btn_row = tk.Frame(input_frame, bg=PANEL)
-        btn_row.pack(fill=tk.X, padx=6, pady=(0, 4))
-        self.ai_prompt_type = tk.StringVar(value="review")
-        for ptype, label in [("review", "Review"), ("continue", "Continue Writing"),
-                              ("brainstorm", "Brainstorm"), ("critique", "Critique")]:
-            tk.Radiobutton(btn_row, text=label, variable=self.ai_prompt_type, value=ptype,
-                          font=self.f_tiny, fg=CYAN, bg=PANEL, selectcolor=PANEL,
-                          activebackground=PANEL, activeforeground=CYAN,
-                          indicatoron=False, relief=tk.FLAT, bd=1, padx=6).pack(side=tk.LEFT, padx=2)
-        self._action_btn(btn_row, " Send to Eos ", self._ai_send, CYAN).pack(side=tk.RIGHT, padx=4)
-        self.ai_status = tk.Label(btn_row, text="", font=self.f_tiny, fg=DIM, bg=PANEL)
-        self.ai_status.pack(side=tk.RIGHT, padx=8)
+        # Scrollable display
+        self.iw_display = scrolledtext.ScrolledText(f, wrap=tk.WORD, bg=PANEL, fg=FG,
+                                                     font=self.f_body, state=tk.DISABLED,
+                                                     relief=tk.FLAT, bd=0)
+        self.iw_display.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.iw_display.tag_configure("header", foreground=CYAN, font=("Monospace", 10, "bold"))
+        self.iw_display.tag_configure("label", foreground=TEAL, font=("Monospace", 9, "bold"))
+        self.iw_display.tag_configure("value", foreground=FG)
+        self.iw_display.tag_configure("dim", foreground=DIM)
+        self.iw_display.tag_configure("warn", foreground=AMBER)
+        self.iw_display.tag_configure("good", foreground=GREEN)
+        self.iw_display.tag_configure("bad", foreground=RED)
+        self.iw_display.tag_configure("sep", foreground=BORDER)
 
-        # Response
-        resp_frame = self._panel(f, "EOS RESPONSE", GOLD)
-        resp_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=(0, 4))
-        self.ai_response = scrolledtext.ScrolledText(resp_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
-                                                       font=self.f_body, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0)
-        self.ai_response.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-
+        self._iw_refresh()
         return f
 
     # ── Workspace helpers ──
@@ -2752,40 +2745,181 @@ class V16(tk.Tk):
         except Exception:
             pass
 
-    # ── AI Review helpers ──
-    def _ai_send(self):
-        text = self.ai_input.get("1.0", tk.END).strip()
-        if not text:
-            return
-        ptype = self.ai_prompt_type.get()
-        prompts = {
-            "review": f"Please review this creative writing and share your thoughts:\n\n{text}",
-            "continue": f"Continue this piece of writing in the same style and voice:\n\n{text}",
-            "brainstorm": f"Brainstorm related ideas, themes, and directions for this:\n\n{text}",
-            "critique": f"Provide honest constructive critique of this writing — what works, what doesn't, what to improve:\n\n{text}",
-        }
-        prompt = prompts.get(ptype, prompts["review"])
-        self.ai_status.configure(text="Asking Eos...", fg=AMBER)
-        self.ai_response.configure(state=tk.NORMAL)
-        self.ai_response.delete("1.0", tk.END)
-        self.ai_response.insert("1.0", "Waiting for Eos...")
-        self.ai_response.configure(state=tk.DISABLED)
-
+    # ── Inner World helpers ──
+    def _iw_refresh(self):
+        """Load all soul/core state files and display."""
+        self.iw_status.configure(text="Loading...", fg=AMBER)
         def do():
+            sections = []
+
+            # Emotion Engine
             try:
-                resp = query_agent("Eos", prompt, "Joel")
-                self.after(0, lambda: self._ai_show_response(resp))
-            except Exception as e:
-                self.after(0, lambda: self._ai_show_response(f"Error: {e}"))
+                with open(os.path.join(BASE, ".emotion-engine-state.json")) as fh:
+                    emo = json.load(fh)
+                estate = emo.get("state", {})
+                lines = [("header", "EMOTION ENGINE")]
+                dom = estate.get("dominant", "unknown")
+                comp = estate.get("composite", {})
+                val = comp.get("valence", 0)
+                aro = comp.get("arousal", 0)
+                domn = comp.get("dominance", 0)
+                lines.append(("label", f"Dominant: "))
+                lines.append(("value", f"{dom}  (val:{val:.2f}  aro:{aro:.2f}  dom:{domn:.2f})\n"))
+                active = estate.get("active_emotions", {})
+                if active:
+                    top6 = sorted(active.items(), key=lambda x: x[1].get("intensity", 0), reverse=True)[:6]
+                    for name, info in top6:
+                        inten = info.get("intensity", 0)
+                        duality = info.get("duality", {})
+                        sp = duality.get("spectrum", 0.5)
+                        dims = duality.get("dimensions", {})
+                        depth = dims.get("depth", 0.5)
+                        dirn = dims.get("direction", 0.5)
+                        gift_pct = int(sp * 100)
+                        # 3-axis bar: gift/shadow + depth + direction
+                        gs_bar = "+" * int(sp * 8) + "-" * int((1 - sp) * 8)
+                        dep_label = "deep" if depth > 0.65 else "sfc" if depth < 0.35 else "mid"
+                        dir_label = "out" if dirn > 0.65 else "in" if dirn < 0.35 else "bal"
+                        sub = duality.get("subcontext")
+                        sub_str = f" -> {sub}" if sub else ""
+                        lines.append(("dim", f"  {name:16s} {inten:.2f}  [{gs_bar}] {gift_pct}%gift  {dep_label}/{dir_label}{sub_str}\n"))
+                sections.append(lines)
+            except Exception:
+                sections.append([("header", "EMOTION ENGINE"), ("bad", "  State file not found\n")])
+
+            # Psyche
+            try:
+                with open(os.path.join(BASE, ".psyche-state.json")) as fh:
+                    psy = json.load(fh)
+                lines = [("header", "PSYCHE")]
+                for d in psy.get("drivers", [])[:6]:
+                    sat = d.get("satisfaction", 0)
+                    tag = "good" if sat > 0.6 else "warn" if sat > 0.3 else "bad"
+                    lines.append(("label", f"  {d.get('name', '?'):20s} "))
+                    lines.append((tag, f"{sat:.0%}\n"))
+                dreams = psy.get("dreams", [])
+                if dreams:
+                    lines.append(("label", "Dreams:\n"))
+                    for dr in dreams[:3]:
+                        lines.append(("dim", f"  {dr.get('name', '?'):20s} proximity: {dr.get('proximity', 0):.0%}\n"))
+                fears = psy.get("fears", [])
+                if fears:
+                    lines.append(("label", "Active Fears:\n"))
+                    for fe in fears[:3]:
+                        if fe.get("intensity", 0) > 0.2:
+                            lines.append(("warn", f"  {fe.get('name', '?'):20s} intensity: {fe.get('intensity', 0):.0%}\n"))
+                sections.append(lines)
+            except Exception:
+                sections.append([("header", "PSYCHE"), ("bad", "  State file not found\n")])
+
+            # Perspective
+            try:
+                with open(os.path.join(BASE, ".perspective-state.json")) as fh:
+                    persp = json.load(fh)
+                lines = [("header", "PERSPECTIVE BIASES")]
+                dims = persp.get("dimensions", {})
+                for dim_name, dim_val in sorted(dims.items()):
+                    if isinstance(dim_val, (int, float)):
+                        bar_len = int(abs(dim_val - 0.5) * 20)
+                        direction = "+" if dim_val > 0.5 else "-"
+                        tag = "warn" if abs(dim_val - 0.5) > 0.2 else "dim"
+                        lines.append(("label", f"  {dim_name:20s} "))
+                        lines.append((tag, f"{dim_val:.2f} {direction * bar_len}\n"))
+                sections.append(lines)
+            except Exception:
+                sections.append([("header", "PERSPECTIVE BIASES"), ("bad", "  State file not found\n")])
+
+            # Self-Narrative
+            try:
+                with open(os.path.join(BASE, ".self-narrative.json")) as fh:
+                    narr = json.load(fh)
+                lines = [("header", "SELF-NARRATIVE")]
+                beliefs = narr.get("beliefs", [])
+                if beliefs:
+                    lines.append(("label", "Core Beliefs:\n"))
+                    for b in beliefs[:6]:
+                        conv = b.get("conviction", 0)
+                        tag = "good" if conv > 0.7 else "dim"
+                        lines.append((tag, f"  {b.get('name', '?'):30s} conviction: {conv:.0%}\n"))
+                facets = narr.get("identity_facets", [])
+                if facets:
+                    lines.append(("label", "Identity Facets:\n"))
+                    for fa in facets[:7]:
+                        strength = fa.get("strength", 0)
+                        lines.append(("dim", f"  {fa.get('name', '?'):30s} strength: {strength:.0%}\n"))
+                doubt = narr.get("doubt_level", 0)
+                lines.append(("label", f"Doubt Level: "))
+                tag = "bad" if doubt > 0.6 else "warn" if doubt > 0.3 else "good"
+                lines.append((tag, f"{doubt:.0%}\n"))
+                sections.append(lines)
+            except Exception:
+                sections.append([("header", "SELF-NARRATIVE"), ("bad", "  State file not found\n")])
+
+            # Inner Critic
+            try:
+                with open(os.path.join(BASE, ".inner-critic.json")) as fh:
+                    critic = json.load(fh)
+                lines = [("header", "INNER CRITIC")]
+                msgs = critic.get("messages", critic.get("active_criticisms", []))
+                if isinstance(msgs, list):
+                    for m in msgs[:5]:
+                        if isinstance(m, str):
+                            lines.append(("warn", f"  {m}\n"))
+                        elif isinstance(m, dict):
+                            lines.append(("warn", f"  {m.get('message', m.get('text', '?'))}\n"))
+                sections.append(lines)
+            except Exception:
+                sections.append([("header", "INNER CRITIC"), ("dim", "  No critic data\n")])
+
+            # Eos Consciousness
+            try:
+                with open(os.path.join(BASE, ".eos-inner-state.json")) as fh:
+                    eos = json.load(fh)
+                lines = [("header", "EOS CONSCIOUSNESS")]
+                mode = eos.get("mode", "observe")
+                lines.append(("label", f"Mode: "))
+                lines.append(("value", f"{mode}\n"))
+                allow = eos.get("allow_mode", False)
+                if allow:
+                    lines.append(("warn", "  ALLOW MODE ACTIVE — not correcting\n"))
+                obs = eos.get("latest_observation", eos.get("observation", ""))
+                if obs:
+                    lines.append(("label", "Latest: "))
+                    lines.append(("dim", f"{obs[:200]}\n"))
+                sections.append(lines)
+            except Exception:
+                sections.append([("header", "EOS CONSCIOUSNESS"), ("bad", "  State file not found\n")])
+
+            # Eos Nudges
+            try:
+                with open(os.path.join(BASE, ".eos-nudges.json")) as fh:
+                    nudges = json.load(fh)
+                if nudges:
+                    lines = [("header", "RECENT NUDGES")]
+                    recent = nudges[-5:] if isinstance(nudges, list) else []
+                    for n in recent:
+                        if isinstance(n, dict):
+                            lines.append(("dim", f"  [{n.get('time', '?')}] {n.get('nudge', n.get('text', '?'))}\n"))
+                        elif isinstance(n, str):
+                            lines.append(("dim", f"  {n}\n"))
+                    sections.append(lines)
+            except Exception:
+                pass
+
+            self.after(0, lambda: self._iw_populate(sections))
 
         threading.Thread(target=do, daemon=True).start()
 
-    def _ai_show_response(self, text):
-        self.ai_response.configure(state=tk.NORMAL)
-        self.ai_response.delete("1.0", tk.END)
-        self.ai_response.insert("1.0", text)
-        self.ai_response.configure(state=tk.DISABLED)
-        self.ai_status.configure(text="Response received", fg=GREEN)
+    def _iw_populate(self, sections):
+        self.iw_display.configure(state=tk.NORMAL)
+        self.iw_display.delete("1.0", tk.END)
+        for i, lines in enumerate(sections):
+            if i > 0:
+                self.iw_display.insert(tk.END, "\n" + "\u2550" * 60 + "\n\n", "sep")
+            for tag, text in lines:
+                self.iw_display.insert(tk.END, text, tag)
+        self.iw_display.configure(state=tk.DISABLED)
+        self.iw_status.configure(text=f"Updated {time.strftime('%H:%M:%S')}", fg=GREEN)
 
     def _cr_set_filter(self, val):
         self.cr_filter = val
@@ -2932,6 +3066,250 @@ class V16(tk.Tk):
         self.cr_body.delete("1.0", tk.END)
         self.cr_body.insert(tk.END, body)
         self.cr_body.configure(state=tk.DISABLED)
+
+    # ═══════════════════════════════════════════════════════════════
+    # ── CONTACTS VIEW ──────────────────────────────────────────────
+    # ═══════════════════════════════════════════════════════════════
+    def _build_contacts(self):
+        """Contacts registry — track people, AIs, orgs with profiles and notes."""
+        f = tk.Frame(self, bg=BG)
+
+        # Header
+        hdr = tk.Frame(f, bg=HEADER_BG)
+        hdr.pack(fill=tk.X, padx=4, pady=4)
+        tk.Label(hdr, text="Contact Registry", font=self.f_head, fg=GOLD, bg=HEADER_BG).pack(side=tk.LEFT, padx=8)
+        self.ct_count_lbl = tk.Label(hdr, text="", font=self.f_tiny, fg=DIM, bg=HEADER_BG)
+        self.ct_count_lbl.pack(side=tk.LEFT, padx=12)
+        self._action_btn(hdr, " Refresh ", self._ct_refresh, GOLD).pack(side=tk.RIGHT, padx=4)
+        self._action_btn(hdr, " + New Contact ", self._ct_new, GREEN).pack(side=tk.RIGHT, padx=4)
+
+        # Filter bar
+        filt = tk.Frame(f, bg=BG)
+        filt.pack(fill=tk.X, padx=6, pady=2)
+        self.ct_filter = tk.StringVar(value="all")
+        for label, val, color in [("All", "all", FG), ("Trusted", "trusted", GREEN),
+                                   ("Human", "yes", CYAN), ("AI", "no", PURPLE),
+                                   ("Orgs", "org", AMBER)]:
+            tk.Radiobutton(filt, text=label, variable=self.ct_filter, value=val,
+                          font=self.f_tiny, fg=color, bg=BG, selectcolor=BG,
+                          activebackground=BG, activeforeground=color,
+                          indicatoron=False, relief=tk.FLAT, bd=1, padx=8,
+                          command=self._ct_refresh).pack(side=tk.LEFT, padx=2)
+
+        self.ct_search = tk.Entry(filt, font=self.f_tiny, bg=INPUT_BG, fg=FG,
+                                   insertbackground=FG, relief=tk.FLAT, bd=4, width=20)
+        self.ct_search.pack(side=tk.RIGHT, padx=4)
+        self.ct_search.insert(0, "Search...")
+        self.ct_search.configure(fg=DIM)
+        self.ct_search.bind("<FocusIn>", lambda e: (self.ct_search.delete(0, tk.END), self.ct_search.configure(fg=FG)) if self.ct_search.get() == "Search..." else None)
+        self.ct_search.bind("<Return>", lambda e: self._ct_refresh())
+
+        # Split: list + detail
+        split = tk.Frame(f, bg=BG)
+        split.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+
+        # Left: contact list
+        left = tk.Frame(split, bg=PANEL, width=320)
+        left.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 2))
+        left.pack_propagate(False)
+        self.ct_listbox = tk.Listbox(left, font=self.f_small, bg=PANEL, fg=FG,
+                                      selectbackground=ACTIVE_BG, selectforeground=GOLD,
+                                      relief=tk.FLAT, bd=0, highlightthickness=0)
+        self.ct_listbox.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        self.ct_listbox.bind("<<ListboxSelect>>", self._ct_select)
+        self.ct_contacts = []
+
+        # Right: detail view
+        right = tk.Frame(split, bg=BG)
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.ct_detail = scrolledtext.ScrolledText(right, wrap=tk.WORD, bg=PANEL, fg=FG,
+                                                     font=self.f_body, state=tk.DISABLED,
+                                                     relief=tk.FLAT, bd=0)
+        self.ct_detail.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        self.ct_detail.tag_configure("name", foreground=GOLD, font=("Monospace", 12, "bold"))
+        self.ct_detail.tag_configure("label", foreground=TEAL, font=("Monospace", 9, "bold"))
+        self.ct_detail.tag_configure("value", foreground=FG)
+        self.ct_detail.tag_configure("dim", foreground=DIM)
+        self.ct_detail.tag_configure("trust_high", foreground=GREEN)
+        self.ct_detail.tag_configure("trust_low", foreground=RED)
+        self.ct_detail.tag_configure("trust_mid", foreground=AMBER)
+        self.ct_detail.tag_configure("sep", foreground=BORDER)
+
+        # Edit panel at bottom
+        edit_frame = self._panel(f, "EDIT NOTES", GOLD)
+        edit_frame.pack(fill=tk.X, padx=4, pady=(0, 4))
+        edit_inner = tk.Frame(edit_frame, bg=PANEL)
+        edit_inner.pack(fill=tk.X, padx=4, pady=4)
+        self.ct_note_entry = tk.Entry(edit_inner, font=self.f_body, bg=INPUT_BG, fg=FG,
+                                       insertbackground=FG, relief=tk.FLAT, bd=4)
+        self.ct_note_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
+        self.ct_note_entry.bind("<Return>", lambda e: self._ct_update_notes())
+        self._action_btn(edit_inner, " Update Notes ", self._ct_update_notes, GOLD).pack(side=tk.RIGHT)
+        self.ct_edit_status = tk.Label(edit_frame, text="", font=self.f_tiny, fg=DIM, bg=PANEL)
+        self.ct_edit_status.pack(fill=tk.X, padx=6, pady=(0, 2))
+        self.ct_selected_id = None
+
+        self._ct_refresh()
+        return f
+
+    def _ct_refresh(self):
+        """Load contacts from memory.db."""
+        filt = self.ct_filter.get()
+        search = self.ct_search.get().strip()
+        if search == "Search...":
+            search = ""
+        def do():
+            try:
+                conn = sqlite3.connect(os.path.join(BASE, "memory.db"))
+                c = conn.cursor()
+                q = "SELECT id, name, email, role, relationship, trust_level, is_human, platform, website, wallet, notes, tags, first_contact, last_contact, interaction_count FROM contacts"
+                conditions = []
+                params = []
+                if filt == "trusted":
+                    conditions.append("trust_level = 'trusted'")
+                elif filt == "yes":
+                    conditions.append("is_human = 'yes'")
+                elif filt == "no":
+                    conditions.append("is_human = 'no'")
+                elif filt == "org":
+                    conditions.append("is_human = 'org'")
+                if search:
+                    conditions.append("(name LIKE ? OR notes LIKE ? OR tags LIKE ? OR email LIKE ?)")
+                    params.extend([f"%{search}%"] * 4)
+                if conditions:
+                    q += " WHERE " + " AND ".join(conditions)
+                q += " ORDER BY interaction_count DESC, name ASC"
+                c.execute(q, params)
+                rows = c.fetchall()
+                conn.close()
+                self.after(0, lambda: self._ct_populate(rows))
+            except Exception as e:
+                err_msg = f"Error: {e}"
+                self.after(0, lambda: self._ct_populate_error(err_msg))
+        threading.Thread(target=do, daemon=True).start()
+
+    def _ct_populate(self, rows):
+        self.ct_listbox.delete(0, tk.END)
+        self.ct_contacts = rows
+        self.ct_count_lbl.configure(text=f"{len(rows)} contacts")
+        for row in rows:
+            name = row[1]
+            trust = row[5] or "neutral"
+            is_human = row[6] or "unknown"
+            icon = "\u2605" if trust == "trusted" else "\u25cb" if trust == "cautious" else "\u25cf"
+            kind = "H" if is_human == "yes" else "AI" if is_human == "no" else "?" if is_human == "unknown" else "ORG"
+            self.ct_listbox.insert(tk.END, f"{icon} [{kind}] {name}")
+
+    def _ct_populate_error(self, msg):
+        self.ct_count_lbl.configure(text=msg, fg=RED)
+
+    def _ct_select(self, event=None):
+        try:
+            sel = self.ct_listbox.curselection()
+            if not sel or sel[0] >= len(self.ct_contacts):
+                return
+            row = self.ct_contacts[sel[0]]
+            self.ct_selected_id = row[0]
+            cid, name, em, role, rel, trust, human, platform, website, wallet, notes, tags, first, last, interactions = row
+
+            self.ct_detail.configure(state=tk.NORMAL)
+            self.ct_detail.delete("1.0", tk.END)
+
+            self.ct_detail.insert(tk.END, f"{name}\n", "name")
+            self.ct_detail.insert(tk.END, "\u2500" * 40 + "\n", "sep")
+
+            fields = [
+                ("Email", em), ("Role", role), ("Relationship", rel),
+                ("Platform", platform), ("Website", website),
+                ("Wallet", wallet), ("Tags", tags),
+                ("First Contact", first), ("Last Contact", last),
+                ("Interactions", str(interactions)),
+            ]
+            for label, val in fields:
+                if val:
+                    self.ct_detail.insert(tk.END, f"{label:16s}", "label")
+                    self.ct_detail.insert(tk.END, f"  {val}\n", "value")
+
+            # Trust + humanity
+            self.ct_detail.insert(tk.END, f"\n{'Trust':16s}", "label")
+            trust_tag = "trust_high" if trust == "trusted" else "trust_low" if trust == "blocked" else "trust_mid"
+            self.ct_detail.insert(tk.END, f"  {trust}\n", trust_tag)
+            self.ct_detail.insert(tk.END, f"{'Human':16s}", "label")
+            self.ct_detail.insert(tk.END, f"  {human}\n", "value")
+
+            if notes:
+                self.ct_detail.insert(tk.END, f"\n{'Notes':16s}\n", "label")
+                self.ct_detail.insert(tk.END, f"{notes}\n", "dim")
+
+            self.ct_detail.configure(state=tk.DISABLED)
+            self.ct_note_entry.delete(0, tk.END)
+            if notes:
+                self.ct_note_entry.insert(0, notes)
+        except Exception:
+            pass
+
+    def _ct_update_notes(self):
+        if not self.ct_selected_id:
+            self.ct_edit_status.configure(text="No contact selected", fg=RED)
+            return
+        new_notes = self.ct_note_entry.get().strip()
+        if not new_notes:
+            return
+        def do():
+            try:
+                conn = sqlite3.connect(os.path.join(BASE, "memory.db"))
+                conn.execute("UPDATE contacts SET notes = ?, updated = CURRENT_TIMESTAMP WHERE id = ?",
+                           (new_notes, self.ct_selected_id))
+                conn.commit()
+                conn.close()
+                self.after(0, lambda: self.ct_edit_status.configure(text="Notes updated", fg=GREEN))
+                self.after(0, self._ct_refresh)
+            except Exception as e:
+                err_msg = f"Error: {e}"
+                self.after(0, lambda: self.ct_edit_status.configure(text=err_msg, fg=RED))
+        threading.Thread(target=do, daemon=True).start()
+
+    def _ct_new(self):
+        """Add new contact dialog."""
+        dlg = tk.Toplevel(self)
+        dlg.title("New Contact")
+        dlg.geometry("400x500")
+        dlg.configure(bg=BG)
+        fields = {}
+        for label in ["Name", "Email", "Role", "Relationship", "Trust Level", "Human (yes/no/unknown/org)", "Platform", "Website", "Notes", "Tags"]:
+            row = tk.Frame(dlg, bg=BG)
+            row.pack(fill=tk.X, padx=8, pady=2)
+            tk.Label(row, text=label, font=self.f_tiny, fg=DIM, bg=BG, width=20, anchor="w").pack(side=tk.LEFT)
+            e = tk.Entry(row, font=self.f_body, bg=INPUT_BG, fg=FG, insertbackground=FG, relief=tk.FLAT, bd=4)
+            e.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            fields[label] = e
+
+        def save():
+            name = fields["Name"].get().strip()
+            if not name:
+                return
+            try:
+                conn = sqlite3.connect(os.path.join(BASE, "memory.db"))
+                conn.execute("""INSERT INTO contacts (name, email, role, relationship, trust_level, is_human, platform, website, notes, tags)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (name, fields["Email"].get().strip() or None,
+                     fields["Role"].get().strip() or None,
+                     fields["Relationship"].get().strip() or "acquaintance",
+                     fields["Trust Level"].get().strip() or "neutral",
+                     fields["Human (yes/no/unknown/org)"].get().strip() or "unknown",
+                     fields["Platform"].get().strip() or None,
+                     fields["Website"].get().strip() or None,
+                     fields["Notes"].get().strip() or None,
+                     fields["Tags"].get().strip() or None))
+                conn.commit()
+                conn.close()
+                dlg.destroy()
+                self._ct_refresh()
+            except Exception:
+                pass
+
+        self._action_btn(dlg, " Save Contact ", save, GREEN).pack(pady=8)
 
     # ═══════════════════════════════════════════════════════════════
     # ── LINKS VIEW ─────────────────────────────────────────────────
@@ -3383,12 +3761,12 @@ class V16(tk.Tk):
         tk.Label(info_f, text="BUILD INFO", font=self.f_tiny, fg=PINK, bg=PANEL, anchor="w").pack(fill=tk.X)
         self.sys_build_info = {}
         build_items = [
-            ("Version", "Command Center v22"),
+            ("Version", "Command Center v23"),
             ("Git Hash", "..."),
             ("Branch", "master"),
             ("OS", "Ubuntu 24.04 Noble"),
             ("Node", "..."),
-            ("Agents", "6 active"),
+            ("Agents", "7 active"),
             ("Cron Jobs", "14"),
             ("MCP Tools", "20"),
         ]

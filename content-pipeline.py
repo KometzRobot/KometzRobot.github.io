@@ -59,10 +59,10 @@ def scan_articles():
     return articles
 
 def get_creative_counts():
-    """Get counts from memory.db creative_works table."""
+    """Get counts from memory.db creative table."""
     try:
         db = sqlite3.connect(str(DB_PATH))
-        cursor = db.execute("SELECT type, COUNT(*) FROM creative_works GROUP BY type")
+        cursor = db.execute("SELECT type, COUNT(*) FROM creative GROUP BY type")
         counts = dict(cursor.fetchall())
         db.close()
         return counts
@@ -225,8 +225,8 @@ def cmd_publish():
     try:
         db = sqlite3.connect(str(DB_PATH))
         db.execute(
-            "INSERT INTO creative_works (type, title, content, platform, created_at) VALUES (?, ?, ?, ?, ?)",
-            ("article", item["title"], content[:500], ",".join(published_to), datetime.now(timezone.utc).isoformat())
+            "INSERT INTO creative (type, number, title, file_path, word_count, agent, created) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("article", 0, item["title"], str(filepath), item.get("words", 0), "meridian", datetime.now(timezone.utc).isoformat())
         )
         db.commit()
         db.close()

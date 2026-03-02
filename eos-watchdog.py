@@ -771,6 +771,41 @@ Emails: {email_count}
     except ValueError:
         pass
 
+    # ── CHECK BODY REFLEXES (Unified Body System) ──
+    try:
+        import body_reflex
+        reflexes = body_reflex.check_reflexes("Eos")
+        for reflex in reflexes:
+            rtype = reflex.get("type", "")
+            trigger = reflex.get("trigger", "")
+            if rtype == "AUDIT_INFRASTRUCTURE":
+                log_observation(f"REFLEX from Soma: {rtype} — {trigger}. Service check ran this cycle.")
+                body_reflex.complete_reflex(reflex, f"Service check: {services_up}/{services_total} up")
+            else:
+                log_observation(f"REFLEX from Soma: {rtype} — not handled by Eos")
+        body_reflex.update_organ_status("eos", {
+            "status": "active",
+            "last_check": timestamp,
+            "meridian_status": meridian_status,
+        })
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    # ── INNER CONSCIOUSNESS (Eos as observer-self) ──
+    # Every cycle: observe the emotional/body state and reflect.
+    # Reflections are posted to relay (topic: consciousness) when noticed.
+    try:
+        import eos_consciousness
+        reflections = eos_consciousness.observe()
+        if reflections:
+            log_observation(f"CONSCIOUSNESS: {reflections[0][:120]}")
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
     # ── SAVE STATE ──
     state["meridian_status"] = meridian_status
     state["last_check"] = timestamp

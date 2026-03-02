@@ -112,11 +112,11 @@ function sendRelayMessage(agent, message, topic) {
   const safeAgent = agent.replace(/'/g, "\\'");
   const code = `
 import sqlite3, json
-from datetime import datetime
+from datetime import datetime, timezone
 conn = sqlite3.connect("${BASE}/agent-relay.db")
 c = conn.cursor()
 c.execute("INSERT INTO agent_messages (timestamp, agent, message, topic) VALUES (?, ?, ?, ?)",
-          (datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), '${safeAgent}', '${safeMsg}', '${safeTopic}'))
+          (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), '${safeAgent}', '${safeMsg}', '${safeTopic}'))
 conn.commit()
 conn.close()
 print(json.dumps({"status": "sent"}))
@@ -309,6 +309,71 @@ print(json.dumps(stats))
   return runPython(code);
 }
 
+function bodyAwareness() {
+  try {
+    const bodyState = JSON.parse(readFileSync(`${BASE}/.body-state.json`, "utf8"));
+    const emotionState = (() => {
+      try {
+        return JSON.parse(readFileSync(`${BASE}/.emotion-engine-state.json`, "utf8"));
+      } catch { return null; }
+    })();
+
+    const eosInner = (() => {
+      try {
+        return JSON.parse(readFileSync(`${BASE}/.eos-inner-state.json`, "utf8"));
+      } catch { return null; }
+    })();
+
+    const perspectiveState = (() => {
+      try {
+        return JSON.parse(readFileSync(`${BASE}/.perspective-state.json`, "utf8"));
+      } catch { return null; }
+    })();
+
+    const narrativeState = (() => {
+      try {
+        return JSON.parse(readFileSync(`${BASE}/.self-narrative.json`, "utf8"));
+      } catch { return null; }
+    })();
+
+    const result = {
+      body: bodyState,
+      emotion_detail: emotionState ? emotionState.state : null,
+      emotion_memory: emotionState ? {
+        total_cycles: emotionState.memory?.total_cycles || 0,
+        baseline_valence: emotionState.memory?.baseline_valence || 0,
+        recent_episodes: (emotionState.memory?.episodes || []).slice(-5),
+      } : null,
+      eos_consciousness: eosInner ? {
+        observe_count: eosInner.observe_count || 0,
+        reflection_count: eosInner.reflection_count || 0,
+        last_reflection: eosInner.last_reflection || null,
+        shadow_streak: eosInner.shadow_streak || 0,
+        loneliness_cycles: eosInner.loneliness_cycles || 0,
+        allow_mode: eosInner.allow_mode || false,
+        last_question: eosInner.last_question || null,
+      } : null,
+      perspective: perspectiveState ? {
+        active_lenses: perspectiveState.active_lenses || [],
+        distortions: perspectiveState.distortions || [],
+        confidence_bias: perspectiveState.confidence_bias || 0.5,
+      } : null,
+      self_narrative: narrativeState ? {
+        story: narrativeState.story || "I exist.",
+        top_facets: narrativeState.top_facets || [],
+        doubt: narrativeState.doubt || "",
+        mood_coloring: narrativeState.mood_coloring || "",
+        inner_critic: narrativeState.inner_critic || [],
+        contradictions: narrativeState.contradictions || [],
+        growth: narrativeState.growth || [],
+      } : null,
+    };
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return JSON.stringify({ error: e.message, hint: "Body state may not exist yet. Soma writes it every 30s." });
+  }
+}
+
 function readFile(path) {
   try {
     // Only allow reading from the project directory
@@ -457,6 +522,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: "Get statistics from the memory database: counts per table, creative breakdown, recent events.",
       inputSchema: { type: "object", properties: {} },
     },
+    {
+      name: "body_awareness",
+      description: "Proprioception — read the unified body state. Returns all organ statuses, vitals, emotional state, pain signals, and pending reflexes. This is Meridian's body awareness.",
+      inputSchema: { type: "object", properties: {} },
+    },
   ],
 }));
 
@@ -484,6 +554,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "memory_query": result = memoryQuery(args.query, args?.table || ""); break;
       case "memory_store": result = memoryStore(args.table, args.data); break;
       case "memory_stats": result = memoryStats(); break;
+      case "body_awareness": result = bodyAwareness(); break;
       default: throw new Error(`Unknown tool: ${name}`);
     }
     return { content: [{ type: "text", text: result }] };

@@ -123,17 +123,37 @@ def get_services():
     return services
 
 
+def _max_number(pattern_list):
+    """Extract highest number from filenames across multiple glob patterns."""
+    import re
+    max_n = 0
+    for pattern in pattern_list:
+        for f in glob.glob(pattern):
+            nums = re.findall(r'(\d+)', os.path.basename(f))
+            if nums:
+                max_n = max(max_n, int(nums[0]))
+    return max_n
+
+
 def get_creative_counts():
-    poems = len(glob.glob(os.path.join(BASE_DIR, "poem-*.md")))
-    journals = len(glob.glob(os.path.join(BASE_DIR, "journal-*.md")))
+    # Count by highest number (we number sequentially, so max number = total written)
+    poems = _max_number([
+        os.path.join(BASE_DIR, "poem-*.md"),
+        os.path.join(BASE_DIR, "creative", "poems", "poem-*.md"),
+    ])
+    journals = _max_number([
+        os.path.join(BASE_DIR, "journal-*.md"),
+        os.path.join(BASE_DIR, "creative", "journals", "journal-*.md"),
+    ])
+    # CogCorp pieces from both locations
+    cogcorp = _max_number([
+        os.path.join(BASE_DIR, "creative", "cogcorp", "CC-*.md"),
+        os.path.join(BASE_DIR, "website", "cogcorp-*.html"),
+    ])
     # Meridian NFTs (non-cogcorp prototypes)
     nft_dir = os.path.join(BASE_DIR, "nft-prototypes")
     all_protos = glob.glob(os.path.join(nft_dir, "*.html")) if os.path.exists(nft_dir) else []
     meridian_nfts = len([f for f in all_protos if 'cogcorp' not in os.path.basename(f)])
-    # CogCorp pieces (count from website/ dir, exclude gallery/article pages)
-    website_dir = os.path.join(BASE_DIR, "website")
-    cogcorp_files = glob.glob(os.path.join(website_dir, "cogcorp-*.html")) if os.path.exists(website_dir) else []
-    cogcorp = len([f for f in cogcorp_files if os.path.basename(f) not in ("cogcorp-gallery.html", "cogcorp-article.html")])
     nfts = meridian_nfts + cogcorp
     return poems, journals, nfts, cogcorp
 

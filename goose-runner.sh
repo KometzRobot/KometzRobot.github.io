@@ -320,4 +320,22 @@ Do NOT check services, website, load/RAM, or heartbeat — those belong to other
 " >> "$LOG" 2>&1
 fi
 
+# ── CHECK BODY REFLEXES (Unified Body System) ──
+python3 -c "
+import body_reflex, json
+reflexes = body_reflex.check_reflexes('Atlas')
+for r in reflexes:
+    rtype = r.get('type', '')
+    if rtype == 'AUDIT_INFRASTRUCTURE':
+        body_reflex.complete_reflex(r, 'Atlas infrastructure audit ran this cycle')
+        print(f'REFLEX handled: {rtype}')
+    elif rtype == 'REDUCE_LOAD':
+        body_reflex.complete_reflex(r, 'Atlas reducing activity')
+        print(f'REFLEX handled: {rtype}')
+body_reflex.update_organ_status('atlas', {
+    'status': 'active',
+    'last_run': __import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+})
+" 2>/dev/null
+
 echo "[$(date)] === Atlas run complete ===" >> "$LOG"

@@ -984,6 +984,35 @@ def main():
         except Exception as e:
             pass  # Don't fail the whole cycle over a thought
 
+    # ── CHECK BODY REFLEXES (Unified Body System) ──
+    try:
+        import body_reflex
+        reflexes = body_reflex.check_reflexes("Nova")
+        for reflex in reflexes:
+            rtype = reflex.get("type", "")
+            trigger = reflex.get("trigger", "")
+            if rtype == "CLEAN_LOGS":
+                log_observation(f"REFLEX from Soma: {rtype} — {trigger}. Running emergency log rotation.")
+                rotated = rotate_logs()
+                cleaned = cleanup_temp_files()
+                result = f"Rotated {len(rotated or [])} logs, cleaned {len(cleaned or [])} files"
+                body_reflex.complete_reflex(reflex, result)
+                actions.append(f"Reflex: {result}")
+            elif rtype == "REDUCE_LOAD":
+                log_observation(f"REFLEX from Soma: REDUCE_LOAD — skipping non-essential tasks this cycle")
+                body_reflex.complete_reflex(reflex, "Reduced activity for this cycle")
+            else:
+                log_observation(f"REFLEX from Soma: {rtype} — not handled by Nova")
+        body_reflex.update_organ_status("nova", {
+            "status": "active",
+            "last_run": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "actions": len(actions),
+        })
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
     save_state(state)
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
