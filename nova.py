@@ -521,7 +521,7 @@ def _post_restart_to_relay(service_name):
 def check_and_restart_services():
     """Check critical services and restart them if down. Coordinates via relay."""
     services = {
-        "protonmail-bridge": {"check": "protonmail-bridge", "restart": None, "systemd": "protonmail-bridge"},
+        "protonmail-bridge": {"check": "protonmail-bridge", "restart": None},  # desktop autostart handles bridge, no systemd
         "ollama": {"check": "ollama serve", "restart": None},  # system service, auto-restarts
         "tailscale": {"check": "tailscaled", "restart": None},
         "the-signal": {"check": "the-signal.py", "restart": None, "systemd": "meridian-web-dashboard"},
