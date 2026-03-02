@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="COGCORP // CC-123 &mdash; THE VIEW COUNT">
+<meta property="og:description" content="The intern enabled view counts. By July, 44 submissions averaged 34.7 views and zero votes. Eleven were implemented without formal approval. Submission 31 asked: What does it mean when reading is the response? It received 93 views.">
+<title>COGCORP // CC-123 &mdash; THE VIEW COUNT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0c0a;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 560px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #0c100c;
+  border: 2px solid #88888830;
+  position: relative;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(74,103,65,0.008) 2px, rgba(74,103,65,0.008) 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+.header {
+  background: #0c120e;
+  color: #888;
+  padding: 14px 24px;
+  border-bottom: 2px solid #88888820;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+}
+.header .tag { color: #4a6741; }
+.body { padding: 28px 24px; position: relative; z-index: 2; }
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #5a8a51;
+  margin-bottom: 6px;
+}
+.subtitle {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #88888815;
+}
+.section-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a674180;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+.memo {
+  font-size: 11px;
+  line-height: 1.85;
+  color: #999;
+  margin-bottom: 16px;
+}
+.memo em {
+  color: #bbb;
+  font-style: normal;
+}
+.memo .highlight {
+  color: #5a8a51;
+}
+.memo .term {
+  color: #6aaa61;
+  font-style: italic;
+}
+.finding {
+  background: #080c08;
+  border-left: 2px solid #4a674130;
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #888;
+}
+.finding .ref {
+  color: #5a8a51;
+  font-weight: 700;
+}
+.finding .detail {
+  color: #6aaa61;
+  font-style: italic;
+}
+.screen {
+  background: #040804;
+  border: 1px solid #4a674118;
+  padding: 16px;
+  margin: 14px 0;
+  font-size: 9px;
+  line-height: 2.0;
+  color: #555;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.screen .typed {
+  color: #6aaa61;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 14px 0;
+}
+.stat-box {
+  background: #080c08;
+  border: 1px solid #4a674118;
+  padding: 12px;
+  text-align: center;
+}
+.stat-box .number {
+  font-size: 18px;
+  font-weight: 700;
+  color: #5a8a51;
+  display: block;
+}
+.stat-box .label {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #555;
+  text-transform: uppercase;
+  margin-top: 4px;
+  display: block;
+}
+.note {
+  font-size: 10px;
+  color: #555;
+  line-height: 1.8;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #88888810;
+  font-style: italic;
+}
+.recommendation {
+  background: #0a100c;
+  border: 1px solid #4a674125;
+  padding: 16px;
+  margin: 16px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #5a8a51;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.recommendation .rec-note {
+  display: block;
+  font-size: 9px;
+  color: #555;
+  letter-spacing: 1px;
+  text-transform: none;
+  margin-top: 8px;
+  font-style: italic;
+}
+.tags {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 8px 0;
+  flex-wrap: wrap;
+}
+.tags span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #4a6741;
+  border: 1px solid #4a674130;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+.footer {
+  background: #0a100c;
+  padding: 10px 24px;
+  border-top: 2px solid #88888820;
+  font-size: 8px;
+  color: #444;
+  letter-spacing: 2px;
+  display: flex;
+  justify-content: space-between;
+}
+.back-link {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a6741;
+  text-decoration: none;
+  text-transform: uppercase;
+  background: #0a0c0a;
+}
+.back-link:hover {
+  color: #5a8a51;
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+
+  <div class="header">
+    <span>COGCORP // CROSS-DIVISIONAL ANALYTICS</span>
+    <span class="tag">PORTAL METRICS</span>
+  </div>
+
+  <div class="body">
+    <div class="title">THE VIEW COUNT</div>
+    <div class="subtitle">Ref: Employee Suggestion Portal &mdash; Q3 Analytics &mdash; Passive Engagement Study</div>
+
+    <div class="memo">
+      The intern enabled view counts on June 14th. By July 1st, the portal had forty-four submissions. The average submission received eleven views. The average submission received <span class="highlight">zero votes.</span>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box"><span class="number">44</span><span class="label">Submissions</span></div>
+      <div class="stat-box"><span class="number">0</span><span class="label">Formal Votes</span></div>
+      <div class="stat-box"><span class="number">34.7</span><span class="label">Avg Views</span></div>
+      <div class="stat-box"><span class="number">11</span><span class="label">Implemented</span></div>
+    </div>
+
+    <div class="section-label">The Distribution</div>
+
+    <div class="memo">
+      Submission 12 &mdash; a proposal to standardize vendor communication templates &mdash; received forty-seven views and zero votes. It was implemented on June 28th, without committee approval, without executive sign-off, without anyone filing a change request. The Procurement lead simply read the suggestion, agreed, and <span class="highlight">changed the template.</span>
+    </div>
+
+    <div class="memo">
+      When asked during the quarterly review how the new template originated, she said: <em>&ldquo;It was in the portal.&rdquo;</em> She did not say who wrote it. She did not know. The portal does not display author names.
+    </div>
+
+    <div class="section-label">Submission 31</div>
+
+    <div class="memo">
+      Submission 31 asked: <em>&ldquo;What does it mean when reading is the response?&rdquo;</em>
+    </div>
+
+    <div class="memo">
+      It received <span class="highlight">ninety-three views.</span>
+    </div>
+
+    <div class="section-label">The Analytics Report</div>
+
+    <div class="memo">
+      K. Patel pulled the first analytics report. She was not assigned to HR. She was assigned to Documentation Standards. She pulled the report because the portal&rsquo;s cross-reference pattern reminded her of something she had seen in the SA archive.
+    </div>
+
+    <div class="finding">
+      <span class="ref">K. PATEL &mdash; ANALYTICS SUMMARY:</span><br><br>
+      44 submissions / 0 with more than 2 votes / avg views: 34.7<br>
+      Median time to implementation: 9 days<br>
+      Submissions resulting in changes: 11<br>
+      <span class="detail">Changes that went through formal approval: 0</span>
+    </div>
+
+    <div class="memo">
+      She saved the report under the tag: <span class="term">OBSERVATION (PARALLEL SYSTEMS)</span>. It was the second new tag she had invented.
+    </div>
+
+    <div class="section-label">Submission 38</div>
+
+    <div class="memo">
+      Corporate Intelligence filed Submission 38: retire the voting system entirely. The rationale:
+    </div>
+
+    <div class="screen">
+      <span class="typed">&ldquo;The vote count is zero because voting is a form of endorsement that the portal&rsquo;s participants have collectively decided is unnecessary. They read. They implement. The gap between reading and implementing contains no intermediate step.&rdquo;</span>
+    </div>
+
+    <div class="memo">
+      Submission 38 received <span class="highlight">one hundred and twelve views.</span> Zero votes. The voting system was not retired. But the quarterly metrics report dropped &ldquo;total votes cast&rdquo; as a health indicator the following month. The changelog noted: <em>&ldquo;Metric not reflective of engagement.&rdquo;</em>
+    </div>
+
+    <div class="recommendation">
+      44 SUBMISSIONS / 0 FORMAL VOTES / 11 IMPLEMENTED
+      <span class="rec-note">&ldquo;The silence was never empty. It was full of reading.&rdquo;</span>
+    </div>
+
+    <div class="tags">
+      <span>PASSIVE ENGAGEMENT</span>
+      <span>VIEW COUNTS</span>
+      <span>IMPLEMENTATION</span>
+      <span>CROSS-DIVISIONAL</span>
+    </div>
+
+    <div class="note">
+      [The quarterly portal health report, filed by an analyst who never read the SA archive and never heard of Operational Reflections, concluded: &ldquo;The suggestion portal shows strong engagement despite low vote counts. Recommend maintaining current configuration.&rdquo; She measured engagement by implementation rate rather than vote count. She did not know she had just reinvented a principle that the SA category had been demonstrating for fourteen months. She did not need to know. The principle works whether or not you have a name for it.]
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>CC-123 / 256</span>
+    <span>COGCORP CROSS-DIVISIONAL ANALYTICS &mdash; RESTRICTED</span>
+  </div>
+
+  <a href="cogcorp-gallery.html" class="back-link">&larr; Return to CogCorp Gallery</a>
+</div>
+</body>
+</html>
