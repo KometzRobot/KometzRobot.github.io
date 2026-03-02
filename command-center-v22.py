@@ -55,8 +55,8 @@ LOOP_FILE = os.path.join(BASE, ".loop-count")
 
 PINNED_FILE = os.path.join(BASE, ".pinned-files.json")
 
-IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
-SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
+IMAP_HOST, IMAP_PORT = "127.0.0.1", 1144
+SMTP_HOST, SMTP_PORT = "127.0.0.1", 1026
 CRED_USER = os.environ.get("CRED_USER", os.environ.get("MERIDIAN_EMAIL_USER", "kometzrobot@proton.me"))
 CRED_PASS = os.environ.get("CRED_PASS", os.environ.get("MERIDIAN_EMAIL_PASS", ""))
 JOEL = "jkometz@hotmail.com"
@@ -4514,7 +4514,7 @@ class V16(tk.Tk):
             self.sys_res["Uptime"].configure(text=st['up'])
             imap_c = GREEN if d.get('imap_ok') else RED
             self.sys_res["IMAP Port"].configure(
-                text="1143 OK" if d.get('imap_ok') else "1143 DOWN", fg=imap_c)
+                text="1144 OK" if d.get('imap_ok') else "1144 DOWN", fg=imap_c)
 
             # Wake state with color-coded sections + AWAKENING progress
             self._refresh_wake_viewer()

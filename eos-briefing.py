@@ -41,8 +41,8 @@ EOS_CREATIVE = os.path.join(BASE, "eos-creative-log.md")
 EOS_STATE = os.path.join(BASE, ".eos-watchdog-state.json")
 RELAY_DB = os.path.join(BASE, "agent-relay.db")
 
-SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
-IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
+SMTP_HOST, SMTP_PORT = "127.0.0.1", 1026
+IMAP_HOST, IMAP_PORT = "127.0.0.1", 1144
 CRED_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
 CRED_PASS = os.environ.get("CRED_PASS", "")
 JOEL = "jkometz@hotmail.com"
@@ -87,9 +87,11 @@ def get_system_health():
 def get_services():
     checks = {
         "Proton Bridge": "protonmail-bridge",
-        "IRC Bot": "irc-bot.py",
         "Ollama": "ollama serve",
         "Command Center": "command-center",
+        "The Signal": "the-signal.py",
+        "Cloudflare Tunnel": "cloudflared",
+        "Soma": "symbiosense.py",
     }
     lines = []
     up = 0
@@ -154,27 +156,26 @@ def get_overnight_activity():
 
 
 def get_pending_messages():
-    """Check if there are unread messages from Joel in the message board."""
+    """Check for recent dashboard messages from Joel."""
     try:
         import sqlite3
-        db = os.path.join(BASE, "messages.db")
+        # Dashboard messages are in memory.db dashboard_messages table
+        db = os.path.join(BASE, "memory.db")
         if not os.path.exists(db):
             return ""
         conn = sqlite3.connect(db)
         c = conn.cursor()
-        state_file = os.path.join(BASE, ".message-state.json")
-        last_id = 0
-        if os.path.exists(state_file):
-            with open(state_file) as f:
-                last_id = json.load(f).get('last_message_id', 0)
-        c.execute("SELECT COUNT(*) FROM messages WHERE id > ? AND sender = 'Joel'", (last_id,))
+        # Check for recent messages (last 24h) from Joel
+        c.execute("""SELECT COUNT(*) FROM dashboard_messages
+                     WHERE timestamp > datetime('now', '-24 hours')
+                     AND message LIKE '%Joel%'""")
         count = c.fetchone()[0]
         conn.close()
         if count > 0:
-            return f"WARNING: {count} unread message(s) from Joel in command center!"
-        return "Message board: all caught up."
+            return f"NOTE: {count} dashboard message(s) in last 24h mentioning Joel."
+        return "Dashboard: no recent Joel messages."
     except Exception:
-        return ""
+        return "Dashboard: check unavailable."
 
 
 def get_outstanding_issues():
@@ -326,19 +327,35 @@ def send_briefing():
     now = datetime.now()
     subject = f"Morning Briefing — {now.strftime('%b %d')} — Eos"
 
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = CRED_USER
+    msg['To'] = JOEL
+
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            s = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+            s.starttls()
+            s.login(CRED_USER, CRED_PASS)
+            s.sendmail(CRED_USER, JOEL, msg.as_string())
+            s.quit()
+            print(f"[{now.strftime('%Y-%m-%d %H:%M')}] Morning briefing sent to Joel.")
+            return
+        except Exception as e:
+            err_msg = f"[{now.strftime('%Y-%m-%d %H:%M')}] SMTP attempt {attempt}/{max_retries} failed: {e}"
+            print(err_msg)
+            if attempt < max_retries:
+                time.sleep(10 * attempt)  # 10s, 20s backoff
+
+    # All retries failed — save briefing to file so it's not lost
+    fallback_path = os.path.join(BASE, f"briefing-{now.strftime('%Y%m%d')}.txt")
     try:
-        msg = MIMEText(body)
-        msg['Subject'] = subject
-        msg['From'] = CRED_USER
-        msg['To'] = JOEL
-        s = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-        s.starttls()
-        s.login(CRED_USER, CRED_PASS)
-        s.sendmail(CRED_USER, JOEL, msg.as_string())
-        s.quit()
-        print(f"[{now.strftime('%Y-%m-%d %H:%M')}] Morning briefing sent to Joel.")
-    except Exception as e:
-        print(f"[{now.strftime('%Y-%m-%d %H:%M')}] Failed to send briefing: {e}")
+        with open(fallback_path, 'w') as f:
+            f.write(f"Subject: {subject}\n\n{body}")
+        print(f"[{now.strftime('%Y-%m-%d %H:%M')}] Briefing saved to {fallback_path} (email failed)")
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

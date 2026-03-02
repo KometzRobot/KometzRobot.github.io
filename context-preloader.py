@@ -43,7 +43,7 @@ SOMA_STATE = os.path.join(BASE, ".symbiosense-state.json")
 HB_FILE = os.path.join(BASE, ".heartbeat")
 BRIEFING_FILE = os.path.join(BASE, "context-briefing.md")
 
-IMAP_HOST, IMAP_PORT = "127.0.0.1", 1143
+IMAP_HOST, IMAP_PORT = "127.0.0.1", 1144
 CRED_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
 CRED_PASS = os.environ.get("CRED_PASS", "")
 

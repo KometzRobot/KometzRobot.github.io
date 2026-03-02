@@ -109,8 +109,8 @@ WEIGHTS = {
     "tailscale":            40,
     "ollama_running":      100,
     "port_8090":            60,
-    "port_1143":            40,
-    "port_1025":            40,
+    "port_1144":            40,
+    "port_1026":            40,
 
     # ── System Resources (1500) ──
     "disk_usage":          140,
@@ -316,16 +316,16 @@ def check_heartbeat_regularity():
     return 0.0
 
 def check_email_imap():
-    return 1.0 if _port_open(1143) else 0.0
+    return 1.0 if _port_open(1144) else 0.0
 
 def check_email_smtp():
-    return 1.0 if _port_open(1025) else 0.0
+    return 1.0 if _port_open(1026) else 0.0
 
 def check_email_unread_backlog():
     """Score penalizes large unread backlogs."""
     try:
         import imaplib
-        m = imaplib.IMAP4("127.0.0.1", 1143)
+        m = imaplib.IMAP4("127.0.0.1", 1144)
         m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", ""))
         m.select("INBOX")
         _, unseen = m.search(None, "UNSEEN")
@@ -641,11 +641,11 @@ def check_ollama_running():
 def check_port_8090():
     return 1.0 if _port_open(8090) else 0.0
 
-def check_port_1143():
-    return 1.0 if _port_open(1143) else 0.0
+def check_port_1144():
+    return 1.0 if _port_open(1144) else 0.0
 
-def check_port_1025():
-    return 1.0 if _port_open(1025) else 0.0
+def check_port_1026():
+    return 1.0 if _port_open(1026) else 0.0
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -995,7 +995,7 @@ def check_email_response_time():
     """Penalize if there are old unanswered Joel emails."""
     try:
         import imaplib, email as email_mod, email.header
-        m = imaplib.IMAP4("127.0.0.1", 1143)
+        m = imaplib.IMAP4("127.0.0.1", 1144)
         m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", ""))
         m.select("INBOX")
         _, d = m.search(None, 'UNSEEN', 'FROM', '"jkometz@hotmail.com"')
@@ -1081,8 +1081,8 @@ def check_listening_ports():
         22,     # SSH
         53,     # DNS (systemd-resolved)
         631,    # CUPS
-        1025,   # SMTP (Proton Bridge)
-        1143,   # IMAP (Proton Bridge)
+        1026,   # SMTP (Proton Bridge)
+        1144,   # IMAP (Proton Bridge)
         8080,   # Command Center v22
         8090,   # The Signal
         11434,  # Ollama
@@ -1477,8 +1477,8 @@ CHECK_MAP = {
     "tailscale": check_tailscale,
     "ollama_running": check_ollama_running,
     "port_8090": check_port_8090,
-    "port_1143": check_port_1143,
-    "port_1025": check_port_1025,
+    "port_1144": check_port_1144,
+    "port_1026": check_port_1026,
     # System Resources
     "disk_usage": check_disk_usage,
     "disk_home": check_disk_home,
@@ -1573,7 +1573,7 @@ CATEGORIES = {
                        "services_systemd", "svc_signal", "svc_hub", "svc_cloudflare",
                        "svc_symbiosense", "svc_protonbridge", "tunnel_reachable",
                        "website_reachable", "tailscale", "ollama_running",
-                       "port_8090", "port_1143", "port_1025"],
+                       "port_8090", "port_1144", "port_1026"],
     "System Resources": ["disk_usage", "disk_home", "disk_growth_rate", "load_1min",
                          "load_5min", "load_15min", "ram_usage", "ram_available_gb",
                          "swap_usage", "zombies", "total_processes", "open_files",

@@ -57,7 +57,7 @@ COMMAND_WHITELIST = {
     "tunnel-url": "cat /home/joel/autonomous-ai/signal-config.json 2>/dev/null || echo 'no config'",
     "email-stats": "python3 /home/joel/autonomous-ai/email-stats-cmd.py",
     "cron-health": "for f in eos-watchdog.log push-live-status.log nova.log eos-react.log goose.log symbiosense.log loop-fitness.log; do age=$(($(date +%s) - $(stat -c%Y /home/joel/autonomous-ai/$f 2>/dev/null || echo 0))); echo \"$f: ${age}s ago\"; done",
-    "ports": "ss -tlnp 2>/dev/null | grep -E ':(8090|1143|1025|11434|8080)' || echo 'no matching ports'",
+    "ports": "ss -tlnp 2>/dev/null | grep -E ':(8090|1144|1026|11434|8080)' || echo 'no matching ports'",
     "memory-stats": "python3 -c \"import sqlite3,json; db=sqlite3.connect('/home/joel/autonomous-ai/memory.db'); tables=['facts','observations','events','decisions','loop_fitness']; [print(f'{t}: {db.execute(f\\\"SELECT COUNT(*) FROM {t}\\\").fetchone()[0]}') for t in tables if db.execute(f\\\"SELECT name FROM sqlite_master WHERE type='table' AND name='{t}'\\\").fetchone()]\"",
 }
 

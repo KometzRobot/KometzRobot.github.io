@@ -9,7 +9,7 @@ try:
 except:
     pass
 SMTP_HOST = '127.0.0.1'
-SMTP_PORT = 1025
+SMTP_PORT = 1026
 EMAIL_ADDR = os.environ.get("CRED_USER", "kometzrobot@proton.me")
 EMAIL_PASS = os.environ.get("CRED_PASS", "")
 

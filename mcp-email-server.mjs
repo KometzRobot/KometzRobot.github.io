@@ -36,9 +36,9 @@ if (!process.env.CRED_PASS) {
 }
 
 const IMAP_HOST = process.env.IMAP_HOST || "127.0.0.1";
-const IMAP_PORT = parseInt(process.env.IMAP_PORT || "1143");
+const IMAP_PORT = parseInt(process.env.IMAP_PORT || "1144");
 const SMTP_HOST = process.env.SMTP_HOST || "127.0.0.1";
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || "1025");
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || "1026");
 const EMAIL_USER = process.env.CRED_USER || "kometzrobot@proton.me";
 const EMAIL_PASS = process.env.CRED_PASS || "";
 

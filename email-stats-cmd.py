@@ -20,7 +20,7 @@ def get_creds():
     return os.environ.get("CRED_PASS", "")
 
 try:
-    m = imaplib.IMAP4("127.0.0.1", 1143)
+    m = imaplib.IMAP4("127.0.0.1", 1144)
     m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), get_creds())
     m.select("INBOX")
     _, d = m.search(None, "ALL")

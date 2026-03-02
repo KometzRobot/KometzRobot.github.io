@@ -129,7 +129,7 @@ def tool_check_emails():
     """Count unseen emails."""
     try:
         import imaplib
-        m = imaplib.IMAP4("127.0.0.1", 1143)
+        m = imaplib.IMAP4("127.0.0.1", 1144)
         m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", ""))
         m.select("INBOX")
         _, data = m.search(None, "UNSEEN")

@@ -26,7 +26,7 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 BASE_DIR = "/home/joel/autonomous-ai"
 
 SMTP_HOST = "127.0.0.1"
-SMTP_PORT = 1025
+SMTP_PORT = 1026
 EMAIL_FROM = "kometzrobot@proton.me"
 EMAIL_FROM_NAME = "Nova (KometzRobot)"
 EMAIL_TO = "jkometz@hotmail.com"

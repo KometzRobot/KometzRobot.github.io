@@ -45,7 +45,7 @@ ALERT_COOLDOWN = 900  # 15 min — grace period for context resets
 HEARTBEAT_THRESHOLD = 900  # 15 min — avoids false alerts during restarts
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "127.0.0.1")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "1025"))
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "1026"))
 EMAIL_FROM = os.environ.get("CRED_USER", "kometzrobot@proton.me")
 EMAIL_TO = os.environ.get("JOEL_EMAIL", "jkometz@hotmail.com")
 EMAIL_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
@@ -195,7 +195,7 @@ def get_email_count():
     """Count total emails via IMAP (quick check)."""
     try:
         import imaplib
-        m = imaplib.IMAP4('127.0.0.1', 1143)
+        m = imaplib.IMAP4('127.0.0.1', 1144)
         m.login(EMAIL_USER, EMAIL_PASS)
         m.select('INBOX')
         status, msgs = m.search(None, 'ALL')
@@ -344,12 +344,12 @@ def restart_service(name):
 
 
 def check_imap_port():
-    """Check if IMAP port 1143 is actually accepting connections (bridge health)."""
+    """Check if IMAP port 1144 is actually accepting connections (bridge health)."""
     try:
         import socket
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(3)
-        result = s.connect_ex(('127.0.0.1', 1143))
+        result = s.connect_ex(('127.0.0.1', 1144))
         s.close()
         return result == 0
     except Exception:
@@ -487,7 +487,7 @@ def run_self_test():
         results.append(("Disk space", "WARN", "could not parse"))
 
     # 15. Port checks
-    ports = {"SMTP(1025)": 1025, "IMAP(1143)": 1143, "Ollama(11434)": 11434}
+    ports = {"SMTP(1026)": 1026, "IMAP(1144)": 1144, "Ollama(11434)": 11434}
     for name, port in ports.items():
         try:
             import socket
@@ -569,11 +569,11 @@ def main():
         imap_ok = check_imap_port()
         if not imap_ok:
             if not state.get("imap_down_alerted"):
-                log_observation("BRIDGE WARNING: protonmail-bridge running but IMAP port 1143 not responding")
+                log_observation("BRIDGE WARNING: protonmail-bridge running but IMAP port 1144 not responding")
                 state["imap_down_alerted"] = True
         else:
             if state.get("imap_down_alerted"):
-                log_observation("BRIDGE RECOVERED: IMAP port 1143 responding again")
+                log_observation("BRIDGE RECOVERED: IMAP port 1144 responding again")
             state["imap_down_alerted"] = False
             # Check if bridge has accounts (login test)
             # Rate-limit: only test every 30 cycles (~60min) when already known-bad
@@ -583,7 +583,7 @@ def main():
             if not skip_login:
                 try:
                     import imaplib
-                    m = imaplib.IMAP4('127.0.0.1', 1143)
+                    m = imaplib.IMAP4('127.0.0.1', 1144)
                     m.login(EMAIL_USER, EMAIL_PASS)
                     m.logout()
                     if state.get("bridge_no_account"):

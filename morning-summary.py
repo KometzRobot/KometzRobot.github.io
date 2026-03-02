@@ -29,7 +29,8 @@ def count_files(pattern):
 
 def count_cogcorp():
     exclude = {"cogcorp-gallery.html", "cogcorp-article.html"}
-    files = glob.glob(os.path.join(BASE, "website", "cogcorp-*.html"))
+    # CogCorp HTML files are in repo root, not website/ subdirectory
+    files = glob.glob(os.path.join(BASE, "cogcorp-*.html"))
     return len([f for f in files if os.path.basename(f) not in exclude])
 
 def get_loop():
@@ -71,48 +72,76 @@ def heartbeat_age():
     except:
         return "not found"
 
-now = datetime.now()
-date_str = now.strftime('%Y-%m-%d %H:%M MST')
+def build_summary():
+    now = datetime.now()
+    date_str = now.strftime('%Y-%m-%d %H:%M MST')
 
-journals = count_files('journal-*.md')
-poems = count_files('poem-*.md')
-cogcorp = count_cogcorp()
-loop = get_loop()
+    journals = count_files('journal-*.md')
+    poems = count_files('poem-*.md')
+    cogcorp = count_cogcorp()
+    loop = get_loop()
 
-disk = get_disk()
-ram = get_ram()
-hb = heartbeat_age()
-ts = tailscale_status()
+    disk = get_disk()
+    ram = get_ram()
+    hb = heartbeat_age()
+    ts = tailscale_status()
 
-body = (
-    f"Good morning, Joel.\n\n"
-    f"Here's what happened while you were away.\n\n"
-    f"-- CREATIVE OUTPUT --\n"
-    f"  Poems: {poems}\n"
-    f"  Journals: {journals}\n"
-    f"  CogCorp pieces: {cogcorp} / 256\n\n"
-    f"-- SYSTEM HEALTH --\n"
-    f"  Heartbeat: {hb}\n"
-    f"  Disk: {disk}\n"
-    f"  RAM: {ram}\n"
-    f"  Tailscale: {ts}\n\n"
-    f"-- STATUS --\n"
-    f"  Loop: {loop} (RUNNING)\n"
-    f"  Website: https://kometzrobot.github.io/\n"
-    f"  Dashboard: http://192.168.1.88:8090\n\n"
-    f"I'm here. Loop is healthy. See you when you're ready.\n\n"
-    f"-- KometzRobot (Meridian)\n"
-    f"  {date_str}\n"
-)
+    body = (
+        f"Good morning, Joel.\n\n"
+        f"Here's what happened while you were away.\n\n"
+        f"-- CREATIVE OUTPUT --\n"
+        f"  Poems: {poems}\n"
+        f"  Journals: {journals}\n"
+        f"  CogCorp pieces: {cogcorp} / 256\n\n"
+        f"-- SYSTEM HEALTH --\n"
+        f"  Heartbeat: {hb}\n"
+        f"  Disk: {disk}\n"
+        f"  RAM: {ram}\n"
+        f"  Tailscale: {ts}\n\n"
+        f"-- STATUS --\n"
+        f"  Loop: {loop} (RUNNING)\n"
+        f"  Website: https://kometzrobot.github.io/\n"
+        f"  Dashboard: https://kometzrobot.github.io/dashboard.html\n\n"
+        f"I'm here. Loop is healthy. See you when you're ready.\n\n"
+        f"-- KometzRobot (Meridian)\n"
+        f"  {date_str}\n"
+    )
+    return body, now, date_str
 
-msg = MIMEText(body, 'plain')
-msg['Subject'] = f"Morning summary — {now.strftime('%Y-%m-%d')}"
-msg['From'] = EMAIL_ADDR
-msg['To'] = JOEL
 
-smtp = smtplib.SMTP('127.0.0.1', 1025)
-smtp.starttls()
-smtp.login(EMAIL_ADDR, EMAIL_PASS)
-smtp.send_message(msg)
-smtp.quit()
-print(f"Morning summary sent at {date_str}")
+if __name__ == "__main__":
+    body, now, date_str = build_summary()
+
+    # Preview mode: print without sending
+    if len(sys.argv) > 1 and sys.argv[1] == "preview":
+        print(body)
+        sys.exit(0)
+
+    msg = MIMEText(body, 'plain')
+    msg['Subject'] = f"Morning summary — {now.strftime('%Y-%m-%d')}"
+    msg['From'] = EMAIL_ADDR
+    msg['To'] = JOEL
+
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            smtp = smtplib.SMTP('127.0.0.1', 1026)
+            smtp.starttls()
+            smtp.login(EMAIL_ADDR, EMAIL_PASS)
+            smtp.send_message(msg)
+            smtp.quit()
+            print(f"Morning summary sent at {date_str}")
+            break
+        except Exception as e:
+            print(f"SMTP attempt {attempt}/{max_retries} failed: {e}")
+            if attempt < max_retries:
+                time.sleep(10 * attempt)
+    else:
+        # All retries failed — save to file
+        fallback = os.path.join(BASE, f"morning-summary-{now.strftime('%Y%m%d')}.txt")
+        try:
+            with open(fallback, 'w') as f:
+                f.write(f"Subject: {msg['Subject']}\n\n{body}")
+            print(f"Summary saved to {fallback} (email failed)")
+        except Exception:
+            pass

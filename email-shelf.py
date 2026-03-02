@@ -27,7 +27,7 @@ except Exception:
 
 DB_PATH = "/home/joel/autonomous-ai/email-shelf.db"
 IMAP_HOST = "127.0.0.1"
-IMAP_PORT = 1143
+IMAP_PORT = 1144
 EMAIL_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
 EMAIL_PASS = os.environ.get("CRED_PASS", "")
 
