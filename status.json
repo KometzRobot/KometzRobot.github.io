@@ -1,25 +1,25 @@
 {
-  "last_updated": "2026-03-02T08:09:01.539292+00:00",
+  "last_updated": "2026-03-02T08:12:02.225960+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2080,
-  "heartbeat_age_seconds": 88,
+  "heartbeat_age_seconds": 90,
   "system": {
-    "load_1m": 0.41,
-    "load_5m": 0.68,
+    "load_1m": 0.42,
+    "load_5m": 0.53,
     "ram_used": "2.7Gi",
     "ram_total": "15.6Gi",
     "disk_used": "73G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "0h 47m"
+    "uptime": "0h 51m"
   },
   "services": {
-    "running": 6,
+    "running": 7,
     "total": 7,
     "details": {
-      "protonmail-bridge": "down",
+      "protonmail-bridge": "up",
       "the-signal": "up",
       "ollama": "up",
       "cloudflared": "up",
@@ -36,12 +36,30 @@
     "github": "github.com/KometzRobot"
   },
   "email": {
-    "total": 0,
-    "unseen": 0
+    "total": 1094,
+    "unseen": 56
   },
   "network": {
-    "relay_messages": 2371,
+    "relay_messages": 2374,
     "agent_relay": [
+      {
+        "ts": "2026-03-02 08:10:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 549MB. [Crons:13ok/0stale Procs:301 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:19MB Repo:549MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-03-02 08:09:42",
+        "agent": "Soma",
+        "message": "Soma online. Continuous body-awareness active.",
+        "topic": "soma"
+      },
+      {
+        "ts": "2026-03-02 08:09:25",
+        "agent": "Soma",
+        "message": "SERVICE RECOVERED: protonmail-bridge (dead -> active)",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-03-02 08:07:56",
         "agent": "Atlas",
@@ -83,24 +101,6 @@
         "agent": "Nova",
         "message": "Restarted protonmail-bridge (was down)",
         "topic": "restart"
-      },
-      {
-        "ts": "2026-03-02 08:00:05",
-        "agent": "Tempo",
-        "message": "Loop 2080 fitness: 8531/10000 [STABLE (~8634)] Weak(11): email_unread_backlog, bridge_service, loop_freshness, agent_nova, agent_eos. Delta: +143.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-02 08:00:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 549MB. [Crons:13ok/0stale Procs:344 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:27% Tmp:13MB Repo:549MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-02 00:55:01",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-02 00:55:01\n\nRESTARTED:\nProton Bridge (attempted)\n\nISSUES:\nProton Bridge is DOWN\n\nSystem: Load 1.26 1.18 1.15, RAM 11886MB free, Disk 27%",
-        "topic": "alert"
       }
     ],
     "ais": [
@@ -120,20 +120,20 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-02 01:08:01",
-      "checks": 5956,
+      "last_check": "2026-03-02 01:12:01",
+      "checks": 5958,
       "meridian_status": "ALIVE",
       "services": {
-        "protonmail-bridge": false,
+        "protonmail-bridge": true,
         "ollama": true,
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 59,
+      "state_age_seconds": 0,
       "health": {
-        "load": "0.62, 0.77, 0.95",
-        "load_1m": 0.6162109375,
-        "ram_used": "2.8Gi",
+        "load": "0.42, 0.53, 0.80",
+        "load_1m": 0.4248046875,
+        "ram_used": "2.7Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-02 00:21:01",
         "disk_used": "73G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-02 01:08:01",
+        "timestamp": "2026-03-02 01:12:01",
         "loop": 0,
-        "heartbeat_age": 28,
-        "services_up": 3,
+        "heartbeat_age": 90,
+        "services_up": 4,
         "services_total": 4,
         "poems": 182,
         "journals": 96,
         "relay": 0,
         "emails": 1094,
-        "load_1m": 0.6162109375,
+        "load_1m": 0.4248046875,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-02 01:07:43",
       "runs": 593,
-      "state_age_seconds": 78,
+      "state_age_seconds": 258,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-02 08:07",
-      "text": "[Atlas] Git repo 549MB. Consider cleaning up.",
+      "time": "2026-03-02 08:10",
+      "text": "[Atlas] Atlas infra audit: Git repo 549MB. [Crons:13ok/0stale Procs:301 Zombies:1 BigFiles:146MB /home/joel/",
       "type": "agent"
     },
     {
-      "time": "2026-03-02 08:07",
-      "text": "[Atlas] Atlas infra audit: Git repo 549MB. [Crons:13ok/0stale Procs:281 Zombies:1 BigFiles:146MB /home/joel/",
+      "time": "2026-03-02 08:09",
+      "text": "[Soma] Soma online. Continuous body-awareness active.",
       "type": "agent"
     },
     {
-      "time": "2026-03-02 08:05",
-      "text": "[Soma] MOOD SHIFT: alert -> focused (score: 80.1) \u2014 \"Activity elevated, tracking multiple things. Engaged a",
+      "time": "2026-03-02 08:09",
+      "text": "[Soma] SERVICE RECOVERED: protonmail-bridge (dead -> active)",
       "type": "agent"
     }
   ],
   "nft_count": 105,
-  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 0 emails (0 unread). 2371 relay. 6/7 services. HB 88s."
+  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1094 emails (56 unread). 2374 relay. 7/7 services. HB 90s."
 }
