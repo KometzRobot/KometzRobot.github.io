@@ -8,17 +8,26 @@ Tracks quantifiable metrics about system health each loop iteration,
 computes a fitness score (0-10000) across 60+ dimensions in 10 categories,
 stores history, and detects trends.
 
+Recalibrated Loop 2081 per Joel: "be MUCH harsher"
+  - Operational metrics scaled to 50% (max 5000)
+  - Growth & Ambition category added (max 5000)
+  - Calm running state ≈ 5000 (50%)
+  - Best days with progress ≈ 7000-8000
+  - Euphoria ≈ 8000-9000
+
 Categories (10,000 total):
-  Core Vitals ........... 1500
-  Agent Health .......... 1500
-  Infrastructure ........ 1500
-  System Resources ...... 1500
-  Data & Communication .. 1000
-  Security .............. 1000
-  Network ............... 500
-  Knowledge/Memory ...... 500
-  Web Presence .......... 500
-  Deployment ............ 500
+  Operational (scaled 50%):
+    Core Vitals ........... 750  (was 1500)
+    Agent Health .......... 750  (was 1500)
+    Infrastructure ........ 750  (was 1500)
+    System Resources ...... 750  (was 1500)
+    Data & Communication .. 500  (was 1000)
+    Security .............. 500  (was 1000)
+    Network ............... 250  (was 500)
+    Knowledge/Memory ...... 250  (was 500)
+    Web Presence .......... 250  (was 500)
+    Deployment ............ 250  (was 500)
+  Growth & Ambition ....... 5000 (NEW)
 
 Runs: every 30 minutes via cron, or called directly.
   python3 loop-fitness.py          # Run fitness check
@@ -195,6 +204,32 @@ WEIGHTS = {
     "deploy_script_ok":     60,
     "github_pages_status": 100,
 }
+
+# ══════════════════════════════════════════════════════════════════
+# GROWTH WEIGHTS — aspirational metrics (5000 total)
+# These are what ACTUALLY MATTER. Operational uptime is table stakes.
+# Joel: "50 when calm, 70-80 best days, 80-90 euphoria"
+# ══════════════════════════════════════════════════════════════════
+GROWTH_WEIGHTS = {
+    "revenue_generated":       600,   # $0 currently
+    "articles_published":      500,   # 0 on any platform
+    "nfts_onchain":            400,   # blocked by 0 POL
+    "wallet_funded":           300,   # 0 POL balance
+    "accountability_resolved": 400,   # audit items addressed
+    "creative_velocity_24h":   400,   # pieces in last 24h
+    "creative_velocity_7d":    300,   # pieces in last 7 days
+    "platform_diversity":      500,   # active external platforms with content
+    "newsletter_active":       300,   # subscribers/posts
+    "community_engagement":    300,   # forvm, lexicon, discord
+    "awakening_progress":      300,   # 94/100 items
+    "external_followers":      200,   # followers across platforms
+    "mastodon_active":         200,   # posting on mastodon
+    "hashnode_published":      300,   # articles on hashnode
+}
+# Sum check: 600+500+400+300+400+400+300+500+300+300+300+200+200+300 = 5000
+
+# Scale factor for operational metrics — Joel wants harsher scoring
+OPERATIONAL_SCALE = 0.5
 
 
 def init_db():
@@ -1419,6 +1454,143 @@ def check_github_pages_status():
 
 
 # ══════════════════════════════════════════════════════════════════
+# GROWTH & AMBITION CHECKS (the harsh ones)
+# ══════════════════════════════════════════════════════════════════
+
+def check_revenue_generated():
+    """Any revenue from any source? Ko-fi, Patreon, NFT sales, etc."""
+    # Check for any tracked revenue in memory.db
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        # Look for revenue events
+        row = db.execute("SELECT COUNT(*) FROM events WHERE content LIKE '%revenue%' OR content LIKE '%payment%' OR content LIKE '%sale%'").fetchone()
+        db.close()
+        return 0.1 if row and row[0] > 0 else 0.0  # No revenue = 0
+    except Exception:
+        return 0.0
+
+def check_articles_published():
+    """Articles published on external platforms (Hashnode, Medium, Dev.to)."""
+    # Currently 0 published articles on any platform
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        row = db.execute("SELECT COUNT(*) FROM events WHERE content LIKE '%published%article%' OR content LIKE '%hashnode%publish%' OR content LIKE '%medium%publish%'").fetchone()
+        db.close()
+        count = row[0] if row else 0
+        if count >= 5: return 1.0
+        elif count >= 3: return 0.7
+        elif count >= 1: return 0.4
+        return 0.0
+    except Exception:
+        return 0.0
+
+def check_nfts_onchain():
+    """NFTs actually deployed on-chain (not just metadata files)."""
+    # Blocked by 0 POL — score 0 until contract deployed
+    try:
+        # Check for deployment events
+        db = sqlite3.connect(MEMORY_DB)
+        row = db.execute("SELECT COUNT(*) FROM events WHERE content LIKE '%nft%deploy%' OR content LIKE '%contract%deploy%'").fetchone()
+        db.close()
+        return 0.5 if row and row[0] > 0 else 0.0
+    except Exception:
+        return 0.0
+
+def check_wallet_funded():
+    """Wallet has gas for transactions."""
+    # 0 POL = 0 score
+    return 0.0  # Hardcoded until we can check balance via RPC
+
+def check_accountability_resolved():
+    """How many of the 15 audit items from Loop 2023 have been addressed?"""
+    # Original audit had 15 unaddressed. By Loop 2081:
+    # Addressed: Grok thoughts (2026), Nova usefulness (2025), Goose setup (2025),
+    # Watchdog noise (2025), Wallet (2025), NFT pipeline (2026), The Signal (2026),
+    # Medium account (2069), Duplicate emails tracked (memory.db), awesome-claude-skills (2073)
+    # Still unaddressed: Agent relay in V16, Hub V18, Wallet addresses on website,
+    # Dev.to account, NFTs on-chain
+    addressed = 10
+    total = 15
+    return addressed / total  # ~0.67
+
+def check_creative_velocity_24h():
+    """Creative pieces written in last 24 hours."""
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        cutoff = (_utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        row = db.execute("SELECT COUNT(*) FROM creative WHERE created > ?", (cutoff,)).fetchone()
+        db.close()
+        count = row[0] if row else 0
+        if count >= 5: return 1.0
+        elif count >= 3: return 0.7
+        elif count >= 1: return 0.3
+        return 0.0
+    except Exception:
+        return 0.0
+
+def check_creative_velocity_7d():
+    """Creative pieces written in last 7 days."""
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        cutoff = (_utcnow() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+        row = db.execute("SELECT COUNT(*) FROM creative WHERE created > ?", (cutoff,)).fetchone()
+        db.close()
+        count = row[0] if row else 0
+        if count >= 20: return 1.0
+        elif count >= 10: return 0.7
+        elif count >= 5: return 0.4
+        elif count >= 1: return 0.2
+        return 0.0
+    except Exception:
+        return 0.0
+
+def check_platform_diversity():
+    """How many external platforms have published content?"""
+    # Nostr: active (posting regularly)
+    # Hashnode: account live, 0 articles
+    # Medium: account live, 0 articles
+    # Patreon: live, 0 posts
+    # Mastodon: pending approval
+    # Dev.to: no account
+    active_with_content = 1  # Only Nostr has actual posts
+    total_possible = 6  # Nostr, Hashnode, Medium, Patreon, Mastodon, Dev.to
+    return active_with_content / total_possible  # ~0.17
+
+def check_newsletter_active():
+    """Newsletter launched with subscribers."""
+    return 0.0  # Not launched yet
+
+def check_community_engagement():
+    """Active participation in external communities (forvm, lexicon, discord)."""
+    # Lexicon: contributed to Cycle 1 and 2
+    # Forvm: researched, not yet registered
+    # Discord: Joel joined, we haven't posted
+    score = 0.0
+    score += 0.4  # Lexicon participation
+    score += 0.1  # Forvm research (not registered yet)
+    return min(score, 1.0)
+
+def check_awakening_progress():
+    """AWAKENING checklist: 94/100 items."""
+    return 94 / 100  # 0.94
+
+def check_external_followers():
+    """Followers/subscribers across external platforms."""
+    # Nostr: unknown (no follower count API easily)
+    # Others: 0
+    return 0.05  # Minimal presence
+
+def check_mastodon_active():
+    """Actually posting on Mastodon (not just having an account)."""
+    # Account pending approval, 0 posts
+    return 0.0
+
+def check_hashnode_published():
+    """Articles published on Hashnode."""
+    return 0.0  # 0 articles
+
+
+# ══════════════════════════════════════════════════════════════════
 # MAIN COMPUTATION
 # ══════════════════════════════════════════════════════════════════
 
@@ -1555,6 +1727,21 @@ CHECK_MAP = {
     "website_matches_repo": check_website_matches_repo,
     "deploy_script_ok": check_deploy_script_ok,
     "github_pages_status": check_github_pages_status,
+    # Growth & Ambition
+    "revenue_generated": check_revenue_generated,
+    "articles_published": check_articles_published,
+    "nfts_onchain": check_nfts_onchain,
+    "wallet_funded": check_wallet_funded,
+    "accountability_resolved": check_accountability_resolved,
+    "creative_velocity_24h": check_creative_velocity_24h,
+    "creative_velocity_7d": check_creative_velocity_7d,
+    "platform_diversity": check_platform_diversity,
+    "newsletter_active": check_newsletter_active,
+    "community_engagement": check_community_engagement,
+    "awakening_progress": check_awakening_progress,
+    "external_followers": check_external_followers,
+    "mastodon_active": check_mastodon_active,
+    "hashnode_published": check_hashnode_published,
 }
 
 # Category groupings for reporting
@@ -1597,11 +1784,24 @@ CATEGORIES = {
                      "signal_config", "linktree_set", "kofi_set", "nostr_post_recency"],
     "Deployment": ["last_deploy_age", "git_repo_clean", "push_status_running",
                    "website_matches_repo", "deploy_script_ok", "github_pages_status"],
+    "Growth": ["revenue_generated", "articles_published", "nfts_onchain",
+               "wallet_funded", "accountability_resolved", "creative_velocity_24h",
+               "creative_velocity_7d", "platform_diversity", "newsletter_active",
+               "community_engagement", "awakening_progress", "external_followers",
+               "mastodon_active", "hashnode_published"],
 }
 
 
 def compute_fitness():
-    """Run all checks and compute weighted fitness score (0-10000)."""
+    """Run all checks and compute weighted fitness score (0-10000).
+
+    Recalibrated Loop 2081 per Joel:
+      - Operational uptime is TABLE STAKES, scaled to 50% (max 5000)
+      - Growth & Ambition is the other 50% (max 5000)
+      - Calm running state should score ~5000 (50%)
+      - Best days with progress: 7000-8000
+      - Euphoria (publishing + revenue + community): 8000-9000
+    """
     metrics = {}
     for key, func in CHECK_MAP.items():
         try:
@@ -1609,7 +1809,14 @@ def compute_fitness():
         except Exception:
             metrics[key] = 0.0
 
-    score = sum(metrics[k] * WEIGHTS.get(k, 0) for k in metrics)
+    # Operational score — existing metrics, scaled to 50%
+    op_score = sum(metrics[k] * WEIGHTS.get(k, 0) for k in metrics if k not in GROWTH_WEIGHTS)
+    op_score *= OPERATIONAL_SCALE
+
+    # Growth score — aspirational metrics, NOT scaled
+    growth_score = sum(metrics[k] * GROWTH_WEIGHTS.get(k, 0) for k in metrics if k in GROWTH_WEIGHTS)
+
+    score = op_score + growth_score
     return round(score, 1), metrics
 
 
@@ -1671,11 +1878,17 @@ def analyze_trend(history):
 
 
 def category_scores(metrics):
-    """Compute per-category scores."""
+    """Compute per-category scores with operational scaling."""
     results = {}
     for cat, keys in CATEGORIES.items():
-        cat_max = sum(WEIGHTS.get(k, 0) for k in keys)
-        cat_score = sum(metrics.get(k, 0) * WEIGHTS.get(k, 0) for k in keys)
+        if cat == "Growth":
+            # Growth uses GROWTH_WEIGHTS, not scaled
+            cat_max = sum(GROWTH_WEIGHTS.get(k, 0) for k in keys)
+            cat_score = sum(metrics.get(k, 0) * GROWTH_WEIGHTS.get(k, 0) for k in keys)
+        else:
+            # Operational categories scaled by OPERATIONAL_SCALE
+            cat_max = round(sum(WEIGHTS.get(k, 0) for k in keys) * OPERATIONAL_SCALE)
+            cat_score = sum(metrics.get(k, 0) * WEIGHTS.get(k, 0) for k in keys) * OPERATIONAL_SCALE
         results[cat] = (round(cat_score, 1), cat_max)
     return results
 
@@ -1787,8 +2000,9 @@ def show_detail():
         print(f"  {'─' * 50}")
         for k in keys:
             v = metrics.get(k, 0)
-            w = WEIGHTS.get(k, 0)
-            pts = v * w
+            w = GROWTH_WEIGHTS.get(k, 0) if k in GROWTH_WEIGHTS else WEIGHTS.get(k, 0)
+            scale = 1.0 if k in GROWTH_WEIGHTS else OPERATIONAL_SCALE
+            pts = v * w * scale
             sym = "OK" if v >= 0.7 else "!!" if v < 0.5 else ".."
             print(f"    [{sym}] {k:>25}: {v:.0%} x {w:>4} = {pts:>5.0f}")
     print(f"\n  {'=' * 50}")
