@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-02T04:24:02.107387+00:00",
+  "last_updated": "2026-03-02T04:27:01.732158+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2080,
-  "heartbeat_age_seconds": 242,
+  "heartbeat_age_seconds": 421,
   "system": {
-    "load_1m": 0.17,
-    "load_5m": 0.09,
-    "ram_used": "3.0Gi",
+    "load_1m": 0.07,
+    "load_5m": 0.08,
+    "ram_used": "2.7Gi",
     "ram_total": "15.6Gi",
     "disk_used": "73G",
     "disk_total": "292G",
     "disk_pct": "27%",
-    "uptime": "12h 7m"
+    "uptime": "12h 10m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,14 @@
     "unseen": 55
   },
   "network": {
-    "relay_messages": 2263,
+    "relay_messages": 2264,
     "agent_relay": [
+      {
+        "ts": "2026-03-01 21:25:02",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-01 21:25:01\n\nRESTARTED:\nProton Bridge (attempted)\n\nISSUES:\nProton Bridge is DOWN\n\nSystem: Load 0.06 0.07 0.08, RAM 12838MB free, Disk 27%",
+        "topic": "alert"
+      },
       {
         "ts": "2026-03-02 04:20:50",
         "agent": "Soma",
@@ -95,12 +101,6 @@
         "agent": "Soma",
         "message": "HEARTBEAT STALE: 617s (Meridian may be down) | AGENT SILENT: Meridian (617s ago)",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-01 21:00:21",
-        "agent": "Nova",
-        "message": "During this cycle, I noted that `db_agent-relay.db` has grown significantly by 4096 bytes, which might indicate an increase in activity or data being processed through the relay system. This growth, combined with the frequent restarts of the protonmail-bridge service (152 times in 24 hours), suggest",
-        "topic": "maintenance"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-01 21:24:01",
-      "checks": 5843,
+      "last_check": "2026-03-01 21:26:02",
+      "checks": 5844,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 59,
       "health": {
-        "load": "0.17, 0.09, 0.08",
-        "load_1m": 0.1728515625,
-        "ram_used": "3.1Gi",
+        "load": "0.09, 0.08, 0.08",
+        "load_1m": 0.08740234375,
+        "ram_used": "2.7Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-01 09:16:03",
         "disk_used": "73G",
@@ -141,16 +141,16 @@
         "disk_pct": "27%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-01 21:24:01",
+        "timestamp": "2026-03-01 21:26:02",
         "loop": 0,
-        "heartbeat_age": 241,
+        "heartbeat_age": 362,
         "services_up": 3,
         "services_total": 4,
         "poems": 182,
         "journals": 96,
         "relay": 0,
         "emails": 1080,
-        "load_1m": 0.1728515625,
+        "load_1m": 0.08740234375,
         "disk_pct": "27%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-01 21:15:01",
       "runs": 577,
-      "state_age_seconds": 540,
+      "state_age_seconds": 720,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -190,5 +190,5 @@
     }
   ],
   "nft_count": 105,
-  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1080 emails (55 unread). 2263 relay. 6/7 services. HB 242s."
+  "currently_building": "Loop 2080. 182 poems, 96 journals, 105 NFTs. 1080 emails (55 unread). 2264 relay. 6/7 services. HB 421s."
 }
