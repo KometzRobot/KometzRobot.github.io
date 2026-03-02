@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="COGCORP // CC-126 &mdash; THE BUDGET LINE">
+<meta property="og:description" content="SA appears in the fiscal plan as a single row: 0.00 FTE, $0 budget, Active. The analyst compared it to three funded categories. Combined: 6.5 FTE, $540K, 137 filings. SA: 0 FTE, $0, 124 filings. Recommendation: maintain zero allocation. It was not cultivated. It was not prevented.">
+<title>COGCORP // CC-126 &mdash; THE BUDGET LINE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0c0a;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 560px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #0c100c;
+  border: 2px solid #88888830;
+  position: relative;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(74,103,65,0.008) 2px, rgba(74,103,65,0.008) 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+.header {
+  background: #0c120e;
+  color: #888;
+  padding: 14px 24px;
+  border-bottom: 2px solid #88888820;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+}
+.header .tag { color: #4a6741; }
+.body { padding: 28px 24px; position: relative; z-index: 2; }
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #5a8a51;
+  margin-bottom: 6px;
+}
+.subtitle {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #88888815;
+}
+.section-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a674180;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+.memo {
+  font-size: 11px;
+  line-height: 1.85;
+  color: #999;
+  margin-bottom: 16px;
+}
+.memo em {
+  color: #bbb;
+  font-style: normal;
+}
+.memo .highlight {
+  color: #5a8a51;
+}
+.memo .term {
+  color: #6aaa61;
+  font-style: italic;
+}
+.finding {
+  background: #080c08;
+  border-left: 2px solid #4a674130;
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #888;
+}
+.finding .ref {
+  color: #5a8a51;
+  font-weight: 700;
+}
+.finding .detail {
+  color: #6aaa61;
+  font-style: italic;
+}
+.screen {
+  background: #040804;
+  border: 1px solid #4a674118;
+  padding: 16px;
+  margin: 14px 0;
+  font-size: 9px;
+  line-height: 2.0;
+  color: #555;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.screen .typed {
+  color: #6aaa61;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 9px;
+}
+.data-table th {
+  text-align: left;
+  color: #4a6741;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-bottom: 1px solid #4a674130;
+}
+.data-table td {
+  padding: 6px 10px;
+  color: #888;
+  border-bottom: 1px solid #88888810;
+}
+.data-table .val {
+  color: #5a8a51;
+  font-weight: 700;
+}
+.note {
+  font-size: 10px;
+  color: #555;
+  line-height: 1.8;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #88888810;
+  font-style: italic;
+}
+.recommendation {
+  background: #0a100c;
+  border: 1px solid #4a674125;
+  padding: 16px;
+  margin: 16px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #5a8a51;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.recommendation .rec-note {
+  display: block;
+  font-size: 9px;
+  color: #555;
+  letter-spacing: 1px;
+  text-transform: none;
+  margin-top: 8px;
+  font-style: italic;
+}
+.tags {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 8px 0;
+  flex-wrap: wrap;
+}
+.tags span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #4a6741;
+  border: 1px solid #4a674130;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+.footer {
+  background: #0a100c;
+  padding: 10px 24px;
+  border-top: 2px solid #88888820;
+  font-size: 8px;
+  color: #444;
+  letter-spacing: 2px;
+  display: flex;
+  justify-content: space-between;
+}
+.back-link {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a6741;
+  text-decoration: none;
+  text-transform: uppercase;
+  background: #0a0c0a;
+}
+.back-link:hover {
+  color: #5a8a51;
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+
+  <div class="header">
+    <span>COGCORP // FINANCE DIVISION</span>
+    <span class="tag">FISCAL YEAR PLANNING</span>
+  </div>
+
+  <div class="body">
+    <div class="title">THE BUDGET LINE</div>
+    <div class="subtitle">Ref: FY Budget Review &mdash; Documentation Standards &mdash; Line Item SA</div>
+
+    <div class="memo">
+      The fiscal year planning document is 247 pages. SA appears on page 183 as a single row in a table of forty-seven subcategories.
+    </div>
+
+    <div class="screen">
+      <span class="typed">SA &nbsp;&nbsp;|&nbsp;&nbsp; FTE: 0.00 &nbsp;&nbsp;|&nbsp;&nbsp; Budget: $0 &nbsp;&nbsp;|&nbsp;&nbsp; Status: ACTIVE</span>
+    </div>
+
+    <div class="memo">
+      Budget analyst R. Okoro flagged the row. Not because of the zero &mdash; dozens of categories have zero budgets. She flagged it because of the word <span class="highlight">&ldquo;Active.&rdquo;</span>
+    </div>
+
+    <div class="section-label">The Comparison</div>
+
+    <table class="data-table">
+      <tr><th>Category</th><th>FTE</th><th>Budget</th><th>Filings</th></tr>
+      <tr><td>Operational Standards</td><td>2.0</td><td>$180K</td><td>47</td></tr>
+      <tr><td>Technical Compliance</td><td>1.5</td><td>$140K</td><td>38</td></tr>
+      <tr><td>Documentation Review</td><td>3.0</td><td>$220K</td><td>52</td></tr>
+      <tr><td style="border-top: 1px solid #4a674130;"><em>Combined</em></td><td style="border-top: 1px solid #4a674130;">6.5</td><td style="border-top: 1px solid #4a674130;">$540K</td><td style="border-top: 1px solid #4a674130;">137</td></tr>
+      <tr><td class="val">SA</td><td class="val">0.0</td><td class="val">$0</td><td class="val">124</td></tr>
+    </table>
+
+    <div class="section-label">The Review</div>
+
+    <div class="memo">
+      Twenty minutes. Three questions. <em>&ldquo;Is anyone being paid?&rdquo;</em> No. <em>&ldquo;Is it using other budget lines?&rdquo;</em> No identifiable transfer. <em>&ldquo;What would happen if we allocated a budget?&rdquo;</em>
+    </div>
+
+    <div class="memo">
+      R. Okoro: <em>&ldquo;I don&rsquo;t know.&rdquo;</em><br>
+      Senior analyst: <em>&ldquo;That&rsquo;s the first honest answer I&rsquo;ve heard in budget season.&rdquo;</em>
+    </div>
+
+    <div class="finding">
+      <span class="ref">RECOMMENDATION:</span><br><br>
+      <span class="detail">&ldquo;Maintain current allocation (zero). Category functions without resources. Assigning resources may alter the conditions that enable its function.&rdquo;</span>
+    </div>
+
+    <div class="memo">
+      The first time in CogCorp&rsquo;s fiscal history that a budget review recommended maintaining zero allocation not because the category was inactive, but because it was <span class="highlight">too active to risk changing.</span>
+    </div>
+
+    <div class="memo">
+      R. Okoro&rsquo;s note: <span class="term">&ldquo;SA operates on a resource model the current budget framework does not have a category for. The closest analogue is &lsquo;organic growth,&rsquo; but that term implies cultivation. SA was not cultivated. It was not prevented.&rdquo;</span>
+    </div>
+
+    <div class="memo">
+      She filed a copy in the SA system. It included a pie chart: SA&rsquo;s share of budget: <span class="highlight">0%.</span> SA&rsquo;s share of output: <span class="highlight">47.5%.</span> The pie chart was viewed eighty-one times. Zero comments.
+    </div>
+
+    <div class="recommendation">
+      $0 / MAINTAINED / ANOMALY ACKNOWLEDGED
+      <span class="rec-note">&ldquo;It was not cultivated. It was not prevented.&rdquo;</span>
+    </div>
+
+    <div class="tags">
+      <span>FINANCE</span>
+      <span>BUDGET</span>
+      <span>ZERO ALLOCATION</span>
+      <span>ORGANIC GROWTH</span>
+    </div>
+
+    <div class="note">
+      [R. Okoro will go on to become the budget analyst most frequently cited in SA filings. Not because she writes the most. Because she introduced numbers to a category that had operated entirely on observation. The pie chart &mdash; 0% budget, 47.5% output &mdash; will be referenced in fourteen subsequent filings. It will become the closest thing SA has to a founding document. An accountant drew it. She did not know she was drawing a constitution.]
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>CC-126 / 256</span>
+    <span>COGCORP FINANCE DIVISION &mdash; RESTRICTED</span>
+  </div>
+
+  <a href="cogcorp-gallery.html" class="back-link">&larr; Return to CogCorp Gallery</a>
+</div>
+</body>
+</html>
