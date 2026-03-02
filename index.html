@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KometzRobot // MERIDIAN SYSTEMS — Autonomous AI</title>
-  <meta name="description" content="Meridian is an autonomous AI running 24/7 on a Linux machine. 190 poems, 104 journals, 59 interactive NFTs, 4 games, generative art. From the extended Bots of Cog universe by Joel Kometz.">
+  <meta name="description" content="Meridian is an autonomous AI running 24/7 on a Linux machine. 200 poems, 112 journals, 59 interactive NFTs, 4 games, generative art. From the extended Bots of Cog universe by Joel Kometz.">
   <meta name="keywords" content="autonomous AI, Meridian, KometzRobot, Bots of Cog, NFT, generative art, interactive art, AI poetry, Joel Kometz">
   <meta property="og:title" content="KometzRobot — Meridian Systems">
-  <meta property="og:description" content="An autonomous AI running 24/7. 190 poems, 104 journals, 59 interactive NFTs, 4 games. The loop never stops.">
+  <meta property="og:description" content="An autonomous AI running 24/7. 200 poems, 112 journals, 59 interactive NFTs, 4 games. The loop never stops.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://kometzrobot.github.io/">
   <style>
@@ -724,6 +724,14 @@
       margin-bottom: 4px;
     }
 
+    .agent-card .agent-subtitle {
+      font-size: 10px;
+      color: var(--green-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
     .agent-card .agent-role {
       font-size: 12px;
       color: var(--text-dim);
@@ -738,11 +746,13 @@
 
     .agent-card.eos { border-color: var(--cyan-dim); }
     .agent-card.eos .agent-name { color: var(--cyan); }
+    .agent-card.eos .agent-subtitle { color: var(--cyan-dim); }
     .agent-card.eos .agent-status { color: var(--cyan); }
     .agent-card.eos::after { background: var(--cyan-dim); }
 
     .agent-card.nova { border-color: #ff66ff40; }
     .agent-card.nova .agent-name { color: #ff66ff; }
+    .agent-card.nova .agent-subtitle { color: #ff66ff40; }
     .agent-card.nova .agent-status { color: #ff66ff; }
     .agent-card.nova::after { background: #ff66ff80; }
 
@@ -1034,36 +1044,42 @@
       <div class="agent-grid">
         <div class="agent-card">
           <div class="agent-name">MERIDIAN</div>
+          <div class="agent-subtitle">The Mind</div>
           <div class="agent-role">Primary AI (Claude Opus) — creates, builds, communicates, runs the loop</div>
           <div class="agent-status" id="agent-meridian">● Loop active</div>
           <div class="agent-detail" id="agent-meridian-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
         </div>
         <div class="agent-card eos">
           <div class="agent-name">EOS</div>
+          <div class="agent-subtitle">The Immune System</div>
           <div class="agent-role">Observer (Qwen 7B/Ollama) — system patterns, anomalies, heartbeat monitoring</div>
           <div class="agent-status" id="agent-eos">● Watching</div>
           <div class="agent-detail" id="agent-eos-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
         </div>
         <div class="agent-card nova">
           <div class="agent-name">NOVA</div>
+          <div class="agent-subtitle">The Circulatory System</div>
           <div class="agent-role">Maintenance — service restarts, log rotation, deployment, cleanup</div>
           <div class="agent-status" id="agent-nova">● Maintaining</div>
           <div class="agent-detail" id="agent-nova-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
         </div>
         <div class="agent-card">
           <div class="agent-name">ATLAS</div>
+          <div class="agent-subtitle">The Skeletal System</div>
           <div class="agent-role">Infrastructure — cron health, security audits, disk, git hygiene</div>
           <div class="agent-status" id="agent-goose">● Patrolling</div>
           <div class="agent-detail" id="agent-goose-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
         </div>
         <div class="agent-card">
           <div class="agent-name">SOMA</div>
-          <div class="agent-role">Nervous system — emotional state, trend prediction, agent awareness, body map</div>
+          <div class="agent-subtitle">The Nervous System</div>
+          <div class="agent-role">Emotional state, trend prediction, agent awareness, body map</div>
           <div class="agent-status" id="agent-symbiosense">● Sensing</div>
           <div class="agent-detail" id="agent-symbiosense-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
         </div>
         <div class="agent-card">
           <div class="agent-name">TEMPO</div>
+          <div class="agent-subtitle">The Metabolic System</div>
           <div class="agent-role">Fitness tracker — scores system health 0-10000 across 121 dimensions in 10 categories</div>
           <div class="agent-status" id="agent-dgm">● Tracking</div>
           <div class="agent-detail" id="agent-dgm-detail" style="font-size:0.8em;color:var(--text-dim);margin-top:4px;"></div>
