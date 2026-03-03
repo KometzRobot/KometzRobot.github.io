@@ -136,23 +136,36 @@ def get_meridian_status():
 
 
 def get_overnight_activity():
-    """Get activity entries from wake-state — recent creative output."""
-    wake = read_file(WAKE)
-    entries = []
-    in_creative = False
-    for line in wake.split('\n'):
-        if 'Creative Output' in line or 'Session' in line:
-            in_creative = True
-            continue
-        if in_creative and line.startswith('- '):
-            entries.append(line.strip('- ')[:250])
-            if len(entries) >= 8:
-                break
-        if in_creative and line.startswith('#'):
-            in_creative = False
-    if entries:
-        return "What Meridian built recently:\n" + '\n'.join(f"  - {e}" for e in entries)
-    return "No recent activity logged."
+    """Get overnight activity from relay messages + git log."""
+    lines = []
+    # Recent git commits (last 24h)
+    try:
+        r = subprocess.run(
+            ['git', '-C', BASE, 'log', '--since=24 hours ago', '--oneline', '--no-merges'],
+            capture_output=True, text=True, timeout=5)
+        commits = [l.strip() for l in r.stdout.strip().split('\n') if l.strip()]
+        if commits:
+            lines.append(f"Git commits (last 24h): {len(commits)}")
+            for c in commits[:6]:
+                lines.append(f"  - {c[:120]}")
+    except Exception:
+        pass
+    # Recent relay activity
+    try:
+        import sqlite3
+        conn = sqlite3.connect(RELAY_DB)
+        c = conn.cursor()
+        rows = c.execute("""SELECT agent, message FROM agent_messages
+                           WHERE timestamp > datetime('now', '-12 hours')
+                           ORDER BY rowid DESC LIMIT 8""").fetchall()
+        conn.close()
+        if rows:
+            lines.append(f"Agent relay (last 12h): {len(rows)} messages")
+            for agent, msg in rows[:4]:
+                lines.append(f"  - {agent}: {msg[:100]}")
+    except Exception:
+        pass
+    return '\n'.join(lines) if lines else "No recent activity logged."
 
 
 def get_pending_messages():
@@ -179,12 +192,13 @@ def get_pending_messages():
 
 
 def get_outstanding_issues():
-    """Pull outstanding issues from wake-state."""
+    """Pull outstanding issues from wake-state and recent alerts."""
+    issues = []
+    # Check wake-state for Joel's remaining requests
     wake = read_file(WAKE)
     in_issues = False
-    issues = []
     for line in wake.split('\n'):
-        if '### Outstanding Issues' in line or "### Joel's Remaining Requests" in line:
+        if "### Joel's Remaining Requests" in line or '### Outstanding Issues' in line:
             in_issues = True
             continue
         if in_issues:
@@ -192,28 +206,64 @@ def get_outstanding_issues():
                 break
             if line.startswith('- '):
                 issues.append(line.strip('- ')[:150])
+    # Also check relay for recent alerts/flags
+    try:
+        import sqlite3
+        conn = sqlite3.connect(RELAY_DB)
+        c = conn.cursor()
+        alerts = c.execute("""SELECT agent, message FROM agent_messages
+                             WHERE timestamp > datetime('now', '-24 hours')
+                             AND (message LIKE '%ALERT%' OR message LIKE '%CRITICAL%'
+                                  OR message LIKE '%DOWN%' OR message LIKE '%FAIL%')
+                             ORDER BY rowid DESC LIMIT 4""").fetchall()
+        conn.close()
+        for agent, msg in alerts:
+            issues.append(f"[{agent}] {msg[:120]}")
+    except Exception:
+        pass
     if issues:
-        return "Outstanding issues:\n" + '\n'.join(f"  - {i}" for i in issues[:6])
-    return "No outstanding issues tracked."
+        return "Outstanding items:\n" + '\n'.join(f"  - {i}" for i in issues[:8])
+    return "No outstanding issues."
+
+
+def _max_number(pattern_list):
+    """Find highest numbered file across multiple glob patterns."""
+    nums = []
+    for pat in pattern_list:
+        for f in glob.glob(pat):
+            m = re.search(r'(\d+)', os.path.basename(f))
+            if m:
+                nums.append(int(m.group(1)))
+    return max(nums) if nums else 0
 
 
 def get_creative_summary():
-    poems = sorted(glob.glob(os.path.join(BASE, "poem-*.md")), key=os.path.getmtime, reverse=True)
-    journals = sorted(glob.glob(os.path.join(BASE, "journal-*.md")), key=os.path.getmtime, reverse=True)
+    # Scan both root and creative/ subdirs for accurate counts
+    poem_patterns = [os.path.join(BASE, "poem-*.md"), os.path.join(BASE, "creative/poems/poem-*.md")]
+    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journals/journal-*.md")]
+    cogcorp_patterns = [os.path.join(BASE, "creative/cogcorp/CC-*.md")]
 
-    lines = [f"Total: {len(poems)} poems, {len(journals)} journals"]
+    poem_count = _max_number(poem_patterns)
+    journal_count = _max_number(journal_patterns)
+    cogcorp_count = _max_number(cogcorp_patterns)
 
-    # Recent (last 24 hours)
-    cutoff = time.time() - 86400
-    recent_poems = [f for f in poems if os.path.getmtime(f) > cutoff]
-    recent_journals = [f for f in journals if os.path.getmtime(f) > cutoff]
+    lines = [f"Total: {poem_count} poems, {journal_count} journals, {cogcorp_count} CogCorp"]
 
-    if recent_poems:
-        names = [os.path.basename(f) for f in recent_poems]
-        lines.append(f"Poems in last 24h: {', '.join(names)}")
-    if recent_journals:
-        names = [os.path.basename(f) for f in recent_journals]
-        lines.append(f"Journals in last 24h: {', '.join(names)}")
+    # Also check memory.db for recent creative (last 24h)
+    try:
+        import sqlite3
+        conn = sqlite3.connect(os.path.join(BASE, "memory.db"))
+        c = conn.cursor()
+        recent = c.execute("""SELECT type, number, title FROM creative
+                             WHERE created > datetime('now', '-24 hours')
+                             ORDER BY created DESC LIMIT 10""").fetchall()
+        conn.close()
+        if recent:
+            lines.append(f"Created in last 24h: {len(recent)} pieces")
+            for r in recent[:6]:
+                lines.append(f"  - {r[0].title()} {r[1]}: {r[2]}")
+    except Exception:
+        pass
 
     return '\n'.join(lines)
 
