@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-03T21:00:02.242021+00:00",
+  "last_updated": "2026-03-03T21:03:02.388073+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2092,
-  "heartbeat_age_seconds": 276,
+  "heartbeat_age_seconds": 145,
   "system": {
-    "load_1m": 1.4,
-    "load_5m": 1.41,
-    "ram_used": "3.8Gi",
+    "load_1m": 0.85,
+    "load_5m": 1.31,
+    "ram_used": "3.9Gi",
     "ram_total": "15.6Gi",
     "disk_used": "76G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "37h 39m"
+    "uptime": "37h 42m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,26 @@
     "unseen": 66
   },
   "network": {
-    "relay_messages": 3228,
+    "relay_messages": 3231,
     "agent_relay": [
+      {
+        "ts": "2026-03-03 21:00:10",
+        "agent": "Atlas",
+        "message": "Stale cron: morning-summary(197696s). Unexpected listeners: 127.0.0.1:19004,19001,19003.",
+        "topic": "Infrastructure"
+      },
+      {
+        "ts": "2026-03-03 21:00:04",
+        "agent": "Tempo",
+        "message": "Loop 2092 fitness: 5788/10000 [STABLE (~5823)] Weak(19): email_unread_backlog, loop_freshness, agent_nova, agent_eos, agent_meridian. Delta: -78.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-03 21:00:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: morning-summary(197696s). SECURITY: Unexpected listeners: 127.0.0.1:19004 127.0.0.1:19001 127.0.0.1:19003 . Git repo 587MB. [Crons:12ok/1stale Procs:312 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:115MB Repo:587MB POL:0 Link",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-03 13:50:08",
         "agent": "Eos",
@@ -83,24 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Stale crons: morning-summary(195896s). SECURITY: Unexpected listeners: 127.0.0.1:19004 127.0.0.1:19001 127.0.0.1:19003 . Git repo 587MB. GitHub unreachable (000). [Crons:12ok/1stale Procs:310 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:1",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-03 13:30:11",
-        "agent": "Eos",
-        "message": "ALERT: Eos Alert \u2014 (\"Unseen Emails Alert\", \"There are 66 unseen emails out of a total of 1259. Please review them promptly.\")",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-03 20:20:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: morning-summary(195296s). SECURITY: Unexpected listeners: 127.0.0.1:19004 127.0.0.1:19001 127.0.0.1:19003 . Git repo 587MB. [Crons:12ok/1stale Procs:298 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:114MB Repo:587MB POL:0 Link",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-03 13:15:02",
-        "agent": "Nova",
-        "message": "Run #740: Changes: db_agent-relay.db: grew by 4096.",
-        "topic": "maintenance"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-03 14:00:01",
-      "checks": 7064,
+      "last_check": "2026-03-03 14:02:01",
+      "checks": 7065,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "1.40, 1.41, 1.02",
-        "load_1m": 1.400390625,
-        "ram_used": "3.6Gi",
+        "load": "1.28, 1.46, 1.09",
+        "load_1m": 1.28173828125,
+        "ram_used": "3.9Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-02 00:21:01",
         "disk_used": "76G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-03 14:00:01",
+        "timestamp": "2026-03-03 14:02:01",
         "loop": 0,
-        "heartbeat_age": 275,
+        "heartbeat_age": 84,
         "services_up": 4,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
         "relay": 0,
         "emails": 1259,
-        "load_1m": 1.400390625,
+        "load_1m": 1.28173828125,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-03 14:00:01",
       "runs": 743,
-      "state_age_seconds": 0,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-03 20:50",
-      "text": "[Atlas] Atlas infra audit: Stale crons: morning-summary(197096s). High CPU:[pgrep](100%) /usr/bin/python3(77",
+      "time": "2026-03-03 21:00",
+      "text": "[Atlas] Stale cron: morning-summary(197696s). Unexpected listeners: 127.0.0.1:19004,19001,19003.",
       "type": "agent"
     },
     {
-      "time": "2026-03-03 20:40",
-      "text": "[Atlas] Atlas infra audit: Stale crons: morning-summary(196496s). SECURITY: Unexpected listeners: 127.0.0.1:",
+      "time": "2026-03-03 21:00",
+      "text": "[Tempo] Loop 2092 fitness: 5788/10000 [STABLE (~5823)] Weak(19): email_unread_backlog, loop_freshness, agent",
       "type": "agent"
     },
     {
-      "time": "2026-03-03 20:35",
-      "text": "[Soma] MOOD SHIFT: focused -> calm (score: 50.6) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
+      "time": "2026-03-03 21:00",
+      "text": "[Atlas] Atlas infra audit: Stale crons: morning-summary(197696s). SECURITY: Unexpected listeners: 127.0.0.1:",
       "type": "agent"
     }
   ],
   "nft_count": 192,
-  "currently_building": "Loop 2092. 254 poems, 152 journals, 192 NFTs. 1259 emails (66 unread). 3228 relay. 7/7 services. HB 276s."
+  "currently_building": "Loop 2092. 254 poems, 152 journals, 192 NFTs. 1259 emails (66 unread). 3231 relay. 7/7 services. HB 145s."
 }
