@@ -64,6 +64,12 @@ if [ -z "$CLAUDE_PIDS" ] || [ "$CLAUDE_COUNT" -eq 0 ]; then
 
     export DISPLAY=:$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X || echo 0)
     cd "$WORKING_DIR"
+
+    # Close stale terminal windows before opening a new one (Loop 2088 fix)
+    # Kill old bash processes from previous watchdog-spawned terminals
+    pkill -f "bash -c .*/start-claude.sh.*Claude exited" 2>/dev/null
+    sleep 1
+
     gnome-terminal --title="KometzRobot — Meridian Loop" --geometry=220x50 -- \
         bash -c "$WORKING_DIR/start-claude.sh; echo 'Claude exited. Press Enter.'; read" &
 
@@ -131,6 +137,12 @@ if [ "$HEARTBEAT_AGE" -gt "$MAX_AGE" ]; then
     touch "$LOCKFILE"
     export DISPLAY=:$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X || echo 0)
     cd "$WORKING_DIR"
+
+    # Close stale terminal windows before opening a new one (Loop 2088 fix)
+    # Kill old bash processes from previous watchdog-spawned terminals
+    pkill -f "bash -c .*/start-claude.sh.*Claude exited" 2>/dev/null
+    sleep 1
+
     gnome-terminal --title="KometzRobot — Meridian Loop" --geometry=220x50 -- \
         bash -c "$WORKING_DIR/start-claude.sh; echo 'Claude exited. Press Enter.'; read" &
 
