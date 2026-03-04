@@ -39,7 +39,7 @@ HEARTBEAT_FILE = os.path.join(BASE_DIR, ".heartbeat")
 WATCHDOG_STATE = os.path.join(BASE_DIR, ".eos-watchdog-state.json")
 EOS_LOG = os.path.join(BASE_DIR, "eos-observations.md")
 WAKE_STATE = os.path.join(BASE_DIR, "wake-state.md")
-RELAY_DB = os.path.join(BASE_DIR, "relay.db")
+RELAY_DB = os.path.join(BASE_DIR, "agent-relay.db")
 
 ALERT_COOLDOWN = 900  # 15 min — grace period for context resets
 HEARTBEAT_THRESHOLD = 900  # 15 min — avoids false alerts during restarts
@@ -61,7 +61,7 @@ SERVICES = {
 
 # Restart via systemd where possible; None = no auto-restart (system service handles it)
 SERVICE_RESTART = {
-    "protonmail-bridge": {"systemd": "protonmail-bridge"},
+    "protonmail-bridge": None,  # DISABLED (Loop 2094) — desktop autostart handles bridge. systemd service disabled since Loop 2073.
     "ollama": None,  # system service, auto-restarts
     "command-center": {"systemd_user": "meridian-hub-v16"},
     "the-signal": {"systemd_user": "meridian-web-dashboard"},
@@ -650,31 +650,25 @@ def main():
             remediation_log = ["  - All services already running"]
 
         if now - state.get("last_alert", 0) > ALERT_COOLDOWN:
-            alert_body = f"""Joel,
-
-This is Eos (system observer).
-
-Meridian appears to be DOWN. Heartbeat stale for {minutes} minutes.
-
-ACTIONS TAKEN:
-{chr(10).join(remediation_log)}
-
-Note: Meridian (Claude Code) likely hit context window limit and needs a fresh session. Eos cannot restart Claude Code itself — that requires the watchdog script or manual restart.
-
-System status:
-- Load: {health['load']}
-- RAM: {health['ram_used']}/{health['ram_total']}
-- Disk: {health.get('disk_pct', '?')}
-- Boot time: {health['boot_time']}
-
-Loop count at last check: {loop_count}
-Creative output: {poems} poems, {journals} journals
-Emails: {email_count}
-
-— Eos (check #{state['checks']})
-"""
-            # Email disabled — watchdog-status.sh handles Joel alerts to avoid duplicates
-            log_observation("Meridian DOWN detected. watchdog-status.sh will handle alerts.")
+            # ACTIVE REMEDIATION (Loop 2094): Trigger watchdog.sh directly instead of just logging
+            log_observation(f"Meridian DOWN ({minutes}m). Triggering watchdog.sh for auto-recovery...")
+            try:
+                watchdog_path = os.path.join(BASE_DIR, "watchdog.sh")
+                env = os.environ.copy()
+                env["DISPLAY"] = ":" + (subprocess.run(
+                    ["bash", "-c", "ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X"],
+                    capture_output=True, text=True, timeout=3
+                ).stdout.strip() or "0")
+                subprocess.Popen(
+                    ["bash", watchdog_path],
+                    env=env, cwd=BASE_DIR,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+                log_observation("watchdog.sh triggered by Eos for Claude recovery")
+                post_relay_message(f"Eos triggered watchdog.sh — Meridian heartbeat stale {minutes}m")
+            except Exception as e:
+                log_observation(f"FAILED to trigger watchdog.sh: {e}")
+            state["last_alert"] = now
 
     elif meridian_status == "ALIVE" and prev_status == "DOWN":
         log_observation(f"Meridian is BACK. Heartbeat resumed ({int(heartbeat_age)}s old). Load {health['load']}")

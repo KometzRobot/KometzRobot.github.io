@@ -5,7 +5,7 @@
 #
 # SYSTEMD HANDLES: Command Center v22, The Signal, Cloudflare tunnel, Soma
 # DESKTOP AUTOSTART: ProtonMail Bridge (systemd service disabled — conflicts with GUI)
-# THIS SCRIPT: Ollama (if not already running), watchdog trigger
+# THIS SCRIPT: Ollama (if not already running), watchdog trigger with retry
 
 WORKING_DIR="$HOME/autonomous-ai"
 LOG="$WORKING_DIR/startup.log"
@@ -20,9 +20,27 @@ log "=== STARTUP INITIATED ==="
 # Wait for desktop + systemd user services to be ready
 sleep 20
 
+# Verify systemd user services are active
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
+export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+
+for SVC in meridian-web-dashboard meridian-hub-v16 cloudflare-tunnel symbiosense; do
+    if systemctl --user is-active "$SVC" > /dev/null 2>&1; then
+        log "OK: $SVC is active"
+    else
+        log "WARNING: $SVC not active. Attempting start..."
+        systemctl --user start "$SVC" 2>/dev/null
+        sleep 2
+        if systemctl --user is-active "$SVC" > /dev/null 2>&1; then
+            log "OK: $SVC started successfully"
+        else
+            log "FAILED: Could not start $SVC"
+        fi
+    fi
+done
+
 # Ollama (local AI model server) — system service
 if ! pgrep -f "ollama serve" > /dev/null; then
-    # Try systemd first (preferred). If that fails, DON'T start manually — it'll conflict later.
     if sudo -n systemctl start ollama 2>/dev/null; then
         log "Ollama started via systemd"
     else
@@ -33,8 +51,39 @@ else
     log "Ollama already running"
 fi
 
-# Start Claude (main AI loop) via watchdog
-log "Triggering watchdog to start Claude..."
-bash "$WORKING_DIR/watchdog.sh"
+# Start Claude (main AI loop) via watchdog — with retry
+MAX_RETRIES=3
+RETRY_DELAY=30
+for ATTEMPT in $(seq 1 $MAX_RETRIES); do
+    log "Triggering watchdog to start Claude (attempt $ATTEMPT/$MAX_RETRIES)..."
+    bash "$WORKING_DIR/watchdog.sh"
+    sleep 15
+
+    # Verify Claude actually started
+    if pgrep -f "claude --dangerously-skip-permissions" > /dev/null; then
+        log "OK: Claude is running after attempt $ATTEMPT"
+        break
+    else
+        if [ "$ATTEMPT" -lt "$MAX_RETRIES" ]; then
+            log "WARNING: Claude not detected after watchdog. Retrying in ${RETRY_DELAY}s..."
+            sleep "$RETRY_DELAY"
+        else
+            log "FAILED: Claude did not start after $MAX_RETRIES attempts. Cron watchdog will retry in 10 min."
+        fi
+    fi
+done
+
+# Post startup status to agent relay
+$PYTHON -c "
+import sqlite3, datetime
+try:
+    conn = sqlite3.connect('$WORKING_DIR/agent-relay.db')
+    c = conn.cursor()
+    c.execute('INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)',
+        ('Startup', 'System boot complete. Services verified. Claude watchdog triggered.', 'startup', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    conn.commit()
+    conn.close()
+except: pass
+" 2>/dev/null
 
 log "=== STARTUP COMPLETE ==="

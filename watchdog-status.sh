@@ -81,17 +81,18 @@ else
 fi
 
 # ── Check Proton Bridge ──────────────────────────────────────────
-# Bridge managed by systemd user service (protonmail-bridge).
-# Known issue: snap can lose account after reboot. Joel must re-add via GUI.
+# Bridge systemd service is DISABLED (Loop 2073) — conflicts with desktop autostart.
+# Desktop autostart (bridge-gui) handles bridge lifecycle.
+# DO NOT restart via systemd — it causes conflicts and restart spam.
 if ! pgrep -f "protonmail-bridge" > /dev/null; then
-    log "ALERT: Proton Bridge is NOT running."
-    FAILURES="${FAILURES}Proton Bridge is DOWN\n"
-    # Try systemd restart (won't fix missing account, but starts the process)
-    export XDG_RUNTIME_DIR=/run/user/$(id -u)
-    export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
-    systemctl --user restart protonmail-bridge 2>/dev/null
-    log "Attempted Proton Bridge restart via systemd"
-    RESTARTS="${RESTARTS}Proton Bridge (attempted)\n"
+    log "INFO: Proton Bridge process not found. Desktop autostart handles it — no systemd restart."
+    # Only flag as failure if IMAP port is also unreachable (bridge truly down)
+    if ! timeout 2 bash -c 'echo > /dev/tcp/127.0.0.1/1144' 2>/dev/null; then
+        FAILURES="${FAILURES}Proton Bridge is DOWN (no process, IMAP port closed)\n"
+        log "WARNING: Bridge process missing AND IMAP port 1144 unreachable."
+    else
+        log "OK: Bridge process not visible but IMAP port 1144 responding (bridge may be running under different name)."
+    fi
 else
     log "OK: Proton Bridge is running."
 fi
