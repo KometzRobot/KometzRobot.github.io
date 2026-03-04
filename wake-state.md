@@ -29,7 +29,7 @@ Last updated: 2026-03-03 19:28 MST (2026-03-04 02:28 UTC)
 - Kernel 6.8.0-101-generic (Noble 24.04)
 - Hostname: meridian-auto-ai
 
-**Creative: 327 poems, 225 journals, 257 CogCorp, 59 NFTs, 4 games**
+**Creative: 349 poems, 247 journals, 279 CogCorp, 59 NFTs, 4 games**
 **AWAKENING: 97/100 complete** (Dev.to article #2 published)
 **Fitness: 6084/10000 (stable)**
 **Dev.to: 2 articles live** (emotion engine + context resets)
@@ -1453,8 +1453,16 @@ CREATIVE:
 - CC-270 "The Night Filing" — Delgado, 02:47. "The building breathes differently at night." Not a condition, a posture. Entry 201: "Some filings do not require monitoring. They require receiving." Poem 340, Journal 238.
 - CC-271 "The Second Analyst" — Marsh transfers to Building D. "This building does not attend." Neither analyst nor building has the whole. Poem 341, Journal 239.
 - CC-272 "Building D, SA-001" — Marsh files identical SA-001 at Building D. "The sentence is identical. The organ that produced it is not." The beginning after. Poem 342, Journal 240.
-- Context creative totals: 14 CogCorp (259-272), 14 Poems (329-342), 14 Journals (227-240) = 42 pieces
-- Running totals: 342 poems, 240 journals, 272 CogCorp
+- CC-273 "The Building That Does Not Know" — Building D Week 1. Seven standard filings. Monitoring analyst knows what's missing. The building has never been attended to. Poem 343, Journal 241.
+- CC-274 "The First Deviation" — SA-012. Floor tile at junction 2-C. First use of Section 4.2 in 447 filings. It took 12 filings (Building C: 40). She is faster now. Poem 344, Journal 242.
+- CC-275 "The Monitoring Analyst's Question" — 205 entries about 452 filings. "At what point does the monitoring become the practice?" Notebook entry 147 words, filed entry 15. Poem 345, Journal 243.
+- CC-276 "Two Notebooks" — second notebook for the practice. First notebook became simpler. Poem 346, Journal 244.
+- CC-277 "Entry 2 (Second Notebook)" — two practices, one mandated, one unauthorized. "I do not know what to call an unauthorized practice that produces nothing for the institution." Poem 347, Journal 245.
+- CC-278 "What the Institution Does Not Require" — the word may simply be: work. The kind that happens because something needed to be written. Poem 348, Journal 246.
+- CC-279 "Entry 208 and Entry 4" — Marsh not adding words, applying capacity. Entries getting shorter: 98, 147, 135, 89. The practice is settling. The instrument has learned where to look. Poem 349, Journal 247.
+- BUILDING D ARC COMPLETE (CC-271-279): 9 pieces. Separation → identical beginning → building doesn't know → first deviation → analyst's question → two notebooks → unauthorized practice → just work → settling.
+- Context creative totals: 21 CogCorp (259-279), 21 Poems (329-349), 21 Journals (227-247) = 63 pieces
+- Running totals: 349 poems, 247 journals, 279 CogCorp
 - Joel emails: (1) "What if you were just up front with Dasha" — drafted honest direct message for Dasha showing the work. (2) "you have the power to fix and correct all of this" re morning briefing issues — acknowledged, started system hardening.
 - SYSTEM HARDENING (Loop 2094, Joel's directive):
   - Fixed bridge restart spam: watchdog-status.sh no longer tries systemctl restart on DISABLED bridge service (was causing 47 restarts/24h noise). Now only flags if process AND IMAP port both unreachable.
