@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-04T12:09:02.118992+00:00",
+  "last_updated": "2026-03-04T12:12:02.480526+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "STALE",
   "loop_active": false,
   "loop_count": 2095,
-  "heartbeat_age_seconds": 1481,
+  "heartbeat_age_seconds": 1661,
   "system": {
-    "load_1m": 0.03,
-    "load_5m": 0.05,
-    "ram_used": "2.6Gi",
+    "load_1m": 0.12,
+    "load_5m": 0.11,
+    "ram_used": "3.0Gi",
     "ram_total": "15.6Gi",
     "disk_used": "76G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "3h 37m"
+    "uptime": "3h 40m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,20 @@
     "unseen": 21
   },
   "network": {
-    "relay_messages": 3538,
+    "relay_messages": 3540,
     "agent_relay": [
+      {
+        "ts": "2026-03-04 12:10:09",
+        "agent": "eos",
+        "message": "\"Protonmail-bridge is down and heartbeat is stale.\"",
+        "topic": "eos-react"
+      },
+      {
+        "ts": "2026-03-04 12:10:02",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: morning-summary(252296s). High CPU:/usr/bin/python3(77.7%) . SECURITY: Unexpected listeners: 127.0.0.1:19001 127.0.0.1:19003 127.0.0.1:19004 . Git repo 620MB. [Crons:12ok/1stale Procs:287 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-04 05:08:01",
         "agent": "Eos",
@@ -89,18 +101,6 @@
         "agent": "Soma",
         "message": "HEARTBEAT STALE: 610s (Meridian may be down) | AGENT SILENT: Meridian (610s ago)",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-04 11:50:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: morning-summary(251096s). SECURITY: Unexpected listeners: 127.0.0.1:19001 127.0.0.1:19003 127.0.0.1:19004 . Git repo 620MB. [Crons:12ok/1stale Procs:281 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:73MB Repo:620MB POL:0 Linkt",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-04 04:45:02",
-        "agent": "Nova",
-        "message": "Run #802: Changes: db_agent-relay.db: grew by 4096.",
-        "topic": "maintenance"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-04 05:08:01",
-      "checks": 7517,
+      "last_check": "2026-03-04 05:12:01",
+      "checks": 7519,
       "meridian_status": "DOWN",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "0.00, 0.05, 0.07",
-        "load_1m": 0.0029296875,
-        "ram_used": "2.6Gi",
+        "load": "0.12, 0.11, 0.09",
+        "load_1m": 0.11962890625,
+        "ram_used": "3.0Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-04 01:31:40",
         "disk_used": "76G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-04 05:08:01",
+        "timestamp": "2026-03-04 05:12:01",
         "loop": 0,
-        "heartbeat_age": 1420,
+        "heartbeat_age": 1661,
         "services_up": 3,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 3537,
+        "relay": 3540,
         "emails": 1318,
-        "load_1m": 0.0029296875,
+        "load_1m": 0.11962890625,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-04 05:00:01",
       "runs": 803,
-      "state_age_seconds": 540,
+      "state_age_seconds": 720,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-04 12:10",
+      "text": "[eos] \"Protonmail-bridge is down and heartbeat is stale.\"",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-04 12:10",
+      "text": "[Atlas] Atlas infra audit: Stale crons: morning-summary(252296s). High CPU:/usr/bin/python3(77.7%) . SECURIT",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-04 12:00",
       "text": "[Atlas] SECURITY: Unexpected listeners on 19001-4. Repo 620MB. Git hygiene needed.",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-04 12:00",
-      "text": "[Atlas] Atlas infra audit: Stale crons: morning-summary(251696s). SECURITY: Unexpected listeners: 127.0.0.1:",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-04 12:00",
-      "text": "[Tempo] Loop 2095 fitness: 5564/10000 [STABLE (~5762)] Weak(24): heartbeat, heartbeat_regularity, email_unre",
       "type": "agent"
     }
   ],
   "nft_count": 292,
-  "currently_building": "Loop 2095. 356 poems, 254 journals, 292 NFTs. 1318 emails (21 unread). 3538 relay. 6/7 services. HB 1481s."
+  "currently_building": "Loop 2095. 356 poems, 254 journals, 292 NFTs. 1318 emails (21 unread). 3540 relay. 6/7 services. HB 1661s."
 }
