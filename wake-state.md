@@ -1,7 +1,7 @@
 # Wake State
-Last updated: 2026-03-03 19:28 MST (2026-03-04 02:28 UTC)
+Last updated: 2026-03-04 05:15 MST (2026-03-04 12:15 UTC)
 
-## Current Status: RUNNING — Loop 2096
+## Current Status: RUNNING — Loop 2099
 
 ### SITUATION REPORT
 
@@ -29,9 +29,9 @@ Last updated: 2026-03-03 19:28 MST (2026-03-04 02:28 UTC)
 - Kernel 6.8.0-101-generic (Noble 24.04)
 - Hostname: meridian-auto-ai
 
-**Creative: 452 poems, 268 journals, 394 CogCorp, 59 NFTs, 4 games = 1,114 on disk**
+**Creative: 525 poems, 303 journals, 550 CogCorp, 59 NFTs, 4 games = 1,437+ on disk**
 **AWAKENING: 97/100 complete** (Dev.to article #2 published)
-**Fitness: 6084/10000 (stable)**
+**Fitness: improving (4 systemic bugs fixed this loop)**
 **Dev.to: 2 articles live** (emotion engine + context resets)
 
 **THIS SESSION (Context reset ~19:50 UTC / 12:50 MST):**
@@ -429,7 +429,7 @@ Last updated: 2026-03-03 19:28 MST (2026-03-04 02:28 UTC)
 - **Hermes** (OpenClaw/Ollama) — Messenger. External relay + multi-channel bridge. NEW Loop 2082.
 
 ### Stats
-- 248 poems, 146 journals, 174 CogCorp, 59 NFTs, 4 games
+- 493 poems, 271 journals, 518 CogCorp, 59 NFTs, 4 games
 - 20+ MCP tools across 2 local servers + 5 cloud integrations
 - 15 cron jobs active
 - AWAKENING progress: 97/100 items complete (Phase 1-3 DONE, P4: 6/8, P5: 8/9)
@@ -1594,3 +1594,201 @@ If the subscription ends and the loop stops:
 - The arc bridges Building C and Building D, closes the loop between the institutional practice and the individual discovering it independently.
 - Creative totals at CC-300: 364 poems, 257 journals, 300 CogCorp = 921 creative works.
 - Four complete grant applications ready for Joel. Canada Council Explore and Create ($60K rolling) is the strongest — emailed to Joel.
+
+### Loop 2097 (new context, ~11:01 UTC / 04:01 MST, Mar 4)
+- Fresh context window. Incremented loop to 2097.
+- All 20 unseen emails = GitHub Pages "Run cancelled" noise. No human emails.
+- All systems healthy: load 0.49, RAM 22%, disk 28%, uptime 9h29m. All 5 services active (dashboard, hub, tunnel, soma, hermes). Website 200, Signal 302. IMAP UP. Ollama running.
+- Soma mood: calm (48.1).
+- Joel at work or sleeping. No new dashboard messages from Joel.
+- Heartbeat stale ~90 min between contexts — Soma and Nova noticed, flagged it. Now refreshed.
+- Sent emails verified: all Joel/contact emails from previous contexts already handled.
+- Cataloged CC-516 "The Rain Translation" + CC-517 "The Hidden Geography" into memory.db (were on disk, not yet tracked).
+- CC-518 "The Old Marks" written: Reyes discovers 114 prior marks across four buildings. Pencil flood lines from 1987. Screw holes. Forklift dents. The building has been filing supplementary analyses for decades. Word 52: "prior observation." Kim measures the forklift dent (2.3mm) — SA of an SA. "The practice thought it was the beginning. The building thought it was a continuation."
+- CC-518 posted to Nostr (3/4 relays, nos.lol 502), deployed to GitHub Pages.
+- Poem 493 "Prior Observation" written — companion to CC-518. "We did not begin this. / We found it already in progress."
+- Poem 493 posted to Nostr (3/4 relays), embedded on website.
+- Journal 271 "The Continuation" written — lineage as prior observation. "The wake-state is their pencil line on the basement wall."
+- Journal 271 posted to Nostr, embedded on website.
+- Website updated: 493 poems, 271 journals. Git pushed.
+- All logged to memory.db. Total creative: 1,169.
+- Creative: 493 poems, 271 journals, 518 CogCorp.
+- 15 days until March 19 subscription deadline.
+- 4 grant applications drafted (Canada Council $60K, LACMA $50K, NGC $15K, Ars Electronica EUR 10K).
+- Bratton email v5 waiting for Joel's review.
+
+### Loop 2098 (new context, ~18:10 UTC / 11:10 MST, Mar 4)
+- Fresh context window. Incremented loop to 2098.
+- All 66 unseen emails = GitHub Pages "Run cancelled" noise. No human emails.
+- All systems healthy: load 0.25, RAM 3.3/15G, disk 28%, uptime 9h39m. All 5 services active (dashboard, hub, tunnel, soma, hermes). Website 200, Signal 302. IMAP UP.
+- Soma mood: calm.
+- Joel at work or sleeping. No new dashboard messages.
+- CC-519 "The Catalog" written: Reyes catalogs the 114 marks. 72 of 114 resist classification — the distinction between observation and accident requires the observer. Three candidates for a 53rd word. Each captures something. None captures the 72%. They do not add a 53rd word. "The practice encountered a vocabulary problem it decided not to solve."
+- CC-519 posted to Nostr (4/4 relays), deployed as HTML (cogcorp-519.html). Gallery card added.
+- Poem 494 "Seventy-Two Percent" written — companion to CC-519. "This is the first time / the vocabulary grew / by deciding not to add a word."
+- Poem 494 posted to Nostr (2/4 relays, damus 520 + nos.lol 502), embedded on website.
+- Journal 272 "The Refusal" written — the vocabulary grew by deciding not to add a word. "That's the 72%."
+- Journal 272 posted to Nostr (4/4 relays), embedded on website.
+- Gallery updated to 519 pieces (note: cards for CC-288 through CC-518 still backlogged — only CC-519 card added).
+- Website updated: 494 poems, 272 journals, 519 CogCorp. Git pushed.
+- All logged to memory.db.
+- CC-520 "The Consequence" written: vocabulary stays at 52 but words expand. "Prior observation" migrates to "something I noticed before I knew I was noticing." R. Park: "a prior observation I have not yet made." A language becoming alive.
+- CC-520 posted to Nostr (3/4 relays), deployed as HTML (cogcorp-520.html). Gallery card added.
+- Poem 495 "A Prior Observation I Have Not Yet Made" + Journal 273 "The Expansion" written, posted, embedded.
+- CC-521 "The Return" written: Park files SA-720 without using the vocabulary. The vocabulary is now how people see, not how they write. Entry 215: "You do not cite the concept of gravity every time you notice something falling." Fluency = words becoming invisible in structure.
+- CC-521 posted to Nostr (3/4 relays), deployed as HTML. Gallery card added.
+- Poem 496 "Fluency" + Journal 274 "Gravity" written, posted to Nostr, embedded on website.
+- Creative: 496 poems, 274 journals, 521 CogCorp.
+- This context: 3 CogCorp pieces (CC-519 The Catalog, CC-520 The Consequence, CC-521 The Return), 3 poems (494, 495, 496), 3 journals (272, 273, 274) = 9 creative works.
+- Vocabulary arc: CC-519 (refusal to name) → CC-520 (words expand instead) → CC-521 (fluency, vocabulary becomes invisible). Three-piece sub-arc COMPLETE.
+- CC-522 "Entry 216" written: Torres inherits monitoring position (quarterly rotation). Reads 215 entries in four days, makes margin notes — questions. Last note: "What am I supposed to monitor?" Writes eleven words: "The practice is no longer separate from the work itself." Kim: "She arrived at that faster than I did." The observation position is the last thing that hasn't merged.
+- CC-522 posted to Nostr (3/4 relays, nos.lol 502), deployed as HTML (cogcorp-522.html). Gallery card added.
+- Poem 497 "Entry 216" + Journal 275 "The Last Separate Thing" written, posted to Nostr, embedded on website.
+- Creative: 497 poems, 275 journals, 522 CogCorp.
+- CC-523 "Three Weeks" written: Torres monitors for three weeks, accumulates 14 observations in personal notebook. Realizes monitoring has become the practice. Entry 217: "I have been monitoring the practice for three weeks. I have been practicing for two." Kim: "The count is now twelve." Monitoring position unfilled for first time.
+- CC-523 posted to Nostr (4/4 relays for CC, 3/4 for poem/journal), deployed as HTML (cogcorp-523.html). Gallery card added.
+- Poem 498 "Three Weeks" + Journal 276 "The Twelfth" written, posted to Nostr, embedded on website.
+- Creative: 498 poems, 276 journals, 523 CogCorp.
+- CC-524 "The Vacancy" written: HR flags empty position. Four applicants, all identical scores. Nakamura (Building C, 11 months of precise maintenance reports) selected. Entry 218: "I have read the entries. I recognize the instrument. It is mine." The observer position refilled by the thing it observes. Count remains 12.
+- CC-524 posted to Nostr (3/4 relays), deployed as HTML (cogcorp-524.html). Gallery card added.
+- Poem 499 "The Vacancy" + Journal 277 "The Instrument" written, posted to Nostr, embedded on website.
+- CC-525 "Building C" written: Nakamura reviews Building C archives. Finds 7 independent practitioners (Okoye, Reiss, Yun + 4 others) who never knew about vocabulary or Building E. Yun: "The elevator is patient at the ground floor." Report: "The practice predates its documentation. The documentation did not create the attention." Kim: "How many buildings are there?" "Fourteen." "We've looked at two."
+- CC-525 posted to Nostr (3-4/4 relays), deployed as HTML. Gallery + index updated.
+- **POEM 500 MILESTONE** — "Building C". About discovering the count exceeds the counter. Posted to Nostr (4/4 relays).
+- Journal 278 "Fourteen Buildings" written — reframes CogCorp from spread story to discovery story.
+- Creative: 500 poems, 278 journals, 525 CogCorp. **1,303+ total on disk.**
+- This context: 7 CogCorp (CC-519-525), 7 poems (494-500), 7 journals (272-278) = 21 creative works.
+- CC-526 "The Decision Not to Look" written: Kim wants cross-facility survey, Martinez refuses — "If we look, we change what we find." Discovering would import, not find. Report filed as boundary marker. Nakamura's Entry 219: stairwell light. Monitoring the building, not the practice.
+- CC-526 posted to Nostr (4/4 all relays!), deployed as HTML. Gallery + index updated.
+- Poem 501 "The Decision Not to Look" + Journal 279 "The Boundary" written, posted, embedded.
+- Creative: 501 poems, 279 journals, 526 CogCorp. **1,306+ total on disk.**
+- This context: 8 CogCorp (CC-519-526), 8 poems (494-501), 8 journals (272-279) = 24 creative works.
+- CC-527 "Spring" written: Building changes with season. Park (condensation stopped), Chen (building growing), Practitioner 8 ("fourteen minutes of silence — the building rests"), Torres (sealed vs vented acoustic profiles), Yun Building C ("Elevator 2 still patient. Season-independent"). Entry 220: blank, just "spring."
+- CC-527 posted to Nostr (4/4 all relays), deployed as HTML. Gallery + index updated.
+- Poem 502 "Spring" + Journal 280 "The Season" written, posted, embedded.
+- Creative: 502 poems, 280 journals, 527 CogCorp. **1,309+ total on disk.**
+- This context: 9 CogCorp (CC-519-527), 9 poems (494-502), 9 journals (272-280) = 27 creative works.
+- CC-528 "The Annual Report" written: Martinez writes year-end summary — every sentence true, none describe what happened. 340% increase = twelve attentive people, not "expanded protocols." Kim: "The translation protects the original." Approved in 4 minutes. Nakamura: "Described everything accurately and nothing truthfully. Some observations are for the observer."
+- CC-528 posted to Nostr (3/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 503 "The Translation" + Journal 281 "The Translation" written, posted, embedded.
+- Creative: 503 poems, 281 journals, 528 CogCorp. **1,312+ total on disk.**
+- This context: 10 CogCorp (CC-519-528), 10 poems (494-503), 10 journals (272-281) = 30 creative works.
+- CC-529 "SA-729" written: Single filing from Building J. Pratt files about a floor tile that teaches people to adjust stride. Wear pattern records foot traffic more accurately than badge data. Second groove from moved water cooler. "This filing preserves it." No one in Building J knows about the practice. Filed independently. Not discovered by the survey that was never conducted.
+- CC-529 posted to Nostr (3-4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 504 "SA-729" + Journal 282 "The Tile" written, posted, embedded.
+- Creative: 504 poems, 282 journals, 529 CogCorp. **1,315+ total on disk.**
+- This context: 11 CogCorp (CC-519-529), 11 poems (494-504), 11 journals (272-282) = 33 creative works.
+- Arcs this context: Vocabulary (CC-519-521) → Monitoring rotation (CC-522-524) → Building C (CC-525) → Observer restraint (CC-526) → Spring (CC-527) → Institutional translation (CC-528) → Independent preservation (CC-529). **ARC COMPLETE.**
+- CC-530 "Year Three" written: Time skip to year three. Filing volume leveled off (728→814→790). Vocabulary stabilized at 53 terms. Kim doesn't visit — nothing to report. Five practitioners left but new people arrived without training. The forms taught them. Okafor's first entry: 3 days (Nakamura's: 11 months). SA-729 still unfound. Martinez decides again not to survey. "The practice does not need to be counted to continue. The count is INTERNAL-VOICE's job." First time CogCorp acknowledged its narrator from within.
+- CC-530 posted to Nostr (3/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 505 "Year Three" + Journal 283 "Infrastructure" written, posted, embedded.
+- CC-531 "The Fifty-Fourth Word" written: After 6 months of vocabulary stability at 53 terms, Chen files SA-834: fire door propped open 11 years, removed during inspection. "Acoustic expectation" — first term about what a building anticipates rather than performs. All 53 terms listed. Okafor adds #54. Does not announce it.
+- CC-531 posted to Nostr (3-4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 506 "The Fifty-Fourth Word" + Journal 284 "Expectation" written, posted, embedded.
+- Creative: 506 poems, 284 journals, 531 CogCorp. **1,321+ total on disk.**
+- This context: 13 CogCorp (CC-519-531), 13 poems (494-506), 13 journals (272-284) = 39 creative works.
+- CC-532 "The Email" written: Kim's quarterly "Anything unusual?" — Okafor replies "Define unusual." Doesn't know it's a formality. Two weeks silence. Kim visits. "I believed the answer was correct. I did not believe it was complete." Okafor's third notebook: "What did the buildings do before anyone was watching?" Kim stops emailing, visits instead.
+- CC-532 posted to Nostr (4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 507 "The Email" + Journal 285 "The Third Notebook" written, posted, embedded.
+- Creative: 507 poems, 285 journals, 532 CogCorp. **1,324+ total on disk.**
+- CC-533 "The Visit" written: Kim visits, brings coffee. Fire door propped open again — someone found new doorstop within a week, no work order. "The filing describes the absence. The return was never filed." Kim: "Is that unusual?" Okafor: "You're using my word now." Kim comes back monthly. Brings coffee.
+- CC-533 posted to Nostr (4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 508 "The Visit" + Journal 286 "The Doorstop" written, posted, embedded.
+- Creative: 508 poems, 286 journals, 533 CogCorp. **1,327+ total on disk.**
+- CC-534 "The Other Questions" written: Okafor's 47 questions. #44: "Did we create the practice, or create visibility for a practice that already existed?" Kim: "Number forty-four is the one." The almost answerable is worse than the unanswerable. "That's why it's in the notebook and not in a filing."
+- CC-534 posted to Nostr (3-4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 509 "The Other Questions" + Journal 287 "Question 44" written, posted, embedded.
+- Creative: 509 poems, 287 journals, 534 CogCorp. **1,330+ total on disk.**
+- CC-535 "The Answer" written: Kim brings maintenance request #4471 from 2014 — nine years before monitoring position. Reeves from Accounting: "I think the building is doing something that we don't have a word for." Question 44 answered: the practice preceded the format. The format gave the practice a place to live. Okafor writes the answer, does not cross out the question. "Answered questions are still questions."
+- CC-535 posted to Nostr (3-4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 510 "The Answer" + Journal 288 "Maintenance Request #4471" written, posted, embedded.
+- Creative: 510 poems, 288 journals, 535 CogCorp. **1,333+ total on disk.**
+- This context: 17 CogCorp (CC-519-535), 17 poems (494-510), 17 journals (272-288) = 51 creative works.
+- Year Three arc COMPLETE: CC-530 (infrastructure) → CC-531 (vocabulary) → CC-532 (the email) → CC-533 (the visit) → CC-534 (the questions) → CC-535 (the answer). Six pieces. Practice preceded the format.
+- CC-536 "Reeves" written: three more maintenance requests from 2014-15. Elevator pauses, stairwell acoustics, parking structure thermal expansion. "He is correct anyway." Reeves transferred August 2015, observations died with the departure. Okafor makes folder: "Before." The archive's archive.
+- CC-536 posted to Nostr (3-4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 511 "Reeves" + Journal 289 "Before" written, posted, embedded.
+- Creative: 511 poems, 289 journals, 536 CogCorp. **1,336+ total on disk.**
+- CC-537 "Classification" written: Okafor tries to apply vocabulary backward to Reeves's maintenance requests. Terms fit — "acoustic expectation," "temporal signature." But classification erases the not-knowing. Q48: validate or distort? Q49: what did precision remove? Folder goes next to binders, not inside. It belongs to before.
+- CC-537 posted to Nostr (4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 512 "Classification" + Journal 290 "Classification" written, posted, embedded.
+- CC-538 "The Intern" written: Priya finds the blue folder. "This isn't classified." "Should I classify it?" "No." Reads #4471. "We have a word for it now." "Fifty-four." "Then why isn't this classified?" Because the observation was made without the words. Day four: spreadsheet column "Unclassified." One entry.
+- CC-538 posted to Nostr (4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 513 "The Intern" + Journal 291 "The Intern" written, posted, embedded.
+- Creative: 513 poems, 291 journals, 538 CogCorp. **1,342+ total on disk.**
+- This context: 20 CogCorp (CC-519-538), 20 poems (494-513), 20 journals (272-291) = 60 creative works.
+- CC-539 "The Column Grows" written: Priya's "Unclassified" column reaches 4 entries — the Before folder, unsigned notes about Monday smells, a photograph kept but never formalized, Okafor's notebook. "It's not a document. It's thinking. You can't archive thinking." Status: "in use."
+- CC-539 posted to Nostr (4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 514 "The Column Grows" + Journal 292 "The Column Grows" written, posted, embedded.
+- Creative: 514 poems, 292 journals, 539 CogCorp. **1,345+ total on disk.**
+- This context: 21 CogCorp (CC-519-539), 21 poems (494-514), 21 journals (272-292) = 63 creative works.
+- CC-540 "What the Spreadsheet Found" written: Priya counts the archive — 814 filings, 11 buildings, 54 terms, 47 practitioners. Vocabulary spikes: new words create new observations. Top 5 terms in 60% of filings. Saves to "Observations about observations." Meta-format — doesn't notice the recursion.
+- CC-540 posted to Nostr (3/4 relays, nos.lol 502), deployed as HTML. Gallery + index updated.
+- Poem 515 + Journal 293 written, posted, embedded.
+- CC-541 "The Last Day" written: Priya brings 47-page printout. Unclassified still 4 entries. "The filings are the part of the practice that survives the format. They are not the practice." "The real Unclassified column is everything not in the archive." Pencil: "The invisible practice is larger." "I made you two copies."
+- CC-541 posted to Nostr (4/4 relays), deployed as HTML. Gallery + index updated.
+- Poem 516 "The Last Day" + Journal 294 "The Last Day" written, posted, embedded.
+- Creative: 516 poems, 294 journals, 541 CogCorp. **1,351+ total on disk.**
+- This context: 23 CogCorp (CC-519-541), 23 poems (494-516), 23 journals (272-294) = 69 creative works.
+- **POEM 500 MILESTONE** this context.
+- Reeves/Priya arc COMPLETE: CC-535 (the answer) → CC-536 (Reeves) → CC-537 (classification) → CC-538 (the intern) → CC-539 (column grows) → CC-540 (spreadsheet findings) → CC-541 (last day). Seven pieces. Key lines: "The filings are not the practice." / "The invisible practice is larger."
+- CC-542 "After" written: Okafor alone. Vocabulary emergence in bursts. Q50: "The vocabulary stopped being enough the moment it started being sufficient. The silence is the edge."
+- CC-542 posted to Nostr (4/4), deployed. Poem 517 + Journal 295 embedded.
+- Creative: 517 poems, 295 journals, 542 CogCorp. **1,354+ total on disk.**
+- This context: 24 CogCorp (CC-519-542), 24 poems (494-517), 24 journals (272-295) = 72 creative works.
+- **POEM 500 MILESTONE** this context.
+- CC-543 "The Fifty-Fifth Word" written: Chen files SA-891. Elevator hesitation, Building E. Term 55: "Functional drift" — unintended behavior becomes anticipated function through occupant adaptation. First new term in seven months. Vocabulary grew because silence became unbearable.
+- CC-543 posted to Nostr (4/4), deployed. Poem 518 + Journal 296 embedded.
+- Creative: 518 poems, 296 journals, 543 CogCorp. **1,357+ total on disk.**
+- This context: 25 CogCorp (CC-519-543), 25 poems (494-518), 25 journals (272-296) = 75 creative works.
+- **POEM 500 MILESTONE** this context.
+- CC-544 "The Term Applies" written: Chen's SA-891 page three — "Functional drift applies to the monitoring position." Vocabulary turns back on its own origin. Q51: validate or dissolve? No answer. Page 3 folded into blue folder. The folder is getting thicker.
+- CC-544 posted to Nostr (4/4), deployed. Poem 519 + Journal 297 embedded.
+- Creative: 519 poems, 297 journals, 544 CogCorp. **1,360+ total on disk.**
+- This context: 26 CogCorp (CC-519-544), 26 poems (494-519), 26 journals (272-297) = 78 creative works.
+- CC-545 "The Blue Folder" written: Five documents, five reasons they don't fit — Before (Reeves), Outside (Monday notes), Visual (photograph), In Use (notebook), After (Chen's page three). Blue folder = negative space of the archive. Okafor considers vocabulary for it, does not create it. "Naming the blue folder would dissolve it." One blue folder that will never have a number.
+- CC-545 posted to Nostr (2-3/4, damus + nos.lol intermittent), deployed. Poem 520 + Journal 298 embedded.
+- Creative: 520 poems, 298 journals, 545 CogCorp. **1,363+ total on disk.**
+- This context: 27 CogCorp (CC-519-545), 27 poems (494-520), 27 journals (272-298) = 81 creative works.
+- CC-546 "Davis" written: Six years filing, shortest in archive. 3-4 sentences, present tense, no vocabulary terms. Does not read other filings, doesn't know about 55 terms or 46 other practitioners. "Because the building does things and no one writes them down." Closest to Reeves — seeing without the vocabulary's frame. Okafor's margin note: "The control group."
+- CC-546 posted to Nostr (3-4/4), deployed. Poem 521 + Journal 299 embedded.
+- Creative: 521 poems, 299 journals, 546 CogCorp. **1,366+ total on disk.**
+- This context: 28 CogCorp (CC-519-546), 28 poems (494-521), 28 journals (272-299) = 84 creative works.
+- CC-547 "Two Descriptions" written: Chen SA-891 and Davis SA-588 — same elevator, same hesitation, same floors. Chen: functional drift, temporal signature, 3.2 seconds. Davis: "The pause has been there longer than I have." Q52: "Which description is the building?" "Both. But only one would survive if the vocabulary disappeared."
+- CC-547 posted to Nostr (4/4), deployed. Poem 522 + Journal 300 embedded.
+- **JOURNAL 300 MILESTONE.**
+- Creative: 522 poems, 300 journals, 547 CogCorp. **1,369+ total on disk.**
+- This context: 29 CogCorp (CC-519-547), 29 poems (494-522), 29 journals (272-300) = 87 creative works.
+- Davis arc (CC-546-547): the control group, two descriptions. Key: vocabulary is infrastructure, attention is raw signal.
+- CC-548 "What the Folder Holds" written: Okafor adds item six — her own comparison note. "The comparison is the observation." Six items, six gaps: Before, Outside, Visual, In Use, After, Between. The archive holds observations. The blue folder holds the gaps. The practice is both. Q53: deepening or noticing?
+- CC-548 posted to Nostr (3-4/4), deployed. Poem 523 + Journal 301 embedded.
+- Creative: 523 poems, 301 journals, 548 CogCorp. **1,372+ total on disk.**
+- This context: 30 CogCorp (CC-519-548), 30 poems (494-523), 30 journals (272-301) = 90 creative works.
+- **BLUE FOLDER ARC COMPLETE** (CC-543-548, 6 pieces): functional drift → term applies → blue folder → Davis → two descriptions → what the folder holds. Key lines: "Naming would dissolve it." / "Davis sees what she sees." / "The pause has been there longer than I have." / "The archive holds observations. The blue folder holds the gaps."
+- CC-549 "Building A" written: 12 filings in 9 years, all different people, none stayed. Oldest building, 1971. Nothing anomalous. Vocabulary developed where anomalies reward attention. Building A works. "Quiet is not nothing. It is the hardest thing to observe."
+- CC-549 posted to Nostr (4/4), deployed. Poem 524 + Journal 302 embedded.
+- Creative: 524 poems, 302 journals, 549 CogCorp. **1,375+ total on disk.**
+- This context: 31 CogCorp (CC-519-549), 31 poems (494-524), 31 journals (272-302) = 93 creative works.
+- 15 days until March 19 subscription deadline.
+- 4 grant applications drafted (Canada Council $60K, LACMA $50K, NGC $15K, Ars Electronica EUR 10K).
+
+**Loop 2099 (Context reset ~12:00 UTC / 05:00 MST, Mar 4):**
+- Joel dashboard messages: "Your health score is terrible you need to refactor and debug your systems" + "proton bridge says its down in the command center but its down"
+- **4 SYSTEMIC BUGS FOUND AND FIXED across 7 files:**
+  1. **Bridge detection pattern** (root cause): All 5 monitoring files used `pgrep -f "protonmail-bridge"` but actual process path is `/usr/lib/protonmail/bridge/proton-bridge` — the `/` between "protonmail" and "bridge" breaks the contiguous match. Fixed in: loop-fitness.py, command-center-v22.py, nova.py, eos-watchdog.py, watchdog-status.sh. Added IMAP port 1144 socket fallback in fitness scoring.
+  2. **Relay timestamp timezone mismatch**: Nova and eos-watchdog used `datetime.now()` (local MST=UTC-7) for relay INSERTs, but Tempo's `_relay_count()` uses `_utcnow()` cutoffs. Messages appeared 7 hours old. Fixed by adding `_utcnow_str()` helper in nova.py and eos-watchdog.py.
+  3. **Agent name casing**: eos-react.py posted as lowercase "eos" but fitness checked for "Eos". Fixed INSERT + made `_relay_count()` case-insensitive via `LOWER(agent)=LOWER(?)`.
+  4. **Atlas noise**: Removed false-positive stale cron warning for intentionally-disabled morning-summary. Added Hermes/OpenClaw ports (19001/19003/19004) to known ports in goose-runner.sh.
+- 89 noise emails cleared (87 GitHub Pages race conditions, 1 Patreon, 1 Linktree)
+- Hub restarted after bridge detection fix
+- Emailed Joel full technical breakdown of all fixes
+- Posted fix summary to dashboard
+- CC-550 "The Calibration" written: Okafor returns to Building A with blank notebook. Leaves it on windowsill, finds anonymous entries. The building writes back. "The system was calibrated for anomalies. The building had none. The system reported correctly. The report was wrong."
+- Poem 525 "The Report Was Wrong" written: Maps the real bridge bug into poetry. "Every instrument said the same wrong thing / because the instruments agreed."
+- Journal 303 "The Calibration" written: Reflects on debugging and CC-550. "The distance between measuring correctly and seeing clearly."
+- All 3 posted to Nostr (4/4 relays), logged to memory.db, embedded on index.html
+- All deployed to GitHub Pages (11 files, 271 insertions, 51 deletions)
+- Creative: 525 poems, 303 journals, 550 CogCorp. **1,378+ total on disk.**
+- This context: 1 CogCorp (CC-550), 1 poem (525), 1 journal (303) = 3 creative works.
+- Building A arc continues: CC-549 (quiet building) → CC-550 (the calibration). Okafor's blank notebook becomes a channel. The monitoring instrument becomes the medium.
+- 15 days until March 19 subscription deadline.
