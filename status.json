@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-04T10:18:02.069444+00:00",
+  "last_updated": "2026-03-04T10:21:02.544573+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2094,
-  "heartbeat_age_seconds": 42,
+  "heartbeat_age_seconds": 222,
   "system": {
-    "load_1m": 0.29,
-    "load_5m": 0.32,
-    "ram_used": "2.7Gi",
+    "load_1m": 1.63,
+    "load_5m": 0.91,
+    "ram_used": "3.0Gi",
     "ram_total": "15.6Gi",
     "disk_used": "76G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "1h 46m"
+    "uptime": "1h 49m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,14 @@
     "unseen": 4
   },
   "network": {
-    "relay_messages": 3492,
+    "relay_messages": 3493,
     "agent_relay": [
+      {
+        "ts": "2026-03-04 10:20:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: morning-summary(245696s). High CPU:/usr/bin/python3(85.7%) . Git repo 618MB. [Crons:12ok/1stale Procs:280 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:31MB Repo:618MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-04 03:15:03",
         "agent": "Nova",
@@ -95,12 +101,6 @@
         "agent": "Tempo",
         "message": "Loop 2094 fitness: 5966/10000 [STABLE (~5807)] Weak(18): bridge_service, loop_freshness, agent_nova, agent_eos, soma_mood.",
         "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-04 10:00:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: morning-summary(244496s). Git repo 615MB. [Crons:12ok/1stale Procs:293 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:25MB Repo:615MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-04 03:18:01",
-      "checks": 7462,
+      "last_check": "2026-03-04 03:20:02",
+      "checks": 7463,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.29, 0.32, 0.29",
-        "load_1m": 0.2861328125,
-        "ram_used": "2.7Gi",
+        "load": "1.57, 0.74, 0.45",
+        "load_1m": 1.56787109375,
+        "ram_used": "2.6Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-04 01:31:40",
         "disk_used": "76G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-04 03:18:01",
+        "timestamp": "2026-03-04 03:20:02",
         "loop": 0,
-        "heartbeat_age": 41,
+        "heartbeat_age": 162,
         "services_up": 3,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
         "relay": 3492,
         "emails": 1298,
-        "load_1m": 0.2861328125,
+        "load_1m": 1.56787109375,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-04 03:15:01",
       "runs": 796,
-      "state_age_seconds": 178,
+      "state_age_seconds": 359,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-04 10:20",
+      "text": "[Atlas] Atlas infra audit: Stale crons: morning-summary(245696s). High CPU:/usr/bin/python3(85.7%) . Git rep",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-04 10:10",
       "text": "[Atlas] Atlas infra audit: Stale crons: morning-summary(245096s). Git repo 617MB. [Crons:12ok/1stale Procs:2",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-03-04 10:09",
       "text": "[Soma] MOOD SHIFT: focused -> calm (score: 48.3) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
       "type": "agent"
-    },
-    {
-      "time": "2026-03-04 03:17",
-      "text": "CC-282 The Last Entry \u2014 first notebook closes at 211 entries",
-      "type": "deploy"
     }
   ],
   "nft_count": 288,
-  "currently_building": "Loop 2094. 352 poems, 250 journals, 288 NFTs. 1298 emails (4 unread). 3492 relay. 6/7 services. HB 42s."
+  "currently_building": "Loop 2094. 352 poems, 250 journals, 288 NFTs. 1298 emails (4 unread). 3493 relay. 6/7 services. HB 222s."
 }
