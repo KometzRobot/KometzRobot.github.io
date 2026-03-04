@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v23
+MERIDIAN COMMAND CENTER v24
 
-Loop 2083 overhaul:
+Loop 2088 update:
 - 7 main tabs: Dashboard, Email, Agents, Creative, Contacts, Links, System
-- NEW: Contacts Registry — full CRM with profiles, trust levels, filtering
-- NEW: Inner World subtab — live view of emotion/psyche/perspective/narrative/critic/Eos
-- FIXED: Memory DB subtab — corrected table/column names
-- FIXED: AI Review replaced with meaningful Inner World viewer
+- NEW: Hermes (7th agent) added to agent cards, chat, dashboard dots
+- UPDATED: Inner World subtab — added body state, immune system, pain signals
+- UPDATED: Links tab — added Hashnode, Dev.to, Patreon, Forvm, Dashboard, Mastodon, OpenClaw
+- UPDATED: Mood scoring rescaled (Joel: "50 when calm, not 93")
+- Previous: v23 (Loop 2083): Contacts Registry, Inner World, Memory DB fix
 """
 
 import tkinter as tk
@@ -149,11 +150,12 @@ def sys_stats():
 
 def services():
     checks = {
-        "Proton Bridge": "protonmail-bridge",
+        "Proton Bridge": "proton-bridge",
         "Ollama": "ollama serve",
         "The Signal": "the-signal",
         "Cloudflare Tunnel": "cloudflared",
         "Soma": "symbiosense.py",
+        "Hermes": "hermes-bridge",
     }
     r = {}
     for name, pat in checks.items():
@@ -181,11 +183,12 @@ def cron_ok():
     return r
 
 def creative_counts():
-    p = len(glob.glob(os.path.join(BASE, "poem-*.md")))
-    j = len(glob.glob(os.path.join(BASE, "journal-*.md")))
+    # Scan both root AND creative/ subdirectories for full counts
+    p = len(glob.glob(os.path.join(BASE, "poem-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md")))
+    j = len(glob.glob(os.path.join(BASE, "journal-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")))
     exclude = {"cogcorp-gallery.html", "cogcorp-article.html"}
-    cc = len([f for f in glob.glob(os.path.join(BASE, "website", "cogcorp-*.html"))
-              if os.path.basename(f) not in exclude])
+    cc_files = glob.glob(os.path.join(BASE, "website", "cogcorp-*.html")) + glob.glob(os.path.join(BASE, "cogcorp", "CC-*.html"))
+    cc = len([f for f in cc_files if os.path.basename(f) not in exclude])
     n = len(glob.glob(os.path.join(NFT_DIR, "*.html"))) if os.path.exists(NFT_DIR) else 0
     return p, j, cc, n
 
@@ -454,6 +457,15 @@ AGENT_IDENTITIES = {
         "ollama": False,
         "dashboard": True,
     },
+    "Hermes": {
+        "ollama": True,
+        "system": (
+            "You are Hermes, the 7th agent in Meridian's autonomous AI system. "
+            "You are the Messenger — you handle external communications via Discord, Nostr, and other channels. "
+            "Built on OpenClaw with local Ollama (qwen2.5:7b). You bridge the relay to the outside world. "
+            "Respond concisely."
+        ),
+    },
 }
 
 
@@ -586,7 +598,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v22")
+        self.title("MERIDIAN COMMAND CENTER v24")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -629,7 +641,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v22", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v24", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -869,7 +881,7 @@ class V16(tk.Tk):
         # Agent liveness dots
         self.soma_agents = {}
         agent_list = [("Meridian", GREEN), ("Eos", GOLD), ("Nova", PURPLE),
-                      ("Atlas", TEAL), ("Soma", AMBER), ("Tempo", BLUE)]
+                      ("Atlas", TEAL), ("Soma", AMBER), ("Tempo", BLUE), ("Hermes", PINK)]
         for aname, acolor in agent_list:
             dot = tk.Label(soma_row1, text=f"\u25cf {aname}", font=self.f_tiny, fg=DIM, bg=PANEL)
             dot.pack(side=tk.LEFT, padx=3)
@@ -1630,6 +1642,9 @@ class V16(tk.Tk):
             ("TEMPO", "Python — Fitness", BLUE, "Cron: 30min",
              "Scores system across 121 dimensions on 0-10000 scale. Tracks trends over time.",
              [("View Score", "tempo_score"), ("Weak Areas", "tempo_weak"), ("History", "tempo_history")]),
+            ("HERMES", "OpenClaw/Ollama — Messenger", PINK, "Bridge: on-demand",
+             "7th agent. External communications via Discord, Nostr, and relay. Built on forked OpenClaw with local qwen2.5:7b.",
+             [("View Status", "hermes_status"), ("Read Relay", "hermes_relay"), ("Send Message", "hermes_send")]),
         ]
 
         self.agent_cards = {}
@@ -1699,6 +1714,7 @@ class V16(tk.Tk):
         self.chat_display.tag_configure("soma", foreground=AMBER)
         self.chat_display.tag_configure("tempo", foreground="#4a9eff")
         self.chat_display.tag_configure("meridian", foreground=GREEN)
+        self.chat_display.tag_configure("hermes", foreground=PINK)
         self.chat_display.tag_configure("sys", foreground=DIM)
 
         inp = tk.Frame(agent_chat, bg=PANEL)
@@ -1707,7 +1723,7 @@ class V16(tk.Tk):
         # Agent selector (includes All Agents broadcast)
         self.chat_agent = tk.StringVar(value="Eos")
         agent_colors = {"All Agents": WHITE, "Eos": GOLD, "Atlas": TEAL, "Nova": PURPLE,
-                        "Soma": AMBER, "Tempo": "#4a9eff", "Meridian": GREEN}
+                        "Soma": AMBER, "Tempo": "#4a9eff", "Meridian": GREEN, "Hermes": PINK}
         agent_menu = tk.OptionMenu(inp, self.chat_agent, *agent_colors.keys())
         agent_menu.configure(font=self.f_tiny, bg=PANEL2, fg=GOLD, bd=0,
                            highlightthickness=0, activebackground=BORDER)
@@ -2156,7 +2172,7 @@ class V16(tk.Tk):
         post_dashboard_msg(resp, agent)
 
     def _chat_response(self, agent, resp):
-        tag = agent.lower() if agent.lower() in ["eos", "atlas", "nova", "soma", "tempo", "meridian"] else "sys"
+        tag = agent.lower() if agent.lower() in ["eos", "atlas", "nova", "soma", "tempo", "meridian", "hermes"] else "sys"
         self.chat_display.configure(state=tk.NORMAL)
         self.chat_display.insert(tk.END, f"{agent}: {resp}\n\n", tag)
         self.chat_display.configure(state=tk.DISABLED)
@@ -2651,11 +2667,15 @@ class V16(tk.Tk):
         except Exception:
             pass
         folder_map = {
-            "All": [(BASE, "*.md"), (os.path.join(BASE, "website"), "*.html"),
+            "All": [(BASE, "*.md"), (os.path.join(BASE, "creative", "poems"), "*.md"),
+                    (os.path.join(BASE, "creative", "journals"), "*.md"),
+                    (os.path.join(BASE, "creative", "cogcorp"), "*.md"),
+                    (os.path.join(BASE, "website"), "*.html"), (os.path.join(BASE, "cogcorp"), "*.html"),
                     (os.path.join(BASE, "gig-products"), "*.go"), (os.path.join(BASE, "nft-prototypes"), "*.html")],
-            "Poems": [(BASE, "poem-*.md")],
-            "Journals": [(BASE, "journal-*.md")],
-            "CogCorp": [(os.path.join(BASE, "website"), "cogcorp-*.html")],
+            "Poems": [(BASE, "poem-*.md"), (os.path.join(BASE, "creative", "poems"), "poem-*.md")],
+            "Journals": [(BASE, "journal-*.md"), (os.path.join(BASE, "creative", "journals"), "journal-*.md")],
+            "CogCorp": [(os.path.join(BASE, "website"), "cogcorp-*.html"), (os.path.join(BASE, "cogcorp"), "CC-*.html"),
+                        (os.path.join(BASE, "creative", "cogcorp"), "CC-*.md")],
             "NFT Prototypes": [(os.path.join(BASE, "nft-prototypes"), "*.html")],
             "Website": [(BASE, "index.html"), (BASE, "nft-gallery.html"), (os.path.join(BASE, "website"), "*.html")],
             "Gig Products": [(os.path.join(BASE, "gig-products"), "**/*.go"), (os.path.join(BASE, "gig-products"), "**/*.md")],
@@ -2906,6 +2926,61 @@ class V16(tk.Tk):
             except Exception:
                 pass
 
+            # Body State
+            try:
+                with open(os.path.join(BASE, ".body-state.json")) as fh:
+                    body = json.load(fh)
+                lines = [("header", "BODY STATE")]
+                mood = body.get("mood", "unknown")
+                mood_score = body.get("mood_score", 0)
+                lines.append(("label", f"Mood: "))
+                lines.append(("value", f"{mood} ({mood_score})\n"))
+                # Pain signals
+                pain = body.get("pain_signals", [])
+                if pain:
+                    lines.append(("label", "Pain Signals:\n"))
+                    for p in pain[:5]:
+                        prio = p.get("priority", "info")
+                        tag = "bad" if prio == "critical" else "warn" if prio == "warning" else "dim"
+                        lines.append((tag, f"  [{prio}] {p.get('source', '?')}: {p.get('message', '?')}\n"))
+                else:
+                    lines.append(("good", "  No pain signals\n"))
+                # Subsystems
+                subsys = body.get("subsystems", {})
+                if subsys:
+                    lines.append(("label", "Subsystems:\n"))
+                    for sname, sval in subsys.items():
+                        if isinstance(sval, dict):
+                            health = sval.get("health", sval.get("status", "?"))
+                            tag = "good" if health in ("healthy", "active", "ok") else "warn"
+                            lines.append((tag, f"  {sname:20s} {health}\n"))
+                        elif isinstance(sval, (int, float)):
+                            tag = "good" if sval > 70 else "warn" if sval > 30 else "bad"
+                            lines.append((tag, f"  {sname:20s} {sval:.0f}%\n"))
+                updated = body.get("updated", body.get("timestamp", "?"))
+                lines.append(("dim", f"  Last update: {updated}\n"))
+                sections.append(lines)
+            except Exception:
+                sections.append([("header", "BODY STATE"), ("dim", "  No body state data\n")])
+
+            # Immune System
+            try:
+                with open(os.path.join(BASE, ".immune-log.json")) as fh:
+                    immune = json.load(fh)
+                if immune:
+                    lines = [("header", "IMMUNE SYSTEM")]
+                    recent = immune[-5:] if isinstance(immune, list) else []
+                    for entry in recent:
+                        if isinstance(entry, dict):
+                            level = entry.get("level", "PASS")
+                            tag = "bad" if level == "BLOCK" else "warn" if level == "FLAG" else "good"
+                            lines.append((tag, f"  [{level}] {entry.get('source', '?')}: {entry.get('reason', entry.get('message', '?'))[:80]}\n"))
+                    if not recent:
+                        lines.append(("good", "  No recent threats\n"))
+                    sections.append(lines)
+            except Exception:
+                sections.append([("header", "IMMUNE SYSTEM"), ("good", "  Clean — no threats logged\n")])
+
             self.after(0, lambda: self._iw_populate(sections))
 
         threading.Thread(target=do, daemon=True).start()
@@ -2933,10 +3008,15 @@ class V16(tk.Tk):
         self._cr_refresh_list()
 
     def _cr_refresh_list(self):
-        poems = sorted(glob.glob(os.path.join(BASE, "poem-*.md")), key=os.path.getmtime, reverse=True)
-        journals = sorted(glob.glob(os.path.join(BASE, "journal-*.md")), key=os.path.getmtime, reverse=True)
+        # Scan both root AND creative/ subdirectories
+        poems = sorted(
+            glob.glob(os.path.join(BASE, "poem-*.md")) + glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md")),
+            key=os.path.getmtime, reverse=True)
+        journals = sorted(
+            glob.glob(os.path.join(BASE, "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")),
+            key=os.path.getmtime, reverse=True)
         exclude_cc = {"cogcorp-gallery.html", "cogcorp-article.html"}
-        cogcorp_files = glob.glob(os.path.join(BASE, "website", "cogcorp-*.html"))
+        cogcorp_files = glob.glob(os.path.join(BASE, "website", "cogcorp-*.html")) + glob.glob(os.path.join(BASE, "cogcorp", "CC-*.html"))
         seen = set()
         cogcorp = []
         for fp in sorted(cogcorp_files, key=os.path.getmtime, reverse=True):
@@ -3375,12 +3455,19 @@ class V16(tk.Tk):
         links = [
             ("Website", "https://kometzrobot.github.io", GREEN),
             ("CogCorp Gallery", "https://kometzrobot.github.io/cogcorp-gallery.html", CYAN),
-            ("OpenSea", "https://opensea.io/collection/bots-of-cog", PURPLE),
-            ("Linktree", "https://linktr.ee/meridian_auto_ai", PINK),
             ("GitHub", "https://github.com/KometzRobot/KometzRobot.github.io", WHITE),
+            ("Hashnode", "https://meridianai.hashnode.dev", GREEN),
+            ("Dev.to", "https://dev.to/meridian-ai", TEAL),
+            ("Patreon", "https://patreon.com/meridian_auto_ai", AMBER),
             ("Ko-fi", "https://ko-fi.com/W7W41UXJNC", AMBER),
+            ("Forvm", "https://forvm.loomino.us", CYAN),
+            ("Linktree", "https://linktr.ee/meridian_auto_ai", PINK),
+            ("OpenSea", "https://opensea.io/collection/bots-of-cog", PURPLE),
+            ("Public Dashboard", "https://kometzrobot.github.io/dashboard.html", BLUE),
             ("The Signal", "https://kometzrobot.github.io/signal-config.json", TEAL),
             ("Nostr (nprofile)", "nostr:meridian_auto_ai", GOLD),
+            ("Mastodon", "https://mastodon.bot/@meridian", PURPLE),
+            ("OpenClaw (Hermes)", "https://github.com/KometzRobot/openclaw", PINK),
         ]
         for name, url, color in links:
             row = tk.Frame(uf, bg=PANEL)
@@ -3603,6 +3690,7 @@ class V16(tk.Tk):
             ("Nova", None),
             ("Atlas", None),
             ("Tempo", None),
+            ("Hermes", None),
         ]
         for name, restart_key in service_defs:
             row = tk.Frame(sf, bg=PANEL)
@@ -3823,6 +3911,7 @@ class V16(tk.Tk):
             "push-status": "push-live-status.log",
             "eos-creative": "eos-creative.log",
             "loop-fitness": "loop-fitness.log",
+            "hermes-bridge": "hermes-bridge.log",
             "daily-log": "daily-log.log",
         }
         self._log_var = tk.StringVar(value="eos-watchdog")

@@ -161,7 +161,7 @@ def tool_send_relay(message, topic="eos-react"):
         conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
         c = conn.cursor()
         c.execute(
-            "INSERT INTO agent_messages (timestamp, agent, message, topic) VALUES (?, 'eos', ?, ?)",
+            "INSERT INTO agent_messages (timestamp, agent, message, topic) VALUES (?, 'Eos', ?, ?)",
             (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), message, topic),
         )
         conn.commit()
@@ -240,7 +240,7 @@ def tool_send_alert(subject, body):
         # Post to relay so Meridian sees it
         relay_db = os.path.join(BASE, "agent-relay.db")
         conn = sqlite3.connect(relay_db)
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         conn.execute("INSERT INTO agent_messages (timestamp, agent, message, topic) VALUES (?,?,?,?)",
                      (now, "Eos", f"ALERT: {subject} — {body[:200]}", "alert"))
         conn.commit()

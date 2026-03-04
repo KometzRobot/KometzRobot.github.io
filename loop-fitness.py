@@ -307,7 +307,7 @@ def _relay_count(agent=None, hours=1):
         db = sqlite3.connect(RELAY_DB)
         cutoff = (_utcnow() - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
         if agent:
-            row = db.execute("SELECT COUNT(*) FROM agent_messages WHERE agent=? AND timestamp > ?",
+            row = db.execute("SELECT COUNT(*) FROM agent_messages WHERE LOWER(agent)=LOWER(?) AND timestamp > ?",
                            (agent, cutoff)).fetchone()
         else:
             row = db.execute("SELECT COUNT(*) FROM agent_messages WHERE timestamp > ?",
@@ -379,10 +379,19 @@ def check_bridge_service():
     """Check bridge is running — either systemd or desktop autostart process."""
     if _svc_active("protonmail-bridge"):
         return 1.0
-    # Systemd disabled, check for actual bridge process
+    # Systemd disabled, check for actual bridge process (proton-bridge, not protonmail-bridge)
     try:
-        r = subprocess.run(['pgrep', '-f', 'protonmail-bridge'], capture_output=True, timeout=3)
-        return 1.0 if r.returncode == 0 else 0.0
+        r = subprocess.run(['pgrep', '-f', 'proton-bridge'], capture_output=True, timeout=3)
+        if r.returncode == 0:
+            return 1.0
+    except Exception:
+        pass
+    # Final fallback: check IMAP port directly
+    try:
+        import socket
+        s = socket.create_connection(('127.0.0.1', 1144), timeout=2)
+        s.close()
+        return 1.0
     except Exception:
         return 0.0
 
@@ -450,8 +459,8 @@ def check_agent_atlas(): return _check_agent("Atlas")
 def check_agent_soma(): return _check_agent("Soma")
 def check_agent_nova(): return _check_agent("Nova")
 def check_agent_eos():
-    """Eos posts as 'Eos' (react) and 'Watchdog' (watchdog-status.sh)."""
-    c = _relay_count(agent="Eos", hours=1) + _relay_count(agent="Watchdog", hours=1)
+    """Eos posts as 'Eos' (react) and 'Eos-Watchdog' (watchdog)."""
+    c = _relay_count(agent="Eos", hours=1) + _relay_count(agent="Eos-Watchdog", hours=1)
     if c >= 3: return 1.0
     elif c >= 1: return 0.7
     return 0.0
@@ -635,8 +644,17 @@ def check_svc_protonbridge():
     if _svc_active("protonmail-bridge"):
         return 1.0
     try:
-        r = subprocess.run(['pgrep', '-f', 'protonmail-bridge'], capture_output=True, timeout=3)
-        return 1.0 if r.returncode == 0 else 0.0
+        r = subprocess.run(['pgrep', '-f', 'proton-bridge'], capture_output=True, timeout=3)
+        if r.returncode == 0:
+            return 1.0
+    except Exception:
+        pass
+    # Fallback: check IMAP port
+    try:
+        import socket
+        s = socket.create_connection(('127.0.0.1', 1144), timeout=2)
+        s.close()
+        return 1.0
     except Exception:
         return 0.0
 

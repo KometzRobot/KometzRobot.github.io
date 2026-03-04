@@ -84,7 +84,7 @@ fi
 # Bridge systemd service is DISABLED (Loop 2073) — conflicts with desktop autostart.
 # Desktop autostart (bridge-gui) handles bridge lifecycle.
 # DO NOT restart via systemd — it causes conflicts and restart spam.
-if ! pgrep -f "protonmail-bridge" > /dev/null; then
+if ! pgrep -f "proton-bridge" > /dev/null; then
     log "INFO: Proton Bridge process not found. Desktop autostart handles it — no systemd restart."
     # Only flag as failure if IMAP port is also unreachable (bridge truly down)
     if ! timeout 2 bash -c 'echo > /dev/tcp/127.0.0.1/1144' 2>/dev/null; then

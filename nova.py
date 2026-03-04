@@ -33,7 +33,11 @@ import shutil
 import sqlite3
 import subprocess
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+def _utcnow_str():
+    """UTC timestamp string for relay consistency."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 BASE = "/home/joel/autonomous-ai"
 WEBSITE_DIR = os.path.join(BASE, "website")
@@ -348,7 +352,7 @@ def post_to_relay(message):
                 in_reply_to INTEGER DEFAULT NULL
             )
         """)
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now = _utcnow_str()
         db.execute(
             "INSERT INTO agent_messages (timestamp, agent, message, topic) VALUES (?,?,?,?)",
             (now, "Nova", message, "maintenance")
@@ -507,11 +511,10 @@ def _post_restart_to_relay(service_name):
     """Announce a restart to the relay so other agents don't duplicate."""
     try:
         import sqlite3
-        from datetime import datetime
         db = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
         db.execute("INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?, ?, ?, ?)",
                    ("Nova", f"Restarted {service_name} (was down)", "restart",
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                    _utcnow_str()))
         db.commit()
         db.close()
     except Exception:
@@ -521,7 +524,7 @@ def _post_restart_to_relay(service_name):
 def check_and_restart_services():
     """Check critical services and restart them if down. Coordinates via relay."""
     services = {
-        "protonmail-bridge": {"check": "protonmail-bridge", "restart": None},  # desktop autostart handles bridge, no systemd
+        "protonmail-bridge": {"check": "proton-bridge", "restart": None},  # desktop autostart handles bridge, no systemd
         "ollama": {"check": "ollama serve", "restart": None},  # system service, auto-restarts
         "tailscale": {"check": "tailscaled", "restart": None},
         "the-signal": {"check": "the-signal.py", "restart": None, "systemd": "meridian-web-dashboard"},
@@ -593,12 +596,11 @@ def nova_alert_joel(message):
     try:
         # Post to relay so Meridian sees it
         import sqlite3
-        from datetime import datetime
         db_path = os.path.join(BASE, "agent-relay.db")
         conn = sqlite3.connect(db_path)
         conn.execute("INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?, ?, ?, ?)",
                      ("Nova", f"CRITICAL ALERT: {message[:300]}", "alert",
-                      datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                      _utcnow_str()))
         conn.commit()
         conn.close()
         log_observation(f"Alert logged to relay (email disabled): {message[:80]}")

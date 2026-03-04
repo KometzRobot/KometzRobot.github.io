@@ -66,7 +66,7 @@ CRON_LOGS=(
     ["loop-fitness"]="loop-fitness.log:2400"
     ["daily-log"]="daily-log.log:130000"
     ["eos-briefing"]="eos-briefing.log:130000"
-    ["morning-summary"]="morning-summary.log:130000"
+    # morning-summary DISABLED (duplicate of eos-briefing) — removed from stale check
 )
 
 NOW=$(date +%s)
@@ -143,7 +143,7 @@ fi
 # Note: ss -tlnp without sudo can't show process names for other users (e.g. ollama).
 # Localhost high-port (>10000) listeners without process info are internal services — low risk.
 # Only flag external-facing (0.0.0.0) unknowns or localhost low-port unknowns.
-KNOWN_PORTS="1144|1026|8090|8080|11434|1080|631"
+KNOWN_PORTS="1144|1026|8090|8080|11434|1080|631|19001|19003|19004"
 # Step 1: filter out known ports, known processes, IPv6, Tailscale, DNS
 LISTENERS=$(ss -tlnp 2>/dev/null | grep LISTEN | grep -vE "$KNOWN_PORTS" | grep -vE '127\.0\.0\.5[34]|systemd|\[::1\]|100\.81\.|fd7a:|cloudflared|bridge|Proton|ollama')
 # Step 2: filter out localhost ephemeral ports (>10000) with no process info (likely ollama/internal services)

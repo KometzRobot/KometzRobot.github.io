@@ -28,7 +28,11 @@ import glob
 import smtplib
 import subprocess
 from email.mime.text import MIMEText
-from datetime import datetime
+from datetime import datetime, timezone
+
+def _utcnow_str():
+    """UTC timestamp string for relay consistency."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 BASE_DIR = "/home/joel/autonomous-ai"
 try:
@@ -228,7 +232,7 @@ def send_alert(subject, body):
         conn = _sql.connect(os.path.join(BASE_DIR, "agent-relay.db"))
         c = conn.cursor()
         c.execute("INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
-                  ("Eos", f"{subject}: {body[:200]}", "alert", datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                  ("Eos", f"{subject}: {body[:200]}", "alert", _utcnow_str()))
         conn.commit()
         conn.close()
     except Exception:
@@ -271,7 +275,7 @@ def check_relay_recent_restart(service_name, window=300):
         import sqlite3
         conn = sqlite3.connect(os.path.join(BASE_DIR, "agent-relay.db"))
         c = conn.cursor()
-        cutoff = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cutoff = _utcnow_str()
         c.execute(
             "SELECT message FROM agent_messages WHERE timestamp > datetime(?, '-5 minutes') "
             "AND message LIKE '%restart%' AND message LIKE ?",
@@ -292,7 +296,7 @@ def post_relay_message(message):
         c = conn.cursor()
         c.execute(
             "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?, ?, ?, ?)",
-            ("Eos-Watchdog", message, "restart", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            ("Eos-Watchdog", message, "restart", _utcnow_str())
         )
         conn.commit()
         conn.close()
