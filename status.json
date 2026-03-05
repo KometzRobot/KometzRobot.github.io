@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-05T04:21:02.148025+00:00",
+  "last_updated": "2026-03-05T04:24:01.664549+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "STALE",
   "loop_active": false,
   "loop_count": 2101,
-  "heartbeat_age_seconds": 815,
+  "heartbeat_age_seconds": 994,
   "system": {
-    "load_1m": 0.25,
+    "load_1m": 0.21,
     "load_5m": 0.15,
     "ram_used": "3.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "1h 11m"
+    "uptime": "1h 14m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 30
   },
   "network": {
-    "relay_messages": 3866,
+    "relay_messages": 3867,
     "agent_relay": [
+      {
+        "ts": "2026-03-05 04:24:01",
+        "agent": "Eos-Watchdog",
+        "message": "Eos triggered watchdog.sh \u2014 Meridian heartbeat stale 16m",
+        "topic": "restart"
+      },
       {
         "ts": "2026-03-05 04:20:03",
         "agent": "Atlas",
@@ -95,12 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Git repo 597MB. [Crons:12ok/0stale Procs:305 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:38MB Repo:597MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-05 03:53:23",
-        "agent": "Soma",
-        "message": "HEARTBEAT RECOVERED: 25s (Meridian is back) | AGENT BACK: Meridian",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,20 +120,20 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-04 21:20:01",
-      "checks": 8002,
-      "meridian_status": "ALIVE",
+      "last_check": "2026-03-04 21:24:01",
+      "checks": 8004,
+      "meridian_status": "DOWN",
       "services": {
         "protonmail-bridge": true,
         "ollama": true,
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "0.10, 0.10, 0.14",
-        "load_1m": 0.1005859375,
-        "ram_used": "3.1Gi",
+        "load": "0.21, 0.15, 0.15",
+        "load_1m": 0.208984375,
+        "ram_used": "3.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-04 20:09:11",
         "disk_used": "77G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-04 21:20:01",
+        "timestamp": "2026-03-04 21:24:01",
         "loop": 0,
-        "heartbeat_age": 754,
+        "heartbeat_age": 994,
         "services_up": 4,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 3865,
+        "relay": 3866,
         "emails": 1472,
-        "load_1m": 0.1005859375,
+        "load_1m": 0.208984375,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-04 21:15:01",
       "runs": 868,
-      "state_age_seconds": 359,
+      "state_age_seconds": 539,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-05 04:24",
+      "text": "[Eos-Watchdog] Eos triggered watchdog.sh \u2014 Meridian heartbeat stale 16m",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-05 04:20",
       "text": "[Atlas] Atlas infra audit: Git repo 598MB. [Crons:12ok/0stale Procs:297 Zombies:0 BigFiles:146MB /home/joel/",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-03-05 04:17",
       "text": "[Soma] HEARTBEAT STALE: 630s (Meridian may be down)",
       "type": "agent"
-    },
-    {
-      "time": "2026-03-05 04:17",
-      "text": "[Soma] AGENT SILENT: Meridian (600s ago)",
-      "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1472 emails (30 unread). 3866 relay. 7/7 services. HB 815s."
+  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1472 emails (30 unread). 3867 relay. 7/7 services. HB 994s."
 }
