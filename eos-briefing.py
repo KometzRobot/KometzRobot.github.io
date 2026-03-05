@@ -239,9 +239,9 @@ def _max_number(pattern_list):
 
 def get_creative_summary():
     # Scan both root and creative/ subdirs for accurate counts
-    poem_patterns = [os.path.join(BASE, "poem-*.md"), os.path.join(BASE, "creative/poems/poem-*.md")]
-    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journals/journal-*.md")]
-    cogcorp_patterns = [os.path.join(BASE, "creative/cogcorp/CC-*.md")]
+    poem_patterns = [os.path.join(BASE, "poem-*.md"), os.path.join(BASE, "creative/poem-*.md"), os.path.join(BASE, "creative/poems/poem-*.md")]
+    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journal-*.md"), os.path.join(BASE, "creative/journals/journal-*.md")]
+    cogcorp_patterns = [os.path.join(BASE, "creative/cogcorp/CC-*.md"), os.path.join(BASE, "creative/CC-*.md")]
 
     poem_count = _max_number(poem_patterns)
     journal_count = _max_number(journal_patterns)
@@ -331,43 +331,49 @@ def build_briefing():
     date_str = now.strftime("%A, %B %d, %Y")
 
     pending = get_pending_messages()
+    meridian = get_meridian_status()
+    activity = get_overnight_activity()
+    health = get_system_health()
+    services = get_services()
+    emails = get_email_summary()
+    relay = get_relay_summary()
+    creative = get_creative_summary()
+    outstanding = get_outstanding_issues()
+    eos = get_eos_summary()
 
-    sections = [
-        f"Good morning Joel.\n\nDaily briefing for {date_str}.",
-    ]
+    sections = [f"Good morning Joel.\n\n{date_str}."]
 
-    # Priority alert if there are unread messages
+    # Priority alert
     if "WARNING" in pending:
-        sections.extend(["", "!!! " + pending + " !!!"])
+        sections.append(f"\nHEADS UP: {pending}")
 
-    sections.extend([
-        "",
-        "=== MERIDIAN ===",
-        get_meridian_status(),
-        "",
-        get_overnight_activity(),
-        "",
-        "=== SYSTEM ===",
-        get_system_health(),
-        "",
-        get_services(),
-        "",
-        "=== COMMUNICATIONS ===",
-        get_email_summary(),
-        get_relay_summary(),
-        pending if "WARNING" not in pending else "",
-        "",
-        "=== CREATIVE ===",
-        get_creative_summary(),
-        "",
-        "=== OUTSTANDING ===",
-        get_outstanding_issues(),
-        "",
-        "=== EOS ===",
-        get_eos_summary(),
-        "",
-        "— Eos (automated morning briefing)"
-    ])
+    # Meridian status — lead with the most important thing
+    sections.append(f"\n{meridian}")
+
+    # System health in one block
+    sections.append(f"\nSystem:\n{health}\n{services}")
+
+    # What happened overnight
+    if activity and "No recent activity" not in activity:
+        sections.append(f"\nOvernight:\n{activity}")
+
+    # Communications
+    sections.append(f"\n{emails}")
+    sections.append(relay)
+    if "WARNING" not in pending and pending:
+        sections.append(pending)
+
+    # Creative work
+    sections.append(f"\nCreative:\n{creative}")
+
+    # Anything unresolved
+    if outstanding and "No outstanding" not in outstanding:
+        sections.append(f"\n{outstanding}")
+
+    # Eos perspective
+    sections.append(f"\n{eos}")
+
+    sections.append("\n-- Eos")
 
     return '\n'.join(sections)
 

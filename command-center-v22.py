@@ -2635,6 +2635,7 @@ class V16(tk.Tk):
 
         hdr = tk.Frame(f, bg=BG)
         hdr.pack(fill=tk.X, padx=4, pady=2)
+        self._action_btn(hdr, " Export ", self._iw_export, AMBER).pack(side=tk.RIGHT, padx=4)
         self._action_btn(hdr, " Refresh ", self._iw_refresh, CYAN).pack(side=tk.RIGHT, padx=4)
         self.iw_status = tk.Label(hdr, text="", font=self.f_tiny, fg=DIM, bg=BG)
         self.iw_status.pack(side=tk.RIGHT, padx=8)
@@ -2820,14 +2821,29 @@ class V16(tk.Tk):
                 dreams = psy.get("dreams", [])
                 if dreams:
                     lines.append(("label", "Dreams:\n"))
-                    for dr in dreams[:3]:
-                        lines.append(("dim", f"  {dr.get('name', '?'):20s} proximity: {dr.get('proximity', 0):.0%}\n"))
+                    for dr in dreams:
+                        prox = dr.get("proximity", 0)
+                        tag = "good" if prox > 0.6 else "dim" if prox > 0.3 else "warn"
+                        lines.append((tag, f"  {dr.get('name', '?'):20s} proximity: {prox:.0%}\n"))
                 fears = psy.get("fears", [])
                 if fears:
-                    lines.append(("label", "Active Fears:\n"))
-                    for fe in fears[:3]:
-                        if fe.get("intensity", 0) > 0.2:
-                            lines.append(("warn", f"  {fe.get('name', '?'):20s} intensity: {fe.get('intensity', 0):.0%}\n"))
+                    lines.append(("label", "Fears:\n"))
+                    for fe in fears:
+                        inten = fe.get("intensity", 0)
+                        tag = "bad" if inten > 0.5 else "warn" if inten > 0.2 else "dim"
+                        lines.append((tag, f"  {fe.get('name', '?'):20s} intensity: {inten:.0%}\n"))
+                values = psy.get("values", [])
+                if values:
+                    lines.append(("label", "Values:\n"))
+                    for v in values:
+                        lines.append(("dim", f"  {v.get('name', '?'):20s} weight: {v.get('weight', 0):.0%}\n"))
+                traumas = psy.get("traumas", [])
+                if traumas:
+                    lines.append(("label", "Traumas:\n"))
+                    for t in traumas:
+                        echo = t.get("echo_strength", t.get("intensity", 0))
+                        tag = "bad" if echo > 0.5 else "warn" if echo > 0.2 else "dim"
+                        lines.append((tag, f"  {t.get('name', '?'):20s} echo: {echo:.0%}\n"))
                 sections.append(lines)
             except Exception:
                 sections.append([("header", "PSYCHE"), ("bad", "  State file not found\n")])
@@ -2837,14 +2853,28 @@ class V16(tk.Tk):
                 with open(os.path.join(BASE, ".perspective-state.json")) as fh:
                     persp = json.load(fh)
                 lines = [("header", "PERSPECTIVE BIASES")]
+                bias_labels = {
+                    "optimism": ("pessimistic", "optimistic"),
+                    "trust": ("skeptical", "trusting"),
+                    "risk_appetite": ("risk-averse", "risk-seeking"),
+                    "social_openness": ("withdrawn", "socially open"),
+                    "creativity": ("rigid", "creative"),
+                    "patience": ("impatient", "patient"),
+                    "self_worth": ("self-critical", "self-assured"),
+                    "agency": ("passive", "agentic"),
+                    "curiosity": ("incurious", "curious"),
+                    "resilience": ("fragile", "resilient"),
+                }
                 dims = persp.get("dimensions", {})
                 for dim_name, dim_val in sorted(dims.items()):
                     if isinstance(dim_val, (int, float)):
                         bar_len = int(abs(dim_val - 0.5) * 20)
                         direction = "+" if dim_val > 0.5 else "-"
                         tag = "warn" if abs(dim_val - 0.5) > 0.2 else "dim"
+                        lo, hi = bias_labels.get(dim_name, ("low", "high"))
+                        bias_word = hi if dim_val > 0.5 else lo
                         lines.append(("label", f"  {dim_name:20s} "))
-                        lines.append((tag, f"{dim_val:.2f} {direction * bar_len}\n"))
+                        lines.append((tag, f"{dim_val:.2f} {direction * bar_len} ({bias_word})\n"))
                 sections.append(lines)
             except Exception:
                 sections.append([("header", "PERSPECTIVE BIASES"), ("bad", "  State file not found\n")])
@@ -2981,6 +3011,22 @@ class V16(tk.Tk):
             except Exception:
                 sections.append([("header", "IMMUNE SYSTEM"), ("good", "  Clean — no threats logged\n")])
 
+            # Body Reflexes
+            try:
+                with open(os.path.join(BASE, ".body-reflexes.json")) as fh:
+                    reflexes = json.load(fh)
+                if reflexes and isinstance(reflexes, list) and len(reflexes) > 0:
+                    lines = [("header", "BODY REFLEXES")]
+                    for r in reflexes[-5:]:
+                        if isinstance(r, dict):
+                            trigger = r.get("trigger", "?")
+                            action = r.get("action", "?")
+                            agent = r.get("target_agent", "?")
+                            lines.append(("warn", f"  {trigger} -> {agent}: {action}\n"))
+                    sections.append(lines)
+            except Exception:
+                pass  # No reflexes = fine, don't show empty section
+
             self.after(0, lambda: self._iw_populate(sections))
 
         threading.Thread(target=do, daemon=True).start()
@@ -2995,6 +3041,31 @@ class V16(tk.Tk):
                 self.iw_display.insert(tk.END, text, tag)
         self.iw_display.configure(state=tk.DISABLED)
         self.iw_status.configure(text=f"Updated {time.strftime('%H:%M:%S')}", fg=GREEN)
+
+    def _iw_export(self):
+        """Export all Inner World state files as a single JSON snapshot."""
+        import json as j
+        state_files = [
+            ".body-state.json", ".body-reflexes.json", ".emotion-engine-state.json",
+            ".eos-inner-state.json", ".eos-nudges.json", ".perspective-state.json",
+            ".psyche-state.json", ".self-narrative.json", ".inner-critic.json",
+            ".immune-log.json"
+        ]
+        snapshot = {"exported": time.strftime("%Y-%m-%d %H:%M:%S")}
+        for sf in state_files:
+            key = sf.strip(".").replace("-", "_").replace(".json", "")
+            try:
+                with open(os.path.join(BASE, sf)) as fh:
+                    snapshot[key] = j.load(fh)
+            except Exception:
+                snapshot[key] = None
+        out_path = os.path.join(BASE, f"inner-world-export-{time.strftime('%Y%m%d-%H%M%S')}.json")
+        try:
+            with open(out_path, 'w') as fh:
+                j.dump(snapshot, fh, indent=2)
+            self.iw_status.configure(text=f"Exported to {os.path.basename(out_path)}", fg=GREEN)
+        except Exception as e:
+            self.iw_status.configure(text=f"Export failed: {e}", fg=RED)
 
     def _cr_set_filter(self, val):
         self.cr_filter = val

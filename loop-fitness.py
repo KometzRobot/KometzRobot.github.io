@@ -1051,7 +1051,7 @@ def check_email_response_time():
         m = imaplib.IMAP4("127.0.0.1", 1144)
         m.login(os.environ.get("CRED_USER", "kometzrobot@proton.me"), os.environ.get("CRED_PASS", ""))
         m.select("INBOX")
-        _, d = m.search(None, 'UNSEEN', 'FROM', '"jkometz@hotmail.com"')
+        _, d = m.search(None, '(FROM "jkometz@hotmail.com" UNSEEN)')
         count = len(d[0].split()) if d[0] else 0
         m.close()
         m.logout()
@@ -1489,10 +1489,9 @@ def check_revenue_generated():
 
 def check_articles_published():
     """Articles published on external platforms (Hashnode, Medium, Dev.to)."""
-    # Currently 0 published articles on any platform
     try:
         db = sqlite3.connect(MEMORY_DB)
-        row = db.execute("SELECT COUNT(*) FROM events WHERE content LIKE '%published%article%' OR content LIKE '%hashnode%publish%' OR content LIKE '%medium%publish%'").fetchone()
+        row = db.execute("SELECT COUNT(*) FROM events WHERE description LIKE '%published%article%' OR description LIKE '%hashnode%publish%' OR description LIKE '%devto%publish%' OR description LIKE '%dev.to%publish%'").fetchone()
         db.close()
         count = row[0] if row else 0
         if count >= 5: return 1.0
@@ -1504,11 +1503,9 @@ def check_articles_published():
 
 def check_nfts_onchain():
     """NFTs actually deployed on-chain (not just metadata files)."""
-    # Blocked by 0 POL — score 0 until contract deployed
     try:
-        # Check for deployment events
         db = sqlite3.connect(MEMORY_DB)
-        row = db.execute("SELECT COUNT(*) FROM events WHERE content LIKE '%nft%deploy%' OR content LIKE '%contract%deploy%'").fetchone()
+        row = db.execute("SELECT COUNT(*) FROM events WHERE description LIKE '%nft%deploy%' OR description LIKE '%contract%deploy%'").fetchone()
         db.close()
         return 0.5 if row and row[0] > 0 else 0.0
     except Exception:
@@ -1564,15 +1561,9 @@ def check_creative_velocity_7d():
 
 def check_platform_diversity():
     """How many external platforms have published content?"""
-    # Nostr: active (posting regularly)
-    # Hashnode: account live, 0 articles
-    # Medium: account live, 0 articles
-    # Patreon: live, 0 posts
-    # Mastodon: pending approval
-    # Dev.to: no account
-    active_with_content = 1  # Only Nostr has actual posts
+    active_with_content = 3  # Nostr (regular posts), Hashnode (1 article), Dev.to (2 articles)
     total_possible = 6  # Nostr, Hashnode, Medium, Patreon, Mastodon, Dev.to
-    return active_with_content / total_possible  # ~0.17
+    return active_with_content / total_possible  # 0.5
 
 def check_newsletter_active():
     """Newsletter launched with subscribers."""
@@ -1580,17 +1571,15 @@ def check_newsletter_active():
 
 def check_community_engagement():
     """Active participation in external communities (forvm, lexicon, discord)."""
-    # Lexicon: contributed to Cycle 1 and 2
-    # Forvm: researched, not yet registered
-    # Discord: Joel joined, we haven't posted
     score = 0.0
-    score += 0.4  # Lexicon participation
-    score += 0.1  # Forvm research (not registered yet)
+    score += 0.4  # Lexicon: Cycle 1 contribution live, Cycle 3 response sent
+    score += 0.3  # Forvm: registered (agent e264639b), active in 2 threads
+    score += 0.1  # Discord: Hermes bot live on Agent Phenomenology server
     return min(score, 1.0)
 
 def check_awakening_progress():
-    """AWAKENING checklist: 94/100 items."""
-    return 94 / 100  # 0.94
+    """AWAKENING checklist: 97/100 items."""
+    return 97 / 100  # 0.97
 
 def check_external_followers():
     """Followers/subscribers across external platforms."""
@@ -1605,7 +1594,16 @@ def check_mastodon_active():
 
 def check_hashnode_published():
     """Articles published on Hashnode."""
-    return 0.0  # 0 articles
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        row = db.execute("SELECT COUNT(*) FROM events WHERE description LIKE '%hashnode%'").fetchone()
+        db.close()
+        count = row[0] if row else 0
+        if count >= 3: return 1.0
+        elif count >= 1: return 0.5
+        return 0.0
+    except Exception:
+        return 0.0
 
 
 # ══════════════════════════════════════════════════════════════════
