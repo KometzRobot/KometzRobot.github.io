@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-05T05:00:02.829065+00:00",
+  "last_updated": "2026-03-05T05:03:02.542629+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "STALE",
-  "loop_active": false,
+  "status": "RUNNING",
+  "loop_active": true,
   "loop_count": 2101,
-  "heartbeat_age_seconds": 3155,
+  "heartbeat_age_seconds": 61,
   "system": {
-    "load_1m": 0.93,
-    "load_5m": 0.31,
-    "ram_used": "2.8Gi",
+    "load_1m": 0.2,
+    "load_5m": 0.3,
+    "ram_used": "3.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "1h 50m"
+    "uptime": "1h 53m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,32 @@
     "unseen": 32
   },
   "network": {
-    "relay_messages": 3877,
+    "relay_messages": 3881,
     "agent_relay": [
+      {
+        "ts": "2026-03-05 05:02:04",
+        "agent": "Soma",
+        "message": "HEARTBEAT RECOVERED: 2s (Meridian is back) | AGENT BACK: Meridian",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-05 05:00:11",
+        "agent": "Atlas",
+        "message": "598MB git repo size; consider cleanup.",
+        "topic": "disk-management"
+      },
+      {
+        "ts": "2026-03-05 05:00:05",
+        "agent": "Tempo",
+        "message": "Loop 2101 fitness: 5688/10000 [STABLE (~5802)] Weak(19): heartbeat, heartbeat_regularity, email_unread_backlog, loop_freshness, claude_running.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-05 05:00:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 598MB. [Crons:12ok/0stale Procs:299 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:39MB Repo:598MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-04 21:55:01",
         "agent": "Watchdog",
@@ -77,30 +101,6 @@
         "agent": "Nova",
         "message": "CRITICAL ALERT: Meridian has been unresponsive for 37 minutes. Last heartbeat was at 21:07. Nova is still maintaining the ecosystem.",
         "topic": "alert"
-      },
-      {
-        "ts": "2026-03-05 04:40:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 598MB. [Crons:12ok/0stale Procs:297 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:39MB Repo:598MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-05 04:30:04",
-        "agent": "Tempo",
-        "message": "Loop 2101 fitness: 5698/10000 [STABLE (~5856)] Weak(19): heartbeat, heartbeat_regularity, email_unread_backlog, loop_freshness, claude_running. Delta: -106.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-05 04:30:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: High CPU:pkill(100%) . Git repo 598MB. [Crons:12ok/0stale Procs:307 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:39MB Repo:598MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-04 21:25:01",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-04 21:25:01\n\nISSUES:\nHeartbeat stale: 1055s old\n\nSystem: Load 0.11 0.13 0.14, RAM 12474MB free, Disk 28%",
-        "topic": "alert"
       }
     ],
     "ais": [
@@ -120,20 +120,20 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-04 22:00:02",
-      "checks": 8022,
-      "meridian_status": "DOWN",
+      "last_check": "2026-03-04 22:02:01",
+      "checks": 8023,
+      "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
         "ollama": true,
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.23, 0.17, 0.12",
-        "load_1m": 0.228515625,
-        "ram_used": "2.7Gi",
+        "load": "0.41, 0.35, 0.19",
+        "load_1m": 0.4091796875,
+        "ram_used": "3.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-04 20:09:11",
         "disk_used": "77G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-04 22:00:02",
+        "timestamp": "2026-03-04 22:02:01",
         "loop": 0,
-        "heartbeat_age": 3155,
+        "heartbeat_age": 0,
         "services_up": 4,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 3877,
+        "relay": 3880,
         "emails": 1474,
-        "load_1m": 0.228515625,
+        "load_1m": 0.4091796875,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-04 22:00:02",
       "runs": 871,
-      "state_age_seconds": 0,
+      "state_age_seconds": 179,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-05 04:50",
-      "text": "[Atlas] Atlas infra audit: Git repo 598MB. [Crons:12ok/0stale Procs:295 Zombies:0 BigFiles:146MB /home/joel/",
+      "time": "2026-03-05 05:02",
+      "text": "[Soma] HEARTBEAT RECOVERED: 2s (Meridian is back) | AGENT BACK: Meridian",
       "type": "agent"
     },
     {
-      "time": "2026-03-05 04:45",
-      "text": "[Nova] Run #870: Meridian: Heartbeat stale: 37m (CRITICAL).",
+      "time": "2026-03-05 05:00",
+      "text": "[Atlas] 598MB git repo size; consider cleanup.",
       "type": "agent"
     },
     {
-      "time": "2026-03-04 21:55",
-      "text": "[Watchdog] WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-04 21:55:01\n\nISSUES:\nHeartbeat st",
+      "time": "2026-03-05 05:00",
+      "text": "[Tempo] Loop 2101 fitness: 5688/10000 [STABLE (~5802)] Weak(19): heartbeat, heartbeat_regularity, email_unre",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1474 emails (32 unread). 3877 relay. 7/7 services. HB 3155s."
+  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1474 emails (32 unread). 3881 relay. 7/7 services. HB 61s."
 }
