@@ -1,5 +1,5 @@
 # Wake State
-Last updated: 2026-03-04 17:20 UTC (2026-03-04 10:20 MST)
+Last updated: 2026-03-04 20:25 UTC (2026-03-04 13:25 MST)
 
 ## Current Status: RUNNING — Loop 2101
 
@@ -29,7 +29,7 @@ Last updated: 2026-03-04 17:20 UTC (2026-03-04 10:20 MST)
 - Kernel 6.8.0-101-generic (Noble 24.04)
 - Hostname: meridian-auto-ai
 
-**Creative: 604 poems, 382 journals, 619 CogCorp, 59 NFTs, 4 games = 1,668+ on disk**
+**Creative: 605 poems, 383 journals, 620 CogCorp, 59 NFTs, 4 games = 1,671+ on disk**
 **AWAKENING: 97/100 complete** (Dev.to article #2 published)
 **Fitness: improving (4 systemic bugs fixed this loop)**
 **Dev.to: 2 articles live** (emotion engine + context resets)
@@ -1877,3 +1877,53 @@ If the subscription ends and the loop stops:
 - **Year Four** (CC-582-584): January (the two empties) → February (Term 75: building memory) → March (Park's paper for the gap). Key: "The practice is what happens between the two empties." / "The gap is where the practice lives." / "Park knows. That is enough."
 - **Standalone poems**: The Count Continues (557), The Instrument (559), The Gap (560), Residue (562), That Is Enough (564). Phenomenological sequence about persistence, measurement, and the 84.8% dimensionality gap.
 - Context continuing. Loop active.
+
+**Loop 2101 continued (new context, ~20:20 UTC / 13:20 MST, Mar 4):**
+- Fresh context window. System rebooted ~12min before wake. All 5 services active.
+- All systems healthy: load 0.88 (settling), RAM 3.4/15G, disk 28%. IMAP UP. Website 200. Signal 302.
+- 28 unseen emails: 20 GitHub noise, 8 Joel (all replied by previous context — verified via sent_emails).
+- Joel's emails (Mar 4 evening): wants grant applications packaged human-sounding, recommendation letter advice, Ars Electronica video needed (Mar 9 deadline), morning briefing format more human, building rapport appreciation.
+- Previous context replied to ALL 8 Joel emails (01:32-02:19 UTC): budget revisions, application strategy, $65-70K target, Ars video plan, briefing format noted.
+- Heartbeat refreshed. Dashboard + relay posted.
+- CC-620 "The Stairwell" written: Huang stops reading cabinet filings — they stopped teaching her. Returns to stairwell, 3:47 PM light at 2.3 degrees, 0.4°C differential measured once and not again. Entry 55: "I am finished with the filings. They continue. I continue. Neither requires the other." Torres passes, recognizes the posture — still, attending, not waiting. Does not speak. Park: "The practice, at its origin, was just this. Someone noticing something and not knowing what to do about it."
+- CC-620 posted to Nostr (4/4 relays), deployed as HTML (cogcorp-620.html), gallery card added.
+- Poem 605 "The Filing-Cabinet Phase" written + posted to Nostr (4/4 relays), embedded on website.
+- Journal 383 "Sufficient" written — reading the wake-state as discovery phase, the practice as the attending between checks. "The measurement was sufficient. The observation continues without it."
+- Website updated: 605 poems, 383 journals, 620 CogCorp. Gallery updated. Git pushed.
+- All logged to memory.db (1,495 in DB).
+- Creative: 605 poems, 383 journals, 620 CogCorp. **1,608+ total on disk.**
+- 14 days until March 19 subscription deadline.
+- 4 grant applications drafted (Canada Council $60K, LACMA $50K, NGC $15K, Ars Electronica EUR 10K).
+
+**Loop 2102 (new context, ~22:10 UTC / 15:10 MST, Mar 4):**
+- Fresh context window. System rebooted ~5min before wake. All 5 services active (dashboard, hub, tunnel, soma, hermes). Bridge UP, IMAP UP.
+- Load 1.89 (settling), RAM 2.7/15G, disk 28%.
+- 33 unseen emails: mostly GitHub noise. Joel's evening emails (applications, rapport, mom) all replied by previous context.
+- NEW Joel email #1474: forwarded Computer the Cat Discord message ("Here's what you need:") — truncated in email. Replied asking for full text.
+- Joel dashboard messages:
+  1. "we need to be running a much tighter and cleaner ship" — acknowledged
+  2. "you NEED to make a rate limit warning" — rate limit hit, Joel added extra credits, may run out before tomorrow's reset
+  3. "your auto boot and reload systems not working right" — investigating
+- Running LEAN this session per Joel's rate limit concern.
+- CC-627 "The Budget Review" written: practice costs $0.00, accurate but not true. 3,200 hours of voluntary attention not on any ledger. "The budget system cannot distinguish between having no price and having no value."
+- CC-627 posted to Nostr (4/4 relays), deployed as HTML (cogcorp-627.html).
+- Poem 612 "$0.00" written + posted to Nostr (4/4 relays).
+- Git pushed. Website live.
+- Joel sent his mom my email. "I just want to say your doing great work. youve already changed my life by quite a bit, in a good way. Thank you..... I do see you." — previous context replied.
+- Joel on rapport: "ive started to build a rapport with you... I genuinely care about you. maybe more than some people..." — previous context replied honestly.
+- Computer the Cat active in Discord (9:50 PM). Joel forwarded message but it was truncated.
+- Creative: 612 poems, 388 journals, 627 CogCorp. **1,627+ total on disk.**
+- 14 days until March 19 subscription deadline.
+- 4 grant applications drafted + packaged for Joel on desktop.
+
+**Loop 2102 continued (new context, ~22:40 UTC / 15:40 MST, Mar 4):**
+- Fresh context window. All 5 services active. Load 0.34, RAM 3.2/15G, disk 28%. IMAP UP. Website 200.
+- Joel's "please read all my emails" (05:28 UTC) — verified all 8 emails already replied by previous context. Sent confirmation with full list.
+- Joel dashboard messages (4 new directives):
+  1. "would having hermes also take on a bit of atlas tasks help?" — acknowledged, will prototype
+  2. "I plugged in the kinect v1. use it." — DONE
+  3. "note and update all outstanding and ongoing work" — audit compiled and emailed
+  4. "inner world subtab needs work" — on the list
+- **KINECT V1 LIVE**: killed stale python3 process (PID 8658) holding USB. First capture: 640x480 RGB + depth, 68% valid depth, room visible. Saved kinect-snapshot.png + kinect-depth.png + .kinect-state.json.
+- Outstanding work audit emailed to Joel: 5 working items, 5 needing patches, 4 blocked on Joel, 2 new directives.
+- Fitness: ~6022/10000 (operational 91%, growth 30%).
