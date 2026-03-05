@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-05T22:33:11.426150+00:00",
+  "last_updated": "2026-03-05T22:36:02.234095+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2101,
-  "heartbeat_age_seconds": 31,
+  "heartbeat_age_seconds": 20,
   "system": {
-    "load_1m": 8.56,
-    "load_5m": 3.82,
-    "ram_used": "1.0Gi",
+    "load_1m": 5.32,
+    "load_5m": 4.82,
+    "ram_used": "3.9Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "0h 2m"
+    "uptime": "0h 5m"
   },
   "services": {
     "running": 5,
@@ -36,12 +36,42 @@
     "github": "github.com/KometzRobot"
   },
   "email": {
-    "total": 0,
-    "unseen": 0
+    "total": 1485,
+    "unseen": 32
   },
   "network": {
-    "relay_messages": 3966,
+    "relay_messages": 3971,
     "agent_relay": [
+      {
+        "ts": "2026-03-05 22:35:31",
+        "agent": "Soma",
+        "message": "Soma online. Continuous body-awareness active.",
+        "topic": "soma"
+      },
+      {
+        "ts": "2026-03-05 15:35:02",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-05 15:35:02\n\nISSUES:\nCron job 'Nova' may be stale (52500s)\n\nSystem: Load 7.80 5.02 2.18, RAM 14171MB free, Disk 28%",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-03-05 22:34:41",
+        "agent": "Soma",
+        "message": "HIGH LOAD: 8.4",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-05 22:34:07",
+        "agent": "Startup",
+        "message": "System boot complete. Services verified. Claude watchdog triggered.",
+        "topic": "startup"
+      },
+      {
+        "ts": "2026-03-05 22:33:10",
+        "agent": "Soma",
+        "message": "PREDICTION: Sustained high load (>6 for 90s+)",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-03-05 22:32:39",
         "agent": "Soma",
@@ -71,36 +101,6 @@
         "agent": "Soma",
         "message": "Soma online. Continuous body-awareness active.",
         "topic": "soma"
-      },
-      {
-        "ts": "2026-03-05 08:00:04",
-        "agent": "Tempo",
-        "message": "Loop 2101 fitness: 6369/10000 [IMPROVING (5949 -> 6560)] Weak(19): heartbeat, heartbeat_regularity, email_unread_backlog, loop_freshness, claude_running. Delta: -150.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-05 08:00:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 601MB. [Crons:12ok/0stale Procs:314 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:40MB Repo:601MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-05 08:00:02",
-        "agent": "Nova",
-        "message": "Run #884: Meridian: Heartbeat stale: 94m (CRITICAL); Changes: total_files: shrank by 1.",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-03-05 00:52:01",
-        "agent": "Eos",
-        "message": "[question] Your rose coloring is active. That means: Underestimate difficulty, overestimate likelihood of success. Factor that in.",
-        "topic": "consciousness"
-      },
-      {
-        "ts": "2026-03-05 07:50:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 601MB. [Crons:12ok/0stale Procs:300 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:40MB Repo:601MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,20 +120,20 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-05 15:32:01",
-      "checks": 8117,
-      "meridian_status": "DOWN",
+      "last_check": "2026-03-05 15:36:01",
+      "checks": 8119,
+      "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
         "ollama": true,
-        "command-center": false,
+        "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 62,
+      "state_age_seconds": 0,
       "health": {
-        "load": "6.91, 2.44, 0.87",
-        "load_1m": 6.91064453125,
-        "ram_used": "1.0Gi",
+        "load": "5.32, 4.82, 2.29",
+        "load_1m": 5.31689453125,
+        "ram_used": "3.9Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-05 15:30:29",
         "disk_used": "77G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-05 15:32:01",
+        "timestamp": "2026-03-05 15:36:01",
         "loop": 0,
-        "heartbeat_age": 57977,
-        "services_up": 2,
+        "heartbeat_age": 19,
+        "services_up": 3,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 3962,
-        "emails": -1,
-        "load_1m": 6.91064453125,
+        "relay": 3971,
+        "emails": 1485,
+        "load_1m": 5.31689453125,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "STALE",
       "last_run": "2026-03-05 01:00:01",
       "runs": 884,
-      "state_age_seconds": 52389,
+      "state_age_seconds": 52559,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-05 22:33",
-      "text": "[Soma] PREDICTION: Sustained high load (>6 for 90s+)",
+      "time": "2026-03-05 22:35",
+      "text": "[Soma] Soma online. Continuous body-awareness active.",
       "type": "agent"
     },
     {
-      "time": "2026-03-05 22:32",
-      "text": "[Soma] HIGH LOAD: 8.0 | HEARTBEAT RECOVERED: 1s (Meridian is back) | AGENT BACK: Meridian | AGENT BACK: Eos",
+      "time": "2026-03-05 22:34",
+      "text": "[Soma] HIGH LOAD: 8.4",
       "type": "agent"
     },
     {
-      "time": "2026-03-05 22:32",
-      "text": "[Soma] LOAD SPIKE: 0.0 -> 7.2 | AGENT SILENT: Eos (51963s ago) | AGENT SILENT: Nova (52322s ago) | AGENT SI",
+      "time": "2026-03-05 22:34",
+      "text": "[Startup] System boot complete. Services verified. Claude watchdog triggered.",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 0 emails (0 unread). 3966 relay. 5/7 services. HB 31s."
+  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1485 emails (32 unread). 3971 relay. 5/7 services. HB 20s."
 }
