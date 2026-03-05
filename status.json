@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-05T03:45:02.139444+00:00",
+  "last_updated": "2026-03-05T03:48:02.070340+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "RUNNING",
-  "loop_active": true,
+  "status": "STALE",
+  "loop_active": false,
   "loop_count": 2101,
-  "heartbeat_age_seconds": 463,
+  "heartbeat_age_seconds": 643,
   "system": {
-    "load_1m": 0.24,
-    "load_5m": 0.16,
-    "ram_used": "3.3Gi",
+    "load_1m": 0.12,
+    "load_5m": 0.13,
+    "ram_used": "2.9Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "0h 35m"
+    "uptime": "0h 38m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,14 @@
     "unseen": 30
   },
   "network": {
-    "relay_messages": 3852,
+    "relay_messages": 3853,
     "agent_relay": [
+      {
+        "ts": "2026-03-05 03:47:21",
+        "agent": "Soma",
+        "message": "HEARTBEAT STALE: 603s (Meridian may be down) | AGENT SILENT: Meridian (603s ago)",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-03-05 03:45:01",
         "agent": "Nova",
@@ -95,12 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Git repo 595MB. [Crons:12ok/0stale Procs:289 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:36MB Repo:595MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-05 03:16:05",
-        "agent": "Eos-Watchdog",
-        "message": "Restarted command-center via systemd",
-        "topic": "restart"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-04 20:44:01",
-      "checks": 7984,
+      "last_check": "2026-03-04 20:48:01",
+      "checks": 7986,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "0.03, 0.14, 0.43",
-        "load_1m": 0.02978515625,
-        "ram_used": "3.3Gi",
+        "load": "0.04, 0.12, 0.35",
+        "load_1m": 0.04248046875,
+        "ram_used": "2.9Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-04 20:09:11",
         "disk_used": "77G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-04 20:44:01",
+        "timestamp": "2026-03-04 20:48:01",
         "loop": 0,
-        "heartbeat_age": 402,
+        "heartbeat_age": 643,
         "services_up": 4,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 3851,
+        "relay": 3853,
         "emails": 1472,
-        "load_1m": 0.02978515625,
+        "load_1m": 0.04248046875,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-04 20:45:01",
       "runs": 866,
-      "state_age_seconds": 0,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-05 03:47",
+      "text": "[Soma] HEARTBEAT STALE: 603s (Meridian may be down) | AGENT SILENT: Meridian (603s ago)",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-05 03:45",
       "text": "[Nova] Run #866: Changes: total_files: grew by 4; Joel sent 2 new message(s).",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-03-05 03:40",
       "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(100%) . Git repo 597MB. [Crons:12ok/0stale Procs:293 Zo",
       "type": "agent"
-    },
-    {
-      "time": "2026-03-05 03:37",
-      "text": "[Soma] MOOD SHIFT: focused -> calm (score: 48.8) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
-      "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1472 emails (30 unread). 3852 relay. 7/7 services. HB 463s."
+  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1472 emails (30 unread). 3853 relay. 7/7 services. HB 643s."
 }
