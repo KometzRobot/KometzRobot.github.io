@@ -79,15 +79,15 @@ GREEN = "#00e87b"
 GREEN2 = "#00c868"
 CYAN = "#00d4ff"
 CYAN2 = "#0098cc"
-AMBER = "#ffaa00"
-AMBER2 = "#cc8800"
+AMBER = "#ff8833"       # Soma — warm orange, nervous system energy
+AMBER2 = "#cc6622"
 RED = "#ff3355"
-GOLD = "#d4a017"
+GOLD = "#ffcc00"        # Eos — bright gold, sensory warmth
 WHITE = "#e8e8f0"
-PURPLE = "#b388ff"
-PINK = "#ff66cc"
-TEAL = "#00ccaa"
-BLUE = "#4488ff"
+PURPLE = "#bb77ff"      # Nova — vivid purple, immune defense
+PINK = "#ff55bb"        # Hermes — hot pink, messenger
+TEAL = "#5599bb"        # Atlas — steel blue, structural/skeletal
+BLUE = "#4488ff"        # Tempo — consistent blue, endocrine rhythm
 
 
 # ── DATA FUNCTIONS ───────────────────────────────────────────────
@@ -299,7 +299,7 @@ def guess_agent(filename):
 
 AGENT_COLORS_MAP = {
     "Meridian": GREEN, "Eos": GOLD, "Nova": PURPLE,
-    "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE,
+    "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE, "Hermes": PINK,
 }
 
 def get_cross_references(filepath):
@@ -1712,7 +1712,7 @@ class V16(tk.Tk):
         self.chat_display.tag_configure("atlas", foreground=TEAL)
         self.chat_display.tag_configure("nova", foreground=PURPLE)
         self.chat_display.tag_configure("soma", foreground=AMBER)
-        self.chat_display.tag_configure("tempo", foreground="#4a9eff")
+        self.chat_display.tag_configure("tempo", foreground=BLUE)
         self.chat_display.tag_configure("meridian", foreground=GREEN)
         self.chat_display.tag_configure("hermes", foreground=PINK)
         self.chat_display.tag_configure("sys", foreground=DIM)
@@ -1723,7 +1723,7 @@ class V16(tk.Tk):
         # Agent selector (includes All Agents broadcast)
         self.chat_agent = tk.StringVar(value="Eos")
         agent_colors = {"All Agents": WHITE, "Eos": GOLD, "Atlas": TEAL, "Nova": PURPLE,
-                        "Soma": AMBER, "Tempo": "#4a9eff", "Meridian": GREEN, "Hermes": PINK}
+                        "Soma": AMBER, "Tempo": BLUE, "Meridian": GREEN, "Hermes": PINK}
         agent_menu = tk.OptionMenu(inp, self.chat_agent, *agent_colors.keys())
         agent_menu.configure(font=self.f_tiny, bg=PANEL2, fg=GOLD, bd=0,
                            highlightthickness=0, activebackground=BORDER)
@@ -2773,6 +2773,37 @@ class V16(tk.Tk):
         def do():
             sections = []
 
+            # ── SUMMARY BAR ──
+            try:
+                summary_parts = []
+                try:
+                    with open(os.path.join(BASE, ".body-state.json")) as fh:
+                        bs = json.load(fh)
+                    mood = bs.get("emotion", {}).get("dominant", "?")
+                    val = bs.get("emotion", {}).get("valence", 0)
+                    aro = bs.get("emotion", {}).get("arousal", 0)
+                    summary_parts.append(f"Feeling: {mood} (val:{val:.2f} aro:{aro:.2f})")
+                    vis = bs.get("vision", {})
+                    if vis.get("available"):
+                        summary_parts.append(f"Eyes: {vis.get('valid_depth_pct', 0):.0f}% depth | bright:{vis.get('mean_brightness', 0):.1f}")
+                    else:
+                        summary_parts.append("Eyes: offline")
+                except Exception:
+                    pass
+                try:
+                    with open(os.path.join(BASE, ".self-narrative.json")) as fh:
+                        sn = json.load(fh)
+                    doubt = sn.get("doubt_level", 0)
+                    top_facet = max(sn.get("identity_facets", [{}]), key=lambda x: x.get("strength", 0), default={})
+                    facet_name = top_facet.get("name", "?")
+                    summary_parts.append(f"Identity: {facet_name} | Doubt: {doubt:.0%}")
+                except Exception:
+                    pass
+                if summary_parts:
+                    sections.append([("header", "OVERVIEW"), ("value", "  " + "\n  ".join(summary_parts) + "\n")])
+            except Exception:
+                pass
+
             # Emotion Engine
             try:
                 with open(os.path.join(BASE, ".emotion-engine-state.json")) as fh:
@@ -2804,6 +2835,18 @@ class V16(tk.Tk):
                         sub = duality.get("subcontext")
                         sub_str = f" -> {sub}" if sub else ""
                         lines.append(("dim", f"  {name:16s} {inten:.2f}  [{gs_bar}] {gift_pct}%gift  {dep_label}/{dir_label}{sub_str}\n"))
+                # Behavioral modifiers
+                bm = estate.get("behavioral_modifiers", {})
+                if bm:
+                    lines.append(("label", "Behavioral Modifiers:\n"))
+                    for mname, mval in bm.items():
+                        bar = "\u2588" * int(mval * 10) + "\u2591" * (10 - int(mval * 10))
+                        lines.append(("dim", f"  {mname:16s} [{bar}] {mval:.0%}\n"))
+                # Perspective summary
+                persp_text = estate.get("perspective", "")
+                if persp_text:
+                    lines.append(("label", "Perspective: "))
+                    lines.append(("dim", f"{persp_text}\n"))
                 sections.append(lines)
             except Exception:
                 sections.append([("header", "EMOTION ENGINE"), ("bad", "  State file not found\n")])
@@ -3026,6 +3069,37 @@ class V16(tk.Tk):
                     sections.append(lines)
             except Exception:
                 pass  # No reflexes = fine, don't show empty section
+
+            # Vision (Kinect)
+            try:
+                with open(os.path.join(BASE, ".kinect-state.json")) as fh:
+                    vis = json.load(fh)
+                lines = [("header", "VISION (KINECT V1)")]
+                if vis.get("available", vis.get("valid_depth_pct") is not None):
+                    ts = vis.get("timestamp", "?")
+                    lines.append(("label", "Status: "))
+                    lines.append(("good", "ONLINE\n"))
+                    lines.append(("dim", f"  Last capture: {ts}\n"))
+                    rgb = vis.get("rgb_shape", [])
+                    if rgb:
+                        lines.append(("dim", f"  Resolution: {rgb[1]}x{rgb[0]} RGB + depth\n"))
+                    bright = vis.get("mean_brightness", 0)
+                    light_desc = "dark" if bright < 10 else "dim" if bright < 50 else "lit" if bright < 150 else "bright"
+                    tag = "warn" if bright < 10 else "dim" if bright < 50 else "good"
+                    lines.append((tag, f"  Brightness: {bright:.1f}/255 ({light_desc})\n"))
+                    dpct = vis.get("valid_depth_pct", 0)
+                    dtag = "good" if dpct > 60 else "warn" if dpct > 30 else "bad"
+                    lines.append((dtag, f"  Depth coverage: {dpct:.1f}%\n"))
+                    dr = vis.get("depth_range", [0, 0])
+                    lines.append(("dim", f"  Depth range: {dr[0]}-{dr[1]} raw units\n"))
+                    dm = vis.get("depth_mean", 0)
+                    lines.append(("dim", f"  Mean depth: {dm:.0f}\n"))
+                else:
+                    lines.append(("label", "Status: "))
+                    lines.append(("bad", f"OFFLINE ({vis.get('reason', 'unknown')})\n"))
+                sections.append(lines)
+            except Exception:
+                sections.append([("header", "VISION (KINECT V1)"), ("dim", "  No vision data yet\n")])
 
             self.after(0, lambda: self._iw_populate(sections))
 

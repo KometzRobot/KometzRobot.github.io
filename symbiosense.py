@@ -38,6 +38,8 @@ MOOD_HISTORY_FILE = os.path.join(BASE, ".soma-mood-history.json")
 BASELINES_FILE = os.path.join(BASE, ".soma-baselines.json")
 BODY_STATE_FILE = os.path.join(BASE, ".body-state.json")
 REFLEX_FILE = os.path.join(BASE, ".body-reflexes.json")
+KINECT_STATE_FILE = os.path.join(BASE, ".kinect-state.json")
+VISION_INTERVAL = 300  # seconds between Kinect captures (5 minutes)
 INTERVAL = 30  # seconds between checks
 MOOD_HISTORY_MAX = 288  # 24 hours at 5-min intervals
 
@@ -249,6 +251,60 @@ def get_neural():
     return result
 
 
+_last_vision_time = 0
+_last_vision_data = None
+
+def get_vision():
+    """Vision sense — Kinect V1 depth + RGB capture. Runs every VISION_INTERVAL seconds."""
+    global _last_vision_time, _last_vision_data
+    now = time.time()
+    if now - _last_vision_time < VISION_INTERVAL and _last_vision_data is not None:
+        return _last_vision_data  # Return cached data between captures
+    try:
+        import freenect
+        import numpy as np
+    except ImportError:
+        return {"available": False, "reason": "freenect not installed"}
+    try:
+        # Capture depth frame
+        depth, _ = freenect.sync_get_depth()
+        if depth is None:
+            return {"available": False, "reason": "no depth data"}
+        # Capture RGB frame
+        rgb, _ = freenect.sync_get_video()
+        # Depth analysis
+        valid_mask = (depth > 0) & (depth < 2047)
+        valid_pct = float(np.sum(valid_mask)) / depth.size * 100
+        valid_depths = depth[valid_mask]
+        depth_min = int(np.min(valid_depths)) if len(valid_depths) > 0 else 0
+        depth_max = int(np.max(valid_depths)) if len(valid_depths) > 0 else 0
+        depth_mean = float(np.mean(valid_depths)) if len(valid_depths) > 0 else 0
+        # RGB analysis
+        brightness = float(np.mean(rgb)) if rgb is not None else 0
+        vision_data = {
+            "available": True,
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "rgb_shape": list(rgb.shape) if rgb is not None else None,
+            "depth_shape": list(depth.shape),
+            "mean_brightness": round(brightness, 2),
+            "valid_depth_pct": round(valid_pct, 2),
+            "depth_range": [depth_min, depth_max],
+            "depth_mean": round(depth_mean, 1),
+        }
+        # Save to kinect state file
+        with open(KINECT_STATE_FILE, 'w') as f:
+            json.dump(vision_data, f, indent=2)
+        # Stop Kinect to release USB
+        freenect.sync_stop()
+        _last_vision_time = now
+        _last_vision_data = vision_data
+        return vision_data
+    except Exception as e:
+        _last_vision_data = {"available": False, "reason": str(e)[:100]}
+        _last_vision_time = now
+        return _last_vision_data
+
+
 def get_organs():
     """Organ health — disk I/O as organ perfusion."""
     organs = {}
@@ -441,17 +497,19 @@ def get_baseline_adjustment(baselines, hour, load_val, ram_val):
 # Soma's "mood" is derived from system health + context + memory.
 # 12 mood states (expanded from 6) with first-person descriptions.
 MOOD_THRESHOLDS = {
-    "serene":       97,   # peak — EVERYTHING perfect, all agents, all services, low load, fresh heartbeat
-    "content":      92,   # deeply comfortable, nothing wrong anywhere
-    "calm":         85,   # normal operations — but this is HARD to maintain
-    "focused":      75,   # elevated activity, working, engaged — typical good state
-    "alert":        65,   # something needs watching, attention pulled
-    "contemplative":55,   # processing concerns, not alarmed but working through it
-    "uneasy":       45,   # multiple small problems piling up
-    "anxious":      35,   # real degradation happening, hypervigilant
-    "stressed":     25,   # overloaded, things breaking, can't keep up
-    "strained":     15,   # near breaking point, critical failures active
-    "critical":      8,   # system in danger, immediate action needed
+    # RESCALED Loop 2088 — Joel: "50 when calm, 70-80 best days, 80-90 euphoria"
+    # Base healthy metrics now produce ~50 (was ~93). Higher states require extras.
+    "serene":       80,   # peak — extremely rare, requires everything + breakthrough moment
+    "content":      65,   # deeply comfortable — requires healthy systems + creative/social activity
+    "calm":         48,   # normal operations — healthy systems, nothing special happening
+    "focused":      40,   # elevated activity, working, engaged
+    "alert":        33,   # something needs watching, attention pulled
+    "contemplative":26,   # processing concerns, not alarmed but working through it
+    "uneasy":       20,   # multiple small problems piling up
+    "anxious":      15,   # real degradation happening, hypervigilant
+    "stressed":     10,   # overloaded, things breaking, can't keep up
+    "strained":      6,   # near breaking point, critical failures active
+    "critical":      3,   # system in danger, immediate action needed
     "shutdown":      0,   # catastrophic, barely functional
 }
 
@@ -945,6 +1003,7 @@ def sense_cycle():
     # Body system readings
     thermal = get_thermal()
     neural = get_neural()
+    vision = get_vision()
 
     now = time.time()
     state = {
@@ -955,6 +1014,7 @@ def sense_cycle():
         "processes": procs,
         "thermal": thermal,
         "neural": neural,
+        "vision": vision,
         "timestamp": now,
     }
 
@@ -1069,8 +1129,17 @@ def sense_cycle():
     # Update baselines with current readings
     baselines = update_baselines(baselines, current_hour, load, ram, disk)
     save_baselines(baselines)
+    # RESCALE composite to Joel's expected range (Loop 2088 fix):
+    # Raw 90-100 (everything healthy) should map to ~45-55, not 90-100.
+    # Joel: "50 when calm, 70-80 best days, 80-90 euphoria"
+    # Apply dampening: scale to 55% of raw. Max from metrics alone = ~55.
+    # Content/serene requires creative or social activity bonuses (future).
+    adjusted_composite = adjusted_composite * 0.55
     # Exponential moving average: 40% old, 60% new — react FASTER to changes (tightened from 60/40)
     prev_composite = prev.get("mood_composite", adjusted_composite)
+    # Handle transition: if prev was on old scale (>60), rescale it too
+    if prev_composite > 60:
+        prev_composite = prev_composite * 0.55
     smoothed = (prev_composite * 0.4) + (adjusted_composite * 0.6)
     state["mood_composite"] = smoothed
     # Re-derive mood from smoothed score (now 12 states)
@@ -1266,6 +1335,7 @@ def sense_cycle():
                 "voice": emotion_data.get("voice", MOOD_VOICE.get(mood, "")) if emotion_data else MOOD_VOICE.get(mood, ""),
                 "behavioral_modifiers": emotion_data.get("behavioral_modifiers", {}) if emotion_data else {},
             },
+            "vision": vision if vision and vision.get("available") else {"available": False},
             "services": state.get("services", {}),
             "predictions": predictions,
             "alerts": [],
