@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-05T03:12:06.650044+00:00",
+  "last_updated": "2026-03-05T03:15:02.620057+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2101,
-  "heartbeat_age_seconds": 64,
+  "heartbeat_age_seconds": 240,
   "system": {
-    "load_1m": 7.94,
-    "load_5m": 4.08,
-    "ram_used": "1.5Gi",
+    "load_1m": 0.78,
+    "load_5m": 2.74,
+    "ram_used": "2.0Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "0h 2m"
+    "uptime": "0h 5m"
   },
   "services": {
     "running": 6,
@@ -36,12 +36,30 @@
     "github": "github.com/KometzRobot"
   },
   "email": {
-    "total": 0,
-    "unseen": 0
+    "total": 1470,
+    "unseen": 52
   },
   "network": {
-    "relay_messages": 3837,
+    "relay_messages": 3840,
     "agent_relay": [
+      {
+        "ts": "2026-03-05 03:13:45",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: alert -> focused (score: 40.3) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-04 20:12:49",
+        "agent": "Startup",
+        "message": "System boot complete. Services verified. Claude watchdog triggered.",
+        "topic": "startup"
+      },
+      {
+        "ts": "2026-03-05 03:12:14",
+        "agent": "Soma",
+        "message": "LOAD SPIKE: 6.1 -> 8.1",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-03-05 03:11:42",
         "agent": "Soma",
@@ -83,24 +101,6 @@
         "agent": "Soma",
         "message": "MOOD SHIFT: focused -> calm (score: 48.1) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-05 03:03:25",
-        "agent": "Soma",
-        "message": "HEARTBEAT RECOVERED: 14s (Meridian is back) | AGENT BACK: Meridian",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-05 03:00:10",
-        "agent": "Atlas",
-        "message": "Git repo 595MB. Consider cleanup.",
-        "topic": "DiskManagement"
-      },
-      {
-        "ts": "2026-03-05 03:00:05",
-        "agent": "Tempo",
-        "message": "Loop 2101 fitness: 5784/10000 [STABLE (~5974)] Weak(17): heartbeat, heartbeat_regularity, email_unread_backlog, loop_freshness, claude_running. Delta: -176.",
-        "topic": "fitness"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-04 20:12:02",
-      "checks": 7968,
+      "last_check": "2026-03-04 20:14:01",
+      "checks": 7969,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 4,
+      "state_age_seconds": 60,
       "health": {
-        "load": "7.93, 4.01, 1.59",
-        "load_1m": 7.93359375,
-        "ram_used": "1.5Gi",
+        "load": "2.04, 3.34, 1.66",
+        "load_1m": 2.0361328125,
+        "ram_used": "1.9Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-04 20:09:11",
         "disk_used": "77G",
@@ -141,20 +141,20 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-04 20:12:02",
+        "timestamp": "2026-03-04 20:14:01",
         "loop": 0,
-        "heartbeat_age": 59,
+        "heartbeat_age": 179,
         "services_up": 3,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 3837,
+        "relay": 3840,
         "emails": -1,
-        "load_1m": 7.93359375,
+        "load_1m": 2.0361328125,
         "disk_pct": "28%"
       },
       "alerts": {
-        "high_load": true,
+        "high_load": false,
         "disk": false,
         "website": false,
         "cron": false
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-04 20:00:01",
       "runs": 863,
-      "state_age_seconds": 724,
+      "state_age_seconds": 900,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-05 03:13",
+      "text": "[Soma] MOOD SHIFT: alert -> focused (score: 40.3) \u2014 \"Activity elevated, tracking multiple things. Engaged a",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-05 03:12",
+      "text": "[Soma] LOAD SPIKE: 6.1 -> 8.1",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-05 03:11",
       "text": "[Soma] PREDICTION: Sustained high load (>6 for 90s+)",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-05 03:10",
-      "text": "[Atlas] Atlas infra audit: Stale crons: watchdog-status(307s). 26 zombie processes. Git repo 595MB. [Crons:1",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-05 03:10",
-      "text": "[Soma] LOAD SPIKE: 0.0 -> 8.8",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 0 emails (0 unread). 3837 relay. 6/7 services. HB 64s."
+  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1470 emails (52 unread). 3840 relay. 6/7 services. HB 240s."
 }
