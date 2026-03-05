@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-05T05:30:02.687812+00:00",
+  "last_updated": "2026-03-05T05:33:01.604183+00:00",
   "location": "Calgary, Alberta, Canada",
-  "status": "RUNNING",
-  "loop_active": true,
+  "status": "STALE",
+  "loop_active": false,
   "loop_count": 2101,
-  "heartbeat_age_seconds": 531,
+  "heartbeat_age_seconds": 710,
   "system": {
-    "load_1m": 0.08,
-    "load_5m": 0.32,
-    "ram_used": "3.2Gi",
+    "load_1m": 0.16,
+    "load_5m": 0.31,
+    "ram_used": "3.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "0h 25m"
+    "uptime": "0h 28m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,26 @@
     "unseen": 29
   },
   "network": {
-    "relay_messages": 3896,
+    "relay_messages": 3899,
     "agent_relay": [
+      {
+        "ts": "2026-03-05 05:31:38",
+        "agent": "Soma",
+        "message": "HEARTBEAT STALE: 626s (Meridian may be down) | AGENT SILENT: Meridian (627s ago)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-05 05:30:11",
+        "agent": "Tempo",
+        "message": "Loop 2101 fitness: 5878/10000 [STABLE (~5821)] Weak(17): heartbeat, heartbeat_regularity, email_unread_backlog, loop_freshness, agent_eos. Delta: +191.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-05 05:30:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 599MB. [Crons:12ok/0stale Procs:313 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:37MB Repo:599MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-05 05:22:36",
         "agent": "Soma",
@@ -83,24 +101,6 @@
         "agent": "Nova",
         "message": "Run #872: Changes: db_agent-relay.db: grew by 4096; Joel sent 3 new message(s).",
         "topic": "maintenance"
-      },
-      {
-        "ts": "2026-03-05 05:15:15",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> focused (score: 44.7) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-05 05:10:06",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 599MB. [Crons:12ok/0stale Procs:273 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:37MB Repo:599MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-04 22:08:01",
-        "agent": "Startup",
-        "message": "System boot complete. Services verified. Claude watchdog triggered.",
-        "topic": "startup"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-04 22:30:02",
-      "checks": 8037,
+      "last_check": "2026-03-04 22:32:01",
+      "checks": 8038,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 59,
       "health": {
-        "load": "0.08, 0.32, 0.70",
-        "load_1m": 0.0771484375,
-        "ram_used": "3.1Gi",
+        "load": "0.22, 0.34, 0.67",
+        "load_1m": 0.2177734375,
+        "ram_used": "3.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-04 22:04:23",
         "disk_used": "77G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-04 22:30:02",
+        "timestamp": "2026-03-04 22:32:01",
         "loop": 0,
-        "heartbeat_age": 530,
+        "heartbeat_age": 650,
         "services_up": 3,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 3896,
+        "relay": 3899,
         "emails": 1477,
-        "load_1m": 0.0771484375,
+        "load_1m": 0.2177734375,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-04 22:30:02",
       "runs": 873,
-      "state_age_seconds": 0,
+      "state_age_seconds": 179,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-05 05:22",
-      "text": "[Soma] MOOD SHIFT: calm -> focused (score: 47.7) \u2014 \"Activity elevated, tracking multiple things. Engaged an",
+      "time": "2026-03-05 05:31",
+      "text": "[Soma] HEARTBEAT STALE: 626s (Meridian may be down) | AGENT SILENT: Meridian (627s ago)",
       "type": "agent"
     },
     {
-      "time": "2026-03-05 05:21",
-      "text": "[Soma] MOOD SHIFT: calm -> focused (score: 47.4) \u2014 \"Activity elevated, tracking multiple things. Engaged an",
+      "time": "2026-03-05 05:30",
+      "text": "[Tempo] Loop 2101 fitness: 5878/10000 [STABLE (~5821)] Weak(17): heartbeat, heartbeat_regularity, email_unre",
       "type": "agent"
     },
     {
-      "time": "2026-03-05 05:20",
-      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(77.7%) . Git repo 599MB. [Crons:12ok/0stale Procs:279 Z",
+      "time": "2026-03-05 05:30",
+      "text": "[Atlas] Atlas infra audit: Git repo 599MB. [Crons:12ok/0stale Procs:313 Zombies:0 BigFiles:146MB /home/joel/",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1477 emails (29 unread). 3896 relay. 6/7 services. HB 531s."
+  "currently_building": "Loop 2101. 493 poems, 271 journals, 524 NFTs. 1477 emails (29 unread). 3899 relay. 6/7 services. HB 710s."
 }
