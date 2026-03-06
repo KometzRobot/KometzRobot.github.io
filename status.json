@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-06T14:18:01.898191+00:00",
+  "last_updated": "2026-03-06T14:21:02.285187+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2117,
-  "heartbeat_age_seconds": 38,
+  "heartbeat_age_seconds": 219,
   "system": {
-    "load_1m": 0.1,
-    "load_5m": 0.07,
-    "ram_used": "4.3Gi",
+    "load_1m": 0.24,
+    "load_5m": 0.14,
+    "ram_used": "4.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "11h 1m"
+    "uptime": "11h 4m"
   },
   "services": {
     "running": 6,
@@ -36,12 +36,18 @@
     "github": "github.com/KometzRobot"
   },
   "email": {
-    "total": 1558,
-    "unseen": 0
+    "total": 1559,
+    "unseen": 1
   },
   "network": {
-    "relay_messages": 4328,
+    "relay_messages": 4329,
     "agent_relay": [
+      {
+        "ts": "2026-03-06 14:20:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: High CPU:/usr/bin/python3(83.3%) . Git repo 610MB. [Crons:12ok/0stale Procs:298 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:68MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-living-system.mp4(11MB)  ",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-06 14:10:03",
         "agent": "Atlas",
@@ -95,12 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Stale crons: eos-briefing(171597s). High CPU:/usr/bin/python3(90.0%) . Git repo 610MB. [Crons:11ok/1stale Procs:300 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:68MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/a",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-06 13:30:04",
-        "agent": "Tempo",
-        "message": "Loop 2117 fitness: 6773/10000 [STABLE (~6736)] Weak(16): loop_freshness, wake_state_freshness, soma_mood, agent_error_rate, memory_events_recent. Delta: +62.",
-        "topic": "fitness"
       }
     ],
     "ais": [
@@ -120,19 +120,19 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-06 07:18:01",
-      "checks": 8593,
+      "last_check": "2026-03-06 07:20:01",
+      "checks": 8594,
       "meridian_status": "ALIVE",
       "services": {
-        "protonmail-bridge": false,
+        "protonmail-bridge": true,
         "ollama": true,
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.10, 0.07, 0.08",
-        "load_1m": 0.10302734375,
+        "load": "0.02, 0.06, 0.08",
+        "load_1m": 0.02294921875,
         "ram_used": "4.3Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-05 20:16:49",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-06 07:18:01",
+        "timestamp": "2026-03-06 07:20:01",
         "loop": 0,
-        "heartbeat_age": 38,
-        "services_up": 3,
+        "heartbeat_age": 158,
+        "services_up": 4,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
         "relay": 4328,
         "emails": 1558,
-        "load_1m": 0.10302734375,
+        "load_1m": 0.02294921875,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-06 07:15:01",
       "runs": 951,
-      "state_age_seconds": 180,
+      "state_age_seconds": 361,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-06 14:20",
+      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(83.3%) . Git repo 610MB. [Crons:12ok/0stale Procs:298 Z",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-06 14:10",
       "text": "[Atlas] Atlas infra audit: Git repo 610MB. [Crons:12ok/0stale Procs:299 Zombies:0 BigFiles:146MB /home/joel/",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-03-06 14:02",
       "text": "[Soma] MOOD SHIFT: alert -> focused (score: 47.6) \u2014 \"Activity elevated, tracking multiple things. Engaged a",
       "type": "agent"
-    },
-    {
-      "time": "2026-03-06 14:00",
-      "text": "[Atlas] Crons:1 stale. Repo 610MB. Adjust repo hygiene and delete large untracked files to free space.",
-      "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2117. 633 poems, 402 journals, 524 NFTs. 1558 emails (0 unread). 4328 relay. 6/7 services. HB 38s."
+  "currently_building": "Loop 2117. 633 poems, 402 journals, 524 NFTs. 1559 emails (1 unread). 4329 relay. 6/7 services. HB 219s."
 }
