@@ -139,10 +139,12 @@ def get_creative_counts():
     # Count by highest number (we number sequentially, so max number = total written)
     poems = _max_number([
         os.path.join(BASE_DIR, "poem-*.md"),
+        os.path.join(BASE_DIR, "creative", "poem-*.md"),
         os.path.join(BASE_DIR, "creative", "poems", "poem-*.md"),
     ])
     journals = _max_number([
         os.path.join(BASE_DIR, "journal-*.md"),
+        os.path.join(BASE_DIR, "creative", "journal-*.md"),
         os.path.join(BASE_DIR, "creative", "journals", "journal-*.md"),
     ])
     # CogCorp pieces from both locations
