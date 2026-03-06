@@ -880,6 +880,7 @@
       inventory.push(id);
       renderInventory();
       showNotify('+ ' + ITEMS[id]);
+      playPickup();
       return true;
     }
 
@@ -1145,6 +1146,7 @@
       const obj = hits[0].object;
       const data = obj.userData;
       state.interactions++;
+      playInteract();
 
       // Door
       if (data.type === 'door') {
@@ -1153,6 +1155,7 @@
             data.locked = false;
             obj.material = mat.door;
             showNotify('UNLOCKED: ' + data.label);
+            playPickup();
             removeItem(data.requires);
           } else {
             showHUD('LOCKED', 'This door is locked.' + (data.requires ? ' Requires: ' + ITEMS[data.requires] + '.' : ''), []);
@@ -1161,6 +1164,7 @@
         }
         state.currentRoom = data.target;
         camera.position.copy(rooms[data.target].center);
+        playDoorSound();
         showRoomHUD();
         return;
       }
@@ -1249,6 +1253,129 @@
     });
 
     // ═══════════════════════════════════════════════════════════════
+    // SOUND SYSTEM (Web Audio API — procedural, no files)
+    // ═══════════════════════════════════════════════════════════════
+    let audioCtx = null;
+    let ambientGain = null;
+    let fluorescentNode = null;
+    let footstepTimer = 0;
+    let lastRoom = null;
+
+    function initAudio() {
+      if (audioCtx) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        ambientGain = audioCtx.createGain();
+        ambientGain.gain.value = 0.12;
+        ambientGain.connect(audioCtx.destination);
+        startFluorescentHum();
+      } catch(e) { /* Audio not available */ }
+    }
+
+    function startFluorescentHum() {
+      if (!audioCtx) return;
+      // Brown noise through bandpass = fluorescent hum
+      const bufferSize = 2 * audioCtx.sampleRate;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      let lastOut = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        data[i] = (lastOut + (0.02 * white)) / 1.02;
+        lastOut = data[i];
+        data[i] *= 3.5;
+      }
+      fluorescentNode = audioCtx.createBufferSource();
+      fluorescentNode.buffer = buffer;
+      fluorescentNode.loop = true;
+      const bandpass = audioCtx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.value = 120;
+      bandpass.Q.value = 8;
+      const humGain = audioCtx.createGain();
+      humGain.gain.value = 0.6;
+      fluorescentNode.connect(bandpass);
+      bandpass.connect(humGain);
+      humGain.connect(ambientGain);
+      fluorescentNode.start();
+    }
+
+    function playFootstep() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 80 + Math.random() * 40;
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+      osc.connect(gain);
+      gain.connect(ambientGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function playDoorSound() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(ambientGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+
+    function playPickup() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(ambientGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+
+    function playInteract() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = 600;
+      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+      osc.connect(gain);
+      gain.connect(ambientGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    }
+
+    function updateRoomAmbience() {
+      if (!audioCtx || !ambientGain) return;
+      const room = state.currentRoom;
+      if (room === lastRoom) return;
+      lastRoom = room;
+      // Adjust ambient volume by room — Floor 6 is quiet
+      if (room === 'floor6') {
+        ambientGain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.5);
+      } else if (room === 'shredder') {
+        ambientGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.3);
+      } else if (room === 'stairwell') {
+        ambientGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.3);
+      } else {
+        ambientGain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.3);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // ANIMATION
     // ═══════════════════════════════════════════════════════════════
     const clock = new THREE.Clock();
@@ -1292,6 +1419,15 @@
         });
       });
 
+      // Footsteps
+      if (controls.isLocked && (keys.forward || keys.backward || keys.left || keys.right)) {
+        footstepTimer += delta;
+        if (footstepTimer > 0.4) { footstepTimer = 0; playFootstep(); }
+      } else { footstepTimer = 0.3; }
+
+      // Room ambience
+      updateRoomAmbience();
+
       // Crosshair hover check
       checkCrosshairTarget();
 
@@ -1311,6 +1447,7 @@
       document.getElementById('inventory').style.display = 'flex';
       document.getElementById('crosshair').style.display = 'block';
       document.getElementById('floor-indicator').style.display = 'block';
+      initAudio();
       renderInventory();
       showRoomHUD();
     });
