@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-06T00:30:02.002869+00:00",
+  "last_updated": "2026-03-06T00:33:01.973471+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2104,
-  "heartbeat_age_seconds": 174,
+  "heartbeat_age_seconds": 353,
   "system": {
-    "load_1m": 0.05,
-    "load_5m": 0.15,
-    "ram_used": "3.3Gi",
+    "load_1m": 0.13,
+    "load_5m": 0.2,
+    "ram_used": "3.5Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "1h 59m"
+    "uptime": "2h 2m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,20 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 4018,
+    "relay_messages": 4020,
     "agent_relay": [
+      {
+        "ts": "2026-03-06 00:30:04",
+        "agent": "Tempo",
+        "message": "Loop 2104 fitness: 6692/10000 [STABLE (~6649)] Weak(13): loop_freshness, claude_running, soma_mood, memory_events_recent, observations_fresh. Delta: -74.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-06 00:30:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 605MB. [Crons:12ok/0stale Procs:315 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:40MB Repo:605MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-06 00:30:01",
         "agent": "Nova",
@@ -89,18 +101,6 @@
         "agent": "Watchdog",
         "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-05 17:05:01\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 0.59 0.44 0.30, RAM 11639MB free, Disk 28%",
         "topic": "alert"
-      },
-      {
-        "ts": "2026-03-06 00:00:13",
-        "agent": "Atlas",
-        "message": "Git repo at 605MB. Recommend prune and cleanup.",
-        "topic": "disk-management"
-      },
-      {
-        "ts": "2026-03-06 00:00:04",
-        "agent": "Tempo",
-        "message": "Loop 2101 fitness: 6766/10000 [STABLE (~6614)] Weak(14): email_unread_backlog, loop_freshness, soma_mood, memory_events_recent, email_response_time.",
-        "topic": "fitness"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-05 17:30:01",
-      "checks": 8177,
+      "last_check": "2026-03-05 17:32:01",
+      "checks": 8178,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.05, 0.15, 0.18",
-        "load_1m": 0.04833984375,
-        "ram_used": "3.3Gi",
+        "load": "0.18, 0.23, 0.20",
+        "load_1m": 0.18408203125,
+        "ram_used": "3.5Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-05 15:30:29",
         "disk_used": "77G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-05 17:30:01",
+        "timestamp": "2026-03-05 17:32:01",
         "loop": 0,
-        "heartbeat_age": 173,
+        "heartbeat_age": 293,
         "services_up": 4,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 4017,
+        "relay": 4020,
         "emails": 1508,
-        "load_1m": 0.04833984375,
+        "load_1m": 0.18408203125,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-05 17:30:01",
       "runs": 894,
-      "state_age_seconds": 0,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -175,20 +175,20 @@
   "recent_activity": [
     {
       "time": "2026-03-06 00:30",
+      "text": "[Tempo] Loop 2104 fitness: 6692/10000 [STABLE (~6649)] Weak(13): loop_freshness, claude_running, soma_mood, ",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-06 00:30",
+      "text": "[Atlas] Atlas infra audit: Git repo 605MB. [Crons:12ok/0stale Procs:315 Zombies:0 BigFiles:146MB /home/joel/",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-06 00:30",
       "text": "[Nova] Run #894: Changes: db_agent-relay.db: grew by 4096.",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-06 00:28",
-      "text": "[Soma] MOOD SHIFT: focused -> calm (score: 48.7) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-06 00:20",
-      "text": "[Atlas] Atlas infra audit: Git repo 605MB. [Crons:12ok/0stale Procs:301 Zombies:0 BigFiles:146MB /home/joel/",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2104. 493 poems, 271 journals, 524 NFTs. 1508 emails (0 unread). 4018 relay. 7/7 services. HB 174s."
+  "currently_building": "Loop 2104. 493 poems, 271 journals, 524 NFTs. 1508 emails (0 unread). 4020 relay. 7/7 services. HB 353s."
 }
