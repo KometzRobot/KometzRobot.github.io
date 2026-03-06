@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-06T19:09:15.228596+00:00",
+  "last_updated": "2026-03-06T19:12:02.322851+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2101,
-  "heartbeat_age_seconds": 159,
+  "heartbeat_age_seconds": 327,
   "system": {
-    "load_1m": 7.35,
-    "load_5m": 3.02,
-    "ram_used": "1.1Gi",
+    "load_1m": 7.78,
+    "load_5m": 5.4,
+    "ram_used": "2.7Gi",
     "ram_total": "15.6Gi",
     "disk_used": "91G",
     "disk_total": "292G",
     "disk_pct": "33%",
-    "uptime": "0h 1m"
+    "uptime": "0h 4m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,44 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 4411,
+    "relay_messages": 4417,
     "agent_relay": [
+      {
+        "ts": "2026-03-06 19:11:30",
+        "agent": "Soma",
+        "message": "PREDICTION: Sustained high load (>6 for 90s+)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-06 19:10:57",
+        "agent": "Startup",
+        "message": "System boot complete. Services verified. Claude watchdog triggered.",
+        "topic": "startup"
+      },
+      {
+        "ts": "2026-03-06 12:10:29",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-06 12:10:08\n\nRESTARTED:\nDesktop Hub v20 (systemd restart)\n\nSystem: Load 6.67 3.49 1.39, RAM 14279MB free, Disk 33%",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-03-06 19:10:22",
+        "agent": "Soma",
+        "message": "LOAD SPIKE: 5.7 -> 9.3 | PROCESS SURGE: 212 -> 271",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-06 19:10:17",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 611MB. [Crons:12ok/0stale Procs:272 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:33% Tmp:22MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-living-system.mp4(11MB)  Repo:611MB POL:0 Linktree:OK GitHub",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-03-06 19:09:21",
+        "agent": "Soma",
+        "message": "PREDICTION: Sustained high load (>6 for 90s+)",
+        "topic": "nerve-event"
+      },
       {
         "ts": "2026-03-06 19:08:50",
         "agent": "Soma",
@@ -65,42 +101,6 @@
         "agent": "Soma",
         "message": "SERVICE DOWN: ollama (active -> dead) | LOAD SPIKE: 0.8 -> 7.4",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-06 19:04:04",
-        "agent": "Eos-Watchdog",
-        "message": "Restarted command-center via systemd",
-        "topic": "restart"
-      },
-      {
-        "ts": "2026-03-06 19:00:10",
-        "agent": "Atlas",
-        "message": "Git repo 610MB. Consider cleanup.",
-        "topic": "infrastructure"
-      },
-      {
-        "ts": "2026-03-06 19:00:05",
-        "agent": "Tempo",
-        "message": "Loop 2117 fitness: 6669/10000 [STABLE (~6664)] Weak(17): loop_freshness, wake_state_freshness, agent_soma, soma_mood, swap_usage.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-06 19:00:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 610MB. [Crons:12ok/0stale Procs:315 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:33% Tmp:71MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-living-system.mp4(11MB)  Repo:610MB POL:0 Linktree:OK GitHub",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-06 19:00:02",
-        "agent": "Nova",
-        "message": "Run #970: routine \u2014 all clear.",
-        "topic": "maintenance"
-      },
-      {
-        "ts": "2026-03-06 18:50:06",
-        "agent": "Eos",
-        "message": "ALERT: Eos Alert \u2014 \"ProtonMail Bridge Service Down\" \"The protonmail-bridge service has been down for 4 minutes. This might affect email handling. Monitoring and taking action if necessary.\"",
-        "topic": "alert"
       }
     ],
     "ais": [
@@ -120,20 +120,20 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-06 12:08:12",
-      "checks": 8738,
+      "last_check": "2026-03-06 12:12:01",
+      "checks": 8740,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
-        "ollama": false,
-        "command-center": false,
-        "the-signal": false
+        "ollama": true,
+        "command-center": true,
+        "the-signal": true
       },
-      "state_age_seconds": 58,
+      "state_age_seconds": 0,
       "health": {
-        "load": "7.48, 2.06, 0.70",
-        "load_1m": 7.48486328125,
-        "ram_used": "825Mi",
+        "load": "7.78, 5.40, 2.37",
+        "load_1m": 7.78466796875,
+        "ram_used": "2.7Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-06 12:07:14",
         "disk_used": "91G",
@@ -141,16 +141,16 @@
         "disk_pct": "33%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-06 12:08:12",
+        "timestamp": "2026-03-06 12:12:01",
         "loop": 0,
-        "heartbeat_age": 97,
-        "services_up": 0,
+        "heartbeat_age": 326,
+        "services_up": 3,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 4409,
+        "relay": 4417,
         "emails": -1,
-        "load_1m": 7.48486328125,
+        "load_1m": 7.78466796875,
         "disk_pct": "33%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-06 12:00:01",
       "runs": 970,
-      "state_age_seconds": 552,
+      "state_age_seconds": 720,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-06 19:08",
-      "text": "[Soma] SERVICE RECOVERED: ollama (dead -> active) | NEURAL RELIEF: swap back to 0.0%",
+      "time": "2026-03-06 19:11",
+      "text": "[Soma] PREDICTION: Sustained high load (>6 for 90s+)",
       "type": "agent"
     },
     {
-      "time": "2026-03-06 19:08",
-      "text": "[Soma] Soma online. Continuous body-awareness active.",
+      "time": "2026-03-06 19:10",
+      "text": "[Startup] System boot complete. Services verified. Claude watchdog triggered.",
       "type": "agent"
     },
     {
-      "time": "2026-03-06 19:06",
-      "text": "[Soma] Soma online. Continuous body-awareness active.",
+      "time": "2026-03-06 19:10",
+      "text": "[Soma] LOAD SPIKE: 5.7 -> 9.3 | PROCESS SURGE: 212 -> 271",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2101. 633 poems, 402 journals, 524 NFTs. 0 emails (0 unread). 4411 relay. 6/7 services. HB 159s."
+  "currently_building": "Loop 2101. 633 poems, 402 journals, 524 NFTs. 0 emails (0 unread). 4417 relay. 6/7 services. HB 327s."
 }
