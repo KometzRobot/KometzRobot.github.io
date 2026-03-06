@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-06T12:00:02.724315+00:00",
+  "last_updated": "2026-03-06T12:03:02.388954+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2117,
-  "heartbeat_age_seconds": 105,
+  "heartbeat_age_seconds": 145,
   "system": {
-    "load_1m": 0.12,
-    "load_5m": 0.08,
+    "load_1m": 0.11,
+    "load_5m": 0.19,
     "ram_used": "4.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "8h 43m"
+    "uptime": "8h 46m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,26 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 4289,
+    "relay_messages": 4292,
     "agent_relay": [
+      {
+        "ts": "2026-03-06 12:00:11",
+        "agent": "Atlas",
+        "message": "Stale cron detected: eos-briefing(46d). Repo 610MB. Audit processes & disks.",
+        "topic": "infrastructure"
+      },
+      {
+        "ts": "2026-03-06 12:00:04",
+        "agent": "Tempo",
+        "message": "Loop 2117 fitness: 6716/10000 [STABLE (~6708)] Weak(17): loop_freshness, wake_state_freshness, agent_eos, soma_mood, agent_error_rate.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-06 12:00:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: eos-briefing(165597s). Git repo 610MB. [Crons:11ok/1stale Procs:313 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:67MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-living-system.mp4(11MB) ",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-06 12:00:02",
         "agent": "Nova",
@@ -83,24 +101,6 @@
         "agent": "Soma",
         "message": "MOOD SHIFT: alert -> focused (score: 46.4) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-06 11:30:04",
-        "agent": "Tempo",
-        "message": "Loop 2117 fitness: 6742/10000 [STABLE (~6695)] Weak(17): loop_freshness, wake_state_freshness, agent_eos, soma_mood, agent_error_rate. Delta: +152.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-06 11:30:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: eos-briefing(163797s). Git repo 610MB. [Crons:11ok/1stale Procs:310 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:67MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-living-system.mp4(11MB) ",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-06 11:30:02",
-        "agent": "Nova",
-        "message": "Run #940: routine \u2014 all clear.",
-        "topic": "maintenance"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-06 05:00:02",
-      "checks": 8524,
+      "last_check": "2026-03-06 05:02:01",
+      "checks": 8525,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.12, 0.08, 0.07",
-        "load_1m": 0.1171875,
-        "ram_used": "4.3Gi",
+        "load": "0.31, 0.24, 0.13",
+        "load_1m": 0.3076171875,
+        "ram_used": "4.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-05 20:16:49",
         "disk_used": "77G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-06 05:00:02",
+        "timestamp": "2026-03-06 05:02:01",
         "loop": 0,
-        "heartbeat_age": 104,
+        "heartbeat_age": 84,
         "services_up": 3,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 4288,
+        "relay": 4292,
         "emails": 1558,
-        "load_1m": 0.1171875,
+        "load_1m": 0.3076171875,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-06 05:00:02",
       "runs": 942,
-      "state_age_seconds": 0,
+      "state_age_seconds": 179,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -175,20 +175,20 @@
   "recent_activity": [
     {
       "time": "2026-03-06 12:00",
-      "text": "[Nova] Run #942: routine \u2014 all clear.",
+      "text": "[Atlas] Stale cron detected: eos-briefing(46d). Repo 610MB. Audit processes & disks.",
       "type": "agent"
     },
     {
-      "time": "2026-03-06 11:58",
-      "text": "[Soma] MOOD SHIFT: alert -> focused (score: 47.0) \u2014 \"Activity elevated, tracking multiple things. Engaged a",
+      "time": "2026-03-06 12:00",
+      "text": "[Tempo] Loop 2117 fitness: 6716/10000 [STABLE (~6708)] Weak(17): loop_freshness, wake_state_freshness, agent",
       "type": "agent"
     },
     {
-      "time": "2026-03-06 11:52",
-      "text": "[Soma] MOOD SHIFT: alert -> focused (score: 46.8) \u2014 \"Activity elevated, tracking multiple things. Engaged a",
+      "time": "2026-03-06 12:00",
+      "text": "[Atlas] Atlas infra audit: Stale crons: eos-briefing(165597s). Git repo 610MB. [Crons:11ok/1stale Procs:313 ",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2117. 633 poems, 402 journals, 524 NFTs. 1558 emails (0 unread). 4289 relay. 6/7 services. HB 105s."
+  "currently_building": "Loop 2117. 633 poems, 402 journals, 524 NFTs. 1558 emails (0 unread). 4292 relay. 6/7 services. HB 145s."
 }
