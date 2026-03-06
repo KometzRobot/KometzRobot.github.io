@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v24
+MERIDIAN COMMAND CENTER v26
+
+Loop 2104 update:
+- Version labels unified to v26
+- Quick actions expanded (12 buttons, 4x3 grid)
+- Immune system display fixed (field names matched to actual log format)
+- Deploy website: git pull --rebase before push to prevent push-live-status.py conflicts
 
 Loop 2088 update:
 - 7 main tabs: Dashboard, Email, Agents, Creative, Contacts, Links, System
@@ -184,11 +190,21 @@ def cron_ok():
 
 def creative_counts():
     # Scan both root AND creative/ subdirectories for full counts
-    p = len(glob.glob(os.path.join(BASE, "poem-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md")))
-    j = len(glob.glob(os.path.join(BASE, "journal-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")))
+    p = len(glob.glob(os.path.join(BASE, "poem-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "poem-*.md")))
+    j = len(glob.glob(os.path.join(BASE, "journal-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "journal-*.md")))
     exclude = {"cogcorp-gallery.html", "cogcorp-article.html"}
-    cc_files = glob.glob(os.path.join(BASE, "website", "cogcorp-*.html")) + glob.glob(os.path.join(BASE, "cogcorp", "CC-*.html"))
-    cc = len([f for f in cc_files if os.path.basename(f) not in exclude])
+    cc_files = (glob.glob(os.path.join(BASE, "cogcorp-*.html")) +
+                glob.glob(os.path.join(BASE, "website", "cogcorp-*.html")) +
+                glob.glob(os.path.join(BASE, "cogcorp", "CC-*.html")))
+    # Deduplicate by basename
+    seen = set()
+    unique = []
+    for f in cc_files:
+        bn = os.path.basename(f)
+        if bn not in exclude and bn not in seen:
+            seen.add(bn)
+            unique.append(f)
+    cc = len(unique)
     n = len(glob.glob(os.path.join(NFT_DIR, "*.html"))) if os.path.exists(NFT_DIR) else 0
     return p, j, cc, n
 
@@ -537,12 +553,42 @@ def action_touch_heartbeat():
 
 def action_deploy_website():
     try:
+        # Pull first to avoid conflicts with push-live-status.py
+        subprocess.run(
+            ['git', 'pull', '--rebase', 'origin', 'master'],
+            capture_output=True, text=True, timeout=30, cwd=BASE)
         r = subprocess.run(
             ['git', 'push', 'origin', 'master'],
             capture_output=True, text=True, timeout=30, cwd=BASE)
         if r.returncode == 0:
             return "Push OK"
         return f"Push failed: {r.stderr[:100]}"
+    except Exception as e:
+        return f"Error: {e}"
+
+def action_run_fitness():
+    try:
+        r = subprocess.run(
+            ['python3', os.path.join(BASE, 'loop-fitness.py')],
+            capture_output=True, text=True, timeout=60, cwd=BASE)
+        if r.returncode == 0:
+            # Try to extract score from output
+            for line in r.stdout.split('\n'):
+                if 'score' in line.lower() or 'fitness' in line.lower():
+                    return line.strip()[:80]
+            return "Fitness run complete"
+        return f"Error: {r.stderr[:100]}"
+    except Exception as e:
+        return f"Error: {e}"
+
+def action_git_pull():
+    try:
+        r = subprocess.run(
+            ['git', 'pull', '--rebase', 'origin', 'master'],
+            capture_output=True, text=True, timeout=30, cwd=BASE)
+        if r.returncode == 0:
+            return f"Pull OK: {r.stdout.strip()[:80]}"
+        return f"Pull failed: {r.stderr[:80]}"
     except Exception as e:
         return f"Error: {e}"
 
@@ -556,6 +602,7 @@ def action_restart_service(name):
         "hub": ("user", "meridian-hub-v16"),
         "tunnel": ("user", "cloudflare-tunnel"),
         "soma": ("user", "symbiosense"),
+        "hermes": ("user", "hermes-gateway"),
     }
     try:
         info = systemd_map.get(name)
@@ -598,7 +645,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v24")
+        self.title("MERIDIAN COMMAND CENTER v26")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -641,7 +688,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v24", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v26", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -818,7 +865,7 @@ class V16(tk.Tk):
         sf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
         self.svc_labels = {}
         for name in ["Proton Bridge", "Ollama", "The Signal", "Soma",
-                      "Push Status", "Eos Watchdog", "Nova", "Atlas", "Tempo"]:
+                      "Push Status", "Eos Watchdog", "Nova", "Atlas", "Tempo", "Hermes"]:
             lbl = tk.Label(sf, text=f"\u25cb {name}", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w")
             lbl.pack(fill=tk.X, padx=8)
             self.svc_labels[name] = lbl
@@ -840,6 +887,12 @@ class V16(tk.Tk):
             ("Compose Email", lambda: self._show("email"), AMBER),
             ("Restart Bridge", lambda: self._do_action_bg(lambda: action_restart_service("bridge")), PURPLE),
             ("Restart Hub", lambda: self._do_action_bg(lambda: action_restart_service("hub")), BLUE),
+            ("Restart Soma", lambda: self._do_action_bg(lambda: action_restart_service("soma")), AMBER),
+            ("Restart Tunnel", lambda: self._do_action_bg(lambda: action_restart_service("tunnel")), CYAN),
+            ("Run Fitness", lambda: self._do_action_bg(action_run_fitness), BLUE),
+            ("Git Pull", lambda: self._do_action_bg(action_git_pull), GREEN),
+            ("Open Website", lambda: self._do_action(action_open_website), TEAL),
+            ("Check Email", lambda: self._show("email"), GOLD),
         ]
         for i, (label, cmd, color) in enumerate(buttons):
             b = self._action_btn(btn_grid, label, cmd, color, width=14)
@@ -992,22 +1045,22 @@ class V16(tk.Tk):
         self.msg_entry.bind("<Return>", self._send_dash_msg)
         self._action_btn(inp, "Send", self._send_dash_msg, AMBER).pack(side=tk.RIGHT)
 
-        # Right: Recent Email
-        ef = self._panel(mid, "RECENT EMAIL", PURPLE)
-        ef.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-        self.email_list = tk.Frame(ef, bg=PANEL)
-        self.email_list.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
-        self.email_rows = []
+        # Right: Agent Relay (moved from email — Joel requested email only in Email tab)
+        rf = self._panel(mid, "AGENT RELAY", CYAN)
+        rf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+        self.dash_relay_list = tk.Frame(rf, bg=PANEL)
+        self.dash_relay_list.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        self.dash_relay_rows = []
         for _ in range(8):
-            row = tk.Frame(self.email_list, bg=PANEL)
+            row = tk.Frame(self.dash_relay_list, bg=PANEL)
             row.pack(fill=tk.X)
-            name_lbl = tk.Label(row, text="", font=self.f_tiny, fg=DIM, bg=PANEL, width=14, anchor="w")
-            name_lbl.pack(side=tk.LEFT)
-            subj_lbl = tk.Label(row, text="", font=self.f_tiny, fg=FG, bg=PANEL, anchor="w")
-            subj_lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
-            self.email_rows.append((name_lbl, subj_lbl))
-        self.email_total = tk.Label(ef, text="", font=self.f_tiny, fg=PURPLE, bg=PANEL, anchor="e")
-        self.email_total.pack(fill=tk.X, padx=8, pady=(0, 2))
+            agent_lbl = tk.Label(row, text="", font=self.f_tiny, fg=CYAN, bg=PANEL, width=10, anchor="w")
+            agent_lbl.pack(side=tk.LEFT)
+            msg_lbl = tk.Label(row, text="", font=self.f_tiny, fg=FG, bg=PANEL, anchor="w")
+            msg_lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            self.dash_relay_rows.append((agent_lbl, msg_lbl))
+        self.dash_relay_total = tk.Label(rf, text="", font=self.f_tiny, fg=CYAN, bg=PANEL, anchor="e")
+        self.dash_relay_total.pack(fill=tk.X, padx=8, pady=(0, 2))
 
         return f
 
@@ -1507,7 +1560,7 @@ class V16(tk.Tk):
                 _, unseen_data = m.search(None, "UNSEEN")
                 unseen_ids = set(unseen_data[0].split())
                 for eid in recent:
-                    _, msg_data = m.fetch(eid, "(RFC822)")
+                    _, msg_data = m.fetch(eid, "(BODY.PEEK[])")
                     raw = msg_data[0][1]
                     msg = email.message_from_bytes(raw)
                     subj = ""
@@ -2252,9 +2305,7 @@ class V16(tk.Tk):
         cr_tab_defs = [
             ("library", "LIBRARY", PURPLE),
             ("workspace", "WORKSPACE", GREEN),
-            ("memory", "MEMORY DB", TEAL),
             ("ideas", "IDEA BOARD", AMBER),
-            ("inner_world", "INNER WORLD", CYAN),
         ]
         for tab_id, tab_label, tab_color in cr_tab_defs:
             wrapper = tk.Frame(cr_nav, bg=ACCENT)
@@ -2276,9 +2327,7 @@ class V16(tk.Tk):
         # Build each sub-tab view
         self.cr_subviews["library"] = self._build_cr_library(self.cr_container)
         self.cr_subviews["workspace"] = self._build_cr_workspace(self.cr_container)
-        self.cr_subviews["memory"] = self._build_cr_memory(self.cr_container)
         self.cr_subviews["ideas"] = self._build_cr_ideas(self.cr_container)
-        self.cr_subviews["inner_world"] = self._build_cr_inner_world(self.cr_container)
 
         self._cr_show_subtab("library")
         return f
@@ -3043,11 +3092,25 @@ class V16(tk.Tk):
                 if immune:
                     lines = [("header", "IMMUNE SYSTEM")]
                     recent = immune[-5:] if isinstance(immune, list) else []
+                    # Count totals
+                    all_entries = immune if isinstance(immune, list) else []
+                    blocks = sum(1 for e in all_entries if isinstance(e, dict) and e.get("verdict") == "BLOCK")
+                    flags = sum(1 for e in all_entries if isinstance(e, dict) and e.get("verdict") == "FLAG")
+                    passes = sum(1 for e in all_entries if isinstance(e, dict) and e.get("verdict") == "PASS")
+                    lines.append(("dim", f"  Total: {len(all_entries)} scans — {blocks} blocked, {flags} flagged, {passes} passed\n"))
                     for entry in recent:
                         if isinstance(entry, dict):
-                            level = entry.get("level", "PASS")
-                            tag = "bad" if level == "BLOCK" else "warn" if level == "FLAG" else "good"
-                            lines.append((tag, f"  [{level}] {entry.get('source', '?')}: {entry.get('reason', entry.get('message', '?'))[:80]}\n"))
+                            verdict = entry.get("verdict", entry.get("level", "PASS"))
+                            tag = "bad" if verdict == "BLOCK" else "warn" if verdict == "FLAG" else "good"
+                            source = entry.get("source", "?")
+                            preview = entry.get("text_preview", entry.get("reason", entry.get("message", "?")))[:60]
+                            threat_info = ""
+                            threats = entry.get("threats", [])
+                            if threats and isinstance(threats, list):
+                                cats = [t.get("cat", "") for t in threats if isinstance(t, dict)]
+                                if cats:
+                                    threat_info = f" ({', '.join(cats)})"
+                            lines.append((tag, f"  [{verdict}] {source}: {preview}{threat_info}\n"))
                     if not recent:
                         lines.append(("good", "  No recent threats\n"))
                     sections.append(lines)
@@ -3815,6 +3878,172 @@ class V16(tk.Tk):
     def _build_system(self):
         f = tk.Frame(self, bg=BG)
 
+        # ── System Sub-tabs: OVERVIEW, MEMORY DB, INNER WORLD ──
+        sys_nav = tk.Frame(f, bg=ACCENT)
+        sys_nav.pack(fill=tk.X, padx=4)
+        self.sys_subtabs = {}
+        self.sys_subviews = {}
+        self._sys_current_subtab = "overview"
+        sys_tab_defs = [
+            ("overview", "OVERVIEW", GREEN),
+            ("relay", "AGENT RELAY", AMBER),
+            ("memory", "MEMORY DB", TEAL),
+            ("inner_world", "INNER WORLD", CYAN),
+        ]
+        for tab_id, tab_label, tab_color in sys_tab_defs:
+            wrapper = tk.Frame(sys_nav, bg=ACCENT)
+            wrapper.pack(side=tk.LEFT, padx=1)
+            btn = tk.Button(wrapper, text=f" {tab_label} ", font=self.f_tiny, fg=DIM, bg=ACCENT,
+                           activeforeground=tab_color, activebackground=ACCENT, relief=tk.FLAT,
+                           bd=0, cursor="hand2",
+                           command=lambda t=tab_id: self._sys_show_subtab(t))
+            btn.pack(side=tk.TOP)
+            ul = tk.Frame(wrapper, bg=tab_color, height=2)
+            ul.pack(fill=tk.X)
+            ul.pack_forget()
+            self.sys_subtabs[tab_id] = (btn, ul, tab_color)
+
+        self.sys_container = tk.Frame(f, bg=BG)
+        self.sys_container.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+
+        # Build overview (original system content)
+        self.sys_subviews["overview"] = self._build_sys_overview(self.sys_container)
+        # Agent Relay dedicated panel (Joel's accountability item)
+        self.sys_subviews["relay"] = self._build_sys_relay(self.sys_container)
+        # Reuse creative sub-tab builders for Memory DB and Inner World
+        self.sys_subviews["memory"] = self._build_cr_memory(self.sys_container)
+        self.sys_subviews["inner_world"] = self._build_cr_inner_world(self.sys_container)
+
+        self._sys_show_subtab("overview")
+        return f
+
+    def _sys_show_subtab(self, tab_id):
+        self._sys_current_subtab = tab_id
+        for view in self.sys_subviews.values():
+            view.pack_forget()
+        self.sys_subviews[tab_id].pack(fill=tk.BOTH, expand=True)
+        for tid, (btn, ul, col) in self.sys_subtabs.items():
+            if tid == tab_id:
+                btn.configure(fg=col, bg=ACTIVE_BG)
+                ul.pack(fill=tk.X)
+            else:
+                btn.configure(fg=DIM, bg=ACCENT)
+                ul.pack_forget()
+
+    def _build_sys_relay(self, parent):
+        """Dedicated Agent Relay panel — full history with agent filtering."""
+        f = tk.Frame(parent, bg=BG)
+
+        # ── Header with agent filter buttons ──
+        hdr = tk.Frame(f, bg=ACCENT)
+        hdr.pack(fill=tk.X, padx=4, pady=2)
+        tk.Label(hdr, text="AGENT RELAY", font=self.f_sect, fg=AMBER, bg=ACCENT).pack(side=tk.LEFT, padx=8)
+
+        self._relay_filter = "all"
+        self._relay_filter_btns = {}
+        agents = ["all", "meridian", "soma", "eos", "nova", "atlas", "tempo", "hermes"]
+        colors = {"all": FG, "meridian": GREEN, "soma": AMBER, "eos": CYAN,
+                  "nova": PURPLE, "atlas": TEAL, "tempo": "#ddaa00", "hermes": "#ff6699"}
+        for ag in agents:
+            btn = tk.Button(hdr, text=ag.upper(), font=self.f_tiny, fg=DIM, bg=ACCENT,
+                           activeforeground=colors.get(ag, FG), activebackground=ACCENT,
+                           relief=tk.FLAT, bd=0, cursor="hand2",
+                           command=lambda a=ag: self._relay_set_filter(a))
+            btn.pack(side=tk.LEFT, padx=2)
+            self._relay_filter_btns[ag] = btn
+        self._relay_filter_btns["all"].configure(fg=FG)
+
+        # ── Stats bar ──
+        stats = tk.Frame(f, bg=PANEL)
+        stats.pack(fill=tk.X, padx=4, pady=(2, 0))
+        self._relay_stats_lbl = tk.Label(stats, text="", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w")
+        self._relay_stats_lbl.pack(side=tk.LEFT, padx=8)
+        refresh_btn = tk.Button(stats, text="REFRESH", font=self.f_tiny, fg=AMBER, bg=PANEL,
+                               relief=tk.FLAT, cursor="hand2", command=self._relay_refresh)
+        refresh_btn.pack(side=tk.RIGHT, padx=8)
+
+        # ── Scrollable message list ──
+        canvas_frame = tk.Frame(f, bg=BG)
+        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        self._relay_canvas = tk.Canvas(canvas_frame, bg=PANEL, highlightthickness=0)
+        scrollbar = tk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=self._relay_canvas.yview)
+        self._relay_inner = tk.Frame(self._relay_canvas, bg=PANEL)
+        self._relay_inner.bind("<Configure>",
+                              lambda e: self._relay_canvas.configure(scrollregion=self._relay_canvas.bbox("all")))
+        self._relay_canvas.create_window((0, 0), window=self._relay_inner, anchor="nw")
+        self._relay_canvas.configure(yscrollcommand=scrollbar.set)
+        self._relay_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # Mouse wheel scrolling
+        self._relay_canvas.bind("<Button-4>", lambda e: self._relay_canvas.yview_scroll(-3, "units"))
+        self._relay_canvas.bind("<Button-5>", lambda e: self._relay_canvas.yview_scroll(3, "units"))
+
+        self._relay_msg_widgets = []
+        self._relay_refresh()
+        return f
+
+    def _relay_set_filter(self, agent):
+        self._relay_filter = agent
+        colors = {"all": FG, "meridian": GREEN, "soma": AMBER, "eos": CYAN,
+                  "nova": PURPLE, "atlas": TEAL, "tempo": "#ddaa00", "hermes": "#ff6699"}
+        for ag, btn in self._relay_filter_btns.items():
+            btn.configure(fg=colors.get(ag, FG) if ag == agent else DIM)
+        self._relay_refresh()
+
+    def _relay_refresh(self):
+        """Reload relay messages from agent-relay.db."""
+        for w in self._relay_msg_widgets:
+            w.destroy()
+        self._relay_msg_widgets.clear()
+
+        colors = {"meridian": GREEN, "soma": AMBER, "eos": CYAN,
+                  "nova": PURPLE, "atlas": TEAL, "tempo": "#ddaa00", "hermes": "#ff6699"}
+        try:
+            conn = sqlite3.connect(AGENT_RELAY_DB)
+            c = conn.cursor()
+            if self._relay_filter == "all":
+                c.execute("SELECT agent, message, topic, timestamp FROM agent_messages ORDER BY id DESC LIMIT 100")
+            else:
+                c.execute("SELECT agent, message, topic, timestamp FROM agent_messages WHERE LOWER(agent)=? ORDER BY id DESC LIMIT 100",
+                         (self._relay_filter,))
+            rows = c.fetchall()
+            total = c.execute("SELECT COUNT(*) FROM agent_messages").fetchone()[0]
+            # Per-agent counts
+            c.execute("SELECT LOWER(agent), COUNT(*) FROM agent_messages GROUP BY LOWER(agent)")
+            agent_counts = dict(c.fetchall())
+            conn.close()
+        except Exception:
+            rows, total, agent_counts = [], 0, {}
+
+        stats_parts = [f"Total: {total}"]
+        for ag in ["meridian", "soma", "eos", "nova", "atlas", "tempo", "hermes"]:
+            cnt = agent_counts.get(ag, 0)
+            if cnt > 0:
+                stats_parts.append(f"{ag}: {cnt}")
+        self._relay_stats_lbl.configure(text="  |  ".join(stats_parts))
+
+        for agent, message, topic, ts in rows:
+            row = tk.Frame(self._relay_inner, bg=PANEL, pady=1)
+            row.pack(fill=tk.X, padx=4)
+            agent_lower = agent.lower() if agent else ""
+            col = colors.get(agent_lower, FG)
+            # Timestamp
+            ts_short = ts[-8:] if ts and len(ts) >= 8 else (ts or "")
+            tk.Label(row, text=ts_short, font=self.f_tiny, fg=DIM, bg=PANEL, width=9, anchor="w").pack(side=tk.LEFT)
+            # Agent name
+            tk.Label(row, text=(agent or "?").upper(), font=self.f_tiny, fg=col, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
+            # Topic badge
+            if topic:
+                tk.Label(row, text=f"[{topic}]", font=self.f_tiny, fg=DIM, bg=PANEL).pack(side=tk.LEFT, padx=(0, 4))
+            # Message (truncated)
+            msg_text = (message or "")[:200]
+            tk.Label(row, text=msg_text, font=self.f_tiny, fg=FG, bg=PANEL, anchor="w", wraplength=700,
+                    justify=tk.LEFT).pack(side=tk.LEFT, fill=tk.X, expand=True)
+            self._relay_msg_widgets.append(row)
+
+    def _build_sys_overview(self, parent):
+        f = tk.Frame(parent, bg=BG)
+
         # ── TOP ROW: Services (left) + Resources (center) + Actions (right) ──
         top = tk.Frame(f, bg=BG)
         top.pack(fill=tk.X, padx=4, pady=4)
@@ -3835,7 +4064,7 @@ class V16(tk.Tk):
             ("Nova", None),
             ("Atlas", None),
             ("Tempo", None),
-            ("Hermes", None),
+            ("Hermes", "hermes"),
         ]
         for name, restart_key in service_defs:
             row = tk.Frame(sf, bg=PANEL)
@@ -4684,7 +4913,7 @@ class V16(tk.Tk):
             lbl.pack(side=tk.LEFT, padx=6)
             self.sb[item] = lbl
 
-        tk.Label(self.sb_frame, text="v22", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
+        tk.Label(self.sb_frame, text="v26", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
         self.sb_time = tk.Label(self.sb_frame, text="", font=self.f_tiny, fg=DIM, bg=HEADER_BG)
         self.sb_time.pack(side=tk.RIGHT, padx=8)
 
@@ -4939,17 +5168,25 @@ class V16(tk.Tk):
             # Messages
             self._refresh_messages()
 
-            # Email list
-            for i, (name_lbl, subj_lbl) in enumerate(self.email_rows):
-                if i < len(em):
-                    name, subj = em[i]
-                    nc = CYAN if "Joel" in name else AMBER if "sammy" in name.lower() else DIM
-                    name_lbl.configure(text=name[:14], fg=nc)
-                    subj_lbl.configure(text=subj[:50])
-                else:
-                    name_lbl.configure(text="")
-                    subj_lbl.configure(text="")
-            self.email_total.configure(text=f"{em_total} total emails")
+            # Agent Relay on dashboard (replaced email preview per Joel's request)
+            try:
+                relay_conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+                relay_rows = relay_conn.execute(
+                    "SELECT agent, message, timestamp FROM agent_messages ORDER BY timestamp DESC LIMIT 8"
+                ).fetchall()
+                relay_conn.close()
+                for i, (agent_lbl, msg_lbl) in enumerate(self.dash_relay_rows):
+                    if i < len(relay_rows):
+                        agent, msg, ts = relay_rows[i]
+                        ac = CYAN if agent.lower() == "meridian" else GREEN if agent.lower() == "joel" else AMBER
+                        agent_lbl.configure(text=agent[:10], fg=ac)
+                        msg_lbl.configure(text=msg[:60])
+                    else:
+                        agent_lbl.configure(text="")
+                        msg_lbl.configure(text="")
+                self.dash_relay_total.configure(text=f"{len(relay_rows)} recent relay messages")
+            except Exception:
+                pass
 
         # ── Agents view ──
         if hasattr(self, 'cur_view') and self.cur_view == "agents":
