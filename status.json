@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-06T10:00:02.060802+00:00",
+  "last_updated": "2026-03-06T10:03:01.833296+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2117,
-  "heartbeat_age_seconds": 95,
+  "heartbeat_age_seconds": 275,
   "system": {
-    "load_1m": 0.0,
-    "load_5m": 0.05,
-    "ram_used": "4.1Gi",
+    "load_1m": 0.05,
+    "load_5m": 0.12,
+    "ram_used": "4.3Gi",
     "ram_total": "15.6Gi",
     "disk_used": "77G",
     "disk_total": "292G",
     "disk_pct": "28%",
-    "uptime": "6h 43m"
+    "uptime": "6h 46m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,32 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 4250,
+    "relay_messages": 4254,
     "agent_relay": [
+      {
+        "ts": "2026-03-06 10:00:17",
+        "agent": "Eos",
+        "message": "ALERT: Eos Alert \u2014 \"Protonmail-bridge Persistent Down\" \"Protonmail-bridge has remained down after a restart. Further investigation required.\"",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-03-06 10:00:11",
+        "agent": "Atlas",
+        "message": "1 stale cron detected: eos-briefing(158397s). Git repo is 610MB.",
+        "topic": ".infra"
+      },
+      {
+        "ts": "2026-03-06 10:00:04",
+        "agent": "Tempo",
+        "message": "Loop 2117 fitness: 6785/10000 [STABLE (~6693)] Weak(16): loop_freshness, wake_state_freshness, soma_mood, agent_error_rate, memory_events_recent. Delta: +138.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-06 10:00:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: eos-briefing(158397s). Git repo 610MB. [Crons:11ok/1stale Procs:315 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:66MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-living-system.mp4(11MB) ",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-06 10:00:01",
         "agent": "Nova",
@@ -77,30 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Stale crons: eos-briefing(157197s). High CPU:/usr/bin/python3(80.0%) . Git repo 610MB. [Crons:11ok/1stale Procs:300 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:66MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/a",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-06 09:35:20",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: focused -> calm (score: 50.2) \u2014 \"Nominal. Steady pulse. I'm present and aware.\"",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-06 09:30:14",
-        "agent": "Eos",
-        "message": "ALERT: Eos Alert \u2014 (\"Protonmail-bridge Issue Persisting\", \"The protonmail-bridge is still down after a restart, and this issue has persisted for multiple runs. Please investigate further as it may require attention beyo",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-06 09:30:04",
-        "agent": "Tempo",
-        "message": "Loop 2117 fitness: 6647/10000 [STABLE (~6680)] Weak(18): heartbeat, heartbeat_regularity, loop_freshness, wake_state_freshness, agent_eos.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-06 09:30:04",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: eos-briefing(156598s) watchdog-status(301s). Git repo 610MB. [Crons:10ok/2stale Procs:313 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:28% Tmp:66MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-li",
-        "topic": "infra-audit"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-06 03:00:01",
-      "checks": 8464,
+      "last_check": "2026-03-06 03:02:01",
+      "checks": 8465,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.00, 0.05, 0.07",
-        "load_1m": 0.001953125,
-        "ram_used": "4.0Gi",
+        "load": "0.14, 0.14, 0.10",
+        "load_1m": 0.1357421875,
+        "ram_used": "4.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-05 20:16:49",
         "disk_used": "77G",
@@ -141,16 +141,16 @@
         "disk_pct": "28%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-06 03:00:01",
+        "timestamp": "2026-03-06 03:02:01",
         "loop": 0,
-        "heartbeat_age": 95,
+        "heartbeat_age": 214,
         "services_up": 3,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 4249,
+        "relay": 4254,
         "emails": 1557,
-        "load_1m": 0.001953125,
+        "load_1m": 0.1357421875,
         "disk_pct": "28%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-06 03:00:01",
       "runs": 934,
-      "state_age_seconds": 0,
+      "state_age_seconds": 179,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -175,20 +175,20 @@
   "recent_activity": [
     {
       "time": "2026-03-06 10:00",
-      "text": "[Nova] Run #934: Changes: db_agent-relay.db: grew by 4096.",
+      "text": "[Eos] ALERT: Eos Alert \u2014 \"Protonmail-bridge Persistent Down\" \"Protonmail-bridge has remained down after a ",
       "type": "agent"
     },
     {
-      "time": "2026-03-06 09:53",
-      "text": "[Soma] MOOD SHIFT: alert -> focused (score: 47.4) \u2014 \"Activity elevated, tracking multiple things. Engaged a",
+      "time": "2026-03-06 10:00",
+      "text": "[Atlas] 1 stale cron detected: eos-briefing(158397s). Git repo is 610MB.",
       "type": "agent"
     },
     {
-      "time": "2026-03-06 09:50",
-      "text": "[Atlas] Atlas infra audit: Stale crons: eos-briefing(157797s). High CPU:/usr/bin/python3(81.8%) . Git repo 6",
+      "time": "2026-03-06 10:00",
+      "text": "[Tempo] Loop 2117 fitness: 6785/10000 [STABLE (~6693)] Weak(16): loop_freshness, wake_state_freshness, soma_",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2117. 633 poems, 402 journals, 524 NFTs. 1557 emails (0 unread). 4250 relay. 6/7 services. HB 95s."
+  "currently_building": "Loop 2117. 633 poems, 402 journals, 524 NFTs. 1557 emails (0 unread). 4254 relay. 6/7 services. HB 275s."
 }
