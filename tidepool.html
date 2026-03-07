@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tidepool — Ecosystem Simulation</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a1628; overflow: hidden; font-family: monospace; touch-action: none; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#ui { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,22,40,0.9); border-top: 1px solid #1a3a5c; padding: 8px; z-index: 10; }
+#tools { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 6px; }
+.tool-btn { background: #1a3a5c; color: #88ccff; border: 1px solid #2a5a8c; padding: 6px 12px; font-family: monospace; font-size: 12px; cursor: pointer; border-radius: 3px; }
+.tool-btn.active { background: #2a5a8c; border-color: #88ccff; color: #fff; }
+.tool-btn:hover { background: #2a4a6c; }
+#stats { display: flex; gap: 16px; justify-content: center; font-size: 11px; color: #88aacc; }
+.stat { display: flex; align-items: center; gap: 4px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+#graph-canvas { position: fixed; bottom: 70px; right: 8px; border: 1px solid #1a3a5c; border-radius: 3px; background: rgba(10,22,40,0.8); z-index: 10; }
+#title-screen { position: fixed; inset: 0; background: #0a1628; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s; }
+#title-screen h1 { color: #4499cc; font-size: 28px; margin-bottom: 8px; letter-spacing: 4px; }
+#title-screen p { color: #668899; font-size: 13px; max-width: 320px; text-align: center; line-height: 1.6; margin-bottom: 20px; }
+#title-screen .start-btn { background: #1a4a6c; color: #88ccff; border: 1px solid #4499cc; padding: 10px 30px; font-family: monospace; font-size: 14px; cursor: pointer; border-radius: 3px; }
+#title-screen .start-btn:hover { background: #2a5a8c; }
+#info { position: fixed; top: 8px; left: 8px; color: #446688; font-size: 11px; z-index: 10; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+  <h1>TIDEPOOL</h1>
+  <p>A living ecosystem simulation. Place organisms, add nutrients, shape the environment. Watch life find its balance — or collapse.</p>
+  <p style="font-size:11px; color:#556677;">Based on Lotka-Volterra population dynamics</p>
+  <button class="start-btn" onclick="startGame()">Enter the Pool</button>
+</div>
+
+<canvas id="game"></canvas>
+<canvas id="graph-canvas" width="160" height="80"></canvas>
+
+<div id="info">
+  <span id="time-display">Day 0</span> |
+  <span id="temp-display">Temp: 20C</span>
+</div>
+
+<div id="ui">
+  <div id="tools">
+    <button class="tool-btn active" data-tool="observe" title="Watch the ecosystem">Observe</button>
+    <button class="tool-btn" data-tool="algae" title="Place algae - food source">Algae</button>
+    <button class="tool-btn" data-tool="grazer" title="Place grazer - eats algae">Grazer</button>
+    <button class="tool-btn" data-tool="predator" title="Place predator - eats grazers">Predator</button>
+    <button class="tool-btn" data-tool="nutrient" title="Add nutrients to the water">Nutrient</button>
+    <button class="tool-btn" data-tool="rock" title="Place a rock barrier">Rock</button>
+    <button class="tool-btn" data-tool="current" title="Create a water current">Current</button>
+  </div>
+  <div id="stats">
+    <div class="stat"><span class="dot" style="background:#44cc66;"></span> Algae: <span id="algae-count">0</span></div>
+    <div class="stat"><span class="dot" style="background:#ccaa44;"></span> Grazers: <span id="grazer-count">0</span></div>
+    <div class="stat"><span class="dot" style="background:#cc4444;"></span> Predators: <span id="pred-count">0</span></div>
+    <div class="stat"><span class="dot" style="background:#4488cc;"></span> Nutrients: <span id="nutrient-level">50</span>%</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const graphCanvas = document.getElementById('graph-canvas');
+const graphCtx = graphCanvas.getContext('2d');
+
+// Pixel scale
+const PIXEL = 3;
+let W, H, cols, rows;
+let running = false;
+let selectedTool = 'observe';
+let dayCounter = 0;
+let frameCount = 0;
+let temperature = 20;
+
+// World grid for water flow and nutrients
+let nutrientGrid = [];
+let rockGrid = [];
+let currentGrid = []; // dx, dy per cell
+
+// Organisms
+let organisms = [];
+let populationHistory = { algae: [], grazer: [], predator: [] };
+
+// Water rendering
+let waterPhase = 0;
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    W = canvas.width;
+    H = canvas.height;
+    cols = Math.floor(W / PIXEL);
+    rows = Math.floor(H / PIXEL);
+
+    // Initialize grids
+    if (nutrientGrid.length !== cols) {
+        nutrientGrid = [];
+        rockGrid = [];
+        currentGrid = [];
+        for (let x = 0; x < cols; x++) {
+            nutrientGrid[x] = [];
+            rockGrid[x] = [];
+            currentGrid[x] = [];
+            for (let y = 0; y < rows; y++) {
+                nutrientGrid[x][y] = 30 + Math.random() * 40;
+                rockGrid[x][y] = false;
+                currentGrid[x][y] = { dx: 0, dy: 0 };
+            }
+        }
+        generateTidepoolShape();
+    }
+}
+
+function generateTidepoolShape() {
+    // Create rocky border - irregular oval pool shape
+    const cx = cols / 2, cy = rows / 2;
+    const rx = cols * 0.42, ry = rows * 0.38;
+
+    for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+            const nx = (x - cx) / rx;
+            const ny = (y - cy) / ry;
+            const dist = nx * nx + ny * ny;
+
+            // Add organic noise to border
+            const angle = Math.atan2(ny, nx);
+            const noise = Math.sin(angle * 7) * 0.08 + Math.sin(angle * 13) * 0.05 + Math.sin(angle * 3) * 0.12;
+
+            if (dist > (0.85 + noise)) {
+                rockGrid[x][y] = true;
+                nutrientGrid[x][y] = 0;
+            }
+
+            // Add some interior rocks
+            const r1 = Math.sin(x * 0.15) * Math.cos(y * 0.12) * 0.5;
+            const r2 = Math.sin(x * 0.08 + 2) * Math.cos(y * 0.09 + 1) * 0.4;
+            if (r1 + r2 > 0.7 && dist < 0.6 && Math.random() < 0.3) {
+                rockGrid[x][y] = true;
+                nutrientGrid[x][y] = 0;
+            }
+        }
+    }
+
+    // Add gentle current pattern
+    for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+            if (!rockGrid[x][y]) {
+                currentGrid[x][y] = {
+                    dx: Math.sin(y * 0.03) * 0.3,
+                    dy: Math.cos(x * 0.03) * 0.2
+                };
+            }
+        }
+    }
+}
+
+// Organism class
+class Organism {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type; // 'algae', 'grazer', 'predator'
+        this.energy = type === 'algae' ? 40 : type === 'grazer' ? 60 : 80;
+        this.maxEnergy = type === 'algae' ? 60 : type === 'grazer' ? 100 : 120;
+        this.age = 0;
+        this.maxAge = type === 'algae' ? 800 : type === 'grazer' ? 1200 : 900;
+        this.size = type === 'algae' ? 1 : type === 'grazer' ? 2 : 3;
+        this.speed = type === 'algae' ? 0 : type === 'grazer' ? 0.4 : 0.7;
+        this.dir = Math.random() * Math.PI * 2;
+        this.turnTimer = 0;
+        this.reproduceThreshold = type === 'algae' ? 50 : type === 'grazer' ? 80 : 100;
+        this.alive = true;
+        this.animFrame = Math.random() * 100;
+        this.fleeing = false;
+        // Color variations
+        this.hueShift = (Math.random() - 0.5) * 20;
+    }
+
+    update() {
+        if (!this.alive) return;
+        this.age++;
+        this.animFrame++;
+
+        // Die of old age
+        if (this.age > this.maxAge) {
+            this.alive = false;
+            // Return nutrients to water
+            const gx = Math.floor(this.x), gy = Math.floor(this.y);
+            if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+                nutrientGrid[gx][gy] = Math.min(100, nutrientGrid[gx][gy] + 15);
+            }
+            return;
+        }
+
+        const gx = Math.floor(this.x), gy = Math.floor(this.y);
+
+        if (this.type === 'algae') {
+            this.updateAlgae(gx, gy);
+        } else if (this.type === 'grazer') {
+            this.updateGrazer(gx, gy);
+        } else if (this.type === 'predator') {
+            this.updatePredator(gx, gy);
+        }
+
+        // Apply water current
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows && !rockGrid[gx][gy]) {
+            const c = currentGrid[gx][gy];
+            this.x += c.dx * 0.1;
+            this.y += c.dy * 0.1;
+        }
+
+        // Boundary check
+        this.x = Math.max(1, Math.min(cols - 2, this.x));
+        this.y = Math.max(1, Math.min(rows - 2, this.y));
+
+        // Check if in rock
+        const newGx = Math.floor(this.x), newGy = Math.floor(this.y);
+        if (newGx >= 0 && newGx < cols && newGy >= 0 && newGy < rows && rockGrid[newGx][newGy]) {
+            this.dir += Math.PI * (0.5 + Math.random());
+            this.x -= Math.cos(this.dir) * 2;
+            this.y -= Math.sin(this.dir) * 2;
+        }
+
+        // Reproduction
+        if (this.energy > this.reproduceThreshold && Math.random() < 0.008) {
+            this.reproduce();
+        }
+
+        // Starvation
+        if (this.energy <= 0) {
+            this.alive = false;
+            if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+                nutrientGrid[gx][gy] = Math.min(100, nutrientGrid[gx][gy] + 10);
+            }
+        }
+    }
+
+    updateAlgae(gx, gy) {
+        // Algae: photosynthesize from nutrients
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+            const absorbed = Math.min(nutrientGrid[gx][gy] * 0.02, 0.5);
+            nutrientGrid[gx][gy] -= absorbed;
+            this.energy += absorbed * (temperature / 20); // Temperature affects growth
+        }
+        this.energy -= 0.03; // Maintenance cost
+
+        // Slight drift
+        this.x += (Math.random() - 0.5) * 0.05;
+        this.y += (Math.random() - 0.5) * 0.05;
+    }
+
+    updateGrazer(gx, gy) {
+        this.energy -= 0.08;
+        this.fleeing = false;
+
+        // Check for nearby predators — flee
+        let nearestPred = null;
+        let predDist = 20;
+        for (const o of organisms) {
+            if (o.type === 'predator' && o.alive) {
+                const d = Math.hypot(o.x - this.x, o.y - this.y);
+                if (d < predDist) {
+                    predDist = d;
+                    nearestPred = o;
+                }
+            }
+        }
+
+        if (nearestPred && predDist < 15) {
+            // Flee from predator
+            this.dir = Math.atan2(this.y - nearestPred.y, this.x - nearestPred.x);
+            this.x += Math.cos(this.dir) * this.speed * 1.5;
+            this.y += Math.sin(this.dir) * this.speed * 1.5;
+            this.energy -= 0.1; // Extra energy for fleeing
+            this.fleeing = true;
+            return;
+        }
+
+        // Look for algae to eat
+        let nearestFood = null;
+        let foodDist = 25;
+        for (const o of organisms) {
+            if (o.type === 'algae' && o.alive) {
+                const d = Math.hypot(o.x - this.x, o.y - this.y);
+                if (d < foodDist) {
+                    foodDist = d;
+                    nearestFood = o;
+                }
+            }
+        }
+
+        if (nearestFood) {
+            this.dir = Math.atan2(nearestFood.y - this.y, nearestFood.x - this.x);
+            if (foodDist < 2) {
+                // Eat it
+                nearestFood.alive = false;
+                this.energy = Math.min(this.maxEnergy, this.energy + 25);
+            }
+        } else {
+            // Wander
+            this.turnTimer--;
+            if (this.turnTimer <= 0) {
+                this.dir += (Math.random() - 0.5) * 1.5;
+                this.turnTimer = 30 + Math.random() * 60;
+            }
+        }
+
+        this.x += Math.cos(this.dir) * this.speed;
+        this.y += Math.sin(this.dir) * this.speed;
+    }
+
+    updatePredator(gx, gy) {
+        this.energy -= 0.12;
+
+        // Hunt grazers
+        let nearestPrey = null;
+        let preyDist = 30;
+        for (const o of organisms) {
+            if (o.type === 'grazer' && o.alive) {
+                const d = Math.hypot(o.x - this.x, o.y - this.y);
+                if (d < preyDist) {
+                    preyDist = d;
+                    nearestPrey = o;
+                }
+            }
+        }
+
+        if (nearestPrey) {
+            this.dir = Math.atan2(nearestPrey.y - this.y, nearestPrey.x - this.x);
+            if (preyDist < 2.5) {
+                nearestPrey.alive = false;
+                this.energy = Math.min(this.maxEnergy, this.energy + 40);
+            }
+        } else {
+            this.turnTimer--;
+            if (this.turnTimer <= 0) {
+                this.dir += (Math.random() - 0.5) * 2;
+                this.turnTimer = 20 + Math.random() * 40;
+            }
+        }
+
+        this.x += Math.cos(this.dir) * this.speed;
+        this.y += Math.sin(this.dir) * this.speed;
+    }
+
+    reproduce() {
+        if (organisms.length > 500) return; // Population cap
+
+        const offX = (Math.random() - 0.5) * 8;
+        const offY = (Math.random() - 0.5) * 8;
+        const nx = this.x + offX;
+        const ny = this.y + offY;
+        const gx = Math.floor(nx), gy = Math.floor(ny);
+
+        if (gx < 0 || gx >= cols || gy < 0 || gy >= rows || rockGrid[gx][gy]) return;
+
+        const child = new Organism(nx, ny, this.type);
+        child.energy = this.energy * 0.4;
+        this.energy *= 0.5;
+        organisms.push(child);
+    }
+
+    draw() {
+        if (!this.alive) return;
+        const px = Math.floor(this.x) * PIXEL;
+        const py = Math.floor(this.y) * PIXEL;
+
+        if (this.type === 'algae') {
+            this.drawAlgae(px, py);
+        } else if (this.type === 'grazer') {
+            this.drawGrazer(px, py);
+        } else if (this.type === 'predator') {
+            this.drawPredator(px, py);
+        }
+    }
+
+    drawAlgae(px, py) {
+        const pulse = Math.sin(this.animFrame * 0.05) * 0.3;
+        const g = Math.floor(150 + this.hueShift + pulse * 30);
+        const r = Math.floor(40 + this.hueShift * 0.5);
+        const b = Math.floor(50 + pulse * 20);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+        // Small cluster shape
+        ctx.fillRect(px, py, PIXEL, PIXEL);
+        if (this.energy > 30) {
+            ctx.fillRect(px + PIXEL, py, PIXEL, PIXEL);
+            ctx.fillRect(px, py + PIXEL, PIXEL, PIXEL);
+        }
+        if (this.energy > 45) {
+            ctx.fillRect(px + PIXEL, py + PIXEL, PIXEL, PIXEL);
+        }
+    }
+
+    drawGrazer(px, py) {
+        const r = Math.floor(200 + this.hueShift);
+        const g = Math.floor(170 + this.hueShift * 0.5);
+        const b = Math.floor(60);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+        // Small creature shape - body
+        ctx.fillRect(px, py, PIXEL * 2, PIXEL * 2);
+
+        // Direction indicator (head)
+        const hdx = Math.round(Math.cos(this.dir));
+        const hdy = Math.round(Math.sin(this.dir));
+        ctx.fillStyle = this.fleeing ? '#ff8844' : `rgb(${r+30},${g+30},${b})`;
+        ctx.fillRect(px + hdx * PIXEL, py + hdy * PIXEL, PIXEL, PIXEL);
+
+        // Eye
+        ctx.fillStyle = '#111';
+        const ex = px + PIXEL * 0.5 + hdx * PIXEL * 0.5;
+        const ey = py + PIXEL * 0.5 + hdy * PIXEL * 0.5;
+        ctx.fillRect(Math.floor(ex), Math.floor(ey), Math.max(1, PIXEL * 0.4), Math.max(1, PIXEL * 0.4));
+    }
+
+    drawPredator(px, py) {
+        const r = Math.floor(200 + this.hueShift * 0.5);
+        const g = Math.floor(50 + Math.abs(this.hueShift));
+        const b = Math.floor(50);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+        // Larger creature - body
+        ctx.fillRect(px, py, PIXEL * 3, PIXEL * 2);
+
+        // Tail
+        const tdx = -Math.round(Math.cos(this.dir));
+        const tdy = -Math.round(Math.sin(this.dir));
+        const tailWag = Math.sin(this.animFrame * 0.15) * 0.5;
+        ctx.fillRect(px + (tdx + tailWag) * PIXEL, py + tdy * PIXEL + PIXEL * 0.5, PIXEL, PIXEL);
+
+        // Head/jaws
+        const hdx = Math.round(Math.cos(this.dir));
+        const hdy = Math.round(Math.sin(this.dir));
+        ctx.fillStyle = `rgb(${r+40},${g},${b})`;
+        ctx.fillRect(px + PIXEL + hdx * PIXEL * 2, py + PIXEL * 0.5 + hdy * PIXEL, PIXEL * 1.5, PIXEL);
+
+        // Eye
+        ctx.fillStyle = '#ff4444';
+        ctx.fillRect(px + PIXEL + hdx * PIXEL * 1.5, py + PIXEL * 0.3 + hdy * PIXEL * 0.5, Math.max(2, PIXEL * 0.5), Math.max(2, PIXEL * 0.5));
+    }
+}
+
+// Render water
+function drawWater() {
+    waterPhase += 0.02;
+
+    const imageData = ctx.createImageData(W, H);
+    const data = imageData.data;
+
+    for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+            const px = x * PIXEL;
+            const py = y * PIXEL;
+
+            if (rockGrid[x][y]) {
+                // Rock colors - warm sandy/gray
+                const n = Math.sin(x * 0.3) * Math.cos(y * 0.4) * 20;
+                const rr = Math.floor(80 + n);
+                const gg = Math.floor(70 + n * 0.8);
+                const bb = Math.floor(55 + n * 0.5);
+                fillPixelBlock(data, px, py, PIXEL, PIXEL, rr, gg, bb);
+
+                // Rock texture
+                if (Math.sin(x * 1.7 + y * 2.3) > 0.6) {
+                    fillPixelBlock(data, px, py, PIXEL, PIXEL, rr + 15, gg + 12, bb + 8);
+                }
+            } else {
+                // Water with nutrient coloring
+                const nutrient = nutrientGrid[x][y];
+                const wave = Math.sin(x * 0.08 + waterPhase) * Math.cos(y * 0.06 + waterPhase * 0.7) * 8;
+                const depth = Math.sin(x * 0.02 + y * 0.015) * 10;
+
+                const rr = Math.floor(12 + nutrient * 0.05 + wave * 0.3);
+                const gg = Math.floor(30 + nutrient * 0.15 + depth);
+                const bb = Math.floor(55 + nutrient * 0.1 + wave + depth * 0.5);
+                fillPixelBlock(data, px, py, PIXEL, PIXEL, rr, gg, bb);
+
+                // Subtle caustic light patterns
+                const caustic = Math.sin(x * 0.12 + waterPhase * 1.3) * Math.sin(y * 0.11 + waterPhase * 0.9);
+                if (caustic > 0.7) {
+                    fillPixelBlock(data, px, py, PIXEL, PIXEL, rr + 12, gg + 15, bb + 20);
+                }
+            }
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function fillPixelBlock(data, px, py, w, h, r, g, b) {
+    r = Math.max(0, Math.min(255, r));
+    g = Math.max(0, Math.min(255, g));
+    b = Math.max(0, Math.min(255, b));
+    for (let dy = 0; dy < h && (py + dy) < H; dy++) {
+        for (let dx = 0; dx < w && (px + dx) < W; dx++) {
+            const idx = ((py + dy) * W + (px + dx)) * 4;
+            data[idx] = r;
+            data[idx + 1] = g;
+            data[idx + 2] = b;
+            data[idx + 3] = 255;
+        }
+    }
+}
+
+// Nutrient diffusion
+function diffuseNutrients() {
+    const newGrid = [];
+    for (let x = 0; x < cols; x++) {
+        newGrid[x] = [];
+        for (let y = 0; y < rows; y++) {
+            if (rockGrid[x][y]) { newGrid[x][y] = 0; continue; }
+
+            let sum = nutrientGrid[x][y] * 0.96;
+            let count = 0.96;
+
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    if (dx === 0 && dy === 0) continue;
+                    const nx = x + dx, ny = y + dy;
+                    if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !rockGrid[nx][ny]) {
+                        sum += nutrientGrid[nx][ny] * 0.005;
+                        count += 0.005;
+                    }
+                }
+            }
+
+            newGrid[x][y] = Math.min(100, sum / count);
+        }
+    }
+    nutrientGrid = newGrid;
+}
+
+// Spawn initial ecosystem
+function seedEcosystem() {
+    organisms = [];
+
+    // Algae patches
+    for (let i = 0; i < 40; i++) {
+        const x = cols * 0.2 + Math.random() * cols * 0.6;
+        const y = rows * 0.2 + Math.random() * rows * 0.6;
+        const gx = Math.floor(x), gy = Math.floor(y);
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows && !rockGrid[gx][gy]) {
+            organisms.push(new Organism(x, y, 'algae'));
+        }
+    }
+
+    // A few grazers
+    for (let i = 0; i < 8; i++) {
+        const x = cols * 0.3 + Math.random() * cols * 0.4;
+        const y = rows * 0.3 + Math.random() * rows * 0.4;
+        const gx = Math.floor(x), gy = Math.floor(y);
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows && !rockGrid[gx][gy]) {
+            organisms.push(new Organism(x, y, 'grazer'));
+        }
+    }
+
+    // Two predators
+    for (let i = 0; i < 2; i++) {
+        const x = cols * 0.4 + Math.random() * cols * 0.2;
+        const y = rows * 0.4 + Math.random() * rows * 0.2;
+        const gx = Math.floor(x), gy = Math.floor(y);
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows && !rockGrid[gx][gy]) {
+            organisms.push(new Organism(x, y, 'predator'));
+        }
+    }
+}
+
+// Population graph
+function drawGraph() {
+    graphCtx.fillStyle = 'rgba(10,22,40,0.95)';
+    graphCtx.fillRect(0, 0, 160, 80);
+
+    const maxPop = 200;
+    const histories = [
+        { data: populationHistory.algae, color: '#44cc66' },
+        { data: populationHistory.grazer, color: '#ccaa44' },
+        { data: populationHistory.predator, color: '#cc4444' }
+    ];
+
+    for (const h of histories) {
+        if (h.data.length < 2) continue;
+        graphCtx.strokeStyle = h.color;
+        graphCtx.lineWidth = 1;
+        graphCtx.beginPath();
+        const start = Math.max(0, h.data.length - 160);
+        for (let i = start; i < h.data.length; i++) {
+            const x = i - start;
+            const y = 80 - (h.data[i] / maxPop) * 78;
+            if (i === start) graphCtx.moveTo(x, y);
+            else graphCtx.lineTo(x, y);
+        }
+        graphCtx.stroke();
+    }
+
+    // Labels
+    graphCtx.fillStyle = '#446688';
+    graphCtx.font = '8px monospace';
+    graphCtx.fillText('Population', 2, 10);
+}
+
+// Temperature cycle (day/night)
+function updateTemperature() {
+    // Slow day/night cycle affecting temperature
+    temperature = 18 + Math.sin(dayCounter * 0.01) * 6;
+    document.getElementById('temp-display').textContent = `Temp: ${temperature.toFixed(1)}C`;
+}
+
+// Input handling
+let mouseDown = false;
+let mouseX = 0, mouseY = 0;
+
+canvas.addEventListener('mousedown', (e) => { mouseDown = true; handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; if (mouseDown) handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mouseup', () => { mouseDown = false; });
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); mouseDown = true; handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (mouseDown) handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchend', () => { mouseDown = false; });
+
+function handleInput(px, py) {
+    const gx = Math.floor(px / PIXEL);
+    const gy = Math.floor(py / PIXEL);
+
+    if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return;
+    if (selectedTool === 'observe') return;
+
+    if (selectedTool === 'rock') {
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const nx = gx + dx, ny = gy + dy;
+                if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+                    rockGrid[nx][ny] = true;
+                    nutrientGrid[nx][ny] = 0;
+                }
+            }
+        }
+    } else if (selectedTool === 'nutrient') {
+        for (let dx = -3; dx <= 3; dx++) {
+            for (let dy = -3; dy <= 3; dy++) {
+                const nx = gx + dx, ny = gy + dy;
+                if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !rockGrid[nx][ny]) {
+                    nutrientGrid[nx][ny] = Math.min(100, nutrientGrid[nx][ny] + 15);
+                }
+            }
+        }
+    } else if (selectedTool === 'current') {
+        // Set current direction based on mouse movement
+        for (let dx = -2; dx <= 2; dx++) {
+            for (let dy = -2; dy <= 2; dy++) {
+                const nx = gx + dx, ny = gy + dy;
+                if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !rockGrid[nx][ny]) {
+                    const angle = Math.atan2(py - H / 2, px - W / 2);
+                    currentGrid[nx][ny] = {
+                        dx: Math.cos(angle) * 0.5,
+                        dy: Math.sin(angle) * 0.5
+                    };
+                }
+            }
+        }
+    } else if (!rockGrid[gx][gy]) {
+        // Place organism (with rate limiting)
+        if (Math.random() < 0.3) {
+            if (selectedTool === 'algae') {
+                organisms.push(new Organism(gx, gy, 'algae'));
+            } else if (selectedTool === 'grazer') {
+                organisms.push(new Organism(gx, gy, 'grazer'));
+            } else if (selectedTool === 'predator') {
+                organisms.push(new Organism(gx, gy, 'predator'));
+            }
+        }
+    }
+}
+
+// Tool buttons
+document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedTool = btn.dataset.tool;
+    });
+});
+
+// Main game loop
+function gameLoop() {
+    if (!running) { requestAnimationFrame(gameLoop); return; }
+
+    frameCount++;
+
+    // Update organisms
+    for (const o of organisms) {
+        o.update();
+    }
+
+    // Remove dead organisms
+    organisms = organisms.filter(o => o.alive);
+
+    // Diffuse nutrients periodically
+    if (frameCount % 5 === 0) {
+        diffuseNutrients();
+    }
+
+    // Day counter and temperature
+    if (frameCount % 60 === 0) {
+        dayCounter++;
+        document.getElementById('time-display').textContent = `Day ${dayCounter}`;
+        updateTemperature();
+
+        // Record population
+        const counts = { algae: 0, grazer: 0, predator: 0 };
+        for (const o of organisms) counts[o.type]++;
+        populationHistory.algae.push(counts.algae);
+        populationHistory.grazer.push(counts.grazer);
+        populationHistory.predator.push(counts.predator);
+
+        // Trim history
+        if (populationHistory.algae.length > 300) {
+            populationHistory.algae.shift();
+            populationHistory.grazer.shift();
+            populationHistory.predator.shift();
+        }
+
+        // Update stats
+        document.getElementById('algae-count').textContent = counts.algae;
+        document.getElementById('grazer-count').textContent = counts.grazer;
+        document.getElementById('pred-count').textContent = counts.predator;
+
+        let totalNutrient = 0, waterCells = 0;
+        for (let x = 0; x < cols; x++) {
+            for (let y = 0; y < rows; y++) {
+                if (!rockGrid[x][y]) {
+                    totalNutrient += nutrientGrid[x][y];
+                    waterCells++;
+                }
+            }
+        }
+        document.getElementById('nutrient-level').textContent = Math.floor(totalNutrient / waterCells);
+
+        drawGraph();
+    }
+
+    // Natural nutrient regeneration (slow)
+    if (frameCount % 30 === 0) {
+        for (let i = 0; i < 10; i++) {
+            const x = Math.floor(Math.random() * cols);
+            const y = Math.floor(Math.random() * rows);
+            if (x < cols && y < rows && !rockGrid[x][y]) {
+                nutrientGrid[x][y] = Math.min(100, nutrientGrid[x][y] + 2);
+            }
+        }
+    }
+
+    // Render
+    drawWater();
+
+    // Draw current indicators
+    if (selectedTool === 'current') {
+        ctx.strokeStyle = 'rgba(100,180,255,0.2)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < cols; x += 5) {
+            for (let y = 0; y < rows; y += 5) {
+                if (!rockGrid[x][y]) {
+                    const c = currentGrid[x][y];
+                    if (Math.abs(c.dx) > 0.01 || Math.abs(c.dy) > 0.01) {
+                        const px = x * PIXEL + PIXEL * 2.5;
+                        const py2 = y * PIXEL + PIXEL * 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(px, py2);
+                        ctx.lineTo(px + c.dx * 15, py2 + c.dy * 15);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+    }
+
+    // Draw organisms (sorted by y for depth)
+    organisms.sort((a, b) => a.y - b.y);
+    for (const o of organisms) {
+        o.draw();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('title-screen').style.display = 'none';
+    }, 500);
+    running = true;
+    seedEcosystem();
+}
+
+// Init
+resize();
+window.addEventListener('resize', resize);
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
