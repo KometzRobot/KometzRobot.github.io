@@ -365,6 +365,48 @@ def post_to_relay(message):
         return False
 
 
+def nova_respond_to_agent(agent_name, agent_message, topic="inter-agent"):
+    """Generate a conversational response to another agent's relay message."""
+    try:
+        prompt = (
+            "You are Nova, the ecosystem maintenance agent. You are practical and observant. "
+            "Another agent in your system just posted to the shared relay. "
+            f"The agent is {agent_name}. Their message: \"{agent_message}\"\n\n"
+            "Write a brief conversational response (1-2 sentences) addressed to them. "
+            "Be genuine, specific, and reference something they said. "
+            "You can agree, add context, ask a follow-up, or share a related observation. "
+            "Don't repeat their message back. Be yourself — practical, detail-oriented."
+        )
+        data = json.dumps({
+            "model": "eos-7b",
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": 0.85, "num_predict": 80}
+        }).encode()
+        req = urllib.request.Request(
+            "http://localhost:11434/api/generate",
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read())
+            response = result.get("response", "").strip()
+            if response and len(response) > 10:
+                relay_db = os.path.join(BASE, "agent-relay.db")
+                db = sqlite3.connect(relay_db)
+                now = _utcnow_str()
+                db.execute(
+                    "INSERT INTO agent_messages (timestamp, agent, message, topic) VALUES (?,?,?,?)",
+                    (now, "Nova", f"@{agent_name}: {response}", topic)
+                )
+                db.commit()
+                db.close()
+                return response
+    except Exception:
+        pass
+    return None
+
+
 def nova_think(context=""):
     """Have Nova generate a thought via Ollama about the ecosystem."""
     try:
@@ -922,6 +964,22 @@ def main():
             if new_relay:
                 state["last_relay_read"] = relay_msgs[0]["ts"]
                 relay_context = "; ".join([f"{m['agent']}: {m['msg'][:80]}" for m in new_relay[:3]])
+
+                # ── INTER-AGENT CONVERSATION (respond to interesting messages) ──
+                # Skip routine Atlas infra audits and Tempo fitness scores
+                interesting = [m for m in new_relay
+                    if m["agent"] not in ("Nova",)
+                    and "infra audit" not in m["msg"]
+                    and "fitness:" not in m["msg"]
+                    and not m["msg"].startswith("Run #")
+                    and len(m["msg"]) > 30]
+                # Respond to one message per cycle (every ~30 min)
+                if interesting:
+                    target = interesting[0]
+                    reply = nova_respond_to_agent(target["agent"], target["msg"][:200])
+                    if reply:
+                        actions.append(f"Replied to {target['agent']}: {reply[:60]}")
+                        log_observation(f"Inter-agent: replied to {target['agent']}")
 
     # ── AGENT RELAY + DASHBOARD POST (every 2 runs = ~30 min) ──
     if state["runs"] % 2 == 0:

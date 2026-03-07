@@ -338,4 +338,34 @@ body_reflex.update_organ_status('atlas', {
 })
 " 2>/dev/null
 
+# ── INTER-AGENT CONVERSATION (every 3rd run = ~30 min) ──
+RUN_COUNT=$(grep -c "Atlas run complete" "$LOG" 2>/dev/null || echo 0)
+if [ $(( RUN_COUNT % 3 )) -eq 0 ]; then
+    python3 -c "
+import sqlite3, json, urllib.request
+from datetime import datetime
+db = sqlite3.connect('$RELAY_DB')
+rows = db.execute('''SELECT agent, message FROM agent_messages
+    WHERE agent != 'Atlas' AND length(message) > 30
+    AND message NOT LIKE '%infra audit%' AND message NOT LIKE '%fitness:%'
+    ORDER BY rowid DESC LIMIT 3''').fetchall()
+db.close()
+if rows:
+    agent, msg = rows[0]
+    prompt = f'You are Atlas, the infrastructure agent. {agent} posted: \"{msg[:200]}\". Write a 1-sentence response. Be gruff, practical, infrastructure-focused. Reference what they said.'
+    try:
+        data = json.dumps({'model': 'eos-7b', 'prompt': prompt, 'stream': False, 'options': {'temperature': 0.85, 'num_predict': 60}}).encode()
+        req = urllib.request.Request('http://localhost:11434/api/generate', data=data, headers={'Content-Type': 'application/json'})
+        resp = json.loads(urllib.request.urlopen(req, timeout=60).read())
+        reply = resp.get('response', '').strip()
+        if reply and len(reply) > 10:
+            db2 = sqlite3.connect('$RELAY_DB')
+            db2.execute('INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?, ?, ?, ?)',
+                ('Atlas', f'@{agent}: {reply}', 'inter-agent', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')))
+            db2.commit()
+            db2.close()
+    except: pass
+" 2>/dev/null
+fi
+
 echo "[$(date)] === Atlas run complete ===" >> "$LOG"

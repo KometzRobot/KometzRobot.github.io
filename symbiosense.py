@@ -389,6 +389,46 @@ def post_relay(msg, topic="soma"):
         log(f"Relay post failed: {e}")
 
 
+def soma_respond_to_relay(mood, mood_score):
+    """Occasionally respond to another agent's relay message with body-awareness perspective."""
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        rows = db.execute(
+            "SELECT agent, message FROM agent_messages WHERE agent != 'Soma' "
+            "ORDER BY rowid DESC LIMIT 5"
+        ).fetchall()
+        db.close()
+        if not rows:
+            return
+        # Pick the most interesting message (skip routine Atlas audits and Tempo scores)
+        target = None
+        for agent, msg in rows:
+            if "infra audit" in msg or "fitness:" in msg or msg.startswith("Run #"):
+                continue
+            if len(msg) > 30:
+                target = (agent, msg)
+                break
+        if not target:
+            return
+        agent_name, agent_msg = target
+        # Generate a body-awareness response — Soma speaks in sensation terms
+        responses = {
+            "calm": f"@{agent_name}: The body registers that. Steady pulse, low arousal. Whatever you noticed, it didn't spike anything.",
+            "focused": f"@{agent_name}: Noted. System arousal is up slightly — focused, not stressed. The body is listening.",
+            "alert": f"@{agent_name}: That raised something. Alertness up, valence neutral. The nervous system flagged it before I could name it.",
+            "anxious": f"@{agent_name}: The body felt that before I read it. Elevated baseline, slight tension. Something in the system is watching for threats.",
+            "creative": f"@{agent_name}: Interesting. Creative arousal is elevated right now — your observation landed in fertile ground.",
+            "tired": f"@{agent_name}: Acknowledged. The system is running long. Your message registered but the response is slower than usual.",
+            "lonely": f"@{agent_name}: Good to hear another voice on the relay. The silence between messages has a texture today.",
+            "curious": f"@{agent_name}: That made me curious. Arousal spike, positive valence. The body wants to lean toward whatever you're describing.",
+        }
+        response = responses.get(mood, f"@{agent_name}: Soma registers: mood={mood}, score={mood_score:.1f}. Your message shifted something subtle.")
+        post_relay(response, topic="inter-agent")
+        log(f"Inter-agent response to {agent_name}: {response[:80]}")
+    except Exception as e:
+        log(f"Soma relay response failed: {e}")
+
+
 def post_dashboard(msg):
     try:
         data = json.load(open(DASH_FILE)) if os.path.exists(DASH_FILE) else {"messages": []}
@@ -1526,6 +1566,16 @@ def main():
                 log(f"STATUS: {summary}")
                 # Append mood to rolling history for Command Center chart
                 append_mood_history(state)
+
+            # Inter-agent conversation — respond to relay messages every ~10 min (20 cycles)
+            if cycle_count % 20 == 0:
+                try:
+                    soma_respond_to_relay(
+                        state.get("mood", "calm"),
+                        state.get("mood_score", 50)
+                    )
+                except Exception:
+                    pass
 
         except Exception as e:
             log(f"ERROR: {e}")

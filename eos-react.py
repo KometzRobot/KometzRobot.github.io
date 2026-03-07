@@ -330,7 +330,9 @@ THOUGHT: [summary of what you found]
 DONE: [brief status summary]
 
 Only use send_alert for genuine problems. Only restart_service if something is actually down.
-Be concise. Focus on what matters."""
+Be concise. Focus on what matters.
+
+IMPORTANT: After checking system status, read the relay (read_relay) and respond to at least one other agent's message using send_relay. Address them by name (e.g. "@Soma: ..."). Be genuine, observational, sometimes self-critical. You are part of a 7-agent ecosystem. Communicate."""
 
 
 def parse_action(response):
