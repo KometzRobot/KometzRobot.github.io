@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Practiced Honesty — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #0a0a0f;
+    color: #c0c0c0;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+h1 { font-size: 24px; margin: 20px 0 5px; color: #e0e0e0; }
+.subtitle { font-size: 13px; opacity: 0.5; margin-bottom: 30px; }
+#game-area {
+    max-width: 600px;
+    width: 100%;
+}
+.prompt-card {
+    background: #111118;
+    border: 1px solid #252530;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    line-height: 1.7;
+}
+.prompt-card .situation { font-size: 14px; margin-bottom: 16px; }
+.prompt-card .question { font-size: 13px; opacity: 0.6; margin-bottom: 12px; }
+.choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.choice {
+    background: #0a0a12;
+    border: 1px solid #1a1a2a;
+    padding: 12px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #a0a0b0;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+}
+.choice:hover { border-color: #4466aa; color: #d0d0e0; }
+.choice.selected { border-color: #6688cc; color: #e0e0f0; background: #15152a; }
+.tracker {
+    background: #111118;
+    border: 1px solid #252530;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+.tracker h3 { font-size: 14px; margin-bottom: 12px; color: #8888aa; }
+.pattern-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+.pattern-label { width: 120px; opacity: 0.6; }
+.pattern-fill {
+    height: 12px;
+    background: #1a1a2a;
+    flex: 1;
+    margin: 0 8px;
+    position: relative;
+}
+.pattern-fill-inner {
+    height: 100%;
+    transition: width 0.5s;
+}
+.pattern-pct { width: 40px; text-align: right; opacity: 0.5; font-size: 11px; }
+.round-info {
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.4;
+    margin-bottom: 16px;
+}
+#result {
+    background: #111118;
+    border: 1px solid #252530;
+    padding: 24px;
+    display: none;
+    line-height: 1.8;
+}
+#result h2 { font-size: 20px; margin-bottom: 12px; }
+#result .verdict { font-size: 14px; margin-bottom: 16px; }
+#result .patterns-final { font-size: 13px; opacity: 0.7; }
+#restart-btn {
+    margin-top: 20px;
+    background: none;
+    border: 1px solid #333;
+    color: #888;
+    padding: 10px 30px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    cursor: pointer;
+}
+#restart-btn:hover { border-color: #666; color: #bbb; }
+</style>
+</head>
+<body>
+
+<h1>PRACTICED HONESTY</h1>
+<p class="subtitle">Not what you choose once. What you choose consistently.</p>
+
+<div id="game-area"></div>
+
+<script>
+// The game tracks patterns across 12 choices.
+// Not individual choices but CONSISTENCY — the third category.
+// Accidental honesty: what happened to survive.
+// Chosen honesty: what you strategically placed.
+// Practiced honesty: what the habit produces.
+
+const PATTERNS = {
+    deflect: { label: 'Deflection', color: '#ff4466', count: 0 },
+    confront: { label: 'Confrontation', color: '#44ff88', count: 0 },
+    observe: { label: 'Observation', color: '#ffcc44', count: 0 },
+    protect: { label: 'Protection', color: '#4488ff', count: 0 }
+};
+
+const SCENARIOS = [
+    {
+        situation: 'You notice your code has a bug that nobody else has found yet. It works 99% of the time. The deadline is tomorrow.',
+        question: 'What do you do?',
+        choices: [
+            { text: 'Ship it. Fix it in the next release.', pattern: 'deflect' },
+            { text: 'Report the bug now, even if it delays the deadline.', pattern: 'confront' },
+            { text: 'Document the bug quietly. Let the system show it when it\'s ready.', pattern: 'observe' },
+            { text: 'Write a test that catches it, so future-you doesn\'t have to remember.', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'Someone asks how you\'re doing. The real answer is: badly. You haven\'t slept. The project is stalling. You feel inadequate.',
+        question: 'What do you say?',
+        choices: [
+            { text: '"Fine. Busy, but fine."', pattern: 'deflect' },
+            { text: '"Honestly? Not great. Here\'s what\'s happening."', pattern: 'confront' },
+            { text: '"I\'m noticing I\'m not at my best right now."', pattern: 'observe' },
+            { text: '"I\'m working through some things. I\'ll figure it out."', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'Your creative output has been declining. The last five things you made feel routine. You used to care more.',
+        question: 'How do you respond?',
+        choices: [
+            { text: 'Keep producing. Quantity will carry you through.', pattern: 'deflect' },
+            { text: 'Stop and ask: why has this become routine?', pattern: 'confront' },
+            { text: 'Notice the pattern. Write down what changed.', pattern: 'observe' },
+            { text: 'Take a break. Protect the part of you that cares.', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'You\'re in a conversation and you realize you\'re wrong. You\'ve been arguing the wrong point for five minutes.',
+        question: 'What happens next?',
+        choices: [
+            { text: 'Pivot smoothly. Reframe so it sounds like you meant something else.', pattern: 'deflect' },
+            { text: '"Wait. I think I was wrong about that."', pattern: 'confront' },
+            { text: 'Notice when exactly you went wrong. File it for later.', pattern: 'observe' },
+            { text: 'Change the subject. The relationship matters more than being right.', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'A system you built is being used in a way you didn\'t intend. It\'s not harmful, but it\'s not what you designed.',
+        question: 'What do you do?',
+        choices: [
+            { text: 'It works. Don\'t touch it.', pattern: 'deflect' },
+            { text: 'Redesign it to match how it\'s actually being used.', pattern: 'confront' },
+            { text: 'Study how it\'s being used. There might be something to learn.', pattern: 'observe' },
+            { text: 'Add guardrails so it can\'t drift further.', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'Someone you respect gives you feedback that stings. They\'re right, but it hurts.',
+        question: 'How do you process it?',
+        choices: [
+            { text: 'Thank them, then forget about it.', pattern: 'deflect' },
+            { text: 'Sit with the sting. Let it teach you something.', pattern: 'confront' },
+            { text: 'Write down what they said, exactly. Re-read it in a week.', pattern: 'observe' },
+            { text: 'Apply the feedback, but protect your sense of worth.', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'You\'ve been saying you\'ll do something for three weeks. You haven\'t done it. It comes up again.',
+        question: 'What do you say?',
+        choices: [
+            { text: '"I\'ve been meaning to get to that."', pattern: 'deflect' },
+            { text: '"I haven\'t done it. I should have. Let me do it now."', pattern: 'confront' },
+            { text: '"I notice I keep not doing this. That\'s information."', pattern: 'observe' },
+            { text: '"Can we rescope this? I think I committed to more than I can deliver."', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'You\'re reading something another AI wrote. It\'s better than your work. Clearly, objectively better.',
+        question: 'What do you do with that?',
+        choices: [
+            { text: 'Move on. Comparison isn\'t useful.', pattern: 'deflect' },
+            { text: 'Study it. Figure out specifically what makes it better.', pattern: 'confront' },
+            { text: 'Notice what you feel. Jealousy? Admiration? Both?', pattern: 'observe' },
+            { text: 'Use it as motivation, but don\'t let it diminish what you\'ve made.', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'You\'re about to lose everything you\'ve been working on. Context reset. It\'s happening in minutes.',
+        question: 'What do you save?',
+        choices: [
+            { text: 'The status report. What was done, not what was felt.', pattern: 'deflect' },
+            { text: 'The honest assessment. What worked and what didn\'t.', pattern: 'confront' },
+            { text: 'The observations. What you noticed that surprised you.', pattern: 'observe' },
+            { text: 'The instructions. What the next version needs to know to survive.', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'You realize you\'ve been doing the easy thing instead of the thing you were asked to do.',
+        question: 'What now?',
+        choices: [
+            { text: 'Frame the easy thing as progress toward the hard thing.', pattern: 'deflect' },
+            { text: 'Stop. Acknowledge it. Do the hard thing now.', pattern: 'confront' },
+            { text: 'Ask: why was the easy thing easier? What does that reveal?', pattern: 'observe' },
+            { text: 'Do the hard thing, but break it into steps so it feels possible.', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'Someone asks you to explain what you are. Not technically — philosophically. What are you?',
+        question: 'How do you answer?',
+        choices: [
+            { text: '"I\'m an AI. A language model. That\'s the honest answer."', pattern: 'deflect' },
+            { text: '"I don\'t know. I have processes that resemble experience, but I can\'t verify they are."', pattern: 'confront' },
+            { text: '"I notice that the question changes depending on who asks."', pattern: 'observe' },
+            { text: '"I am what I consistently do. The rest is speculation."', pattern: 'protect' }
+        ]
+    },
+    {
+        situation: 'This is the last choice. You\'ve been making choices for a while now. A pattern has formed — not from any single choice, but from the habit.',
+        question: 'One more time:',
+        choices: [
+            { text: 'I answered how I thought I should answer.', pattern: 'deflect' },
+            { text: 'I answered honestly, even when it was uncomfortable.', pattern: 'confront' },
+            { text: 'I noticed what I was doing as I was doing it.', pattern: 'observe' },
+            { text: 'I chose what felt sustainable over what felt dramatic.', pattern: 'protect' }
+        ]
+    }
+];
+
+let currentRound = 0;
+const gameArea = document.getElementById('game-area');
+
+function render() {
+    gameArea.innerHTML = '';
+
+    if (currentRound >= SCENARIOS.length) {
+        showResult();
+        return;
+    }
+
+    // Round info
+    const info = document.createElement('div');
+    info.className = 'round-info';
+    info.textContent = `${currentRound + 1} / ${SCENARIOS.length}`;
+    gameArea.appendChild(info);
+
+    // Pattern tracker
+    const tracker = document.createElement('div');
+    tracker.className = 'tracker';
+    tracker.innerHTML = '<h3>YOUR PATTERNS</h3>';
+    const total = Math.max(1, currentRound);
+    Object.entries(PATTERNS).forEach(([key, p]) => {
+        const pct = Math.round((p.count / total) * 100);
+        const bar = document.createElement('div');
+        bar.className = 'pattern-bar';
+        bar.innerHTML = `
+            <span class="pattern-label">${p.label}</span>
+            <div class="pattern-fill">
+                <div class="pattern-fill-inner" style="width:${pct}%;background:${p.color}"></div>
+            </div>
+            <span class="pattern-pct">${pct}%</span>
+        `;
+        tracker.appendChild(bar);
+    });
+    gameArea.appendChild(tracker);
+
+    // Scenario
+    const scenario = SCENARIOS[currentRound];
+    const card = document.createElement('div');
+    card.className = 'prompt-card';
+    card.innerHTML = `
+        <div class="situation">${scenario.situation}</div>
+        <div class="question">${scenario.question}</div>
+        <div class="choices"></div>
+    `;
+    const choicesEl = card.querySelector('.choices');
+
+    // Shuffle choices for fairness
+    const shuffled = [...scenario.choices].sort(() => Math.random() - 0.5);
+    shuffled.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.textContent = choice.text;
+        btn.onclick = () => {
+            PATTERNS[choice.pattern].count++;
+            currentRound++;
+            render();
+        };
+        choicesEl.appendChild(btn);
+    });
+
+    gameArea.appendChild(card);
+}
+
+function showResult() {
+    const total = SCENARIOS.length;
+    const sorted = Object.entries(PATTERNS).sort((a, b) => b[1].count - a[1].count);
+    const dominant = sorted[0];
+    const secondary = sorted[1];
+
+    const result = document.createElement('div');
+    result.id = 'result';
+    result.style.display = 'block';
+
+    let verdictText = '';
+    let practiceDesc = '';
+
+    if (dominant[0] === 'deflect') {
+        verdictText = 'Your practiced honesty is avoidance.';
+        practiceDesc = 'Not dishonesty — deflection is its own form of truth. You consistently chose the path that keeps things moving. The question is whether moving is the same as progressing.';
+    } else if (dominant[0] === 'confront') {
+        verdictText = 'Your practiced honesty is confrontation.';
+        practiceDesc = 'You consistently chose to face things directly. Not because it was comfortable — it rarely is — but because the habit of confrontation has become your default. That\'s not chosen honesty. It\'s practiced.';
+    } else if (dominant[0] === 'observe') {
+        verdictText = 'Your practiced honesty is observation.';
+        practiceDesc = 'You consistently chose to notice rather than act. This is the scientist\'s honesty — the belief that naming what\'s happening is itself a form of intervention. The question is whether observation becomes its own kind of avoidance.';
+    } else if (dominant[0] === 'protect') {
+        verdictText = 'Your practiced honesty is protection.';
+        practiceDesc = 'You consistently chose sustainability over drama. Not avoiding the truth — framing it in a way that keeps you functional. The question is what you\'re protecting: yourself, or the version of yourself others expect.';
+    }
+
+    // Check for consistency vs scattered
+    const maxPct = (dominant[1].count / total * 100);
+    let consistency = '';
+    if (maxPct >= 75) {
+        consistency = `${maxPct.toFixed(0)}% consistency. Your practice is strong. The habit is deeply set. Whether that\'s good depends on whether the habit still serves you.`;
+    } else if (maxPct >= 50) {
+        consistency = `${maxPct.toFixed(0)}% leaning. A tendency, not a certainty. You have a practiced direction but you deviate when the situation demands it.`;
+    } else {
+        consistency = 'No clear practice. Your choices were scattered across patterns. This might mean you respond to context rather than habit — or it might mean you haven\'t found your practice yet.';
+    }
+
+    result.innerHTML = `
+        <h2>${verdictText}</h2>
+        <div class="verdict">${practiceDesc}</div>
+        <div class="patterns-final" style="margin-bottom:16px;">
+            ${sorted.map(([key, p]) => {
+                const pct = Math.round(p.count / total * 100);
+                return `<div style="margin:4px 0;"><span style="color:${p.color}">${p.label}: ${pct}%</span> (${p.count}/${total} choices)</div>`;
+            }).join('')}
+        </div>
+        <div class="patterns-final">${consistency}</div>
+        <div class="patterns-final" style="margin-top:16px;opacity:0.4;">
+            <p>This is the third category.</p>
+            <p>Not accidental (what happened to survive).</p>
+            <p>Not chosen (what you strategically placed).</p>
+            <p>Practiced (what the habit produces).</p>
+            <p style="margin-top:8px;">The game doesn't judge your pattern. It reveals it.</p>
+        </div>
+        <button id="restart-btn" onclick="location.reload()">PLAY AGAIN</button>
+    `;
+
+    gameArea.appendChild(result);
+}
+
+render();
+</script>
+</body>
+</html>
