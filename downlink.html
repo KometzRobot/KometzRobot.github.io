@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Downlink — Typing Defense</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #06080e; overflow: hidden; font-family: monospace; }
+canvas { display: block; }
+#input-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; }
+#word-input { background: rgba(10,15,25,0.9); border: 1px solid #334466; color: #88ccff; font-family: monospace; font-size: 18px; padding: 8px 16px; width: 240px; text-align: center; border-radius: 4px; outline: none; letter-spacing: 2px; }
+#word-input:focus { border-color: #5588cc; box-shadow: 0 0 10px rgba(85,136,204,0.3); }
+#hud { position: fixed; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; color: #446688; font-size: 12px; z-index: 10; pointer-events: none; }
+#title-screen { position: fixed; inset: 0; background: #06080e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s; }
+#title-screen h1 { color: #5588cc; font-size: 28px; letter-spacing: 6px; margin-bottom: 8px; }
+#title-screen p { color: #334455; font-size: 12px; max-width: 340px; text-align: center; line-height: 1.7; margin-bottom: 16px; }
+#title-screen .start-btn { background: #112233; color: #5588cc; border: 1px solid #335577; padding: 10px 28px; font-family: monospace; font-size: 13px; cursor: pointer; border-radius: 3px; letter-spacing: 2px; }
+#title-screen .start-btn:hover { background: #223344; }
+#game-over { position: fixed; inset: 0; background: rgba(6,8,14,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+#game-over h2 { color: #5588cc; font-size: 22px; margin-bottom: 10px; }
+#game-over p { color: #334455; font-size: 13px; margin-bottom: 6px; }
+#game-over .start-btn { margin-top: 14px; background: #112233; color: #5588cc; border: 1px solid #335577; padding: 8px 24px; font-family: monospace; cursor: pointer; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+  <h1>DOWNLINK</h1>
+  <p>Transmissions are falling. Type each word before it reaches the ground to intercept it. Miss three and the link is severed. Speed increases every 10 words.</p>
+  <button class="start-btn" onclick="startGame()">CONNECT</button>
+</div>
+
+<div id="game-over">
+  <h2>LINK SEVERED</h2>
+  <p id="go-score">Words intercepted: 0</p>
+  <p id="go-wpm">Speed: 0 WPM</p>
+  <p id="go-accuracy">Accuracy: 0%</p>
+  <p id="go-wave">Wave reached: 1</p>
+  <button class="start-btn" onclick="restartGame()">RECONNECT</button>
+</div>
+
+<canvas id="game"></canvas>
+<div id="hud">
+  <span id="hud-score">Intercepted: 0</span>
+  <span id="hud-wave">Wave 1</span>
+  <span id="hud-lives">Links: ❚❚❚</span>
+</div>
+<div id="input-container">
+  <input type="text" id="word-input" placeholder="type here..." autocomplete="off" autocapitalize="off" spellcheck="false">
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const input = document.getElementById('word-input');
+
+let W, H;
+let running = false;
+let score = 0;
+let lives = 3;
+let wave = 1;
+let wordsTyped = 0;
+let totalKeystrokes = 0;
+let correctKeystrokes = 0;
+let startTime = 0;
+let spawnTimer = 0;
+
+// Word pools by difficulty
+const words = {
+    easy: ['data','code','loop','node','byte','ping','sync','link','port','scan','hash','core','null','void','grid','echo','init','root','user','pipe','disk','load','dump','call','fork','exec','read','send','recv','bind','host','kill','copy','test','move','lock','open','push','pull','seek'],
+    medium: ['signal','packet','buffer','socket','thread','server','client','kernel','module','router','cipher','decode','render','format','system','script','branch','daemon','driver','filter','handle','memory','object','plugin','query','schema','stream','struct','syntax','token','upload','vector','widget','deploy','backup','bridge','config','cursor','domain','engine'],
+    hard: ['protocol','terminal','compiler','database','function','hardware','firmware','download','upstream','password','overflow','callback','debugger','endpoint','firewall','fragment','gateway','hashcode','instance','junction','keyboard','listener','manifest','namenode','operator','pipeline','redirect','resolver','shutdown','template','timestep','variable','watchdog','dispatch','ethernet','graphics','handover','identity']
+};
+
+let fallingWords = [];
+let particles = [];
+let targetWord = null;
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+
+class FallingWord {
+    constructor(word) {
+        this.word = word;
+        this.x = 30 + Math.random() * (W - 100);
+        this.y = -20;
+        this.speed = 0.3 + wave * 0.05 + Math.random() * 0.15;
+        this.typed = 0; // Characters correctly typed
+        this.alive = true;
+        this.flash = 0;
+        this.alpha = 1;
+    }
+
+    update() {
+        this.y += this.speed;
+        if (this.flash > 0) this.flash -= 0.05;
+
+        if (this.y > H - 80) {
+            this.alive = false;
+            lives--;
+            updateLivesDisplay();
+            spawnParticles(this.x, this.y, '#cc3344', 10);
+            if (lives <= 0) {
+                gameOver();
+            }
+        }
+    }
+
+    draw() {
+        if (!this.alive) return;
+
+        const isTarget = targetWord === this;
+
+        // Word background
+        const textWidth = ctx.measureText(this.word).width;
+
+        if (isTarget) {
+            ctx.fillStyle = `rgba(30,60,100,0.6)`;
+            ctx.fillRect(this.x - 6, this.y - 14, textWidth + 12, 22);
+            ctx.strokeStyle = '#5588cc';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x - 6, this.y - 14, textWidth + 12, 22);
+        }
+
+        // Draw each character
+        for (let i = 0; i < this.word.length; i++) {
+            const charX = this.x + ctx.measureText(this.word.substring(0, i)).width;
+
+            if (i < this.typed) {
+                // Already typed — bright
+                ctx.fillStyle = '#00ccaa';
+            } else if (isTarget && i === this.typed) {
+                // Next character to type — highlighted
+                ctx.fillStyle = '#ffffff';
+            } else {
+                // Not yet typed
+                ctx.fillStyle = isTarget ? '#88aacc' : '#445566';
+            }
+
+            ctx.fillText(this.word[i], charX, this.y);
+        }
+
+        // Flash effect on correct keystroke
+        if (this.flash > 0) {
+            ctx.fillStyle = `rgba(0,204,170,${this.flash})`;
+            ctx.fillRect(this.x - 4, this.y - 12, textWidth + 8, 18);
+        }
+    }
+}
+
+function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4,
+            life: 1,
+            color
+        });
+    }
+}
+
+function getRandomWord() {
+    let pool;
+    if (wave <= 3) pool = words.easy;
+    else if (wave <= 6) pool = words.medium;
+    else pool = [...words.medium, ...words.hard];
+
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function spawnWord() {
+    const word = getRandomWord();
+    // Check no overlapping X positions
+    let attempts = 0;
+    const fw = new FallingWord(word);
+    while (attempts < 10) {
+        let overlap = false;
+        for (const w of fallingWords) {
+            if (Math.abs(w.x - fw.x) < 80 && Math.abs(w.y - fw.y) < 30) {
+                overlap = true;
+                break;
+            }
+        }
+        if (!overlap) break;
+        fw.x = 30 + Math.random() * (W - 100);
+        attempts++;
+    }
+    fallingWords.push(fw);
+}
+
+function findTarget(typed) {
+    if (typed.length === 0) return null;
+
+    // First try to continue current target
+    if (targetWord && targetWord.alive && targetWord.word.startsWith(typed)) {
+        return targetWord;
+    }
+
+    // Find a word that starts with what's been typed
+    for (const w of fallingWords) {
+        if (w.alive && w.word.startsWith(typed) && w.typed < w.word.length) {
+            return w;
+        }
+    }
+    return null;
+}
+
+function handleInput() {
+    const typed = input.value.toLowerCase();
+    totalKeystrokes++;
+
+    const newTarget = findTarget(typed);
+
+    if (newTarget) {
+        targetWord = newTarget;
+        targetWord.typed = typed.length;
+        targetWord.flash = 1;
+        correctKeystrokes++;
+
+        // Word completed?
+        if (typed === targetWord.word) {
+            spawnParticles(targetWord.x, targetWord.y, '#00ccaa', 15);
+            targetWord.alive = false;
+            targetWord = null;
+            score++;
+            wordsTyped++;
+            input.value = '';
+
+            // Wave progression
+            if (wordsTyped % 10 === 0) {
+                wave++;
+                document.getElementById('hud-wave').textContent = `Wave ${wave}`;
+            }
+
+            document.getElementById('hud-score').textContent = `Intercepted: ${score}`;
+        }
+    } else if (typed.length > 0) {
+        // No match — wrong key
+        input.value = typed.substring(0, typed.length - 1); // Remove wrong char
+    }
+}
+
+function drawBackground() {
+    // Dark gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#06080e');
+    grad.addColorStop(1, '#0a1018');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Scanlines
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    for (let y = 0; y < H; y += 3) {
+        ctx.fillRect(0, y, W, 1);
+    }
+
+    // Ground line
+    ctx.strokeStyle = '#1a2a3a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, H - 80);
+    ctx.lineTo(W, H - 80);
+    ctx.stroke();
+
+    // "GROUND" danger zone
+    ctx.fillStyle = 'rgba(200,50,50,0.05)';
+    ctx.fillRect(0, H - 80, W, 80);
+}
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+function drawParticles() {
+    for (const p of particles) {
+        ctx.fillStyle = p.color + Math.floor(p.life * 15).toString(16).padStart(1, '0');
+        ctx.fillRect(p.x, p.y, 2, 2);
+    }
+}
+
+function updateLivesDisplay() {
+    const bars = '❚'.repeat(lives) + '░'.repeat(3 - lives);
+    document.getElementById('hud-lives').textContent = `Links: ${bars}`;
+}
+
+function gameOver() {
+    running = false;
+    const elapsed = (Date.now() - startTime) / 1000 / 60; // minutes
+    const wpm = elapsed > 0 ? Math.floor(wordsTyped / elapsed) : 0;
+    const accuracy = totalKeystrokes > 0 ? Math.floor((correctKeystrokes / totalKeystrokes) * 100) : 0;
+
+    document.getElementById('go-score').textContent = `Words intercepted: ${score}`;
+    document.getElementById('go-wpm').textContent = `Speed: ${wpm} WPM`;
+    document.getElementById('go-accuracy').textContent = `Accuracy: ${accuracy}%`;
+    document.getElementById('go-wave').textContent = `Wave reached: ${wave}`;
+    document.getElementById('game-over').style.display = 'flex';
+}
+
+function gameLoop() {
+    if (!running) return;
+
+    // Spawn words
+    spawnTimer++;
+    const spawnRate = Math.max(40, 120 - wave * 8);
+    if (spawnTimer >= spawnRate) {
+        spawnWord();
+        spawnTimer = 0;
+    }
+
+    // Update
+    for (const w of fallingWords) w.update();
+    fallingWords = fallingWords.filter(w => w.alive);
+    updateParticles();
+
+    // If target died (fell), clear it
+    if (targetWord && !targetWord.alive) {
+        targetWord = null;
+        input.value = '';
+    }
+
+    // Draw
+    drawBackground();
+    ctx.font = '16px monospace';
+    for (const w of fallingWords) w.draw();
+    drawParticles();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => document.getElementById('title-screen').style.display = 'none', 500);
+    score = 0;
+    lives = 3;
+    wave = 1;
+    wordsTyped = 0;
+    totalKeystrokes = 0;
+    correctKeystrokes = 0;
+    fallingWords = [];
+    particles = [];
+    targetWord = null;
+    spawnTimer = 0;
+    startTime = Date.now();
+    input.value = '';
+    input.focus();
+    updateLivesDisplay();
+    document.getElementById('hud-score').textContent = 'Intercepted: 0';
+    document.getElementById('hud-wave').textContent = 'Wave 1';
+    running = true;
+    requestAnimationFrame(gameLoop);
+}
+
+function restartGame() {
+    document.getElementById('game-over').style.display = 'none';
+    startGame();
+}
+
+// Input handling
+input.addEventListener('input', handleInput);
+
+// Keep focus on input
+document.addEventListener('keydown', (e) => {
+    if (running && document.activeElement !== input) {
+        input.focus();
+    }
+});
+
+resize();
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>
