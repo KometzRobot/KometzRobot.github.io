@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Powder — Particle Physics Sandbox</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; overflow: hidden; font-family: monospace; touch-action: none; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#ui { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,15,0.92); border-top: 1px solid #2a2a3a; padding: 6px 8px; z-index: 10; }
+#materials { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
+.mat-btn { width: 48px; height: 30px; border: 2px solid #333; cursor: pointer; border-radius: 3px; font-size: 8px; font-family: monospace; color: #fff; text-align: center; line-height: 28px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.mat-btn.active { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.3); }
+#controls { display: flex; gap: 8px; justify-content: center; align-items: center; font-size: 10px; color: #666; }
+#title-screen { position: fixed; inset: 0; background: #0a0a0f; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.6s; }
+#title-screen h1 { color: #cc8844; font-size: 28px; letter-spacing: 6px; margin-bottom: 8px; }
+#title-screen p { color: #665533; font-size: 12px; max-width: 340px; text-align: center; line-height: 1.7; margin-bottom: 16px; }
+#title-screen .start-btn { background: #332211; color: #cc8844; border: 1px solid #664422; padding: 10px 28px; font-family: monospace; font-size: 13px; cursor: pointer; border-radius: 3px; letter-spacing: 2px; }
+#title-screen .start-btn:hover { background: #443322; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+  <h1>POWDER</h1>
+  <p>Particle physics sandbox. Paint with materials — sand, water, fire, oil, plant, acid, steam, stone. Watch them interact, flow, burn, grow, and dissolve. Every pixel is a simulation.</p>
+  <button class="start-btn" onclick="startGame()">CREATE</button>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <div id="materials">
+    <button class="mat-btn active" data-mat="sand" style="background:#c4a040;" title="Sand - falls, piles up">Sand</button>
+    <button class="mat-btn" data-mat="water" style="background:#2266cc;" title="Water - flows, evaporates near fire">Water</button>
+    <button class="mat-btn" data-mat="fire" style="background:#cc3300;" title="Fire - burns oil and plant, rises">Fire</button>
+    <button class="mat-btn" data-mat="oil" style="background:#554400;" title="Oil - floats on water, burns">Oil</button>
+    <button class="mat-btn" data-mat="plant" style="background:#228833;" title="Plant - grows near water, burns">Plant</button>
+    <button class="mat-btn" data-mat="acid" style="background:#88cc00;" title="Acid - dissolves everything">Acid</button>
+    <button class="mat-btn" data-mat="stone" style="background:#666666;" title="Stone - solid, melts in acid">Stone</button>
+    <button class="mat-btn" data-mat="steam" style="background:#aabbcc;" title="Steam - rises, condenses to water">Steam</button>
+    <button class="mat-btn" data-mat="erase" style="background:#222;" title="Erase">Erase</button>
+  </div>
+  <div id="controls">
+    <span>Brush: </span>
+    <input type="range" id="brush-size" min="1" max="10" value="3" style="width:80px;">
+    <span id="brush-label">3</span>
+    <span style="margin-left:12px;">Particles: <span id="particle-count">0</span></span>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let W, H, cols, rows;
+const PIXEL = 3;
+let running = false;
+let selectedMat = 'sand';
+let brushSize = 3;
+
+// Material types
+const EMPTY = 0;
+const SAND = 1;
+const WATER = 2;
+const FIRE = 3;
+const OIL = 4;
+const PLANT = 5;
+const ACID = 6;
+const STONE = 7;
+const STEAM = 8;
+
+const matMap = { sand: SAND, water: WATER, fire: FIRE, oil: OIL, plant: PLANT, acid: ACID, stone: STONE, steam: STEAM, erase: EMPTY };
+
+// Grid
+let grid;
+let colorGrid; // Store color variations
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    cols = Math.floor(W / PIXEL);
+    rows = Math.floor(H / PIXEL);
+
+    const newGrid = new Uint8Array(cols * rows);
+    const newColor = new Uint8Array(cols * rows);
+
+    // Preserve existing grid if resizing
+    if (grid) {
+        const minCols = Math.min(cols, grid.length / rows || cols);
+        const minRows = Math.min(rows, (grid.length / (grid.length / rows)) || rows);
+        // Just reset on resize for simplicity
+    }
+
+    grid = newGrid;
+    colorGrid = newColor;
+}
+
+function idx(x, y) { return y * cols + x; }
+function get(x, y) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return STONE; // Walls
+    return grid[idx(x, y)];
+}
+function set(x, y, val) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+    grid[idx(x, y)] = val;
+}
+function getColor(x, y) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return 0;
+    return colorGrid[idx(x, y)];
+}
+function setColor(x, y, val) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+    colorGrid[idx(x, y)] = val;
+}
+
+function swap(x1, y1, x2, y2) {
+    if (x2 < 0 || x2 >= cols || y2 < 0 || y2 >= rows) return false;
+    const i1 = idx(x1, y1), i2 = idx(x2, y2);
+    const t = grid[i1]; grid[i1] = grid[i2]; grid[i2] = t;
+    const tc = colorGrid[i1]; colorGrid[i1] = colorGrid[i2]; colorGrid[i2] = tc;
+    return true;
+}
+
+// Update direction alternates each frame for fairness
+let updateDir = 1;
+
+function simulate() {
+    updateDir *= -1;
+    const startX = updateDir === 1 ? 0 : cols - 1;
+    const endX = updateDir === 1 ? cols : -1;
+
+    for (let y = rows - 1; y >= 0; y--) {
+        for (let x = startX; x !== endX; x += updateDir) {
+            const cell = get(x, y);
+            if (cell === EMPTY) continue;
+
+            switch (cell) {
+                case SAND: updateSand(x, y); break;
+                case WATER: updateWater(x, y); break;
+                case FIRE: updateFire(x, y); break;
+                case OIL: updateOil(x, y); break;
+                case PLANT: updatePlant(x, y); break;
+                case ACID: updateAcid(x, y); break;
+                case STEAM: updateSteam(x, y); break;
+                // STONE doesn't move
+            }
+        }
+    }
+}
+
+function updateSand(x, y) {
+    const below = get(x, y + 1);
+    if (below === EMPTY || below === WATER || below === OIL) {
+        swap(x, y, x, y + 1);
+    } else {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const bl = get(x + side, y + 1);
+        if (bl === EMPTY || bl === WATER || bl === OIL) {
+            swap(x, y, x + side, y + 1);
+        } else {
+            const br = get(x - side, y + 1);
+            if (br === EMPTY || br === WATER || br === OIL) {
+                swap(x, y, x - side, y + 1);
+            }
+        }
+    }
+}
+
+function updateWater(x, y) {
+    const below = get(x, y + 1);
+    if (below === EMPTY) {
+        swap(x, y, x, y + 1);
+    } else {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        if (get(x + side, y + 1) === EMPTY) {
+            swap(x, y, x + side, y + 1);
+        } else if (get(x - side, y + 1) === EMPTY) {
+            swap(x, y, x - side, y + 1);
+        } else if (get(x + side, y) === EMPTY) {
+            swap(x, y, x + side, y);
+        } else if (get(x - side, y) === EMPTY) {
+            swap(x, y, x - side, y);
+        }
+    }
+
+    // Evaporate near fire
+    for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+            if (get(x + dx, y + dy) === FIRE && Math.random() < 0.05) {
+                set(x, y, STEAM);
+                setColor(x, y, Math.floor(Math.random() * 30));
+                return;
+            }
+        }
+    }
+}
+
+function updateFire(x, y) {
+    // Fire rises and dies
+    if (Math.random() < 0.03) {
+        set(x, y, EMPTY);
+        return;
+    }
+
+    // Rise
+    if (get(x, y - 1) === EMPTY && Math.random() < 0.6) {
+        swap(x, y, x, y - 1);
+    } else {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        if (get(x + side, y - 1) === EMPTY) {
+            swap(x, y, x + side, y - 1);
+        }
+    }
+
+    // Spread to flammable neighbors
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            const n = get(x + dx, y + dy);
+            if ((n === OIL || n === PLANT) && Math.random() < 0.08) {
+                set(x + dx, y + dy, FIRE);
+                setColor(x + dx, y + dy, Math.floor(Math.random() * 40));
+            }
+        }
+    }
+
+    // Flicker color
+    setColor(x, y, Math.floor(Math.random() * 60));
+}
+
+function updateOil(x, y) {
+    // Oil is like water but floats on water
+    const below = get(x, y + 1);
+    if (below === EMPTY) {
+        swap(x, y, x, y + 1);
+    } else if (below === WATER) {
+        // Float on water — swap with water below
+        swap(x, y, x, y + 1);
+    } else {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        if (get(x + side, y + 1) === EMPTY) {
+            swap(x, y, x + side, y + 1);
+        } else if (get(x - side, y + 1) === EMPTY) {
+            swap(x, y, x - side, y + 1);
+        } else if (get(x + side, y) === EMPTY) {
+            swap(x, y, x + side, y);
+        } else if (get(x - side, y) === EMPTY) {
+            swap(x, y, x - side, y);
+        }
+    }
+}
+
+function updatePlant(x, y) {
+    // Grow toward water
+    let hasWater = false;
+    for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+            if (get(x + dx, y + dy) === WATER) hasWater = true;
+        }
+    }
+
+    if (hasWater && Math.random() < 0.01) {
+        // Grow in random direction
+        const gx = x + Math.floor(Math.random() * 3) - 1;
+        const gy = y + Math.floor(Math.random() * 3) - 1;
+        if (get(gx, gy) === EMPTY || get(gx, gy) === WATER) {
+            set(gx, gy, PLANT);
+            setColor(gx, gy, Math.floor(Math.random() * 40));
+        }
+    }
+}
+
+function updateAcid(x, y) {
+    // Acid falls and dissolves things
+    const below = get(x, y + 1);
+    if (below === EMPTY) {
+        swap(x, y, x, y + 1);
+    } else if (below !== ACID && below !== EMPTY && Math.random() < 0.15) {
+        // Dissolve what's below
+        set(x, y + 1, EMPTY);
+        if (Math.random() < 0.4) {
+            set(x, y, EMPTY); // Acid consumed too
+        }
+    } else {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        if (get(x + side, y + 1) === EMPTY) {
+            swap(x, y, x + side, y + 1);
+        } else if (get(x - side, y + 1) === EMPTY) {
+            swap(x, y, x - side, y + 1);
+        } else if (get(x + side, y) === EMPTY) {
+            swap(x, y, x + side, y);
+        } else if (get(x - side, y) === EMPTY) {
+            swap(x, y, x - side, y);
+        }
+
+        // Dissolve adjacent non-acid, non-empty
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const n = get(x + dx, y + dy);
+                if (n !== EMPTY && n !== ACID && Math.random() < 0.02) {
+                    set(x + dx, y + dy, EMPTY);
+                    if (Math.random() < 0.3) set(x, y, EMPTY);
+                }
+            }
+        }
+    }
+}
+
+function updateSteam(x, y) {
+    // Steam rises
+    if (Math.random() < 0.005) {
+        // Condense to water
+        set(x, y, WATER);
+        setColor(x, y, Math.floor(Math.random() * 30));
+        return;
+    }
+
+    if (get(x, y - 1) === EMPTY) {
+        swap(x, y, x, y - 1);
+    } else {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        if (get(x + side, y - 1) === EMPTY) {
+            swap(x, y, x + side, y - 1);
+        } else if (get(x + side, y) === EMPTY) {
+            swap(x, y, x + side, y);
+        } else if (get(x - side, y) === EMPTY) {
+            swap(x, y, x - side, y);
+        }
+    }
+}
+
+// Rendering
+function render() {
+    const imageData = ctx.createImageData(W, H);
+    const data = imageData.data;
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const cell = grid[idx(x, y)];
+            if (cell === EMPTY) continue;
+
+            const cv = colorGrid[idx(x, y)];
+            let r, g, b;
+
+            switch (cell) {
+                case SAND:
+                    r = 180 + cv; g = 150 + cv * 0.7; b = 50 + cv * 0.3;
+                    break;
+                case WATER:
+                    r = 30 + cv * 0.3; g = 80 + cv * 0.5; b = 180 + cv;
+                    break;
+                case FIRE:
+                    r = 220 + cv * 0.5; g = 80 + cv * 2; b = 10 + cv * 0.5;
+                    break;
+                case OIL:
+                    r = 60 + cv * 0.3; g = 50 + cv * 0.2; b = 10 + cv * 0.1;
+                    break;
+                case PLANT:
+                    r = 20 + cv * 0.3; g = 100 + cv; b = 30 + cv * 0.5;
+                    break;
+                case ACID:
+                    r = 100 + cv; g = 200 + cv * 0.5; b = 10 + cv * 0.3;
+                    break;
+                case STONE:
+                    r = 90 + cv * 0.5; g = 85 + cv * 0.5; b = 80 + cv * 0.5;
+                    break;
+                case STEAM:
+                    r = 160 + cv; g = 170 + cv; b = 190 + cv;
+                    break;
+                default:
+                    continue;
+            }
+
+            r = Math.max(0, Math.min(255, Math.floor(r)));
+            g = Math.max(0, Math.min(255, Math.floor(g)));
+            b = Math.max(0, Math.min(255, Math.floor(b)));
+
+            const px = x * PIXEL;
+            const py = y * PIXEL;
+            for (let dy = 0; dy < PIXEL && (py + dy) < H; dy++) {
+                for (let dx = 0; dx < PIXEL && (px + dx) < W; dx++) {
+                    const pidx = ((py + dy) * W + (px + dx)) * 4;
+                    data[pidx] = r;
+                    data[pidx + 1] = g;
+                    data[pidx + 2] = b;
+                    data[pidx + 3] = 255;
+                }
+            }
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
+// Input
+let mouseDown = false;
+
+function handleInput(px, py) {
+    const gx = Math.floor(px / PIXEL);
+    const gy = Math.floor(py / PIXEL);
+    const mat = matMap[selectedMat] ?? EMPTY;
+
+    for (let dx = -brushSize; dx <= brushSize; dx++) {
+        for (let dy = -brushSize; dy <= brushSize; dy++) {
+            if (dx * dx + dy * dy > brushSize * brushSize) continue;
+            const nx = gx + dx, ny = gy + dy;
+            if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+
+            if (mat === EMPTY) {
+                set(nx, ny, EMPTY);
+            } else if (get(nx, ny) === EMPTY) {
+                // Random scatter for natural look
+                if (Math.random() < 0.7) {
+                    set(nx, ny, mat);
+                    setColor(nx, ny, Math.floor(Math.random() * 40));
+                }
+            }
+        }
+    }
+}
+
+canvas.addEventListener('mousedown', (e) => { mouseDown = true; handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mousemove', (e) => { if (mouseDown) handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mouseup', () => { mouseDown = false; });
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); mouseDown = true; handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (mouseDown) handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchend', () => { mouseDown = false; });
+
+// Material buttons
+document.querySelectorAll('.mat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedMat = btn.dataset.mat;
+    });
+});
+
+// Brush size
+document.getElementById('brush-size').addEventListener('input', (e) => {
+    brushSize = parseInt(e.target.value);
+    document.getElementById('brush-label').textContent = brushSize;
+});
+
+// Main loop
+function gameLoop() {
+    if (!running) { requestAnimationFrame(gameLoop); return; }
+
+    simulate();
+    render();
+
+    // Particle count
+    let count = 0;
+    for (let i = 0; i < grid.length; i++) {
+        if (grid[i] !== EMPTY) count++;
+    }
+    document.getElementById('particle-count').textContent = count;
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => document.getElementById('title-screen').style.display = 'none', 600);
+    running = true;
+}
+
+resize();
+window.addEventListener('resize', resize);
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
