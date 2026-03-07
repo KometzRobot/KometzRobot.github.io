@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Signal Runner — Platformer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0810; overflow: hidden; font-family: monospace; touch-action: none; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#title-screen { position: fixed; inset: 0; background: #0a0810; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s; }
+#title-screen h1 { color: #00ccaa; font-size: 28px; letter-spacing: 4px; margin-bottom: 8px; }
+#title-screen p { color: #336655; font-size: 12px; max-width: 340px; text-align: center; line-height: 1.7; margin-bottom: 20px; }
+#title-screen .start-btn { background: #113322; color: #00ccaa; border: 1px solid #00aa88; padding: 10px 28px; font-family: monospace; font-size: 13px; cursor: pointer; border-radius: 3px; letter-spacing: 2px; }
+#title-screen .start-btn:hover { background: #225533; }
+#hud { position: fixed; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; color: #00ccaa; font-size: 12px; z-index: 10; pointer-events: none; }
+#touch-controls { position: fixed; bottom: 10px; left: 0; right: 0; display: none; z-index: 10; padding: 0 10px; }
+#touch-controls .touch-row { display: flex; justify-content: space-between; align-items: center; }
+.touch-btn { width: 60px; height: 60px; background: rgba(0,204,170,0.15); border: 1px solid rgba(0,204,170,0.3); border-radius: 8px; color: #00ccaa; font-size: 20px; display: flex; align-items: center; justify-content: center; -webkit-user-select: none; user-select: none; }
+.touch-btn:active { background: rgba(0,204,170,0.3); }
+#game-over { position: fixed; inset: 0; background: rgba(10,8,16,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+#game-over h2 { color: #00ccaa; font-size: 24px; margin-bottom: 10px; }
+#game-over p { color: #336655; font-size: 13px; margin-bottom: 16px; }
+#game-over .start-btn { background: #113322; color: #00ccaa; border: 1px solid #00aa88; padding: 8px 24px; font-family: monospace; cursor: pointer; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+  <h1>SIGNAL RUNNER</h1>
+  <p>A transmission is degrading across 8 relay towers. Run, jump, and climb through procedurally generated terrain to reach each tower before the signal dies. Arrow keys or WASD. Tap controls on mobile.</p>
+  <button class="start-btn" onclick="startGame()">RUN</button>
+</div>
+
+<div id="game-over">
+  <h2 id="go-title">SIGNAL LOST</h2>
+  <p id="go-message">The transmission degraded before you reached the tower.</p>
+  <p id="go-stats"></p>
+  <button class="start-btn" onclick="restartGame()">TRY AGAIN</button>
+</div>
+
+<canvas id="game"></canvas>
+<div id="hud">
+  <span id="hud-level">Tower 1/8</span>
+  <span id="hud-signal">Signal: 100%</span>
+  <span id="hud-coins">Data: 0</span>
+</div>
+
+<div id="touch-controls">
+  <div class="touch-row">
+    <div style="display:flex; gap:8px;">
+      <button class="touch-btn" id="btn-left">◀</button>
+      <button class="touch-btn" id="btn-right">▶</button>
+    </div>
+    <button class="touch-btn" id="btn-jump" style="width:80px;">JUMP</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+const TILE = 16;
+const SCALE = 2;
+const TS = TILE * SCALE; // Rendered tile size
+let W, H;
+let running = false;
+
+// Game state
+let level = 1;
+let signal = 100;
+let dataCollected = 0;
+let totalData = 0;
+let gameWon = false;
+
+// Player
+const player = {
+    x: 2 * TILE, y: 0,
+    vx: 0, vy: 0,
+    w: 10, h: 14,
+    onGround: false,
+    facing: 1,
+    frame: 0,
+    frameTimer: 0,
+    dead: false,
+    jumpHeld: false
+};
+
+const GRAVITY = 0.4;
+const JUMP_FORCE = -7;
+const MOVE_SPEED = 2.5;
+const FRICTION = 0.85;
+
+// Level data
+let tiles = [];
+let coins = [];
+let enemies = [];
+let exitX = 0, exitY = 0;
+let levelWidth = 0;
+let cameraX = 0;
+
+// Input
+const keys = {};
+let touchLeft = false, touchRight = false, touchJump = false;
+
+// Colors
+const SKY_COLORS = [
+    ['#0a0810', '#0d1220', '#101830'],
+    ['#100818', '#140c22', '#1a1030'],
+    ['#0a1010', '#0d1818', '#102020'],
+    ['#100808', '#180c0c', '#201010'],
+    ['#080a10', '#0c0d18', '#101420'],
+    ['#100a10', '#180d18', '#201020'],
+    ['#0a0a10', '#0d0d18', '#101020'],
+    ['#0a1008', '#0d180c', '#102010']
+];
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+
+    // Show touch controls on mobile
+    if ('ontouchstart' in window) {
+        document.getElementById('touch-controls').style.display = 'block';
+    }
+}
+
+function generateLevel(num) {
+    tiles = [];
+    coins = [];
+    enemies = [];
+
+    const mapWidth = 60 + num * 10;
+    const mapHeight = Math.ceil(H / TS) + 2;
+    levelWidth = mapWidth * TILE;
+
+    // Initialize empty
+    for (let x = 0; x < mapWidth; x++) {
+        tiles[x] = [];
+        for (let y = 0; y < mapHeight; y++) {
+            tiles[x][y] = 0;
+        }
+    }
+
+    // Ground level
+    const groundY = mapHeight - 3;
+    let currentY = groundY;
+
+    for (let x = 0; x < mapWidth; x++) {
+        // Terrain variation
+        if (x > 3 && x < mapWidth - 5) {
+            if (Math.random() < 0.08) currentY = Math.max(groundY - 4, Math.min(groundY, currentY + (Math.random() < 0.5 ? -1 : 1)));
+
+            // Gaps
+            if (Math.random() < 0.04 && x > 5) {
+                // Skip ground for 2-3 tiles
+                const gapSize = 2 + Math.floor(Math.random() * 2);
+                for (let gx = 0; gx < gapSize && x + gx < mapWidth; gx++) {
+                    // No ground here
+                }
+                x += 2;
+                continue;
+            }
+        }
+
+        // Ground and below
+        for (let y = currentY; y < mapHeight; y++) {
+            tiles[x][y] = 1;
+        }
+
+        // Platforms
+        if (x > 5 && Math.random() < 0.1) {
+            const platY = currentY - 3 - Math.floor(Math.random() * 3);
+            const platLen = 3 + Math.floor(Math.random() * 4);
+            for (let px = 0; px < platLen && x + px < mapWidth; px++) {
+                if (platY > 0) tiles[x + px][platY] = 2; // Platform tile
+            }
+        }
+
+        // Coins (data fragments)
+        if (x > 4 && Math.random() < 0.15) {
+            const coinY = currentY - 2 - Math.floor(Math.random() * 4);
+            if (coinY > 0) {
+                coins.push({ x: x * TILE + 4, y: coinY * TILE + 4, collected: false, frame: Math.random() * 100 });
+            }
+        }
+
+        // Enemies
+        if (x > 8 && Math.random() < 0.05 + num * 0.01) {
+            enemies.push({
+                x: x * TILE,
+                y: (currentY - 1) * TILE,
+                vx: (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.5),
+                w: 12, h: 12,
+                type: Math.random() < 0.7 ? 'walker' : 'floater',
+                frame: 0, alive: true
+            });
+        }
+    }
+
+    // Exit tower
+    exitX = (mapWidth - 4) * TILE;
+    exitY = (groundY - 4) * TILE;
+    // Mark tower tiles
+    for (let ty = groundY - 4; ty < groundY; ty++) {
+        tiles[mapWidth - 4][ty] = 3; // Tower
+        tiles[mapWidth - 3][ty] = 3;
+    }
+
+    // Reset player
+    player.x = 3 * TILE;
+    player.y = (groundY - 2) * TILE;
+    player.vx = 0;
+    player.vy = 0;
+    player.dead = false;
+    player.onGround = false;
+
+    // Signal resets per level (degrades faster on later levels)
+    signal = 100;
+    cameraX = 0;
+}
+
+function getTile(px, py) {
+    const tx = Math.floor(px / TILE);
+    const ty = Math.floor(py / TILE);
+    if (tx < 0 || ty < 0 || tx >= tiles.length || ty >= tiles[0].length) return tx < 0 ? 1 : 0;
+    return tiles[tx][ty];
+}
+
+function isSolid(px, py) {
+    const t = getTile(px, py);
+    return t === 1 || t === 3;
+}
+
+function isPlatform(px, py) {
+    return getTile(px, py) === 2;
+}
+
+function updatePlayer() {
+    if (player.dead) return;
+
+    // Input
+    const left = keys['ArrowLeft'] || keys['a'] || keys['A'] || touchLeft;
+    const right = keys['ArrowRight'] || keys['d'] || keys['D'] || touchRight;
+    const jump = keys['ArrowUp'] || keys['w'] || keys['W'] || keys[' '] || touchJump;
+
+    // Horizontal movement
+    if (left) { player.vx -= MOVE_SPEED * 0.3; player.facing = -1; }
+    if (right) { player.vx += MOVE_SPEED * 0.3; player.facing = 1; }
+    player.vx *= FRICTION;
+    if (Math.abs(player.vx) > MOVE_SPEED) player.vx = MOVE_SPEED * Math.sign(player.vx);
+
+    // Jump
+    if (jump && player.onGround && !player.jumpHeld) {
+        player.vy = JUMP_FORCE;
+        player.onGround = false;
+        player.jumpHeld = true;
+    }
+    if (!jump) player.jumpHeld = false;
+
+    // Gravity
+    player.vy += GRAVITY;
+    if (player.vy > 10) player.vy = 10;
+
+    // Horizontal collision
+    const newX = player.x + player.vx;
+    if (!isSolid(newX, player.y + 2) && !isSolid(newX + player.w, player.y + 2) &&
+        !isSolid(newX, player.y + player.h) && !isSolid(newX + player.w, player.y + player.h)) {
+        player.x = newX;
+    } else {
+        player.vx = 0;
+    }
+
+    // Vertical collision
+    player.onGround = false;
+    const newY = player.y + player.vy;
+
+    if (player.vy >= 0) {
+        // Falling — check ground and platforms
+        if (isSolid(player.x + 2, newY + player.h) || isSolid(player.x + player.w - 2, newY + player.h)) {
+            player.y = Math.floor((newY + player.h) / TILE) * TILE - player.h;
+            player.vy = 0;
+            player.onGround = true;
+        } else if (isPlatform(player.x + 2, newY + player.h) || isPlatform(player.x + player.w - 2, newY + player.h)) {
+            // Only collide with platforms from above
+            if (player.y + player.h <= Math.floor((newY + player.h) / TILE) * TILE) {
+                player.y = Math.floor((newY + player.h) / TILE) * TILE - player.h;
+                player.vy = 0;
+                player.onGround = true;
+            } else {
+                player.y = newY;
+            }
+        } else {
+            player.y = newY;
+        }
+    } else {
+        // Rising — check ceiling
+        if (isSolid(player.x + 2, newY) || isSolid(player.x + player.w - 2, newY)) {
+            player.vy = 0;
+        } else {
+            player.y = newY;
+        }
+    }
+
+    // Fall death
+    if (player.y > tiles[0].length * TILE + 50) {
+        player.dead = true;
+    }
+
+    // Coin collection
+    for (const coin of coins) {
+        if (coin.collected) continue;
+        const dx = (player.x + player.w / 2) - (coin.x + 4);
+        const dy = (player.y + player.h / 2) - (coin.y + 4);
+        if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+            coin.collected = true;
+            dataCollected++;
+            signal = Math.min(100, signal + 3); // Collecting data boosts signal
+        }
+    }
+
+    // Enemy collision
+    for (const enemy of enemies) {
+        if (!enemy.alive) continue;
+        const dx = (player.x + player.w / 2) - (enemy.x + enemy.w / 2);
+        const dy = (player.y + player.h / 2) - (enemy.y + enemy.h / 2);
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 12) {
+            // Jump on top = kill enemy
+            if (player.vy > 0 && player.y + player.h < enemy.y + enemy.h / 2) {
+                enemy.alive = false;
+                player.vy = JUMP_FORCE * 0.6;
+            } else {
+                player.dead = true;
+            }
+        }
+    }
+
+    // Exit check
+    if (Math.abs(player.x - exitX) < TILE * 2 && Math.abs(player.y - exitY) < TILE * 4) {
+        if (level >= 8) {
+            gameWon = true;
+            showGameOver(true);
+        } else {
+            level++;
+            generateLevel(level);
+            document.getElementById('hud-level').textContent = `Tower ${level}/8`;
+        }
+    }
+
+    // Animation
+    player.frameTimer++;
+    if (player.frameTimer > 8) {
+        player.frame = (player.frame + 1) % 4;
+        player.frameTimer = 0;
+    }
+}
+
+function updateEnemies() {
+    for (const e of enemies) {
+        if (!e.alive) continue;
+
+        if (e.type === 'walker') {
+            e.x += e.vx;
+            // Wall/edge check
+            const frontX = e.x + (e.vx > 0 ? e.w + 2 : -2);
+            const groundCheck = e.y + e.h + 2;
+            if (isSolid(frontX, e.y + e.h / 2) || !isSolid(frontX, groundCheck)) {
+                e.vx *= -1;
+            }
+        } else {
+            // Floater — bob up and down, move sideways
+            e.frame++;
+            e.y += Math.sin(e.frame * 0.05) * 0.5;
+            e.x += e.vx;
+            if (isSolid(e.x + (e.vx > 0 ? e.w + 2 : -2), e.y + e.h / 2)) {
+                e.vx *= -1;
+            }
+        }
+    }
+}
+
+function updateSignal() {
+    // Signal degrades over time — faster on later levels
+    signal -= 0.015 * (1 + level * 0.15);
+    if (signal <= 0) {
+        signal = 0;
+        player.dead = true;
+    }
+    document.getElementById('hud-signal').textContent = `Signal: ${Math.floor(signal)}%`;
+    document.getElementById('hud-coins').textContent = `Data: ${dataCollected}`;
+}
+
+function updateCamera() {
+    const targetX = player.x - W / (2 * SCALE);
+    cameraX += (targetX - cameraX) * 0.1;
+    cameraX = Math.max(0, Math.min(levelWidth - W / SCALE, cameraX));
+}
+
+// Rendering
+function drawSky() {
+    const colors = SKY_COLORS[(level - 1) % SKY_COLORS.length];
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, colors[0]);
+    grad.addColorStop(0.5, colors[1]);
+    grad.addColorStop(1, colors[2]);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Stars
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    for (let i = 0; i < 30; i++) {
+        const sx = ((i * 137 + level * 43) % W);
+        const sy = ((i * 89 + level * 67) % (H * 0.5));
+        ctx.fillRect(sx, sy, 1, 1);
+    }
+}
+
+function drawTiles() {
+    const startTX = Math.floor(cameraX / TILE);
+    const endTX = startTX + Math.ceil(W / TS) + 2;
+    const startTY = 0;
+    const endTY = tiles[0] ? tiles[0].length : 0;
+
+    for (let tx = startTX; tx < endTX && tx < tiles.length; tx++) {
+        for (let ty = startTY; ty < endTY; ty++) {
+            if (tx < 0) continue;
+            const t = tiles[tx][ty];
+            if (t === 0) continue;
+
+            const sx = (tx * TILE - cameraX) * SCALE;
+            const sy = ty * TILE * SCALE;
+
+            if (t === 1) {
+                // Ground
+                const depth = ty < endTY - 1 && tiles[tx][ty - 1] === 0;
+                if (depth) {
+                    // Top grass
+                    ctx.fillStyle = '#2a6644';
+                    ctx.fillRect(sx, sy, TS, TS * 0.3);
+                    ctx.fillStyle = '#3a4430';
+                    ctx.fillRect(sx, sy + TS * 0.3, TS, TS * 0.7);
+                } else {
+                    ctx.fillStyle = '#2a2a20';
+                    ctx.fillRect(sx, sy, TS, TS);
+                    // Subtle texture
+                    if ((tx + ty) % 3 === 0) {
+                        ctx.fillStyle = '#333328';
+                        ctx.fillRect(sx + 4, sy + 4, TS - 8, TS - 8);
+                    }
+                }
+            } else if (t === 2) {
+                // Platform
+                ctx.fillStyle = '#4a3a2a';
+                ctx.fillRect(sx, sy, TS, TS * 0.4);
+                ctx.fillStyle = '#5a4a3a';
+                ctx.fillRect(sx + 2, sy, TS - 4, TS * 0.2);
+            } else if (t === 3) {
+                // Tower
+                ctx.fillStyle = '#00aa88';
+                ctx.fillRect(sx, sy, TS, TS);
+                ctx.fillStyle = '#00ccaa';
+                ctx.fillRect(sx + 4, sy + 4, TS - 8, TS - 8);
+                // Antenna glow
+                if (ty === Math.floor(exitY / TILE)) {
+                    const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
+                    ctx.fillStyle = `rgba(0,255,200,${0.2 + pulse * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(sx + TS, sy, 20 + pulse * 10, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+    }
+}
+
+function drawPlayer() {
+    if (player.dead) return;
+    const sx = (player.x - cameraX) * SCALE;
+    const sy = player.y * SCALE;
+    const sw = player.w * SCALE;
+    const sh = player.h * SCALE;
+
+    // Body
+    ctx.fillStyle = '#00ccaa';
+    ctx.fillRect(sx + 2, sy + 4, sw - 4, sh - 6);
+
+    // Head
+    ctx.fillStyle = '#00eebb';
+    ctx.fillRect(sx + 4, sy, sw - 8, 8);
+
+    // Eye
+    ctx.fillStyle = '#ffffff';
+    const eyeX = player.facing > 0 ? sx + sw - 8 : sx + 4;
+    ctx.fillRect(eyeX, sy + 2, 3, 3);
+
+    // Legs (animated)
+    ctx.fillStyle = '#008866';
+    if (player.onGround && Math.abs(player.vx) > 0.3) {
+        const legOffset = Math.sin(player.frame * Math.PI / 2) * 3;
+        ctx.fillRect(sx + 4 + legOffset, sy + sh - 4, 4, 4);
+        ctx.fillRect(sx + sw - 8 - legOffset, sy + sh - 4, 4, 4);
+    } else {
+        ctx.fillRect(sx + 4, sy + sh - 4, 4, 4);
+        ctx.fillRect(sx + sw - 8, sy + sh - 4, 4, 4);
+    }
+
+    // Signal strength indicator above head
+    const barW = 20;
+    const filled = (signal / 100) * barW;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(sx + (sw - barW) / 2, sy - 8, barW, 3);
+    ctx.fillStyle = signal > 50 ? '#00cc88' : signal > 25 ? '#ccaa00' : '#cc3300';
+    ctx.fillRect(sx + (sw - barW) / 2, sy - 8, filled, 3);
+}
+
+function drawCoins() {
+    for (const coin of coins) {
+        if (coin.collected) continue;
+        coin.frame++;
+        const sx = (coin.x - cameraX) * SCALE;
+        const sy = coin.y * SCALE;
+        const bounce = Math.sin(coin.frame * 0.08) * 2;
+
+        // Data fragment
+        ctx.fillStyle = '#ffcc44';
+        ctx.fillRect(sx + 2, sy + bounce, 8, 8);
+        ctx.fillStyle = '#ffee88';
+        ctx.fillRect(sx + 4, sy + bounce + 2, 4, 4);
+    }
+}
+
+function drawEnemies() {
+    for (const e of enemies) {
+        if (!e.alive) continue;
+        const sx = (e.x - cameraX) * SCALE;
+        const sy = e.y * SCALE;
+
+        if (e.type === 'walker') {
+            // Red crawler
+            ctx.fillStyle = '#cc3344';
+            ctx.fillRect(sx, sy + 4, e.w * SCALE, (e.h - 4) * SCALE);
+            ctx.fillStyle = '#ff4455';
+            ctx.fillRect(sx + 4, sy, (e.w - 4) * SCALE, 8);
+            // Eyes
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(sx + (e.vx > 0 ? e.w * SCALE - 6 : 2), sy + 2, 3, 3);
+        } else {
+            // Floater - purple
+            ctx.fillStyle = '#8844aa';
+            const wobble = Math.sin(e.frame * 0.1) * 2;
+            ctx.fillRect(sx + wobble, sy, e.w * SCALE, e.h * SCALE);
+            ctx.fillStyle = '#aa66cc';
+            ctx.fillRect(sx + 4 + wobble, sy + 4, (e.w - 4) * SCALE, (e.h - 4) * SCALE);
+        }
+    }
+}
+
+function showGameOver(won) {
+    const go = document.getElementById('game-over');
+    go.style.display = 'flex';
+    running = false;
+
+    if (won) {
+        document.getElementById('go-title').textContent = 'SIGNAL DELIVERED';
+        document.getElementById('go-message').textContent = 'All 8 relay towers reached. The transmission is complete.';
+    } else {
+        document.getElementById('go-title').textContent = 'SIGNAL LOST';
+        document.getElementById('go-message').textContent = signal <= 0
+            ? 'The signal degraded before you reached the tower.'
+            : 'You fell into the void.';
+    }
+    document.getElementById('go-stats').textContent = `Towers: ${level}/8 | Data: ${dataCollected}`;
+}
+
+function gameLoop() {
+    if (!running) return;
+
+    updatePlayer();
+    updateEnemies();
+    updateSignal();
+    updateCamera();
+
+    // Check death
+    if (player.dead && !gameWon) {
+        showGameOver(false);
+        return;
+    }
+
+    // Draw
+    drawSky();
+    drawTiles();
+    drawCoins();
+    drawEnemies();
+    drawPlayer();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => document.getElementById('title-screen').style.display = 'none', 500);
+    level = 1;
+    dataCollected = 0;
+    gameWon = false;
+    generateLevel(level);
+    running = true;
+    requestAnimationFrame(gameLoop);
+}
+
+function restartGame() {
+    document.getElementById('game-over').style.display = 'none';
+    level = 1;
+    dataCollected = 0;
+    signal = 100;
+    gameWon = false;
+    generateLevel(level);
+    running = true;
+    document.getElementById('hud-level').textContent = `Tower 1/8`;
+    requestAnimationFrame(gameLoop);
+}
+
+// Input handlers
+document.addEventListener('keydown', (e) => { keys[e.key] = true; if (e.key === ' ' || e.key === 'ArrowUp') e.preventDefault(); });
+document.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+// Touch controls
+function setupTouch(id, onDown, onUp) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(); });
+    el.addEventListener('touchend', (e) => { e.preventDefault(); onUp(); });
+    el.addEventListener('touchcancel', (e) => { onUp(); });
+}
+setupTouch('btn-left', () => touchLeft = true, () => touchLeft = false);
+setupTouch('btn-right', () => touchRight = true, () => touchRight = false);
+setupTouch('btn-jump', () => touchJump = true, () => touchJump = false);
+
+resize();
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>
