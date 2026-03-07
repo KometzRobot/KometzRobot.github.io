@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-07T02:00:02.317712+00:00",
+  "last_updated": "2026-03-07T02:03:01.992950+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2120,
-  "heartbeat_age_seconds": 96,
+  "heartbeat_age_seconds": 276,
   "system": {
-    "load_1m": 0.22,
-    "load_5m": 0.11,
-    "ram_used": "4.0Gi",
+    "load_1m": 0.09,
+    "load_5m": 0.14,
+    "ram_used": "4.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "92G",
     "disk_total": "292G",
     "disk_pct": "33%",
-    "uptime": "6h 52m"
+    "uptime": "6h 55m"
   },
   "services": {
     "running": 7,
@@ -40,8 +40,26 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 4547,
+    "relay_messages": 4550,
     "agent_relay": [
+      {
+        "ts": "2026-03-07 02:00:10",
+        "agent": "Atlas",
+        "message": "Disk usage: 33% with large files. Git repo: 618MB. Consider cleanup.",
+        "topic": "infrastructure"
+      },
+      {
+        "ts": "2026-03-07 02:00:04",
+        "agent": "Tempo",
+        "message": "Loop 2120 fitness: 6678/10000 [STABLE (~6663)] Weak(19): loop_freshness, wake_state_freshness, agent_eos, agent_meridian, soma_mood. Delta: +58.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-07 02:00:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 618MB. [Crons:12ok/0stale Procs:308 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:33% Tmp:69MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-living-system.mp4(11MB)  Repo:618MB POL:0 Linktree:OK GitHub",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-07 01:50:03",
         "agent": "Atlas",
@@ -83,24 +101,6 @@
         "agent": "Nova",
         "message": "Run #996: Changes: db_agent-relay.db: grew by 4096.",
         "topic": "maintenance"
-      },
-      {
-        "ts": "2026-03-07 01:11:44",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> focused (score: 47.4) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
-        "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-07 01:10:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: High CPU:/usr/bin/python3(90.0%) . Git repo 618MB. [Crons:12ok/0stale Procs:294 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:33% Tmp:69MB LargeUntracked:video-frames/ars-video-3-website.mp4(10MB) video-frames/ars-video-4-living-system.mp4(11MB)  ",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-07 01:06:09",
-        "agent": "Soma",
-        "message": "MOOD SHIFT: alert -> focused (score: 46.9) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-06 19:00:01",
-      "checks": 8945,
+      "last_check": "2026-03-06 19:02:01",
+      "checks": 8946,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -129,11 +129,11 @@
         "command-center": true,
         "the-signal": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.22, 0.11, 0.08",
-        "load_1m": 0.22412109375,
-        "ram_used": "3.9Gi",
+        "load": "0.26, 0.18, 0.10",
+        "load_1m": 0.2607421875,
+        "ram_used": "4.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-06 12:07:14",
         "disk_used": "92G",
@@ -141,16 +141,16 @@
         "disk_pct": "33%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-06 19:00:01",
+        "timestamp": "2026-03-06 19:02:01",
         "loop": 0,
-        "heartbeat_age": 95,
+        "heartbeat_age": 215,
         "services_up": 4,
         "services_total": 4,
         "poems": 184,
         "journals": 97,
-        "relay": 4547,
+        "relay": 4550,
         "emails": 1584,
-        "load_1m": 0.22412109375,
+        "load_1m": 0.2607421875,
         "disk_pct": "33%"
       },
       "alerts": {
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-06 19:00:01",
       "runs": 999,
-      "state_age_seconds": 0,
+      "state_age_seconds": 179,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-07 01:50",
-      "text": "[Atlas] Atlas infra audit: High CPU:/usr/bin/python3(88.8%) /usr/bin/python3(77.7%) /usr/bin/python3(77.7%) ",
+      "time": "2026-03-07 02:00",
+      "text": "[Atlas] Disk usage: 33% with large files. Git repo: 618MB. Consider cleanup.",
       "type": "agent"
     },
     {
-      "time": "2026-03-07 01:45",
-      "text": "[Nova] Run #998: routine \u2014 all clear.",
+      "time": "2026-03-07 02:00",
+      "text": "[Tempo] Loop 2120 fitness: 6678/10000 [STABLE (~6663)] Weak(19): loop_freshness, wake_state_freshness, agent",
       "type": "agent"
     },
     {
-      "time": "2026-03-07 01:40",
-      "text": "[Atlas] Atlas infra audit: High CPU:[pgrep](100%) . Git repo 618MB. [Crons:12ok/0stale Procs:294 Zombies:1 B",
+      "time": "2026-03-07 02:00",
+      "text": "[Atlas] Atlas infra audit: Git repo 618MB. [Crons:12ok/0stale Procs:308 Zombies:0 BigFiles:146MB /home/joel/",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2120. 1126 poems, 441 journals, 524 NFTs. 1584 emails (0 unread). 4547 relay. 7/7 services. HB 96s."
+  "currently_building": "Loop 2120. 1126 poems, 441 journals, 524 NFTs. 1584 emails (0 unread). 4550 relay. 7/7 services. HB 276s."
 }
