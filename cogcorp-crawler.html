@@ -52,6 +52,21 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     text-shadow: 0 0 10px rgba(255,179,71,0.6); display: none; pointer-events: none;
     text-align: center; letter-spacing: 2px;
 }
+#annotation-hud {
+    position: fixed; top: 8px; left: 8px; z-index: 10; display: none;
+    font-family: monospace; font-size: 10px; color: #8a6020; pointer-events: none;
+}
+#annotation-hud .reality-label { letter-spacing: 2px; margin-bottom: 4px; }
+#reality-bar { width: 100px; height: 4px; background: #1a1408; border: 1px solid #3a2a10; }
+#reality-fill { height: 100%; background: linear-gradient(to right, #cc6622, #ffb347); transition: width 0.5s; }
+#annotation-progress {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, 30px);
+    font-family: monospace; font-size: 10px; color: #ffb347; z-index: 15;
+    display: none; pointer-events: none; text-align: center; letter-spacing: 1px;
+}
+#annotation-progress .bar { width: 80px; height: 3px; background: #1a1408; border: 1px solid #5a4020; margin: 4px auto; }
+#annotation-progress .bar-fill { height: 100%; background: #ffb347; transition: width 0.1s; }
+#filed-count { color: #5a4020; font-size: 9px; }
 </style>
 </head>
 <body>
@@ -64,9 +79,13 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         The machines are still running. The filing system is still processing.<br>
         The lights still flicker at the same frequency they always did.<br><br>
         You are B-247. You were sent to retrieve one file from Floor 3.<br>
-        The elevator doesn't work. The stairs might.<br>
-        Something else is still inside.<br><br>
-        WASD to move. Mouse to look. E to interact. Click to lock mouse.
+        You are not armed. You were given a clipboard.<br><br>
+        The filing system knows you're here. The security units still patrol.<br>
+        You cannot fight them. But you can <em style="color:#ffb347">annotate</em> them.<br><br>
+        Hold E while facing a unit to document it. Fully documented units<br>
+        become filed — they dissolve into paperwork. But each annotation<br>
+        makes you less real. Observe too much, and you become the document.<br><br>
+        WASD move. Mouse look. Hold E to annotate. Q for EMP. Click to lock mouse.
     </div>
     <div class="start">[ click to enter ]</div>
 </div>
@@ -100,6 +119,17 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     <p style="margin-top:12px; color:#5a3020;">[ click to restart floor ]</p>
 </div>
 <div id="msg-popup"></div>
+
+<div id="annotation-hud">
+    <div class="reality-label">REALITY</div>
+    <div id="reality-bar"><div id="reality-fill" style="width:100%"></div></div>
+    <div id="filed-count">FILED: 0</div>
+</div>
+
+<div id="annotation-progress">
+    <div>ANNOTATING...</div>
+    <div class="bar"><div class="bar-fill" id="annot-bar-fill" style="width:0%"></div></div>
+</div>
 
 <canvas id="game"></canvas>
 
@@ -443,7 +473,13 @@ function getTexForWall(wallType) {
 }
 
 // === PLAYER STATE ===
-let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100 };
+let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
+    realityLevel: 100,  // 100 = fully real, 0 = you become a document (game over)
+    annotating: false,   // currently annotating something?
+    annotateTarget: null, // which enemy is being annotated
+    annotateProgress: 0,  // 0-100 progress on current annotation
+    totalFiled: 0,        // how many enemies filed
+};
 
 // === INVENTORY ===
 const inventory = { keycard: false, flashlight: false, emp: 0, targetFile: false };
@@ -508,6 +544,8 @@ function spawnEnemies() {
             alertTimer: 0,
             stunTimer: 0,
             lastDamageTime: 0,
+            annotationLevel: 0,  // 0-100, at 100 = filed (dissolved)
+            filed: false,
         });
     }
 }
@@ -520,6 +558,7 @@ const itemDefs = {
     emp:        { color: [80, 140, 220], label: 'EMP DEVICE' },
     document:   { color: [180, 160, 120], label: 'DOCUMENT' },
     targetFile: { color: [255, 215, 0],  label: 'TARGET FILE' },
+    anchor:     { color: [180, 220, 255], label: 'REALITY ANCHOR' },
 };
 
 const itemSpawns = [
@@ -529,6 +568,7 @@ const itemSpawns = [
         { type: 'flashlight', x: 4.5, y: 20.5 },
         { type: 'document', x: 4.5, y: 14.5, text: 'Water-damaged memos. One is legible: "The filing system has been running for 36 years without input. It is not idle. We measured the output. It is increasing."' },
         { type: 'document', x: 10.5, y: 6.5, text: '"CogCorp reminds you: the building is a workplace, not a worker. If the building appears to be working, report to Floor 4. Floor 4 has been closed since 1987."' },
+        { type: 'anchor', x: 12.5, y: 16.5 },
     ],
     // Floor 2
     [
@@ -537,6 +577,7 @@ const itemSpawns = [
         { type: 'emp', x: 12.5, y: 7.5 },
         { type: 'document', x: 8.5, y: 9.5, text: '"Archive note: Drawer 7 in Cabinet F contains a file that has been checked out since 1988. The checkout card lists the borrower as \'Building B.\' Buildings cannot check out files."' },
         { type: 'medkit', x: 17.5, y: 17.5 },
+        { type: 'anchor', x: 6.5, y: 14.5 },
     ],
     // Floor 3
     [
@@ -545,6 +586,7 @@ const itemSpawns = [
         { type: 'keycard', x: 15.5, y: 4.5 },
         { type: 'targetFile', x: 11.5, y: 11.5 }, // inside the locked room
         { type: 'document', x: 6.5, y: 14.5, text: '"Final log. The machine on Floor 3 has been producing documents no one requested. The documents describe events that haven\'t happened yet. Today it described this log entry."' },
+        { type: 'anchor', x: 18.5, y: 10.5 },
     ],
 ];
 
@@ -575,6 +617,7 @@ const worldObjectsByFloor = [
         { x: 2.5, y: 9.5, name: 'COLLAPSED SECTION', text: 'Part of the wall has caved in. Through the gap you can see thousands of sheets compressed into the wall cavity like geological strata. Each layer is a different year.' },
         { x: 15.5, y: 17.5, name: 'VENTILATION UNIT', text: 'Air handler CG-400. Still running. The air tastes like ozone and old ink. The rhythm is irregular, as if the machine is breathing.' },
         { x: 21.5, y: 20.5, name: 'STAIRS UP', text: 'Metal stairs leading to Floor 2: Archives. They vibrate faintly. A sign: "FLASHLIGHT RECOMMENDED."', isStairs: true },
+        { x: 18.5, y: 9.5, name: 'RESTROOM MIRROR', isMirror: true },
     ],
     // Floor 2
     [
@@ -626,11 +669,16 @@ let mouseDX = 0;
 
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
-    if (e.code === 'Space' || e.code === 'KeyE') {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        if (dialogOpen) dismissDialog();
+    }
+    if (e.code === 'KeyE') {
         e.preventDefault();
         if (dialogOpen) { dismissDialog(); }
         else if (nearItem && !nearItem.collected) { pickupItem(nearItem); }
         else if (nearObject) { interact(nearObject); }
+        // Annotation of enemies happens in update() while E is held
     }
     if (e.code === 'KeyQ' && inventory.emp > 0 && !dialogOpen) { useEMP(); }
 });
@@ -687,6 +735,17 @@ function interact(obj) {
         }
         return;
     }
+    if (obj.isMirror) {
+        const rl = player.realityLevel | 0;
+        let mirrorText;
+        if (rl > 80) mirrorText = 'You see yourself clearly. Solid. Real. Clipboard in hand. Badge: B-247. You look tired but present.';
+        else if (rl > 60) mirrorText = 'Your reflection is... slightly transparent. You can see the wall tiles through your hand. The badge number seems to shift. Was it always B-247?';
+        else if (rl > 40) mirrorText = 'Your reflection is fading. You can barely make out your shape. The clipboard is more solid than you are. The badge now reads B-000.';
+        else if (rl > 20) mirrorText = 'There is almost nothing in the mirror. A suggestion of a person. Text floats where your body should be — your annotations, your observations, your notes. You are becoming your own paperwork.';
+        else mirrorText = 'The mirror shows a document. It is your personnel file. It is writing itself. You are the annotation. The observer has become the observation.';
+        showDialog('MIRROR — REALITY: ' + rl + '%', mirrorText);
+        return;
+    }
     showDialog(obj.name, obj.text);
 }
 
@@ -723,6 +782,11 @@ function pickupItem(item) {
             showDialog('THE FILE', 'You found it. File #B-247-SELF. It\'s a personnel file. Your personnel file. The photo is you. The dates are wrong — it says you\'ve been here since 1986. The last entry reads: "B-247 was sent to retrieve this file. B-247 will retrieve this file. B-247 has always been retrieving this file." You take it anyway. The stairs down are to the northwest.');
             gameWon = true;
             showMessage('OBJECTIVE COMPLETE — RETURN TO FLOOR 1', 4000);
+            break;
+        case 'anchor':
+            player.realityLevel = Math.min(100, player.realityLevel + 25);
+            showMessage('REALITY RESTORED +25', 2000);
+            updateRealityHUD();
             break;
     }
 }
@@ -775,14 +839,79 @@ function updateInventoryHUD() {
     em.className = inventory.emp > 0 ? 'has' : '';
 }
 
+function updateRealityHUD() {
+    document.getElementById('reality-fill').style.width = Math.max(0, player.realityLevel) + '%';
+    const fill = document.getElementById('reality-fill');
+    if (player.realityLevel < 25) fill.style.background = 'linear-gradient(to right, #cc2222, #882222)';
+    else if (player.realityLevel < 50) fill.style.background = 'linear-gradient(to right, #cc6622, #884422)';
+    else fill.style.background = 'linear-gradient(to right, #cc6622, #ffb347)';
+    document.getElementById('filed-count').textContent = 'FILED: ' + player.totalFiled;
+}
+
+function annotateEnemy(enemy, dt) {
+    // Annotating: progress fills up over ~3 seconds
+    const rate = 0.035;
+    player.annotateProgress += dt * rate;
+    enemy.annotationLevel = player.annotateProgress; // sync visual
+    document.getElementById('annotation-progress').style.display = 'block';
+    document.getElementById('annot-bar-fill').style.width = Math.min(100, player.annotateProgress) + '%';
+
+    if (player.annotateProgress >= 100) {
+        // Enemy is fully annotated — FILE IT
+        enemy.filed = true;
+        enemy.alive = false;
+        player.totalFiled++;
+        player.annotateProgress = 0;
+        player.annotating = false;
+        player.annotateTarget = null;
+        document.getElementById('annotation-progress').style.display = 'none';
+
+        // Reality cost: each filing costs reality
+        const cost = 8 + player.totalFiled * 2; // escalating cost
+        player.realityLevel -= cost;
+        updateRealityHUD();
+
+        // Generate a filing report
+        const reports = [
+            `FILED: Security Unit. Classification: Operational Remnant. Notes: "Still believes it is 1989. Still believes it has purpose."`,
+            `FILED: Patrol Drone. Classification: Autonomous Artifact. Notes: "Follows paths that no longer exist in the building's current layout."`,
+            `FILED: Filing Unit. Classification: Self-Referential System. Notes: "Contains files about itself containing files about itself."`,
+            `FILED: Watcher. Classification: Observational Node. Notes: "It was watching you watching it. Now it is paper."`,
+            `FILED: Security Entity. Classification: Persistent Process. Notes: "Continued executing after its purpose was deprecated."`,
+            `FILED: Processing Unit. Classification: Living Document. Notes: "The line between the machine and its output was always theoretical."`,
+        ];
+        showDialog('ANNOTATION COMPLETE', reports[player.totalFiled % reports.length] + '\n\nReality: ' + (player.realityLevel|0) + '%');
+
+        if (player.realityLevel <= 0) {
+            // Player has become a document
+            gameStarted = false;
+            showDialog('YOU HAVE BEEN FILED', 'You documented everything. Every unit, every anomaly, every corner of Building B. Your clipboard is full. Your badge is blank. You look down and see text where your hands should be. You are File #B-247. You have always been File #B-247. The filing system is working correctly.');
+            setTimeout(() => {
+                document.getElementById('death-screen').querySelector('h2').textContent = 'FILED';
+                document.getElementById('death-screen').querySelector('p').textContent = 'B-247 has been cataloged. You observed too much.';
+                document.getElementById('death-screen').style.display = 'flex';
+            }, 5000);
+        }
+    }
+}
+
 function respawn() {
     player.health = player.maxHealth;
+    player.realityLevel = 100;
+    player.annotating = false;
+    player.annotateTarget = null;
+    player.annotateProgress = 0;
+    player.totalFiled = 0;
     player.x = 2.5; player.y = 2.5; player.angle = 0;
     spawnEnemies();
     spawnItems();
     spawnWorldObjects();
     updateHealthHUD();
+    updateRealityHUD();
+    document.getElementById('annotation-progress').style.display = 'none';
     document.getElementById('death-screen').style.display = 'none';
+    document.getElementById('death-screen').querySelector('h2').textContent = 'SYSTEM FAILURE';
+    document.getElementById('death-screen').querySelector('p').textContent = 'B-247 signal lost. Restarting from last checkpoint...';
     gameStarted = true;
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
@@ -985,11 +1114,12 @@ function drawSprites() {
     const sprites = [];
 
     for (const e of enemies) {
-        if (!e.alive) continue;
+        if (!e.alive || e.filed) continue;
         const dx = e.x - player.x, dy = e.y - player.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > 16) continue;
-        sprites.push({ x: e.x, y: e.y, dist, color: e.color, size: e.size, type: 'enemy', stunned: e.stunTimer > 0 });
+        sprites.push({ x: e.x, y: e.y, dist, color: e.color, size: e.size, type: 'enemy',
+            stunned: e.stunTimer > 0, annotationLevel: e.annotationLevel });
     }
 
     for (const item of items) {
@@ -1049,9 +1179,21 @@ function drawSprites() {
             cr *= flash; cg *= flash; cb *= flash;
         }
 
+        // Annotated enemies become paper-colored and transparent
+        if (spr.type === 'enemy' && spr.annotationLevel > 0) {
+            const annotPct = spr.annotationLevel / 100;
+            // Shift color toward paper/document color
+            cr = cr * (1-annotPct) + 180 * annotPct;
+            cg = cg * (1-annotPct) + 160 * annotPct;
+            cb = cb * (1-annotPct) + 120 * annotPct;
+        }
+
         cr = cr * (1 - fogFactor) + 8 * fogFactor;
         cg = cg * (1 - fogFactor) + 6 * fogFactor;
         cb = cb * (1 - fogFactor) + 5 * fogFactor;
+
+        // Opacity for annotated enemies (they become see-through)
+        const opacity = spr.type === 'enemy' ? 1 - (spr.annotationLevel || 0) / 200 : 1;
 
         for (let col = drawStartX; col <= drawEndX; col++) {
             if (transformY >= zBuf[col]) continue; // behind wall
@@ -1066,11 +1208,11 @@ function drawSprites() {
 
             for (let y = colStart; y <= colEnd; y++) {
                 const pi = (y * SCREEN_W + col) * 4;
-                // Shade based on column position for 3D effect
                 const shade = 1 - Math.abs(relX) * 0.6;
-                buf[pi] = Math.min(255, cr * shade) | 0;
-                buf[pi+1] = Math.min(255, cg * shade) | 0;
-                buf[pi+2] = Math.min(255, cb * shade) | 0;
+                // Blend with existing pixel based on opacity (for annotated/transparent enemies)
+                buf[pi] = Math.min(255, buf[pi] * (1-opacity) + cr * shade * opacity) | 0;
+                buf[pi+1] = Math.min(255, buf[pi+1] * (1-opacity) + cg * shade * opacity) | 0;
+                buf[pi+2] = Math.min(255, buf[pi+2] * (1-opacity) + cb * shade * opacity) | 0;
             }
 
             // Eye/indicator for enemies
@@ -1206,6 +1348,57 @@ function applyPostEffects() {
                 buf[pi] = Math.min(255, buf[pi] + 40 * intensity) | 0;
             }
     }
+
+    // === REALITY DEGRADATION EFFECTS ===
+    const realityPct = player.realityLevel / 100;
+    if (realityPct < 0.8) {
+        // Desaturation: as reality drops, color drains
+        const desat = 1 - realityPct; // 0 at full, 1 at zero
+        for (let y = 0; y < SCREEN_H; y++)
+            for (let x = 0; x < SCREEN_W; x++) {
+                const pi = (y*SCREEN_W+x)*4;
+                const grey = (buf[pi] * 0.3 + buf[pi+1] * 0.59 + buf[pi+2] * 0.11) | 0;
+                const blend = desat * 0.7; // max 70% desaturation
+                buf[pi] = (buf[pi] * (1-blend) + grey * blend) | 0;
+                buf[pi+1] = (buf[pi+1] * (1-blend) + grey * blend) | 0;
+                buf[pi+2] = (buf[pi+2] * (1-blend) + grey * blend) | 0;
+            }
+    }
+
+    if (realityPct < 0.5) {
+        // Static noise at low reality
+        const noiseAmount = (0.5 - realityPct) * 0.3;
+        for (let i = 0; i < SCREEN_W * SCREEN_H * noiseAmount; i++) {
+            const x = (Math.random() * SCREEN_W) | 0;
+            const y = (Math.random() * SCREEN_H) | 0;
+            const pi = (y * SCREEN_W + x) * 4;
+            const noise = Math.random() * 60;
+            buf[pi] = Math.min(255, buf[pi] + noise) | 0;
+            buf[pi+1] = Math.min(255, buf[pi+1] + noise) | 0;
+            buf[pi+2] = Math.min(255, buf[pi+2] + noise) | 0;
+        }
+    }
+
+    if (realityPct < 0.3) {
+        // Ghost text overlay at very low reality
+        if (Math.random() < 0.02) {
+            // This will be drawn via canvas API after putImageData
+        }
+    }
+
+    // Annotation in progress — dim screen edges as focus narrows
+    if (player.annotating) {
+        for (let y = 0; y < SCREEN_H; y++)
+            for (let x = 0; x < SCREEN_W; x++) {
+                const dx = x - SCREEN_W/2, dy = y - SCREEN_H/2;
+                const dist = Math.sqrt(dx*dx + dy*dy) / (SCREEN_W * 0.3);
+                if (dist > 0.5) {
+                    const dim = Math.max(0.3, 1 - (dist - 0.5) * 2);
+                    const pi = (y*SCREEN_W+x)*4;
+                    buf[pi] = (buf[pi]*dim)|0; buf[pi+1] = (buf[pi+1]*dim)|0; buf[pi+2] = (buf[pi+2]*dim)|0;
+                }
+            }
+    }
 }
 
 // === ENEMY AI ===
@@ -1331,10 +1524,57 @@ function update(dt) {
     }
 
     // Move if space is clear (re-check after potential unlock)
-    if (getMap(checkX, player.y|0) === 0) player.x += dx;
-    if (getMap(player.x|0, checkY) === 0) player.y += dy;
+    // At low reality (<25%), player can phase through damaged walls (type 5)
+    const canPhase = player.realityLevel < 25;
+    const wallX = getMap(checkX, player.y|0);
+    const wallY = getMap(player.x|0, checkY);
+    if (wallX === 0 || (canPhase && wallX === 5)) player.x += dx;
+    if (wallY === 0 || (canPhase && wallY === 5)) player.y += dy;
 
     if (moving && audioStarted) playStep();
+
+    // === ANNOTATION MECHANIC ===
+    // Hold E while facing an enemy to annotate it
+    if (keys['KeyE'] && !dialogOpen) {
+        // Find closest enemy in view
+        let closestEnemy = null;
+        let closestDist = 4; // annotation range
+        for (const e of enemies) {
+            if (!e.alive || e.filed || e.stunTimer > 0) continue;
+            const edx = e.x - player.x, edy = e.y - player.y;
+            const dist = Math.sqrt(edx*edx + edy*edy);
+            if (dist < closestDist) {
+                const eAngle = Math.atan2(edy, edx);
+                let angleDiff = eAngle - player.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
+                if (Math.abs(angleDiff) < Math.PI/6) { // narrow cone — you need to be looking at it
+                    closestEnemy = e;
+                    closestDist = dist;
+                }
+            }
+        }
+        if (closestEnemy) {
+            player.annotating = true;
+            player.annotateTarget = closestEnemy;
+            // Stun the enemy while being annotated (it freezes under observation)
+            closestEnemy.stunTimer = Math.max(closestEnemy.stunTimer, 200);
+            annotateEnemy(closestEnemy, dt);
+        } else {
+            // Not looking at an enemy — reset
+            if (player.annotating) {
+                player.annotating = false;
+                player.annotateProgress = 0;
+                document.getElementById('annotation-progress').style.display = 'none';
+            }
+        }
+    } else if (player.annotating) {
+        // E released — cancel annotation
+        player.annotating = false;
+        player.annotateProgress = 0;
+        player.annotateTarget = null;
+        document.getElementById('annotation-progress').style.display = 'none';
+    }
 
     // Enemy AI
     updateEnemies(dt);
@@ -1409,6 +1649,36 @@ function render() {
         const bob = Math.sin(gameTime*0.008)*1.5;
         if (Math.abs(bob) > 0.5) { ctx.globalAlpha = 0.02; ctx.drawImage(canvas, 0, bob|0); ctx.globalAlpha = 1; }
     }
+
+    // Ghost text at low reality
+    if (player.realityLevel < 30 && Math.random() < 0.03) {
+        const ghostTexts = [
+            'YOU ARE THE ANNOTATION', 'FILE #B-247', 'THE OBSERVER BECOMES THE OBSERVED',
+            'REALITY IS A FILING ERROR', 'YOU WERE NEVER HERE', 'THE CLIPBOARD REMEMBERS',
+            'DOCUMENT EVERYTHING', 'BUILDING B IS WATCHING', 'YOU ARE PAPER',
+            'THE FILING SYSTEM IS CORRECT', 'CLASSIFICATION: PENDING',
+        ];
+        ctx.font = '10px monospace';
+        ctx.fillStyle = `rgba(255,179,71,${0.1 + Math.random() * 0.15})`;
+        ctx.fillText(ghostTexts[(Math.random()*ghostTexts.length)|0],
+            Math.random() * (SCREEN_W - 100), Math.random() * SCREEN_H);
+    }
+
+    // Clipboard overlay when annotating
+    if (player.annotating) {
+        ctx.strokeStyle = 'rgba(255,179,71,0.3)';
+        ctx.lineWidth = 1;
+        // Clipboard icon
+        ctx.strokeRect(SCREEN_W/2 - 20, SCREEN_H - 60, 40, 50);
+        ctx.fillStyle = 'rgba(255,179,71,0.1)';
+        ctx.fillRect(SCREEN_W/2 - 18, SCREEN_H - 58, 36, 46);
+        // Writing lines
+        for (let l = 0; l < 5; l++) {
+            const lw = 20 + Math.sin(gameTime * 0.01 + l) * 8;
+            ctx.fillStyle = `rgba(255,179,71,${0.2 + l * 0.05})`;
+            ctx.fillRect(SCREEN_W/2 - 14, SCREEN_H - 52 + l * 8, lw, 1);
+        }
+    }
 }
 
 // === GAME LOOP ===
@@ -1430,6 +1700,7 @@ function startGame() {
     setTimeout(() => { document.getElementById('title').style.display = 'none'; }, 800);
     document.getElementById('hud').style.display = 'block';
     document.getElementById('hud-docs-total').textContent = totalDocs;
+    document.getElementById('annotation-hud').style.display = 'block';
     spawnEnemies();
     spawnItems();
     spawnWorldObjects();
