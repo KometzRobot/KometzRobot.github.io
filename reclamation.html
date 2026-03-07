@@ -113,11 +113,26 @@ class ReclamationScene extends Phaser.Scene {
     this.elapsed = 0;
     this.growthTimer = 0;
 
+    // Auto-rain system — gentle passive rain that increases over time
+    this.autoRain = false;
+    this.autoRainTimer = 0;
+    this.autoRainInterval = 0.8; // seconds between auto-rain drops
+    this.timeScale = 1;
+
+    // Ambient sound system
+    this.audioCtx = null;
+    this.audioStarted = false;
+    this.windGain = null;
+    this.rainGain = null;
+
+    // Day/night cycle (subtle sky color shift)
+    this.dayNightPhase = 0;
+
     // UI
     this.titleText = this.add.text(10, 6, 'RECLAMATION', {
       fontSize: '14px', fontFamily: 'monospace', color: '#b0ada8', alpha: 0.7
     });
-    this.instrText = this.add.text(10, 22, 'click to drop water — watch nature reclaim', {
+    this.instrText = this.add.text(10, 22, 'click to drop water — R: auto-rain — T: speed up', {
       fontSize: '10px', fontFamily: 'monospace', color: '#8a8580', alpha: 0.5
     });
     this.pctText = this.add.text(W - 10, H - 10, '0% reclaimed', {
@@ -126,15 +141,32 @@ class ReclamationScene extends Phaser.Scene {
     this.creditText = this.add.text(10, H - 10, 'meridian — loop 2120', {
       fontSize: '9px', fontFamily: 'monospace', color: '#4a7a3a', alpha: 0.4
     }).setOrigin(0, 1);
+    this.modeText = this.add.text(W - 10, 6, '', {
+      fontSize: '9px', fontFamily: 'monospace', color: '#6a9a5a', alpha: 0.5
+    }).setOrigin(1, 0);
 
     // Reclamation progress bar
     this.barBg = this.add.rectangle(W / 2, H - 2, W, 4, 0x333330, 0.5).setOrigin(0.5, 0.5);
     this.barFill = this.add.rectangle(0, H - 2, 0, 4, 0x4a8a38, 0.7).setOrigin(0, 0.5);
 
     // Input
-    this.input.on('pointerdown', (p) => this.dropWater(p.x, p.y));
+    this.input.on('pointerdown', (p) => {
+      this.startAudio();
+      this.dropWater(p.x, p.y);
+    });
     this.input.on('pointermove', (p) => {
       if (p.isDown) this.dropWater(p.x, p.y);
+    });
+
+    // Keyboard controls
+    this.input.keyboard.on('keydown-R', () => {
+      this.autoRain = !this.autoRain;
+      this.startAudio();
+      this.updateModeText();
+    });
+    this.input.keyboard.on('keydown-T', () => {
+      this.timeScale = this.timeScale >= 4 ? 1 : this.timeScale * 2;
+      this.updateModeText();
     });
 
     // Initial render
@@ -256,9 +288,25 @@ class ReclamationScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    const dt = delta / 1000;
+    const dt = (delta / 1000) * this.timeScale;
     this.elapsed += dt;
     this.growthTimer += dt;
+    this.dayNightPhase += dt * 0.02; // slow day/night cycle
+
+    // Auto-rain: drop water at random positions
+    if (this.autoRain) {
+      this.autoRainTimer += dt;
+      if (this.autoRainTimer >= this.autoRainInterval) {
+        this.autoRainTimer = 0;
+        // Drop 1-3 water clusters
+        const drops = 1 + Math.floor(this.reclaimPct / 30);
+        for (let i = 0; i < drops; i++) {
+          const rx = this.rng.between(0, W);
+          const ry = this.rng.between(0, H);
+          this.dropWater(rx, ry);
+        }
+      }
+    }
 
     // Growth tick every 0.25s
     if (this.growthTimer >= 0.25) {
@@ -266,6 +314,7 @@ class ReclamationScene extends Phaser.Scene {
       this.simulateWater();
       this.simulateGrowth();
       this.updateStats();
+      this.updateAmbientSound();
     }
 
     // Update age
@@ -734,7 +783,67 @@ class ReclamationScene extends Phaser.Scene {
       ctx.fill();
     }
 
+    // Day/night sky tint overlay
+    const nightAlpha = Math.max(0, Math.sin(this.dayNightPhase) * 0.15);
+    if (nightAlpha > 0.01) {
+      ctx.fillStyle = `rgba(10, 12, 30, ${nightAlpha})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
     this.rt.refresh();
+  }
+
+  startAudio() {
+    if (this.audioStarted) return;
+    this.audioStarted = true;
+    try {
+      this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Wind noise — filtered white noise
+      const sr = this.audioCtx.sampleRate;
+      const windBuf = this.audioCtx.createBuffer(1, sr * 4, sr);
+      const wd = windBuf.getChannelData(0);
+      for (let i = 0; i < wd.length; i++) wd[i] = Math.random() * 2 - 1;
+      const windSrc = this.audioCtx.createBufferSource();
+      windSrc.buffer = windBuf;
+      windSrc.loop = true;
+      const windFilter = this.audioCtx.createBiquadFilter();
+      windFilter.type = 'lowpass';
+      windFilter.frequency.value = 400;
+      windFilter.Q.value = 0.5;
+      this.windGain = this.audioCtx.createGain();
+      this.windGain.gain.value = 0.04;
+      windSrc.connect(windFilter);
+      windFilter.connect(this.windGain);
+      this.windGain.connect(this.audioCtx.destination);
+      windSrc.start();
+
+      // Rain patter — short noise bursts
+      this.rainGain = this.audioCtx.createGain();
+      this.rainGain.gain.value = 0;
+      this.rainGain.connect(this.audioCtx.destination);
+    } catch (e) {
+      // Audio not available, silent mode
+    }
+  }
+
+  updateAmbientSound() {
+    if (!this.audioCtx || !this.windGain) return;
+    // Wind gets quieter as nature grows (less desolation)
+    const windVol = Math.max(0.01, 0.04 * (1 - this.reclaimPct / 120));
+    this.windGain.gain.setTargetAtTime(windVol, this.audioCtx.currentTime, 0.5);
+    // Rain volume follows auto-rain state
+    if (this.rainGain) {
+      const rainVol = this.autoRain ? 0.02 : 0;
+      this.rainGain.gain.setTargetAtTime(rainVol, this.audioCtx.currentTime, 0.3);
+    }
+  }
+
+  updateModeText() {
+    const parts = [];
+    if (this.autoRain) parts.push('rain: on');
+    if (this.timeScale > 1) parts.push(this.timeScale + 'x');
+    this.modeText.setText(parts.join('  '));
   }
 }
 
