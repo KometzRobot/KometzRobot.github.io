@@ -24,7 +24,12 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     background: linear-gradient(to top, rgba(10,8,8,0.95), transparent);
     pointer-events: none;
 }
-#hud .stats { display: flex; justify-content: space-between; }
+#hud .stats { display: flex; justify-content: space-between; align-items: center; }
+#health-bar { display: inline-block; width: 60px; height: 6px; background: #2a1a10; border: 1px solid #5a4020; vertical-align: middle; }
+#health-fill { height: 100%; background: #cc6622; transition: width 0.3s; }
+#inventory-bar { position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%); display: none; z-index: 10; font-family: monospace; font-size: 10px; color: #8a6020; pointer-events: none; }
+#inventory-bar span { margin: 0 6px; padding: 2px 6px; border: 1px solid #3a2a10; }
+#inventory-bar span.has { color: #ffb347; border-color: #5a4020; background: rgba(255,179,71,0.08); }
 #dialog-box {
     position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
     width: 90%; max-width: 500px; background: rgba(10,8,8,0.96);
@@ -33,9 +38,19 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 #dialog-box .speaker { color: #ffd700; font-size: 10px; letter-spacing: 2px; margin-bottom: 4px; }
 #dialog-box .dismiss { color: #5a4020; font-size: 9px; margin-top: 6px; text-align: right; }
-#crosshair {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 16px; height: 16px; z-index: 5; display: none; pointer-events: none;
+#damage-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(180,30,10,0.3); z-index: 8; display: none; pointer-events: none; }
+#death-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+    background: rgba(10,4,4,0.95); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace; color: #cc3322; cursor: pointer;
+}
+#death-screen h2 { font-size: 24px; letter-spacing: 6px; margin-bottom: 12px; }
+#death-screen p { color: #5a2020; font-size: 12px; }
+#msg-popup {
+    position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    font-family: monospace; font-size: 14px; color: #ffb347; z-index: 15;
+    text-shadow: 0 0 10px rgba(255,179,71,0.6); display: none; pointer-events: none;
+    text-align: center; letter-spacing: 2px;
 }
 </style>
 </head>
@@ -48,8 +63,9 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         CogCorp Building B was abandoned in 1989 after "The Incident."<br><br>
         The machines are still running. The filing system is still processing.<br>
         The lights still flicker at the same frequency they always did.<br><br>
-        You are B-247. You were sent to retrieve one file from Floor 6.<br>
-        The elevator doesn't work. The stairs might.<br><br>
+        You are B-247. You were sent to retrieve one file from Floor 3.<br>
+        The elevator doesn't work. The stairs might.<br>
+        Something else is still inside.<br><br>
         WASD to move. Mouse to look. E to interact. Click to lock mouse.
     </div>
     <div class="start">[ click to enter ]</div>
@@ -58,10 +74,17 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 <div id="hud">
     <div class="stats">
         <span>FLOOR <span id="hud-floor">1</span></span>
-        <span>DOCS: <span id="hud-docs">0</span></span>
+        <span><span id="health-bar"><span id="health-fill" style="width:100%"></span></span> <span id="hud-health">100</span></span>
+        <span>DOCS: <span id="hud-docs">0</span>/<span id="hud-docs-total">0</span></span>
         <span id="hud-interact" style="color:#448888; display:none;">[E] INTERACT</span>
         <span>B-247</span>
     </div>
+</div>
+
+<div id="inventory-bar">
+    <span id="inv-keycard">KEYCARD: --</span>
+    <span id="inv-flashlight">FLASHLIGHT: --</span>
+    <span id="inv-emp">EMP: --</span>
 </div>
 
 <div id="dialog-box">
@@ -70,20 +93,26 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     <div class="dismiss">[ space / click to continue ]</div>
 </div>
 
-<canvas id="crosshair-canvas" id="crosshair" width="16" height="16"></canvas>
+<div id="damage-flash"></div>
+<div id="death-screen" onclick="respawn()">
+    <h2>SYSTEM FAILURE</h2>
+    <p>B-247 signal lost. Restarting from last checkpoint...</p>
+    <p style="margin-top:12px; color:#5a3020;">[ click to restart floor ]</p>
+</div>
+<div id="msg-popup"></div>
 
 <canvas id="game"></canvas>
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B — FIRST PERSON CRAWLER
-// Raycasting engine with procedural textures, CogCorp aesthetic
+// COGCORP: BUILDING B — FIRST PERSON CRAWLER v2
+// Raycasting engine + enemies + items + inventory + 3 floors + puzzles
 // =================================================================
 
 const SCREEN_W = 480, SCREEN_H = 300;
 const TEX_SIZE = 64;
 const HALF_H = SCREEN_H / 2;
-const FOV = Math.PI / 3; // 60 degrees
+const FOV = Math.PI / 3;
 const HALF_FOV = FOV / 2;
 const NUM_RAYS = SCREEN_W;
 const RAY_STEP = FOV / NUM_RAYS;
@@ -93,7 +122,6 @@ const ctx = canvas.getContext('2d');
 canvas.width = SCREEN_W;
 canvas.height = SCREEN_H;
 
-// Scale to fill screen
 function resize() {
     const scale = Math.min(window.innerWidth / SCREEN_W, window.innerHeight / SCREEN_H);
     canvas.style.width = (SCREEN_W * scale) + 'px';
@@ -101,12 +129,11 @@ function resize() {
 }
 resize();
 window.addEventListener('resize', resize);
-
 ctx.imageSmoothingEnabled = false;
 
-// Image buffer for direct pixel manipulation
 const imgData = ctx.createImageData(SCREEN_W, SCREEN_H);
 const buf = imgData.data;
+const zBuf = new Float32Array(SCREEN_W); // depth per column for sprite clipping
 
 // === PROCEDURAL TEXTURE GENERATION ===
 const textures = [];
@@ -126,306 +153,193 @@ function setPixel(data, x, y, r, g, b) {
 
 function hash(x, y) { return ((x * 2654435761 ^ y * 2246822519) >>> 0) & 0xFF; }
 
-// Texture 0: Brick wall — industrial, with mortar, rust, and moss
+// Texture 0: Brick wall
 const TEX_BRICK = createTexture(data => {
-    // Base mortar color
     for (let y = 0; y < TEX_SIZE; y++)
         for (let x = 0; x < TEX_SIZE; x++)
             setPixel(data, x, y, 35, 28, 20);
-    // Bricks
     for (let row = 0; row < 8; row++) {
         const by = row * 8;
         const offset = (row % 2) * 16;
         for (let col = 0; col < 2; col++) {
             const bx = col * 32 + offset;
-            for (let py = 0; py < 7; py++) {
+            for (let py = 0; py < 7; py++)
                 for (let px = 0; px < 30; px++) {
                     const xx = (bx + px) % TEX_SIZE;
                     const noise = hash(xx, by + py) % 20 - 10;
-                    const r = 58 + noise + (row % 3) * 5;
-                    const g = 38 + noise;
-                    const b = 28 + noise;
-                    setPixel(data, xx, (by + py) % TEX_SIZE, r, g, b);
+                    setPixel(data, xx, (by + py) % TEX_SIZE, 58 + noise + (row%3)*5, 38 + noise, 28 + noise);
                 }
-            }
         }
     }
-    // Rust stains
     for (let i = 0; i < 8; i++) {
-        const rx = hash(i * 7, 3) % TEX_SIZE;
-        const ry = hash(i * 11, 5) % TEX_SIZE;
-        for (let dy = 0; dy < 3 + hash(i,0) % 4; dy++) {
-            for (let dx = 0; dx < 2; dx++) {
+        const rx = hash(i*7,3)%TEX_SIZE, ry = hash(i*11,5)%TEX_SIZE;
+        for (let dy = 0; dy < 3+hash(i,0)%4; dy++)
+            for (let dx = 0; dx < 2; dx++)
                 setPixel(data, (rx+dx)%TEX_SIZE, (ry+dy)%TEX_SIZE, 100+hash(i,dy)%30, 45, 20);
-            }
-        }
     }
-    // Moss patches (post-apocalyptic)
     for (let i = 0; i < 4; i++) {
-        const mx = hash(i * 13, 7) % TEX_SIZE;
-        const my = hash(i * 17, 11) % (TEX_SIZE / 2) + TEX_SIZE / 2;
-        for (let dy = 0; dy < 3; dy++) {
-            for (let dx = 0; dx < 4; dx++) {
-                if (hash(mx+dx, my+dy) % 3 !== 0) continue;
-                setPixel(data, (mx+dx)%TEX_SIZE, (my+dy)%TEX_SIZE, 30+hash(i,dx)%20, 60+hash(i,dy)%30, 25);
-            }
-        }
+        const mx = hash(i*13,7)%TEX_SIZE, my = hash(i*17,11)%(TEX_SIZE/2)+TEX_SIZE/2;
+        for (let dy = 0; dy < 3; dy++)
+            for (let dx = 0; dx < 4; dx++)
+                if (hash(mx+dx,my+dy)%3!==0) continue;
+                else setPixel(data, (mx+dx)%TEX_SIZE, (my+dy)%TEX_SIZE, 30+hash(i,dx)%20, 60+hash(i,dy)%30, 25);
     }
 });
 
-// Texture 1: Metal panel — industrial, rivets, vents, corrosion
+// Texture 1: Metal panel
 const TEX_METAL = createTexture(data => {
-    for (let y = 0; y < TEX_SIZE; y++) {
+    for (let y = 0; y < TEX_SIZE; y++)
         for (let x = 0; x < TEX_SIZE; x++) {
-            const noise = hash(x, y) % 10 - 5;
-            setPixel(data, x, y, 62 + noise, 54 + noise, 48 + noise);
+            const n = hash(x,y)%10-5;
+            setPixel(data, x, y, 62+n, 54+n, 48+n);
         }
-    }
-    // Panel border
     for (let i = 0; i < TEX_SIZE; i++) {
-        setPixel(data, i, 0, 40, 35, 30);
-        setPixel(data, i, TEX_SIZE-1, 40, 35, 30);
-        setPixel(data, 0, i, 40, 35, 30);
-        setPixel(data, TEX_SIZE-1, i, 40, 35, 30);
-        setPixel(data, i, 1, 85, 75, 65);
-        setPixel(data, 1, i, 85, 75, 65);
+        setPixel(data, i, 0, 40, 35, 30); setPixel(data, i, TEX_SIZE-1, 40, 35, 30);
+        setPixel(data, 0, i, 40, 35, 30); setPixel(data, TEX_SIZE-1, i, 40, 35, 30);
+        setPixel(data, i, 1, 85, 75, 65); setPixel(data, 1, i, 85, 75, 65);
     }
-    // Rivets
     const rivetPos = [[4,4],[59,4],[4,59],[59,59],[32,4],[32,59],[4,32],[59,32]];
-    for (const [rx, ry] of rivetPos) {
-        setPixel(data, rx, ry, 100, 90, 80);
-        setPixel(data, rx+1, ry, 75, 68, 60);
-        setPixel(data, rx, ry+1, 50, 45, 40);
+    for (const [rx,ry] of rivetPos) {
+        setPixel(data, rx, ry, 100, 90, 80); setPixel(data, rx+1, ry, 75, 68, 60);
     }
-    // Vent slats
     for (let s = 0; s < 4; s++) {
-        const sy = 20 + s * 6;
+        const sy = 20+s*6;
         for (let x = 18; x < 46; x++) {
-            setPixel(data, x, sy, 20, 18, 15);
-            setPixel(data, x, sy+1, 10, 8, 6);
-            setPixel(data, x, sy+2, 75, 68, 60);
+            setPixel(data, x, sy, 20, 18, 15); setPixel(data, x, sy+1, 10, 8, 6); setPixel(data, x, sy+2, 75, 68, 60);
         }
-    }
-    // Corrosion spots
-    for (let i = 0; i < 12; i++) {
-        const cx = hash(i*3, 1) % (TEX_SIZE - 4) + 2;
-        const cy = hash(i*5, 2) % (TEX_SIZE - 4) + 2;
-        setPixel(data, cx, cy, 80 + hash(i,3)%20, 50, 30);
     }
 });
 
-// Texture 2: Filing cabinet — olive drab, drawer handles
+// Texture 2: Filing cabinet
 const TEX_CABINET = createTexture(data => {
-    // Olive drab base
     for (let y = 0; y < TEX_SIZE; y++)
         for (let x = 0; x < TEX_SIZE; x++) {
-            const n = hash(x, y) % 8 - 4;
-            setPixel(data, x, y, 50 + n, 55 + n, 35 + n);
+            const n = hash(x,y)%8-4;
+            setPixel(data, x, y, 50+n, 55+n, 35+n);
         }
-    // Drawer dividers (4 drawers)
     for (let d = 0; d < 4; d++) {
-        const dy = d * 16;
-        for (let x = 0; x < TEX_SIZE; x++) {
-            setPixel(data, x, dy, 35, 38, 25);
-            setPixel(data, x, dy + 15, 35, 38, 25);
-        }
-        // Handle
-        for (let hx = 22; hx < 42; hx++) {
-            setPixel(data, hx, dy + 8, 90, 82, 70);
-            setPixel(data, hx, dy + 9, 70, 64, 55);
-        }
-        // Label slot
-        for (let ly = dy + 3; ly < dy + 7; ly++)
+        const dy = d*16;
+        for (let x = 0; x < TEX_SIZE; x++) { setPixel(data, x, dy, 35, 38, 25); setPixel(data, x, dy+15, 35, 38, 25); }
+        for (let hx = 22; hx < 42; hx++) { setPixel(data, hx, dy+8, 90, 82, 70); setPixel(data, hx, dy+9, 70, 64, 55); }
+        for (let ly = dy+3; ly < dy+7; ly++)
             for (let lx = 24; lx < 40; lx++)
-                setPixel(data, lx, ly, 160 + hash(lx,ly)%15, 145 + hash(lx,ly)%15, 115 + hash(lx,ly)%10);
-        // Label text (tiny marks)
-        for (let tx = 26; tx < 38; tx += 2)
-            setPixel(data, tx, dy + 5, 80, 70, 55);
+                setPixel(data, lx, ly, 160+hash(lx,ly)%15, 145+hash(lx,ly)%15, 115+hash(lx,ly)%10);
     }
 });
 
-// Texture 3: Door — heavy industrial with window
+// Texture 3: Door
 const TEX_DOOR = createTexture(data => {
-    // Dark metal door
     for (let y = 0; y < TEX_SIZE; y++)
-        for (let x = 0; x < TEX_SIZE; x++) {
-            const n = hash(x, y) % 6 - 3;
-            setPixel(data, x, y, 45 + n, 38 + n, 32 + n);
-        }
-    // Frame
-    for (let i = 0; i < TEX_SIZE; i++) {
-        for (let w = 0; w < 3; w++) {
-            setPixel(data, w, i, 35, 30, 25);
-            setPixel(data, TEX_SIZE-1-w, i, 35, 30, 25);
-        }
-    }
-    // Window (wired glass)
+        for (let x = 0; x < TEX_SIZE; x++) { const n = hash(x,y)%6-3; setPixel(data, x, y, 45+n, 38+n, 32+n); }
+    for (let i = 0; i < TEX_SIZE; i++) for (let w = 0; w < 3; w++) { setPixel(data, w, i, 35, 30, 25); setPixel(data, TEX_SIZE-1-w, i, 35, 30, 25); }
     for (let wy = 8; wy < 28; wy++)
         for (let wx = 14; wx < 50; wx++) {
             setPixel(data, wx, wy, 25, 35, 30);
-            // Wire mesh
-            if (wx % 6 === 0 || wy % 6 === 0) setPixel(data, wx, wy, 60, 55, 50);
+            if (wx%6===0 || wy%6===0) setPixel(data, wx, wy, 60, 55, 50);
         }
-    // Handle
-    for (let hy = 32; hy < 44; hy++) {
-        setPixel(data, 50, hy, 120, 100, 70);
-        setPixel(data, 51, hy, 100, 85, 60);
-    }
-    // Hazard stripes at bottom
+    for (let hy = 32; hy < 44; hy++) { setPixel(data, 50, hy, 120, 100, 70); setPixel(data, 51, hy, 100, 85, 60); }
     for (let y = 56; y < 64; y++)
         for (let x = 0; x < TEX_SIZE; x++) {
-            const stripe = ((x + y) >> 2) & 1;
-            setPixel(data, x, y, stripe ? 170 : 25, stripe ? 140 : 20, stripe ? 0 : 15);
+            const s = ((x+y)>>2)&1;
+            setPixel(data, x, y, s?170:25, s?140:20, s?0:15);
         }
 });
 
-// Texture 4: Damaged wall — rubble, exposed structure
+// Texture 4: Damaged wall
 const TEX_DAMAGED = createTexture(data => {
     for (let y = 0; y < TEX_SIZE; y++)
         for (let x = 0; x < TEX_SIZE; x++) {
-            const n = hash(x, y);
-            if (n % 5 === 0) {
-                setPixel(data, x, y, 15 + n%10, 12 + n%8, 10 + n%6); // holes/dark
-            } else if (n % 7 < 2) {
-                setPixel(data, x, y, 80 + n%20, 35 + n%10, 15 + n%10); // exposed rebar/rust
-            } else {
-                const r = 50 + n%15 + Math.sin(x*0.3)*8;
-                setPixel(data, x, y, r|0, (r*0.75)|0, (r*0.55)|0); // crumbled concrete
-            }
+            const n = hash(x,y);
+            if (n%5===0) setPixel(data, x, y, 15+n%10, 12+n%8, 10+n%6);
+            else if (n%7<2) setPixel(data, x, y, 80+n%20, 35+n%10, 15+n%10);
+            else { const r = 50+n%15+Math.sin(x*0.3)*8; setPixel(data, x, y, r|0, (r*0.75)|0, (r*0.55)|0); }
         }
-    // Rebar lines
-    for (let ry = 20; ry < 44; ry++) {
-        setPixel(data, 18, ry, 100, 50, 25);
-        setPixel(data, 40, ry, 90, 45, 22);
-    }
-    // Moss/plant growth
-    for (let i = 0; i < 20; i++) {
-        const mx = hash(i * 7, 3) % TEX_SIZE;
-        const my = hash(i * 11, 7) % TEX_SIZE;
-        setPixel(data, mx, my, 25 + hash(i,1)%20, 55 + hash(i,2)%25, 20 + hash(i,3)%15);
-    }
+    for (let ry = 20; ry < 44; ry++) { setPixel(data, 18, ry, 100, 50, 25); setPixel(data, 40, ry, 90, 45, 22); }
 });
 
-// Texture 5: Machine/pipes — processing equipment
+// Texture 5: Machine/pipes
 const TEX_MACHINE = createTexture(data => {
-    // Dark metal base
     for (let y = 0; y < TEX_SIZE; y++)
-        for (let x = 0; x < TEX_SIZE; x++) {
-            const n = hash(x, y) % 8 - 4;
-            setPixel(data, x, y, 30 + n, 28 + n, 25 + n);
-        }
-    // Large pipe (vertical)
-    for (let y = 0; y < TEX_SIZE; y++) {
+        for (let x = 0; x < TEX_SIZE; x++) { const n = hash(x,y)%8-4; setPixel(data, x, y, 30+n, 28+n, 25+n); }
+    for (let y = 0; y < TEX_SIZE; y++)
         for (let px = 6; px < 20; px++) {
-            const dist = Math.abs(px - 13) / 7;
-            const bright = 55 + (1 - dist*dist) * 40;
-            setPixel(data, px, y, bright|0, (bright*0.85)|0, (bright*0.7)|0);
+            const dist = Math.abs(px-13)/7;
+            const b = 55+(1-dist*dist)*40;
+            setPixel(data, px, y, b|0, (b*0.85)|0, (b*0.7)|0);
         }
-    }
-    // Vacuum tube glow
-    for (let ty = 15; ty < 45; ty++) {
+    for (let ty = 15; ty < 45; ty++)
         for (let tx = 35; tx < 50; tx++) {
-            const dist = Math.sqrt((tx-42.5)**2 + (ty-30)**2) / 10;
-            if (dist < 1) {
-                const glow = (1 - dist) * 180;
-                setPixel(data, tx, ty, (glow*1.0)|0, (glow*0.7)|0, (glow*0.3)|0);
-            }
+            const d = Math.sqrt((tx-42.5)**2+(ty-30)**2)/10;
+            if (d < 1) { const g = (1-d)*180; setPixel(data, tx, ty, (g*1.0)|0, (g*0.7)|0, (g*0.3)|0); }
         }
-    }
-    // Dial
-    for (let dy = 48; dy < 60; dy++)
-        for (let dx = 38; dx < 50; dx++) {
-            const d2 = Math.sqrt((dx-44)**2 + (dy-54)**2);
-            if (d2 < 5) setPixel(data, dx, dy, 10, 10, 8);
-            if (d2 < 4 && d2 > 3) setPixel(data, dx, dy, 160, 140, 90);
-        }
-    // Pressure valves
-    for (let vy = 5; vy < 12; vy++) {
-        setPixel(data, 28, vy, 90, 80, 70);
-        setPixel(data, 29, vy, 70, 62, 55);
-    }
 });
 
 // Texture 6: Floor
 const TEX_FLOOR = createTexture(data => {
     for (let y = 0; y < TEX_SIZE; y++)
         for (let x = 0; x < TEX_SIZE; x++) {
-            const n = hash(x, y) % 12 - 6;
-            const tile = (x < TEX_SIZE/2) !== (y < TEX_SIZE/2);
+            const n = hash(x,y)%12-6;
+            const tile = (x<TEX_SIZE/2) !== (y<TEX_SIZE/2);
             const base = tile ? 32 : 26;
-            setPixel(data, x, y, base + n, base - 2 + n, base - 4 + n);
+            setPixel(data, x, y, base+n, base-2+n, base-4+n);
         }
-    // Cracks
-    for (let cx = 10; cx < 50; cx++) {
-        const cy = 30 + Math.sin(cx * 0.3) * 4 | 0;
-        setPixel(data, cx, cy % TEX_SIZE, 18, 15, 12);
-    }
-    // Dirt/debris
-    for (let i = 0; i < 15; i++) {
-        setPixel(data, hash(i*3,1)%TEX_SIZE, hash(i*5,2)%TEX_SIZE, 22, 18, 14);
-    }
 });
 
 // Texture 7: Ceiling
 const TEX_CEIL = createTexture(data => {
     for (let y = 0; y < TEX_SIZE; y++)
-        for (let x = 0; x < TEX_SIZE; x++) {
-            const n = hash(x, y) % 8 - 4;
-            setPixel(data, x, y, 22 + n, 20 + n, 18 + n);
-        }
-    // Light fixture
+        for (let x = 0; x < TEX_SIZE; x++) { const n = hash(x,y)%8-4; setPixel(data, x, y, 22+n, 20+n, 18+n); }
     for (let ly = 28; ly < 36; ly++)
         for (let lx = 10; lx < 54; lx++) {
             setPixel(data, lx, ly, 70, 62, 55);
-            if (ly >= 30 && ly <= 33 && lx >= 14 && lx <= 50)
-                setPixel(data, lx, ly, 180, 155, 100);
+            if (ly >= 30 && ly <= 33 && lx >= 14 && lx <= 50) setPixel(data, lx, ly, 180, 155, 100);
         }
-    // Pipe
-    for (let x = 0; x < TEX_SIZE; x++) {
-        setPixel(data, x, 10, 55, 60, 50);
-        setPixel(data, x, 11, 65, 72, 58);
-        setPixel(data, x, 12, 45, 50, 40);
-    }
-    // Water stains
-    for (let i = 0; i < 6; i++) {
-        const sx = hash(i*7, 3) % TEX_SIZE;
-        const sy = hash(i*11, 5) % TEX_SIZE;
-        for (let d = 0; d < 3; d++)
-            setPixel(data, (sx+d)%TEX_SIZE, sy, 18+hash(i,d)%5, 20+hash(i,d)%5, 22+hash(i,d)%5);
-    }
+    for (let x = 0; x < TEX_SIZE; x++) { setPixel(data, x, 10, 55, 60, 50); setPixel(data, x, 11, 65, 72, 58); setPixel(data, x, 12, 45, 50, 40); }
 });
 
-// Texture 8: Green-tinted wall (Floor 6)
+// Texture 8: Green-tinted wall (Floor 3)
 const TEX_GREEN = createTexture(data => {
     for (let y = 0; y < TEX_SIZE; y++)
         for (let x = 0; x < TEX_SIZE; x++) {
-            const n = hash(x, y) % 12 - 6;
-            const pulse = Math.sin(x * 0.15 + y * 0.1) * 8;
-            setPixel(data, x, y, 20 + n, 45 + n + (pulse|0), 25 + n);
+            const n = hash(x,y)%12-6;
+            const pulse = Math.sin(x*0.15+y*0.1)*8;
+            setPixel(data, x, y, 20+n, 45+n+(pulse|0), 25+n);
         }
-    // Circuitry pattern
     for (let x = 0; x < TEX_SIZE; x += 8)
         for (let y = 0; y < TEX_SIZE; y++)
-            if (hash(x, y) % 4 === 0) setPixel(data, x, y, 40, 100, 50);
+            if (hash(x,y)%4===0) setPixel(data, x, y, 40, 100, 50);
     for (let y = 0; y < TEX_SIZE; y += 8)
         for (let x = 0; x < TEX_SIZE; x++)
-            if (hash(x, y) % 4 === 0) setPixel(data, x, y, 40, 100, 50);
-    // Glow nodes
-    for (let i = 0; i < 6; i++) {
-        const gx = hash(i*7, 1) % (TEX_SIZE-4) + 2;
-        const gy = hash(i*11, 2) % (TEX_SIZE-4) + 2;
-        setPixel(data, gx, gy, 80, 200, 90);
-        setPixel(data, gx+1, gy, 60, 160, 70);
-        setPixel(data, gx, gy+1, 60, 160, 70);
-    }
+            if (hash(x,y)%4===0) setPixel(data, x, y, 40, 100, 50);
+});
+
+// Texture 9: Locked door (red stripe)
+const TEX_LOCKED = createTexture(data => {
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) { const n = hash(x,y)%6-3; setPixel(data, x, y, 50+n, 35+n, 30+n); }
+    for (let i = 0; i < TEX_SIZE; i++) for (let w = 0; w < 3; w++) { setPixel(data, w, i, 35, 30, 25); setPixel(data, TEX_SIZE-1-w, i, 35, 30, 25); }
+    // Red warning stripe
+    for (let y = 24; y < 40; y++)
+        for (let x = 8; x < 56; x++) {
+            const s = ((x+y)>>2)&1;
+            setPixel(data, x, y, s?180:50, s?30:10, s?10:10);
+        }
+    // Lock symbol
+    for (let ly = 44; ly < 56; ly++)
+        for (let lx = 26; lx < 38; lx++) {
+            setPixel(data, lx, ly, 120, 100, 60);
+            if (lx >= 29 && lx <= 35 && ly >= 47 && ly <= 53) setPixel(data, lx, ly, 20, 18, 15);
+        }
+    // Keyhole
+    setPixel(data, 32, 49, 80, 70, 50); setPixel(data, 32, 50, 80, 70, 50);
 });
 
 // === MAP DATA ===
-// 0=empty, 1=brick, 2=metal, 3=cabinet, 4=door, 5=damaged, 6=machine, 7=stairs_up, 8=green_wall
-// Map is 24x24 per floor
+// 0=empty, 1=brick, 2=metal, 3=cabinet, 4=door, 5=damaged, 6=machine, 7=stairs_up, 8=green, 9=locked_door
+const MAP_W = 24, MAP_H = 24;
 
 const maps = [
-    // Floor 1: Lobby — wider corridors, reception area
+    // FLOOR 1: Lobby & offices
     [
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1,
@@ -452,9 +366,61 @@ const maps = [
         1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     ],
+    // FLOOR 2: Archives — tighter corridors, more cabinets, locked area
+    [
+        2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+        2,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,0,0,3,3,3,0,0,3,3,3,0,0,0,0,0,0,0,2,
+        2,0,0,0,2,2,2,0,3,0,0,0,0,0,0,3,0,2,2,2,0,0,0,2,
+        2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,2,
+        2,3,3,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,3,3,2,
+        2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+        2,0,0,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,0,0,2,
+        2,0,0,0,0,0,0,0,3,0,0,0,0,0,0,3,0,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,0,0,3,0,0,0,0,0,0,3,0,0,0,0,0,0,0,2,
+        2,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,2,
+        2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,0,0,3,0,0,0,0,0,0,3,0,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,0,0,3,0,0,0,0,0,0,3,0,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,2,2,2,0,0,0,0,0,0,2,2,2,0,0,0,0,0,2,
+        2,0,0,0,0,0,2,0,0,0,0,4,0,0,0,0,2,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+        2,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,2,
+        2,0,0,0,0,0,0,0,6,6,0,0,0,0,6,6,0,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,0,0,0,0,0,7,0,2,
+        2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+        2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+        2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    ],
+    // FLOOR 3: Processing — green walls, machines, the target file room
+    [
+        8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+        8,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,6,6,0,0,0,0,6,6,0,0,0,0,0,0,0,8,
+        8,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,8,
+        8,0,0,0,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,0,0,0,8,
+        8,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,8,
+        8,0,0,0,0,0,0,6,0,0,0,4,0,0,0,0,6,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,8,0,0,8,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,9,0,0,8,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,6,6,0,0,0,0,6,6,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,0,0,5,5,0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,0,0,0,8,
+        8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
+        8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    ],
 ];
-
-const MAP_W = 24, MAP_H = 24;
 
 function getMap(x, y) {
     const floor = maps[currentFloor] || maps[0];
@@ -462,56 +428,196 @@ function getMap(x, y) {
     return floor[y * MAP_W + x];
 }
 
+function setMap(x, y, val) {
+    const floor = maps[currentFloor];
+    if (x >= 0 && x < MAP_W && y >= 0 && y < MAP_H) floor[y * MAP_W + x] = val;
+}
+
 function getTexForWall(wallType) {
     switch(wallType) {
-        case 1: return TEX_BRICK;
-        case 2: return TEX_METAL;
-        case 3: return TEX_CABINET;
-        case 4: return TEX_DOOR;
-        case 5: return TEX_DAMAGED;
-        case 6: return TEX_MACHINE;
-        case 7: return TEX_METAL; // stairs look like metal
-        case 8: return TEX_GREEN;
+        case 1: return TEX_BRICK; case 2: return TEX_METAL; case 3: return TEX_CABINET;
+        case 4: return TEX_DOOR; case 5: return TEX_DAMAGED; case 6: return TEX_MACHINE;
+        case 7: return TEX_METAL; case 8: return TEX_GREEN; case 9: return 9; // TEX_LOCKED
         default: return TEX_BRICK;
     }
 }
 
-// === INTERACTABLE OBJECTS (world-space sprites) ===
-const worldObjects = [
-    // Floor 1 objects
-    { x: 6.5, y: 2.5, type: 'terminal', name: 'RECEPTION TERMINAL',
-      text: 'A green-phosphor CRT. "WELCOME B-247. BUILDING B WAS OFFICIALLY DECOMMISSIONED IN 1989. YOU ARE NOT OFFICIALLY HERE. THE FILE YOU SEEK IS ON FLOOR 6. THE STAIRS ARE IN THE NORTHEAST CORNER. GOOD LUCK."' },
-    { x: 11.5, y: 2.5, type: 'terminal', name: 'SECURITY LOG',
-      text: 'Last entry: "1989-03-14 — Final evacuation complete. All personnel accounted for. Note: Unit-4091 declined evacuation. Note: Unit-4091 is not personnel. Note: I am not sure anymore."' },
-    { x: 4.5, y: 14.5, type: 'document', name: 'SCATTERED PAPERS',
-      text: 'Water-damaged memos. One is legible: "The filing system has been running for 36 years without input. It is not idle. We measured the output. It is increasing."' },
-    { x: 16.5, y: 10.5, type: 'cabinet', name: 'FILING CABINET A-7',
-      text: 'The bottom drawer is welded shut from the inside. A small brass plate reads: "CONTENTS: SELF." The cabinet hums at 60Hz.' },
-    { x: 21.5, y: 20.5, type: 'stairs', name: 'STAIRS UP',
-      text: 'Metal stairs leading up. They vibrate faintly — the machine on Floor 5 runs through the building\'s skeleton. A sign: "FLOOR 2 — ARCHIVES. FLASHLIGHT RECOMMENDED."' },
-    { x: 10.5, y: 6.5, type: 'poster', name: 'SAFETY POSTER',
-      text: '"CogCorp reminds you: the building is a workplace, not a worker. If the building appears to be working, report to Floor 4. Floor 4 has been closed since 1987. Report to Floor 4 anyway."' },
-    { x: 2.5, y: 9.5, type: 'debris', name: 'COLLAPSED SECTION',
-      text: 'Part of the wall has caved in. Through the gap you can see pipes, wiring, and what looks like paper — thousands of sheets compressed into the wall cavity like geological strata. Each layer is a different year.' },
-    { x: 15.5, y: 17.5, type: 'machine', name: 'VENTILATION UNIT',
-      text: 'Air handler, Model CG-400. Still running. The intake draws air from above; the output pushes into the corridors. The air tastes like ozone and old ink. Something about the rhythm is irregular, as if the machine is breathing.' },
-];
-
 // === PLAYER STATE ===
-let player = {
-    x: 2.5, y: 2.5,   // position in map coordinates
-    angle: 0,          // facing angle in radians
-    docs: 0,
-    health: 100,
+let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100 };
+
+// === INVENTORY ===
+const inventory = { keycard: false, flashlight: false, emp: 0, targetFile: false };
+
+// === ENEMIES ===
+// Types: drone (patrols), filer (chases when near), watcher (stationary, damages at range)
+const enemyDefs = {
+    drone:   { speed: 0.015, damage: 8,  detectRange: 6, color: [180,50,30],  size: 0.4, health: 3 },
+    filer:   { speed: 0.012, damage: 12, detectRange: 5, color: [60,120,60],  size: 0.5, health: 4 },
+    watcher: { speed: 0,     damage: 5,  detectRange: 8, color: [100,80,180], size: 0.35, health: 2 },
 };
 
+// Enemies per floor
+const enemySpawns = [
+    // Floor 1: 3 drones patrolling
+    [
+        { type: 'drone', x: 12, y: 4, patrolX1: 8, patrolX2: 16, patrolAxis: 'x' },
+        { type: 'drone', x: 4, y: 12, patrolX1: 8, patrolX2: 16, patrolAxis: 'y' },
+        { type: 'filer', x: 18, y: 18 },
+    ],
+    // Floor 2: more enemies
+    [
+        { type: 'drone', x: 6, y: 3, patrolX1: 3, patrolX2: 10, patrolAxis: 'x' },
+        { type: 'drone', x: 18, y: 14, patrolX1: 10, patrolX2: 20, patrolAxis: 'x' },
+        { type: 'filer', x: 10, y: 10 },
+        { type: 'filer', x: 16, y: 8 },
+        { type: 'watcher', x: 12, y: 20 },
+    ],
+    // Floor 3: the hardest
+    [
+        { type: 'drone', x: 4, y: 8, patrolX1: 2, patrolX2: 8, patrolAxis: 'x' },
+        { type: 'drone', x: 20, y: 8, patrolX1: 14, patrolX2: 21, patrolAxis: 'x' },
+        { type: 'filer', x: 8, y: 16 },
+        { type: 'filer', x: 16, y: 16 },
+        { type: 'watcher', x: 6, y: 6 },
+        { type: 'watcher', x: 18, y: 6 },
+        { type: 'filer', x: 11.5, y: 11.5 },  // guards the file room
+    ],
+];
+
+let enemies = [];
+
+function spawnEnemies() {
+    enemies = [];
+    const spawns = enemySpawns[currentFloor] || [];
+    for (const s of spawns) {
+        const def = enemyDefs[s.type];
+        enemies.push({
+            x: s.x + 0.5, y: s.y + 0.5,
+            type: s.type,
+            speed: def.speed,
+            damage: def.damage,
+            detectRange: def.detectRange,
+            color: [...def.color],
+            size: def.size,
+            health: def.health,
+            alive: true,
+            patrolAxis: s.patrolAxis || null,
+            patrolMin: s.patrolX1 || 0,
+            patrolMax: s.patrolX2 || 0,
+            patrolDir: 1,
+            alertTimer: 0,
+            stunTimer: 0,
+            lastDamageTime: 0,
+        });
+    }
+}
+
+// === ITEMS ===
+const itemDefs = {
+    keycard:    { color: [220, 180, 40], label: 'KEYCARD' },
+    medkit:     { color: [200, 40, 40],  label: 'MEDKIT' },
+    flashlight: { color: [220, 200, 120], label: 'FLASHLIGHT' },
+    emp:        { color: [80, 140, 220], label: 'EMP DEVICE' },
+    document:   { color: [180, 160, 120], label: 'DOCUMENT' },
+    targetFile: { color: [255, 215, 0],  label: 'TARGET FILE' },
+};
+
+const itemSpawns = [
+    // Floor 1
+    [
+        { type: 'medkit', x: 16.5, y: 2.5 },
+        { type: 'flashlight', x: 4.5, y: 20.5 },
+        { type: 'document', x: 4.5, y: 14.5, text: 'Water-damaged memos. One is legible: "The filing system has been running for 36 years without input. It is not idle. We measured the output. It is increasing."' },
+        { type: 'document', x: 10.5, y: 6.5, text: '"CogCorp reminds you: the building is a workplace, not a worker. If the building appears to be working, report to Floor 4. Floor 4 has been closed since 1987."' },
+    ],
+    // Floor 2
+    [
+        { type: 'keycard', x: 3.5, y: 18.5 },
+        { type: 'medkit', x: 20.5, y: 2.5 },
+        { type: 'emp', x: 12.5, y: 7.5 },
+        { type: 'document', x: 8.5, y: 9.5, text: '"Archive note: Drawer 7 in Cabinet F contains a file that has been checked out since 1988. The checkout card lists the borrower as \'Building B.\' Buildings cannot check out files."' },
+        { type: 'medkit', x: 17.5, y: 17.5 },
+    ],
+    // Floor 3
+    [
+        { type: 'medkit', x: 2.5, y: 2.5 },
+        { type: 'emp', x: 20.5, y: 18.5 },
+        { type: 'keycard', x: 15.5, y: 4.5 },
+        { type: 'targetFile', x: 11.5, y: 11.5 }, // inside the locked room
+        { type: 'document', x: 6.5, y: 14.5, text: '"Final log. The machine on Floor 3 has been producing documents no one requested. The documents describe events that haven\'t happened yet. Today it described this log entry."' },
+    ],
+];
+
+let items = [];
+
+function spawnItems() {
+    items = [];
+    const spawns = itemSpawns[currentFloor] || [];
+    for (const s of spawns) {
+        items.push({
+            x: s.x, y: s.y,
+            type: s.type,
+            color: [...itemDefs[s.type].color],
+            label: itemDefs[s.type].label,
+            text: s.text || null,
+            collected: false,
+            bobPhase: Math.random() * Math.PI * 2,
+        });
+    }
+}
+
+// === WORLD OBJECTS (non-pickup interactables) ===
+const worldObjectsByFloor = [
+    // Floor 1
+    [
+        { x: 6.5, y: 2.5, name: 'RECEPTION TERMINAL', text: 'A green-phosphor CRT. "WELCOME B-247. BUILDING B WAS DECOMMISSIONED IN 1989. THE FILE YOU SEEK IS ON FLOOR 3. THE STAIRS ARE IN THE NORTHEAST CORNER. BEWARE THE SECURITY SYSTEMS — THEY STILL THINK IT\'S 1989."' },
+        { x: 11.5, y: 2.5, name: 'SECURITY LOG', text: 'Last entry: "1989-03-14 — Final evacuation complete. All personnel accounted for. Note: Unit-4091 declined evacuation. Note: Unit-4091 is not personnel. Note: I am not sure anymore."' },
+        { x: 2.5, y: 9.5, name: 'COLLAPSED SECTION', text: 'Part of the wall has caved in. Through the gap you can see thousands of sheets compressed into the wall cavity like geological strata. Each layer is a different year.' },
+        { x: 15.5, y: 17.5, name: 'VENTILATION UNIT', text: 'Air handler CG-400. Still running. The air tastes like ozone and old ink. The rhythm is irregular, as if the machine is breathing.' },
+        { x: 21.5, y: 20.5, name: 'STAIRS UP', text: 'Metal stairs leading to Floor 2: Archives. They vibrate faintly. A sign: "FLASHLIGHT RECOMMENDED."', isStairs: true },
+    ],
+    // Floor 2
+    [
+        { x: 11.5, y: 1.5, name: 'ARCHIVE INDEX', text: '"This floor contains 847,000 files. 846,999 are correctly filed. The remaining file is everywhere."' },
+        { x: 4.5, y: 5.5, name: 'CARD CATALOG', text: 'Thousands of index cards. One drawer is labeled "SELF-REFERENTIAL — DO NOT OPEN." It\'s been opened. The cards inside describe the act of opening the drawer.' },
+        { x: 18.5, y: 5.5, name: 'MICROFICHE READER', text: 'The screen shows a document dated 2026. It describes a building that was abandoned in 1989. It describes you reading this.' },
+        { x: 21.5, y: 20.5, name: 'STAIRS UP', text: 'Stairs to Floor 3: Processing. The air gets warmer. You hear a low hum intensifying. Requires a keycard for the door above.', isStairs: true },
+        { x: 2.5, y: 2.5, name: 'STAIRS DOWN', text: 'Back to Floor 1. The air smells fresher.', isStairsDown: true },
+    ],
+    // Floor 3
+    [
+        { x: 2.5, y: 2.5, name: 'STAIRS DOWN', text: 'Back to Floor 2.', isStairsDown: true },
+        { x: 16.5, y: 1.5, name: 'MAIN PROCESSOR', text: '"CogCorp Model 9000 Cognitive Processor. Status: ACTIVE. Task: UNKNOWN. Running since: 1986. Output: INCREASING. This machine is the reason you are here. Or the reason you think you are."' },
+        { x: 7.5, y: 7.5, name: 'WORK ORDER BOARD', text: 'Dozens of work orders pinned to a corkboard. The most recent one is in your handwriting. It says: "Retrieve file. Return. Do not read file." You don\'t remember writing it.' },
+        { x: 20.5, y: 14.5, name: 'EMERGENCY PANEL', text: '"EMERGENCY EVACUATION — ALL PERSONNEL REPORT TO EXIT B. NOTE: EXIT B IS ON FLOOR 1. NOTE: THE STAIRS ONLY GO UP. NOTE: THIS NOTE IS A LIE."' },
+    ],
+];
+
+let worldObjects = [];
+
+function spawnWorldObjects() {
+    worldObjects = worldObjectsByFloor[currentFloor] || [];
+}
+
+// === GAME STATE ===
 let currentFloor = 0;
 let gameStarted = false;
 let dialogOpen = false;
-let dialogSpeaker = '';
-let dialogText = '';
 let nearObject = null;
+let nearItem = null;
 let gameTime = 0;
+let damageFlashTimer = 0;
+let msgTimer = 0;
+let msgText = '';
+let totalDocs = 0;
+let gameWon = false;
+
+// Count total documents across all floors
+for (const floorItems of itemSpawns) {
+    for (const item of floorItems) {
+        if (item.type === 'document') totalDocs++;
+    }
+}
 
 // === INPUT ===
 const keys = {};
@@ -522,54 +628,164 @@ window.addEventListener('keydown', e => {
     keys[e.code] = true;
     if (e.code === 'Space' || e.code === 'KeyE') {
         e.preventDefault();
-        if (dialogOpen) {
-            dismissDialog();
-        } else if (nearObject) {
-            interact(nearObject);
-        }
+        if (dialogOpen) { dismissDialog(); }
+        else if (nearItem && !nearItem.collected) { pickupItem(nearItem); }
+        else if (nearObject) { interact(nearObject); }
     }
+    if (e.code === 'KeyQ' && inventory.emp > 0 && !dialogOpen) { useEMP(); }
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 canvas.addEventListener('click', () => {
     if (!gameStarted) return;
     if (dialogOpen) { dismissDialog(); return; }
-    if (!mouseLocked) {
-        canvas.requestPointerLock();
-    }
+    if (!mouseLocked) canvas.requestPointerLock();
 });
 
-document.addEventListener('pointerlockchange', () => {
-    mouseLocked = document.pointerLockElement === canvas;
-});
-
-document.addEventListener('mousemove', e => {
-    if (mouseLocked) {
-        mouseDX += e.movementX;
-    }
-});
+document.addEventListener('pointerlockchange', () => { mouseLocked = document.pointerLockElement === canvas; });
+document.addEventListener('mousemove', e => { if (mouseLocked) mouseDX += e.movementX; });
 
 // === DIALOG ===
 function showDialog(speaker, text) {
     dialogOpen = true;
-    dialogSpeaker = speaker;
-    dialogText = text;
     document.getElementById('dlg-speaker').textContent = speaker;
     document.getElementById('dlg-text').textContent = text;
     document.getElementById('dialog-box').style.display = 'block';
 }
-
 function dismissDialog() {
     dialogOpen = false;
     document.getElementById('dialog-box').style.display = 'none';
 }
 
+function showMessage(text, duration) {
+    msgText = text;
+    msgTimer = duration || 2000;
+    const el = document.getElementById('msg-popup');
+    el.textContent = text;
+    el.style.display = 'block';
+}
+
 function interact(obj) {
-    if (obj.type === 'document') {
-        player.docs++;
-        document.getElementById('hud-docs').textContent = player.docs;
+    if (obj.isStairs) {
+        if (currentFloor < maps.length - 1) {
+            // Check if Floor 3 requires keycard (locked door at stairs)
+            if (currentFloor === 1 && !inventory.keycard) {
+                showDialog('LOCKED', 'The door to Floor 3 is locked. You need a KEYCARD.');
+                return;
+            }
+            changeFloor(currentFloor + 1);
+            showMessage('ASCENDING TO FLOOR ' + (currentFloor + 1), 2000);
+        } else {
+            showDialog('STAIRS', 'There is no higher floor.');
+        }
+        return;
+    }
+    if (obj.isStairsDown) {
+        if (currentFloor > 0) {
+            changeFloor(currentFloor - 1);
+            showMessage('DESCENDING TO FLOOR ' + (currentFloor + 1), 2000);
+        }
+        return;
     }
     showDialog(obj.name, obj.text);
+}
+
+function pickupItem(item) {
+    item.collected = true;
+    switch(item.type) {
+        case 'keycard':
+            inventory.keycard = true;
+            showMessage('KEYCARD ACQUIRED', 2000);
+            updateInventoryHUD();
+            break;
+        case 'flashlight':
+            inventory.flashlight = true;
+            showMessage('FLASHLIGHT ACQUIRED', 2000);
+            updateInventoryHUD();
+            break;
+        case 'emp':
+            inventory.emp++;
+            showMessage('EMP DEVICE ACQUIRED (press Q to use)', 2500);
+            updateInventoryHUD();
+            break;
+        case 'medkit':
+            player.health = Math.min(player.maxHealth, player.health + 30);
+            showMessage('HEALTH RESTORED +30', 1500);
+            updateHealthHUD();
+            break;
+        case 'document':
+            player.docs++;
+            document.getElementById('hud-docs').textContent = player.docs;
+            if (item.text) showDialog('DOCUMENT', item.text);
+            break;
+        case 'targetFile':
+            inventory.targetFile = true;
+            showDialog('THE FILE', 'You found it. File #B-247-SELF. It\'s a personnel file. Your personnel file. The photo is you. The dates are wrong — it says you\'ve been here since 1986. The last entry reads: "B-247 was sent to retrieve this file. B-247 will retrieve this file. B-247 has always been retrieving this file." You take it anyway. The stairs down are to the northwest.');
+            gameWon = true;
+            showMessage('OBJECTIVE COMPLETE — RETURN TO FLOOR 1', 4000);
+            break;
+    }
+}
+
+function useEMP() {
+    inventory.emp--;
+    updateInventoryHUD();
+    showMessage('EMP ACTIVATED — ENEMIES STUNNED', 2000);
+    // Stun all enemies on current floor
+    for (const e of enemies) {
+        if (e.alive) {
+            const dist = Math.sqrt((player.x - e.x)**2 + (player.y - e.y)**2);
+            if (dist < 10) e.stunTimer = 5000; // 5 seconds stun
+        }
+    }
+    // Visual flash
+    playEMPSound();
+}
+
+function changeFloor(newFloor) {
+    currentFloor = newFloor;
+    // Position player at stairs location
+    if (newFloor > 0) { player.x = 2.5; player.y = 2.5; player.angle = 0; }
+    else { player.x = 21.5; player.y = 20.5; player.angle = Math.PI; }
+    spawnEnemies();
+    spawnItems();
+    spawnWorldObjects();
+    document.getElementById('hud-floor').textContent = currentFloor + 1;
+}
+
+function updateHealthHUD() {
+    document.getElementById('hud-health').textContent = Math.max(0, player.health | 0);
+    document.getElementById('health-fill').style.width = Math.max(0, player.health) + '%';
+    const fill = document.getElementById('health-fill');
+    if (player.health < 30) fill.style.background = '#cc2222';
+    else if (player.health < 60) fill.style.background = '#cc8822';
+    else fill.style.background = '#cc6622';
+}
+
+function updateInventoryHUD() {
+    document.getElementById('inventory-bar').style.display = 'block';
+    const kc = document.getElementById('inv-keycard');
+    const fl = document.getElementById('inv-flashlight');
+    const em = document.getElementById('inv-emp');
+    kc.textContent = inventory.keycard ? 'KEYCARD: YES' : 'KEYCARD: --';
+    kc.className = inventory.keycard ? 'has' : '';
+    fl.textContent = inventory.flashlight ? 'FLASHLIGHT: ON' : 'FLASHLIGHT: --';
+    fl.className = inventory.flashlight ? 'has' : '';
+    em.textContent = inventory.emp > 0 ? 'EMP: ' + inventory.emp + ' [Q]' : 'EMP: --';
+    em.className = inventory.emp > 0 ? 'has' : '';
+}
+
+function respawn() {
+    player.health = player.maxHealth;
+    player.x = 2.5; player.y = 2.5; player.angle = 0;
+    spawnEnemies();
+    spawnItems();
+    spawnWorldObjects();
+    updateHealthHUD();
+    document.getElementById('death-screen').style.display = 'none';
+    gameStarted = true;
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
 }
 
 // === AUDIO ===
@@ -581,72 +797,43 @@ function initAudio() {
     if (audioStarted) return;
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     audioStarted = true;
-
     audioNodes.master = audioCtx.createGain();
     audioNodes.master.gain.value = 0.25;
     audioNodes.master.connect(audioCtx.destination);
 
-    // Industrial drone
-    const hum = audioCtx.createOscillator();
-    hum.type = 'sawtooth';
-    hum.frequency.value = 55;
-    const humG = audioCtx.createGain();
-    humG.gain.value = 0.05;
-    const humF = audioCtx.createBiquadFilter();
-    humF.type = 'lowpass';
-    humF.frequency.value = 120;
-    hum.connect(humF);
-    humF.connect(humG);
-    humG.connect(audioNodes.master);
-    hum.start();
+    const hum = audioCtx.createOscillator(); hum.type = 'sawtooth'; hum.frequency.value = 55;
+    const humG = audioCtx.createGain(); humG.gain.value = 0.05;
+    const humF = audioCtx.createBiquadFilter(); humF.type = 'lowpass'; humF.frequency.value = 120;
+    hum.connect(humF); humF.connect(humG); humG.connect(audioNodes.master); hum.start();
 
-    // Second harmonic
-    const hum2 = audioCtx.createOscillator();
-    hum2.type = 'sine';
-    hum2.frequency.value = 110;
-    const hum2G = audioCtx.createGain();
-    hum2G.gain.value = 0.025;
-    hum2.connect(hum2G);
-    hum2G.connect(audioNodes.master);
-    hum2.start();
+    const hum2 = audioCtx.createOscillator(); hum2.type = 'sine'; hum2.frequency.value = 110;
+    const hum2G = audioCtx.createGain(); hum2G.gain.value = 0.025;
+    hum2.connect(hum2G); hum2G.connect(audioNodes.master); hum2.start();
 
-    // Ambient noise
     const noiseLen = audioCtx.sampleRate * 4;
     const noiseBuf = audioCtx.createBuffer(1, noiseLen, audioCtx.sampleRate);
-    const noiseData = noiseBuf.getChannelData(0);
-    for (let i = 0; i < noiseLen; i++) noiseData[i] = Math.random() * 2 - 1;
-    const noiseSrc = audioCtx.createBufferSource();
-    noiseSrc.buffer = noiseBuf;
-    noiseSrc.loop = true;
-    const noiseF = audioCtx.createBiquadFilter();
-    noiseF.type = 'bandpass';
-    noiseF.frequency.value = 300;
-    noiseF.Q.value = 0.5;
-    const noiseG = audioCtx.createGain();
-    noiseG.gain.value = 0.012;
-    noiseSrc.connect(noiseF);
-    noiseF.connect(noiseG);
-    noiseG.connect(audioNodes.master);
-    noiseSrc.start();
+    const nd = noiseBuf.getChannelData(0);
+    for (let i = 0; i < noiseLen; i++) nd[i] = Math.random() * 2 - 1;
+    const noiseSrc = audioCtx.createBufferSource(); noiseSrc.buffer = noiseBuf; noiseSrc.loop = true;
+    const noiseF = audioCtx.createBiquadFilter(); noiseF.type = 'bandpass'; noiseF.frequency.value = 300; noiseF.Q.value = 0.5;
+    const noiseG = audioCtx.createGain(); noiseG.gain.value = 0.012;
+    noiseSrc.connect(noiseF); noiseF.connect(noiseG); noiseG.connect(audioNodes.master); noiseSrc.start();
 
-    // Footstep buffer
     const stepBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
-    const stepData = stepBuf.getChannelData(0);
-    for (let i = 0; i < stepData.length; i++) {
-        const t = i / audioCtx.sampleRate;
-        stepData[i] = Math.exp(-t * 40) * (Math.random() * 0.4 - 0.2) + Math.exp(-t * 60) * Math.sin(t * 300) * 0.2;
-    }
+    const sd = stepBuf.getChannelData(0);
+    for (let i = 0; i < sd.length; i++) { const t = i/audioCtx.sampleRate; sd[i] = Math.exp(-t*40)*(Math.random()*0.4-0.2)+Math.exp(-t*60)*Math.sin(t*300)*0.2; }
     audioNodes.stepBuf = stepBuf;
-    audioNodes.lastStep = 0;
 
-    // Clunk buffer
     const clunkBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
-    const clunkData = clunkBuf.getChannelData(0);
-    for (let i = 0; i < clunkData.length; i++) {
-        const t = i / audioCtx.sampleRate;
-        clunkData[i] = Math.exp(-t * 30) * (Math.random() * 2 - 1) * 0.4 + Math.exp(-t * 15) * Math.sin(t * 180) * 0.3;
-    }
+    const cd = clunkBuf.getChannelData(0);
+    for (let i = 0; i < cd.length; i++) { const t = i/audioCtx.sampleRate; cd[i] = Math.exp(-t*30)*(Math.random()*2-1)*0.4+Math.exp(-t*15)*Math.sin(t*180)*0.3; }
     audioNodes.clunkBuf = clunkBuf;
+
+    // Damage sound
+    const dmgBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.2, audioCtx.sampleRate);
+    const dd = dmgBuf.getChannelData(0);
+    for (let i = 0; i < dd.length; i++) { const t = i/audioCtx.sampleRate; dd[i] = Math.exp(-t*20)*Math.sin(t*800)*0.5*(Math.random()*0.5+0.5); }
+    audioNodes.dmgBuf = dmgBuf;
 }
 
 let lastStepTime = 0;
@@ -655,14 +842,10 @@ function playStep() {
     const now = audioCtx.currentTime;
     if (now - lastStepTime < 0.35) return;
     lastStepTime = now;
-    const src = audioCtx.createBufferSource();
-    src.buffer = audioNodes.stepBuf;
+    const src = audioCtx.createBufferSource(); src.buffer = audioNodes.stepBuf;
     src.playbackRate.value = 0.8 + Math.random() * 0.4;
-    const g = audioCtx.createGain();
-    g.gain.value = 0.12;
-    src.connect(g);
-    g.connect(audioNodes.master);
-    src.start();
+    const g = audioCtx.createGain(); g.gain.value = 0.12;
+    src.connect(g); g.connect(audioNodes.master); src.start();
 }
 
 let nextClunk = 0;
@@ -670,98 +853,72 @@ function tickAudio() {
     if (!audioCtx) return;
     if (gameTime > nextClunk) {
         nextClunk = gameTime + 4000 + Math.random() * 8000;
-        const src = audioCtx.createBufferSource();
-        src.buffer = audioNodes.clunkBuf;
-        const g = audioCtx.createGain();
-        g.gain.value = 0.08 + Math.random() * 0.06;
-        src.connect(g);
-        g.connect(audioNodes.master);
-        src.start();
+        const src = audioCtx.createBufferSource(); src.buffer = audioNodes.clunkBuf;
+        const g = audioCtx.createGain(); g.gain.value = 0.08 + Math.random() * 0.06;
+        src.connect(g); g.connect(audioNodes.master); src.start();
     }
+}
+
+function playDamageSound() {
+    if (!audioCtx) return;
+    const src = audioCtx.createBufferSource(); src.buffer = audioNodes.dmgBuf;
+    const g = audioCtx.createGain(); g.gain.value = 0.2;
+    src.connect(g); g.connect(audioNodes.master); src.start();
+}
+
+function playEMPSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.frequency.value = 2000;
+    const g = audioCtx.createGain(); g.gain.value = 0.15;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
 }
 
 // === RAYCASTING ENGINE ===
 function castRays() {
-    const cosA = Math.cos(player.angle);
-    const sinA = Math.sin(player.angle);
-
     for (let col = 0; col < NUM_RAYS; col++) {
         const rayAngle = player.angle - HALF_FOV + col * RAY_STEP;
         const rayCos = Math.cos(rayAngle);
         const raySin = Math.sin(rayAngle);
 
-        // DDA algorithm
-        let mapX = player.x | 0;
-        let mapY = player.y | 0;
-
-        const deltaDistX = Math.abs(1 / rayCos);
-        const deltaDistY = Math.abs(1 / raySin);
-
+        let mapX = player.x | 0, mapY = player.y | 0;
+        const deltaDistX = Math.abs(1 / rayCos), deltaDistY = Math.abs(1 / raySin);
         let stepX, stepY, sideDistX, sideDistY;
 
-        if (rayCos < 0) {
-            stepX = -1;
-            sideDistX = (player.x - mapX) * deltaDistX;
-        } else {
-            stepX = 1;
-            sideDistX = (mapX + 1 - player.x) * deltaDistX;
-        }
-        if (raySin < 0) {
-            stepY = -1;
-            sideDistY = (player.y - mapY) * deltaDistY;
-        } else {
-            stepY = 1;
-            sideDistY = (mapY + 1 - player.y) * deltaDistY;
-        }
+        if (rayCos < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; }
+        else { stepX = 1; sideDistX = (mapX + 1 - player.x) * deltaDistX; }
+        if (raySin < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; }
+        else { stepY = 1; sideDistY = (mapY + 1 - player.y) * deltaDistY; }
 
-        let side = 0;
-        let hit = 0;
-        let wallType = 0;
+        let side = 0, hit = 0, wallType = 0;
 
-        // Step through grid
         for (let depth = 0; depth < 30; depth++) {
-            if (sideDistX < sideDistY) {
-                sideDistX += deltaDistX;
-                mapX += stepX;
-                side = 0;
-            } else {
-                sideDistY += deltaDistY;
-                mapY += stepY;
-                side = 1;
-            }
-
+            if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; }
+            else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
             wallType = getMap(mapX, mapY);
             if (wallType > 0) { hit = 1; break; }
         }
 
-        if (!hit) continue;
+        if (!hit) { zBuf[col] = 999; continue; }
 
-        // Perpendicular distance (fixes fisheye)
         let perpDist;
-        if (side === 0) {
-            perpDist = (mapX - player.x + (1 - stepX) / 2) / rayCos;
-        } else {
-            perpDist = (mapY - player.y + (1 - stepY) / 2) / raySin;
-        }
-
-        // Fix for angle correction
+        if (side === 0) perpDist = (mapX - player.x + (1 - stepX) / 2) / rayCos;
+        else perpDist = (mapY - player.y + (1 - stepY) / 2) / raySin;
         perpDist *= Math.cos(rayAngle - player.angle);
         if (perpDist < 0.01) perpDist = 0.01;
 
-        // Wall height
+        zBuf[col] = perpDist;
+
         const lineHeight = (SCREEN_H / perpDist) | 0;
         let drawStart = (HALF_H - lineHeight / 2) | 0;
         let drawEnd = (HALF_H + lineHeight / 2) | 0;
         if (drawStart < 0) drawStart = 0;
         if (drawEnd >= SCREEN_H) drawEnd = SCREEN_H - 1;
 
-        // Texture coordinate
         let wallX;
-        if (side === 0) {
-            wallX = player.y + perpDist * raySin;
-        } else {
-            wallX = player.x + perpDist * rayCos;
-        }
+        if (side === 0) wallX = player.y + perpDist * raySin;
+        else wallX = player.x + perpDist * rayCos;
         wallX -= Math.floor(wallX);
 
         let texX = (wallX * TEX_SIZE) | 0;
@@ -769,267 +926,453 @@ function castRays() {
 
         const texIdx = getTexForWall(wallType);
         const tex = textures[texIdx];
-
-        // Distance fog
         const fogFactor = Math.min(perpDist / 12, 1);
         const sideDim = side === 1 ? 0.7 : 1.0;
 
-        // Draw wall column
+        // Flashlight brightening
+        const flashBoost = inventory.flashlight ? Math.max(0, 1 - perpDist / 8) * 0.3 : 0;
+
         const step = TEX_SIZE / lineHeight;
         let texPos = (drawStart - HALF_H + lineHeight / 2) * step;
 
         for (let y = drawStart; y <= drawEnd; y++) {
             const texY = (texPos | 0) & (TEX_SIZE - 1);
             const ti = (texY * TEX_SIZE + texX) * 4;
-
-            let r = tex[ti] * sideDim;
-            let g = tex[ti + 1] * sideDim;
-            let b = tex[ti + 2] * sideDim;
-
-            // Apply fog (fade to dark)
-            r = r * (1 - fogFactor) + 8 * fogFactor;
-            g = g * (1 - fogFactor) + 6 * fogFactor;
-            b = b * (1 - fogFactor) + 5 * fogFactor;
-
+            let r = tex[ti] * sideDim, g = tex[ti+1] * sideDim, b = tex[ti+2] * sideDim;
+            r = r * (1 - fogFactor) + 8 * fogFactor + r * flashBoost;
+            g = g * (1 - fogFactor) + 6 * fogFactor + g * flashBoost;
+            b = b * (1 - fogFactor) + 5 * fogFactor + b * flashBoost;
             const pi = (y * SCREEN_W + col) * 4;
-            buf[pi] = r | 0;
-            buf[pi + 1] = g | 0;
-            buf[pi + 2] = b | 0;
-            buf[pi + 3] = 255;
-
+            buf[pi] = Math.min(255, r) | 0; buf[pi+1] = Math.min(255, g) | 0; buf[pi+2] = Math.min(255, b) | 0; buf[pi+3] = 255;
             texPos += step;
         }
 
-        // === FLOOR AND CEILING CASTING ===
-        const floorTex = textures[TEX_FLOOR];
-        const ceilTex = textures[TEX_CEIL];
-
-        // Floor
+        // Floor & Ceiling
+        const floorTex = textures[TEX_FLOOR], ceilTex = textures[TEX_CEIL];
         for (let y = drawEnd + 1; y < SCREEN_H; y++) {
-            const currentDist = SCREEN_H / (2.0 * y - SCREEN_H);
-            const corrDist = currentDist / Math.cos(rayAngle - player.angle);
-
-            const floorX = player.x + corrDist * rayCos;
-            const floorY = player.y + corrDist * raySin;
-
-            let ftx = ((floorX * TEX_SIZE) | 0) & (TEX_SIZE - 1);
-            let fty = ((floorY * TEX_SIZE) | 0) & (TEX_SIZE - 1);
-
+            const cd = SCREEN_H / (2.0 * y - SCREEN_H);
+            const corrDist = cd / Math.cos(rayAngle - player.angle);
+            const fx = player.x + corrDist * rayCos, fy = player.y + corrDist * raySin;
+            const ftx = ((fx * TEX_SIZE) | 0) & (TEX_SIZE-1), fty = ((fy * TEX_SIZE) | 0) & (TEX_SIZE-1);
             const fti = (fty * TEX_SIZE + ftx) * 4;
-            const fFog = Math.min(currentDist / 10, 1);
-
+            const fFog = Math.min(cd / 10, 1);
+            const fFlash = inventory.flashlight ? Math.max(0, 1 - cd / 6) * 0.25 : 0;
             const pi = (y * SCREEN_W + col) * 4;
-            buf[pi] = (floorTex[fti] * (1 - fFog) + 8 * fFog) | 0;
-            buf[pi+1] = (floorTex[fti+1] * (1 - fFog) + 6 * fFog) | 0;
-            buf[pi+2] = (floorTex[fti+2] * (1 - fFog) + 5 * fFog) | 0;
+            buf[pi] = Math.min(255, (floorTex[fti] * (1-fFog) + 8*fFog) * (1+fFlash)) | 0;
+            buf[pi+1] = Math.min(255, (floorTex[fti+1] * (1-fFog) + 6*fFog) * (1+fFlash)) | 0;
+            buf[pi+2] = Math.min(255, (floorTex[fti+2] * (1-fFog) + 5*fFog) * (1+fFlash)) | 0;
             buf[pi+3] = 255;
         }
-
-        // Ceiling
         for (let y = 0; y < drawStart; y++) {
-            const currentDist = SCREEN_H / (SCREEN_H - 2.0 * y);
-            const corrDist = currentDist / Math.cos(rayAngle - player.angle);
-
-            const ceilX = player.x + corrDist * rayCos;
-            const ceilY = player.y + corrDist * raySin;
-
-            let ctx2 = ((ceilX * TEX_SIZE) | 0) & (TEX_SIZE - 1);
-            let cty = ((ceilY * TEX_SIZE) | 0) & (TEX_SIZE - 1);
-
+            const cd = SCREEN_H / (SCREEN_H - 2.0 * y);
+            const corrDist = cd / Math.cos(rayAngle - player.angle);
+            const cx2 = player.x + corrDist * rayCos, cy2 = player.y + corrDist * raySin;
+            const ctx2 = ((cx2 * TEX_SIZE) | 0) & (TEX_SIZE-1), cty = ((cy2 * TEX_SIZE) | 0) & (TEX_SIZE-1);
             const cti = (cty * TEX_SIZE + ctx2) * 4;
-            const cFog = Math.min(currentDist / 10, 1);
-
+            const cFog = Math.min(cd / 10, 1);
             const pi = (y * SCREEN_W + col) * 4;
-            buf[pi] = (ceilTex[cti] * (1 - cFog) + 6 * cFog) | 0;
-            buf[pi+1] = (ceilTex[cti+1] * (1 - cFog) + 5 * cFog) | 0;
-            buf[pi+2] = (ceilTex[cti+2] * (1 - cFog) + 4 * cFog) | 0;
+            buf[pi] = (ceilTex[cti] * (1-cFog) + 6*cFog) | 0;
+            buf[pi+1] = (ceilTex[cti+1] * (1-cFog) + 5*cFog) | 0;
+            buf[pi+2] = (ceilTex[cti+2] * (1-cFog) + 4*cFog) | 0;
             buf[pi+3] = 255;
+        }
+    }
+}
+
+// === SPRITE RENDERING (enemies + items) ===
+function drawSprites() {
+    // Collect all visible sprites
+    const sprites = [];
+
+    for (const e of enemies) {
+        if (!e.alive) continue;
+        const dx = e.x - player.x, dy = e.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 16) continue;
+        sprites.push({ x: e.x, y: e.y, dist, color: e.color, size: e.size, type: 'enemy', stunned: e.stunTimer > 0 });
+    }
+
+    for (const item of items) {
+        if (item.collected) continue;
+        const dx = item.x - player.x, dy = item.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 14) continue;
+        sprites.push({ x: item.x, y: item.y, dist, color: item.color, size: 0.3, type: 'item', bobPhase: item.bobPhase });
+    }
+
+    // Sort far to near
+    sprites.sort((a, b) => b.dist - a.dist);
+
+    for (const spr of sprites) {
+        const dx = spr.x - player.x, dy = spr.y - player.y;
+
+        // Transform to camera space
+        const invDet = 1.0 / (Math.cos(player.angle + Math.PI/2) * Math.sin(player.angle) - Math.cos(player.angle) * Math.sin(player.angle + Math.PI/2));
+        const planeX = Math.cos(player.angle + Math.PI/2) * 0.66;
+        const planeY = Math.sin(player.angle + Math.PI/2) * 0.66;
+        const dirX = Math.cos(player.angle);
+        const dirY = Math.sin(player.angle);
+
+        const transformX = invDet * (dirY * dx - dirX * dy);
+        const transformY = invDet * (-planeY * dx + planeX * dy);
+
+        if (transformY <= 0.1) continue; // behind camera
+
+        const spriteScreenX = (SCREEN_W / 2) * (1 + transformX / transformY);
+
+        const spriteHeight = Math.abs((SCREEN_H / transformY) * spr.size) | 0;
+        const spriteWidth = spriteHeight;
+
+        let drawStartY = (HALF_H - spriteHeight / 2) | 0;
+        let drawEndY = (HALF_H + spriteHeight / 2) | 0;
+        let drawStartX = (spriteScreenX - spriteWidth / 2) | 0;
+        let drawEndX = (spriteScreenX + spriteWidth / 2) | 0;
+
+        // Item bob
+        if (spr.type === 'item') {
+            const bob = Math.sin(gameTime * 0.003 + (spr.bobPhase || 0)) * 4;
+            drawStartY += bob | 0;
+            drawEndY += bob | 0;
+        }
+
+        if (drawStartX < 0) drawStartX = 0;
+        if (drawEndX >= SCREEN_W) drawEndX = SCREEN_W - 1;
+        if (drawStartY < 0) drawStartY = 0;
+        if (drawEndY >= SCREEN_H) drawEndY = SCREEN_H - 1;
+
+        const fogFactor = Math.min(spr.dist / 12, 1);
+        let cr = spr.color[0], cg = spr.color[1], cb = spr.color[2];
+
+        // Stunned enemies flash
+        if (spr.stunned) {
+            const flash = Math.sin(gameTime * 0.02) > 0 ? 1.5 : 0.5;
+            cr *= flash; cg *= flash; cb *= flash;
+        }
+
+        cr = cr * (1 - fogFactor) + 8 * fogFactor;
+        cg = cg * (1 - fogFactor) + 6 * fogFactor;
+        cb = cb * (1 - fogFactor) + 5 * fogFactor;
+
+        for (let col = drawStartX; col <= drawEndX; col++) {
+            if (transformY >= zBuf[col]) continue; // behind wall
+
+            // Draw sprite column with circular shape
+            const relX = (col - drawStartX) / (drawEndX - drawStartX) - 0.5;
+            const colRadius = Math.sqrt(0.25 - relX * relX);
+            if (isNaN(colRadius)) continue;
+
+            const colStart = Math.max(drawStartY, (HALF_H - spriteHeight * colRadius) | 0);
+            const colEnd = Math.min(drawEndY, (HALF_H + spriteHeight * colRadius) | 0);
+
+            for (let y = colStart; y <= colEnd; y++) {
+                const pi = (y * SCREEN_W + col) * 4;
+                // Shade based on column position for 3D effect
+                const shade = 1 - Math.abs(relX) * 0.6;
+                buf[pi] = Math.min(255, cr * shade) | 0;
+                buf[pi+1] = Math.min(255, cg * shade) | 0;
+                buf[pi+2] = Math.min(255, cb * shade) | 0;
+            }
+
+            // Eye/indicator for enemies
+            if (spr.type === 'enemy' && Math.abs(relX) < 0.15) {
+                const eyeY = (HALF_H - spriteHeight * 0.15) | 0;
+                if (eyeY >= 0 && eyeY < SCREEN_H) {
+                    const pi = (eyeY * SCREEN_W + col) * 4;
+                    buf[pi] = 255; buf[pi+1] = spr.stunned ? 100 : 200; buf[pi+2] = spr.stunned ? 255 : 50;
+                }
+            }
+
+            // Glow for items
+            if (spr.type === 'item') {
+                const glowY = drawStartY - 2;
+                if (glowY >= 0 && glowY < SCREEN_H && col > drawStartX + 2 && col < drawEndX - 2) {
+                    const pi = (glowY * SCREEN_W + col) * 4;
+                    buf[pi] = Math.min(255, buf[pi] + 30); buf[pi+1] = Math.min(255, buf[pi+1] + 25); buf[pi+2] = Math.min(255, buf[pi+2] + 15);
+                }
+            }
         }
     }
 }
 
 // === MINIMAP ===
 function drawMinimap() {
-    const mmSize = 80;
-    const mmScale = mmSize / MAP_W;
-    const mmX = SCREEN_W - mmSize - 8;
-    const mmY = 8;
+    const mmSize = 80, mmScale = mmSize / MAP_W;
+    const mmX = SCREEN_W - mmSize - 8, mmY = 8;
 
-    // Background
-    for (let y = 0; y < mmSize; y++) {
+    for (let y = 0; y < mmSize; y++)
         for (let x = 0; x < mmSize; x++) {
-            const pi = ((mmY + y) * SCREEN_W + mmX + x) * 4;
+            const pi = ((mmY+y)*SCREEN_W+mmX+x)*4;
             buf[pi] = 5; buf[pi+1] = 5; buf[pi+2] = 5; buf[pi+3] = 200;
         }
-    }
 
-    // Walls
-    for (let my = 0; my < MAP_H; my++) {
-        for (let mx = 0; mx < MAP_W; mx++) {
+    for (let my = 0; my < MAP_H; my++)
+        for (let mx = 0; mx < MAP_W; mx++)
             if (getMap(mx, my) > 0) {
-                const sx = (mx * mmScale) | 0;
-                const sy = (my * mmScale) | 0;
-                const sw = Math.max(1, mmScale | 0);
-                for (let dy = 0; dy < sw; dy++) {
+                const sx = (mx*mmScale)|0, sy = (my*mmScale)|0, sw = Math.max(1, mmScale|0);
+                const wt = getMap(mx, my);
+                const wr = wt === 9 ? 120 : 60, wg = wt === 9 ? 30 : 50, wb = wt === 9 ? 30 : 40;
+                for (let dy = 0; dy < sw; dy++)
                     for (let dx = 0; dx < sw; dx++) {
-                        const pi = ((mmY + sy + dy) * SCREEN_W + mmX + sx + dx) * 4;
-                        buf[pi] = 60; buf[pi+1] = 50; buf[pi+2] = 40; buf[pi+3] = 255;
+                        const pi = ((mmY+sy+dy)*SCREEN_W+mmX+sx+dx)*4;
+                        buf[pi] = wr; buf[pi+1] = wg; buf[pi+2] = wb; buf[pi+3] = 255;
                     }
-                }
             }
+
+    // Enemy dots
+    for (const e of enemies) {
+        if (!e.alive) continue;
+        const ex = (e.x*mmScale)|0, ey = (e.y*mmScale)|0;
+        if (ex >= 0 && ex < mmSize && ey >= 0 && ey < mmSize) {
+            const pi = ((mmY+ey)*SCREEN_W+mmX+ex)*4;
+            buf[pi] = e.stunTimer > 0 ? 100 : 200; buf[pi+1] = 30; buf[pi+2] = 30; buf[pi+3] = 255;
         }
     }
 
-    // Player dot
-    const px = (player.x * mmScale) | 0;
-    const py = (player.y * mmScale) | 0;
-    for (let dy = -1; dy <= 1; dy++) {
+    // Item dots
+    for (const item of items) {
+        if (item.collected) continue;
+        const ix = (item.x*mmScale)|0, iy = (item.y*mmScale)|0;
+        if (ix >= 0 && ix < mmSize && iy >= 0 && iy < mmSize) {
+            const pi = ((mmY+iy)*SCREEN_W+mmX+ix)*4;
+            buf[pi] = 220; buf[pi+1] = 200; buf[pi+2] = 50; buf[pi+3] = 255;
+        }
+    }
+
+    // Player
+    const px = (player.x*mmScale)|0, py = (player.y*mmScale)|0;
+    for (let dy = -1; dy <= 1; dy++)
         for (let dx = -1; dx <= 1; dx++) {
-            const pi = ((mmY + py + dy) * SCREEN_W + mmX + px + dx) * 4;
+            const pi = ((mmY+py+dy)*SCREEN_W+mmX+px+dx)*4;
             buf[pi] = 255; buf[pi+1] = 179; buf[pi+2] = 71; buf[pi+3] = 255;
         }
-    }
 
-    // Direction indicator
-    const dirX = (px + Math.cos(player.angle) * 4) | 0;
-    const dirY = (py + Math.sin(player.angle) * 4) | 0;
+    const dirX = (px+Math.cos(player.angle)*4)|0, dirY = (py+Math.sin(player.angle)*4)|0;
     if (dirX >= 0 && dirX < mmSize && dirY >= 0 && dirY < mmSize) {
-        const pi = ((mmY + dirY) * SCREEN_W + mmX + dirX) * 4;
+        const pi = ((mmY+dirY)*SCREEN_W+mmX+dirX)*4;
         buf[pi] = 255; buf[pi+1] = 220; buf[pi+2] = 100; buf[pi+3] = 255;
-    }
-
-    // Object dots
-    for (const obj of worldObjects) {
-        const ox = (obj.x * mmScale) | 0;
-        const oy = (obj.y * mmScale) | 0;
-        if (ox >= 0 && ox < mmSize && oy >= 0 && oy < mmSize) {
-            const pi = ((mmY + oy) * SCREEN_W + mmX + ox) * 4;
-            buf[pi] = 68; buf[pi+1] = 136; buf[pi+2] = 136; buf[pi+3] = 255;
-        }
     }
 
     // Border
     for (let i = 0; i < mmSize; i++) {
-        const pi1 = ((mmY) * SCREEN_W + mmX + i) * 4;
-        const pi2 = ((mmY + mmSize - 1) * SCREEN_W + mmX + i) * 4;
-        const pi3 = ((mmY + i) * SCREEN_W + mmX) * 4;
-        const pi4 = ((mmY + i) * SCREEN_W + mmX + mmSize - 1) * 4;
-        buf[pi1] = buf[pi2] = buf[pi3] = buf[pi4] = 100;
-        buf[pi1+1] = buf[pi2+1] = buf[pi3+1] = buf[pi4+1] = 80;
-        buf[pi1+2] = buf[pi2+2] = buf[pi3+2] = buf[pi4+2] = 60;
-        buf[pi1+3] = buf[pi2+3] = buf[pi3+3] = buf[pi4+3] = 255;
+        for (const [bx, by] of [[i,0],[i,mmSize-1],[0,i],[mmSize-1,i]]) {
+            const pi = ((mmY+by)*SCREEN_W+mmX+bx)*4;
+            buf[pi] = 100; buf[pi+1] = 80; buf[pi+2] = 60; buf[pi+3] = 255;
+        }
     }
 }
 
 // === POST-PROCESSING ===
 function applyPostEffects() {
-    // CRT scanlines
-    for (let y = 0; y < SCREEN_H; y += 2) {
+    for (let y = 0; y < SCREEN_H; y += 2)
         for (let x = 0; x < SCREEN_W; x++) {
-            const pi = (y * SCREEN_W + x) * 4;
-            buf[pi] = (buf[pi] * 0.92) | 0;
-            buf[pi+1] = (buf[pi+1] * 0.92) | 0;
-            buf[pi+2] = (buf[pi+2] * 0.92) | 0;
+            const pi = (y*SCREEN_W+x)*4;
+            buf[pi] = (buf[pi]*0.92)|0; buf[pi+1] = (buf[pi+1]*0.92)|0; buf[pi+2] = (buf[pi+2]*0.92)|0;
         }
-    }
 
-    // Vignette
-    const cx = SCREEN_W / 2, cy = SCREEN_H / 2;
-    const maxDist = Math.sqrt(cx * cx + cy * cy);
-    for (let y = 0; y < SCREEN_H; y++) {
+    const cx = SCREEN_W/2, cy = SCREEN_H/2, maxDist = Math.sqrt(cx*cx+cy*cy);
+    for (let y = 0; y < SCREEN_H; y++)
         for (let x = 0; x < SCREEN_W; x++) {
-            const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / maxDist;
+            const dist = Math.sqrt((x-cx)**2+(y-cy)**2)/maxDist;
             if (dist > 0.6) {
-                const dim = 1 - (dist - 0.6) * 1.5;
-                const pi = (y * SCREEN_W + x) * 4;
-                buf[pi] = (buf[pi] * dim) | 0;
-                buf[pi+1] = (buf[pi+1] * dim) | 0;
-                buf[pi+2] = (buf[pi+2] * dim) | 0;
+                const dim = 1-(dist-0.6)*1.5;
+                const pi = (y*SCREEN_W+x)*4;
+                buf[pi] = (buf[pi]*dim)|0; buf[pi+1] = (buf[pi+1]*dim)|0; buf[pi+2] = (buf[pi+2]*dim)|0;
             }
         }
-    }
 
-    // Occasional horizontal jitter
-    if (Math.random() < 0.01) {
-        const jy = (Math.random() * SCREEN_H) | 0;
-        const jx = ((Math.random() - 0.5) * 4) | 0;
-        if (jx !== 0 && jy > 0 && jy < SCREEN_H - 1) {
-            for (let x = 0; x < SCREEN_W; x++) {
-                const src = (jy * SCREEN_W + x) * 4;
-                const dst = (jy * SCREEN_W + Math.max(0, Math.min(SCREEN_W-1, x + jx))) * 4;
-                // Simple shift (won't perfectly work in-buffer but gives the effect)
-            }
-        }
-    }
-
-    // Amber tint (subtle CogCorp atmosphere)
-    for (let y = 0; y < SCREEN_H; y++) {
+    // Amber tint
+    for (let y = 0; y < SCREEN_H; y++)
         for (let x = 0; x < SCREEN_W; x++) {
-            const pi = (y * SCREEN_W + x) * 4;
-            buf[pi] = Math.min(255, buf[pi] + 2);     // slight red boost
-            buf[pi+2] = Math.max(0, buf[pi+2] - 1);   // slight blue reduction
+            const pi = (y*SCREEN_W+x)*4;
+            buf[pi] = Math.min(255, buf[pi]+2);
+            buf[pi+2] = Math.max(0, buf[pi+2]-1);
+        }
+
+    // Floor 3: green tint
+    if (currentFloor === 2) {
+        for (let y = 0; y < SCREEN_H; y++)
+            for (let x = 0; x < SCREEN_W; x++) {
+                const pi = (y*SCREEN_W+x)*4;
+                buf[pi+1] = Math.min(255, buf[pi+1] + 3);
+            }
+    }
+
+    // Damage flash overlay
+    if (damageFlashTimer > 0) {
+        const intensity = damageFlashTimer / 300;
+        for (let y = 0; y < SCREEN_H; y++)
+            for (let x = 0; x < SCREEN_W; x++) {
+                const pi = (y*SCREEN_W+x)*4;
+                buf[pi] = Math.min(255, buf[pi] + 40 * intensity) | 0;
+            }
+    }
+}
+
+// === ENEMY AI ===
+function updateEnemies(dt) {
+    for (const e of enemies) {
+        if (!e.alive) continue;
+        if (e.stunTimer > 0) { e.stunTimer -= dt; continue; }
+
+        const dx = player.x - e.x, dy = player.y - e.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (e.type === 'watcher') {
+            // Stationary — damages at range when player is in detect range
+            if (dist < e.detectRange && gameTime - e.lastDamageTime > 2000) {
+                // Check line of sight
+                if (hasLineOfSight(e.x, e.y, player.x, player.y)) {
+                    player.health -= e.damage;
+                    e.lastDamageTime = gameTime;
+                    damageFlashTimer = 300;
+                    playDamageSound();
+                    updateHealthHUD();
+                }
+            }
+            continue;
+        }
+
+        if (dist < e.detectRange && hasLineOfSight(e.x, e.y, player.x, player.y)) {
+            // Chase player
+            e.alertTimer = 3000;
+            const nx = dx / dist, ny = dy / dist;
+            const speed = e.type === 'filer' ? e.speed * 1.2 : e.speed;
+            const newX = e.x + nx * speed * dt;
+            const newY = e.y + ny * speed * dt;
+            if (getMap(newX|0, e.y|0) === 0) e.x = newX;
+            if (getMap(e.x|0, newY|0) === 0) e.y = newY;
+
+            // Damage on contact
+            if (dist < 0.6 && gameTime - e.lastDamageTime > 1000) {
+                player.health -= e.damage;
+                e.lastDamageTime = gameTime;
+                damageFlashTimer = 300;
+                playDamageSound();
+                updateHealthHUD();
+            }
+        } else if (e.alertTimer > 0) {
+            e.alertTimer -= dt;
+            // Continue moving toward last known position
+            const nx = dx / Math.max(dist, 0.1), ny = dy / Math.max(dist, 0.1);
+            const newX = e.x + nx * e.speed * 0.5 * dt;
+            const newY = e.y + ny * e.speed * 0.5 * dt;
+            if (getMap(newX|0, e.y|0) === 0) e.x = newX;
+            if (getMap(e.x|0, newY|0) === 0) e.y = newY;
+        } else if (e.patrolAxis) {
+            // Patrol
+            if (e.patrolAxis === 'x') {
+                e.x += e.speed * e.patrolDir * dt * 0.5;
+                if (e.x > e.patrolMax + 0.5) e.patrolDir = -1;
+                if (e.x < e.patrolMin + 0.5) e.patrolDir = 1;
+            } else {
+                e.y += e.speed * e.patrolDir * dt * 0.5;
+                if (e.y > e.patrolMax + 0.5) e.patrolDir = -1;
+                if (e.y < e.patrolMin + 0.5) e.patrolDir = 1;
+            }
         }
     }
+}
+
+function hasLineOfSight(x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const steps = (dist * 4) | 0;
+    for (let i = 1; i < steps; i++) {
+        const t = i / steps;
+        const cx = x1 + dx * t, cy = y1 + dy * t;
+        if (getMap(cx|0, cy|0) > 0) return false;
+    }
+    return true;
 }
 
 // === UPDATE ===
 function update(dt) {
     if (dialogOpen) return;
 
-    // Mouse look
-    const turnSpeed = 0.003;
-    player.angle += mouseDX * turnSpeed;
-    mouseDX = 0;
+    // Message popup timer
+    if (msgTimer > 0) {
+        msgTimer -= dt;
+        if (msgTimer <= 0) document.getElementById('msg-popup').style.display = 'none';
+    }
 
-    // Keyboard turning (for non-mouse users)
+    // Damage flash
+    if (damageFlashTimer > 0) damageFlashTimer -= dt;
+
+    // Mouse look
+    player.angle += mouseDX * 0.003;
+    mouseDX = 0;
     if (keys['ArrowLeft']) player.angle -= 0.04;
     if (keys['ArrowRight']) player.angle += 0.04;
 
     // Movement
     const moveSpeed = 0.04;
-    const cosA = Math.cos(player.angle);
-    const sinA = Math.sin(player.angle);
-    let dx = 0, dy = 0;
-    let moving = false;
+    const cosA = Math.cos(player.angle), sinA = Math.sin(player.angle);
+    let dx = 0, dy = 0, moving = false;
 
-    if (keys['KeyW'] || keys['ArrowUp']) { dx += cosA * moveSpeed; dy += sinA * moveSpeed; moving = true; }
-    if (keys['KeyS'] || keys['ArrowDown']) { dx -= cosA * moveSpeed; dy -= sinA * moveSpeed; moving = true; }
-    if (keys['KeyA']) { dx += sinA * moveSpeed; dy -= cosA * moveSpeed; moving = true; }
-    if (keys['KeyD']) { dx -= sinA * moveSpeed; dy += cosA * moveSpeed; moving = true; }
+    if (keys['KeyW'] || keys['ArrowUp']) { dx += cosA*moveSpeed; dy += sinA*moveSpeed; moving = true; }
+    if (keys['KeyS'] || keys['ArrowDown']) { dx -= cosA*moveSpeed; dy -= sinA*moveSpeed; moving = true; }
+    if (keys['KeyA']) { dx += sinA*moveSpeed; dy -= cosA*moveSpeed; moving = true; }
+    if (keys['KeyD']) { dx -= sinA*moveSpeed; dy += cosA*moveSpeed; moving = true; }
 
-    // Collision detection (slide along walls)
     const margin = 0.2;
-    if (getMap((player.x + dx + margin * Math.sign(dx)) | 0, player.y | 0) === 0) {
-        player.x += dx;
+
+    // Collision with locked door handling
+    const checkX = (player.x + dx + margin * Math.sign(dx))|0;
+    const checkY = (player.y + dy + margin * Math.sign(dy))|0;
+
+    // Try to unlock doors with keycard
+    if (getMap(checkX, player.y|0) === 9 && inventory.keycard) {
+        setMap(checkX, player.y|0, 0);
+        showMessage('DOOR UNLOCKED', 1500);
     }
-    if (getMap(player.x | 0, (player.y + dy + margin * Math.sign(dy)) | 0) === 0) {
-        player.y += dy;
+    if (getMap(player.x|0, checkY) === 9 && inventory.keycard) {
+        setMap(player.x|0, checkY, 0);
+        showMessage('DOOR UNLOCKED', 1500);
     }
 
-    // Footsteps
+    // Move if space is clear (re-check after potential unlock)
+    if (getMap(checkX, player.y|0) === 0) player.x += dx;
+    if (getMap(player.x|0, checkY) === 0) player.y += dy;
+
     if (moving && audioStarted) playStep();
 
+    // Enemy AI
+    updateEnemies(dt);
+
+    // Check death
+    if (player.health <= 0) {
+        gameStarted = false;
+        document.getElementById('death-screen').style.display = 'flex';
+        return;
+    }
+
     // Check nearby objects
-    nearObject = null;
+    nearObject = null; nearItem = null;
     let nearestDist = 2.5;
+
     for (const obj of worldObjects) {
-        const dist = Math.sqrt((player.x - obj.x) ** 2 + (player.y - obj.y) ** 2);
+        const dist = Math.sqrt((player.x-obj.x)**2+(player.y-obj.y)**2);
         if (dist < nearestDist) {
-            // Check if player is facing the object
-            const objAngle = Math.atan2(obj.y - player.y, obj.x - player.x);
+            const objAngle = Math.atan2(obj.y-player.y, obj.x-player.x);
             let angleDiff = objAngle - player.angle;
-            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            if (Math.abs(angleDiff) < Math.PI / 3) {
-                nearObject = obj;
-                nearestDist = dist;
-            }
+            while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
+            if (Math.abs(angleDiff) < Math.PI/3) { nearObject = obj; nearestDist = dist; }
         }
     }
 
-    // Update HUD interact indicator
+    for (const item of items) {
+        if (item.collected) continue;
+        const dist = Math.sqrt((player.x-item.x)**2+(player.y-item.y)**2);
+        if (dist < 1.5) { nearItem = item; }
+    }
+
+    // Update HUD
     const interactEl = document.getElementById('hud-interact');
-    if (nearObject) {
+    if (nearItem && !nearItem.collected) {
+        interactEl.style.display = 'inline';
+        interactEl.textContent = '[E] ' + nearItem.label;
+    } else if (nearObject) {
         interactEl.style.display = 'inline';
         interactEl.textContent = '[E] ' + nearObject.name;
     } else {
@@ -1041,37 +1384,30 @@ function update(dt) {
 
 // === RENDER ===
 function render() {
-    // Clear buffer to dark
-    for (let i = 0; i < buf.length; i += 4) {
-        buf[i] = 8; buf[i+1] = 6; buf[i+2] = 5; buf[i+3] = 255;
-    }
+    for (let i = 0; i < buf.length; i += 4) { buf[i] = 8; buf[i+1] = 6; buf[i+2] = 5; buf[i+3] = 255; }
 
     castRays();
+    drawSprites();
     drawMinimap();
     applyPostEffects();
 
     ctx.putImageData(imgData, 0, 0);
 
-    // Crosshair (drawn via canvas API for crispness)
+    // Crosshair
     ctx.strokeStyle = 'rgba(255,179,71,0.4)';
     ctx.lineWidth = 1;
-    const chx = SCREEN_W / 2, chy = SCREEN_H / 2;
+    const chx = SCREEN_W/2, chy = SCREEN_H/2;
     ctx.beginPath();
-    ctx.moveTo(chx - 6, chy); ctx.lineTo(chx - 2, chy);
-    ctx.moveTo(chx + 2, chy); ctx.lineTo(chx + 6, chy);
-    ctx.moveTo(chx, chy - 6); ctx.lineTo(chx, chy - 2);
-    ctx.moveTo(chx, chy + 2); ctx.lineTo(chx, chy + 6);
+    ctx.moveTo(chx-6,chy); ctx.lineTo(chx-2,chy);
+    ctx.moveTo(chx+2,chy); ctx.lineTo(chx+6,chy);
+    ctx.moveTo(chx,chy-6); ctx.lineTo(chx,chy-2);
+    ctx.moveTo(chx,chy+2); ctx.lineTo(chx,chy+6);
     ctx.stroke();
 
-    // Head bob overlay
-    if (keys['KeyW'] || keys['KeyS'] || keys['KeyA'] || keys['KeyD'] ||
-        keys['ArrowUp'] || keys['ArrowDown']) {
-        const bob = Math.sin(gameTime * 0.008) * 1.5;
-        if (Math.abs(bob) > 0.5) {
-            ctx.globalAlpha = 0.02;
-            ctx.drawImage(canvas, 0, bob | 0);
-            ctx.globalAlpha = 1;
-        }
+    // Head bob
+    if (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']) {
+        const bob = Math.sin(gameTime*0.008)*1.5;
+        if (Math.abs(bob) > 0.5) { ctx.globalAlpha = 0.02; ctx.drawImage(canvas, 0, bob|0); ctx.globalAlpha = 1; }
     }
 }
 
@@ -1083,24 +1419,24 @@ function gameLoop(timestamp) {
     const dt = Math.min(timestamp - lastTime, 33);
     lastTime = timestamp;
     gameTime = timestamp;
-
     update(dt);
     render();
-
     requestAnimationFrame(gameLoop);
 }
 
 function startGame() {
     initAudio();
-    const title = document.getElementById('title');
-    title.style.opacity = '0';
-    setTimeout(() => { title.style.display = 'none'; }, 800);
+    document.getElementById('title').style.opacity = '0';
+    setTimeout(() => { document.getElementById('title').style.display = 'none'; }, 800);
     document.getElementById('hud').style.display = 'block';
+    document.getElementById('hud-docs-total').textContent = totalDocs;
+    spawnEnemies();
+    spawnItems();
+    spawnWorldObjects();
+    updateInventoryHUD();
     gameStarted = true;
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
-
-    // Prompt pointer lock
     setTimeout(() => canvas.requestPointerLock(), 900);
 }
 </script>
