@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Morphogenesis — Reaction-Diffusion</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; overflow: hidden; font-family: monospace; touch-action: none; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#ui { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,15,0.92); border-top: 1px solid #2a2a3a; padding: 8px 12px; z-index: 10; }
+#tools { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 6px; }
+.tool-btn { background: #1a1a2a; color: #8888aa; border: 1px solid #333344; padding: 5px 10px; font-family: monospace; font-size: 11px; cursor: pointer; border-radius: 3px; }
+.tool-btn.active { background: #333355; border-color: #8888cc; color: #ccccee; }
+.tool-btn:hover { background: #2a2a3c; }
+#presets { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
+.preset-btn { background: #151520; color: #666688; border: 1px solid #2a2a3a; padding: 4px 8px; font-family: monospace; font-size: 10px; cursor: pointer; border-radius: 2px; }
+.preset-btn.active { background: #2a2a44; color: #aaaacc; border-color: #6666aa; }
+.preset-btn:hover { background: #222233; }
+#info-bar { display: flex; gap: 14px; justify-content: center; font-size: 9px; color: #555566; }
+#title-screen { position: fixed; inset: 0; background: #0a0a0f; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.8s; }
+#title-screen h1 { color: #7777aa; font-size: 24px; letter-spacing: 6px; margin-bottom: 8px; }
+#title-screen .subtitle { color: #555577; font-size: 11px; font-style: italic; margin-bottom: 16px; }
+#title-screen p { color: #444466; font-size: 12px; max-width: 360px; text-align: center; line-height: 1.7; margin-bottom: 16px; }
+#title-screen .start-btn { background: #1a1a2a; color: #7777aa; border: 1px solid #444466; padding: 10px 28px; font-family: monospace; font-size: 13px; cursor: pointer; border-radius: 3px; letter-spacing: 2px; }
+#title-screen .start-btn:hover { background: #2a2a44; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+  <h1>MORPHOGENESIS</h1>
+  <div class="subtitle">after Alan Turing, 1952</div>
+  <p>Two chemicals react and diffuse across a surface. From this simple interaction, organic patterns emerge — spots, stripes, labyrinthine curves, coral-like growths. The same math that gives leopards their spots.</p>
+  <p style="font-size:10px; color:#333344;">Gray-Scott reaction-diffusion model. Click to seed chemical B.</p>
+  <button class="start-btn" onclick="startGame()">OBSERVE</button>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <div id="presets">
+    <button class="preset-btn active" data-preset="mitosis" title="Cell division patterns">Mitosis</button>
+    <button class="preset-btn" data-preset="coral" title="Coral-like growths">Coral</button>
+    <button class="preset-btn" data-preset="spots" title="Leopard spots">Spots</button>
+    <button class="preset-btn" data-preset="stripes" title="Zebra stripes">Stripes</button>
+    <button class="preset-btn" data-preset="maze" title="Labyrinthine patterns">Maze</button>
+    <button class="preset-btn" data-preset="worms" title="Worm-like structures">Worms</button>
+    <button class="preset-btn" data-preset="unstable" title="Chaotic patterns">Chaos</button>
+  </div>
+  <div id="tools">
+    <button class="tool-btn active" data-tool="seed" title="Seed chemical B">Seed</button>
+    <button class="tool-btn" data-tool="erase" title="Remove chemical B">Erase</button>
+    <button class="tool-btn" data-tool="clear" title="Reset to blank">Clear</button>
+  </div>
+  <div id="info-bar">
+    <span>Click/drag to seed patterns</span>
+    <span id="fps-display">fps: 0</span>
+    <span id="step-display">step: 0</span>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let W, H, gridW, gridH;
+const SCALE = 2; // Each cell = 2x2 pixels
+let running = false;
+let selectedTool = 'seed';
+let stepCount = 0;
+let lastFpsTime = 0;
+let fpsCount = 0;
+
+// Gray-Scott parameters
+let feed = 0.0367;
+let kill = 0.0649;
+const dA = 1.0;   // Diffusion rate of chemical A
+const dB = 0.5;   // Diffusion rate of chemical B
+const dt = 1.0;   // Time step
+
+// Presets (feed, kill) — each produces different patterns
+const presets = {
+    mitosis: { f: 0.0367, k: 0.0649 },
+    coral:   { f: 0.0545, k: 0.062 },
+    spots:   { f: 0.035, k: 0.065 },
+    stripes: { f: 0.04, k: 0.06 },
+    maze:    { f: 0.029, k: 0.057 },
+    worms:   { f: 0.078, k: 0.061 },
+    unstable:{ f: 0.026, k: 0.051 }
+};
+let currentPreset = 'mitosis';
+
+// Chemical grids (A and B)
+let gridA, gridB, nextA, nextB;
+
+// Color palettes per preset
+const palettes = {
+    mitosis:  [[10,10,20], [20,40,80], [40,100,160], [100,200,220], [220,240,250]],
+    coral:    [[10,8,15], [60,20,40], [160,40,60], [220,120,80], [255,200,150]],
+    spots:    [[15,12,8], [80,60,20], [180,140,40], [240,200,80], [255,240,200]],
+    stripes:  [[8,10,15], [20,50,60], [40,120,100], [80,200,160], [200,255,220]],
+    maze:     [[12,8,16], [40,20,60], [80,40,120], [160,80,200], [220,180,255]],
+    worms:    [[10,10,10], [40,30,20], [100,60,30], [200,100,40], [255,180,80]],
+    unstable: [[10,5,5], [60,10,10], [160,20,20], [255,60,30], [255,200,100]]
+};
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    gridW = Math.floor(W / SCALE);
+    gridH = Math.floor(H / SCALE);
+
+    initGrids();
+}
+
+function initGrids() {
+    gridA = new Float32Array(gridW * gridH);
+    gridB = new Float32Array(gridW * gridH);
+    nextA = new Float32Array(gridW * gridH);
+    nextB = new Float32Array(gridW * gridH);
+
+    // Fill with chemical A, no B
+    gridA.fill(1.0);
+    gridB.fill(0.0);
+}
+
+function seedAt(cx, cy, radius) {
+    for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+            if (dx * dx + dy * dy > radius * radius) continue;
+            const x = cx + dx;
+            const y = cy + dy;
+            if (x >= 0 && x < gridW && y >= 0 && y < gridH) {
+                const idx = y * gridW + x;
+                gridB[idx] = 1.0;
+                // Add slight randomness for organic look
+                gridA[idx] = 0.5 + Math.random() * 0.2;
+            }
+        }
+    }
+}
+
+function eraseAt(cx, cy, radius) {
+    for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+            if (dx * dx + dy * dy > radius * radius) continue;
+            const x = cx + dx;
+            const y = cy + dy;
+            if (x >= 0 && x < gridW && y >= 0 && y < gridH) {
+                const idx = y * gridW + x;
+                gridB[idx] = 0;
+                gridA[idx] = 1.0;
+            }
+        }
+    }
+}
+
+// Laplacian using a 3x3 convolution kernel
+function laplacian(grid, x, y) {
+    const w = gridW, h = gridH;
+    const xm = x > 0 ? x - 1 : w - 1;
+    const xp = x < w - 1 ? x + 1 : 0;
+    const ym = y > 0 ? y - 1 : h - 1;
+    const yp = y < h - 1 ? y + 1 : 0;
+
+    return grid[ym * w + xm] * 0.05 +
+           grid[ym * w + x]  * 0.2 +
+           grid[ym * w + xp] * 0.05 +
+           grid[y * w + xm]  * 0.2 +
+           grid[y * w + x]   * -1.0 +
+           grid[y * w + xp]  * 0.2 +
+           grid[yp * w + xm] * 0.05 +
+           grid[yp * w + x]  * 0.2 +
+           grid[yp * w + xp] * 0.05;
+}
+
+// Simulation step
+function simulate() {
+    for (let y = 0; y < gridH; y++) {
+        for (let x = 0; x < gridW; x++) {
+            const idx = y * gridW + x;
+            const a = gridA[idx];
+            const b = gridB[idx];
+            const lA = laplacian(gridA, x, y);
+            const lB = laplacian(gridB, x, y);
+
+            const reaction = a * b * b;
+
+            nextA[idx] = a + (dA * lA - reaction + feed * (1.0 - a)) * dt;
+            nextB[idx] = b + (dB * lB + reaction - (kill + feed) * b) * dt;
+
+            // Clamp
+            nextA[idx] = Math.max(0, Math.min(1, nextA[idx]));
+            nextB[idx] = Math.max(0, Math.min(1, nextB[idx]));
+        }
+    }
+
+    // Swap
+    [gridA, nextA] = [nextA, gridA];
+    [gridB, nextB] = [nextB, gridB];
+    stepCount++;
+}
+
+// Render
+function render() {
+    const imageData = ctx.createImageData(W, H);
+    const data = imageData.data;
+    const palette = palettes[currentPreset];
+
+    for (let y = 0; y < gridH; y++) {
+        for (let x = 0; x < gridW; x++) {
+            const idx = y * gridW + x;
+            const b = gridB[idx];
+
+            // Map B concentration to color via palette
+            const t = Math.max(0, Math.min(1, b)) * (palette.length - 1);
+            const i = Math.floor(t);
+            const frac = t - i;
+            const j = Math.min(i + 1, palette.length - 1);
+
+            const r = Math.floor(palette[i][0] * (1 - frac) + palette[j][0] * frac);
+            const g = Math.floor(palette[i][1] * (1 - frac) + palette[j][1] * frac);
+            const bl = Math.floor(palette[i][2] * (1 - frac) + palette[j][2] * frac);
+
+            // Fill SCALE x SCALE block
+            for (let dy = 0; dy < SCALE; dy++) {
+                for (let dx = 0; dx < SCALE; dx++) {
+                    const px = x * SCALE + dx;
+                    const py = y * SCALE + dy;
+                    if (px >= W || py >= H) continue;
+                    const pidx = (py * W + px) * 4;
+                    data[pidx] = r;
+                    data[pidx + 1] = g;
+                    data[pidx + 2] = bl;
+                    data[pidx + 3] = 255;
+                }
+            }
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
+// Input
+let mouseDown = false;
+
+function handleInput(px, py) {
+    const gx = Math.floor(px / SCALE);
+    const gy = Math.floor(py / SCALE);
+    const radius = 4;
+
+    if (selectedTool === 'seed') {
+        seedAt(gx, gy, radius);
+    } else if (selectedTool === 'erase') {
+        eraseAt(gx, gy, radius + 2);
+    } else if (selectedTool === 'clear') {
+        initGrids();
+    }
+}
+
+canvas.addEventListener('mousedown', (e) => { mouseDown = true; handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mousemove', (e) => { if (mouseDown) handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mouseup', () => { mouseDown = false; });
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); mouseDown = true; handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (mouseDown) handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchend', () => { mouseDown = false; });
+
+// Tool and preset buttons
+document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedTool = btn.dataset.tool;
+        if (selectedTool === 'clear') {
+            initGrids();
+            selectedTool = 'seed';
+            document.querySelector('[data-tool="seed"]').classList.add('active');
+            btn.classList.remove('active');
+        }
+    });
+});
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentPreset = btn.dataset.preset;
+        const p = presets[currentPreset];
+        feed = p.f;
+        kill = p.k;
+    });
+});
+
+// Main loop
+function gameLoop(timestamp) {
+    if (!running) { requestAnimationFrame(gameLoop); return; }
+
+    // Run multiple simulation steps per frame for speed
+    for (let i = 0; i < 8; i++) {
+        simulate();
+    }
+
+    render();
+
+    // FPS counter
+    fpsCount++;
+    if (timestamp - lastFpsTime > 1000) {
+        document.getElementById('fps-display').textContent = `fps: ${fpsCount}`;
+        fpsCount = 0;
+        lastFpsTime = timestamp;
+    }
+
+    if (stepCount % 8 === 0) {
+        document.getElementById('step-display').textContent = `step: ${stepCount}`;
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('title-screen').style.display = 'none';
+    }, 800);
+    running = true;
+
+    // Seed initial pattern — a few random spots
+    for (let i = 0; i < 8; i++) {
+        const x = Math.floor(gridW * 0.2 + Math.random() * gridW * 0.6);
+        const y = Math.floor(gridH * 0.2 + Math.random() * gridH * 0.6);
+        seedAt(x, y, 3 + Math.floor(Math.random() * 4));
+    }
+}
+
+// Init
+resize();
+window.addEventListener('resize', () => {
+    resize();
+});
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
