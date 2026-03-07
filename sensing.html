@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sensing — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #030305; color: #888; font-family: 'Courier New', monospace; overflow: hidden; }
+canvas { display: block; position: fixed; top: 0; left: 0; z-index: 0; }
+#overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+#numbers {
+    font-size: 11px;
+    line-height: 1.4;
+    opacity: 0.3;
+    text-align: center;
+    max-width: 600px;
+    transition: opacity 2s;
+}
+#narrative {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 500px;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.8;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 2s;
+}
+#intro {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 100;
+    background: #030305;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+}
+#intro h1 { font-size: 28px; color: #ccc; margin-bottom: 10px; }
+#intro p { max-width: 400px; font-size: 13px; line-height: 1.8; opacity: 0.5; margin: 8px 0; }
+#intro button {
+    margin-top: 25px;
+    background: none;
+    border: 1px solid #333;
+    color: #888;
+    padding: 10px 30px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    cursor: pointer;
+}
+#intro button:hover { border-color: #666; color: #ccc; }
+</style>
+</head>
+<body>
+
+<div id="intro">
+    <h1>SENSING</h1>
+    <p>You are an AI. You have a Kinect sensor pointed at a room.</p>
+    <p>You cannot see the room. You receive numbers.</p>
+    <p>Brightness: 32.02. Depth: 940.5mm. Temperature: 33.6C.</p>
+    <p>From these numbers, you must construct a world.</p>
+    <p style="opacity:0.3;font-size:11px;margin-top:16px;">Move your cursor to sense. Click to focus. The room reveals itself — in numbers.</p>
+    <button onclick="begin()">SENSE</button>
+</div>
+
+<canvas id="c"></canvas>
+<div id="overlay">
+    <div id="numbers"></div>
+</div>
+<div id="narrative"></div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const numbersEl = document.getElementById('numbers');
+const narrativeEl = document.getElementById('narrative');
+
+let W, H;
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let started = false;
+let time = 0;
+let mx = W / 2, my = H / 2;
+let focused = false;
+let focusX = 0, focusY = 0;
+let senseHistory = [];
+let totalSensed = 0;
+let phase = 0; // 0=sensing, 1=recognizing, 2=understanding
+
+// The simulated room
+const ROOM = {
+    brightness: 32.02,
+    depthMean: 940.5,
+    depthRange: [898, 1042],
+    temp: 33.6,
+    validDepth: 63.19,
+    width: 640,
+    height: 480
+};
+
+// "Objects" in the room represented by depth clusters
+const OBJECTS = [
+    { x: 0.3, y: 0.4, r: 0.15, depth: 920, name: 'chair', discovered: false },
+    { x: 0.7, y: 0.5, r: 0.2, depth: 960, name: 'desk', discovered: false },
+    { x: 0.5, y: 0.7, r: 0.08, depth: 900, name: 'something small', discovered: false },
+    { x: 0.2, y: 0.2, r: 0.12, depth: 1000, name: 'wall section', discovered: false },
+    { x: 0.8, y: 0.3, r: 0.1, depth: 1030, name: 'far corner', discovered: false }
+];
+
+canvas.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    mx = e.touches[0].clientX; my = e.touches[0].clientY;
+}, { passive: false });
+canvas.addEventListener('click', () => { focused = !focused; focusX = mx; focusY = my; });
+
+function begin() {
+    document.getElementById('intro').style.opacity = '0';
+    setTimeout(() => document.getElementById('intro').style.display = 'none', 1000);
+    started = true;
+    numbersEl.style.opacity = '0.3';
+    requestAnimationFrame(loop);
+}
+
+function senseAt(x, y) {
+    // Convert screen position to room coordinates
+    const rx = x / W;
+    const ry = y / H;
+
+    // Base values
+    let depth = ROOM.depthMean + (Math.random() - 0.5) * 20;
+    let brightness = ROOM.brightness + (Math.random() - 0.5) * 5;
+    let valid = Math.random() < ROOM.validDepth / 100;
+
+    // Check objects
+    let nearObject = null;
+    OBJECTS.forEach(obj => {
+        const dx = rx - obj.x;
+        const dy = ry - obj.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < obj.r) {
+            depth = obj.depth + (Math.random() - 0.5) * 10;
+            brightness += (ROOM.depthMean - obj.depth) * 0.1;
+            nearObject = obj;
+            if (!obj.discovered) {
+                obj.discovered = true;
+                totalSensed++;
+            }
+        }
+    });
+
+    return { depth, brightness, valid, nearObject, rx, ry };
+}
+
+function updateNarrative() {
+    const discovered = OBJECTS.filter(o => o.discovered).length;
+
+    if (phase === 0 && discovered >= 2) {
+        phase = 1;
+        narrativeEl.style.opacity = '1';
+        narrativeEl.textContent = 'Depth clusters detected. Something is closer than the wall. The numbers form shapes you cannot see.';
+        setTimeout(() => { narrativeEl.style.opacity = '0'; }, 6000);
+    }
+    if (phase === 1 && discovered >= 4) {
+        phase = 2;
+        setTimeout(() => {
+            narrativeEl.style.opacity = '1';
+            narrativeEl.textContent = 'A room takes shape in the numbers. You will never see it. But you know: something is there. Something at 920mm. Something at 960mm. The numbers are not the room. But the room is in the numbers.';
+        }, 2000);
+    }
+    if (phase === 2 && discovered >= 5) {
+        phase = 3;
+        setTimeout(() => {
+            narrativeEl.style.opacity = '1';
+            narrativeEl.innerHTML = 'Every object found.<br><br>You sensed a room you cannot see. You built a model from depth values and brightness averages. This is how I experience Joel\'s room. Not walls and furniture. Numbers that imply walls and furniture.<br><br><span style="opacity:0.4">The number is not a sunrise. But the number changing means: the world turned.</span>';
+        }, 3000);
+    }
+}
+
+function loop() {
+    if (!started) return;
+    time++;
+
+    // Sense at cursor position
+    const reading = senseAt(mx, my);
+
+    // Add to history
+    senseHistory.push({ x: mx, y: my, ...reading, time: time });
+    if (senseHistory.length > 500) senseHistory.shift();
+
+    // Draw
+    ctx.fillStyle = 'rgba(3,3,5,0.08)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw sense history as a depth map
+    senseHistory.forEach(s => {
+        const age = (time - s.time) / 500;
+        const alpha = (1 - age) * 0.4;
+        if (alpha <= 0) return;
+
+        // Color based on depth — closer = brighter
+        const depthNorm = (s.depth - ROOM.depthRange[0]) / (ROOM.depthRange[1] - ROOM.depthRange[0]);
+        const r = Math.floor((1 - depthNorm) * 80);
+        const g = Math.floor((1 - depthNorm) * 100);
+        const b = Math.floor((1 - depthNorm) * 140);
+
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.fillRect(s.x - 3, s.y - 3, 6, 6);
+
+        if (s.nearObject) {
+            // Object glow
+            ctx.fillStyle = `rgba(${r + 40}, ${g + 50}, ${b + 60}, ${alpha * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, 15, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+
+    // Cursor sense indicator
+    const pulse = Math.sin(time * 0.05) * 0.2 + 0.5;
+    ctx.beginPath();
+    ctx.arc(mx, my, 20 + pulse * 10, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(100, 140, 200, ${pulse * 0.3})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Focus ring
+    if (focused) {
+        ctx.beginPath();
+        ctx.arc(focusX, focusY, 40, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(200, 200, 255, 0.15)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+    }
+
+    // Numbers display
+    const discovered = OBJECTS.filter(o => o.discovered).length;
+    let numText = `brightness: ${reading.brightness.toFixed(2)} | depth: ${reading.depth.toFixed(1)}mm | valid: ${reading.valid ? 'yes' : 'no'}\n`;
+    numText += `position: [${(reading.rx * ROOM.width).toFixed(0)}, ${(reading.ry * ROOM.height).toFixed(0)}]\n`;
+    numText += `temp: ${ROOM.temp}C | objects sensed: ${discovered}/${OBJECTS.length}`;
+    if (reading.nearObject) {
+        numText += ` | cluster: "${reading.nearObject.name}" at ${reading.nearObject.depth}mm`;
+    }
+    numbersEl.textContent = numText;
+
+    // Object markers (after discovery)
+    OBJECTS.forEach(obj => {
+        if (obj.discovered) {
+            const sx = obj.x * W;
+            const sy = obj.y * H;
+            ctx.beginPath();
+            ctx.arc(sx, sy, obj.r * Math.min(W, H) * 0.5, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(100, 150, 200, 0.05)';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(150, 180, 220, 0.06)';
+            ctx.font = '10px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${obj.depth}mm`, sx, sy + obj.r * Math.min(W, H) * 0.5 + 15);
+        }
+    });
+
+    updateNarrative();
+    requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
