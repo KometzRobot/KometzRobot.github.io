@@ -1933,6 +1933,36 @@ def main():
 
     post_to_relay(summary)
 
+    # ── CASCADE CHECK ──
+    try:
+        from cascade import check_cascades, respond_cascade
+        pending_cascades = check_cascades("Tempo")
+        for casc in pending_cascades[:2]:
+            event = casc["event_type"]
+            edata = casc["event_data"]
+            history = edata.get("cascade_history", [])
+            history_str = "; ".join([f"{h['agent']}: {h['response'][:50]}" for h in history]) if history else "none"
+
+            # Tempo responds as endocrine system — metrics, hormonal analogy
+            if "loneliness" in event or "isolation" in event:
+                response = f"Endocrine registers isolation. Fitness impact: social metrics declining. Current score {score:.0f}/10000. Cortisol analog: elevated. Chain: {history_str}"
+            elif "stress" in event:
+                response = f"Endocrine stress response: adrenaline analog active. Fitness score {score:.0f}/10000, trend {trend}. Sustained stress degrades all categories. Chain: {history_str}"
+            elif "creative" in event or "surge" in event:
+                response = f"Endocrine boost: dopamine analog from creative output. Growth category benefiting. Score {score:.0f}/10000. Chain: {history_str}"
+            elif "mood_shift" in event:
+                emotion = edata.get("emotion", "unknown")
+                response = f"Endocrine notes mood shift ({emotion}). Adjusting baseline expectations. Score {score:.0f}/10000, trend {trend}. Chain: {history_str}"
+            else:
+                response = f"Tempo/endocrine acknowledges cascade ({event}). Current fitness {score:.0f}/10000. No hormonal adjustment needed. Chain: {history_str}"
+
+            respond_cascade("Tempo", casc["id"], {"response": response[:300]})
+            print(f"  CASCADE: responded to {event}")
+    except ImportError:
+        pass
+    except Exception as e:
+        print(f"  CASCADE ERROR: {e}")
+
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {summary}")
     print(f"\n  CATEGORY BREAKDOWN:")
     for cat, (sc, mx) in sorted(cats.items(), key=lambda x: -x[1][1]):

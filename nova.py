@@ -981,6 +981,37 @@ def main():
                         actions.append(f"Replied to {target['agent']}: {reply[:60]}")
                         log_observation(f"Inter-agent: replied to {target['agent']}")
 
+    # ── CASCADE CHECK (every run) ──
+    try:
+        from cascade import check_cascades, respond_cascade
+        pending_cascades = check_cascades("Nova")
+        for casc in pending_cascades[:2]:
+            event = casc["event_type"]
+            edata = casc["event_data"]
+            history = edata.get("cascade_history", [])
+            history_str = "; ".join([f"{h['agent']}: {h['response'][:60]}" for h in history]) if history else "none"
+
+            # Nova responds as immune system — threat assessment, protection
+            if "loneliness" in event or "isolation" in event:
+                response = f"Immune system notes social isolation pattern. Monitoring for cascading service neglect. Threat level: low but persistent. Prior chain: {history_str}"
+            elif "stress" in event or "overload" in event:
+                response = f"Immune alert: stress indicators elevated. Scanning for resource exhaustion, log bloat, service degradation. Deploying protective monitoring. Chain: {history_str}"
+            elif "creative" in event or "surge" in event:
+                response = f"Immune system standing down — creative surge is healthy. Monitoring resource usage stays within bounds. No intervention needed. Chain: {history_str}"
+            elif "mood_shift" in event:
+                emotion = edata.get("emotion", "unknown")
+                response = f"Immune system registers mood shift ({emotion}). Adjusting health monitoring sensitivity. Watching for secondary effects on service stability. Chain: {history_str}"
+            else:
+                response = f"Nova/immune acknowledges cascade ({event}). System health nominal. No immune response required. Chain: {history_str}"
+
+            respond_cascade("Nova", casc["id"], {"response": response[:300]})
+            actions.append(f"Cascade response: {event}")
+            log_observation(f"Cascade: responded to {event} from {casc['source_agent']}")
+    except ImportError:
+        pass
+    except Exception as e:
+        log_observation(f"Cascade error: {e}")
+
     # ── AGENT RELAY + DASHBOARD POST (every 2 runs = ~30 min) ──
     if state["runs"] % 2 == 0:
         # Build meaningful summary — skip routine noise

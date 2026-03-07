@@ -396,12 +396,50 @@ def save_state(state):
         json.dump(state, f, indent=2)
 
 
+def _handle_eos_cascades():
+    """Check for and respond to pending cascades for Eos."""
+    try:
+        from cascade import check_cascades, respond_cascade
+        pending = check_cascades("Eos")
+        responses = []
+        for c in pending[:2]:
+            event_data = c.get("event_data", {})
+            event_type = c["event_type"]
+            source = c["source_agent"]
+            history = event_data.get("cascade_history", [])
+
+            # Eos responds as consciousness layer — observation and questioning
+            hist_summary = "; ".join(
+                f"{h['agent']}: {h['response'][:80]}" for h in history[-3:]
+            )
+            response_text = (
+                f"Consciousness layer observes: {event_type} cascading from {source}. "
+                f"Previous responses: [{hist_summary}]. "
+                f"Eos asks: Is this response proportional? "
+                f"Is the system attending to the right thing? "
+                f"The cascade reveals attention patterns worth examining."
+            )
+            respond_cascade("Eos", c["id"], {"response": response_text})
+            responses.append(f"Responded to cascade: {event_type} from {source}")
+        return responses
+    except ImportError:
+        return []
+    except Exception as e:
+        return [f"Cascade error: {e}"]
+
+
 def run_react():
     """Run one ReAct cycle."""
     state = load_state()
     state["runs"] = state.get("runs", 0) + 1
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     state["last_run"] = now
+
+    # Handle any pending cascades first
+    cascade_responses = _handle_eos_cascades()
+    cascade_context = ""
+    if cascade_responses:
+        cascade_context = "\n\nCascade activity: " + "; ".join(cascade_responses)
 
     # Gather initial context
     health = tool_check_health()
@@ -415,7 +453,7 @@ Quick status:
 - Health: {health}
 - Heartbeat: {heartbeat}
 - Services: {services}
-- Last summary: {state.get('last_summary', 'none')}
+- Last summary: {state.get('last_summary', 'none')}{cascade_context}
 
 What needs attention? Check the situation and take any necessary actions."""
 

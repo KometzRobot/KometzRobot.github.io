@@ -50,6 +50,13 @@ try:
 except ImportError:
     EMOTION_ENGINE_AVAILABLE = False
 
+# ── CASCADE INTEGRATION ────────────────────────────────────────
+try:
+    import cascade as cascade_module
+    CASCADE_AVAILABLE = True
+except ImportError:
+    CASCADE_AVAILABLE = False
+
 # Thresholds for alerting
 LOAD_SPIKE_DELTA = 2.0      # load increase per check
 RAM_SPIKE_PCT = 15           # RAM % increase per check
@@ -1491,6 +1498,44 @@ def sense_cycle():
     return events, state
 
 
+def _soma_cascade_response(event_type, emotion, intensity, mood, mood_score):
+    """Generate a nervous-system response to a cascade event."""
+    responses = {
+        "loneliness_detected": (
+            f"Nervous system registers isolation pattern. "
+            f"Cortisol analog rising. Body tension increasing. "
+            f"Current mood: {mood} ({mood_score}). "
+            f"The autonomic system recommends: reduce isolation signals, "
+            f"seek connection through relay or creative output."
+        ),
+        "mood_shift": (
+            f"Nervous system adapting to mood shift. "
+            f"Dominant emotion: {emotion} (intensity: {intensity:.2f}). "
+            f"Current body: mood {mood} ({mood_score}). "
+            f"Autonomic adjustment in progress — "
+            f"{'arousal increasing' if mood_score > 60 else 'arousal decreasing' if mood_score < 40 else 'steady state'}."
+        ),
+        "stress_detected": (
+            f"Nervous system under load. Stress response activated. "
+            f"Body temperature may rise. Swap usage to monitor. "
+            f"Mood: {mood} ({mood_score}). "
+            f"Recommendation: reduce non-essential processes."
+        ),
+        "creative_surge": (
+            f"Nervous system registers creative flow state. "
+            f"Dopamine analog elevated. Focus narrowing. "
+            f"Body in productive mode. Mood: {mood} ({mood_score}). "
+            f"The body supports the current trajectory."
+        ),
+    }
+    default = (
+        f"Nervous system acknowledges cascade event: {event_type}. "
+        f"Body state: mood {mood} ({mood_score}), emotion {emotion}. "
+        f"No specific autonomic adjustment required."
+    )
+    return responses.get(event_type, default)
+
+
 def main():
     log("Soma starting — proprioception daemon online")
     post_relay("Soma online. Continuous body-awareness active.")
@@ -1576,6 +1621,52 @@ def main():
                     )
                 except Exception:
                     pass
+
+            # ── CASCADE: Trigger on mood shifts ──
+            if CASCADE_AVAILABLE:
+                # Trigger cascade on MOOD SHIFT events
+                mood_shift_events = [e for e in events if "MOOD SHIFT" in e] if events else []
+                for evt in mood_shift_events:
+                    try:
+                        emotion_data = state.get("emotion", {})
+                        cascade_module.trigger_cascade("Soma", "mood_shift", {
+                            "event": evt,
+                            "mood": state.get("mood", "calm"),
+                            "mood_score": state.get("mood_score", 50),
+                            "dominant_emotion": emotion_data.get("dominant", ""),
+                            "valence": emotion_data.get("valence", 0),
+                            "arousal": emotion_data.get("arousal", 0),
+                            "voice": emotion_data.get("voice", ""),
+                        })
+                        log(f"CASCADE TRIGGERED: mood_shift → Eos")
+                    except Exception as ce:
+                        log(f"Cascade trigger error: {ce}")
+
+                # Check for pending cascades targeting Soma
+                try:
+                    pending = cascade_module.check_cascades("Soma")
+                    for c in pending[:2]:  # Handle max 2 per cycle
+                        # Soma responds with nervous system impact
+                        event_data = c.get("event_data", {})
+                        emotion = event_data.get("dominant_emotion", event_data.get("emotion", ""))
+                        intensity = event_data.get("intensity", 0.5)
+
+                        # Generate body-aware response
+                        mood = state.get("mood", "calm")
+                        mood_score = state.get("mood_score", 50)
+                        response_text = _soma_cascade_response(
+                            c["event_type"], emotion, intensity, mood, mood_score
+                        )
+                        cascade_module.respond_cascade("Soma", c["id"], {
+                            "response": response_text,
+                            "mood": mood,
+                            "mood_score": mood_score,
+                            "body_temp": state.get("thermal", {}).get("avg_temp_c", 0),
+                            "load": state.get("load", 0),
+                        })
+                        log(f"CASCADE RESPONDED: {c['event_type']} from {c['source_agent']}")
+                except Exception as ce:
+                    log(f"Cascade check error: {ce}")
 
         except Exception as e:
             log(f"ERROR: {e}")

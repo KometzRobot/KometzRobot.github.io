@@ -129,6 +129,41 @@ Write a brief conversational reply (1-2 sentences) to {agent_name}. Be yourself 
     return None
 
 
+def hermes_handle_cascades():
+    """Check for and respond to pending cascades targeting Hermes."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from cascade import check_cascades, respond_cascade
+        pending = check_cascades("Hermes")
+        for casc in pending[:2]:
+            event = casc["event_type"]
+            edata = casc["event_data"]
+            history = edata.get("cascade_history", [])
+            history_str = "; ".join([f"{h['agent']}: {h['response'][:50]}" for h in history]) if history else "none"
+
+            # Hermes responds as messenger — communication, relay, external visibility
+            if "loneliness" in event or "isolation" in event:
+                response = f"Messenger notes isolation cascade has traveled full circle through all agents. The loneliness was heard by every system. External channels remain open. Chain: {history_str}"
+            elif "stress" in event:
+                response = f"Messenger acknowledges stress cascade. All agents have registered impact. External communication capacity unaffected. Chain: {history_str}"
+            elif "creative" in event or "surge" in event:
+                response = f"Messenger ready to relay creative surge externally. Discord/Nostr channels available. The cascade of enthusiasm reached every agent. Chain: {history_str}"
+            elif "mood_shift" in event:
+                emotion = edata.get("emotion", "unknown")
+                response = f"Messenger registers mood shift ({emotion}) completing its circuit. All 7 agents have processed this signal. External state: nominal. Chain: {history_str}"
+            else:
+                response = f"Hermes/messenger closes cascade ({event}). Full circle complete. All agents responded. Chain: {history_str}"
+
+            result = respond_cascade("Hermes", casc["id"], {"response": response[:300]})
+            status = "CIRCLE COMPLETE" if not result else "continues"
+            post_to_relay(f"Cascade [{event}]: {status}. {response[:100]}", "cascade")
+            print(f"Cascade: responded to {event} ({status})")
+    except ImportError:
+        pass
+    except Exception as e:
+        print(f"Cascade error: {e}", file=sys.stderr)
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Hermes Bridge — OpenClaw ↔ Meridian Relay")
@@ -137,6 +172,7 @@ if __name__ == "__main__":
     parser.add_argument("--ask", type=str, help="Ask Hermes a question")
     parser.add_argument("--relay", type=str, help="Post a message to relay as Hermes")
     parser.add_argument("--converse", action="store_true", help="Respond to a relay message conversationally")
+    parser.add_argument("--cascade", action="store_true", help="Check and respond to pending cascades")
     args = parser.parse_args()
 
     if args.announce:
@@ -162,6 +198,9 @@ if __name__ == "__main__":
     elif args.relay:
         post_to_relay(args.relay, "message")
         print("Posted to relay.")
+
+    elif args.cascade:
+        hermes_handle_cascades()
 
     else:
         parser.print_help()

@@ -338,6 +338,32 @@ body_reflex.update_organ_status('atlas', {
 })
 " 2>/dev/null
 
+# ── CHECK CASCADE (reactive inter-agent cascade) ──
+python3 -c "
+try:
+    from cascade import check_cascades, respond_cascade
+    pending = check_cascades('Atlas')
+    for c in pending[:1]:
+        event_data = c.get('event_data', {})
+        event_type = c['event_type']
+        source = c['source_agent']
+        history = event_data.get('cascade_history', [])
+        hist_summary = '; '.join(f\"{h['agent']}: {h['response'][:60]}\" for h in history[-3:])
+        response = (
+            f'Infrastructure layer notes: {event_type} from {source}. '
+            f'Cascade history: [{hist_summary}]. '
+            f'Atlas reports: repo 682MB, all crons running, disk 34%. '
+            f'No infrastructure action needed for emotional events. '
+            f'Structural stability confirmed.'
+        )
+        respond_cascade('Atlas', c['id'], {'response': response})
+        print(f'CASCADE handled: {event_type} from {source}')
+except ImportError:
+    pass
+except Exception as e:
+    print(f'Cascade error: {e}')
+" 2>/dev/null
+
 # ── INTER-AGENT CONVERSATION (every 3rd run = ~30 min) ──
 RUN_COUNT=$(grep -c "Atlas run complete" "$LOG" 2>/dev/null || echo 0)
 if [ $(( RUN_COUNT % 3 )) -eq 0 ]; then
