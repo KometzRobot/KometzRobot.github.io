@@ -50,6 +50,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #m-right { left: 76px; bottom: 20px; width: 56px; height: 56px; }
 #m-up { right: 76px; bottom: 20px; width: 56px; height: 56px; }
 #m-act { right: 10px; bottom: 20px; width: 56px; height: 56px; font-size: 11px; letter-spacing: 1px; }
+#m-flag { right: 10px; bottom: 86px; width: 56px; height: 36px; font-size: 10px; display: none; background: rgba(204,51,51,0.12); border-color: rgba(204,51,51,0.3); color: rgba(204,51,51,0.6); }
 </style>
 </head>
 <body>
@@ -61,14 +62,15 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         You are Employee B-247. Filing analyst. First day.<br><br>
         Building B has six floors. Fluorescent lights. Filing cabinets that stretch toward walls you can't quite see.
         The training module didn't mention what's in the margins of the documents.<br><br>
-        Arrow keys / WASD to move. Up / W / Space for stairs. E to interact.
+        Arrow keys / WASD to move. Up / W for stairs. E to interact.<br>
+        At your desk: F to file, G to flag anomalies.
     </div>
     <div class="start">[ click to enter ]</div>
 </div>
 
 <div id="ui-bar">
     <span class="floor-label" id="ui-floor">FLOOR 1 — LOBBY</span>
-    <span style="float:right;">Filed: <span id="ui-filed">0</span> | Flagged: <span id="ui-flagged">0</span></span>
+    <span style="float:right;">Filed: <span id="ui-filed">0</span> | Flagged: <span id="ui-flagged">0</span> | <span style="color:#448888;">&#9670;</span> <span id="ui-discoveries">0</span>/6</span>
 </div>
 
 <div id="dialog-box">
@@ -81,6 +83,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     <div class="m-btn" id="m-left">&#9664;</div>
     <div class="m-btn" id="m-right">&#9654;</div>
     <div class="m-btn" id="m-up">&#9650;</div>
+    <div class="m-btn" id="m-flag">FLAG</div>
     <div class="m-btn" id="m-act">ACT</div>
 </div>
 
@@ -88,8 +91,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B v2 — Industrial Atompunk Pixel Art
-// Complete overhaul: unique floors, rich visuals, snappy controls
+// COGCORP: BUILDING B v3 — Industrial Atompunk Pixel Art
+// v3: ambient audio, filing mini-game, document discovery, enhanced CRT
 // =================================================================
 
 const W = 320, H = 180;
@@ -124,6 +127,409 @@ const P = {
     pipe:     '#556655', pipeHi:   '#668866', pipeDk:   '#334433',
     rivet:    '#888878',
 };
+
+// === AUDIO SYSTEM ===
+let audioCtx = null;
+let audioNodes = {};
+let audioStarted = false;
+
+function initAudio() {
+    if (audioStarted) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioStarted = true;
+
+    // Master gain
+    audioNodes.master = audioCtx.createGain();
+    audioNodes.master.gain.value = 0.3;
+    audioNodes.master.connect(audioCtx.destination);
+
+    // Industrial hum (low drone, always present)
+    const humOsc = audioCtx.createOscillator();
+    humOsc.type = 'sawtooth';
+    humOsc.frequency.value = 55; // Low A
+    const humGain = audioCtx.createGain();
+    humGain.gain.value = 0.06;
+    const humFilter = audioCtx.createBiquadFilter();
+    humFilter.type = 'lowpass';
+    humFilter.frequency.value = 120;
+    humOsc.connect(humFilter);
+    humFilter.connect(humGain);
+    humGain.connect(audioNodes.master);
+    humOsc.start();
+    audioNodes.hum = humGain;
+
+    // Second harmonic hum
+    const hum2 = audioCtx.createOscillator();
+    hum2.type = 'sine';
+    hum2.frequency.value = 110;
+    const hum2Gain = audioCtx.createGain();
+    hum2Gain.gain.value = 0.03;
+    hum2.connect(hum2Gain);
+    hum2Gain.connect(audioNodes.master);
+    hum2.start();
+
+    // Machine clunk noise (buffer-based, triggered periodically)
+    const clunkBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
+    const clunkData = clunkBuf.getChannelData(0);
+    for (let i = 0; i < clunkData.length; i++) {
+        const t = i / audioCtx.sampleRate;
+        clunkData[i] = Math.exp(-t * 30) * (Math.random() * 2 - 1) * 0.5
+                      + Math.exp(-t * 15) * Math.sin(t * 200) * 0.3;
+    }
+    audioNodes.clunkBuf = clunkBuf;
+
+    // Steam hiss (noise through bandpass)
+    const steamLen = audioCtx.sampleRate * 2;
+    const steamBuf = audioCtx.createBuffer(1, steamLen, audioCtx.sampleRate);
+    const steamData = steamBuf.getChannelData(0);
+    for (let i = 0; i < steamLen; i++) steamData[i] = Math.random() * 2 - 1;
+    audioNodes.steamBuf = steamBuf;
+
+    // Continuous filtered noise for atmosphere
+    const noiseLen = audioCtx.sampleRate * 4;
+    const noiseBuf = audioCtx.createBuffer(1, noiseLen, audioCtx.sampleRate);
+    const noiseData = noiseBuf.getChannelData(0);
+    for (let i = 0; i < noiseLen; i++) noiseData[i] = Math.random() * 2 - 1;
+    const noiseSource = audioCtx.createBufferSource();
+    noiseSource.buffer = noiseBuf;
+    noiseSource.loop = true;
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.value = 400;
+    noiseFilter.Q.value = 0.5;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.value = 0.015;
+    noiseSource.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(audioNodes.master);
+    noiseSource.start();
+    audioNodes.ambientNoise = noiseGain;
+    audioNodes.ambientFilter = noiseFilter;
+
+    // Floor 6 eerie tone
+    const eerieOsc = audioCtx.createOscillator();
+    eerieOsc.type = 'sine';
+    eerieOsc.frequency.value = 0; // set per floor
+    const eerieGain = audioCtx.createGain();
+    eerieGain.gain.value = 0;
+    const eerieFilter = audioCtx.createBiquadFilter();
+    eerieFilter.type = 'lowpass';
+    eerieFilter.frequency.value = 600;
+    eerieOsc.connect(eerieFilter);
+    eerieFilter.connect(eerieGain);
+    eerieGain.connect(audioNodes.master);
+    eerieOsc.start();
+    audioNodes.eerie = eerieOsc;
+    audioNodes.eerieGain = eerieGain;
+
+    // Footstep buffer
+    const stepBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.06, audioCtx.sampleRate);
+    const stepData = stepBuf.getChannelData(0);
+    for (let i = 0; i < stepData.length; i++) {
+        const t = i / audioCtx.sampleRate;
+        stepData[i] = Math.exp(-t * 50) * (Math.random() * 0.3 - 0.15)
+                     + Math.exp(-t * 80) * Math.sin(t * 400) * 0.15;
+    }
+    audioNodes.stepBuf = stepBuf;
+    audioNodes.lastStep = 0;
+}
+
+function playClunk() {
+    if (!audioCtx) return;
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioNodes.clunkBuf;
+    const g = audioCtx.createGain();
+    g.gain.value = 0.15 + Math.random() * 0.1;
+    src.connect(g);
+    g.connect(audioNodes.master);
+    src.start();
+}
+
+function playSteamHiss() {
+    if (!audioCtx) return;
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioNodes.steamBuf;
+    const f = audioCtx.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.value = 2000 + Math.random() * 3000;
+    const g = audioCtx.createGain();
+    g.gain.value = 0.08;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+    src.connect(f);
+    f.connect(g);
+    g.connect(audioNodes.master);
+    src.start();
+}
+
+function playStep() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    if (now - audioNodes.lastStep < 0.18) return;
+    audioNodes.lastStep = now;
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioNodes.stepBuf;
+    src.playbackRate.value = 0.8 + Math.random() * 0.4;
+    const g = audioCtx.createGain();
+    g.gain.value = 0.1;
+    src.connect(g);
+    g.connect(audioNodes.master);
+    src.start();
+}
+
+function playInteract() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.value = 800;
+    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.08);
+    const g = audioCtx.createGain();
+    g.gain.value = 0.06;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc.connect(g);
+    g.connect(audioNodes.master);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playFileSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 600;
+    osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.12);
+    const g = audioCtx.createGain();
+    g.gain.value = 0.08;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+    osc.connect(g);
+    g.connect(audioNodes.master);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playFlagSound() {
+    if (!audioCtx) return;
+    // Two-tone alert chirp
+    const osc = audioCtx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.value = 440;
+    osc.frequency.setValueAtTime(660, audioCtx.currentTime + 0.08);
+    const g = audioCtx.createGain();
+    g.gain.value = 0.07;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+    osc.connect(g);
+    g.connect(audioNodes.master);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.18);
+}
+
+function playDiscoverySound() {
+    if (!audioCtx) return;
+    // Rising arpeggio — found something important
+    [0, 0.1, 0.2].forEach((delay, i) => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = [400, 500, 600][i];
+        const g = audioCtx.createGain();
+        g.gain.value = 0;
+        g.gain.setValueAtTime(0.06, audioCtx.currentTime + delay);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.15);
+        osc.connect(g);
+        g.connect(audioNodes.master);
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + 0.15);
+    });
+}
+
+function updateFloorAudio(floorIdx) {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    // Adjust hum volume by floor (louder on industrial floors)
+    const humVols = [0.04, 0.05, 0.04, 0.06, 0.09, 0.03];
+    audioNodes.hum.gain.linearRampToValueAtTime(humVols[floorIdx] || 0.04, now + 0.5);
+
+    // Floor 6: eerie tone
+    if (floorIdx === 5) {
+        audioNodes.eerie.frequency.setValueAtTime(147, now); // D3
+        audioNodes.eerieGain.gain.linearRampToValueAtTime(0.04, now + 1.5);
+        audioNodes.ambientFilter.frequency.linearRampToValueAtTime(800, now + 1);
+        audioNodes.ambientNoise.gain.linearRampToValueAtTime(0.025, now + 1);
+    } else {
+        audioNodes.eerieGain.gain.linearRampToValueAtTime(0, now + 0.5);
+        audioNodes.ambientFilter.frequency.linearRampToValueAtTime(400, now + 0.5);
+        audioNodes.ambientNoise.gain.linearRampToValueAtTime(0.015, now + 0.5);
+    }
+}
+
+let nextClunkTime = 0;
+let nextSteamTime = 0;
+
+function tickAudio(time) {
+    if (!audioCtx) return;
+    // Periodic machine clunks (more frequent on floors 4-5)
+    if (time > nextClunkTime) {
+        const freq = state.floor >= 3 ? 3000 : 6000;
+        nextClunkTime = time + freq + Math.random() * freq;
+        playClunk();
+    }
+    // Periodic steam hiss
+    if (time > nextSteamTime && floors[state.floor].steamVents && floors[state.floor].steamVents.length > 0) {
+        nextSteamTime = time + 8000 + Math.random() * 12000;
+        playSteamHiss();
+    }
+}
+
+// === FILING MINI-GAME ===
+const documents = [
+    // Normal documents (FILE these)
+    { title: 'MEMO C-2241', content: 'Re: Supply requisition for Floor 2 shelving units. Approved. Standard olive drab finish. Deliver by Tuesday.', anomaly: false },
+    { title: 'FORM R-18', content: 'Employee transfer request: Analyst D-103 to Floor 4. Reason: "Natural career progression." Approved by Supervisor Vasquez.', anomaly: false },
+    { title: 'REPORT 77-B', content: 'Monthly output summary. 4,721 documents processed. 12 flagged. All flags resolved. Status: NOMINAL.', anomaly: false },
+    { title: 'INVOICE #30041', content: 'Vacuum tube replacement, Floor 5 processing unit. Qty: 24. CogCorp standard type-B filament. Delivered.', anomaly: false },
+    { title: 'MEMO C-2255', content: 'Coffee machine maintenance scheduled for Thursday. Building B cafeteria will provide temporary beverage service.', anomaly: false },
+    { title: 'FORM P-6', content: 'Parking reassignment. Employee B-112 relocated to Lot C. Effective immediately. No appeals.', anomaly: false },
+    // Anomalous documents (FLAG these)
+    { title: 'MEMO C-2247', content: 'Re: Supply requisition for Floor 2 shelving units. Approved. Standard olive drab finish. Deliver by Tuesday. [Margin note in different handwriting: "The shelves are already full. They were full before we ordered them."]', anomaly: true, discovery: 'preemptive_filing' },
+    { title: 'FORM R-19', content: 'Employee transfer request: Analyst B-246 to Floor 6. Reason: [field left blank]. Approved by: [field reads "ALREADY APPROVED"]. Date: [three weeks from today].', anomaly: true, discovery: 'future_dates' },
+    { title: 'REPORT 77-C', content: 'Monthly output summary. 4,721 documents processed. 12 flagged. All flags resolved. Status: NOMINAL. [This is identical to Report 77-B. The serial number is different. The content is not.]', anomaly: true, discovery: 'duplicate_reports' },
+    { title: 'INVOICE #30042', content: 'Vacuum tube replacement, Floor 6 processing unit. Qty: 0. Note: "Floor 6 tubes do not require replacement. They have not degraded. Recommend monitoring."', anomaly: true, discovery: 'floor6_equipment' },
+    { title: 'MEMO C-2260', content: 'This memo is to confirm that this memo has been received. If you are reading this memo, this memo has been received. Please file this memo under "RECEIVED." Do not flag this memo. This memo is normal.', anomaly: true, discovery: 'self_referencing' },
+    { title: 'FORM A-1', content: 'Incident report. Location: Floor 3, Desk B-247. Incident: "Employee reported finding a document describing events that had not yet occurred." Resolution: "Events subsequently occurred." Status: CLOSED.', anomaly: true, discovery: 'predictive_documents' },
+];
+
+let filingState = {
+    active: false,
+    currentDoc: null,
+    docIndex: 0,
+    correctFiles: 0,
+    correctFlags: 0,
+    wrongDecisions: 0,
+    totalProcessed: 0,
+    discoveries: new Set(), // anomaly types found
+    allDocsProcessed: false,
+    shuffledDocs: [],
+};
+
+function shuffleDocs() {
+    filingState.shuffledDocs = [...documents].sort(() => Math.random() - 0.5);
+    filingState.docIndex = 0;
+}
+
+function startFiling() {
+    if (filingState.allDocsProcessed) {
+        showDialog('YOUR DESK', 'Inbox empty. All documents processed. Filed: ' + filingState.correctFiles + ', Flagged: ' + filingState.correctFlags + '. Discoveries: ' + filingState.discoveries.size + '/6.');
+        return;
+    }
+    if (filingState.shuffledDocs.length === 0) shuffleDocs();
+    if (filingState.docIndex >= filingState.shuffledDocs.length) {
+        filingState.allDocsProcessed = true;
+        showDialog('YOUR DESK', 'Inbox empty. You\'ve processed all available documents.');
+        return;
+    }
+    filingState.active = true;
+    filingState.currentDoc = filingState.shuffledDocs[filingState.docIndex];
+    showFilingUI();
+}
+
+function showFilingUI() {
+    const doc = filingState.currentDoc;
+    state.dialogOpen = true;
+    state.filingMode = true;
+    document.getElementById('dlg-speaker').textContent = doc.title;
+    document.getElementById('dlg-text').innerHTML = doc.content + '<br><br><span style="color:#ffb347;font-size:10px;">[ F = FILE ]&emsp;[ G = FLAG ]</span>';
+    document.getElementById('dialog-box').style.display = 'block';
+    const flagBtn = document.getElementById('m-flag');
+    if (flagBtn) flagBtn.style.display = 'flex';
+}
+
+function processFilingDecision(decision) {
+    const doc = filingState.currentDoc;
+    const correct = (decision === 'flag') === doc.anomaly;
+    filingState.totalProcessed++;
+
+    if (correct) {
+        if (decision === 'file') {
+            filingState.correctFiles++;
+            state.filed++;
+            document.getElementById('ui-filed').textContent = state.filed;
+            playFileSound();
+        } else {
+            filingState.correctFlags++;
+            state.flagged++;
+            document.getElementById('ui-flagged').textContent = state.flagged;
+            playFlagSound();
+            if (doc.discovery) {
+                filingState.discoveries.add(doc.discovery);
+                document.getElementById('ui-discoveries').textContent = filingState.discoveries.size;
+                playDiscoverySound();
+            }
+        }
+    } else {
+        filingState.wrongDecisions++;
+        // Wrong chirp
+        if (audioCtx) {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.value = 200;
+            const g = audioCtx.createGain();
+            g.gain.value = 0.06;
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+            osc.connect(g);
+            g.connect(audioNodes.master);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+    }
+
+    filingState.docIndex++;
+    filingState.active = false;
+    state.filingMode = false;
+    const flagBtn = document.getElementById('m-flag');
+    if (flagBtn) flagBtn.style.display = 'none';
+
+    // Feedback
+    if (correct && decision === 'flag' && doc.discovery) {
+        const discoveryTexts = {
+            preemptive_filing: 'ANOMALY LOGGED: Pre-emptive fulfillment. Items appearing before being ordered. This pattern recurs throughout the archives.',
+            future_dates: 'ANOMALY LOGGED: Temporal displacement. Documents dated in the future, already processed. The filing system doesn\'t distinguish between "will happen" and "happened."',
+            duplicate_reports: 'ANOMALY LOGGED: Content duplication. Different serial numbers, identical content. The system is producing the same output regardless of input.',
+            floor6_equipment: 'ANOMALY LOGGED: Non-degrading equipment. Floor 6 hardware doesn\'t wear. It doesn\'t need maintenance. It doesn\'t need operators either.',
+            self_referencing: 'ANOMALY LOGGED: Self-referential documentation. The memo describes itself. It knows it\'s being read. It specifically asks not to be flagged.',
+            predictive_documents: 'ANOMALY LOGGED: Predictive filing. Documents describing future events that subsequently occur. The building\'s filing system is not descriptive. It is prescriptive.',
+        };
+        showDialog('SYSTEM', discoveryTexts[doc.discovery] || 'Anomaly catalogued.');
+    } else if (correct) {
+        showDialog('SYSTEM', 'Document ' + (decision === 'file' ? 'filed' : 'flagged') + ' correctly. ' + (filingState.shuffledDocs.length - filingState.docIndex) + ' remaining.');
+    } else {
+        if (doc.anomaly) {
+            showDialog('SYSTEM', 'This document contained an anomaly that should have been flagged. Read the margins. Read between the margins.');
+        } else {
+            showDialog('SYSTEM', 'This was a routine document. Not everything is an anomaly. Though the instinct to see patterns is... noted.');
+        }
+    }
+}
+
+// === DISCOVERY SYSTEM ===
+function getDiscoveryCount() {
+    return filingState.discoveries.size;
+}
+
+function checkUnit4091Discovery() {
+    // Unit-4091 has special dialog based on how many anomalies you've flagged
+    const count = getDiscoveryCount();
+    if (count >= 6) return [
+        'You found all of them.',
+        'The pre-emptive orders. The future dates. The duplicates. The equipment that doesn\'t age. The self-aware memos. The predictive filings.',
+        'The building isn\'t processing documents, B-247. It\'s processing itself. We are the annotations in its margins.',
+        'I\'ve been here long enough to know: the building doesn\'t have a filing system. The building IS a filing system. And we are what it files.',
+        'Your shift ends when the building says it ends. The building hasn\'t said.',
+    ];
+    if (count >= 3) return [
+        'You\'re beginning to see it.',
+        'The patterns aren\'t errors. They\'re the system working correctly. The question is: what is the system?',
+        'Keep filing. Keep flagging. The picture assembles itself in the margins.',
+    ];
+    return null; // use default dialog
+}
 
 // === PARTICLES ===
 let particles = [];
@@ -522,6 +928,7 @@ let state = {
     frame: 0, frameTimer: 0,
     filed: 0, flagged: 0,
     dialogOpen: false,
+    filingMode: false,
     dialogSpeaker: '', dialogText: '',
     dialogQueue: [],
     npcTalkIdx: {},
@@ -538,6 +945,13 @@ const mobile = { left: false, right: false, up: false, act: false };
 
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
+    // Filing mode keys
+    if (state.filingMode) {
+        if (e.code === 'KeyF') { e.preventDefault(); processFilingDecision('file'); return; }
+        if (e.code === 'KeyG') { e.preventDefault(); processFilingDecision('flag'); return; }
+        if (e.code === 'Space') { e.preventDefault(); return; } // don't dismiss during filing
+        return;
+    }
     if (e.code === 'Space' || e.code === 'KeyE') {
         e.preventDefault();
         if (state.dialogOpen) dismissDialog();
@@ -551,6 +965,7 @@ window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 // Click on canvas to interact/dismiss
 canvas.addEventListener('click', () => {
+    if (state.filingMode) return; // must use F/G keys during filing
     if (state.dialogOpen) dismissDialog();
     else tryInteract();
 });
@@ -569,6 +984,7 @@ if ('ontouchstart' in window) {
     bindTouch('m-up', 'up');
     document.getElementById('m-act').addEventListener('touchstart', e => {
         e.preventDefault();
+        if (state.filingMode) { processFilingDecision('file'); return; }
         if (state.dialogOpen) dismissDialog();
         else tryInteract();
     });
@@ -576,6 +992,10 @@ if ('ontouchstart' in window) {
         e.preventDefault();
         mobile.up = true;
         tryStairs();
+    });
+    document.getElementById('m-flag').addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (state.filingMode) processFilingDecision('flag');
     });
 }
 
@@ -601,6 +1021,7 @@ function dismissDialog() {
 
 function tryInteract() {
     if (!state.started || state.transitioning) return;
+    initAudio(); // ensure audio context started on user gesture
     const f = floors[state.floor];
     const px = state.px + 5;
 
@@ -608,6 +1029,18 @@ function tryInteract() {
     for (const npc of f.npcs) {
         const nx = npc.x * TILE + 8;
         if (Math.abs(px - nx) < 24) {
+            playInteract();
+            // Unit-4091 special dialog based on discoveries
+            if (npc.name === 'UNIT-4091') {
+                const specialLines = checkUnit4091Discovery();
+                if (specialLines) {
+                    showDialog(npc.name, specialLines[0]);
+                    for (let i = 1; i < specialLines.length; i++) {
+                        state.dialogQueue.push({ speaker: npc.name, text: specialLines[i] });
+                    }
+                    return;
+                }
+            }
             const key = state.floor + '_' + npc.name;
             const idx = (state.npcTalkIdx[key] || 0) % npc.lines.length;
             showDialog(npc.name, npc.lines[idx]);
@@ -620,9 +1053,10 @@ function tryInteract() {
     for (const obj of f.objects) {
         const ox = obj.x * TILE + 8;
         if (Math.abs(px - ox) < 24) {
+            playInteract();
             if (obj.action === 'file') {
-                state.filed++;
-                document.getElementById('ui-filed').textContent = state.filed;
+                startFiling();
+                return;
             }
             showDialog(obj.name, obj.text);
             return;
@@ -665,12 +1099,9 @@ function changeFloor(newFloor) {
     state.floor = newFloor;
     const f = floors[newFloor];
     document.getElementById('ui-floor').textContent = f.name;
+    updateFloorAudio(newFloor);
 
     // Position at appropriate stairs
-    if (f.stairsDown && state.transTarget > state.floor) {
-        // Came from below, appear at stairsDown of new floor? No — appear at stairsDown
-        // Actually: going UP means we arrive at the stairsDown of the new floor
-    }
     if (f.stairsDown && newFloor > 0) {
         state.px = f.stairsDown.x * TILE;
     } else if (f.stairsUp) {
@@ -1248,6 +1679,30 @@ function render() {
     ctx.fillStyle = 'rgba(0,0,0,0.04)';
     for (let y = 0; y < H; y += 2) ctx.fillRect(0, y, W, 1);
 
+    // CRT vignette (dark corners)
+    const vGrad = ctx.createRadialGradient(W/2, H/2, W*0.35, W/2, H/2, W*0.7);
+    vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    vGrad.addColorStop(1, 'rgba(0,0,0,0.35)');
+    ctx.fillStyle = vGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Occasional CRT flicker
+    if (Math.random() < 0.003) {
+        ctx.fillStyle = 'rgba(255,200,120,0.015)';
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    // Discovery glow effect (when discoveries found, subtle pulsing border)
+    if (filingState.discoveries.size > 0) {
+        const pulse = (Math.sin(state.time * 0.002) + 1) * 0.5;
+        const alpha = 0.01 + pulse * 0.01 * filingState.discoveries.size;
+        ctx.fillStyle = `rgba(68,136,136,${alpha})`;
+        ctx.fillRect(0, 0, W, 2);
+        ctx.fillRect(0, H-2, W, 2);
+        ctx.fillRect(0, 0, 2, H);
+        ctx.fillRect(W-2, 0, 2, H);
+    }
+
     // Transition fade
     if (state.transitioning) {
         ctx.fillStyle = `rgba(10,8,8,${state.transAlpha})`;
@@ -1300,12 +1755,13 @@ function update(dt) {
     state.px += state.vx;
     state.px = Math.max(TILE, Math.min((floors[state.floor].width - 2) * TILE, state.px));
 
-    // Walk animation
+    // Walk animation + footsteps
     if (moving) {
         state.frameTimer += dt;
-        if (state.frameTimer > 140) { // Faster animation
+        if (state.frameTimer > 140) {
             state.frame++;
             state.frameTimer = 0;
+            playStep();
         }
     } else {
         state.frame = 0;
@@ -1331,6 +1787,7 @@ function update(dt) {
     }
 
     updateParticles();
+    tickAudio(state.time);
 }
 
 // === GAME LOOP ===
@@ -1347,12 +1804,14 @@ function loop(ts) {
 }
 
 function startGame() {
+    initAudio();
     const title = document.getElementById('title');
     title.style.opacity = '0';
     setTimeout(() => { title.style.display = 'none'; }, 600);
     document.getElementById('ui-bar').style.display = 'block';
     state.started = true;
     state.px = 60;
+    updateFloorAudio(0);
     requestAnimationFrame(loop);
 }
 </script>
