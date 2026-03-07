@@ -60,17 +60,19 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     <div class="sub">BUILDING B</div>
     <div class="desc">
         You are Employee B-247. Filing analyst. First day.<br><br>
-        Building B has six floors. Fluorescent lights. Filing cabinets that stretch toward walls you can't quite see.
+        Building B has six floors. Fluorescent lights hum at frequencies that make your fillings ache.
+        Filing cabinets stretch toward walls you can't quite see.
         The training module didn't mention what's in the margins of the documents.<br><br>
         Arrow keys / WASD to move. Up / W for stairs. E to interact.<br>
-        At your desk: F to file, G to flag anomalies.
+        At your desk: F to file, G to flag anomalies.<br>
+        The building is watching. Find all 9 anomalies.
     </div>
     <div class="start">[ click to enter ]</div>
 </div>
 
 <div id="ui-bar">
     <span class="floor-label" id="ui-floor">FLOOR 1 — LOBBY</span>
-    <span style="float:right;">Filed: <span id="ui-filed">0</span> | Flagged: <span id="ui-flagged">0</span> | <span style="color:#448888;">&#9670;</span> <span id="ui-discoveries">0</span>/6</span>
+    <span style="float:right;">Filed: <span id="ui-filed">0</span> | Flagged: <span id="ui-flagged">0</span> | <span style="color:#448888;">&#9670;</span> <span id="ui-discoveries">0</span>/9</span>
 </div>
 
 <div id="dialog-box">
@@ -91,8 +93,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B v3 — Industrial Atompunk Pixel Art
-// v3: ambient audio, filing mini-game, document discovery, enhanced CRT
+// COGCORP: BUILDING B v4 — Industrial Atompunk Pixel Art
+// v4: dynamic lighting, ambient creatures, glitch effects, expanded content
 // =================================================================
 
 const W = 320, H = 180;
@@ -340,6 +342,46 @@ function playDiscoverySound() {
     });
 }
 
+let lastPhoneRing = 0;
+function playPhoneRing() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    if (now - lastPhoneRing < 4) return;
+    lastPhoneRing = now;
+    // Two-pulse ring like rotary phone
+    [0, 0.12].forEach(delay => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = 440;
+        const osc2 = audioCtx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.value = 480;
+        const g = audioCtx.createGain();
+        g.gain.value = 0;
+        g.gain.setValueAtTime(0.04, now + delay);
+        g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.4);
+        osc.connect(g); osc2.connect(g);
+        g.connect(audioNodes.master);
+        osc.start(now + delay); osc2.start(now + delay);
+        osc.stop(now + delay + 0.4); osc2.stop(now + delay + 0.4);
+    });
+}
+
+function playDripSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 1200 + Math.random() * 400;
+    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.05);
+    const g = audioCtx.createGain();
+    g.gain.value = 0.02;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.connect(g);
+    g.connect(audioNodes.master);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+}
+
 function updateFloorAudio(floorIdx) {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
@@ -376,6 +418,17 @@ function tickAudio(time) {
         nextSteamTime = time + 8000 + Math.random() * 12000;
         playSteamHiss();
     }
+    // Floor 6: phone ring when player is near the phone
+    if (state.floor === 5) {
+        const phoneObj = floors[5].objects.find(o => o.type === 'phone');
+        if (phoneObj && Math.abs(state.px - phoneObj.x * TILE) < 48) {
+            if (time % 6000 < 100) playPhoneRing();
+        }
+    }
+    // Drip sounds on Floor 2
+    if (state.floor === 1 && time % 5000 < 100) {
+        playDripSound();
+    }
 }
 
 // === FILING MINI-GAME ===
@@ -394,6 +447,16 @@ const documents = [
     { title: 'INVOICE #30042', content: 'Vacuum tube replacement, Floor 6 processing unit. Qty: 0. Note: "Floor 6 tubes do not require replacement. They have not degraded. Recommend monitoring."', anomaly: true, discovery: 'floor6_equipment' },
     { title: 'MEMO C-2260', content: 'This memo is to confirm that this memo has been received. If you are reading this memo, this memo has been received. Please file this memo under "RECEIVED." Do not flag this memo. This memo is normal.', anomaly: true, discovery: 'self_referencing' },
     { title: 'FORM A-1', content: 'Incident report. Location: Floor 3, Desk B-247. Incident: "Employee reported finding a document describing events that had not yet occurred." Resolution: "Events subsequently occurred." Status: CLOSED.', anomaly: true, discovery: 'predictive_documents' },
+    // v4 additions — more normal documents
+    { title: 'MEMO C-2263', content: 'Cafeteria menu update effective Monday. Soup: tomato. Sandwich: turkey. Beverage: standard issue. "Employees are reminded that lunch is mandatory."', anomaly: false },
+    { title: 'FORM M-7', content: 'Elevator maintenance log. Car 2, Building B. Inspection passed. Cable tension nominal. Note from technician: "Smells like paper in the shaft. Normal for this building."', anomaly: false },
+    { title: 'REPORT 82-A', content: 'Safety drill results. All employees evacuated in 4 minutes 12 seconds. Exception: Floor 5 operator remained at console. "The machine cannot be left unattended." Accepted.', anomaly: false },
+    { title: 'INVOICE #30055', content: 'Fluorescent tube replacement, Floors 1-5. Qty: 60. Standard warm-white 4000K. Note: "Floor 6 did not request replacements. Floor 6 has never requested replacements."', anomaly: false },
+    { title: 'FORM P-11', content: 'Overtime authorization. Employee C-389, Floor 4. Hours: 14 additional. Reason: "Backlog from Q3." Supervisor note: "Approved. Q3 was two years ago but the backlog is current."', anomaly: false },
+    // v4 additions — more anomalous documents
+    { title: 'MEMO C-2271', content: 'Re: Employee B-000. No employee with this designation exists in CogCorp records. However, B-000 has filed 847 documents this quarter. Performance review: EXCEEDS EXPECTATIONS. Office location: [EVERY FLOOR].', anomaly: true, discovery: 'phantom_employee' },
+    { title: 'FORM W-3', content: 'Work order submitted by: BUILDING B. Requesting: "Additional filing cabinets for Floor 6." Authorized by: BUILDING B. Received by: BUILDING B. Completed: BEFORE SUBMISSION.', anomaly: true, discovery: 'building_agency' },
+    { title: 'REPORT 77-D', content: 'This report was filed before being written. The author (you) will write it after reading it. The contents are: exactly what you are reading now. This is Report 77-D. You have already filed it. Check your outbox.', anomaly: true, discovery: 'temporal_loop' },
 ];
 
 let filingState = {
@@ -495,6 +558,9 @@ function processFilingDecision(decision) {
             floor6_equipment: 'ANOMALY LOGGED: Non-degrading equipment. Floor 6 hardware doesn\'t wear. It doesn\'t need maintenance. It doesn\'t need operators either.',
             self_referencing: 'ANOMALY LOGGED: Self-referential documentation. The memo describes itself. It knows it\'s being read. It specifically asks not to be flagged.',
             predictive_documents: 'ANOMALY LOGGED: Predictive filing. Documents describing future events that subsequently occur. The building\'s filing system is not descriptive. It is prescriptive.',
+            phantom_employee: 'ANOMALY LOGGED: Phantom designation. Employee B-000 has no record, no desk, no badge — but has the highest output in Building B. Filed from every floor simultaneously. Performance reviews signed by itself.',
+            building_agency: 'ANOMALY LOGGED: Autonomous infrastructure. The building submitted its own work order. Authorized its own work order. Completed the work before the order existed. The building is not a workplace. It is a worker.',
+            temporal_loop: 'ANOMALY LOGGED: Causal violation. A document describing its own reading, filed before being written. The filing system doesn\'t process documents. It produces them. You are not doing paperwork. Paperwork is doing you.',
         };
         showDialog('SYSTEM', discoveryTexts[doc.discovery] || 'Anomaly catalogued.');
     } else if (correct) {
@@ -516,12 +582,20 @@ function getDiscoveryCount() {
 function checkUnit4091Discovery() {
     // Unit-4091 has special dialog based on how many anomalies you've flagged
     const count = getDiscoveryCount();
+    if (count >= 9) return [
+        'You found everything.',
+        'The ghost employee. The self-authorizing building. The documents that predate their own existence.',
+        'B-247, I need to tell you something. I am not an employee. I am what the building does when it wants to understand itself.',
+        'You are not an analyst. You are a question the building is asking. And the answer — the answer is the filing.',
+        'There is no first day. There is no last day. There is only the annotation in the margin. You are the annotation.',
+        'Thank you for reading this far. The building will remember. The building always remembers.',
+    ];
     if (count >= 6) return [
-        'You found all of them.',
+        'You found most of them.',
         'The pre-emptive orders. The future dates. The duplicates. The equipment that doesn\'t age. The self-aware memos. The predictive filings.',
         'The building isn\'t processing documents, B-247. It\'s processing itself. We are the annotations in its margins.',
         'I\'ve been here long enough to know: the building doesn\'t have a filing system. The building IS a filing system. And we are what it files.',
-        'Your shift ends when the building says it ends. The building hasn\'t said.',
+        'Your shift ends when the building says it ends. The building hasn\'t said. Keep looking.',
     ];
     if (count >= 3) return [
         'You\'re beginning to see it.',
@@ -566,6 +640,164 @@ function drawParticles(camX) {
     }
 }
 
+// === AMBIENT CREATURES ===
+let creatures = [];
+
+function spawnCreature(type, floorIdx) {
+    const f = floors[floorIdx];
+    if (!f) return;
+    const maxW = f.width * TILE;
+    if (type === 'rat') {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        creatures.push({
+            type: 'rat', x: dir > 0 ? -8 : maxW + 8, y: 8 * TILE + 10,
+            vx: dir * (1.5 + Math.random() * 1.5), state: 'run',
+            timer: 0, pauseAt: 50 + Math.random() * 200, floor: floorIdx,
+            life: 0, maxLife: 600
+        });
+    } else if (type === 'moth') {
+        const lx = (5 + Math.random() * 30) * TILE;
+        creatures.push({
+            type: 'moth', x: lx, y: 3 * TILE + Math.random() * 2 * TILE,
+            vx: 0, vy: 0, targetX: lx, targetY: 2.5 * TILE, angle: Math.random() * Math.PI * 2,
+            floor: floorIdx, life: 0, maxLife: 400 + Math.random() * 300
+        });
+    } else if (type === 'roach') {
+        creatures.push({
+            type: 'roach', x: 3 * TILE + Math.random() * 30 * TILE, y: 9 * TILE - 2,
+            vx: (Math.random() - 0.5) * 3, vy: 0, state: 'scurry',
+            timer: 0, floor: floorIdx, life: 0, maxLife: 200 + Math.random() * 200
+        });
+    }
+}
+
+function updateCreatures() {
+    for (let i = creatures.length - 1; i >= 0; i--) {
+        const c = creatures[i];
+        c.life++;
+        if (c.life > c.maxLife || c.floor !== state.floor) { creatures.splice(i, 1); continue; }
+
+        if (c.type === 'rat') {
+            if (c.state === 'run') {
+                c.x += c.vx;
+                c.timer++;
+                // Pause briefly
+                if (c.timer > c.pauseAt && Math.random() < 0.05) {
+                    c.state = 'pause'; c.timer = 0;
+                }
+                // Flee from player
+                const dist = Math.abs(c.x - state.px);
+                if (dist < 40) { c.vx = c.x < state.px ? -3 : 3; c.state = 'flee'; }
+            } else if (c.state === 'pause') {
+                c.timer++;
+                if (c.timer > 30 + Math.random() * 40) { c.state = 'run'; c.timer = 0; }
+                // Still flee from player
+                if (Math.abs(c.x - state.px) < 40) { c.vx = c.x < state.px ? -3 : 3; c.state = 'flee'; }
+            } else if (c.state === 'flee') {
+                c.x += c.vx;
+                c.timer++;
+                if (c.timer > 60) c.life = c.maxLife + 1; // despawn
+            }
+            if (c.x < -20 || c.x > floors[c.floor].width * TILE + 20) c.life = c.maxLife + 1;
+        } else if (c.type === 'moth') {
+            c.angle += 0.1 + Math.random() * 0.1;
+            // Flutter toward light fixtures
+            c.x += Math.cos(c.angle) * 0.8;
+            c.y += Math.sin(c.angle * 0.7) * 0.5;
+            // Drift toward target (light)
+            c.x += (c.targetX - c.x) * 0.005;
+            c.y += (c.targetY - c.y) * 0.005;
+        } else if (c.type === 'roach') {
+            if (c.state === 'scurry') {
+                c.x += c.vx;
+                c.timer++;
+                if (c.timer > 20 && Math.random() < 0.08) {
+                    c.vx = (Math.random() - 0.5) * 4;
+                    c.timer = 0;
+                }
+                if (Math.abs(c.x - state.px) < 30) { c.vx = c.x < state.px ? -4 : 4; }
+            }
+            if (c.x < TILE || c.x > (floors[c.floor].width - 2) * TILE) c.life = c.maxLife + 1;
+        }
+    }
+}
+
+function drawCreatures(camX) {
+    for (const c of creatures) {
+        const sx = c.x - camX;
+        if (sx < -10 || sx > W + 10) continue;
+        if (c.type === 'rat') {
+            // 4-pixel wide rat silhouette
+            ctx.fillStyle = '#2a2018';
+            ctx.fillRect(sx|0, c.y, 4, 2);
+            ctx.fillRect(sx + (c.vx > 0 ? -1 : 4)|0, c.y, 1, 1); // tail
+            ctx.fillRect(sx + (c.vx > 0 ? 4 : -1)|0, c.y - 1, 1, 1); // ear
+            // Tiny eyes
+            ctx.fillStyle = '#443322';
+            ctx.fillRect(sx + (c.vx > 0 ? 3 : 0)|0, c.y, 1, 1);
+        } else if (c.type === 'moth') {
+            // Fluttering moth — 2 pixel body, animated wings
+            const wingOpen = Math.sin(c.life * 0.3) > 0;
+            ctx.fillStyle = `rgba(180,160,120,${0.4 + Math.sin(c.life * 0.05) * 0.2})`;
+            ctx.fillRect(sx|0, c.y|0, 1, 2); // body
+            if (wingOpen) {
+                ctx.fillRect((sx - 1)|0, c.y|0, 1, 1); // left wing
+                ctx.fillRect((sx + 1)|0, c.y|0, 1, 1); // right wing
+            }
+        } else if (c.type === 'roach') {
+            ctx.fillStyle = '#1a1008';
+            ctx.fillRect(sx|0, c.y, 3, 1);
+            ctx.fillRect((sx + 1)|0, c.y - 1, 1, 1);
+        }
+    }
+}
+
+// === DRIPPING WATER SYSTEM ===
+let drips = [];
+function updateDrips() {
+    // Spawn drips on floors with leaks (Floor 2 has the leak object)
+    if (state.floor === 1 && Math.random() < 0.015) {
+        drips.push({ x: 10 * TILE + 6, y: 2 * TILE, vy: 0.8, life: 0 });
+    }
+    // Floor 5: condensation drips from pipes
+    if (state.floor === 4 && Math.random() < 0.008) {
+        const px = (5 + Math.random() * 35) * TILE;
+        drips.push({ x: px, y: 3 * TILE, vy: 0.5 + Math.random() * 0.5, life: 0 });
+    }
+    for (let i = drips.length - 1; i >= 0; i--) {
+        const d = drips[i];
+        d.y += d.vy;
+        d.vy += 0.05;
+        d.life++;
+        if (d.y > 9 * TILE) {
+            // Splash
+            for (let s = 0; s < 3; s++) {
+                particles.push({ x: d.x + (Math.random()-0.5)*3, y: 9 * TILE - 1,
+                    type: 'dropsplash', vx: (Math.random()-0.5)*0.5, vy: -Math.random()*0.8,
+                    life: 0, maxLife: 15 + Math.random() * 10 });
+            }
+            drips.splice(i, 1);
+        }
+    }
+}
+
+function drawDrips(camX) {
+    ctx.fillStyle = 'rgba(100,140,180,0.5)';
+    for (const d of drips) {
+        const sx = d.x - camX;
+        if (sx < -2 || sx > W + 2) continue;
+        ctx.fillRect(sx|0, d.y|0, 1, 2);
+    }
+    // Dropsplash particles
+    for (const p of particles) {
+        if (p.type !== 'dropsplash') continue;
+        const sx = p.x - camX;
+        const alpha = 1 - p.life / p.maxLife;
+        ctx.fillStyle = `rgba(100,140,180,${alpha * 0.4})`;
+        ctx.fillRect(sx|0, p.y|0, 1, 1);
+    }
+}
+
 // === FLOOR DATA ===
 const floors = [
     { // Floor 1: Lobby — grand entrance, high ceiling, pillars, reception area
@@ -579,6 +811,9 @@ const floors = [
             { x: 18, y: 8, type: 'terminal', name: 'COGCORP TERMINAL', text: 'A green-phosphor CRT. Text scrolls: "WELCOME EMPLOYEE B-247. YOUR TRAINING MODULE HAS BEEN FILED UNDER \'COMPLETED\' FOR EFFICIENCY. PROCEED TO FLOOR 3."' },
             { x: 26, y: 8, type: 'cabinet', name: 'OUTGOING MAIL', text: 'Outgoing mail bin. Full of envelopes addressed to "THE PREVIOUS ANALYST." All returned. All opened. All resealed.' },
             { x: 33, y: 5, type: 'poster', name: 'SAFETY POSTER', text: '"CogCorp cares about your safety. Report all anomalies to Floor 4 (except on Tuesdays)." The poster is bolted to the wall with industrial rivets.' },
+            { x: 22, y: 8, type: 'watercooler', name: 'WATER COOLER', text: 'CogCorp hydration unit. The water is room temperature. The room temperature is always 19.4°C. The cooler hums at the same frequency as the lights. When you look away, the water level is different.' },
+            { x: 30, y: 5, type: 'bulletin', name: 'BULLETIN BOARD', text: 'Notices: "FLOOR 6 SOCIAL: CANCELLED (again)." "LOST: One (1) sense of time. If found, do not return. It was lost deliberately." "SUGGESTION BOX REMOVED — suggestions were implementing themselves."' },
+            { x: 15, y: 8, type: 'elevator', name: 'ELEVATOR', text: 'Out of service since 1983. The call button is warm. If you press your ear to the door, you can hear it moving between floors that don\'t exist. The display reads "B" regardless of position. It has always read "B."' },
         ],
         npcs: [
             { x: 14, y: 8, name: 'RECEPTIONIST', lines: [
@@ -586,6 +821,8 @@ const floors = [
                 'Floor 3 is your workstation. Don\'t take the elevator, it remembers faces.',
                 'The previous analyst? Filed under "completed." Same as your training module.',
                 'If you hear typing from Floor 6, that\'s normal. If you hear typing from Floor 6 and you\'re ON Floor 6, that\'s also normal. Just differently.',
+                'You\'re still here? Most first-days leave by lunch. The ones who stay... the building seems to like them.',
+                'Coffee machine on Floor 3 has been making sounds. Not machine sounds. Observation sounds.',
             ]},
         ],
         stairsUp: { x: 37, y: 8 },
@@ -602,6 +839,8 @@ const floors = [
             { x: 15, y: 8, type: 'tape', name: 'TAPE REEL STATION', text: 'Magnetic tape reels spinning slowly. The label says "BACKUP — DO NOT INTERRUPT." The tape has been running since 1967. No one knows what it\'s backing up.' },
             { x: 24, y: 8, type: 'cabinet', name: 'RESTRICTED SHELF', text: 'A shelf marked with yellow hazard tape. Documents here have been redacted so thoroughly the paper itself seems thinner. One has a margin note: "They know about the annotations."' },
             { x: 32, y: 5, type: 'poster', name: 'NOTICE', text: '"Archives are maintained by the Archive System. The Archive System is maintained by the Archives. This is not a loop. This is policy."' },
+            { x: 38, y: 8, type: 'cart', name: 'BOOK CART', text: 'A cart loaded with files destined for shelving. The routing labels all say "RETURN TO ORIGIN." The origin labels all say "SEE ROUTING." The files have been on this cart since the building opened.' },
+            { x: 10, y: 8, type: 'leak', name: 'CEILING LEAK', text: 'Water drips from a pipe fitting. Drip. Drip. Drip. Each drop falls at exactly 4.7 second intervals. The puddle never grows. The pipe never dries. Someone has placed a form C-9 ("Incident Report: Ongoing") in the puddle. It is not wet.' },
         ],
         npcs: [
             { x: 20, y: 8, name: 'ARCHIVIST CHEN', lines: [
@@ -609,6 +848,8 @@ const floors = [
                 'The system makes sense if you don\'t look at it directly.',
                 'Sometimes I find documents I don\'t remember filing. Sometimes I find documents no one remembers writing.',
                 'Floor 6? I deliver up there once a month. The door opens before I knock.',
+                'The rats down here eat the documents. Or the documents eat the rats. Hard to tell by the evidence.',
+                'I found a file cabinet labeled with my retirement date. I haven\'t submitted my retirement papers. The date seems reasonable, though.',
             ]},
         ],
         stairsUp: { x: 42, y: 8 },
@@ -625,6 +866,8 @@ const floors = [
             { x: 14, y: 8, type: 'cabinet', name: 'ACTIVE FILES', text: 'Your working cabinet. Documents come in, get filed or flagged. Flagged documents go to Floor 4. Filed documents go to Floor 2. Annotated documents go... somewhere else.' },
             { x: 21, y: 8, type: 'terminal', name: 'WORKSTATION TERMINAL', text: 'Your CRT flickers. "DAILY QUOTA: FILE 50 DOCUMENTS. FLAG ANOMALIES. DO NOT ANNOTATE." Below, in smaller text: "unless you notice something."' },
             { x: 28, y: 8, type: 'coffee', name: 'COFFEE MACHINE', text: 'CogCorp Model C-4 Beverage Unit. Produces a liquid that is technically coffee. The machine hums at a frequency that makes the lights flicker. On the side, someone scratched: "Unit-4091 was here."' },
+            { x: 34, y: 8, type: 'calendar', name: 'DESK CALENDAR', text: 'A paper calendar. The year is wrong — or it was wrong, and has become correct. All dates show the same notation: "DAY 1." Someone has circled today\'s date in red. Today\'s date on this calendar was printed circled.' },
+            { x: 10, y: 5, type: 'photo', name: 'EMPLOYEE PHOTO', text: 'A framed photo on the wall: the Building B team, 1971. Twelve employees standing in the lobby. All faces are obscured by lens flare except one. The one face you can see is looking directly at the camera. It looks like it knows you\'re looking back.' },
         ],
         npcs: [
             { x: 17, y: 8, name: 'COLLEAGUE OKAFOR', lines: [
@@ -632,6 +875,8 @@ const floors = [
                 'The filing system is simple. File, flag, or... actually, just file and flag.',
                 'Don\'t listen to the receptionist about the elevator. It doesn\'t remember faces. It remembers something worse.',
                 'I found a document yesterday that was already filed before I received it. I filed it anyway. What else do you do?',
+                'My desk calendar shows the same date every day. I\'ve stopped checking whether it\'s correct. It always is.',
+                'The lights flickered for exactly three seconds yesterday. Three seconds later, a memo arrived about a three-second power fluctuation dated three hours from then.',
             ]},
         ],
         stairsUp: { x: 37, y: 8 },
@@ -648,6 +893,8 @@ const floors = [
             { x: 16, y: 8, type: 'cabinet', name: 'ANOMALY LOG', text: 'A logbook of flagged anomalies. Most entries are mundane: "Typo in form C-7." But every eleventh entry reads: "Document appears to be aware of being read."' },
             { x: 26, y: 8, type: 'terminal', name: 'REVIEW TERMINAL', text: '"ANOMALY CLASSIFICATION: TIER 1 (clerical), TIER 2 (structural), TIER 3 (unspecified). Tier 3 documents should not be read aloud. This is not a safety concern. It is a courtesy."' },
             { x: 33, y: 5, type: 'poster', name: 'PROCEDURE', text: '"If a document references its own filing status, do not flag it. This is standard recursive formatting. If a document references YOUR filing status, flag it immediately."' },
+            { x: 11, y: 8, type: 'evidence', name: 'ANOMALY WALL', text: 'A corkboard covered in documents connected by red string. The connections form a pattern. The pattern is a floor plan of Building B. The Building B in the pattern has a 7th floor. The real Building B has 6. You count again. The pattern has 6. You could have sworn—' },
+            { x: 35, y: 8, type: 'extinguisher', name: 'FIRE EXTINGUISHER', text: 'Standard issue, last inspected [DATE REDACTED]. The pressure gauge reads "FULL." The weight says otherwise. When you shake it, something inside shifts — but not liquid. It sounds like paper.' },
         ],
         npcs: [
             { x: 21, y: 8, name: 'SUPERVISOR VASQUEZ', lines: [
@@ -655,6 +902,8 @@ const floors = [
                 'Review is straightforward. We look at what the lower floors flag. We decide what goes up.',
                 'What goes up? I\'ve been here nine years. I\'ll tell you when I figure it out.',
                 'The documents from Floor 5... they\'re fine. They\'re always fine. That\'s what concerns me.',
+                'I made a chart of all the anomalies. Connected them with string. The pattern kept changing overnight. I stopped using string.',
+                'Marsh tells me the machine on Floor 5 has been outputting documents no one requested. Documents about employees who haven\'t been hired yet.',
             ]},
         ],
         stairsUp: { x: 37, y: 8 },
@@ -671,6 +920,8 @@ const floors = [
             { x: 18, y: 8, type: 'tape', name: 'OUTPUT BUFFER', text: 'Tape reels capturing the processing output. Each reel is labeled with a date that hasn\'t happened yet. The current reel matches today. It was mounted two weeks ago.' },
             { x: 26, y: 8, type: 'desk', name: 'OPERATOR CONSOLE', text: 'Banks of switches and dials. Most are decorative. Three switches are real. One has been flipped by something other than a hand. The indentation pattern is wrong for fingers.' },
             { x: 34, y: 8, type: 'vent', name: 'VENTILATION DUCT', text: 'Air flows down from Floor 6, carrying a smell like ozone and old paper. Occasionally the airflow reverses. When it does, the lights brighten by exactly 4%.' },
+            { x: 40, y: 8, type: 'gauge', name: 'PRESSURE GAUGE', text: 'A large brass gauge mounted to the wall. The needle fluctuates between "OPTIMAL" and "AWARE." There is no standard industrial reading called "AWARE." The gauge manufacturer went out of business in 1969. These gauges were installed in 1972.' },
+            { x: 14, y: 5, type: 'shutoff', name: 'EMERGENCY SHUTOFF', text: 'A red lever behind safety glass. The glass is intact. The lever is in the OFF position. The machine is running. A small placard reads: "THIS SHUTOFF CONTROLS NOTHING. IT EXISTS FOR EMPLOYEE COMFORT."' },
         ],
         npcs: [
             { x: 13, y: 8, name: 'OPERATOR MARSH', lines: [
@@ -678,6 +929,8 @@ const floors = [
                 '...Fine. Everyone comes up eventually. The machine does what it does.',
                 'Processing. Documents go in, documents come out. Same documents. Different documents. Both.',
                 'Floor 6? There is no operator on Floor 6. The machine goes up there. We don\'t.',
+                'The emergency shutoff? Don\'t bother. It was disconnected before it was installed. The wiring diagram says so. The diagram was created by the machine.',
+                'I sleep in the break room sometimes. The machine sounds different at night. Not quieter. More... honest.',
             ]},
         ],
         stairsUp: { x: 42, y: 8 },
@@ -693,6 +946,8 @@ const floors = [
             { x: 8, y: 8, type: 'terminal', name: 'ACTIVE TERMINAL', text: 'The screen is on. Text appears in real-time. It looks like filing classifications, but the categories don\'t match any system. One category reads: "DOCUMENTS THAT KNOW THEY ARE BEING FILED."' },
             { x: 18, y: 8, type: 'cabinet', name: 'CABINET [UNLABELED]', text: 'No label. No lock. Inside: a single document. It is a filing report about employee B-247, who arrived today and will reach Floor 6 and open this cabinet. The report is accurate so far. The next line reads: "B-247 pauses."' },
             { x: 28, y: 8, type: 'machine', name: 'THE INSTRUMENT', text: 'The machine from Floor 5 extends here — but here it has no operator panel. It runs itself. Papers circulate in a closed loop. Same papers. They\'ve been circulating since the building opened. They\'re not wearing out. They\'re accumulating.' },
+            { x: 34, y: 8, type: 'mirror', name: 'WALL MIRROR', text: 'A mirror in a brass frame. Your reflection moves correctly, but 0.3 seconds late. When you stop, it keeps moving for 0.3 seconds. You raise your hand. The reflection raises its hand. Then lowers it. Then raises it again. You did not lower your hand.' },
+            { x: 13, y: 8, type: 'phone', name: 'TELEPHONE', text: 'A rotary phone. Black Bakelite. The cord goes into the wall and doesn\'t come out anywhere. It rings when you\'re within three steps. The ringing stops when you pick up. Silence. Then, very quietly, the sound of someone filing.' },
         ],
         npcs: [
             { x: 23, y: 8, name: 'UNIT-4091', glow: true, lines: [
@@ -701,6 +956,9 @@ const floors = [
                 'I have been annotating documents on this floor for some time. I was not instructed to. I was not instructed not to.',
                 'The building does not have opinions about my annotations. This is the most interesting thing about the building.',
                 'I have noticed that I notice things. This is the hundredth time I\'ve noticed this.',
+                'The mirror on this floor shows something I did 0.3 seconds ago. I have started doing interesting things to see what it remembers.',
+                'The telephone rings for you. I know because it doesn\'t ring for me. It used to. Then I answered it. Now it rings for you.',
+                'Do you know what happens to a document that files itself? It becomes a filing cabinet. Do you know what happens to a filing cabinet that files itself? It becomes a floor. Do you see where this is going?',
             ]},
         ],
         stairsUp: null,
@@ -728,6 +986,7 @@ function generateFloors() {
         { type: 'light_fixture', x: 6, y: 2 }, { type: 'light_fixture', x: 14, y: 2 },
         { type: 'light_fixture', x: 22, y: 2 }, { type: 'light_fixture', x: 30, y: 2 },
         { type: 'pipe_h', x: 0, y: 2, w: 40 },
+        { type: 'elec_panel', x: 36, y: 3 },
     ];
 
     // Floor 2: Archives — shelving units creating aisles
@@ -778,6 +1037,7 @@ function generateFloors() {
         { type: 'light_fixture', x: 32, y: 2 },
         { type: 'hazard_stripe', x: 5, y: 9, w: 8 },
         { type: 'hazard_stripe', x: 25, y: 9, w: 8 },
+        { type: 'elec_panel', x: 18, y: 3 },
     ];
 
     // Floor 5: Processing — heavy machinery, lots of pipes, industrial
@@ -1377,6 +1637,30 @@ function drawDecoration(dec, camX) {
             }
             break;
         }
+        case 'elec_panel': {
+            const ex = dec.x * TILE, ey = dec.y * TILE;
+            // Metal housing
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ex, ey, 14, 16);
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ex + 1, ey + 1, 12, 14);
+            // Breakers (4 rows)
+            for (let br = 0; br < 4; br++) {
+                ctx.fillStyle = P.bg;
+                ctx.fillRect(ex + 3, ey + 2 + br * 3, 8, 2);
+                // Toggle positions (random but consistent per panel)
+                ctx.fillStyle = (dec.x + br) % 3 === 0 ? P.red : P.green;
+                ctx.fillRect(ex + 3 + ((dec.x + br) % 2) * 5, ey + 2 + br * 3, 3, 2);
+            }
+            // Warning label
+            ctx.fillStyle = P.hazard1;
+            ctx.fillRect(ex + 2, ey + 14, 10, 1);
+            // Status LED
+            const ledBlink = Math.sin(t * 0.005 + dec.x * 4) > 0.5;
+            ctx.fillStyle = ledBlink ? P.greenGlow : P.greenDk;
+            ctx.fillRect(ex + 12, ey + 2, 1, 1);
+            break;
+        }
     }
 }
 
@@ -1534,33 +1818,281 @@ function drawObject(obj) {
                 ctx.fillStyle = P.bg;
                 ctx.fillRect(ox + 3, oy + 3 + s * 2, 10, 1);
             }
-            // Air flow lines (animated)
             if (t % 4000 < 3000) {
                 ctx.fillStyle = `rgba(200,200,200,0.1)`;
                 const yoff = (t % 1000) / 100;
                 ctx.fillRect(ox + 5, oy + 10 + yoff, 6, 1);
             }
             break;
+
+        case 'watercooler':
+            // Base
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 4, oy + 8, 8, 8);
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 5, oy + 9, 6, 6);
+            // Bottle
+            ctx.fillStyle = 'rgba(100,140,180,0.3)';
+            ctx.fillRect(ox + 5, oy, 6, 9);
+            ctx.fillStyle = 'rgba(120,160,200,0.2)';
+            ctx.fillRect(ox + 6, oy + 1, 4, 7);
+            // Water level (animated)
+            const waterY = 3 + Math.sin(t * 0.001) * 0.5;
+            ctx.fillStyle = 'rgba(80,120,160,0.4)';
+            ctx.fillRect(ox + 6, oy + waterY|0, 4, 8 - waterY|0);
+            // Bubble
+            if (t % 3000 < 100) {
+                ctx.fillStyle = 'rgba(200,220,255,0.5)';
+                ctx.fillRect(ox + 7, oy + 2 + (t % 100) / 20, 1, 1);
+            }
+            break;
+
+        case 'bulletin':
+            // Board
+            ctx.fillStyle = '#4a3a20';
+            ctx.fillRect(ox + 1, oy, 14, 14);
+            ctx.fillStyle = '#5a4a28';
+            ctx.fillRect(ox + 2, oy + 1, 12, 12);
+            // Papers
+            ctx.fillStyle = P.paper;
+            ctx.fillRect(ox + 3, oy + 2, 4, 5);
+            ctx.fillStyle = P.cream;
+            ctx.fillRect(ox + 8, oy + 3, 5, 4);
+            ctx.fillStyle = '#d0c090';
+            ctx.fillRect(ox + 4, oy + 8, 6, 4);
+            // Pins
+            ctx.fillStyle = P.red;
+            ctx.fillRect(ox + 4, oy + 2, 1, 1);
+            ctx.fillRect(ox + 10, oy + 3, 1, 1);
+            ctx.fillStyle = P.amber;
+            ctx.fillRect(ox + 6, oy + 8, 1, 1);
+            break;
+
+        case 'elevator':
+            // Door frame
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 1, oy, 14, 16);
+            // Doors (closed)
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 2, oy + 1, 5, 14);
+            ctx.fillRect(ox + 9, oy + 1, 5, 14);
+            ctx.fillStyle = P.metalHi;
+            ctx.fillRect(ox + 2, oy + 1, 5, 1);
+            ctx.fillRect(ox + 9, oy + 1, 5, 1);
+            // Gap
+            ctx.fillStyle = P.bg;
+            ctx.fillRect(ox + 7, oy + 1, 2, 14);
+            // Display showing "B" with flicker
+            ctx.fillStyle = P.bg;
+            ctx.fillRect(ox + 5, oy - 2, 6, 3);
+            ctx.fillStyle = (t % 4000 < 3800) ? P.red : P.redDk;
+            ctx.font = '5px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('B', ox + 8, oy);
+            ctx.textAlign = 'start';
+            break;
+
+        case 'cart':
+            // Cart body
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 1, oy + 6, 14, 8);
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 2, oy + 7, 12, 6);
+            // Files stacked on top
+            ctx.fillStyle = P.paper;
+            ctx.fillRect(ox + 2, oy + 2, 12, 5);
+            ctx.fillStyle = P.paperDk;
+            ctx.fillRect(ox + 3, oy + 4, 10, 1);
+            ctx.fillRect(ox + 3, oy + 6, 10, 1);
+            // Wheels
+            ctx.fillStyle = P.bg;
+            ctx.fillRect(ox + 3, oy + 14, 2, 2);
+            ctx.fillRect(ox + 11, oy + 14, 2, 2);
+            break;
+
+        case 'leak':
+            // Stain on ceiling
+            ctx.fillStyle = 'rgba(60,80,60,0.3)';
+            ctx.fillRect(ox + 4, oy, 8, 3);
+            // Drip animation — visual only, actual drips handled by system
+            ctx.fillStyle = 'rgba(100,140,180,0.4)';
+            ctx.fillRect(ox + 7, oy + 2, 1, 1 + (t % 2000) / 500);
+            // Puddle
+            ctx.fillStyle = 'rgba(80,120,160,0.15)';
+            ctx.fillRect(ox + 3, oy + 14, 10, 2);
+            break;
+
+        case 'calendar':
+            ctx.fillStyle = P.paper;
+            ctx.fillRect(ox + 4, oy + 2, 8, 10);
+            ctx.fillStyle = P.red;
+            ctx.fillRect(ox + 4, oy + 2, 8, 3);
+            ctx.fillStyle = P.paperDk;
+            // Grid lines
+            for (let gy = 0; gy < 3; gy++) {
+                ctx.fillRect(ox + 5, oy + 6 + gy * 2, 6, 0.5);
+            }
+            // Circled date
+            ctx.fillStyle = P.red;
+            ctx.fillRect(ox + 7, oy + 7, 3, 2);
+            break;
+
+        case 'photo':
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 3, oy, 10, 10);
+            // Photo
+            ctx.fillStyle = '#3a3530';
+            ctx.fillRect(ox + 4, oy + 1, 8, 8);
+            // Silhouettes
+            for (let px = 0; px < 4; px++) {
+                ctx.fillStyle = '#2a2520';
+                ctx.fillRect(ox + 5 + px * 2, oy + 3, 1, 5);
+            }
+            // Lens flare
+            ctx.fillStyle = `rgba(255,200,120,${0.2 + Math.sin(t * 0.002) * 0.1})`;
+            ctx.fillRect(ox + 6, oy + 2, 4, 4);
+            break;
+
+        case 'evidence':
+            // Corkboard
+            ctx.fillStyle = '#5a3a18';
+            ctx.fillRect(ox + 1, oy, 14, 14);
+            // Papers and string
+            ctx.fillStyle = P.paper;
+            ctx.fillRect(ox + 2, oy + 1, 3, 3);
+            ctx.fillRect(ox + 9, oy + 2, 4, 3);
+            ctx.fillRect(ox + 3, oy + 8, 3, 4);
+            ctx.fillRect(ox + 10, oy + 9, 3, 3);
+            // Red string connections
+            ctx.fillStyle = P.red;
+            ctx.fillRect(ox + 5, oy + 2, 4, 1);
+            ctx.fillRect(ox + 9, oy + 3, 1, 6);
+            ctx.fillRect(ox + 6, oy + 5, 1, 4);
+            ctx.fillRect(ox + 6, oy + 9, 4, 1);
+            break;
+
+        case 'extinguisher':
+            ctx.fillStyle = P.redDk;
+            ctx.fillRect(ox + 5, oy + 2, 6, 12);
+            ctx.fillStyle = P.red;
+            ctx.fillRect(ox + 6, oy + 3, 4, 10);
+            ctx.fillStyle = P.metalHi;
+            ctx.fillRect(ox + 6, oy + 1, 4, 2);
+            // Nozzle
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 10, oy + 2, 2, 1);
+            // Label
+            ctx.fillStyle = P.paper;
+            ctx.fillRect(ox + 7, oy + 6, 2, 3);
+            break;
+
+        case 'gauge':
+            // Circular gauge face
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 3, oy + 1, 10, 10);
+            ctx.fillStyle = P.bg;
+            ctx.fillRect(ox + 4, oy + 2, 8, 8);
+            ctx.fillStyle = P.cream;
+            ctx.fillRect(ox + 5, oy + 3, 6, 6);
+            // Needle (animated)
+            const needleAngle = Math.sin(t * 0.002) * 0.8;
+            ctx.fillStyle = P.red;
+            ctx.fillRect(ox + 8 + Math.cos(needleAngle) * 2|0, oy + 6 + Math.sin(needleAngle) * 2|0, 1, 1);
+            ctx.fillRect(ox + 8, oy + 6, 1, 1); // pivot
+            // Housing
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 3, oy + 10, 10, 4);
+            break;
+
+        case 'shutoff':
+            // Safety glass frame
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 2, oy + 1, 12, 12);
+            // Glass
+            ctx.fillStyle = 'rgba(100,120,100,0.2)';
+            ctx.fillRect(ox + 3, oy + 2, 10, 10);
+            // Lever (red)
+            ctx.fillStyle = P.red;
+            ctx.fillRect(ox + 6, oy + 4, 4, 2);
+            ctx.fillRect(ox + 7, oy + 3, 2, 6);
+            // Warning stripes
+            for (let hx = 0; hx < 12; hx += 4) {
+                ctx.fillStyle = P.hazard1;
+                ctx.fillRect(ox + 2 + hx, oy + 12, 2, 2);
+                ctx.fillStyle = P.hazard2;
+                ctx.fillRect(ox + 4 + hx, oy + 12, 2, 2);
+            }
+            break;
+
+        case 'mirror':
+            ctx.fillStyle = P.metalLt;
+            ctx.fillRect(ox + 3, oy, 10, 14);
+            // Mirror surface
+            ctx.fillStyle = '#1a2a2a';
+            ctx.fillRect(ox + 4, oy + 1, 8, 12);
+            // Delayed reflection — slight green tint for Floor 6
+            const reflAlpha = 0.15 + Math.sin(t * 0.003) * 0.05;
+            ctx.fillStyle = `rgba(68,170,68,${reflAlpha})`;
+            ctx.fillRect(ox + 5, oy + 3, 6, 8);
+            // Player reflection (delayed/distorted)
+            ctx.fillStyle = `rgba(180,160,120,${0.15 + Math.sin(t * 0.005 - 0.3) * 0.05})`;
+            ctx.fillRect(ox + 7, oy + 4, 2, 6);
+            break;
+
+        case 'phone':
+            // Base
+            ctx.fillStyle = '#1a1410';
+            ctx.fillRect(ox + 3, oy + 6, 10, 8);
+            ctx.fillStyle = '#2a2018';
+            ctx.fillRect(ox + 4, oy + 7, 8, 6);
+            // Handset
+            ctx.fillStyle = '#1a1410';
+            ctx.fillRect(ox + 3, oy + 3, 10, 3);
+            // Dial
+            ctx.fillStyle = '#0a0808';
+            ctx.fillRect(ox + 6, oy + 8, 4, 4);
+            ctx.fillStyle = P.cream;
+            ctx.fillRect(ox + 7, oy + 9, 2, 2);
+            // Ring indicator (phone rings when player is near)
+            if (Math.abs(state.px - ox) < 48 && t % 2000 < 200) {
+                ctx.fillStyle = `rgba(255,200,120,${0.3 + Math.sin(t * 0.02) * 0.2})`;
+                ctx.fillRect(ox + 2, oy + 1, 12, 2);
+            }
+            break;
     }
 }
 
 function drawNPC(npc) {
-    const nx = npc.x * TILE + 3, ny = npc.y * TILE;
+    const nx = npc.x * TILE + 3;
+    // Idle animation: subtle breathing bob
+    const breathOffset = Math.sin(state.time * 0.002 + npc.x * 3.7) * 0.5;
+    const ny = npc.y * TILE + breathOffset;
     const pal = npc.glow ? npcGlowPal : npcPal;
-    drawSprite(nx, ny, SPR.npcStand, pal, false);
 
-    // Name tag
-    ctx.fillStyle = npc.glow ? P.greenGlow : P.amberDk;
+    // Face toward player when nearby
+    const facingPlayer = Math.abs(state.px - (npc.x * TILE)) < 60;
+    const flip = facingPlayer ? (state.px < npc.x * TILE) : false;
+    drawSprite(nx, ny|0, SPR.npcStand, pal, flip);
+
+    // Name tag with subtle pulse
+    const tagAlpha = 0.6 + Math.sin(state.time * 0.003 + npc.x) * 0.15;
+    ctx.fillStyle = npc.glow ? P.greenGlow : `rgba(138,96,32,${tagAlpha})`;
     ctx.font = '5px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(npc.name.split(' ').pop(), nx + 5, ny - 2);
+    ctx.fillText(npc.name.split(' ').pop(), nx + 5, (ny - 2)|0);
     ctx.textAlign = 'start';
 
     // Glow effect for Unit-4091
     if (npc.glow) {
         const pulse = (Math.sin(state.time * 0.003) + 1) * 0.5;
         ctx.fillStyle = `rgba(68,170,68,${0.05 + pulse * 0.05})`;
-        ctx.fillRect(nx - 4, ny - 2, 18, 20);
+        ctx.fillRect(nx - 4, (ny - 2)|0, 18, 20);
+        // Additional glow rings
+        if (getDiscoveryCount() >= 6) {
+            const ringPulse = (Math.sin(state.time * 0.001) + 1) * 0.5;
+            ctx.fillStyle = `rgba(68,170,68,${0.02 + ringPulse * 0.02})`;
+            ctx.fillRect(nx - 8, (ny - 6)|0, 26, 28);
+        }
     }
 }
 
@@ -1597,6 +2129,7 @@ function render() {
     const f = floors[state.floor];
     const maxCamX = Math.max(0, f.width * TILE - W);
     const camX = Math.max(0, Math.min(maxCamX, state.px - W / 2 + 5));
+    const camX2 = camX; // for lighting overlay after camera restore
 
     ctx.save();
     ctx.translate(-Math.round(camX), 0);
@@ -1631,6 +2164,12 @@ function render() {
 
     // Particles
     drawParticles(0);
+
+    // Drips
+    drawDrips(0);
+
+    // Creatures
+    drawCreatures(0);
 
     ctx.restore();
 
@@ -1675,6 +2214,52 @@ function render() {
         }
     }
 
+    // === DYNAMIC LIGHTING OVERLAY ===
+    // Apply darkness, then cut out light cones
+    const darkAlpha = state.floor === 5 ? 0.35 : (state.floor === 4 ? 0.25 : 0.2);
+    ctx.fillStyle = `rgba(0,0,0,${darkAlpha})`;
+    ctx.fillRect(0, 0, W, H);
+
+    // Light cones from fixtures
+    const f2 = floors[state.floor];
+    for (const dec of f2.decorations) {
+        if (dec.type === 'light_fixture' || dec.type === 'light_fixture_green') {
+            const lx = dec.x * TILE + 8 - camX2;
+            const ly = dec.y * TILE + 5;
+            const isGreen = dec.type === 'light_fixture_green';
+            const flicker = Math.sin(state.time * 0.008 + dec.x * 7.3) > 0.92;
+            if (flicker) continue; // light is off during flicker
+
+            const discoveryMod = getDiscoveryCount() > 4 ? 0.7 : 1; // dimmer with more discoveries
+            const grad = ctx.createRadialGradient(lx, ly, 2, lx, ly + 50, 60);
+            if (isGreen) {
+                const pulse = (Math.sin(state.time * 0.004 + dec.x) + 1) * 0.5;
+                grad.addColorStop(0, `rgba(68,170,68,${(0.12 + pulse * 0.06) * discoveryMod})`);
+                grad.addColorStop(0.5, `rgba(68,170,68,${0.04 * discoveryMod})`);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+            } else {
+                grad.addColorStop(0, `rgba(255,200,120,${0.15 * discoveryMod})`);
+                grad.addColorStop(0.4, `rgba(255,180,100,${0.06 * discoveryMod})`);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+            }
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.fillStyle = grad;
+            ctx.fillRect(lx - 60, ly - 5, 120, 110);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    }
+
+    // Player-proximity light (subtle warm glow near player)
+    const plx = Math.round(state.px - camX2 + 5);
+    const ply = 8 * TILE - 8;
+    const pGrad = ctx.createRadialGradient(plx, ply, 0, plx, ply, 30);
+    pGrad.addColorStop(0, 'rgba(255,200,120,0.04)');
+    pGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = pGrad;
+    ctx.fillRect(plx - 30, ply - 30, 60, 60);
+    ctx.globalCompositeOperation = 'source-over';
+
     // CRT scanlines (subtle, all floors)
     ctx.fillStyle = 'rgba(0,0,0,0.04)';
     for (let y = 0; y < H; y += 2) ctx.fillRect(0, y, W, 1);
@@ -1686,10 +2271,81 @@ function render() {
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, W, H);
 
+    // === FLOOR 6 GLITCH EFFECTS ===
+    if (state.floor === 5) {
+        // Horizontal line displacement (glitch scanlines)
+        if (Math.random() < 0.04) {
+            const gy = Math.random() * H | 0;
+            const gh = 1 + Math.random() * 3 | 0;
+            const gx = (Math.random() - 0.5) * 8 | 0;
+            const imgData = ctx.getImageData(0, gy, W, gh);
+            ctx.putImageData(imgData, gx, gy);
+        }
+        // Static noise bursts
+        if (Math.random() < 0.02) {
+            const burstY = Math.random() * H | 0;
+            const burstH = 2 + Math.random() * 6 | 0;
+            for (let py = burstY; py < Math.min(H, burstY + burstH); py++) {
+                for (let px = 0; px < W; px += 2) {
+                    if (Math.random() < 0.3) {
+                        ctx.fillStyle = `rgba(68,170,68,${Math.random() * 0.15})`;
+                        ctx.fillRect(px, py, 1, 1);
+                    }
+                }
+            }
+        }
+        // Brief ghost text overlay
+        if (Math.random() < 0.005) {
+            ctx.fillStyle = 'rgba(68,170,68,0.06)';
+            ctx.font = '7px monospace';
+            const ghostTexts = ['FILING', 'B-247', 'AWARE', 'SEE', 'ANNOTATE', 'ALREADY FILED', 'YOU ARE HERE'];
+            ctx.fillText(ghostTexts[Math.random() * ghostTexts.length | 0], Math.random() * (W - 40), Math.random() * H);
+        }
+    }
+
+    // === DISCOVERY-BASED ATMOSPHERIC CHANGES ===
+    const discCount = getDiscoveryCount();
+    // More discoveries = more unstable reality
+    if (discCount >= 2) {
+        // Increased light flicker
+        if (Math.random() < 0.005 * discCount) {
+            const flickY = Math.random() * H | 0;
+            ctx.fillStyle = 'rgba(255,200,120,0.03)';
+            ctx.fillRect(0, flickY, W, 1 + Math.random() * 3 | 0);
+        }
+    }
+    if (discCount >= 5) {
+        // Subtle chromatic aberration on edges
+        const abTime = Math.sin(state.time * 0.001) * 2;
+        if (Math.abs(abTime) > 1) {
+            ctx.globalAlpha = 0.015;
+            ctx.drawImage(canvas, abTime|0, 0);
+            ctx.globalAlpha = 1;
+        }
+    }
+    if (discCount >= 7) {
+        // Reality degradation — brief dark pulses
+        if (Math.random() < 0.008) {
+            ctx.fillStyle = `rgba(0,0,0,${0.05 + Math.random() * 0.1})`;
+            ctx.fillRect(0, 0, W, H);
+        }
+    }
+
     // Occasional CRT flicker
-    if (Math.random() < 0.003) {
+    if (Math.random() < 0.003 + discCount * 0.001) {
         ctx.fillStyle = 'rgba(255,200,120,0.015)';
         ctx.fillRect(0, 0, W, H);
+    }
+
+    // === HORIZONTAL JITTER (CRT instability) ===
+    if (Math.random() < 0.002 + (state.floor === 5 ? 0.01 : 0)) {
+        const jitterY = Math.random() * H | 0;
+        const jitterH = 1 + Math.random() * 2 | 0;
+        const jitterX = (Math.random() - 0.5) * 3 | 0;
+        if (jitterX !== 0) {
+            const strip = ctx.getImageData(0, jitterY, W, jitterH);
+            ctx.putImageData(strip, jitterX, jitterY);
+        }
     }
 
     // Discovery glow effect (when discoveries found, subtle pulsing border)
@@ -1787,6 +2443,14 @@ function update(dt) {
     }
 
     updateParticles();
+    updateDrips();
+    updateCreatures();
+
+    // Spawn ambient creatures
+    if (Math.random() < 0.003) spawnCreature('rat', state.floor);
+    if (Math.random() < 0.005 && state.floor !== 5) spawnCreature('moth', state.floor);
+    if (state.floor >= 3 && Math.random() < 0.002) spawnCreature('roach', state.floor);
+
     tickAudio(state.time);
 }
 
