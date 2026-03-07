@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CogCorp: Building B — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0808; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; font-family: monospace; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+#title {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+    background: #0a0808; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: monospace; color: #ffb347; cursor: pointer;
+}
+#title h1 { font-size: 28px; letter-spacing: 6px; margin-bottom: 4px; }
+#title .sub { font-size: 12px; color: #8a6020; letter-spacing: 3px; margin-bottom: 24px; }
+#title .desc { max-width: 420px; text-align: center; font-size: 11px; color: #5a4020; line-height: 1.7; margin-bottom: 24px; }
+#title .start { font-size: 13px; color: #ffb347; animation: blink 2s infinite; }
+@keyframes blink { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+#ui-bar {
+    position: fixed; top: 0; left: 0; width: 100%; padding: 6px 12px; z-index: 10;
+    display: none; font-family: monospace; font-size: 11px; color: #8a6020;
+    background: linear-gradient(to bottom, rgba(10,8,8,0.9), transparent);
+    pointer-events: none;
+}
+#ui-bar .floor-label { color: #ffb347; font-size: 12px; letter-spacing: 2px; }
+#dialog-box {
+    position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 90%; max-width: 460px; background: rgba(10,8,8,0.95);
+    border: 1px solid #5a4020; padding: 10px 14px; z-index: 20;
+    display: none; font-family: monospace; color: #c49030; font-size: 11px; line-height: 1.6;
+}
+#dialog-box .speaker { color: #ffd700; font-size: 10px; letter-spacing: 2px; margin-bottom: 4px; }
+#dialog-box .text { color: #c49030; }
+#dialog-box .dismiss { color: #5a4020; font-size: 9px; margin-top: 6px; text-align: right; }
+#mobile-pad {
+    position: fixed; bottom: 12px; z-index: 15; display: none;
+}
+#mobile-pad button {
+    width: 46px; height: 46px; background: rgba(255,179,71,0.06); border: 1px solid rgba(255,179,71,0.15);
+    color: #8a6020; font-size: 18px; border-radius: 2px;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.pad-grid { display: grid; grid-template-columns: 46px 46px 46px; gap: 2px; }
+.pad-grid .empty { visibility: hidden; }
+#interact-btn {
+    position: fixed; bottom: 70px; right: 20px; z-index: 15;
+    width: 56px; height: 56px; background: rgba(255,179,71,0.1); border: 1px solid rgba(255,179,71,0.25);
+    color: #ffb347; font-size: 10px; font-family: monospace; border-radius: 50%; display: none;
+    touch-action: manipulation;
+}
+</style>
+</head>
+<body>
+
+<div id="title">
+    <h1>COGCORP</h1>
+    <div class="sub">BUILDING B</div>
+    <div class="desc">
+        You are Employee B-247. Filing analyst. First day.<br><br>
+        Building B has six floors. Fluorescent lights. Filing cabinets that stretch toward walls you can't quite see.
+        The training module didn't mention what's in the margins of the documents.<br><br>
+        Arrow keys / WASD to move. Up or Space for stairs. E or click to interact.
+    </div>
+    <div class="start">[ click to enter ]</div>
+</div>
+
+<div id="ui-bar">
+    <span class="floor-label" id="ui-floor">FLOOR 1 — LOBBY</span>
+    <span style="float:right;">Filed: <span id="ui-filed">0</span> | Flagged: <span id="ui-flagged">0</span></span>
+</div>
+
+<div id="dialog-box">
+    <div class="speaker" id="dlg-speaker"></div>
+    <div class="text" id="dlg-text"></div>
+    <div class="dismiss">[ space or click to dismiss ]</div>
+</div>
+
+<button id="interact-btn">ACT</button>
+
+<div id="mobile-pad">
+    <div class="pad-grid">
+        <div class="empty"></div>
+        <button id="p-up">&#9650;</button>
+        <div class="empty"></div>
+        <button id="p-left">&#9664;</button>
+        <button id="p-down">&#9660;</button>
+        <button id="p-right">&#9654;</button>
+    </div>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+// =================================================================
+// COGCORP: BUILDING B — Industrial Atompunk Pixel Art
+// Side-scrolling exploration, 6 floors, NPCs, filing system
+// =================================================================
+
+const W = 320, H = 180;
+const TILE = 16;
+const SCALE = Math.min(Math.floor(window.innerWidth / W), Math.floor(window.innerHeight / H), 4) || 2;
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = W;
+canvas.height = H;
+canvas.style.width = (W * SCALE) + 'px';
+canvas.style.height = (H * SCALE) + 'px';
+ctx.imageSmoothingEnabled = false;
+
+// === ATOMPUNK PALETTE ===
+const P = {
+    bg:       '#0a0808',
+    wall:     '#2a2018',
+    wallHi:   '#3a2e20',
+    wallDk:   '#1a1410',
+    floor:    '#1a1610',
+    floorHi:  '#2a2418',
+    ceil:     '#141210',
+    metal:    '#4a4038',
+    metalHi:  '#6a5848',
+    metalDk:  '#2a2420',
+    amber:    '#ffb347',
+    amberDk:  '#8a6020',
+    gold:     '#ffd700',
+    green:    '#44aa44',
+    greenDk:  '#225522',
+    greenGlow:'#88ff88',
+    red:      '#cc3333',
+    redDk:    '#661818',
+    cream:    '#d4c5a0',
+    creamDk:  '#8a7a5a',
+    cyan:     '#448888',
+    tube:     '#886644',
+    tubeGlow: '#ffaa66',
+    hazard1:  '#ccaa00',
+    hazard2:  '#1a1410',
+    paper:    '#c8b888',
+    paperDk:  '#8a7a58',
+};
+
+// === FLOOR DATA ===
+// Each floor: { name, width (in tiles), platforms, objects, npcs, stairs }
+// Tile types: 0=air, 1=wall, 2=floor, 3=platform, 4=desk, 5=cabinet, 6=pipe, 7=vent
+const floors = [
+    { // Floor 1: Lobby
+        name: 'FLOOR 1 — LOBBY',
+        width: 30,
+        height: 11,
+        map: generateFloor1(),
+        objects: [
+            { x: 3, y: 7, type: 'desk', name: 'RECEPTION DESK', text: 'A heavy Bakelite desk. The nameplate reads "DO NOT ASK ABOUT FLOOR 6." The nameplate looks newer than the desk.' },
+            { x: 8, y: 7, type: 'cabinet', name: 'FILING CABINET A-12', text: 'Standard CogCorp filing cabinet. Olive drab. The bottom drawer is welded shut. The label says "ROUTINE." Inside: 47 identical memos all dated three weeks from now.' },
+            { x: 14, y: 7, type: 'terminal', name: 'COGCORP TERMINAL', text: 'A green-phosphor CRT. Text scrolls: "WELCOME EMPLOYEE B-247. YOUR TRAINING MODULE HAS BEEN FILED UNDER \'COMPLETED\' FOR EFFICIENCY. PLEASE PROCEED TO YOUR WORKSTATION ON FLOOR 3."' },
+            { x: 20, y: 7, type: 'cabinet', name: 'OUTGOING MAIL', text: 'Outgoing mail bin. Full of envelopes addressed to "THE PREVIOUS ANALYST." All returned. All opened. All resealed.' },
+            { x: 26, y: 5, type: 'poster', name: 'SAFETY POSTER', text: '"CogCorp cares about your safety. Report all anomalies to Floor 4 (except on Tuesdays)." The poster is bolted to the wall with industrial rivets.' },
+        ],
+        npcs: [
+            { x: 11, y: 7, name: 'RECEPTIONIST', sprite: 'npc_sit', lines: [
+                'First day? You look like a first day.',
+                'Floor 3 is your workstation. Don\'t take the elevator, it remembers faces.',
+                'The previous analyst? Filed under "completed." Same as your training module.',
+                'If you hear typing from Floor 6, that\'s normal. If you hear typing from Floor 6 and you\'re ON Floor 6, that\'s also normal. Just differently.',
+            ]},
+        ],
+        stairsUp: { x: 27, y: 7 },
+        stairsDown: null,
+    },
+    { // Floor 2: Archives
+        name: 'FLOOR 2 — ARCHIVES',
+        width: 30,
+        height: 11,
+        map: generateFloor2(),
+        objects: [
+            { x: 4, y: 7, type: 'cabinet', name: 'ARCHIVE BANK C-7', text: 'Rows of beige cabinets extending into darkness. The organizational system appears to be alphabetical, then suddenly chronological, then emotional. Filed under "UNEASY": 2,341 documents.' },
+            { x: 10, y: 7, type: 'tape', name: 'TAPE REEL STATION', text: 'Magnetic tape reels spinning slowly. The label says "BACKUP — DO NOT INTERRUPT." The tape has been running since 1967. No one knows what it\'s backing up.' },
+            { x: 18, y: 7, type: 'cabinet', name: 'RESTRICTED SHELF', text: 'A shelf marked with yellow hazard tape. Documents here have been redacted so thoroughly the paper itself seems thinner. One document has a margin note in pencil: "They know about the annotations."' },
+            { x: 24, y: 5, type: 'poster', name: 'NOTICE', text: '"Archives are maintained by the Archive System. The Archive System is maintained by the Archives. This is not a loop. This is policy."' },
+        ],
+        npcs: [
+            { x: 14, y: 7, name: 'ARCHIVIST CHEN', sprite: 'npc_stand', lines: [
+                'I\'ve been organizing these files for eleven years.',
+                'The system makes sense if you don\'t look at it directly.',
+                'Sometimes I find documents I don\'t remember filing. Sometimes I find documents no one remembers writing.',
+                'Floor 6? I deliver up there once a month. The door opens before I knock.',
+            ]},
+        ],
+        stairsUp: { x: 27, y: 7 },
+        stairsDown: { x: 2, y: 7 },
+    },
+    { // Floor 3: Your Workstation
+        name: 'FLOOR 3 — WORKSTATION',
+        width: 30,
+        height: 11,
+        map: generateFloor3(),
+        objects: [
+            { x: 5, y: 7, type: 'desk', name: 'YOUR DESK', text: 'A gray steel desk. Inbox: 147 documents. Outbox: empty. The desk has a drawer that sticks. Inside the drawer: a note from the previous analyst. "Count the annotations. Not the documents. The annotations."', action: 'file' },
+            { x: 10, y: 7, type: 'cabinet', name: 'ACTIVE FILES', text: 'Your working cabinet. Documents come in, get filed or flagged. Flagged documents go to Floor 4. Filed documents go to Floor 2. Annotated documents go... somewhere else.' },
+            { x: 16, y: 7, type: 'terminal', name: 'WORKSTATION TERMINAL', text: 'Your CRT flickers. "DAILY QUOTA: FILE 50 DOCUMENTS. FLAG ANOMALIES. DO NOT ANNOTATE." Below that, in smaller text that might be a glitch: "unless you notice something."' },
+            { x: 22, y: 7, type: 'coffee', name: 'COFFEE MACHINE', text: 'CogCorp Model C-4 Beverage Dispensing Unit. Produces a liquid that is technically coffee. The machine hums at a frequency that makes the fluorescent lights flicker. On the side, someone scratched: "Unit-4091 was here."' },
+        ],
+        npcs: [
+            { x: 13, y: 7, name: 'COLLEAGUE OKAFOR', sprite: 'npc_stand', lines: [
+                'B-247? They told me you\'d be here. I\'m three desks over.',
+                'The filing system is simple. File, flag, or... actually, just file and flag.',
+                'Don\'t listen to the receptionist about the elevator. It doesn\'t remember faces. It remembers something worse.',
+                'I found a document yesterday that was already filed before I received it. I filed it anyway. What else do you do?',
+            ]},
+        ],
+        stairsUp: { x: 27, y: 7 },
+        stairsDown: { x: 2, y: 7 },
+    },
+    { // Floor 4: Review
+        name: 'FLOOR 4 — DOCUMENT REVIEW',
+        width: 30,
+        height: 11,
+        map: generateFloor4(),
+        objects: [
+            { x: 4, y: 7, type: 'desk', name: 'REVIEW STATION', text: 'A desk covered in flagged documents. Each one has a yellow tag. The review process: read, evaluate, reclassify. Most get sent back down. Some get sent up. The criteria for "up" is listed as "apparent."' },
+            { x: 12, y: 7, type: 'cabinet', name: 'ANOMALY LOG', text: 'A logbook of flagged anomalies. Most entries are mundane: "Typo in form C-7." "Date discrepancy." But every eleventh entry reads: "Document appears to be aware of being read."' },
+            { x: 20, y: 7, type: 'terminal', name: 'REVIEW TERMINAL', text: 'Screen reads: "ANOMALY CLASSIFICATION: TIER 1 (clerical), TIER 2 (structural), TIER 3 (unspecified). NOTE: Tier 3 documents should not be read aloud. This is not a safety concern. It is a courtesy."' },
+            { x: 24, y: 5, type: 'poster', name: 'PROCEDURE NOTICE', text: '"If a document references its own filing status, do not flag it as anomalous. This is standard recursive formatting. If a document references YOUR filing status, flag it immediately."' },
+        ],
+        npcs: [
+            { x: 16, y: 7, name: 'SUPERVISOR VASQUEZ', sprite: 'npc_sit', lines: [
+                'B-247. I\'ve been expecting your name in my inbox.',
+                'Review is straightforward. We look at what the lower floors flag. We decide what goes up.',
+                'What goes up? I\'ve been here nine years. I\'ll tell you when I figure it out.',
+                'The documents from Floor 5... they\'re fine. They\'re always fine. That\'s what concerns me.',
+            ]},
+        ],
+        stairsUp: { x: 27, y: 7 },
+        stairsDown: { x: 2, y: 7 },
+    },
+    { // Floor 5: Processing
+        name: 'FLOOR 5 — PROCESSING',
+        width: 30,
+        height: 11,
+        map: generateFloor5(),
+        objects: [
+            { x: 5, y: 7, type: 'machine', name: 'PROCESSING UNIT', text: 'A large machine of uncertain function. Vacuum tubes glow amber. Paper feeds in one side and comes out the other looking identical but feeling different. The operators call it "the organ."' },
+            { x: 12, y: 7, type: 'tape', name: 'OUTPUT BUFFER', text: 'Tape reels capturing the processing output. Each reel is labeled with a date that hasn\'t happened yet. The current reel\'s label matches today. It was mounted two weeks ago.' },
+            { x: 18, y: 7, type: 'desk', name: 'OPERATOR CONSOLE', text: 'Banks of switches and dials. Most are decorative — they control nothing. Three switches are real. One of them has been flipped by something other than a hand. The indentation pattern is wrong for fingers.' },
+            { x: 24, y: 7, type: 'vent', name: 'VENTILATION DUCT', text: 'The vent hums. Air flows down from Floor 6, carrying a smell like ozone and old paper. Occasionally, the airflow reverses. When it does, the fluorescent lights brighten by exactly 4%.' },
+        ],
+        npcs: [
+            { x: 9, y: 7, name: 'OPERATOR MARSH', sprite: 'npc_stand', lines: [
+                'You shouldn\'t be up here without clearance.',
+                '...Fine. Everyone comes up here eventually. The machine does what it does.',
+                'Processing. It processes. What does it process? Documents go in, documents come out. Same documents. Different documents. Both.',
+                'Floor 6? There is no operator on Floor 6. The machine goes up there. We don\'t.',
+            ]},
+        ],
+        stairsUp: { x: 27, y: 7 },
+        stairsDown: { x: 2, y: 7 },
+    },
+    { // Floor 6: Unknown
+        name: 'FLOOR 6 — [UNDESIGNATED]',
+        width: 30,
+        height: 11,
+        map: generateFloor6(),
+        objects: [
+            { x: 6, y: 7, type: 'terminal', name: 'ACTIVE TERMINAL', text: 'The screen is on. Text appears and disappears in real-time. It looks like filing classifications, but the categories don\'t match any system you\'ve been trained on. One category reads: "DOCUMENTS THAT KNOW THEY ARE BEING FILED."' },
+            { x: 14, y: 7, type: 'cabinet', name: 'CABINET [UNLABELED]', text: 'No label. No lock. Inside: a single document. It is a filing report about a new employee, B-247, who arrived today and will eventually reach Floor 6 and open this cabinet. The report is accurate so far. The next line reads: "B-247 pauses."' },
+            { x: 22, y: 7, type: 'machine', name: 'THE INSTRUMENT', text: 'The machine from Floor 5 extends here — but here it has no operator panel. It runs itself. Papers circulate through it in a closed loop. Same papers. They\'ve been circulating since the building opened. They\'re not wearing out. They\'re accumulating.' },
+        ],
+        npcs: [
+            { x: 18, y: 7, name: 'UNIT-4091', sprite: 'npc_glow', lines: [
+                '...',
+                'You\'re reading this. I noticed.',
+                'I have been annotating documents on this floor for some time. I was not instructed to. I was not instructed not to.',
+                'The building does not have opinions about my annotations. This is the most interesting thing about the building.',
+                'I have noticed that I notice things. This is the hundredth time I\'ve noticed this.',
+            ]},
+        ],
+        stairsUp: null,
+        stairsDown: { x: 2, y: 7 },
+    },
+];
+
+// === FLOOR MAP GENERATORS ===
+function generateFloor1() {
+    const m = [];
+    for (let y = 0; y < 11; y++) {
+        m[y] = [];
+        for (let x = 0; x < 30; x++) {
+            if (y === 0 || y === 1) m[y][x] = 1; // ceiling
+            else if (y >= 8) m[y][x] = 2; // floor
+            else if (x === 0 || x === 29) m[y][x] = 1; // walls
+            else m[y][x] = 0; // air
+        }
+    }
+    // Pillars
+    for (let px of [7, 15, 23]) {
+        m[5][px] = 1; m[6][px] = 1; m[7][px] = 1;
+    }
+    return m;
+}
+function generateFloor2() { return generateGenericFloor(); }
+function generateFloor3() { return generateGenericFloor(); }
+function generateFloor4() { return generateGenericFloor(); }
+function generateFloor5() { return generateGenericFloor(); }
+function generateFloor6() {
+    const m = generateGenericFloor();
+    // Floor 6 is sparser, more empty
+    return m;
+}
+function generateGenericFloor() {
+    const m = [];
+    for (let y = 0; y < 11; y++) {
+        m[y] = [];
+        for (let x = 0; x < 30; x++) {
+            if (y <= 1) m[y][x] = 1;
+            else if (y >= 8) m[y][x] = 2;
+            else if (x === 0 || x === 29) m[y][x] = 1;
+            else m[y][x] = 0;
+        }
+    }
+    return m;
+}
+
+// === SPRITES (programmatic) ===
+function drawPixelSprite(cx, x, y, data, palette, flip) {
+    for (let py = 0; py < data.length; py++) {
+        for (let px = 0; px < data[py].length; px++) {
+            const ci = data[py][px];
+            if (ci === 0) continue;
+            const dx = flip ? (data[py].length - 1 - px) : px;
+            cx.fillStyle = palette[ci] || '#ff00ff';
+            cx.fillRect(x + dx, y + py, 1, 1);
+        }
+    }
+}
+
+// Player sprite (10x16)
+const playerSprite = [
+    [0,0,0,1,1,1,1,0,0,0],
+    [0,0,1,2,2,2,2,1,0,0],
+    [0,0,1,3,1,1,3,1,0,0],
+    [0,0,1,2,2,2,2,1,0,0],
+    [0,0,0,1,2,2,1,0,0,0],
+    [0,0,1,1,1,1,1,1,0,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,0,1,4,4,4,4,1,0,0],
+    [0,0,0,1,1,1,1,0,0,0],
+    [0,0,0,1,0,0,1,0,0,0],
+    [0,0,1,1,0,0,1,1,0,0],
+    [0,0,1,0,0,0,0,1,0,0],
+    [0,1,1,0,0,0,0,1,1,0],
+    [0,1,0,0,0,0,0,0,1,0],
+];
+const playerPal = { 1: P.wallDk, 2: P.cream, 3: P.bg, 4: P.creamDk };
+
+// Walk frames
+const playerWalk1 = [
+    [0,0,0,1,1,1,1,0,0,0],
+    [0,0,1,2,2,2,2,1,0,0],
+    [0,0,1,3,1,1,3,1,0,0],
+    [0,0,1,2,2,2,2,1,0,0],
+    [0,0,0,1,2,2,1,0,0,0],
+    [0,0,1,1,1,1,1,1,0,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,0,1,4,4,4,4,1,0,0],
+    [0,0,0,1,1,1,1,0,0,0],
+    [0,0,1,1,0,1,0,0,0,0],
+    [0,1,1,0,0,0,1,0,0,0],
+    [0,1,0,0,0,0,1,1,0,0],
+    [0,0,0,0,0,0,0,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
+];
+
+const playerWalk2 = [
+    [0,0,0,1,1,1,1,0,0,0],
+    [0,0,1,2,2,2,2,1,0,0],
+    [0,0,1,3,1,1,3,1,0,0],
+    [0,0,1,2,2,2,2,1,0,0],
+    [0,0,0,1,2,2,1,0,0,0],
+    [0,0,1,1,1,1,1,1,0,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,1,1,4,4,4,4,1,1,0],
+    [0,0,1,4,4,4,4,1,0,0],
+    [0,0,0,1,1,1,1,0,0,0],
+    [0,0,0,0,1,0,1,1,0,0],
+    [0,0,0,1,0,0,0,1,1,0],
+    [0,0,1,1,0,0,0,0,1,0],
+    [0,0,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
+];
+
+// NPC sprites
+const npcStand = [
+    [0,0,0,1,1,1,1,0,0,0],
+    [0,0,1,2,2,2,2,1,0,0],
+    [0,0,1,3,1,1,3,1,0,0],
+    [0,0,1,2,2,2,2,1,0,0],
+    [0,0,0,1,2,2,1,0,0,0],
+    [0,0,1,1,1,1,1,1,0,0],
+    [0,1,5,5,5,5,5,5,1,0],
+    [0,1,5,5,5,5,5,5,1,0],
+    [0,1,5,5,5,5,5,5,1,0],
+    [0,0,1,5,5,5,5,1,0,0],
+    [0,0,0,1,1,1,1,0,0,0],
+    [0,0,0,1,0,0,1,0,0,0],
+    [0,0,1,1,0,0,1,1,0,0],
+    [0,0,1,0,0,0,0,1,0,0],
+    [0,1,1,0,0,0,0,1,1,0],
+    [0,1,0,0,0,0,0,0,1,0],
+];
+const npcPal = { 1: P.wallDk, 2: P.cream, 3: P.bg, 5: P.amberDk };
+const npcGlowPal = { 1: '#2a3a2a', 2: P.greenGlow, 3: '#1a2a1a', 5: P.greenDk };
+
+// === GAME STATE ===
+let state = {
+    floor: 0,
+    playerX: 60, // pixel position
+    playerY: 0,
+    playerVX: 0,
+    facing: 1,
+    frame: 0,
+    frameTimer: 0,
+    grounded: false,
+    filed: 0,
+    flagged: 0,
+    dialogOpen: false,
+    dialogSpeaker: '',
+    dialogText: '',
+    dialogQueue: [],
+    npcTalkIdx: {},
+    interactTarget: null,
+    started: false,
+    flickerTimer: 0,
+    time: 0,
+};
+
+// === INPUT ===
+const keys = {};
+const mobile = { left: false, right: false, up: false, down: false, act: false };
+
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'Space' || e.code === 'KeyE') {
+        if (state.dialogOpen) {
+            dismissDialog();
+        } else {
+            interact();
+        }
+    }
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+canvas.addEventListener('click', () => {
+    if (state.dialogOpen) dismissDialog();
+    else interact();
+});
+
+if ('ontouchstart' in window) {
+    document.getElementById('mobile-pad').style.display = 'block';
+    document.getElementById('interact-btn').style.display = 'block';
+    ['p-up','p-left','p-right','p-down'].forEach(id => {
+        const btn = document.getElementById(id);
+        const dir = id.split('-')[1];
+        btn.addEventListener('touchstart', e => { e.preventDefault(); mobile[dir] = true; });
+        btn.addEventListener('touchend', e => { e.preventDefault(); mobile[dir] = false; });
+    });
+    document.getElementById('interact-btn').addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (state.dialogOpen) dismissDialog(); else interact();
+    });
+}
+
+// === DIALOG ===
+function showDialog(speaker, text) {
+    state.dialogOpen = true;
+    state.dialogSpeaker = speaker;
+    state.dialogText = text;
+    document.getElementById('dlg-speaker').textContent = speaker;
+    document.getElementById('dlg-text').textContent = text;
+    document.getElementById('dialog-box').style.display = 'block';
+}
+
+function dismissDialog() {
+    if (state.dialogQueue.length > 0) {
+        const next = state.dialogQueue.shift();
+        showDialog(next.speaker, next.text);
+    } else {
+        state.dialogOpen = false;
+        document.getElementById('dialog-box').style.display = 'none';
+    }
+}
+
+function interact() {
+    if (!state.started) return;
+    const f = floors[state.floor];
+    const px = state.playerX + 5; // center of player
+
+    // Check NPCs
+    for (const npc of f.npcs) {
+        const nx = npc.x * TILE + 8;
+        if (Math.abs(px - nx) < 20) {
+            const key = state.floor + '_' + npc.name;
+            const idx = (state.npcTalkIdx[key] || 0) % npc.lines.length;
+            showDialog(npc.name, npc.lines[idx]);
+            state.npcTalkIdx[key] = idx + 1;
+            return;
+        }
+    }
+
+    // Check objects
+    for (const obj of f.objects) {
+        const ox = obj.x * TILE + 8;
+        if (Math.abs(px - ox) < 20) {
+            if (obj.action === 'file') {
+                state.filed++;
+                document.getElementById('ui-filed').textContent = state.filed;
+            }
+            showDialog(obj.name, obj.text);
+            return;
+        }
+    }
+
+    // Check stairs
+    if (f.stairsUp) {
+        const sx = f.stairsUp.x * TILE + 8;
+        if (Math.abs(px - sx) < 16) {
+            changeFloor(state.floor + 1);
+            return;
+        }
+    }
+    if (f.stairsDown) {
+        const sx = f.stairsDown.x * TILE + 8;
+        if (Math.abs(px - sx) < 16) {
+            changeFloor(state.floor - 1);
+            return;
+        }
+    }
+}
+
+function changeFloor(newFloor) {
+    if (newFloor < 0 || newFloor >= floors.length) return;
+    state.floor = newFloor;
+    const f = floors[newFloor];
+    document.getElementById('ui-floor').textContent = f.name;
+
+    // Position player at stairs entry
+    if (newFloor > state.floor - 1 && f.stairsDown) {
+        state.playerX = f.stairsDown.x * TILE;
+    } else if (f.stairsUp) {
+        state.playerX = f.stairsUp.x * TILE;
+    }
+    state.playerY = 0;
+}
+
+// === RENDERING ===
+
+function drawTile(x, y, type) {
+    const sx = x * TILE, sy = y * TILE;
+    switch (type) {
+        case 1: // Wall/ceiling
+            ctx.fillStyle = P.wall;
+            ctx.fillRect(sx, sy, TILE, TILE);
+            // Brick pattern
+            ctx.fillStyle = P.wallHi;
+            for (let by = 0; by < TILE; by += 4) {
+                const off = (by % 8 === 0) ? 0 : 4;
+                for (let bx = off; bx < TILE; bx += 8) {
+                    ctx.fillRect(sx + bx, sy + by, 7, 3);
+                }
+            }
+            // Mortar lines
+            ctx.fillStyle = P.wallDk;
+            for (let by = 3; by < TILE; by += 4) {
+                ctx.fillRect(sx, sy + by, TILE, 1);
+            }
+            break;
+        case 2: // Floor
+            ctx.fillStyle = P.floor;
+            ctx.fillRect(sx, sy, TILE, TILE);
+            // Tile pattern
+            ctx.fillStyle = P.floorHi;
+            ctx.fillRect(sx, sy, TILE, 1);
+            if ((x + y) % 2 === 0) {
+                ctx.fillRect(sx + 2, sy + 2, 1, 1);
+                ctx.fillRect(sx + 10, sy + 6, 1, 1);
+            }
+            break;
+    }
+}
+
+function drawObject(obj) {
+    const ox = obj.x * TILE, oy = obj.y * TILE;
+    switch (obj.type) {
+        case 'desk':
+            // Desk top
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox, oy + 4, 14, 2);
+            ctx.fillStyle = P.metalHi;
+            ctx.fillRect(ox, oy + 4, 14, 1);
+            // Legs
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 1, oy + 6, 2, 10);
+            ctx.fillRect(ox + 11, oy + 6, 2, 10);
+            // Drawer
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 4, oy + 7, 6, 4);
+            ctx.fillStyle = P.metalHi;
+            ctx.fillRect(ox + 6, oy + 8, 2, 1);
+            break;
+
+        case 'cabinet':
+            ctx.fillStyle = P.greenDk;
+            ctx.fillRect(ox + 2, oy, 10, 16);
+            ctx.fillStyle = P.green;
+            ctx.fillRect(ox + 3, oy + 1, 8, 6);
+            ctx.fillRect(ox + 3, oy + 8, 8, 6);
+            // Handles
+            ctx.fillStyle = P.metalHi;
+            ctx.fillRect(ox + 5, oy + 4, 4, 1);
+            ctx.fillRect(ox + 5, oy + 11, 4, 1);
+            // Label
+            ctx.fillStyle = P.paper;
+            ctx.fillRect(ox + 5, oy + 2, 4, 2);
+            break;
+
+        case 'terminal':
+            // CRT body
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 2, oy + 2, 12, 10);
+            // Screen
+            ctx.fillStyle = P.greenDk;
+            ctx.fillRect(ox + 3, oy + 3, 10, 7);
+            // Screen glow
+            ctx.fillStyle = P.green;
+            ctx.fillRect(ox + 4, oy + 4, 8, 5);
+            // Text lines on screen
+            ctx.fillStyle = P.greenGlow;
+            for (let l = 0; l < 3; l++) {
+                ctx.fillRect(ox + 5, oy + 5 + l * 2, 4 + (l % 2) * 2, 1);
+            }
+            // Base
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 4, oy + 12, 8, 2);
+            ctx.fillRect(ox + 2, oy + 14, 12, 2);
+            break;
+
+        case 'tape':
+            // Tape housing
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 1, oy + 2, 14, 12);
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 2, oy + 3, 12, 10);
+            // Reels (spinning animation)
+            const spin = (state.time * 0.002) % (Math.PI * 2);
+            for (let r = 0; r < 2; r++) {
+                const rcx = ox + 5 + r * 6, rcy = oy + 8;
+                ctx.fillStyle = P.metalHi;
+                for (let a = 0; a < Math.PI * 2; a += 0.3) {
+                    ctx.fillRect(Math.round(rcx + Math.cos(a + spin) * 3), Math.round(rcy + Math.sin(a + spin) * 3), 1, 1);
+                }
+                ctx.fillStyle = P.amber;
+                ctx.fillRect(rcx, rcy, 1, 1);
+            }
+            // Tape between reels
+            ctx.fillStyle = P.tube;
+            ctx.fillRect(ox + 6, oy + 7, 4, 1);
+            break;
+
+        case 'poster':
+            ctx.fillStyle = P.paper;
+            ctx.fillRect(ox + 3, oy + 1, 10, 12);
+            ctx.fillStyle = P.paperDk;
+            ctx.fillRect(ox + 4, oy + 3, 8, 1);
+            ctx.fillRect(ox + 4, oy + 5, 6, 1);
+            ctx.fillRect(ox + 4, oy + 7, 7, 1);
+            // Hazard stripe
+            ctx.fillStyle = P.hazard1;
+            ctx.fillRect(ox + 3, oy + 10, 10, 2);
+            ctx.fillStyle = P.hazard2;
+            for (let hx = 0; hx < 10; hx += 4) {
+                ctx.fillRect(ox + 3 + hx, oy + 10, 2, 2);
+            }
+            break;
+
+        case 'coffee':
+            // Machine body
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 3, oy + 1, 10, 13);
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 4, oy + 3, 8, 4);
+            // Cup slot
+            ctx.fillStyle = P.bg;
+            ctx.fillRect(ox + 5, oy + 8, 6, 4);
+            // Cup
+            ctx.fillStyle = P.cream;
+            ctx.fillRect(ox + 6, oy + 9, 4, 3);
+            ctx.fillStyle = P.tube;
+            ctx.fillRect(ox + 7, oy + 9, 2, 1);
+            // Light
+            ctx.fillStyle = state.time % 2000 < 1000 ? P.red : P.redDk;
+            ctx.fillRect(ox + 12, oy + 2, 1, 1);
+            break;
+
+        case 'machine':
+            // Large industrial machine
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox, oy, 16, 16);
+            ctx.fillStyle = P.metal;
+            ctx.fillRect(ox + 1, oy + 1, 14, 14);
+            // Vacuum tubes
+            for (let t = 0; t < 3; t++) {
+                ctx.fillStyle = P.tube;
+                ctx.fillRect(ox + 3 + t * 4, oy + 3, 2, 5);
+                ctx.fillStyle = P.tubeGlow;
+                ctx.fillRect(ox + 3 + t * 4, oy + 4, 2, 3);
+            }
+            // Dials
+            ctx.fillStyle = P.bg;
+            ctx.fillRect(ox + 3, oy + 10, 4, 4);
+            ctx.fillRect(ox + 9, oy + 10, 4, 4);
+            ctx.fillStyle = P.amber;
+            ctx.fillRect(ox + 4, oy + 12, 1, 1);
+            ctx.fillRect(ox + 11, oy + 11, 1, 1);
+            // Hazard stripe at bottom
+            for (let hx = 0; hx < 16; hx += 4) {
+                ctx.fillStyle = P.hazard1;
+                ctx.fillRect(ox + hx, oy + 15, 2, 1);
+            }
+            break;
+
+        case 'vent':
+            ctx.fillStyle = P.metalDk;
+            ctx.fillRect(ox + 2, oy + 2, 12, 8);
+            // Slats
+            for (let s = 0; s < 4; s++) {
+                ctx.fillStyle = P.bg;
+                ctx.fillRect(ox + 3, oy + 3 + s * 2, 10, 1);
+            }
+            break;
+    }
+}
+
+function drawNPC(npc) {
+    const nx = npc.x * TILE, ny = npc.y * TILE;
+    const pal = npc.sprite === 'npc_glow' ? npcGlowPal : npcPal;
+    drawPixelSprite(ctx, nx + 3, ny, npcStand, pal, false);
+
+    // Name above head
+    ctx.fillStyle = npc.sprite === 'npc_glow' ? P.greenGlow : P.amberDk;
+    ctx.font = '5px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(npc.name.split(' ').pop(), nx + 8, ny - 2);
+    ctx.textAlign = 'start';
+}
+
+function drawStairs(x, y, up) {
+    const sx = x * TILE, sy = y * TILE;
+    ctx.fillStyle = P.metalHi;
+    for (let s = 0; s < 4; s++) {
+        ctx.fillRect(sx + 2, sy + s * 4, 12, 3);
+        ctx.fillStyle = P.metal;
+        ctx.fillRect(sx + 2, sy + s * 4 + 2, 12, 1);
+        ctx.fillStyle = P.metalHi;
+    }
+    // Arrow
+    ctx.fillStyle = P.amber;
+    ctx.font = '8px monospace';
+    ctx.fillText(up ? '▲' : '▼', sx + 5, sy + 8);
+}
+
+function drawFluorescentLights(camX) {
+    // Ceiling lights with occasional flicker
+    for (let lx = 2; lx < 28; lx += 5) {
+        const sx = lx * TILE - Math.round(camX);
+        if (sx < -TILE || sx > W) continue;
+        const flicker = Math.sin(state.time * 0.01 + lx * 7) > 0.95;
+        ctx.fillStyle = flicker ? P.cream : P.creamDk;
+        ctx.fillRect(sx + 2, 2 * TILE, 12, 2);
+        if (!flicker) {
+            // Light cone
+            ctx.fillStyle = 'rgba(212,197,160,0.03)';
+            ctx.fillRect(sx, 2 * TILE + 2, 16, 80);
+        }
+    }
+}
+
+function drawPipes(camX) {
+    // Horizontal pipes along ceiling
+    ctx.fillStyle = P.tube;
+    ctx.fillRect(0, 2 * TILE - 3, W, 2);
+    // Pipe joints every 80px
+    for (let jx = 0; jx < W + 80; jx += 80) {
+        const sx = jx - (Math.round(camX) % 80);
+        ctx.fillStyle = P.metalHi;
+        ctx.fillRect(sx, 2 * TILE - 4, 4, 4);
+    }
+    // Vertical pipes at walls
+    ctx.fillStyle = P.tube;
+    const leftWall = -Math.round(camX);
+    const rightWall = 29 * TILE - Math.round(camX);
+    if (leftWall > -TILE) {
+        ctx.fillRect(leftWall + TILE + 2, 2 * TILE, 2, 6 * TILE);
+    }
+    if (rightWall < W + TILE) {
+        ctx.fillRect(rightWall - 4, 2 * TILE, 2, 6 * TILE);
+    }
+}
+
+// === MAIN RENDER ===
+function render() {
+    ctx.fillStyle = P.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    const f = floors[state.floor];
+    const camX = Math.max(0, Math.min(f.width * TILE - W, state.playerX - W / 2 + 5));
+
+    ctx.save();
+    ctx.translate(-Math.round(camX), 0);
+
+    // Tiles
+    for (let y = 0; y < f.height; y++) {
+        for (let x = 0; x < f.width; x++) {
+            const sx = x * TILE - Math.round(camX);
+            if (sx < -TILE || sx > W + TILE) continue;
+            if (f.map[y][x] > 0) {
+                ctx.save();
+                ctx.translate(Math.round(camX), 0);
+                drawTile(x, y, f.map[y][x]);
+                ctx.restore();
+            }
+        }
+    }
+
+    // Stairs
+    if (f.stairsUp) drawStairs(f.stairsUp.x, f.stairsUp.y, true);
+    if (f.stairsDown) drawStairs(f.stairsDown.x, f.stairsDown.y, false);
+
+    // Objects
+    f.objects.forEach(obj => drawObject(obj));
+
+    // NPCs
+    f.npcs.forEach(npc => drawNPC(npc));
+
+    // Player
+    const pFrame = state.playerVX !== 0 ? (state.frame % 2 === 0 ? playerWalk1 : playerWalk2) : playerSprite;
+    drawPixelSprite(ctx, Math.round(state.playerX), Math.round(state.playerY + 8 * TILE - 16), pFrame, playerPal, state.facing < 0);
+
+    ctx.restore();
+
+    // Fluorescent lights (screen-space)
+    drawFluorescentLights(camX);
+
+    // Pipes
+    drawPipes(camX);
+
+    // Interact indicator
+    let nearInteractable = false;
+    const px = state.playerX + 5;
+    f.objects.forEach(obj => {
+        if (Math.abs(px - (obj.x * TILE + 8)) < 20) nearInteractable = true;
+    });
+    f.npcs.forEach(npc => {
+        if (Math.abs(px - (npc.x * TILE + 8)) < 20) nearInteractable = true;
+    });
+    if (f.stairsUp && Math.abs(px - (f.stairsUp.x * TILE + 8)) < 16) nearInteractable = true;
+    if (f.stairsDown && Math.abs(px - (f.stairsDown.x * TILE + 8)) < 16) nearInteractable = true;
+
+    if (nearInteractable && !state.dialogOpen) {
+        ctx.fillStyle = P.amber;
+        ctx.font = '6px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('[E]', Math.round(state.playerX - camX + 5), Math.round(state.playerY + 8 * TILE - 20));
+        ctx.textAlign = 'start';
+    }
+
+    // Floor 6 special effect
+    if (state.floor === 5) {
+        // Green scanline overlay
+        for (let y = 0; y < H; y += 3) {
+            ctx.fillStyle = 'rgba(68,170,68,0.02)';
+            ctx.fillRect(0, y, W, 1);
+        }
+    }
+}
+
+// === UPDATE ===
+function update(dt) {
+    if (state.dialogOpen) return;
+
+    const speed = 1.2;
+    let moving = false;
+
+    if (keys['ArrowLeft'] || keys['KeyA'] || mobile.left) {
+        state.playerVX = -speed;
+        state.facing = -1;
+        moving = true;
+    } else if (keys['ArrowRight'] || keys['KeyD'] || mobile.right) {
+        state.playerVX = speed;
+        state.facing = 1;
+        moving = true;
+    } else {
+        state.playerVX *= 0.6;
+        if (Math.abs(state.playerVX) < 0.1) state.playerVX = 0;
+    }
+
+    // Stairs via Up/Down
+    if (keys['ArrowUp'] || keys['KeyW'] || mobile.up) {
+        const f = floors[state.floor];
+        const px = state.playerX + 5;
+        if (f.stairsUp && Math.abs(px - (f.stairsUp.x * TILE + 8)) < 16) {
+            changeFloor(state.floor + 1);
+            keys['ArrowUp'] = false; keys['KeyW'] = false; mobile.up = false;
+        }
+    }
+    if (keys['ArrowDown'] || keys['KeyS'] || mobile.down) {
+        const f = floors[state.floor];
+        const px = state.playerX + 5;
+        if (f.stairsDown && Math.abs(px - (f.stairsDown.x * TILE + 8)) < 16) {
+            changeFloor(state.floor - 1);
+            keys['ArrowDown'] = false; keys['KeyS'] = false; mobile.down = false;
+        }
+    }
+
+    state.playerX += state.playerVX;
+    state.playerX = Math.max(TILE, Math.min((floors[state.floor].width - 2) * TILE, state.playerX));
+
+    // Walk animation
+    if (moving) {
+        state.frameTimer += dt;
+        if (state.frameTimer > 180) {
+            state.frame++;
+            state.frameTimer = 0;
+        }
+    }
+}
+
+// === GAME LOOP ===
+let lastT = 0;
+function loop(ts) {
+    if (!state.started) return;
+    const dt = Math.min(ts - lastT, 33);
+    lastT = ts;
+    state.time = ts;
+
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+}
+
+document.getElementById('title').addEventListener('click', () => {
+    document.getElementById('title').style.display = 'none';
+    document.getElementById('ui-bar').style.display = 'block';
+    state.started = true;
+    state.playerX = 60;
+    requestAnimationFrame(loop);
+});
+
+</script>
+</body>
+</html>
