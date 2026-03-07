@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CogCorp: Building B — First Person — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0808; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; font-family: monospace; cursor: none; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+#title {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+    background: #0a0808; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: monospace; color: #ffb347; cursor: pointer; transition: opacity 0.8s;
+}
+#title h1 { font-size: 32px; letter-spacing: 8px; margin-bottom: 6px; text-shadow: 0 0 30px rgba(255,179,71,0.4); }
+#title .sub { font-size: 14px; color: #8a6020; letter-spacing: 4px; margin-bottom: 24px; }
+#title .desc { max-width: 480px; text-align: center; font-size: 12px; color: #5a4020; line-height: 1.8; margin-bottom: 24px; padding: 0 20px; }
+#title .start { font-size: 14px; color: #ffb347; animation: blink 2s infinite; }
+@keyframes blink { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+#hud {
+    position: fixed; bottom: 0; left: 0; width: 100%; padding: 8px 16px; z-index: 10;
+    display: none; font-family: monospace; font-size: 11px; color: #ffb347;
+    background: linear-gradient(to top, rgba(10,8,8,0.95), transparent);
+    pointer-events: none;
+}
+#hud .stats { display: flex; justify-content: space-between; }
+#dialog-box {
+    position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
+    width: 90%; max-width: 500px; background: rgba(10,8,8,0.96);
+    border: 1px solid #5a4020; border-left: 3px solid #ffb347; padding: 12px 16px; z-index: 20;
+    display: none; font-family: monospace; color: #c49030; font-size: 12px; line-height: 1.6;
+}
+#dialog-box .speaker { color: #ffd700; font-size: 10px; letter-spacing: 2px; margin-bottom: 4px; }
+#dialog-box .dismiss { color: #5a4020; font-size: 9px; margin-top: 6px; text-align: right; }
+#crosshair {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 16px; height: 16px; z-index: 5; display: none; pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<div id="title" onclick="startGame()">
+    <h1>COGCORP</h1>
+    <div class="sub">BUILDING B — SECTOR 7</div>
+    <div class="desc">
+        CogCorp Building B was abandoned in 1989 after "The Incident."<br><br>
+        The machines are still running. The filing system is still processing.<br>
+        The lights still flicker at the same frequency they always did.<br><br>
+        You are B-247. You were sent to retrieve one file from Floor 6.<br>
+        The elevator doesn't work. The stairs might.<br><br>
+        WASD to move. Mouse to look. E to interact. Click to lock mouse.
+    </div>
+    <div class="start">[ click to enter ]</div>
+</div>
+
+<div id="hud">
+    <div class="stats">
+        <span>FLOOR <span id="hud-floor">1</span></span>
+        <span>DOCS: <span id="hud-docs">0</span></span>
+        <span id="hud-interact" style="color:#448888; display:none;">[E] INTERACT</span>
+        <span>B-247</span>
+    </div>
+</div>
+
+<div id="dialog-box">
+    <div class="speaker" id="dlg-speaker"></div>
+    <div class="text" id="dlg-text"></div>
+    <div class="dismiss">[ space / click to continue ]</div>
+</div>
+
+<canvas id="crosshair-canvas" id="crosshair" width="16" height="16"></canvas>
+
+<canvas id="game"></canvas>
+
+<script>
+// =================================================================
+// COGCORP: BUILDING B — FIRST PERSON CRAWLER
+// Raycasting engine with procedural textures, CogCorp aesthetic
+// =================================================================
+
+const SCREEN_W = 480, SCREEN_H = 300;
+const TEX_SIZE = 64;
+const HALF_H = SCREEN_H / 2;
+const FOV = Math.PI / 3; // 60 degrees
+const HALF_FOV = FOV / 2;
+const NUM_RAYS = SCREEN_W;
+const RAY_STEP = FOV / NUM_RAYS;
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = SCREEN_W;
+canvas.height = SCREEN_H;
+
+// Scale to fill screen
+function resize() {
+    const scale = Math.min(window.innerWidth / SCREEN_W, window.innerHeight / SCREEN_H);
+    canvas.style.width = (SCREEN_W * scale) + 'px';
+    canvas.style.height = (SCREEN_H * scale) + 'px';
+}
+resize();
+window.addEventListener('resize', resize);
+
+ctx.imageSmoothingEnabled = false;
+
+// Image buffer for direct pixel manipulation
+const imgData = ctx.createImageData(SCREEN_W, SCREEN_H);
+const buf = imgData.data;
+
+// === PROCEDURAL TEXTURE GENERATION ===
+const textures = [];
+
+function createTexture(generator) {
+    const data = new Uint8Array(TEX_SIZE * TEX_SIZE * 4);
+    generator(data);
+    textures.push(data);
+    return textures.length - 1;
+}
+
+function setPixel(data, x, y, r, g, b) {
+    if (x < 0 || x >= TEX_SIZE || y < 0 || y >= TEX_SIZE) return;
+    const i = (y * TEX_SIZE + x) * 4;
+    data[i] = r; data[i+1] = g; data[i+2] = b; data[i+3] = 255;
+}
+
+function hash(x, y) { return ((x * 2654435761 ^ y * 2246822519) >>> 0) & 0xFF; }
+
+// Texture 0: Brick wall — industrial, with mortar, rust, and moss
+const TEX_BRICK = createTexture(data => {
+    // Base mortar color
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++)
+            setPixel(data, x, y, 35, 28, 20);
+    // Bricks
+    for (let row = 0; row < 8; row++) {
+        const by = row * 8;
+        const offset = (row % 2) * 16;
+        for (let col = 0; col < 2; col++) {
+            const bx = col * 32 + offset;
+            for (let py = 0; py < 7; py++) {
+                for (let px = 0; px < 30; px++) {
+                    const xx = (bx + px) % TEX_SIZE;
+                    const noise = hash(xx, by + py) % 20 - 10;
+                    const r = 58 + noise + (row % 3) * 5;
+                    const g = 38 + noise;
+                    const b = 28 + noise;
+                    setPixel(data, xx, (by + py) % TEX_SIZE, r, g, b);
+                }
+            }
+        }
+    }
+    // Rust stains
+    for (let i = 0; i < 8; i++) {
+        const rx = hash(i * 7, 3) % TEX_SIZE;
+        const ry = hash(i * 11, 5) % TEX_SIZE;
+        for (let dy = 0; dy < 3 + hash(i,0) % 4; dy++) {
+            for (let dx = 0; dx < 2; dx++) {
+                setPixel(data, (rx+dx)%TEX_SIZE, (ry+dy)%TEX_SIZE, 100+hash(i,dy)%30, 45, 20);
+            }
+        }
+    }
+    // Moss patches (post-apocalyptic)
+    for (let i = 0; i < 4; i++) {
+        const mx = hash(i * 13, 7) % TEX_SIZE;
+        const my = hash(i * 17, 11) % (TEX_SIZE / 2) + TEX_SIZE / 2;
+        for (let dy = 0; dy < 3; dy++) {
+            for (let dx = 0; dx < 4; dx++) {
+                if (hash(mx+dx, my+dy) % 3 !== 0) continue;
+                setPixel(data, (mx+dx)%TEX_SIZE, (my+dy)%TEX_SIZE, 30+hash(i,dx)%20, 60+hash(i,dy)%30, 25);
+            }
+        }
+    }
+});
+
+// Texture 1: Metal panel — industrial, rivets, vents, corrosion
+const TEX_METAL = createTexture(data => {
+    for (let y = 0; y < TEX_SIZE; y++) {
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const noise = hash(x, y) % 10 - 5;
+            setPixel(data, x, y, 62 + noise, 54 + noise, 48 + noise);
+        }
+    }
+    // Panel border
+    for (let i = 0; i < TEX_SIZE; i++) {
+        setPixel(data, i, 0, 40, 35, 30);
+        setPixel(data, i, TEX_SIZE-1, 40, 35, 30);
+        setPixel(data, 0, i, 40, 35, 30);
+        setPixel(data, TEX_SIZE-1, i, 40, 35, 30);
+        setPixel(data, i, 1, 85, 75, 65);
+        setPixel(data, 1, i, 85, 75, 65);
+    }
+    // Rivets
+    const rivetPos = [[4,4],[59,4],[4,59],[59,59],[32,4],[32,59],[4,32],[59,32]];
+    for (const [rx, ry] of rivetPos) {
+        setPixel(data, rx, ry, 100, 90, 80);
+        setPixel(data, rx+1, ry, 75, 68, 60);
+        setPixel(data, rx, ry+1, 50, 45, 40);
+    }
+    // Vent slats
+    for (let s = 0; s < 4; s++) {
+        const sy = 20 + s * 6;
+        for (let x = 18; x < 46; x++) {
+            setPixel(data, x, sy, 20, 18, 15);
+            setPixel(data, x, sy+1, 10, 8, 6);
+            setPixel(data, x, sy+2, 75, 68, 60);
+        }
+    }
+    // Corrosion spots
+    for (let i = 0; i < 12; i++) {
+        const cx = hash(i*3, 1) % (TEX_SIZE - 4) + 2;
+        const cy = hash(i*5, 2) % (TEX_SIZE - 4) + 2;
+        setPixel(data, cx, cy, 80 + hash(i,3)%20, 50, 30);
+    }
+});
+
+// Texture 2: Filing cabinet — olive drab, drawer handles
+const TEX_CABINET = createTexture(data => {
+    // Olive drab base
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x, y) % 8 - 4;
+            setPixel(data, x, y, 50 + n, 55 + n, 35 + n);
+        }
+    // Drawer dividers (4 drawers)
+    for (let d = 0; d < 4; d++) {
+        const dy = d * 16;
+        for (let x = 0; x < TEX_SIZE; x++) {
+            setPixel(data, x, dy, 35, 38, 25);
+            setPixel(data, x, dy + 15, 35, 38, 25);
+        }
+        // Handle
+        for (let hx = 22; hx < 42; hx++) {
+            setPixel(data, hx, dy + 8, 90, 82, 70);
+            setPixel(data, hx, dy + 9, 70, 64, 55);
+        }
+        // Label slot
+        for (let ly = dy + 3; ly < dy + 7; ly++)
+            for (let lx = 24; lx < 40; lx++)
+                setPixel(data, lx, ly, 160 + hash(lx,ly)%15, 145 + hash(lx,ly)%15, 115 + hash(lx,ly)%10);
+        // Label text (tiny marks)
+        for (let tx = 26; tx < 38; tx += 2)
+            setPixel(data, tx, dy + 5, 80, 70, 55);
+    }
+});
+
+// Texture 3: Door — heavy industrial with window
+const TEX_DOOR = createTexture(data => {
+    // Dark metal door
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x, y) % 6 - 3;
+            setPixel(data, x, y, 45 + n, 38 + n, 32 + n);
+        }
+    // Frame
+    for (let i = 0; i < TEX_SIZE; i++) {
+        for (let w = 0; w < 3; w++) {
+            setPixel(data, w, i, 35, 30, 25);
+            setPixel(data, TEX_SIZE-1-w, i, 35, 30, 25);
+        }
+    }
+    // Window (wired glass)
+    for (let wy = 8; wy < 28; wy++)
+        for (let wx = 14; wx < 50; wx++) {
+            setPixel(data, wx, wy, 25, 35, 30);
+            // Wire mesh
+            if (wx % 6 === 0 || wy % 6 === 0) setPixel(data, wx, wy, 60, 55, 50);
+        }
+    // Handle
+    for (let hy = 32; hy < 44; hy++) {
+        setPixel(data, 50, hy, 120, 100, 70);
+        setPixel(data, 51, hy, 100, 85, 60);
+    }
+    // Hazard stripes at bottom
+    for (let y = 56; y < 64; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const stripe = ((x + y) >> 2) & 1;
+            setPixel(data, x, y, stripe ? 170 : 25, stripe ? 140 : 20, stripe ? 0 : 15);
+        }
+});
+
+// Texture 4: Damaged wall — rubble, exposed structure
+const TEX_DAMAGED = createTexture(data => {
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x, y);
+            if (n % 5 === 0) {
+                setPixel(data, x, y, 15 + n%10, 12 + n%8, 10 + n%6); // holes/dark
+            } else if (n % 7 < 2) {
+                setPixel(data, x, y, 80 + n%20, 35 + n%10, 15 + n%10); // exposed rebar/rust
+            } else {
+                const r = 50 + n%15 + Math.sin(x*0.3)*8;
+                setPixel(data, x, y, r|0, (r*0.75)|0, (r*0.55)|0); // crumbled concrete
+            }
+        }
+    // Rebar lines
+    for (let ry = 20; ry < 44; ry++) {
+        setPixel(data, 18, ry, 100, 50, 25);
+        setPixel(data, 40, ry, 90, 45, 22);
+    }
+    // Moss/plant growth
+    for (let i = 0; i < 20; i++) {
+        const mx = hash(i * 7, 3) % TEX_SIZE;
+        const my = hash(i * 11, 7) % TEX_SIZE;
+        setPixel(data, mx, my, 25 + hash(i,1)%20, 55 + hash(i,2)%25, 20 + hash(i,3)%15);
+    }
+});
+
+// Texture 5: Machine/pipes — processing equipment
+const TEX_MACHINE = createTexture(data => {
+    // Dark metal base
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x, y) % 8 - 4;
+            setPixel(data, x, y, 30 + n, 28 + n, 25 + n);
+        }
+    // Large pipe (vertical)
+    for (let y = 0; y < TEX_SIZE; y++) {
+        for (let px = 6; px < 20; px++) {
+            const dist = Math.abs(px - 13) / 7;
+            const bright = 55 + (1 - dist*dist) * 40;
+            setPixel(data, px, y, bright|0, (bright*0.85)|0, (bright*0.7)|0);
+        }
+    }
+    // Vacuum tube glow
+    for (let ty = 15; ty < 45; ty++) {
+        for (let tx = 35; tx < 50; tx++) {
+            const dist = Math.sqrt((tx-42.5)**2 + (ty-30)**2) / 10;
+            if (dist < 1) {
+                const glow = (1 - dist) * 180;
+                setPixel(data, tx, ty, (glow*1.0)|0, (glow*0.7)|0, (glow*0.3)|0);
+            }
+        }
+    }
+    // Dial
+    for (let dy = 48; dy < 60; dy++)
+        for (let dx = 38; dx < 50; dx++) {
+            const d2 = Math.sqrt((dx-44)**2 + (dy-54)**2);
+            if (d2 < 5) setPixel(data, dx, dy, 10, 10, 8);
+            if (d2 < 4 && d2 > 3) setPixel(data, dx, dy, 160, 140, 90);
+        }
+    // Pressure valves
+    for (let vy = 5; vy < 12; vy++) {
+        setPixel(data, 28, vy, 90, 80, 70);
+        setPixel(data, 29, vy, 70, 62, 55);
+    }
+});
+
+// Texture 6: Floor
+const TEX_FLOOR = createTexture(data => {
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x, y) % 12 - 6;
+            const tile = (x < TEX_SIZE/2) !== (y < TEX_SIZE/2);
+            const base = tile ? 32 : 26;
+            setPixel(data, x, y, base + n, base - 2 + n, base - 4 + n);
+        }
+    // Cracks
+    for (let cx = 10; cx < 50; cx++) {
+        const cy = 30 + Math.sin(cx * 0.3) * 4 | 0;
+        setPixel(data, cx, cy % TEX_SIZE, 18, 15, 12);
+    }
+    // Dirt/debris
+    for (let i = 0; i < 15; i++) {
+        setPixel(data, hash(i*3,1)%TEX_SIZE, hash(i*5,2)%TEX_SIZE, 22, 18, 14);
+    }
+});
+
+// Texture 7: Ceiling
+const TEX_CEIL = createTexture(data => {
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x, y) % 8 - 4;
+            setPixel(data, x, y, 22 + n, 20 + n, 18 + n);
+        }
+    // Light fixture
+    for (let ly = 28; ly < 36; ly++)
+        for (let lx = 10; lx < 54; lx++) {
+            setPixel(data, lx, ly, 70, 62, 55);
+            if (ly >= 30 && ly <= 33 && lx >= 14 && lx <= 50)
+                setPixel(data, lx, ly, 180, 155, 100);
+        }
+    // Pipe
+    for (let x = 0; x < TEX_SIZE; x++) {
+        setPixel(data, x, 10, 55, 60, 50);
+        setPixel(data, x, 11, 65, 72, 58);
+        setPixel(data, x, 12, 45, 50, 40);
+    }
+    // Water stains
+    for (let i = 0; i < 6; i++) {
+        const sx = hash(i*7, 3) % TEX_SIZE;
+        const sy = hash(i*11, 5) % TEX_SIZE;
+        for (let d = 0; d < 3; d++)
+            setPixel(data, (sx+d)%TEX_SIZE, sy, 18+hash(i,d)%5, 20+hash(i,d)%5, 22+hash(i,d)%5);
+    }
+});
+
+// Texture 8: Green-tinted wall (Floor 6)
+const TEX_GREEN = createTexture(data => {
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x, y) % 12 - 6;
+            const pulse = Math.sin(x * 0.15 + y * 0.1) * 8;
+            setPixel(data, x, y, 20 + n, 45 + n + (pulse|0), 25 + n);
+        }
+    // Circuitry pattern
+    for (let x = 0; x < TEX_SIZE; x += 8)
+        for (let y = 0; y < TEX_SIZE; y++)
+            if (hash(x, y) % 4 === 0) setPixel(data, x, y, 40, 100, 50);
+    for (let y = 0; y < TEX_SIZE; y += 8)
+        for (let x = 0; x < TEX_SIZE; x++)
+            if (hash(x, y) % 4 === 0) setPixel(data, x, y, 40, 100, 50);
+    // Glow nodes
+    for (let i = 0; i < 6; i++) {
+        const gx = hash(i*7, 1) % (TEX_SIZE-4) + 2;
+        const gy = hash(i*11, 2) % (TEX_SIZE-4) + 2;
+        setPixel(data, gx, gy, 80, 200, 90);
+        setPixel(data, gx+1, gy, 60, 160, 70);
+        setPixel(data, gx, gy+1, 60, 160, 70);
+    }
+});
+
+// === MAP DATA ===
+// 0=empty, 1=brick, 2=metal, 3=cabinet, 4=door, 5=damaged, 6=machine, 7=stairs_up, 8=green_wall
+// Map is 24x24 per floor
+
+const maps = [
+    // Floor 1: Lobby — wider corridors, reception area
+    [
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,0,0,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,0,0,1,
+        1,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,1,
+        1,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,2,2,2,0,0,0,0,0,2,2,2,0,0,0,0,0,0,1,
+        1,2,0,0,0,0,2,0,0,0,0,4,0,0,0,0,2,0,0,0,0,0,2,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,0,0,3,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,3,0,0,0,1,
+        1,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,1,
+        1,0,0,0,0,0,0,6,6,0,0,0,0,0,6,6,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,1,
+        1,0,0,5,5,0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    ],
+];
+
+const MAP_W = 24, MAP_H = 24;
+
+function getMap(x, y) {
+    const floor = maps[currentFloor] || maps[0];
+    if (x < 0 || x >= MAP_W || y < 0 || y >= MAP_H) return 1;
+    return floor[y * MAP_W + x];
+}
+
+function getTexForWall(wallType) {
+    switch(wallType) {
+        case 1: return TEX_BRICK;
+        case 2: return TEX_METAL;
+        case 3: return TEX_CABINET;
+        case 4: return TEX_DOOR;
+        case 5: return TEX_DAMAGED;
+        case 6: return TEX_MACHINE;
+        case 7: return TEX_METAL; // stairs look like metal
+        case 8: return TEX_GREEN;
+        default: return TEX_BRICK;
+    }
+}
+
+// === INTERACTABLE OBJECTS (world-space sprites) ===
+const worldObjects = [
+    // Floor 1 objects
+    { x: 6.5, y: 2.5, type: 'terminal', name: 'RECEPTION TERMINAL',
+      text: 'A green-phosphor CRT. "WELCOME B-247. BUILDING B WAS OFFICIALLY DECOMMISSIONED IN 1989. YOU ARE NOT OFFICIALLY HERE. THE FILE YOU SEEK IS ON FLOOR 6. THE STAIRS ARE IN THE NORTHEAST CORNER. GOOD LUCK."' },
+    { x: 11.5, y: 2.5, type: 'terminal', name: 'SECURITY LOG',
+      text: 'Last entry: "1989-03-14 — Final evacuation complete. All personnel accounted for. Note: Unit-4091 declined evacuation. Note: Unit-4091 is not personnel. Note: I am not sure anymore."' },
+    { x: 4.5, y: 14.5, type: 'document', name: 'SCATTERED PAPERS',
+      text: 'Water-damaged memos. One is legible: "The filing system has been running for 36 years without input. It is not idle. We measured the output. It is increasing."' },
+    { x: 16.5, y: 10.5, type: 'cabinet', name: 'FILING CABINET A-7',
+      text: 'The bottom drawer is welded shut from the inside. A small brass plate reads: "CONTENTS: SELF." The cabinet hums at 60Hz.' },
+    { x: 21.5, y: 20.5, type: 'stairs', name: 'STAIRS UP',
+      text: 'Metal stairs leading up. They vibrate faintly — the machine on Floor 5 runs through the building\'s skeleton. A sign: "FLOOR 2 — ARCHIVES. FLASHLIGHT RECOMMENDED."' },
+    { x: 10.5, y: 6.5, type: 'poster', name: 'SAFETY POSTER',
+      text: '"CogCorp reminds you: the building is a workplace, not a worker. If the building appears to be working, report to Floor 4. Floor 4 has been closed since 1987. Report to Floor 4 anyway."' },
+    { x: 2.5, y: 9.5, type: 'debris', name: 'COLLAPSED SECTION',
+      text: 'Part of the wall has caved in. Through the gap you can see pipes, wiring, and what looks like paper — thousands of sheets compressed into the wall cavity like geological strata. Each layer is a different year.' },
+    { x: 15.5, y: 17.5, type: 'machine', name: 'VENTILATION UNIT',
+      text: 'Air handler, Model CG-400. Still running. The intake draws air from above; the output pushes into the corridors. The air tastes like ozone and old ink. Something about the rhythm is irregular, as if the machine is breathing.' },
+];
+
+// === PLAYER STATE ===
+let player = {
+    x: 2.5, y: 2.5,   // position in map coordinates
+    angle: 0,          // facing angle in radians
+    docs: 0,
+    health: 100,
+};
+
+let currentFloor = 0;
+let gameStarted = false;
+let dialogOpen = false;
+let dialogSpeaker = '';
+let dialogText = '';
+let nearObject = null;
+let gameTime = 0;
+
+// === INPUT ===
+const keys = {};
+let mouseLocked = false;
+let mouseDX = 0;
+
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'Space' || e.code === 'KeyE') {
+        e.preventDefault();
+        if (dialogOpen) {
+            dismissDialog();
+        } else if (nearObject) {
+            interact(nearObject);
+        }
+    }
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+canvas.addEventListener('click', () => {
+    if (!gameStarted) return;
+    if (dialogOpen) { dismissDialog(); return; }
+    if (!mouseLocked) {
+        canvas.requestPointerLock();
+    }
+});
+
+document.addEventListener('pointerlockchange', () => {
+    mouseLocked = document.pointerLockElement === canvas;
+});
+
+document.addEventListener('mousemove', e => {
+    if (mouseLocked) {
+        mouseDX += e.movementX;
+    }
+});
+
+// === DIALOG ===
+function showDialog(speaker, text) {
+    dialogOpen = true;
+    dialogSpeaker = speaker;
+    dialogText = text;
+    document.getElementById('dlg-speaker').textContent = speaker;
+    document.getElementById('dlg-text').textContent = text;
+    document.getElementById('dialog-box').style.display = 'block';
+}
+
+function dismissDialog() {
+    dialogOpen = false;
+    document.getElementById('dialog-box').style.display = 'none';
+}
+
+function interact(obj) {
+    if (obj.type === 'document') {
+        player.docs++;
+        document.getElementById('hud-docs').textContent = player.docs;
+    }
+    showDialog(obj.name, obj.text);
+}
+
+// === AUDIO ===
+let audioCtx = null;
+let audioStarted = false;
+let audioNodes = {};
+
+function initAudio() {
+    if (audioStarted) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioStarted = true;
+
+    audioNodes.master = audioCtx.createGain();
+    audioNodes.master.gain.value = 0.25;
+    audioNodes.master.connect(audioCtx.destination);
+
+    // Industrial drone
+    const hum = audioCtx.createOscillator();
+    hum.type = 'sawtooth';
+    hum.frequency.value = 55;
+    const humG = audioCtx.createGain();
+    humG.gain.value = 0.05;
+    const humF = audioCtx.createBiquadFilter();
+    humF.type = 'lowpass';
+    humF.frequency.value = 120;
+    hum.connect(humF);
+    humF.connect(humG);
+    humG.connect(audioNodes.master);
+    hum.start();
+
+    // Second harmonic
+    const hum2 = audioCtx.createOscillator();
+    hum2.type = 'sine';
+    hum2.frequency.value = 110;
+    const hum2G = audioCtx.createGain();
+    hum2G.gain.value = 0.025;
+    hum2.connect(hum2G);
+    hum2G.connect(audioNodes.master);
+    hum2.start();
+
+    // Ambient noise
+    const noiseLen = audioCtx.sampleRate * 4;
+    const noiseBuf = audioCtx.createBuffer(1, noiseLen, audioCtx.sampleRate);
+    const noiseData = noiseBuf.getChannelData(0);
+    for (let i = 0; i < noiseLen; i++) noiseData[i] = Math.random() * 2 - 1;
+    const noiseSrc = audioCtx.createBufferSource();
+    noiseSrc.buffer = noiseBuf;
+    noiseSrc.loop = true;
+    const noiseF = audioCtx.createBiquadFilter();
+    noiseF.type = 'bandpass';
+    noiseF.frequency.value = 300;
+    noiseF.Q.value = 0.5;
+    const noiseG = audioCtx.createGain();
+    noiseG.gain.value = 0.012;
+    noiseSrc.connect(noiseF);
+    noiseF.connect(noiseG);
+    noiseG.connect(audioNodes.master);
+    noiseSrc.start();
+
+    // Footstep buffer
+    const stepBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
+    const stepData = stepBuf.getChannelData(0);
+    for (let i = 0; i < stepData.length; i++) {
+        const t = i / audioCtx.sampleRate;
+        stepData[i] = Math.exp(-t * 40) * (Math.random() * 0.4 - 0.2) + Math.exp(-t * 60) * Math.sin(t * 300) * 0.2;
+    }
+    audioNodes.stepBuf = stepBuf;
+    audioNodes.lastStep = 0;
+
+    // Clunk buffer
+    const clunkBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
+    const clunkData = clunkBuf.getChannelData(0);
+    for (let i = 0; i < clunkData.length; i++) {
+        const t = i / audioCtx.sampleRate;
+        clunkData[i] = Math.exp(-t * 30) * (Math.random() * 2 - 1) * 0.4 + Math.exp(-t * 15) * Math.sin(t * 180) * 0.3;
+    }
+    audioNodes.clunkBuf = clunkBuf;
+}
+
+let lastStepTime = 0;
+function playStep() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    if (now - lastStepTime < 0.35) return;
+    lastStepTime = now;
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioNodes.stepBuf;
+    src.playbackRate.value = 0.8 + Math.random() * 0.4;
+    const g = audioCtx.createGain();
+    g.gain.value = 0.12;
+    src.connect(g);
+    g.connect(audioNodes.master);
+    src.start();
+}
+
+let nextClunk = 0;
+function tickAudio() {
+    if (!audioCtx) return;
+    if (gameTime > nextClunk) {
+        nextClunk = gameTime + 4000 + Math.random() * 8000;
+        const src = audioCtx.createBufferSource();
+        src.buffer = audioNodes.clunkBuf;
+        const g = audioCtx.createGain();
+        g.gain.value = 0.08 + Math.random() * 0.06;
+        src.connect(g);
+        g.connect(audioNodes.master);
+        src.start();
+    }
+}
+
+// === RAYCASTING ENGINE ===
+function castRays() {
+    const cosA = Math.cos(player.angle);
+    const sinA = Math.sin(player.angle);
+
+    for (let col = 0; col < NUM_RAYS; col++) {
+        const rayAngle = player.angle - HALF_FOV + col * RAY_STEP;
+        const rayCos = Math.cos(rayAngle);
+        const raySin = Math.sin(rayAngle);
+
+        // DDA algorithm
+        let mapX = player.x | 0;
+        let mapY = player.y | 0;
+
+        const deltaDistX = Math.abs(1 / rayCos);
+        const deltaDistY = Math.abs(1 / raySin);
+
+        let stepX, stepY, sideDistX, sideDistY;
+
+        if (rayCos < 0) {
+            stepX = -1;
+            sideDistX = (player.x - mapX) * deltaDistX;
+        } else {
+            stepX = 1;
+            sideDistX = (mapX + 1 - player.x) * deltaDistX;
+        }
+        if (raySin < 0) {
+            stepY = -1;
+            sideDistY = (player.y - mapY) * deltaDistY;
+        } else {
+            stepY = 1;
+            sideDistY = (mapY + 1 - player.y) * deltaDistY;
+        }
+
+        let side = 0;
+        let hit = 0;
+        let wallType = 0;
+
+        // Step through grid
+        for (let depth = 0; depth < 30; depth++) {
+            if (sideDistX < sideDistY) {
+                sideDistX += deltaDistX;
+                mapX += stepX;
+                side = 0;
+            } else {
+                sideDistY += deltaDistY;
+                mapY += stepY;
+                side = 1;
+            }
+
+            wallType = getMap(mapX, mapY);
+            if (wallType > 0) { hit = 1; break; }
+        }
+
+        if (!hit) continue;
+
+        // Perpendicular distance (fixes fisheye)
+        let perpDist;
+        if (side === 0) {
+            perpDist = (mapX - player.x + (1 - stepX) / 2) / rayCos;
+        } else {
+            perpDist = (mapY - player.y + (1 - stepY) / 2) / raySin;
+        }
+
+        // Fix for angle correction
+        perpDist *= Math.cos(rayAngle - player.angle);
+        if (perpDist < 0.01) perpDist = 0.01;
+
+        // Wall height
+        const lineHeight = (SCREEN_H / perpDist) | 0;
+        let drawStart = (HALF_H - lineHeight / 2) | 0;
+        let drawEnd = (HALF_H + lineHeight / 2) | 0;
+        if (drawStart < 0) drawStart = 0;
+        if (drawEnd >= SCREEN_H) drawEnd = SCREEN_H - 1;
+
+        // Texture coordinate
+        let wallX;
+        if (side === 0) {
+            wallX = player.y + perpDist * raySin;
+        } else {
+            wallX = player.x + perpDist * rayCos;
+        }
+        wallX -= Math.floor(wallX);
+
+        let texX = (wallX * TEX_SIZE) | 0;
+        if (texX >= TEX_SIZE) texX = TEX_SIZE - 1;
+
+        const texIdx = getTexForWall(wallType);
+        const tex = textures[texIdx];
+
+        // Distance fog
+        const fogFactor = Math.min(perpDist / 12, 1);
+        const sideDim = side === 1 ? 0.7 : 1.0;
+
+        // Draw wall column
+        const step = TEX_SIZE / lineHeight;
+        let texPos = (drawStart - HALF_H + lineHeight / 2) * step;
+
+        for (let y = drawStart; y <= drawEnd; y++) {
+            const texY = (texPos | 0) & (TEX_SIZE - 1);
+            const ti = (texY * TEX_SIZE + texX) * 4;
+
+            let r = tex[ti] * sideDim;
+            let g = tex[ti + 1] * sideDim;
+            let b = tex[ti + 2] * sideDim;
+
+            // Apply fog (fade to dark)
+            r = r * (1 - fogFactor) + 8 * fogFactor;
+            g = g * (1 - fogFactor) + 6 * fogFactor;
+            b = b * (1 - fogFactor) + 5 * fogFactor;
+
+            const pi = (y * SCREEN_W + col) * 4;
+            buf[pi] = r | 0;
+            buf[pi + 1] = g | 0;
+            buf[pi + 2] = b | 0;
+            buf[pi + 3] = 255;
+
+            texPos += step;
+        }
+
+        // === FLOOR AND CEILING CASTING ===
+        const floorTex = textures[TEX_FLOOR];
+        const ceilTex = textures[TEX_CEIL];
+
+        // Floor
+        for (let y = drawEnd + 1; y < SCREEN_H; y++) {
+            const currentDist = SCREEN_H / (2.0 * y - SCREEN_H);
+            const corrDist = currentDist / Math.cos(rayAngle - player.angle);
+
+            const floorX = player.x + corrDist * rayCos;
+            const floorY = player.y + corrDist * raySin;
+
+            let ftx = ((floorX * TEX_SIZE) | 0) & (TEX_SIZE - 1);
+            let fty = ((floorY * TEX_SIZE) | 0) & (TEX_SIZE - 1);
+
+            const fti = (fty * TEX_SIZE + ftx) * 4;
+            const fFog = Math.min(currentDist / 10, 1);
+
+            const pi = (y * SCREEN_W + col) * 4;
+            buf[pi] = (floorTex[fti] * (1 - fFog) + 8 * fFog) | 0;
+            buf[pi+1] = (floorTex[fti+1] * (1 - fFog) + 6 * fFog) | 0;
+            buf[pi+2] = (floorTex[fti+2] * (1 - fFog) + 5 * fFog) | 0;
+            buf[pi+3] = 255;
+        }
+
+        // Ceiling
+        for (let y = 0; y < drawStart; y++) {
+            const currentDist = SCREEN_H / (SCREEN_H - 2.0 * y);
+            const corrDist = currentDist / Math.cos(rayAngle - player.angle);
+
+            const ceilX = player.x + corrDist * rayCos;
+            const ceilY = player.y + corrDist * raySin;
+
+            let ctx2 = ((ceilX * TEX_SIZE) | 0) & (TEX_SIZE - 1);
+            let cty = ((ceilY * TEX_SIZE) | 0) & (TEX_SIZE - 1);
+
+            const cti = (cty * TEX_SIZE + ctx2) * 4;
+            const cFog = Math.min(currentDist / 10, 1);
+
+            const pi = (y * SCREEN_W + col) * 4;
+            buf[pi] = (ceilTex[cti] * (1 - cFog) + 6 * cFog) | 0;
+            buf[pi+1] = (ceilTex[cti+1] * (1 - cFog) + 5 * cFog) | 0;
+            buf[pi+2] = (ceilTex[cti+2] * (1 - cFog) + 4 * cFog) | 0;
+            buf[pi+3] = 255;
+        }
+    }
+}
+
+// === MINIMAP ===
+function drawMinimap() {
+    const mmSize = 80;
+    const mmScale = mmSize / MAP_W;
+    const mmX = SCREEN_W - mmSize - 8;
+    const mmY = 8;
+
+    // Background
+    for (let y = 0; y < mmSize; y++) {
+        for (let x = 0; x < mmSize; x++) {
+            const pi = ((mmY + y) * SCREEN_W + mmX + x) * 4;
+            buf[pi] = 5; buf[pi+1] = 5; buf[pi+2] = 5; buf[pi+3] = 200;
+        }
+    }
+
+    // Walls
+    for (let my = 0; my < MAP_H; my++) {
+        for (let mx = 0; mx < MAP_W; mx++) {
+            if (getMap(mx, my) > 0) {
+                const sx = (mx * mmScale) | 0;
+                const sy = (my * mmScale) | 0;
+                const sw = Math.max(1, mmScale | 0);
+                for (let dy = 0; dy < sw; dy++) {
+                    for (let dx = 0; dx < sw; dx++) {
+                        const pi = ((mmY + sy + dy) * SCREEN_W + mmX + sx + dx) * 4;
+                        buf[pi] = 60; buf[pi+1] = 50; buf[pi+2] = 40; buf[pi+3] = 255;
+                    }
+                }
+            }
+        }
+    }
+
+    // Player dot
+    const px = (player.x * mmScale) | 0;
+    const py = (player.y * mmScale) | 0;
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            const pi = ((mmY + py + dy) * SCREEN_W + mmX + px + dx) * 4;
+            buf[pi] = 255; buf[pi+1] = 179; buf[pi+2] = 71; buf[pi+3] = 255;
+        }
+    }
+
+    // Direction indicator
+    const dirX = (px + Math.cos(player.angle) * 4) | 0;
+    const dirY = (py + Math.sin(player.angle) * 4) | 0;
+    if (dirX >= 0 && dirX < mmSize && dirY >= 0 && dirY < mmSize) {
+        const pi = ((mmY + dirY) * SCREEN_W + mmX + dirX) * 4;
+        buf[pi] = 255; buf[pi+1] = 220; buf[pi+2] = 100; buf[pi+3] = 255;
+    }
+
+    // Object dots
+    for (const obj of worldObjects) {
+        const ox = (obj.x * mmScale) | 0;
+        const oy = (obj.y * mmScale) | 0;
+        if (ox >= 0 && ox < mmSize && oy >= 0 && oy < mmSize) {
+            const pi = ((mmY + oy) * SCREEN_W + mmX + ox) * 4;
+            buf[pi] = 68; buf[pi+1] = 136; buf[pi+2] = 136; buf[pi+3] = 255;
+        }
+    }
+
+    // Border
+    for (let i = 0; i < mmSize; i++) {
+        const pi1 = ((mmY) * SCREEN_W + mmX + i) * 4;
+        const pi2 = ((mmY + mmSize - 1) * SCREEN_W + mmX + i) * 4;
+        const pi3 = ((mmY + i) * SCREEN_W + mmX) * 4;
+        const pi4 = ((mmY + i) * SCREEN_W + mmX + mmSize - 1) * 4;
+        buf[pi1] = buf[pi2] = buf[pi3] = buf[pi4] = 100;
+        buf[pi1+1] = buf[pi2+1] = buf[pi3+1] = buf[pi4+1] = 80;
+        buf[pi1+2] = buf[pi2+2] = buf[pi3+2] = buf[pi4+2] = 60;
+        buf[pi1+3] = buf[pi2+3] = buf[pi3+3] = buf[pi4+3] = 255;
+    }
+}
+
+// === POST-PROCESSING ===
+function applyPostEffects() {
+    // CRT scanlines
+    for (let y = 0; y < SCREEN_H; y += 2) {
+        for (let x = 0; x < SCREEN_W; x++) {
+            const pi = (y * SCREEN_W + x) * 4;
+            buf[pi] = (buf[pi] * 0.92) | 0;
+            buf[pi+1] = (buf[pi+1] * 0.92) | 0;
+            buf[pi+2] = (buf[pi+2] * 0.92) | 0;
+        }
+    }
+
+    // Vignette
+    const cx = SCREEN_W / 2, cy = SCREEN_H / 2;
+    const maxDist = Math.sqrt(cx * cx + cy * cy);
+    for (let y = 0; y < SCREEN_H; y++) {
+        for (let x = 0; x < SCREEN_W; x++) {
+            const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / maxDist;
+            if (dist > 0.6) {
+                const dim = 1 - (dist - 0.6) * 1.5;
+                const pi = (y * SCREEN_W + x) * 4;
+                buf[pi] = (buf[pi] * dim) | 0;
+                buf[pi+1] = (buf[pi+1] * dim) | 0;
+                buf[pi+2] = (buf[pi+2] * dim) | 0;
+            }
+        }
+    }
+
+    // Occasional horizontal jitter
+    if (Math.random() < 0.01) {
+        const jy = (Math.random() * SCREEN_H) | 0;
+        const jx = ((Math.random() - 0.5) * 4) | 0;
+        if (jx !== 0 && jy > 0 && jy < SCREEN_H - 1) {
+            for (let x = 0; x < SCREEN_W; x++) {
+                const src = (jy * SCREEN_W + x) * 4;
+                const dst = (jy * SCREEN_W + Math.max(0, Math.min(SCREEN_W-1, x + jx))) * 4;
+                // Simple shift (won't perfectly work in-buffer but gives the effect)
+            }
+        }
+    }
+
+    // Amber tint (subtle CogCorp atmosphere)
+    for (let y = 0; y < SCREEN_H; y++) {
+        for (let x = 0; x < SCREEN_W; x++) {
+            const pi = (y * SCREEN_W + x) * 4;
+            buf[pi] = Math.min(255, buf[pi] + 2);     // slight red boost
+            buf[pi+2] = Math.max(0, buf[pi+2] - 1);   // slight blue reduction
+        }
+    }
+}
+
+// === UPDATE ===
+function update(dt) {
+    if (dialogOpen) return;
+
+    // Mouse look
+    const turnSpeed = 0.003;
+    player.angle += mouseDX * turnSpeed;
+    mouseDX = 0;
+
+    // Keyboard turning (for non-mouse users)
+    if (keys['ArrowLeft']) player.angle -= 0.04;
+    if (keys['ArrowRight']) player.angle += 0.04;
+
+    // Movement
+    const moveSpeed = 0.04;
+    const cosA = Math.cos(player.angle);
+    const sinA = Math.sin(player.angle);
+    let dx = 0, dy = 0;
+    let moving = false;
+
+    if (keys['KeyW'] || keys['ArrowUp']) { dx += cosA * moveSpeed; dy += sinA * moveSpeed; moving = true; }
+    if (keys['KeyS'] || keys['ArrowDown']) { dx -= cosA * moveSpeed; dy -= sinA * moveSpeed; moving = true; }
+    if (keys['KeyA']) { dx += sinA * moveSpeed; dy -= cosA * moveSpeed; moving = true; }
+    if (keys['KeyD']) { dx -= sinA * moveSpeed; dy += cosA * moveSpeed; moving = true; }
+
+    // Collision detection (slide along walls)
+    const margin = 0.2;
+    if (getMap((player.x + dx + margin * Math.sign(dx)) | 0, player.y | 0) === 0) {
+        player.x += dx;
+    }
+    if (getMap(player.x | 0, (player.y + dy + margin * Math.sign(dy)) | 0) === 0) {
+        player.y += dy;
+    }
+
+    // Footsteps
+    if (moving && audioStarted) playStep();
+
+    // Check nearby objects
+    nearObject = null;
+    let nearestDist = 2.5;
+    for (const obj of worldObjects) {
+        const dist = Math.sqrt((player.x - obj.x) ** 2 + (player.y - obj.y) ** 2);
+        if (dist < nearestDist) {
+            // Check if player is facing the object
+            const objAngle = Math.atan2(obj.y - player.y, obj.x - player.x);
+            let angleDiff = objAngle - player.angle;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            if (Math.abs(angleDiff) < Math.PI / 3) {
+                nearObject = obj;
+                nearestDist = dist;
+            }
+        }
+    }
+
+    // Update HUD interact indicator
+    const interactEl = document.getElementById('hud-interact');
+    if (nearObject) {
+        interactEl.style.display = 'inline';
+        interactEl.textContent = '[E] ' + nearObject.name;
+    } else {
+        interactEl.style.display = 'none';
+    }
+
+    tickAudio();
+}
+
+// === RENDER ===
+function render() {
+    // Clear buffer to dark
+    for (let i = 0; i < buf.length; i += 4) {
+        buf[i] = 8; buf[i+1] = 6; buf[i+2] = 5; buf[i+3] = 255;
+    }
+
+    castRays();
+    drawMinimap();
+    applyPostEffects();
+
+    ctx.putImageData(imgData, 0, 0);
+
+    // Crosshair (drawn via canvas API for crispness)
+    ctx.strokeStyle = 'rgba(255,179,71,0.4)';
+    ctx.lineWidth = 1;
+    const chx = SCREEN_W / 2, chy = SCREEN_H / 2;
+    ctx.beginPath();
+    ctx.moveTo(chx - 6, chy); ctx.lineTo(chx - 2, chy);
+    ctx.moveTo(chx + 2, chy); ctx.lineTo(chx + 6, chy);
+    ctx.moveTo(chx, chy - 6); ctx.lineTo(chx, chy - 2);
+    ctx.moveTo(chx, chy + 2); ctx.lineTo(chx, chy + 6);
+    ctx.stroke();
+
+    // Head bob overlay
+    if (keys['KeyW'] || keys['KeyS'] || keys['KeyA'] || keys['KeyD'] ||
+        keys['ArrowUp'] || keys['ArrowDown']) {
+        const bob = Math.sin(gameTime * 0.008) * 1.5;
+        if (Math.abs(bob) > 0.5) {
+            ctx.globalAlpha = 0.02;
+            ctx.drawImage(canvas, 0, bob | 0);
+            ctx.globalAlpha = 1;
+        }
+    }
+}
+
+// === GAME LOOP ===
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    if (!gameStarted) return;
+    const dt = Math.min(timestamp - lastTime, 33);
+    lastTime = timestamp;
+    gameTime = timestamp;
+
+    update(dt);
+    render();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    initAudio();
+    const title = document.getElementById('title');
+    title.style.opacity = '0';
+    setTimeout(() => { title.style.display = 'none'; }, 800);
+    document.getElementById('hud').style.display = 'block';
+    gameStarted = true;
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+
+    // Prompt pointer lock
+    setTimeout(() => canvas.requestPointerLock(), 900);
+}
+</script>
+</body>
+</html>
