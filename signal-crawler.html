@@ -304,6 +304,9 @@ let camX = 0, camY = 0;
 const MAP_W = 30, MAP_H = 22;
 let saveData = null;
 let autoSaveInterval = null;
+let visible = []; // fog of war: tiles the player can currently see
+let revealed = []; // tiles the player has ever seen
+const VIEW_RADIUS = 6;
 
 function addMessage(text) {
   messages.unshift(text);
@@ -405,9 +408,45 @@ function generateMap() {
     }
   }
 
+  // init fog of war
+  visible = [];
+  revealed = [];
+  for (let y = 0; y < MAP_H; y++) {
+    visible[y] = new Array(MAP_W).fill(false);
+    revealed[y] = new Array(MAP_W).fill(false);
+  }
+  updateVisibility();
+
   updateHUD();
   addMessage(`Floor ${currentFloor + 1}: ${floorData.name} — ${floorData.agent}'s domain`);
   addMessage(floorData.desc);
+}
+
+// Raycasting fog of war — reveals tiles in line of sight
+function updateVisibility() {
+  for (let y = 0; y < MAP_H; y++)
+    for (let x = 0; x < MAP_W; x++)
+      visible[y][x] = false;
+
+  // cast rays in all directions
+  const steps = 120;
+  for (let i = 0; i < steps; i++) {
+    const angle = (i / steps) * Math.PI * 2;
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    let rx = player.x + 0.5;
+    let ry = player.y + 0.5;
+    for (let d = 0; d < VIEW_RADIUS; d++) {
+      const tx = Math.floor(rx);
+      const ty = Math.floor(ry);
+      if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) break;
+      visible[ty][tx] = true;
+      revealed[ty][tx] = true;
+      if (map[ty][tx] === 1) break; // wall blocks sight
+      rx += dx * 0.5;
+      ry += dy * 0.5;
+    }
+  }
 }
 
 function updateHUD() {
@@ -461,6 +500,7 @@ function movePlayer(dx, dy) {
 
   player.x = nx;
   player.y = ny;
+  updateVisibility();
 
   // check items
   for (let i = items.length - 1; i >= 0; i--) {
@@ -564,7 +604,8 @@ function saveGame() {
     items: items.map(i => ({ ...i })),
     stairs: stairs ? { ...stairs } : null,
     heart: heart ? { ...heart } : null,
-    version: '9.3'
+    revealed: revealed.map(r => [...r]),
+    version: '9.4'
   };
   try {
     localStorage.setItem('signalCrawlerSave', JSON.stringify(data));
@@ -585,6 +626,21 @@ function loadGame() {
     items = data.items;
     stairs = data.stairs;
     heart = data.heart;
+    // restore fog of war
+    if (data.revealed) {
+      revealed = data.revealed;
+      visible = [];
+      for (let y = 0; y < MAP_H; y++) visible[y] = new Array(MAP_W).fill(false);
+      updateVisibility();
+    } else {
+      visible = [];
+      revealed = [];
+      for (let y = 0; y < MAP_H; y++) {
+        visible[y] = new Array(MAP_W).fill(false);
+        revealed[y] = new Array(MAP_W).fill(false);
+      }
+      updateVisibility();
+    }
     updateHUD();
     addMessage('Checkpoint loaded.');
     return true;
@@ -628,11 +684,15 @@ function render() {
       const screenX = (mx - camX);
       const screenY = (my - camY);
 
+      const isVisible = visible[my] && visible[my][mx];
+      const isRevealed = revealed[my] && revealed[my][mx];
+
+      if (!isRevealed) continue; // completely dark — don't draw
+
       if (map[my][mx] === 1) {
         drawSprite(WALL_SPRITE, screenX, screenY, false);
       } else {
         // floor
-        const floorColor = FLOORS[currentFloor] ? FLOORS[currentFloor].color : '#666';
         const px = screenX * TS;
         const py = screenY * TS;
         ctx.fillStyle = '#1a1a22';
@@ -642,11 +702,19 @@ function render() {
         ctx.lineWidth = 0.5;
         ctx.strokeRect(px, py, TS, TS);
       }
+
+      // fog overlay for previously-seen but not currently visible tiles
+      if (!isVisible) {
+        const px = screenX * TS;
+        const py = screenY * TS;
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(px, py, TS, TS);
+      }
     }
   }
 
-  // draw stairs
-  if (stairs) {
+  // draw stairs (only if visible)
+  if (stairs && visible[stairs.y] && visible[stairs.y][stairs.x]) {
     const sx = stairs.x - camX;
     const sy = stairs.y - camY;
     if (sx >= 0 && sx < COLS + 2 && sy >= 0 && sy < ROWS + 2) {
@@ -654,8 +722,8 @@ function render() {
     }
   }
 
-  // draw heart
-  if (heart) {
+  // draw heart (only if visible)
+  if (heart && visible[heart.y] && visible[heart.y][heart.x]) {
     const hx = heart.x - camX;
     const hy = heart.y - camY;
     if (hx >= 0 && hx < COLS + 2 && hy >= 0 && hy < ROWS + 2) {
@@ -667,13 +735,12 @@ function render() {
     }
   }
 
-  // draw items
+  // draw items (only if visible)
   items.forEach(item => {
+    if (!visible[item.y] || !visible[item.y][item.x]) return;
     const ix = item.x - camX;
     const iy = item.y - camY;
     if (ix >= 0 && ix < COLS + 2 && iy >= 0 && iy < ROWS + 2) {
-      // gentle bob
-      const bob = Math.sin(Date.now() * 0.004 + item.x) * 0.1;
       if (item.type === 'frag') {
         drawSprite(FRAG_SPRITE, ix, iy, false);
       } else {
@@ -682,8 +749,9 @@ function render() {
     }
   });
 
-  // draw enemies
+  // draw enemies (only if visible)
   enemies.forEach(e => {
+    if (!visible[e.y] || !visible[e.y][e.x]) return;
     const ex = e.x - camX;
     const ey = e.y - camY;
     if (ex >= 0 && ex < COLS + 2 && ey >= 0 && ey < ROWS + 2) {
