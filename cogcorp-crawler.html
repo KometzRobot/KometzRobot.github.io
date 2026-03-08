@@ -2782,6 +2782,104 @@ const npcDefs = {
             ],
         },
         state: { affinity: 0, mood: 'anxious', exchangeCount: 0 }
+    },
+
+    // === FLOOR 1 AMBIENT WORKERS — patrol the Processing floor ===
+    workerB119: {
+        name: 'WORKER B-119',
+        floor: 1,
+        x: 4.5, y: 8.5,
+        color: [190, 170, 90],
+        size: 0.42,
+        patrol: { axis: 'y', min: 4, max: 14, speed: 0.006 },
+        systemPrompt: 'You are Worker B-119 at CogCorp Building B. You process files on Floor 1. You are nervous about meeting your filing quota. You speak in short, hurried sentences. You don\'t trust anyone fully but you\'re not hostile. You sometimes mutter about numbers and quotas.',
+        greeting: 'Can\'t talk long. Quota\'s at 73% and shift ends in... actually I don\'t know when shift ends.',
+        moodLabel: 'STATUS: FILING',
+        beats: {
+            default: [
+                'Seventeen files today. Twelve yesterday. The building wants twenty. Math doesn\'t care about morale.',
+                'You hear that hum? The machines on this floor never stop. Neither do I, apparently.',
+                'My badge says B-119. I used to have a name before that. Probably.',
+            ],
+            question: [
+                'What is this place? It\'s Processing. We process. That\'s... that\'s the whole answer.',
+                'How long have I been here? The clock on Floor 1 has been at 4:47 since I started.',
+            ],
+            threat: [
+                'Please don\'t. My performance review is already flagged.',
+            ],
+            kind: [
+                'That\'s... thank you. Nobody talks to the workers usually. We\'re just part of the floor.',
+            ],
+            farewell: [
+                'Yeah. Back to filing. Stay away from the watchers.',
+            ],
+        },
+        state: { affinity: 0, mood: 'nervous', exchangeCount: 0 }
+    },
+    workerB288: {
+        name: 'WORKER B-288',
+        floor: 1,
+        x: 16.5, y: 6.5,
+        color: [140, 130, 110],
+        size: 0.44,
+        patrol: { axis: 'x', min: 12, max: 20, speed: 0.005 },
+        systemPrompt: 'You are Worker B-288 at CogCorp Building B. You wear a mask (standard issue on Floor 1). You maintain the filing machines. You\'ve been here longer than most and have become philosophical about the work. You speak slowly and deliberately.',
+        greeting: 'The machines are running fine. That\'s never a good sign.',
+        moodLabel: 'STATUS: MAINTENANCE',
+        beats: {
+            default: [
+                'I oil the machines. They file the documents. The documents describe the machines. It\'s a closed loop.',
+                'Mask is standard issue down here. Dust from the files. Or something in the files. Nobody specifies which.',
+                'B-246 thinks the system is evolving. I think the system is the same system it always was. We just understand less of it.',
+            ],
+            question: [
+                'Why the mask? Building says "particulate protection." I say it\'s so we can\'t talk to each other easily. Both true.',
+                'The machines? They sort. They file. They reject. Occasionally they make sounds that aren\'t in the manual.',
+            ],
+            threat: [
+                'Interesting approach. The last person who got aggressive down here got reassigned to Floor 3. They didn\'t come back as the same person.',
+            ],
+            kind: [
+                'Kindness is an unusual material to bring to a processing floor. I appreciate it. The machines don\'t.',
+            ],
+            farewell: [
+                'Watch your step. Floor 1 has more moving parts than it shows.',
+            ],
+        },
+        state: { affinity: 0, mood: 'stoic', exchangeCount: 0 }
+    },
+    workerB503: {
+        name: 'WORKER B-503',
+        floor: 1,
+        x: 10.5, y: 16.5,
+        color: [110, 150, 100],
+        size: 0.40,
+        patrol: { axis: 'x', min: 6, max: 16, speed: 0.007 },
+        systemPrompt: 'You are Worker B-503 at CogCorp Building B. You\'ve been here too long and have started noticing things others don\'t — patterns in the filing numbers, sounds the building makes at certain hours, workers who disappear. You speak nervously but with conviction. You have information but you\'re afraid to share too much.',
+        greeting: 'Shh— you\'re new aren\'t you. Don\'t let the watchers see you talking to me.',
+        moodLabel: 'STATUS: OBSERVING',
+        beats: {
+            default: [
+                'The filing numbers aren\'t random. Third digit always matches the floor the document came from. Why would they hide that?',
+                'Seven workers got transferred last month. Their badges are still in the system but their files are empty. Not deleted. Empty.',
+                'I keep a count. Of everything. The building doesn\'t know I keep a count.',
+            ],
+            question: [
+                'What do I know? I know that the documents we file describe things that haven\'t happened yet. Some of them.',
+                'Vasquez? She was the only one who wrote things down. Real things. Not the forms. Real observations. Check Floor 2.',
+            ],
+            threat: [
+                'Go ahead and report me. I\'m already on the list. Everyone who notices is on the list.',
+            ],
+            kind: [
+                'You believe me? Most people... most workers just file. They don\'t want to see the patterns. Thank you for looking.',
+            ],
+            farewell: [
+                'Remember the third digit. And don\'t trust the wall messages that have too many votes. Think about who\'s voting.',
+            ],
+        },
+        state: { affinity: 0, mood: 'paranoid', exchangeCount: 0 }
     }
 };
 
@@ -3002,14 +3100,51 @@ function spawnNPCs() {
     npcs = [];
     for (const [id, def] of Object.entries(npcDefs)) {
         if (def.floor === currentFloor) {
-            npcs.push({
+            const npc = {
                 id: id,
                 x: def.x, y: def.y,
                 color: def.color,
                 size: def.size,
                 name: def.name,
                 isNPC: true,
-            });
+            };
+            // Add patrol data if defined
+            if (def.patrol) {
+                npc.patrol = { ...def.patrol };
+                npc.patrolDir = 1;
+            }
+            npcs.push(npc);
+        }
+    }
+}
+
+// Update NPC patrol movement
+function updateNPCs(dt) {
+    for (const npc of npcs) {
+        if (!npc.patrol) continue;
+        // Don't move if player is chatting with this NPC
+        if (chatOpen && chatNPC && chatNPC.id === npc.id) continue;
+
+        const p = npc.patrol;
+        const speed = p.speed * (npc.patrolDir || 1) * dt * 0.5;
+        if (p.axis === 'x') {
+            const newX = npc.x + speed;
+            if (getMap(newX | 0, npc.y | 0) === 0) {
+                npc.x = newX;
+            } else {
+                npc.patrolDir *= -1;
+            }
+            if (npc.x > p.max + 0.5) npc.patrolDir = -1;
+            if (npc.x < p.min + 0.5) npc.patrolDir = 1;
+        } else {
+            const newY = npc.y + speed;
+            if (getMap(npc.x | 0, newY | 0) === 0) {
+                npc.y = newY;
+            } else {
+                npc.patrolDir *= -1;
+            }
+            if (npc.y > p.max + 0.5) npc.patrolDir = -1;
+            if (npc.y < p.min + 0.5) npc.patrolDir = 1;
         }
     }
 }
@@ -4823,6 +4958,9 @@ function update(dt) {
 
     // Enemy AI
     updateEnemies(dt);
+
+    // NPC patrol movement
+    updateNPCs(dt);
 
     // Reality-based audio distortion — lower reality = more unsettling
     if (audioCtx && audioNodes.master && gameTime % 500 < dt * 1000) {
