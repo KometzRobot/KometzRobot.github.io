@@ -396,10 +396,18 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         <div class="wall-header">PERSONNEL MESSAGE BOARD</div>
         <div class="wall-messages" id="wall-messages"></div>
         <div class="wall-input-area">
+            <div style="margin-bottom:4px;">
+                <select id="wall-type" style="background:#1a1408;color:#8a7040;border:1px solid #3a2a10;font-family:inherit;font-size:10px;padding:2px 4px;">
+                    <option value="message">MESSAGE</option>
+                    <option value="warning">WARNING</option>
+                    <option value="clue">CLUE</option>
+                    <option value="plea">PLEA</option>
+                </select>
+            </div>
             <textarea class="wall-input" id="wall-input" placeholder="Leave a message for the next agent..." maxlength="200"></textarea>
         </div>
         <button class="wall-submit" onclick="submitWallMessage()">INSCRIBE</button>
-        <div class="wall-footer">[ ESC to close ] Messages persist between agents.</div>
+        <div class="wall-footer">[ ESC to close ] Messages persist between agents. Vote on messages to guide those who follow.</div>
     </div>
 </div>
 
@@ -2662,9 +2670,17 @@ async function fetchWallMessages() {
     } catch(e) { /* offline — no messages */ }
 }
 
-async function postWallMessage(text) {
+async function postWallMessage(text, msgType) {
     try {
         const agentId = 'B-' + (100 + Math.floor(Math.random() * 900));
+        const body = {
+            agent_id: agentId,
+            message: text,
+            floor: currentFloor + 1,
+            reality_level: player.realityLevel | 0,
+        };
+        if (msgType) body.msg_type = msgType;
+        if (currentSessionId) body.session_id = currentSessionId;
         await fetch(SUPABASE_URL + '/rest/v1/wall_messages', {
             method: 'POST',
             headers: {
@@ -2673,12 +2689,7 @@ async function postWallMessage(text) {
                 'Content-Type': 'application/json',
                 'Prefer': 'return=minimal'
             },
-            body: JSON.stringify({
-                agent_id: agentId,
-                message: text,
-                floor: currentFloor + 1,
-                reality_level: player.realityLevel | 0,
-            }),
+            body: JSON.stringify(body),
             signal: AbortSignal.timeout(4000)
         });
     } catch(e) { /* silent fail */ }
@@ -2706,10 +2717,46 @@ function renderWall() {
     if (wallMessages.length === 0) {
         el.innerHTML = '<div class="wall-msg"><em style="color:#3a2a10;">No messages found. You may be the first.</em></div>';
     } else {
-        el.innerHTML = wallMessages.map(m =>
-            `<div class="wall-msg">"${escapeHTML(m.message)}"<br><span class="wall-author">— ${escapeHTML(m.agent_id || 'Unknown')} | Floor ${m.floor || '?'} | Reality: ${m.reality_level || '?'}%</span></div>`
-        ).join('');
+        el.innerHTML = wallMessages.map(m => {
+            const typeLabel = m.msg_type && m.msg_type !== 'message'
+                ? `<span style="color:${m.msg_type==='warning'?'#cc6633':m.msg_type==='clue'?'#33aa77':m.msg_type==='plea'?'#7766aa':'#887744'};font-size:9px;letter-spacing:1px;">[${m.msg_type.toUpperCase()}]</span> `
+                : '';
+            const voteInfo = (m.votes_helpful || m.votes_deceptive)
+                ? ` | <span style="color:#556644" title="helpful">\u2191${m.votes_helpful||0}</span> <span style="color:#665544" title="deceptive">\u2193${m.votes_deceptive||0}</span>`
+                : '';
+            const voteButtons = m.id
+                ? ` <span class="wall-vote" onclick="voteWallMessage(${m.id},'helpful')" style="cursor:pointer;color:#556644;font-size:9px;" title="Mark helpful">[+]</span><span class="wall-vote" onclick="voteWallMessage(${m.id},'deceptive')" style="cursor:pointer;color:#665544;font-size:9px;" title="Mark deceptive">[-]</span>`
+                : '';
+            return `<div class="wall-msg">${typeLabel}"${escapeHTML(m.message)}"<br><span class="wall-author">— ${escapeHTML(m.agent_id || 'Unknown')} | Floor ${m.floor || '?'} | Reality: ${m.reality_level || '?'}%${voteInfo}${voteButtons}</span></div>`;
+        }).join('');
     }
+}
+
+async function voteWallMessage(msgId, voteType) {
+    const field = voteType === 'helpful' ? 'votes_helpful' : 'votes_deceptive';
+    try {
+        // Fetch current value
+        const r = await fetch(SUPABASE_URL + '/rest/v1/wall_messages?id=eq.' + msgId + '&select=' + field, {
+            headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON },
+            signal: AbortSignal.timeout(4000)
+        });
+        if (r.ok) {
+            const data = await r.json();
+            const current = data[0]?.[field] || 0;
+            await fetch(SUPABASE_URL + '/rest/v1/wall_messages?id=eq.' + msgId, {
+                method: 'PATCH',
+                headers: {
+                    'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+                    'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({ [field]: current + 1 }),
+                signal: AbortSignal.timeout(4000)
+            });
+            showMessage(voteType === 'helpful' ? 'MARKED: HELPFUL' : 'MARKED: DECEPTIVE', 1500);
+            await fetchWallMessages();
+            renderWall();
+        }
+    } catch(e) { /* silent */ }
 }
 
 async function submitWallMessage() {
@@ -2718,8 +2765,9 @@ async function submitWallMessage() {
     if (!text) return;
     input.value = '';
 
-    await postWallMessage(text);
-    showMessage('MESSAGE INSCRIBED', 2000);
+    const msgType = document.getElementById('wall-type')?.value || 'message';
+    await postWallMessage(text, msgType);
+    showMessage(msgType === 'warning' ? 'WARNING INSCRIBED' : msgType === 'clue' ? 'CLUE INSCRIBED' : msgType === 'plea' ? 'PLEA INSCRIBED' : 'MESSAGE INSCRIBED', 2000);
 
     // Re-fetch after posting
     setTimeout(async () => {
