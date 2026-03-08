@@ -1131,6 +1131,7 @@ let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
     annotateProgress: 0,  // 0-100 progress on current annotation
     totalFiled: 0,        // how many enemies filed
     allDocsFound: false,  // all documents collected this run
+    phaseHintShown: false, // shown hint about wall phasing at low reality
 };
 
 // Ambient message system — periodic atmospheric text
@@ -1939,7 +1940,31 @@ function processDeskDecision(action) {
     }
 
     deskResult = correct ? 'correct' : 'wrong';
-    deskResultTimer = 2000; // show result for 2 seconds
+    deskResultTimer = 2500; // show result for 2.5 seconds
+
+    // Highlight invalid fields on the file card
+    highlightFileIssues(f);
+}
+
+function highlightFileIssues(f) {
+    const fields = document.querySelectorAll('#desk-file-card .file-field');
+    if (!fields.length) return;
+    // Map field index to issue type: 0=unit, 1=serial, 2=dept, 3=clearance, 4=code, 5=expiry
+    const issueMap = { dept: 2, clearance: 3, code: 4, expiry: 5 };
+    for (const issue of f.issues) {
+        const idx = issueMap[issue];
+        if (idx !== undefined && fields[idx]) {
+            fields[idx].style.color = '#cc3322';
+            fields[idx].style.borderLeft = '2px solid #cc3322';
+            fields[idx].style.paddingLeft = '6px';
+        }
+    }
+    // If file was valid, mark all green
+    if (f.valid) {
+        for (const field of fields) {
+            field.style.color = '#66cc44';
+        }
+    }
 }
 
 function getIssueDescription(f) {
@@ -2428,6 +2453,7 @@ function respawn() {
     player.annotateProgress = 0;
     player.totalFiled = 0;
     player.allDocsFound = false;
+    player.phaseHintShown = false;
     player.docs = 0;
     deskOpen = false; deskEnemy = null; deskFile = null;
     chatOpen = false; chatNPC = null; wallOpen = false;
@@ -3785,6 +3811,10 @@ function update(dt) {
     // Move if space is clear (re-check after potential unlock)
     // At low reality (<25%), player can phase through damaged walls (type 5)
     const canPhase = player.realityLevel < 25;
+    if (canPhase && !player.phaseHintShown) {
+        player.phaseHintShown = true;
+        showMessage('Your body is losing solidity. Damaged walls no longer stop you.', 4000);
+    }
     const wallX = getMap(checkX, player.y|0);
     const wallY = getMap(player.x|0, checkY);
     if (wallX === 0 || (canPhase && wallX === 5)) player.x += dx;
