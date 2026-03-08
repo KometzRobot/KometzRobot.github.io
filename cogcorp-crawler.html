@@ -1730,10 +1730,10 @@ function renderProcessingDesk() {
     let cardHTML = '';
     cardHTML += `<div class="file-field"><span class="label">UNIT:</span> ${f.unitName}</div>`;
     cardHTML += `<div class="file-field"><span class="label">SERIAL:</span> ${f.serialNum}</div>`;
-    cardHTML += `<div class="file-field${f.issues.includes('dept') ? ' suspicious' : ''}"><span class="label">DEPARTMENT:</span> ${f.dept}</div>`;
-    cardHTML += `<div class="file-field${f.issues.includes('clearance') ? ' suspicious' : ''}"><span class="label">CLEARANCE:</span> LEVEL ${f.clearance}</div>`;
-    cardHTML += `<div class="file-field${f.issues.includes('code') ? ' suspicious' : ''}"><span class="label">FILING CODE:</span> ${f.code}</div>`;
-    cardHTML += `<div class="file-field${f.issues.includes('expiry') ? ' suspicious' : ''}"><span class="label">VALID UNTIL:</span> ${f.expiry}</div>`;
+    cardHTML += `<div class="file-field"><span class="label">DEPARTMENT:</span> ${f.dept}</div>`;
+    cardHTML += `<div class="file-field"><span class="label">CLEARANCE:</span> LEVEL ${f.clearance}</div>`;
+    cardHTML += `<div class="file-field"><span class="label">FILING CODE:</span> ${f.code}</div>`;
+    cardHTML += `<div class="file-field"><span class="label">VALID UNTIL:</span> ${f.expiry}</div>`;
     document.getElementById('desk-file-card').innerHTML = cardHTML;
 
     // Rules
@@ -3537,18 +3537,36 @@ function render() {
         if (Math.abs(bob) > 0.5) { ctx.globalAlpha = 0.02; ctx.drawImage(canvas, 0, bob|0); ctx.globalAlpha = 1; }
     }
 
-    // Ghost text at low reality
-    if (player.realityLevel < 30 && Math.random() < 0.03) {
-        const ghostTexts = [
-            'YOU ARE THE ANNOTATION', 'FILE #B-247', 'THE OBSERVER BECOMES THE OBSERVED',
-            'REALITY IS A FILING ERROR', 'YOU WERE NEVER HERE', 'THE CLIPBOARD REMEMBERS',
-            'DOCUMENT EVERYTHING', 'BUILDING B IS WATCHING', 'YOU ARE PAPER',
-            'THE FILING SYSTEM IS CORRECT', 'CLASSIFICATION: PENDING',
-        ];
+    // Ghost text at low reality — persists for multiple frames so it's readable
+    if (player.realityLevel < 30) {
+        if (!player._ghostTexts) player._ghostTexts = [];
+        // Spawn new ghost text occasionally (more frequent at lower reality)
+        const spawnChance = 0.015 + (30 - player.realityLevel) * 0.002;
+        if (Math.random() < spawnChance && player._ghostTexts.length < 3) {
+            const ghostPhrases = [
+                'YOU ARE THE ANNOTATION', 'FILE #B-247', 'THE OBSERVER BECOMES THE OBSERVED',
+                'REALITY IS A FILING ERROR', 'YOU WERE NEVER HERE', 'THE CLIPBOARD REMEMBERS',
+                'DOCUMENT EVERYTHING', 'BUILDING B IS WATCHING', 'YOU ARE PAPER',
+                'THE FILING SYSTEM IS CORRECT', 'CLASSIFICATION: PENDING',
+            ];
+            player._ghostTexts.push({
+                text: ghostPhrases[(Math.random()*ghostPhrases.length)|0],
+                x: 20 + Math.random() * (SCREEN_W - 140),
+                y: 30 + Math.random() * (SCREEN_H - 60),
+                life: 800 + Math.random() * 1500,
+                maxLife: 800 + Math.random() * 1500,
+                alpha: 0.12 + Math.random() * 0.18,
+            });
+        }
         ctx.font = '10px monospace';
-        ctx.fillStyle = `rgba(255,179,71,${0.1 + Math.random() * 0.15})`;
-        ctx.fillText(ghostTexts[(Math.random()*ghostTexts.length)|0],
-            Math.random() * (SCREEN_W - 100), Math.random() * SCREEN_H);
+        for (let i = player._ghostTexts.length - 1; i >= 0; i--) {
+            const g = player._ghostTexts[i];
+            g.life -= dt * 1000;
+            if (g.life <= 0) { player._ghostTexts.splice(i, 1); continue; }
+            const fade = Math.min(1, g.life / 400) * Math.min(1, (g.maxLife - g.life) / 300);
+            ctx.fillStyle = `rgba(255,179,71,${g.alpha * fade})`;
+            ctx.fillText(g.text, g.x, g.y);
+        }
     }
 
     // Clipboard overlay when annotating
