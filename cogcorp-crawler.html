@@ -1469,6 +1469,9 @@ function interact(obj) {
             const newFloor = currentFloor + 1;
             changeFloor(newFloor);
             showMessage('ASCENDING TO FLOOR ' + (newFloor + 1), 2000);
+            if (newFloor === 2) {
+                setTimeout(() => showMessage('The building is breathing.', 3000), 2500);
+            }
         } else {
             showDialog('STAIRS', 'There is no higher floor.');
         }
@@ -2482,6 +2485,38 @@ function updateFloorAmbience(floor) {
     audioNodes.hum2.frequency.linearRampToValueAtTime(hum2Freqs[floor] || 110, t + 2);
     audioNodes.noiseFilter.frequency.linearRampToValueAtTime(noiseFreqs[floor] || 300, t + 2);
     audioNodes.noiseGain.gain.linearRampToValueAtTime(noiseVols[floor] || 0.012, t + 2);
+
+    // Floor 3: building heartbeat — low-frequency pulse, 72 BPM
+    if (audioNodes._heartbeatInterval) {
+        clearInterval(audioNodes._heartbeatInterval);
+        audioNodes._heartbeatInterval = null;
+    }
+    if (floor === 2) {
+        function playHeartbeat() {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const now = audioCtx.currentTime;
+            // lub (softer)
+            const lub = audioCtx.createOscillator();
+            const lubG = audioCtx.createGain();
+            lub.type = 'sine'; lub.frequency.value = 35;
+            lubG.gain.setValueAtTime(0, now);
+            lubG.gain.linearRampToValueAtTime(0.08, now + 0.04);
+            lubG.gain.linearRampToValueAtTime(0, now + 0.12);
+            lub.connect(lubG); lubG.connect(audioNodes.master);
+            lub.start(now); lub.stop(now + 0.15);
+            // DUB (stronger)
+            const dub = audioCtx.createOscillator();
+            const dubG = audioCtx.createGain();
+            dub.type = 'sine'; dub.frequency.value = 30;
+            dubG.gain.setValueAtTime(0, now + 0.18);
+            dubG.gain.linearRampToValueAtTime(0.12, now + 0.24);
+            dubG.gain.linearRampToValueAtTime(0, now + 0.35);
+            dub.connect(dubG); dubG.connect(audioNodes.master);
+            dub.start(now + 0.18); dub.stop(now + 0.40);
+        }
+        playHeartbeat();
+        audioNodes._heartbeatInterval = setInterval(playHeartbeat, 833);
+    }
 }
 
 let lastStepTime = 0;
@@ -3325,13 +3360,31 @@ function applyPostEffects() {
             buf[pi+2] = Math.max(0, buf[pi+2]-1);
         }
 
-    // Floor 3: green tint
+    // Floor 3: green tint + building heartbeat
     if (currentFloor === 2) {
+        // Green tint — the processing floor feels organic
         for (let y = 0; y < SCREEN_H; y++)
             for (let x = 0; x < SCREEN_W; x++) {
                 const pi = (y*SCREEN_W+x)*4;
                 buf[pi+1] = Math.min(255, buf[pi+1] + 3);
             }
+        // Building heartbeat — lub-DUB rhythm (72 BPM = 833ms cycle)
+        const heartPhase = (gameTime % 833) / 833;
+        let heartIntensity = 0;
+        if (heartPhase < 0.08) heartIntensity = heartPhase / 0.08;           // lub rise
+        else if (heartPhase < 0.15) heartIntensity = 1 - (heartPhase - 0.08) / 0.07; // lub fall
+        else if (heartPhase < 0.22) heartIntensity = 0;                      // pause
+        else if (heartPhase < 0.32) heartIntensity = (heartPhase - 0.22) / 0.10 * 1.3; // DUB rise
+        else if (heartPhase < 0.42) heartIntensity = 1.3 * (1 - (heartPhase - 0.32) / 0.10); // DUB fall
+        heartIntensity = Math.min(1, heartIntensity) * 0.06;
+        if (heartIntensity > 0.005) {
+            for (let y = 0; y < SCREEN_H; y++)
+                for (let x = 0; x < SCREEN_W; x++) {
+                    const pi = (y*SCREEN_W+x)*4;
+                    buf[pi]   = Math.min(255, (buf[pi]   * (1 + heartIntensity)) | 0);
+                    buf[pi+1] = Math.min(255, (buf[pi+1] * (1 + heartIntensity * 0.6)) | 0);
+                }
+        }
     }
 
     // Damage flash overlay
