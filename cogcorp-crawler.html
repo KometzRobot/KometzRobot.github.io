@@ -67,6 +67,39 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #annotation-progress .bar { width: 80px; height: 3px; background: #1a1408; border: 1px solid #5a4020; margin: 4px auto; }
 #annotation-progress .bar-fill { height: 100%; background: #ffb347; transition: width 0.1s; }
 #filed-count { color: #5a4020; font-size: 9px; }
+#crt-terminal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50;
+    background: rgba(0,8,0,0.92); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace; cursor: default;
+}
+#crt-terminal .crt-frame {
+    width: 520px; max-width: 92%; background: #001200;
+    border: 3px solid #0a3a0a; border-radius: 10px;
+    padding: 24px 28px; position: relative; overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,255,0,0.08), inset 0 0 80px rgba(0,0,0,0.5);
+    animation: crt-flicker 4s infinite;
+}
+#crt-terminal .crt-frame::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.03) 2px, rgba(0,255,0,0.03) 4px);
+    pointer-events: none; z-index: 1;
+}
+#crt-terminal .crt-header {
+    color: #33ff33; font-size: 13px; letter-spacing: 3px;
+    text-shadow: 0 0 8px rgba(0,255,0,0.5);
+    border-bottom: 1px solid #0a3a0a; padding-bottom: 8px; margin-bottom: 14px;
+}
+#crt-terminal .crt-body {
+    color: #22cc22; font-size: 11px; line-height: 1.7;
+    text-shadow: 0 0 4px rgba(0,255,0,0.3); min-height: 120px;
+}
+#crt-terminal .crt-option { color: #33ff33; cursor: pointer; padding: 2px 0; }
+#crt-terminal .crt-option:hover { color: #88ff88; text-shadow: 0 0 12px rgba(0,255,0,0.6); }
+#crt-terminal .crt-input-line { color: #33ff33; font-size: 13px; margin-top: 10px; text-shadow: 0 0 8px rgba(0,255,0,0.5); }
+#crt-terminal .crt-cursor { animation: crt-blink 0.7s infinite; }
+@keyframes crt-blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+#crt-terminal .crt-footer { color: #0a5a0a; font-size: 10px; margin-top: 14px; text-align: right; }
+@keyframes crt-flicker { 0%,96% { opacity: 1; } 97% { opacity: 0.85; } 98% { opacity: 1; } 99% { opacity: 0.9; } }
 </style>
 </head>
 <body>
@@ -129,6 +162,14 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 <div id="annotation-progress">
     <div>ANNOTATING...</div>
     <div class="bar"><div class="bar-fill" id="annot-bar-fill" style="width:0%"></div></div>
+</div>
+
+<div id="crt-terminal">
+    <div class="crt-frame">
+        <div class="crt-header" id="crt-header"></div>
+        <div class="crt-body" id="crt-body"></div>
+        <div class="crt-footer">[ ESC to exit terminal ]</div>
+    </div>
 </div>
 
 <canvas id="game"></canvas>
@@ -967,6 +1008,7 @@ const worldObjectsByFloor = [
         { x: 20.5, y: 4.5, name: 'EMPLOYEE PHOTO WALL', text: 'Framed photos of CogCorp employees. The faces get blurrier toward the right side of the wall. The last three frames are empty. The plaques beneath them read: "Employee of the Month — March 1989," "Employee of the Month — April 1989," "Employee of the Month — Forever."' },
         { x: 8.5, y: 20.5, name: 'BROKEN CLOCK', text: 'A large wall clock. The second hand moves backward. The minute hand doesn\'t move at all. The hour hand points at a number that doesn\'t exist on the clock face. It\'s between 12 and 1. It has always been between 12 and 1.' },
         { x: 14.5, y: 9.5, name: 'SUGGESTION BOX', text: 'A metal suggestion box. It\'s full. You pull one out: "Please stop the filing system from filing the suggestion box." Below it: "Please stop the suggestion box from generating suggestions about itself." Below that: "I think the building is reading these."' },
+        { x: 12.5, y: 2.5, name: 'PERSONNEL TERMINAL', isTerminal: true, terminalId: 'personnel' },
     ],
     // Floor 2: Archives — deeper, stranger
     [
@@ -980,6 +1022,7 @@ const worldObjectsByFloor = [
         { x: 16.5, y: 10.5, name: 'ARCHIVE TERMINAL', text: '"QUERY: WHO IS B-247? RESULT: B-247 is a filing clerk assigned to retrieve File #B-247-SELF. STATUS: In progress. NOTE: This query has been made 1,447 times. Each instance was the first time."' },
         { x: 6.5, y: 10.5, name: 'READING DESK', text: 'A desk with a green lamp. An open book. The pages are blank except for one line repeated on every page: "The observer changes the observed. The observed changes the observer. The observation remains." The book has no author. The book has no title. The book may not be a book.' },
         { x: 14.5, y: 20.5, name: 'ARCHIVE MIRROR', isMirror: true },
+        { x: 11.5, y: 5.5, name: 'ARCHIVE QUERY TERMINAL', isTerminal: true, terminalId: 'archive' },
     ],
     // Floor 3: Processing — the machine heart
     [
@@ -991,6 +1034,7 @@ const worldObjectsByFloor = [
         { x: 20.5, y: 4.5, name: 'TEMPERATURE GAUGE', text: 'The temperature gauge reads 37.0°C. Body temperature. The building\'s thermostat is set to body temperature. The instruction manual by the gauge says: "Maintain ambient temperature at biological operating parameters. If asked why, the answer is: comfort. Do not investigate further."' },
         { x: 12.5, y: 20.5, name: 'DECOMMISSION PLAQUE', text: '"BUILDING B — DECOMMISSIONED 1989. COGNITIVE PROCESSING DIVISION. This building is no longer operational. This plaque was printed by the building\'s operational printer. This is not a contradiction. Authorized by: Building B."' },
         { x: 8.5, y: 11.5, name: 'PROCESSING MIRROR', isMirror: true },
+        { x: 16.5, y: 7.5, name: 'OVERRIDE CONSOLE', isTerminal: true, terminalId: 'override' },
     ],
 ];
 
@@ -1013,6 +1057,14 @@ let msgText = '';
 let totalDocs = 0;
 let gameWon = false;
 
+// === CRT TERMINAL STATE ===
+let terminalOpen = false;
+let currentTerminal = null;
+let currentTermScreen = 'main';
+let termCodeInput = '';
+let enemyRevealTimer = 0;
+let enemySlowTimer = 0;
+
 // Count total documents across all floors
 for (const floorItems of itemSpawns) {
     for (const item of floorItems) {
@@ -1027,6 +1079,14 @@ let mouseDX = 0;
 
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
+    // Route to terminal when open
+    if (terminalOpen) {
+        e.preventDefault();
+        if (e.code === 'Escape') { closeTerminal(); return; }
+        if (e.key >= '0' && e.key <= '9') { handleTerminalKey(e.key); return; }
+        if (e.code === 'Backspace') { handleTerminalKey('Backspace'); return; }
+        return;
+    }
     if (e.code === 'Space') {
         e.preventDefault();
         if (dialogOpen) dismissDialog();
@@ -1091,6 +1151,10 @@ function interact(obj) {
             changeFloor(currentFloor - 1);
             showMessage('DESCENDING TO FLOOR ' + (currentFloor + 1), 2000);
         }
+        return;
+    }
+    if (obj.isTerminal) {
+        openTerminal(obj.terminalId);
         return;
     }
     if (obj.isMirror) {
@@ -1510,6 +1574,312 @@ function updateProximityAudio() {
     }
 }
 
+// === CRT TERMINAL SYSTEM ===
+const terminalData = {
+    personnel: {
+        header: 'COGCORP PERSONNEL SYSTEM v4.7',
+        screens: {
+            main: {
+                text: 'TERMINAL ACTIVE \u2014 LAST LOGIN: 1989-03-14\n\nSELECT FUNCTION:',
+                options: [
+                    { key: '1', label: 'View Employee Records', goto: 'records' },
+                    { key: '2', label: 'Security Camera Access', goto: 'security_prompt' },
+                    { key: '3', label: 'Building Directory', goto: 'directory' },
+                    { key: '4', label: 'Exit Terminal', action: 'close' },
+                ]
+            },
+            records: {
+                text: 'EMPLOYEE: B-247\nSTATUS: ACTIVE\nASSIGNED: 1986-06-01\nDEPARTMENT: FILE RETRIEVAL\n\nNOTE: B-247 has been assigned to retrieve\nFile #B-247-SELF on 1,447 separate occasions.\nEach assignment was the first.\n\nPERFORMANCE REVIEW:\n"B-247 is an excellent employee. B-247 has always\nbeen an excellent employee. B-247 will continue to\nbe an excellent employee until B-247 is filed."',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            security_prompt: {
+                text: 'SECURITY CAMERA ACCESS \u2014 RESTRICTED\n\nENTER ACCESS CODE:',
+                input: { length: 4, code: '4091', success: 'security_granted', fail: 'security_denied' }
+            },
+            security_granted: {
+                text: 'ACCESS GRANTED.\n\nCAMERA FEED ACTIVE \u2014 30 SECOND WINDOW.\nHighlighting all security units on current floor.\n\n[FEED WILL TERMINATE AUTOMATICALLY]',
+                onEnter: 'revealEnemies',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            security_denied: {
+                text: 'ACCESS DENIED.\n\nINCORRECT CODE.\n\nHINT: The access code can be found in\nMaintenance Report #4091.\nThe report number IS the code.',
+                options: [
+                    { key: '1', label: 'Try Again', goto: 'security_prompt' },
+                    { key: '2', label: 'Back', goto: 'main' },
+                ]
+            },
+            directory: {
+                text: 'BUILDING B \u2014 DIRECTORY\n\nFLOOR 1: Lobby, Reception, Offices\n  \u25b8 Stairs to Floor 2: northeast corner\n\nFLOOR 2: Archives, Filing Systems\n  \u25b8 Keycard required for Floor 3 access\n  \u25b8 Archive Query Terminal available\n\nFLOOR 3: Processing, Cognitive Engine\n  \u25b8 Target file in secure room\n  \u25b8 Processing Override Console available\n\nFLOOR 4: [REDACTED \u2014 CLOSED SINCE 1987]',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+        }
+    },
+    archive: {
+        header: 'ARCHIVE RETRIEVAL SYSTEM v2.1',
+        screens: {
+            main: {
+                text: 'CONNECTED TO COGCORP CENTRAL ARCHIVE\nINDEX: 847,000 FILES | 846,999 CLASSIFIED\n\nSELECT QUERY:',
+                options: [
+                    { key: '1', label: 'Search: "B-247"', goto: 'search_b247' },
+                    { key: '2', label: 'Search: "ANNOTATION"', goto: 'search_annot' },
+                    { key: '3', label: 'System Diagnostics', goto: 'diagnostics' },
+                    { key: '4', label: 'Exit Terminal', action: 'close' },
+                ]
+            },
+            search_b247: {
+                text: 'SEARCHING... QUERY: "B-247"\n\nRESULTS: 1,448 MATCHES\n\n #0001: "B-247 personnel file \u2014 FLOOR 3 SECURE ROOM"\n #0002: "B-247 retrieval order \u2014 FILED"\n #0003: "B-247 retrieval order \u2014 FILED"\n ...\n #1447: "B-247 retrieval order \u2014 FILED"\n #1448: "B-247 retrieval order \u2014 IN PROGRESS"\n\nNOTE: All 1,447 previous retrieval orders are\nidentical. All 1,447 previous B-247s ended.\n"Ended" is not the same as "completed."',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            search_annot: {
+                text: 'SEARCHING... QUERY: "ANNOTATION"\n\nRESULTS: 3 MATCHES\n\n #0001: "Annotation Protocol \u2014 SECURITY MEASURE"\n   Documenting a security unit reduces it to data.\n   Data can be filed. Filed data is resolved.\n\n #0002: "Annotation Side Effects \u2014 CLASSIFIED"\n   The observer becomes more like the observation.\n   Reality coherence decreases proportionally.\n\n #0003: "Annotation Reversal \u2014 FILE NOT FOUND"\n   This file does not exist. Stop looking.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            diagnostics: {
+                text: 'SYSTEM DIAGNOSTICS \u2014 ARCHIVE v2.1\n\n Storage: 99.97% capacity\n Index integrity: COMPROMISED (self-referential)\n Last defrag: 1989-03-14\n Uptime: 13,506 days\n\n WARNING: Processing Override Console on Floor 3\n requires access code. Code found in archive:\n\n \u25b8 OVERRIDE CODE: 7734\n\n NOTE: This diagnostic was not supposed to display\n the override code. The archive decided you need it.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+        }
+    },
+    override: {
+        header: 'COGNITIVE PROCESSING UNIT \u2014 OVERRIDE',
+        screens: {
+            main: {
+                text: 'MODEL CG-9000 \u2014 STATUS: ACTIVE\nTASK: COGNITIVE FILING\nRUNTIME: 13,506 DAYS\nOUTPUT: INCREASING\n\nOVERRIDE CONSOLE:',
+                options: [
+                    { key: '1', label: 'Status Report', goto: 'status' },
+                    { key: '2', label: 'Enter Override Code', goto: 'override_prompt' },
+                    { key: '3', label: 'Emergency Protocol', goto: 'emergency' },
+                    { key: '4', label: 'Exit Terminal', action: 'close' },
+                ]
+            },
+            status: {
+                text: 'PROCESSING STATUS REPORT\n\n Active security units: (counting...)\n Files processed today: \u221e\n Cognitive load: 147% (OVER CAPACITY)\n\n PRIMARY: Convert observations into files.\n SECONDARY: Convert observers into files.\n TERTIARY: Deny secondary function exists.\n\n NOTE: The machine does not think. The machine\n processes. If processing resembles thinking,\n this is a coincidence.',
+                dynamic: 'statusReport',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            override_prompt: {
+                text: 'PROCESSING OVERRIDE \u2014 RESTRICTED\n\nThis will reduce processing speed for 60 seconds.\nAll security units will move at half speed.\n\nENTER OVERRIDE CODE:',
+                input: { length: 4, code: '7734', success: 'override_ok', fail: 'override_fail' }
+            },
+            override_ok: {
+                text: 'OVERRIDE ACCEPTED.\n\nProcessing speed reduced to 50%.\nSecurity unit response time: DOUBLED.\nDuration: 60 seconds.\n\nWARNING: The machine is aware of the override.\nWARNING: The machine does not approve.\nWARNING: These warnings were generated by the machine.',
+                onEnter: 'slowEnemies',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            override_fail: {
+                text: 'INVALID CODE.\n\nThe override code can be found in the\nArchive Retrieval System diagnostics on Floor 2.\n\nThe machine suggests you go look.\nThe machine has no suggestions function.',
+                options: [
+                    { key: '1', label: 'Try Again', goto: 'override_prompt' },
+                    { key: '2', label: 'Back', goto: 'main' },
+                ]
+            },
+            emergency: {
+                text: 'EMERGENCY PROTOCOL \u2014 EXTREME MEASURES\n\n \u26a0 WARNING: Cognitive buffer discharge.\n \u26a0 All security units stunned for 30 seconds.\n \u26a0 COST: 20% REALITY COHERENCE\n\n The emergency protocol works by overwhelming\n the processor with unfileable data. Your\n observational coherence will be damaged.\n\nPROCEED?',
+                options: [
+                    { key: '1', label: 'Yes \u2014 Emergency Discharge', action: 'emergencyProtocol' },
+                    { key: '2', label: 'No \u2014 Cancel', goto: 'main' },
+                ]
+            },
+        }
+    },
+};
+
+function openTerminal(termId) {
+    currentTerminal = termId;
+    currentTermScreen = 'main';
+    termCodeInput = '';
+    terminalOpen = true;
+    document.exitPointerLock && document.exitPointerLock();
+    playTerminalBootSound();
+    renderTerminal();
+    document.getElementById('crt-terminal').style.display = 'flex';
+}
+
+function closeTerminal() {
+    terminalOpen = false;
+    currentTerminal = null;
+    currentTermScreen = 'main';
+    termCodeInput = '';
+    document.getElementById('crt-terminal').style.display = 'none';
+}
+
+function renderTerminal() {
+    const term = terminalData[currentTerminal];
+    const screen = term.screens[currentTermScreen];
+    document.getElementById('crt-header').textContent = term.header;
+
+    let text = screen.text;
+    // Dynamic status report
+    if (screen.dynamic === 'statusReport') {
+        const alive = enemies.filter(e => e.alive).length;
+        text = text.replace('(counting...)', String(alive));
+    }
+
+    let html = text.replace(/\n/g, '<br>');
+
+    // Code input field
+    if (screen.input) {
+        const filled = termCodeInput.padEnd(screen.input.length, '_');
+        html += '<br><br><div class="crt-input-line">&gt; ' +
+            filled.split('').join(' ') +
+            ' <span class="crt-cursor">\u2588</span></div>';
+    }
+
+    // Menu options
+    if (screen.options) {
+        html += '<br>';
+        for (const opt of screen.options) {
+            html += '<div class="crt-option">[' + opt.key + '] ' + opt.label + '</div>';
+        }
+    }
+
+    document.getElementById('crt-body').innerHTML = html;
+
+    // Execute onEnter action
+    if (screen.onEnter) {
+        executeTerminalAction(screen.onEnter);
+        screen.onEnter = null; // only trigger once
+    }
+}
+
+function handleTerminalKey(key) {
+    if (!terminalOpen || !currentTerminal) return;
+    const term = terminalData[currentTerminal];
+    const screen = term.screens[currentTermScreen];
+
+    // Code input mode
+    if (screen.input) {
+        if (key >= '0' && key <= '9') {
+            termCodeInput += key;
+            playTerminalKeySound();
+            renderTerminal();
+            if (termCodeInput.length >= screen.input.length) {
+                const code = termCodeInput;
+                setTimeout(() => {
+                    if (code === screen.input.code) {
+                        currentTermScreen = screen.input.success;
+                        playTerminalSuccessSound();
+                    } else {
+                        currentTermScreen = screen.input.fail;
+                        playTerminalErrorSound();
+                    }
+                    termCodeInput = '';
+                    renderTerminal();
+                }, 400);
+            }
+            return;
+        }
+        if (key === 'Backspace' && termCodeInput.length > 0) {
+            termCodeInput = termCodeInput.slice(0, -1);
+            renderTerminal();
+            return;
+        }
+        return;
+    }
+
+    // Menu option selection
+    if (screen.options) {
+        for (const opt of screen.options) {
+            if (key === opt.key) {
+                playTerminalKeySound();
+                if (opt.action === 'close') { closeTerminal(); return; }
+                if (opt.action) executeTerminalAction(opt.action);
+                if (opt.goto) {
+                    currentTermScreen = opt.goto;
+                    termCodeInput = '';
+                    renderTerminal();
+                }
+                return;
+            }
+        }
+    }
+}
+
+function executeTerminalAction(action) {
+    switch (action) {
+        case 'revealEnemies':
+            enemyRevealTimer = 30000;
+            showMessage('CAMERA FEED ACTIVE \u2014 30s', 3000);
+            break;
+        case 'slowEnemies':
+            enemySlowTimer = 60000;
+            showMessage('OVERRIDE ACTIVE \u2014 ENEMIES SLOWED', 3000);
+            break;
+        case 'emergencyProtocol':
+            player.realityLevel = Math.max(0, player.realityLevel - 20);
+            updateRealityHUD();
+            for (const e of enemies) {
+                if (e.alive) e.stunTimer = 30000;
+            }
+            showMessage('EMERGENCY DISCHARGE \u2014 REALITY -20%', 3000);
+            closeTerminal();
+            if (player.realityLevel <= 0) checkRealityDeath();
+            break;
+    }
+}
+
+function checkRealityDeath() {
+    // At 0 reality, player is filed
+    if (player.realityLevel <= 0) {
+        gameStarted = false;
+        document.getElementById('death-screen').querySelector('h2').textContent = 'YOU HAVE BEEN FILED';
+        document.getElementById('death-screen').querySelector('p').textContent = 'B-247 observational coherence: 0%. The filing system has processed you.';
+        document.getElementById('death-screen').style.display = 'flex';
+    }
+}
+
+// Terminal audio
+function playTerminalBootSound() {
+    if (!audioCtx) initAudio();
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); osc.type = 'square';
+    osc.frequency.setValueAtTime(800, t);
+    osc.frequency.exponentialRampToValueAtTime(200, t + 0.15);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.06, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(t); osc.stop(t + 0.15);
+    // CRT hum startup
+    const osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = 60;
+    const g2 = audioCtx.createGain();
+    g2.gain.setValueAtTime(0, t + 0.1);
+    g2.gain.linearRampToValueAtTime(0.03, t + 0.3);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+    osc2.connect(g2); g2.connect(audioNodes.master); osc2.start(t); osc2.stop(t + 0.8);
+}
+
+function playTerminalKeySound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator(); osc.type = 'square';
+    osc.frequency.value = 500 + Math.random() * 300;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+}
+
+function playTerminalSuccessSound() {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    [440, 554, 659].forEach((f, i) => {
+        const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.frequency.value = f;
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.04, t + i * 0.08);
+        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.12);
+        osc.connect(g); g.connect(audioNodes.master);
+        osc.start(t + i * 0.08); osc.stop(t + i * 0.08 + 0.12);
+    });
+}
+
+function playTerminalErrorSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = 120;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.06, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+}
+
 // === RAYCASTING ENGINE ===
 function castRays() {
     for (let col = 0; col < NUM_RAYS; col++) {
@@ -1764,14 +2134,22 @@ function drawMinimap() {
                     }
             }
 
-    // Enemy dots
+    // Enemy dots (bigger when camera reveal active)
     for (const e of enemies) {
         if (!e.alive) continue;
         const ex = (e.x*mmScale)|0, ey = (e.y*mmScale)|0;
-        if (ex >= 0 && ex < mmSize && ey >= 0 && ey < mmSize) {
-            const pi = ((mmY+ey)*SCREEN_W+mmX+ex)*4;
-            buf[pi] = e.stunTimer > 0 ? 100 : 200; buf[pi+1] = 30; buf[pi+2] = 30; buf[pi+3] = 255;
-        }
+        const revealed = enemyRevealTimer > 0;
+        const cr = e.stunTimer > 0 ? 100 : (revealed ? 255 : 200);
+        const cg = revealed ? 60 : 30, cb = revealed ? 60 : 30;
+        const dotR = revealed ? 2 : 0;
+        for (let ddy = -dotR; ddy <= dotR; ddy++)
+            for (let ddx = -dotR; ddx <= dotR; ddx++) {
+                const px = ex+ddx, py = ey+ddy;
+                if (px >= 0 && px < mmSize && py >= 0 && py < mmSize) {
+                    const pi = ((mmY+py)*SCREEN_W+mmX+px)*4;
+                    buf[pi] = cr; buf[pi+1] = cg; buf[pi+2] = cb; buf[pi+3] = 255;
+                }
+            }
     }
 
     // Item dots
@@ -1933,7 +2311,8 @@ function updateEnemies(dt) {
             // Chase player
             e.alertTimer = 3000;
             const nx = dx / dist, ny = dy / dist;
-            const speed = e.type === 'filer' ? e.speed * 1.2 : e.speed;
+            const slowMult = enemySlowTimer > 0 ? 0.5 : 1;
+            const speed = (e.type === 'filer' ? e.speed * 1.2 : e.speed) * slowMult;
             const newX = e.x + nx * speed * dt;
             const newY = e.y + ny * speed * dt;
             if (getMap(newX|0, e.y|0) === 0) e.x = newX;
@@ -1951,18 +2330,19 @@ function updateEnemies(dt) {
             e.alertTimer -= dt;
             // Continue moving toward last known position
             const nx = dx / Math.max(dist, 0.1), ny = dy / Math.max(dist, 0.1);
-            const newX = e.x + nx * e.speed * 0.5 * dt;
-            const newY = e.y + ny * e.speed * 0.5 * dt;
+            const sMult = enemySlowTimer > 0 ? 0.5 : 1;
+            const newX = e.x + nx * e.speed * 0.5 * sMult * dt;
+            const newY = e.y + ny * e.speed * 0.5 * sMult * dt;
             if (getMap(newX|0, e.y|0) === 0) e.x = newX;
             if (getMap(e.x|0, newY|0) === 0) e.y = newY;
         } else if (e.patrolAxis) {
             // Patrol
             if (e.patrolAxis === 'x') {
-                e.x += e.speed * e.patrolDir * dt * 0.5;
+                e.x += e.speed * e.patrolDir * dt * 0.5 * (enemySlowTimer > 0 ? 0.5 : 1);
                 if (e.x > e.patrolMax + 0.5) e.patrolDir = -1;
                 if (e.x < e.patrolMin + 0.5) e.patrolDir = 1;
             } else {
-                e.y += e.speed * e.patrolDir * dt * 0.5;
+                e.y += e.speed * e.patrolDir * dt * 0.5 * (enemySlowTimer > 0 ? 0.5 : 1);
                 if (e.y > e.patrolMax + 0.5) e.patrolDir = -1;
                 if (e.y < e.patrolMin + 0.5) e.patrolDir = 1;
             }
@@ -1984,7 +2364,11 @@ function hasLineOfSight(x1, y1, x2, y2) {
 
 // === UPDATE ===
 function update(dt) {
-    if (dialogOpen) return;
+    if (dialogOpen || terminalOpen) return;
+
+    // Timer updates
+    if (enemyRevealTimer > 0) enemyRevealTimer -= dt;
+    if (enemySlowTimer > 0) enemySlowTimer -= dt;
 
     // Message popup timer
     if (msgTimer > 0) {
