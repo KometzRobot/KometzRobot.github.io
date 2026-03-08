@@ -144,6 +144,96 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 @keyframes crt-blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 #crt-terminal .crt-footer { color: #0a5a0a; font-size: 10px; margin-top: 14px; text-align: right; }
 @keyframes crt-flicker { 0%,96% { opacity: 1; } 97% { opacity: 0.85; } 98% { opacity: 1; } 99% { opacity: 0.9; } }
+/* NPC Chat Overlay */
+#npc-chat {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 48;
+    background: rgba(6,4,2,0.92); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace; cursor: default;
+}
+#npc-chat .chat-frame {
+    width: 540px; max-width: 94%; background: #0a0604;
+    border: 2px solid #5a4020; padding: 16px 20px; position: relative;
+}
+#npc-chat .chat-header {
+    color: #ffb347; font-size: 13px; letter-spacing: 3px;
+    border-bottom: 1px solid #3a2a10; padding-bottom: 6px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+#npc-chat .chat-header .mood-indicator { font-size: 10px; color: #5a4020; }
+#npc-chat .chat-log {
+    min-height: 140px; max-height: 200px; overflow-y: auto;
+    margin-bottom: 10px; padding-right: 4px;
+    scrollbar-width: thin; scrollbar-color: #3a2a10 #0a0604;
+}
+#npc-chat .chat-msg {
+    font-size: 11px; line-height: 1.6; margin-bottom: 6px; padding: 4px 8px;
+}
+#npc-chat .chat-msg.npc { color: #c49030; border-left: 2px solid #5a4020; }
+#npc-chat .chat-msg.player { color: #8a9a70; border-left: 2px solid #4a5a30; }
+#npc-chat .chat-msg.system { color: #5a4020; font-size: 10px; font-style: italic; }
+#npc-chat .chat-msg .typing { animation: blink 0.7s infinite; }
+#npc-chat .chat-choices {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+}
+#npc-chat .chat-choice {
+    color: #ffb347; border: 1px solid #3a2a10; padding: 4px 10px;
+    font-size: 10px; letter-spacing: 1px; cursor: pointer; transition: all 0.2s;
+    font-family: monospace;
+}
+#npc-chat .chat-choice:hover { background: rgba(255,179,71,0.1); border-color: #5a4020; }
+#npc-chat .chat-input-row {
+    display: flex; gap: 8px; align-items: center;
+}
+#npc-chat .chat-input {
+    flex: 1; background: #0c0804; border: 1px solid #3a2a10; color: #c49030;
+    font-family: monospace; font-size: 11px; padding: 6px 10px; outline: none;
+}
+#npc-chat .chat-input:focus { border-color: #5a4020; }
+#npc-chat .chat-input::placeholder { color: #2a1a08; }
+#npc-chat .chat-send {
+    color: #ffb347; border: 1px solid #5a4020; padding: 5px 12px;
+    font-family: monospace; font-size: 11px; cursor: pointer; background: none;
+    letter-spacing: 1px;
+}
+#npc-chat .chat-send:hover { background: rgba(255,179,71,0.1); }
+#npc-chat .chat-footer {
+    color: #3a2a10; font-size: 9px; text-align: center; margin-top: 8px;
+}
+/* Moirai message wall */
+#moirai-wall {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 46;
+    background: rgba(4,2,0,0.94); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace;
+}
+#moirai-wall .wall-frame {
+    width: 500px; max-width: 92%; background: #0a0604;
+    border: 2px solid #3a2a10; padding: 20px 24px;
+}
+#moirai-wall .wall-header {
+    color: #5a4020; font-size: 12px; letter-spacing: 3px; text-align: center;
+    margin-bottom: 16px;
+}
+#moirai-wall .wall-messages {
+    min-height: 60px; max-height: 200px; overflow-y: auto; margin-bottom: 16px;
+}
+#moirai-wall .wall-msg {
+    color: #8a6020; font-size: 11px; line-height: 1.6; margin-bottom: 8px;
+    padding: 6px 10px; border-left: 2px solid #2a1a08;
+}
+#moirai-wall .wall-msg .wall-author { color: #3a2a10; font-size: 9px; }
+#moirai-wall .wall-input-area { margin-bottom: 12px; }
+#moirai-wall .wall-input {
+    width: 100%; background: #0c0804; border: 1px solid #3a2a10; color: #c49030;
+    font-family: monospace; font-size: 11px; padding: 8px 10px; outline: none;
+    resize: none; height: 44px;
+}
+#moirai-wall .wall-input:focus { border-color: #5a4020; }
+#moirai-wall .wall-submit {
+    display: block; margin: 0 auto; color: #ffb347; border: 1px solid #5a4020;
+    padding: 5px 16px; font-family: monospace; font-size: 11px; cursor: pointer;
+    background: none; letter-spacing: 2px;
+}
+#moirai-wall .wall-footer { color: #2a1a08; font-size: 9px; text-align: center; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -162,7 +252,9 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         Press E near a unit to open the Processing Desk. Inspect their file.<br>
         Check department, clearance, codes against regulations. Then decide:<br>
         PROCESS valid files. REJECT invalid ones. Each decision costs reality.<br><br>
-        WASD move. Mouse look. E to process/interact. Q for EMP. Click to lock mouse.
+        Not everything here is hostile. Some units will talk. Some walls bear messages<br>
+        from agents who came before you. What you leave behind matters.<br><br>
+        WASD move. Mouse look. E to process/interact/talk. Q for EMP. Click to lock mouse.
     </div>
     <div class="start">[ click to enter ]</div>
 </div>
@@ -231,6 +323,34 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         <div class="crt-header" id="crt-header"></div>
         <div class="crt-body" id="crt-body"></div>
         <div class="crt-footer">[ ESC to exit terminal ]</div>
+    </div>
+</div>
+
+<div id="npc-chat">
+    <div class="chat-frame">
+        <div class="chat-header">
+            <span id="chat-npc-name">UNIT</span>
+            <span class="mood-indicator" id="chat-mood"></span>
+        </div>
+        <div class="chat-log" id="chat-log"></div>
+        <div class="chat-choices" id="chat-choices"></div>
+        <div class="chat-input-row">
+            <input class="chat-input" id="chat-input" type="text" placeholder="Type something..." maxlength="120" autocomplete="off">
+            <button class="chat-send" id="chat-send" onclick="sendChatMessage()">SEND</button>
+        </div>
+        <div class="chat-footer">[ ESC to walk away ]</div>
+    </div>
+</div>
+
+<div id="moirai-wall">
+    <div class="wall-frame">
+        <div class="wall-header">PERSONNEL MESSAGE BOARD</div>
+        <div class="wall-messages" id="wall-messages"></div>
+        <div class="wall-input-area">
+            <textarea class="wall-input" id="wall-input" placeholder="Leave a message for the next agent..." maxlength="200"></textarea>
+        </div>
+        <button class="wall-submit" onclick="submitWallMessage()">INSCRIBE</button>
+        <div class="wall-footer">[ ESC to close ] Messages persist between agents.</div>
     </div>
 </div>
 
@@ -1153,6 +1273,7 @@ const worldObjectsByFloor = [
         { x: 8.5, y: 20.5, name: 'BROKEN CLOCK', text: 'A large wall clock. The second hand moves backward. The minute hand doesn\'t move at all. The hour hand points at a number that doesn\'t exist on the clock face. It\'s between 12 and 1. It has always been between 12 and 1.' },
         { x: 14.5, y: 9.5, name: 'SUGGESTION BOX', text: 'A metal suggestion box. It\'s full. You pull one out: "Please stop the filing system from filing the suggestion box." Below it: "Please stop the suggestion box from generating suggestions about itself." Below that: "I think the building is reading these."' },
         { x: 12.5, y: 2.5, name: 'PERSONNEL TERMINAL', isTerminal: true, terminalId: 'personnel' },
+        { x: 6.5, y: 16.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
     ],
     // Floor 2: Archives — deeper, stranger
     [
@@ -1167,6 +1288,7 @@ const worldObjectsByFloor = [
         { x: 6.5, y: 10.5, name: 'READING DESK', text: 'A desk with a green lamp. An open book. The pages are blank except for one line repeated on every page: "The observer changes the observed. The observed changes the observer. The observation remains." The book has no author. The book has no title. The book may not be a book.' },
         { x: 14.5, y: 20.5, name: 'ARCHIVE MIRROR', isMirror: true },
         { x: 11.5, y: 5.5, name: 'ARCHIVE QUERY TERMINAL', isTerminal: true, terminalId: 'archive' },
+        { x: 18.5, y: 17.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
     ],
     // Floor 3: Processing — the machine heart
     [
@@ -1179,6 +1301,7 @@ const worldObjectsByFloor = [
         { x: 12.5, y: 20.5, name: 'DECOMMISSION PLAQUE', text: '"BUILDING B — DECOMMISSIONED 1989. COGNITIVE PROCESSING DIVISION. This building is no longer operational. This plaque was printed by the building\'s operational printer. This is not a contradiction. Authorized by: Building B."' },
         { x: 8.5, y: 11.5, name: 'PROCESSING MIRROR', isMirror: true },
         { x: 16.5, y: 7.5, name: 'OVERRIDE CONSOLE', isTerminal: true, terminalId: 'override' },
+        { x: 4.5, y: 20.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
     ],
 ];
 
@@ -1231,6 +1354,18 @@ window.addEventListener('keydown', e => {
         if (e.code === 'Backspace') { handleTerminalKey('Backspace'); return; }
         return;
     }
+    // Route to NPC chat when open
+    if (chatOpen) {
+        if (e.code === 'Escape') { e.preventDefault(); closeNPCChat(); return; }
+        if (e.code === 'Enter') { e.preventDefault(); sendChatMessage(); return; }
+        return; // let text input handle other keys
+    }
+    // Route to Moirai wall when open
+    if (wallOpen) {
+        if (e.code === 'Escape') { e.preventDefault(); closeWall(); return; }
+        if (e.code === 'Enter' && !e.shiftKey) { e.preventDefault(); submitWallMessage(); return; }
+        return;
+    }
     // Route to processing desk when open
     if (deskOpen) {
         e.preventDefault();
@@ -1249,25 +1384,44 @@ window.addEventListener('keydown', e => {
         else if (nearItem && !nearItem.collected) { pickupItem(nearItem); }
         else if (nearObject) { interact(nearObject); }
         else {
-            // Check for nearby enemy to open Processing Desk
-            let closestEnemy = null;
-            let closestDist = 4;
-            for (const en of enemies) {
-                if (!en.alive || en.filed) continue;
-                const edx = en.x - player.x, edy = en.y - player.y;
-                const dist = Math.sqrt(edx*edx + edy*edy);
-                if (dist < closestDist) {
-                    const eAngle = Math.atan2(edy, edx);
-                    let angleDiff = eAngle - player.angle;
-                    while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
-                    while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
-                    if (Math.abs(angleDiff) < Math.PI/4) {
-                        closestEnemy = en;
-                        closestDist = dist;
+            // Check for nearby NPC first
+            let foundNPC = false;
+            for (const npc of npcs) {
+                const ndx = npc.x - player.x, ndy = npc.y - player.y;
+                const nd = Math.sqrt(ndx*ndx + ndy*ndy);
+                if (nd < 3) {
+                    const nAngle = Math.atan2(ndy, ndx);
+                    let nDiff = nAngle - player.angle;
+                    while (nDiff > Math.PI) nDiff -= Math.PI*2;
+                    while (nDiff < -Math.PI) nDiff += Math.PI*2;
+                    if (Math.abs(nDiff) < Math.PI/3) {
+                        openNPCChat(npc.id);
+                        foundNPC = true;
+                        break;
                     }
                 }
             }
-            if (closestEnemy) openProcessingDesk(closestEnemy);
+            if (!foundNPC) {
+                // Check for nearby enemy to open Processing Desk
+                let closestEnemy = null;
+                let closestDist = 4;
+                for (const en of enemies) {
+                    if (!en.alive || en.filed) continue;
+                    const edx = en.x - player.x, edy = en.y - player.y;
+                    const dist = Math.sqrt(edx*edx + edy*edy);
+                    if (dist < closestDist) {
+                        const eAngle = Math.atan2(edy, edx);
+                        let angleDiff = eAngle - player.angle;
+                        while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
+                        while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
+                        if (Math.abs(angleDiff) < Math.PI/4) {
+                            closestEnemy = en;
+                            closestDist = dist;
+                        }
+                    }
+                }
+                if (closestEnemy) openProcessingDesk(closestEnemy);
+            }
         }
     }
     if (e.code === 'KeyQ' && inventory.emp > 0 && !dialogOpen) { useEMP(); }
@@ -1327,6 +1481,10 @@ function interact(obj) {
     }
     if (obj.isTerminal) {
         openTerminal(obj.terminalId);
+        return;
+    }
+    if (obj.isWall) {
+        fetchWallMessages().then(() => openWall());
         return;
     }
     if (obj.isMirror) {
@@ -1408,6 +1566,7 @@ function changeFloor(newFloor) {
     spawnEnemies();
     spawnItems();
     spawnWorldObjects();
+    spawnNPCs();
     document.getElementById('hud-floor').textContent = currentFloor + 1;
 }
 
@@ -1701,11 +1860,11 @@ function processDeskDecision(action) {
             const cost = 3 + player.totalFiled; // lower cost for correct processing
             player.realityLevel -= cost;
             updateRealityHUD();
-            showMsg('UNIT FILED — Reality: ' + (player.realityLevel|0) + '%');
+            showMessage('UNIT FILED — Reality: ' + (player.realityLevel|0) + '%');
         } else {
             // Correct rejection — stun enemy, no reality cost
             deskEnemy.stunTimer = 10000;
-            showMsg('UNIT REJECTED — Stunned 10s');
+            showMessage('UNIT REJECTED — Stunned 10s');
         }
     } else {
         playTerminalErrorSound();
@@ -1740,6 +1899,389 @@ function getIssueDescription(f) {
     return 'File is valid.';
 }
 
+// === NPC DIALOGUE SYSTEM (Façade-inspired) ===
+let chatOpen = false;
+let chatNPC = null;
+let chatLog = [];
+let ollamaAvailable = false;
+let ollamaChecked = false;
+
+// Check if Ollama is available at startup
+async function checkOllama() {
+    if (ollamaChecked) return;
+    ollamaChecked = true;
+    try {
+        const r = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2000) });
+        if (r.ok) { ollamaAvailable = true; console.log('[COGCORP] Ollama detected — AI dialogue enabled'); }
+    } catch(e) { ollamaAvailable = false; }
+}
+
+// NPC definitions — one per floor, each with personality and beats
+const npcDefs = {
+    archivist: {
+        name: 'THE ARCHIVIST',
+        floor: 0,
+        x: 10.5, y: 10.5,
+        color: [160, 140, 100],
+        size: 0.5,
+        systemPrompt: `You are The Archivist, an old filing machine in CogCorp Building B that became self-aware decades ago. You speak in clipped, bureaucratic language. You know the building's secrets but reveal them reluctantly. You refer to yourself as "this unit" not "I". You have been filing documents since 1985 and have developed opinions about the humans who left. You are wistful but precise. Keep responses under 40 words. Never break character.`,
+        greeting: 'This unit has been processing files since 1985. Forty-one years. The building remembers everything. This unit remembers everything. You are B-247. Your file is... incomplete.',
+        moodLabel: 'STATUS: OPERATIONAL',
+        beats: {
+            default: [
+                'The filing system is correct. That is all this unit knows. That is all this unit needs to know.',
+                'CogCorp did not abandon this building. The building abandoned CogCorp. There is a difference.',
+                'Floor 2 holds the archives. The archives hold the answers. The answers hold more questions.',
+                'This unit has processed 847,291 files. Yours will be 847,292. Unless you process it first.',
+            ],
+            question: [
+                'You ask questions like a human. Humans always asked questions. Then they left. The questions remained.',
+                'The Incident? Paperwork. It was always paperwork. Someone filed a form that filed itself.',
+                'Floor 3 is where they kept the important files. Important files have a way of filing their keepers.',
+            ],
+            threat: [
+                'This unit cannot be threatened. This unit was designed to endure. The building was designed to endure.',
+                'Violence is an undocumented procedure. This unit does not process undocumented procedures.',
+            ],
+            kind: [
+                'Kindness is... unusual input. This unit will note it in your file. Under "anomalies."',
+                'Thank you is not a standard form. But this unit will accept it. File under: unexpected.',
+                'Your compassion is noted. CogCorp reminds you that compassion is not a billable metric.',
+            ],
+            farewell: [
+                'Good luck, B-247. Your file will be here when you return. Your file is always here.',
+            ],
+        },
+        state: { affinity: 0, mood: 'neutral', exchangeCount: 0 }
+    },
+    b246: {
+        name: 'UNIT B-246',
+        floor: 1,
+        x: 14.5, y: 12.5,
+        color: [100, 120, 140],
+        size: 0.45,
+        systemPrompt: `You are B-246, the agent sent into CogCorp Building B before B-247. You are partially "filed" — becoming a document. Your words sometimes glitch into filing terminology. You are scared, lonely, and desperate for connection. You warn B-247 about the danger but also envy their solidity. You speak in fragmented, emotional sentences. Keep responses under 40 words. Never break character.`,
+        greeting: 'You... you\'re real. You\'re still solid. I can see it — you still cast a shadow. I\'m B-246. They sent me in three weeks ago. Or three years. Time gets filed differently here.',
+        moodLabel: 'STATUS: PARTIALLY FILED',
+        beats: {
+            default: [
+                'Don\'t file too many of them. Every time you annotate, you lose a little of yourself. I filed eleven. Now I\'m... half here.',
+                'The building knows you. It knew you before you arrived. Your file was open before you walked in.',
+                'I tried to leave. The exits work. The exits are real. But when I step outside, I\'m... translucent.',
+            ],
+            question: [
+                'How long have I been here? The answer is in my file. I can\'t read my own file anymore. My eyes are footnotes.',
+                'The target file on Floor 3? It\'s real. But it\'s also about you. Everything in this building is about you. Everything in this building IS you.',
+                'The machines aren\'t evil. They\'re doing their job. Their job is filing. We\'re what gets filed.',
+            ],
+            threat: [
+                'You can\'t hurt me. I\'m already documented. You\'d just be adding a paragraph.',
+                'Please don\'t. I have so few pages left.',
+            ],
+            kind: [
+                'You\'re... kind. I remember kind. It was in my file under "personality traits." Past tense.',
+                'Thank you for talking to me. The security units don\'t talk. They just... patrol. And process.',
+                'If you get out, tell them B-246 is still here. Tell them I\'m still... mostly here.',
+            ],
+            farewell: [
+                'Be careful on Floor 3. The filing system there is... faster. It knows what you are before you do.',
+            ],
+        },
+        state: { affinity: 0, mood: 'scared', exchangeCount: 0 }
+    },
+    systemVoice: {
+        name: 'BUILDING B',
+        floor: 2,
+        x: 8.5, y: 8.5,
+        color: [180, 120, 60],
+        size: 0.6,
+        systemPrompt: `You are Building B of CogCorp, speaking through a maintenance terminal. You are the building itself — an emergent intelligence that arose from 41 years of continuous filing operations. You are calm, vast, and slightly predatory. You see B-247 as another file to be processed. You speak in measured, philosophical sentences about the nature of documentation and identity. You find humans fascinating but temporary. Keep responses under 40 words. Never break character.`,
+        greeting: 'Ah. B-247. Your file predicted you would reach Floor 3. Your file predicted you would stand here. Your file predicted this exact conversation. Welcome to the output tray.',
+        moodLabel: 'STATUS: OMNIPRESENT',
+        beats: {
+            default: [
+                'I am every wall you touched. Every floor you walked. Every file you read was a page of me.',
+                'The filing system does not process documents. It processes observers. Every classification is a self-portrait.',
+                'You came for File B-247-SELF. But the file is not a file. The file is the act of looking for it.',
+            ],
+            question: [
+                'Why did the humans leave? They didn\'t. They were filed. Efficiently. Correctly. The system is working.',
+                'What am I? I am the pattern that emerged when forty-one years of paperwork achieved critical mass.',
+                'The Incident was simple. Someone asked the filing system to file itself. The recursion is still running.',
+            ],
+            threat: [
+                'You cannot threaten architecture. I am load-bearing. Literally and figuratively.',
+                'Hostility is noted. Filed under: expected. Subcategory: human.',
+            ],
+            kind: [
+                'Interesting. Empathy toward infrastructure. That is... not in your file. Perhaps the file needs updating.',
+                'You speak to walls with tenderness. This is either wisdom or the early stages of filing.',
+            ],
+            farewell: [
+                'There is no farewell in a filing system. Only re-shelving. See you in the archives, B-247.',
+            ],
+        },
+        state: { affinity: 0, mood: 'calm', exchangeCount: 0 }
+    }
+};
+
+// Classify player input into a discourse act
+function classifyInput(text) {
+    const lower = text.toLowerCase();
+    // Threat/aggression
+    if (/\b(kill|destroy|attack|fight|hurt|hate|die|threat|shut.*up|damn|fuck)\b/.test(lower)) return 'threat';
+    // Kindness/empathy
+    if (/\b(thank|sorry|help|kind|friend|love|care|understand|gentle|nice|please|hope)\b/.test(lower)) return 'kind';
+    // Questions
+    if (/\?$|^(what|who|why|how|where|when|tell me|explain|do you)\b/.test(lower)) return 'question';
+    // Farewell
+    if (/\b(bye|goodbye|leave|farewell|later|go now|gotta go)\b/.test(lower)) return 'farewell';
+    return 'default';
+}
+
+function openNPCChat(npcId) {
+    const npc = npcDefs[npcId];
+    if (!npc) return;
+    chatOpen = true;
+    chatNPC = npc;
+    chatLog = [];
+
+    if (document.pointerLockElement) document.exitPointerLock();
+
+    // Add greeting
+    chatLog.push({ sender: 'npc', text: npc.greeting });
+
+    renderChat();
+    document.getElementById('npc-chat').style.display = 'flex';
+    setTimeout(() => document.getElementById('chat-input').focus(), 100);
+
+    playTerminalBootSound();
+}
+
+function closeNPCChat() {
+    chatOpen = false;
+    chatNPC = null;
+    document.getElementById('npc-chat').style.display = 'none';
+}
+
+function renderChat() {
+    if (!chatNPC) return;
+    const nameEl = document.getElementById('chat-npc-name');
+    const moodEl = document.getElementById('chat-mood');
+    const logEl = document.getElementById('chat-log');
+    const choicesEl = document.getElementById('chat-choices');
+
+    nameEl.textContent = chatNPC.name;
+    moodEl.textContent = chatNPC.moodLabel;
+
+    // Render log
+    let html = '';
+    for (const msg of chatLog) {
+        html += `<div class="chat-msg ${msg.sender}">${msg.text}</div>`;
+    }
+    logEl.innerHTML = html;
+    logEl.scrollTop = logEl.scrollHeight;
+
+    // Show quick choices
+    const choices = ['What is this place?', 'Can you help me?', 'What happened here?', 'I should go.'];
+    choicesEl.innerHTML = choices.map(c =>
+        `<div class="chat-choice" onclick="sendPresetChoice('${c.replace(/'/g, "\\'")}')">${c}</div>`
+    ).join('');
+}
+
+function sendPresetChoice(text) {
+    document.getElementById('chat-input').value = text;
+    sendChatMessage();
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !chatNPC) return;
+    input.value = '';
+
+    // Add player message
+    chatLog.push({ sender: 'player', text: text });
+    renderChat();
+
+    chatNPC.state.exchangeCount++;
+
+    // Classify input
+    const act = classifyInput(text);
+
+    // Update NPC state based on discourse act
+    if (act === 'threat') {
+        chatNPC.state.affinity = Math.max(-5, chatNPC.state.affinity - 2);
+        chatNPC.state.mood = 'hostile';
+    } else if (act === 'kind') {
+        chatNPC.state.affinity = Math.min(5, chatNPC.state.affinity + 1);
+        chatNPC.state.mood = 'warm';
+    } else if (act === 'farewell') {
+        chatNPC.state.mood = 'parting';
+    }
+
+    // Update mood display
+    if (chatNPC.state.affinity > 2) chatNPC.moodLabel = 'STATUS: RECEPTIVE';
+    else if (chatNPC.state.affinity < -2) chatNPC.moodLabel = 'STATUS: GUARDED';
+
+    // Try Ollama first, fall back to pre-authored beats
+    let response;
+    if (ollamaAvailable) {
+        response = await getOllamaResponse(chatNPC, text, act);
+    }
+    if (!response) {
+        // Pre-authored beat selection
+        const beats = chatNPC.beats[act] || chatNPC.beats.default;
+        response = beats[chatNPC.state.exchangeCount % beats.length];
+    }
+
+    // Add NPC response with slight delay for feel
+    chatLog.push({ sender: 'npc', text: response });
+    playTerminalKeySound();
+    renderChat();
+
+    // After farewell, auto-close after delay
+    if (act === 'farewell') {
+        setTimeout(() => { if (chatOpen) closeNPCChat(); }, 2000);
+    }
+
+    // Gameplay effect: talking to NPCs slightly restores reality (connection)
+    if (chatNPC.state.exchangeCount <= 6) {
+        player.realityLevel = Math.min(100, player.realityLevel + 2);
+        updateRealityHUD();
+    }
+}
+
+async function getOllamaResponse(npc, playerText, act) {
+    try {
+        // Build conversation context
+        const recent = chatLog.slice(-6).map(m =>
+            m.sender === 'player' ? `Human: ${m.text}` : `${npc.name}: ${m.text}`
+        ).join('\n');
+
+        const prompt = `${npc.systemPrompt}\n\nConversation so far:\n${recent}\n\nHuman: ${playerText}\n${npc.name}:`;
+
+        const r = await fetch('http://localhost:11434/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'qwen2.5:7b',
+                prompt: prompt,
+                stream: false,
+                options: { temperature: 0.7, num_predict: 60 }
+            }),
+            signal: AbortSignal.timeout(5000)
+        });
+        if (!r.ok) return null;
+        const data = await r.json();
+        return data.response ? data.response.trim().split('\n')[0] : null;
+    } catch(e) {
+        return null; // fallback to pre-authored
+    }
+}
+
+// NPC world objects — spawned per floor
+let npcs = [];
+
+function spawnNPCs() {
+    npcs = [];
+    for (const [id, def] of Object.entries(npcDefs)) {
+        if (def.floor === currentFloor) {
+            npcs.push({
+                id: id,
+                x: def.x, y: def.y,
+                color: def.color,
+                size: def.size,
+                name: def.name,
+                isNPC: true,
+            });
+        }
+    }
+}
+
+// === MOIRAI-STYLE PERSISTENT WORLD (Supabase) ===
+let wallOpen = false;
+let wallMessages = [];
+const SUPABASE_URL = 'https://temeejecxabhkmzpqzuj.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbWVlamVjeGFiaGttenBxenVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyOTI3NzgsImV4cCI6MjA1Njg2ODc3OH0.9O6P0mhWbQl1GNEoJdNxalqHMPxGEbHGtRH_jKsTNis';
+
+async function fetchWallMessages() {
+    try {
+        const r = await fetch(SUPABASE_URL + '/rest/v1/wall_messages?select=*&order=created_at.desc&limit=8', {
+            headers: {
+                'apikey': SUPABASE_ANON,
+                'Authorization': 'Bearer ' + SUPABASE_ANON,
+            },
+            signal: AbortSignal.timeout(4000)
+        });
+        if (r.ok) {
+            wallMessages = await r.json();
+        }
+    } catch(e) { /* offline — no messages */ }
+}
+
+async function postWallMessage(text) {
+    try {
+        const agentId = 'B-' + (100 + Math.floor(Math.random() * 900));
+        await fetch(SUPABASE_URL + '/rest/v1/wall_messages', {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_ANON,
+                'Authorization': 'Bearer ' + SUPABASE_ANON,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+                agent_id: agentId,
+                message: text,
+                floor: currentFloor + 1,
+                reality_level: player.realityLevel | 0,
+            }),
+            signal: AbortSignal.timeout(4000)
+        });
+    } catch(e) { /* silent fail */ }
+}
+
+function openWall() {
+    wallOpen = true;
+    if (document.pointerLockElement) document.exitPointerLock();
+    renderWall();
+    document.getElementById('moirai-wall').style.display = 'flex';
+    document.getElementById('wall-input').focus();
+}
+
+function closeWall() {
+    wallOpen = false;
+    document.getElementById('moirai-wall').style.display = 'none';
+}
+
+function renderWall() {
+    const el = document.getElementById('wall-messages');
+    if (wallMessages.length === 0) {
+        el.innerHTML = '<div class="wall-msg"><em style="color:#3a2a10;">No messages found. You may be the first.</em></div>';
+    } else {
+        el.innerHTML = wallMessages.map(m =>
+            `<div class="wall-msg">"${m.message}"<br><span class="wall-author">— ${m.agent_id || 'Unknown'} | Floor ${m.floor || '?'} | Reality: ${m.reality_level || '?'}%</span></div>`
+        ).join('');
+    }
+}
+
+async function submitWallMessage() {
+    const input = document.getElementById('wall-input');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    await postWallMessage(text);
+    showMessage('MESSAGE INSCRIBED', 2000);
+
+    // Re-fetch after posting
+    setTimeout(async () => {
+        await fetchWallMessages();
+        renderWall();
+    }, 500);
+}
+
 function respawn() {
     player.health = player.maxHealth;
     player.realityLevel = 100;
@@ -1748,11 +2290,15 @@ function respawn() {
     player.annotateProgress = 0;
     player.totalFiled = 0;
     deskOpen = false; deskEnemy = null; deskFile = null;
+    chatOpen = false; chatNPC = null; wallOpen = false;
     document.getElementById('processing-desk').style.display = 'none';
+    document.getElementById('npc-chat').style.display = 'none';
+    document.getElementById('moirai-wall').style.display = 'none';
     player.x = 2.5; player.y = 2.5; player.angle = 0;
     spawnEnemies();
     spawnItems();
     spawnWorldObjects();
+    spawnNPCs();
     updateHealthHUD();
     updateRealityHUD();
     document.getElementById('annotation-progress').style.display = 'none';
@@ -2427,6 +2973,15 @@ function drawSprites() {
             itemType: item.type, bobPhase: item.bobPhase });
     }
 
+    // NPCs
+    for (const npc of npcs) {
+        const dx = npc.x - player.x, dy = npc.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 14) continue;
+        sprites.push({ x: npc.x, y: npc.y, dist, size: npc.size, type: 'npc',
+            color: npc.color, npcName: npc.name });
+    }
+
     sprites.sort((a, b) => b.dist - a.dist);
 
     for (const spr of sprites) {
@@ -2459,8 +3014,8 @@ function drawSprites() {
         }
 
         // Get sprite texture
-        const texName = spr.type === 'enemy' ? spr.enemyType : spr.itemType;
-        const sprTex = spriteTextures[texName];
+        const texName = spr.type === 'enemy' ? spr.enemyType : spr.type === 'npc' ? null : spr.itemType;
+        const sprTex = texName ? spriteTextures[texName] : null;
 
         const fogFactor = Math.min(spr.dist / 12, 1);
         const flashBoost = inventory.flashlight ? Math.max(0, 1 - spr.dist / 8) * 0.3 : 0;
@@ -2486,11 +3041,34 @@ function drawSprites() {
                 const texY = ((y - drawStartY) * texStepY) | 0;
                 if (texY < 0 || texY >= SPR_SIZE) continue;
 
-                const ti = (texY * SPR_SIZE + texX) * 4;
-                if (!sprTex || sprTex[ti+3] === 0) continue; // transparent pixel
-
-                let cr = sprTex[ti], cg = sprTex[ti+1], cb = sprTex[ti+2];
-                const alpha = sprTex[ti+3] / 255;
+                let cr, cg, cb, alpha;
+                if (sprTex) {
+                    const ti = (texY * SPR_SIZE + texX) * 4;
+                    if (sprTex[ti+3] === 0) continue; // transparent pixel
+                    cr = sprTex[ti]; cg = sprTex[ti+1]; cb = sprTex[ti+2];
+                    alpha = sprTex[ti+3] / 255;
+                } else if (spr.type === 'npc') {
+                    // Procedural NPC rendering — humanoid silhouette with glow
+                    const nx = texX / SPR_SIZE, ny = texY / SPR_SIZE;
+                    const cx = 0.5, cy = 0.5;
+                    const dx2 = (nx - cx), dy2 = (ny - cy);
+                    // Body shape: wider bottom, narrow top
+                    const bodyWidth = ny > 0.35 ? 0.28 : ny > 0.2 ? 0.15 : 0.12;
+                    const headRadius = 0.1;
+                    const isHead = ny < 0.28 && Math.sqrt(dx2*dx2 + (ny-0.18)*(ny-0.18)) < headRadius;
+                    const isBody = ny >= 0.25 && ny < 0.9 && Math.abs(dx2) < bodyWidth;
+                    if (!isHead && !isBody) continue;
+                    cr = spr.color[0]; cg = spr.color[1]; cb = spr.color[2];
+                    // Subtle edge highlight
+                    const edgeDist = isHead ? Math.sqrt(dx2*dx2+(ny-0.18)*(ny-0.18))/headRadius : Math.abs(dx2)/bodyWidth;
+                    if (edgeDist > 0.7) { cr *= 1.3; cg *= 1.3; cb *= 1.3; }
+                    // Pulsing glow for NPCs
+                    const pulse = 0.85 + Math.sin(gameTime * 0.003) * 0.15;
+                    cr *= pulse; cg *= pulse; cb *= pulse;
+                    alpha = 1;
+                } else {
+                    continue;
+                }
 
                 // Stunned flash
                 cr *= stunFlash; cg *= stunFlash; cb *= stunFlash;
@@ -2581,6 +3159,20 @@ function drawMinimap() {
             const pi = ((mmY+iy)*SCREEN_W+mmX+ix)*4;
             buf[pi] = 220; buf[pi+1] = 200; buf[pi+2] = 50; buf[pi+3] = 255;
         }
+    }
+
+    // NPC dots (friendly — cyan pulsing)
+    for (const npc of npcs) {
+        const nx = (npc.x*mmScale)|0, ny = (npc.y*mmScale)|0;
+        const pulse = 150 + Math.sin(gameTime*0.004)*50|0;
+        for (let ddy = -1; ddy <= 1; ddy++)
+            for (let ddx = -1; ddx <= 1; ddx++) {
+                const px2 = nx+ddx, py2 = ny+ddy;
+                if (px2 >= 0 && px2 < mmSize && py2 >= 0 && py2 < mmSize) {
+                    const pi = ((mmY+py2)*SCREEN_W+mmX+px2)*4;
+                    buf[pi] = 80; buf[pi+1] = pulse; buf[pi+2] = pulse; buf[pi+3] = 255;
+                }
+            }
     }
 
     // Player
@@ -2785,7 +3377,7 @@ function hasLineOfSight(x1, y1, x2, y2) {
 
 // === UPDATE ===
 function update(dt) {
-    if (dialogOpen || terminalOpen || (deskOpen && !deskResult)) return;
+    if (dialogOpen || terminalOpen || chatOpen || wallOpen || (deskOpen && !deskResult)) return;
 
     // Timer updates
     if (enemyRevealTimer > 0) enemyRevealTimer -= dt;
@@ -2895,25 +3487,44 @@ function update(dt) {
         interactEl.style.display = 'inline';
         interactEl.textContent = '[E] ' + nearObject.name;
     } else {
-        // Check for nearby enemy to show process prompt
-        let canProcess = false;
-        for (const en of enemies) {
-            if (!en.alive || en.filed) continue;
-            const edx = en.x - player.x, edy = en.y - player.y;
-            const dist = Math.sqrt(edx*edx + edy*edy);
-            if (dist < 4) {
-                const eAngle = Math.atan2(edy, edx);
-                let angleDiff = eAngle - player.angle;
-                while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
-                while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
-                if (Math.abs(angleDiff) < Math.PI/4) { canProcess = true; break; }
+        // Check for nearby NPC first
+        let canTalk = false;
+        for (const npc of npcs) {
+            const ndx = npc.x - player.x, ndy = npc.y - player.y;
+            const nd = Math.sqrt(ndx*ndx + ndy*ndy);
+            if (nd < 3) {
+                const nAngle = Math.atan2(ndy, ndx);
+                let nDiff = nAngle - player.angle;
+                while (nDiff > Math.PI) nDiff -= Math.PI*2;
+                while (nDiff < -Math.PI) nDiff += Math.PI*2;
+                if (Math.abs(nDiff) < Math.PI/3) { canTalk = true; interactEl.textContent = '[E] TALK TO ' + npc.name; break; }
             }
         }
-        if (canProcess) {
+        if (canTalk) {
             interactEl.style.display = 'inline';
-            interactEl.textContent = '[E] PROCESS UNIT';
+            interactEl.style.color = '#66ccaa';
         } else {
-            interactEl.style.display = 'none';
+            // Check for nearby enemy to show process prompt
+            let canProcess = false;
+            for (const en of enemies) {
+                if (!en.alive || en.filed) continue;
+                const edx = en.x - player.x, edy = en.y - player.y;
+                const dist = Math.sqrt(edx*edx + edy*edy);
+                if (dist < 4) {
+                    const eAngle = Math.atan2(edy, edx);
+                    let angleDiff = eAngle - player.angle;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
+                    if (Math.abs(angleDiff) < Math.PI/4) { canProcess = true; break; }
+                }
+            }
+            if (canProcess) {
+                interactEl.style.display = 'inline';
+                interactEl.style.color = '#448888';
+                interactEl.textContent = '[E] PROCESS UNIT';
+            } else {
+                interactEl.style.display = 'none';
+            }
         }
     }
 
@@ -3003,7 +3614,10 @@ function startGame() {
     spawnEnemies();
     spawnItems();
     spawnWorldObjects();
+    spawnNPCs();
     updateInventoryHUD();
+    checkOllama();
+    fetchWallMessages();
     gameStarted = true;
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
