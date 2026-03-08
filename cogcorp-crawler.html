@@ -1106,6 +1106,13 @@ function loadSpritePNG(name, path) {
     img.src = path;
 }
 
+// Additional texture indices for floor-specific variants
+const TEX_FACTORY_WALL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=40;d[i+1]=50;d[i+2]=55;d[i+3]=255;} });
+const TEX_FACTORY_METAL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=35;d[i+1]=45;d[i+2]=55;d[i+3]=255;} });
+const TEX_FACTORY_FLOOR = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=30;d[i+1]=38;d[i+2]=42;d[i+3]=255;} });
+const TEX_OFFICE_WALL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=55;d[i+1]=48;d[i+2]=40;d[i+3]=255;} });
+const TEX_OFFICE_FLOOR = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=45;d[i+1]=42;d[i+2]=38;d[i+3]=255;} });
+
 function loadTileset() {
     const img = new Image();
     img.onload = () => {
@@ -1122,9 +1129,26 @@ function loadTileset() {
             const px = extractPixelData(img, col * tileSize, row * tileSize, tileSize, tileSize, TEX_SIZE);
             textures[texIdx] = px;
         }
+        // Load factory tiles from expanded area (column 9)
+        textures[TEX_FACTORY_WALL] = extractPixelData(img, 9*tileSize, 0*tileSize, tileSize, tileSize, TEX_SIZE);
+        textures[TEX_FACTORY_METAL] = extractPixelData(img, 9*tileSize, 1*tileSize, tileSize, tileSize, TEX_SIZE);
+        textures[TEX_FACTORY_FLOOR] = extractPixelData(img, 9*tileSize, 2*tileSize, tileSize, tileSize, TEX_SIZE);
     };
     img.onerror = () => { /* keep procedural fallback */ };
     img.src = TILESET_PATH;
+}
+
+// Load lab-office tiles as separate tileset source
+function loadOfficeTileset() {
+    const img = new Image();
+    img.onload = () => {
+        const tileSize = 32;
+        // Bottom-left area of lab-office-tiles.png has wall/door tiles
+        textures[TEX_OFFICE_WALL] = extractPixelData(img, 0*tileSize, 5*tileSize, tileSize, tileSize, TEX_SIZE);
+        textures[TEX_OFFICE_FLOOR] = extractPixelData(img, 4*tileSize, 0*tileSize, tileSize, tileSize, TEX_SIZE);
+    };
+    img.onerror = () => { /* keep procedural fallback */ };
+    img.src = 'game-assets/lab-office-tiles.png';
 }
 
 // Start loading immediately — procedural textures serve as fallback
@@ -1132,6 +1156,7 @@ for (const [name, path] of Object.entries(SPRITE_ASSETS)) {
     loadSpritePNG(name, path);
 }
 loadTileset();
+loadOfficeTileset();
 
 // === MAP DATA ===
 // 0=empty, 1=brick, 2=metal, 3=cabinet, 4=door, 5=damaged, 6=machine, 7=stairs_up, 8=green, 9=locked_door
@@ -1233,6 +1258,19 @@ function setMap(x, y, val) {
 }
 
 function getTexForWall(wallType) {
+    // Floor-specific primary wall textures — each floor has a distinct feel
+    if (currentFloor === 1) {
+        // Floor 2 (Processing): cold industrial factory textures
+        switch(wallType) {
+            case 1: return TEX_FACTORY_WALL; case 2: return TEX_FACTORY_METAL;
+            case 3: return TEX_CABINET; case 4: return TEX_DOOR;
+            case 5: return TEX_DAMAGED; case 6: return TEX_MACHINE;
+            case 7: return TEX_FACTORY_METAL; case 8: return TEX_GREEN;
+            case 9: return 9;
+            default: return TEX_FACTORY_WALL;
+        }
+    }
+    // Floor 1 and 3 use base textures (tint handles the rest)
     switch(wallType) {
         case 1: return TEX_BRICK; case 2: return TEX_METAL; case 3: return TEX_CABINET;
         case 4: return TEX_DOOR; case 5: return TEX_DAMAGED; case 6: return TEX_MACHINE;
@@ -4004,7 +4042,30 @@ function playTerminalErrorSound() {
 }
 
 // === RAYCASTING ENGINE ===
+// === FLOOR-DEPENDENT ATMOSPHERE ===
+// Each floor has distinct fog color, wall tint, and floor/ceil tint
+const FLOOR_ATMOSPHERE = [
+    { // Floor 1 — Intake: warm fluorescent office lighting
+        fogR: 14, fogG: 10, fogB: 6,
+        tintR: 1.05, tintG: 0.95, tintB: 0.85, // warm amber shift
+        floorTint: [1.0, 0.9, 0.8], ceilTint: [0.9, 0.85, 0.8]
+    },
+    { // Floor 2 — Processing: cold industrial blue
+        fogR: 5, fogG: 8, fogB: 14,
+        tintR: 0.85, tintG: 0.95, tintB: 1.1, // cold blue shift
+        floorTint: [0.8, 0.9, 1.05], ceilTint: [0.75, 0.85, 1.0]
+    },
+    { // Floor 3 — Archive: deep sickly green-purple
+        fogR: 7, fogG: 5, fogB: 10,
+        tintR: 0.9, tintG: 1.05, tintB: 0.95, // sickly green shift
+        floorTint: [0.85, 1.0, 0.85], ceilTint: [0.8, 0.9, 1.05]
+    }
+];
+
+function getAtmo() { return FLOOR_ATMOSPHERE[currentFloor] || FLOOR_ATMOSPHERE[0]; }
+
 function castRays() {
+    const atmo = getAtmo();
     for (let col = 0; col < NUM_RAYS; col++) {
         const rayAngle = player.angle - HALF_FOV + col * RAY_STEP;
         const rayCos = Math.cos(rayAngle);
@@ -4066,17 +4127,20 @@ function castRays() {
         for (let y = drawStart; y <= drawEnd; y++) {
             const texY = (texPos | 0) & (TEX_SIZE - 1);
             const ti = (texY * TEX_SIZE + texX) * 4;
-            let r = tex[ti] * sideDim, g = tex[ti+1] * sideDim, b = tex[ti+2] * sideDim;
-            r = r * (1 - fogFactor) + 8 * fogFactor + r * flashBoost;
-            g = g * (1 - fogFactor) + 6 * fogFactor + g * flashBoost;
-            b = b * (1 - fogFactor) + 5 * fogFactor + b * flashBoost;
+            let r = tex[ti] * sideDim * atmo.tintR, g = tex[ti+1] * sideDim * atmo.tintG, b = tex[ti+2] * sideDim * atmo.tintB;
+            r = r * (1 - fogFactor) + atmo.fogR * fogFactor + r * flashBoost;
+            g = g * (1 - fogFactor) + atmo.fogG * fogFactor + g * flashBoost;
+            b = b * (1 - fogFactor) + atmo.fogB * fogFactor + b * flashBoost;
             const pi = (y * SCREEN_W + col) * 4;
             buf[pi] = Math.min(255, r) | 0; buf[pi+1] = Math.min(255, g) | 0; buf[pi+2] = Math.min(255, b) | 0; buf[pi+3] = 255;
             texPos += step;
         }
 
         // Floor & Ceiling
-        const floorTex = textures[TEX_FLOOR], ceilTex = textures[TEX_CEIL];
+        const floorTexIdx = currentFloor === 1 ? TEX_FACTORY_FLOOR : (currentFloor === 0 ? TEX_OFFICE_FLOOR : TEX_FLOOR);
+        const floorTex = textures[floorTexIdx] || textures[TEX_FLOOR];
+        const ceilTex = textures[TEX_CEIL];
+        const fTint = atmo.floorTint, cTint = atmo.ceilTint;
         for (let y = drawEnd + 1; y < SCREEN_H; y++) {
             const cd = SCREEN_H / (2.0 * y - SCREEN_H);
             const corrDist = cd / Math.cos(rayAngle - player.angle);
@@ -4086,9 +4150,9 @@ function castRays() {
             const fFog = Math.min(cd / 10, 1);
             const fFlash = inventory.flashlight ? Math.max(0, 1 - cd / 6) * 0.25 : 0;
             const pi = (y * SCREEN_W + col) * 4;
-            buf[pi] = Math.min(255, (floorTex[fti] * (1-fFog) + 8*fFog) * (1+fFlash)) | 0;
-            buf[pi+1] = Math.min(255, (floorTex[fti+1] * (1-fFog) + 6*fFog) * (1+fFlash)) | 0;
-            buf[pi+2] = Math.min(255, (floorTex[fti+2] * (1-fFog) + 5*fFog) * (1+fFlash)) | 0;
+            buf[pi] = Math.min(255, (floorTex[fti] * fTint[0] * (1-fFog) + atmo.fogR*fFog) * (1+fFlash)) | 0;
+            buf[pi+1] = Math.min(255, (floorTex[fti+1] * fTint[1] * (1-fFog) + atmo.fogG*fFog) * (1+fFlash)) | 0;
+            buf[pi+2] = Math.min(255, (floorTex[fti+2] * fTint[2] * (1-fFog) + atmo.fogB*fFog) * (1+fFlash)) | 0;
             buf[pi+3] = 255;
         }
         for (let y = 0; y < drawStart; y++) {
@@ -4099,9 +4163,9 @@ function castRays() {
             const cti = (cty * TEX_SIZE + ctx2) * 4;
             const cFog = Math.min(cd / 10, 1);
             const pi = (y * SCREEN_W + col) * 4;
-            buf[pi] = (ceilTex[cti] * (1-cFog) + 6*cFog) | 0;
-            buf[pi+1] = (ceilTex[cti+1] * (1-cFog) + 5*cFog) | 0;
-            buf[pi+2] = (ceilTex[cti+2] * (1-cFog) + 4*cFog) | 0;
+            buf[pi] = (ceilTex[cti] * cTint[0] * (1-cFog) + atmo.fogR*0.7*cFog) | 0;
+            buf[pi+1] = (ceilTex[cti+1] * cTint[1] * (1-cFog) + atmo.fogG*0.7*cFog) | 0;
+            buf[pi+2] = (ceilTex[cti+2] * cTint[2] * (1-cFog) + atmo.fogB*0.7*cFog) | 0;
             buf[pi+3] = 255;
         }
     }
