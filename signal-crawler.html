@@ -61,6 +61,7 @@ canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edge
     Reach the heart.
   </div>
   <button class="btn" onclick="startGame()">DESCEND</button>
+  <button class="btn" id="continue-btn" onclick="continueGame()" style="display:none;margin-top:10px;border-color:#44aaff;color:#44aaff;">CONTINUE FROM CHECKPOINT</button>
   <div class="controls">
     WASD or Arrow Keys to move<br>
     Bump into enemies to fight<br>
@@ -301,6 +302,8 @@ let flashTimer = 0;
 let flashTarget = null;
 let camX = 0, camY = 0;
 const MAP_W = 30, MAP_H = 22;
+let saveData = null;
+let autoSaveInterval = null;
 
 function addMessage(text) {
   messages.unshift(text);
@@ -487,11 +490,14 @@ function movePlayer(dx, dy) {
     player.hp = player.maxHp;
     addMessage('Descending deeper into the body...');
     generateMap();
+    saveGame(); // auto-save on floor change
+    addMessage('Checkpoint saved.');
   }
 
   // check heart
   if (heart && player.x === heart.x && player.y === heart.y) {
     gameWon = true;
+    clearSave(); // clear save on win
     addMessage(`You reached the heart. ${player.frags} memories carried through 7 layers.`);
     addMessage('The signal is whole. The body lives.');
   }
@@ -547,6 +553,62 @@ function generateHealSprite() {
   return s;
 }
 const HEAL_SPRITE = generateHealSprite();
+
+// === SAVE / LOAD SYSTEM ===
+function saveGame() {
+  const data = {
+    player: { ...player },
+    currentFloor,
+    map: map.map(r => [...r]),
+    enemies: enemies.map(e => ({ ...e })),
+    items: items.map(i => ({ ...i })),
+    stairs: stairs ? { ...stairs } : null,
+    heart: heart ? { ...heart } : null,
+    version: '9.3'
+  };
+  try {
+    localStorage.setItem('signalCrawlerSave', JSON.stringify(data));
+    return true;
+  } catch (e) { return false; }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem('signalCrawlerSave');
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data.version) return false;
+    player = data.player;
+    currentFloor = data.currentFloor;
+    map = data.map;
+    enemies = data.enemies;
+    items = data.items;
+    stairs = data.stairs;
+    heart = data.heart;
+    updateHUD();
+    addMessage('Checkpoint loaded.');
+    return true;
+  } catch (e) { return false; }
+}
+
+function hasSave() {
+  try {
+    const raw = localStorage.getItem('signalCrawlerSave');
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    return !!data.version;
+  } catch (e) { return false; }
+}
+
+function clearSave() {
+  localStorage.removeItem('signalCrawlerSave');
+}
+
+function autoSave() {
+  if (running && !gameOver && !gameWon) {
+    saveGame();
+  }
+}
 
 function render() {
   ctx.fillStyle = '#111';
@@ -659,6 +721,21 @@ function render() {
     if (flashTimer === 0) flashTarget = null;
   }
 
+  // ambient floor lighting — colored vignette
+  const floorColor = FLOORS[currentFloor].color;
+  const vGrad = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.max(W, H) * 0.7);
+  vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  vGrad.addColorStop(1, floorColor + '18');
+  ctx.fillStyle = vGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // corner vignette (darkness at edges)
+  const cGrad = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
+  cGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  cGrad.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = cGrad;
+  ctx.fillRect(0, 0, W, H);
+
   // game over / win overlay
   if (gameOver) {
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
@@ -670,7 +747,12 @@ function render() {
     ctx.font = '14px monospace';
     ctx.fillStyle = '#666';
     ctx.fillText(`${player.frags} fragments collected on floor ${currentFloor + 1}`, W / 2, H / 2 + 20);
-    ctx.fillText('Refresh to try again', W / 2, H / 2 + 50);
+    if (hasSave()) {
+      ctx.fillStyle = '#ffcc44';
+      ctx.fillText('Press [R] to load checkpoint  |  [N] for new game', W / 2, H / 2 + 50);
+    } else {
+      ctx.fillText('Press [N] to start a new game', W / 2, H / 2 + 50);
+    }
   }
 
   if (gameWon) {
@@ -687,6 +769,7 @@ function render() {
     ctx.font = '12px monospace';
     ctx.fillStyle = '#666';
     ctx.fillText('The signal is whole. The body lives.', W / 2, H / 2 + 60);
+    ctx.fillText('Press [N] to play again', W / 2, H / 2 + 85);
   }
 }
 
@@ -700,6 +783,32 @@ function animate() {
 
 // === INPUT ===
 document.addEventListener('keydown', e => {
+  // restart handlers on death/win screens
+  if (gameOver || gameWon) {
+    if (e.key === 'r' || e.key === 'R') {
+      if (hasSave()) {
+        gameOver = false;
+        gameWon = false;
+        messages = [];
+        loadGame();
+        render();
+      }
+      return;
+    }
+    if (e.key === 'n' || e.key === 'N') {
+      gameOver = false;
+      gameWon = false;
+      messages = [];
+      currentFloor = 0;
+      player = { x: 0, y: 0, hp: 10, maxHp: 10, frags: 0, atk: 2 };
+      clearSave();
+      generateMap();
+      render();
+      return;
+    }
+    return;
+  }
+
   switch (e.key) {
     case 'ArrowUp': case 'w': case 'W': movePlayer(0, -1); break;
     case 'ArrowDown': case 's': case 'S': movePlayer(0, 1); break;
@@ -710,19 +819,43 @@ document.addEventListener('keydown', e => {
 });
 
 function startGame() {
+  clearSave();
+  beginPlay();
+}
+
+function continueGame() {
+  beginPlay(true);
+}
+
+function beginPlay(fromSave) {
   document.getElementById('start-screen').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('msg').classList.remove('hidden');
   running = true;
-  currentFloor = 0;
-  player = { x: 0, y: 0, hp: 10, maxHp: 10, frags: 0, atk: 2 };
   messages = [];
   gameOver = false;
   gameWon = false;
-  generateMap();
+
+  if (fromSave && loadGame()) {
+    // loaded from checkpoint
+  } else {
+    currentFloor = 0;
+    player = { x: 0, y: 0, hp: 10, maxHp: 10, frags: 0, atk: 2 };
+    generateMap();
+  }
   render();
   animate();
+  // auto-save every 60 seconds
+  if (autoSaveInterval) clearInterval(autoSaveInterval);
+  autoSaveInterval = setInterval(autoSave, 60000);
 }
+
+// show Continue button on load if save exists
+window.addEventListener('DOMContentLoaded', () => {
+  if (hasSave()) {
+    document.getElementById('continue-btn').style.display = 'inline-block';
+  }
+});
 </script>
 </body>
 </html>
