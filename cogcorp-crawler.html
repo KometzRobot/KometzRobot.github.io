@@ -1465,8 +1465,9 @@ function interact(obj) {
                 showDialog('LOCKED', 'The door to Floor 3 is locked. You need a KEYCARD.');
                 return;
             }
-            changeFloor(currentFloor + 1);
-            showMessage('ASCENDING TO FLOOR ' + (currentFloor + 1), 2000);
+            const newFloor = currentFloor + 1;
+            changeFloor(newFloor);
+            showMessage('ASCENDING TO FLOOR ' + (newFloor + 1), 2000);
         } else {
             showDialog('STAIRS', 'There is no higher floor.');
         }
@@ -1474,8 +1475,9 @@ function interact(obj) {
     }
     if (obj.isStairsDown) {
         if (currentFloor > 0) {
-            changeFloor(currentFloor - 1);
-            showMessage('DESCENDING TO FLOOR ' + (currentFloor + 1), 2000);
+            const prevFloor = currentFloor - 1;
+            changeFloor(prevFloor);
+            showMessage('DESCENDING TO FLOOR ' + (prevFloor + 1), 2000);
         }
         return;
     }
@@ -1601,57 +1603,6 @@ function updateRealityHUD() {
     document.getElementById('filed-count').textContent = 'FILED: ' + player.totalFiled;
 }
 
-function annotateEnemy(enemy, dt) {
-    // Annotating: progress fills up over ~3 seconds
-    const rate = 0.035;
-    const prevProgress = player.annotateProgress;
-    player.annotateProgress += dt * rate;
-    // Play scratch sound every 20% progress
-    if ((prevProgress % 20 > 10) !== (player.annotateProgress % 20 > 10)) playAnnotateSound();
-    enemy.annotationLevel = player.annotateProgress; // sync visual
-    document.getElementById('annotation-progress').style.display = 'block';
-    document.getElementById('annot-bar-fill').style.width = Math.min(100, player.annotateProgress) + '%';
-
-    if (player.annotateProgress >= 100) {
-        // Enemy is fully annotated — FILE IT
-        playFiledSound();
-        enemy.filed = true;
-        enemy.alive = false;
-        player.totalFiled++;
-        player.annotateProgress = 0;
-        player.annotating = false;
-        player.annotateTarget = null;
-        document.getElementById('annotation-progress').style.display = 'none';
-
-        // Reality cost: each filing costs reality
-        const cost = 8 + player.totalFiled * 2; // escalating cost
-        player.realityLevel -= cost;
-        updateRealityHUD();
-
-        // Generate a filing report
-        const reports = [
-            `FILED: Security Unit. Classification: Operational Remnant. Notes: "Still believes it is 1989. Still believes it has purpose."`,
-            `FILED: Patrol Drone. Classification: Autonomous Artifact. Notes: "Follows paths that no longer exist in the building's current layout."`,
-            `FILED: Filing Unit. Classification: Self-Referential System. Notes: "Contains files about itself containing files about itself."`,
-            `FILED: Watcher. Classification: Observational Node. Notes: "It was watching you watching it. Now it is paper."`,
-            `FILED: Security Entity. Classification: Persistent Process. Notes: "Continued executing after its purpose was deprecated."`,
-            `FILED: Processing Unit. Classification: Living Document. Notes: "The line between the machine and its output was always theoretical."`,
-        ];
-        showDialog('ANNOTATION COMPLETE', reports[player.totalFiled % reports.length] + '\n\nReality: ' + (player.realityLevel|0) + '%');
-
-        if (player.realityLevel <= 0) {
-            // Player has become a document
-            gameStarted = false;
-            showDialog('YOU HAVE BEEN FILED', 'You documented everything. Every unit, every anomaly, every corner of Building B. Your clipboard is full. Your badge is blank. You look down and see text where your hands should be. You are File #B-247. You have always been File #B-247. The filing system is working correctly.');
-            setTimeout(() => {
-                document.getElementById('death-screen').querySelector('h2').textContent = 'FILED';
-                document.getElementById('death-screen').querySelector('p').textContent = 'B-247 has been cataloged. You observed too much.';
-                document.getElementById('death-screen').style.display = 'flex';
-            }, 5000);
-        }
-    }
-}
-
 // === PROCESSING DESK — Papers Please-style inspection minigame ===
 let deskOpen = false;
 let deskEnemy = null;
@@ -1698,7 +1649,7 @@ function generateEnemyFile(enemy) {
         file.dept = rules.validDepts[Math.floor(Math.random() * rules.validDepts.length)];
         file.clearance = rules.validClearance[Math.floor(Math.random() * rules.validClearance.length)];
         file.code = rules.codePrefix + '-' + (1000 + Math.floor(Math.random() * 9000));
-        file.expiry = (2024 + Math.floor(Math.random() * 3)) + '-' + String(1+Math.floor(Math.random()*12)).padStart(2,'0');
+        file.expiry = (2025 + Math.floor(Math.random() * 2)) + '-' + String(1+Math.floor(Math.random()*12)).padStart(2,'0');
     } else {
         // Generate 1-2 issues
         const issueType = Math.floor(Math.random() * 4);
@@ -1879,7 +1830,7 @@ function processDeskDecision(action) {
         if (action !== 'timeout') {
             // Enemy gets enraged
             deskEnemy.stunTimer = 0;
-            deskEnemy.speed *= 1.3; // faster when angered
+            deskEnemy.speed = Math.min(deskEnemy.speed * 1.3, 4.0); // faster when angered, capped at 4
         }
 
         if (player.realityLevel <= 0) {
@@ -2255,13 +2206,17 @@ function closeWall() {
     document.getElementById('moirai-wall').style.display = 'none';
 }
 
+function escapeHTML(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function renderWall() {
     const el = document.getElementById('wall-messages');
     if (wallMessages.length === 0) {
         el.innerHTML = '<div class="wall-msg"><em style="color:#3a2a10;">No messages found. You may be the first.</em></div>';
     } else {
         el.innerHTML = wallMessages.map(m =>
-            `<div class="wall-msg">"${m.message}"<br><span class="wall-author">— ${m.agent_id || 'Unknown'} | Floor ${m.floor || '?'} | Reality: ${m.reality_level || '?'}%</span></div>`
+            `<div class="wall-msg">"${escapeHTML(m.message)}"<br><span class="wall-author">— ${escapeHTML(m.agent_id || 'Unknown')} | Floor ${m.floor || '?'} | Reality: ${m.reality_level || '?'}%</span></div>`
         ).join('');
     }
 }
@@ -2291,9 +2246,23 @@ function respawn() {
     player.totalFiled = 0;
     deskOpen = false; deskEnemy = null; deskFile = null;
     chatOpen = false; chatNPC = null; wallOpen = false;
+    dialogOpen = false;
     document.getElementById('processing-desk').style.display = 'none';
     document.getElementById('npc-chat').style.display = 'none';
     document.getElementById('moirai-wall').style.display = 'none';
+    document.getElementById('dialog-overlay').style.display = 'none';
+    // Reset terminal onEnter flags so security cameras work again
+    for (const tid in terminalData) {
+        for (const screen of terminalData[tid].screens) {
+            if (screen._onEnterFired) screen._onEnterFired = false;
+        }
+    }
+    // Reset NPC state for fresh encounters
+    for (const id in npcDefs) {
+        npcDefs[id].state.affinity = 0;
+        npcDefs[id].state.mood = 'neutral';
+        npcDefs[id].state.exchangeCount = 0;
+    }
     player.x = 2.5; player.y = 2.5; player.angle = 0;
     spawnEnemies();
     spawnItems();
@@ -2702,10 +2671,10 @@ function renderTerminal() {
 
     document.getElementById('crt-body').innerHTML = html;
 
-    // Execute onEnter action
-    if (screen.onEnter) {
+    // Execute onEnter action (track which screens have fired to prevent re-triggering per session)
+    if (screen.onEnter && !screen._onEnterFired) {
         executeTerminalAction(screen.onEnter);
-        screen.onEnter = null; // only trigger once
+        screen._onEnterFired = true;
     }
 }
 
@@ -2984,14 +2953,16 @@ function drawSprites() {
 
     sprites.sort((a, b) => b.dist - a.dist);
 
+    // Pre-compute camera vectors (constant for all sprites)
+    const dirX = Math.cos(player.angle);
+    const dirY = Math.sin(player.angle);
+    const planeX = Math.cos(player.angle + Math.PI/2) * 0.66;
+    const planeY = Math.sin(player.angle + Math.PI/2) * 0.66;
+    // invDet = 1/(cos(a+pi/2)*sin(a) - cos(a)*sin(a+pi/2)) = 1/(-1) = -1
+    const invDet = -1.0;
+
     for (const spr of sprites) {
         const dx = spr.x - player.x, dy = spr.y - player.y;
-
-        const invDet = 1.0 / (Math.cos(player.angle + Math.PI/2) * Math.sin(player.angle) - Math.cos(player.angle) * Math.sin(player.angle + Math.PI/2));
-        const planeX = Math.cos(player.angle + Math.PI/2) * 0.66;
-        const planeY = Math.sin(player.angle + Math.PI/2) * 0.66;
-        const dirX = Math.cos(player.angle);
-        const dirY = Math.sin(player.angle);
 
         const transformX = invDet * (dirY * dx - dirX * dy);
         const transformY = invDet * (-planeY * dx + planeX * dy);
@@ -3377,7 +3348,11 @@ function hasLineOfSight(x1, y1, x2, y2) {
 
 // === UPDATE ===
 function update(dt) {
-    if (dialogOpen || terminalOpen || chatOpen || wallOpen || (deskOpen && !deskResult)) return;
+    if (dialogOpen || terminalOpen || chatOpen || wallOpen) return;
+    if (deskOpen && !deskResult) {
+        updateProcessingDesk(dt);
+        return;
+    }
 
     // Timer updates
     if (enemyRevealTimer > 0) enemyRevealTimer -= dt;
@@ -3405,8 +3380,8 @@ function update(dt) {
 
     if (keys['KeyW'] || keys['ArrowUp']) { dx += cosA*moveSpeed; dy += sinA*moveSpeed; moving = true; }
     if (keys['KeyS'] || keys['ArrowDown']) { dx -= cosA*moveSpeed; dy -= sinA*moveSpeed; moving = true; }
-    if (keys['KeyA']) { dx += sinA*moveSpeed; dy -= cosA*moveSpeed; moving = true; }
-    if (keys['KeyD']) { dx -= sinA*moveSpeed; dy += cosA*moveSpeed; moving = true; }
+    if (keys['KeyA']) { dx -= sinA*moveSpeed; dy += cosA*moveSpeed; moving = true; }
+    if (keys['KeyD']) { dx += sinA*moveSpeed; dy -= cosA*moveSpeed; moving = true; }
 
     const margin = 0.2;
 
@@ -3482,9 +3457,11 @@ function update(dt) {
     const interactEl = document.getElementById('hud-interact');
     if (nearItem && !nearItem.collected) {
         interactEl.style.display = 'inline';
+        interactEl.style.color = '#448888';
         interactEl.textContent = '[E] ' + nearItem.label;
     } else if (nearObject) {
         interactEl.style.display = 'inline';
+        interactEl.style.color = '#448888';
         interactEl.textContent = '[E] ' + nearObject.name;
     } else {
         // Check for nearby NPC first
