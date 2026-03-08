@@ -67,6 +67,50 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #annotation-progress .bar { width: 80px; height: 3px; background: #1a1408; border: 1px solid #5a4020; margin: 4px auto; }
 #annotation-progress .bar-fill { height: 100%; background: #ffb347; transition: width 0.1s; }
 #filed-count { color: #5a4020; font-size: 9px; }
+#processing-desk {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 45;
+    background: rgba(8,4,2,0.94); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace; cursor: default;
+}
+#processing-desk .desk-frame {
+    width: 560px; max-width: 94%; background: #0c0804;
+    border: 2px solid #5a4020; padding: 16px 20px; position: relative;
+}
+#processing-desk .desk-header {
+    color: #ffb347; font-size: 14px; letter-spacing: 4px; text-align: center;
+    border-bottom: 1px solid #3a2a10; padding-bottom: 8px; margin-bottom: 12px;
+}
+#processing-desk .file-card {
+    background: #1a1208; border: 1px solid #3a2a10; padding: 12px 16px; margin-bottom: 12px;
+}
+#processing-desk .file-field {
+    color: #c49030; font-size: 11px; line-height: 2; letter-spacing: 1px;
+}
+#processing-desk .file-field .label { color: #5a4020; }
+#processing-desk .file-field.suspicious { color: #ff6633; border-left: 2px solid #ff6633; padding-left: 8px; }
+#processing-desk .file-field.valid { color: #66cc44; }
+#processing-desk .rulebook {
+    background: #0a0604; border: 1px solid #2a1a08; padding: 8px 12px;
+    color: #5a4020; font-size: 10px; line-height: 1.8; margin-bottom: 12px;
+}
+#processing-desk .rulebook-title { color: #8a6020; letter-spacing: 2px; margin-bottom: 4px; }
+#processing-desk .timer-bar {
+    width: 100%; height: 4px; background: #1a1208; border: 1px solid #3a2a10; margin-bottom: 12px;
+}
+#processing-desk .timer-fill { height: 100%; background: #ffb347; transition: width 0.1s linear; }
+#processing-desk .actions {
+    display: flex; justify-content: center; gap: 16px; font-size: 12px;
+}
+#processing-desk .action-btn {
+    color: #ffb347; border: 1px solid #5a4020; padding: 6px 16px; letter-spacing: 2px;
+    cursor: pointer; transition: background 0.2s;
+}
+#processing-desk .action-btn:hover { background: rgba(255,179,71,0.1); }
+#processing-desk .action-btn.process { border-color: #44aa33; color: #66cc44; }
+#processing-desk .action-btn.reject { border-color: #aa3333; color: #cc4444; }
+#processing-desk .result-text {
+    text-align: center; font-size: 12px; margin-top: 12px; letter-spacing: 2px; min-height: 18px;
+}
 #crt-terminal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50;
     background: rgba(0,8,0,0.92); display: none; flex-direction: column;
@@ -112,13 +156,13 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         The machines are still running. The filing system is still processing.<br>
         The lights still flicker at the same frequency they always did.<br><br>
         You are B-247. You were sent to retrieve one file from Floor 3.<br>
-        You are not armed. You were given a clipboard.<br><br>
+        You are not armed. You were given a <em style="color:#ffb347">processing desk</em>.<br><br>
         The filing system knows you're here. The security units still patrol.<br>
-        You cannot fight them. But you can <em style="color:#ffb347">annotate</em> them.<br><br>
-        Hold E while facing a unit to document it. Fully documented units<br>
-        become filed — they dissolve into paperwork. But each annotation<br>
-        makes you less real. Observe too much, and you become the document.<br><br>
-        WASD move. Mouse look. Hold E to annotate. Q for EMP. Click to lock mouse.
+        You cannot fight them. But you can <em style="color:#ffb347">process</em> them.<br><br>
+        Press E near a unit to open the Processing Desk. Inspect their file.<br>
+        Check department, clearance, codes against regulations. Then decide:<br>
+        PROCESS valid files. REJECT invalid ones. Each decision costs reality.<br><br>
+        WASD move. Mouse look. E to process/interact. Q for EMP. Click to lock mouse.
     </div>
     <div class="start">[ click to enter ]</div>
 </div>
@@ -162,6 +206,24 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 <div id="annotation-progress">
     <div>ANNOTATING...</div>
     <div class="bar"><div class="bar-fill" id="annot-bar-fill" style="width:0%"></div></div>
+</div>
+
+<div id="processing-desk">
+    <div class="desk-frame">
+        <div class="desk-header">PERSONNEL PROCESSING DESK</div>
+        <div class="file-card" id="desk-file-card"></div>
+        <div class="rulebook">
+            <div class="rulebook-title">CURRENT REGULATIONS</div>
+            <div id="desk-rules"></div>
+        </div>
+        <div class="timer-bar"><div class="timer-fill" id="desk-timer-fill" style="width:100%"></div></div>
+        <div class="actions">
+            <div class="action-btn process" onclick="processDeskDecision('process')">[1] PROCESS</div>
+            <div class="action-btn reject" onclick="processDeskDecision('reject')">[2] REJECT</div>
+        </div>
+        <div class="result-text" id="desk-result"></div>
+        <div style="color:#3a2a10; font-size:9px; text-align:center; margin-top:8px;">[ ESC to abandon ]</div>
+    </div>
 </div>
 
 <div id="crt-terminal">
@@ -1169,6 +1231,14 @@ window.addEventListener('keydown', e => {
         if (e.code === 'Backspace') { handleTerminalKey('Backspace'); return; }
         return;
     }
+    // Route to processing desk when open
+    if (deskOpen) {
+        e.preventDefault();
+        if (e.code === 'Escape') { closeProcessingDesk(); return; }
+        if (e.code === 'Digit1') { processDeskDecision('process'); return; }
+        if (e.code === 'Digit2') { processDeskDecision('reject'); return; }
+        return;
+    }
     if (e.code === 'Space') {
         e.preventDefault();
         if (dialogOpen) dismissDialog();
@@ -1178,7 +1248,27 @@ window.addEventListener('keydown', e => {
         if (dialogOpen) { dismissDialog(); }
         else if (nearItem && !nearItem.collected) { pickupItem(nearItem); }
         else if (nearObject) { interact(nearObject); }
-        // Annotation of enemies happens in update() while E is held
+        else {
+            // Check for nearby enemy to open Processing Desk
+            let closestEnemy = null;
+            let closestDist = 4;
+            for (const en of enemies) {
+                if (!en.alive || en.filed) continue;
+                const edx = en.x - player.x, edy = en.y - player.y;
+                const dist = Math.sqrt(edx*edx + edy*edy);
+                if (dist < closestDist) {
+                    const eAngle = Math.atan2(edy, edx);
+                    let angleDiff = eAngle - player.angle;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
+                    if (Math.abs(angleDiff) < Math.PI/4) {
+                        closestEnemy = en;
+                        closestDist = dist;
+                    }
+                }
+            }
+            if (closestEnemy) openProcessingDesk(closestEnemy);
+        }
     }
     if (e.code === 'KeyQ' && inventory.emp > 0 && !dialogOpen) { useEMP(); }
 });
@@ -1403,6 +1493,253 @@ function annotateEnemy(enemy, dt) {
     }
 }
 
+// === PROCESSING DESK — Papers Please-style inspection minigame ===
+let deskOpen = false;
+let deskEnemy = null;
+let deskFile = null;
+let deskTimer = 0;
+const DESK_TIME_LIMIT = 8000; // 8 seconds to decide
+let deskResult = ''; // '' | 'correct' | 'wrong'
+let deskResultTimer = 0;
+
+const DEPARTMENTS = ['SECURITY', 'ARCHIVES', 'PROCESSING', 'MAINTENANCE', 'RESEARCH', 'ADMINISTRATION'];
+const CLEARANCE_LEVELS = [1, 2, 3, 4, 5];
+
+// Rules per floor — what's valid
+const FLOOR_RULES = [
+    { // Floor 1
+        validDepts: ['SECURITY', 'MAINTENANCE', 'ADMINISTRATION'],
+        validClearance: [1, 2, 3],
+        codePrefix: 'F1',
+        maxYear: 2026,
+        description: 'Floor 1: Only SECURITY, MAINTENANCE, ADMIN units.\nClearance 1-3 valid. Codes start with F1.\nExpiry must not be before 2025.'
+    },
+    { // Floor 2
+        validDepts: ['ARCHIVES', 'PROCESSING', 'RESEARCH'],
+        validClearance: [2, 3, 4],
+        codePrefix: 'F2',
+        maxYear: 2026,
+        description: 'Floor 2: Only ARCHIVES, PROCESSING, RESEARCH units.\nClearance 2-4 valid. Codes start with F2.\nExpiry must not be before 2024.'
+    },
+    { // Floor 3
+        validDepts: ['PROCESSING', 'RESEARCH', 'ADMINISTRATION'],
+        validClearance: [3, 4, 5],
+        codePrefix: 'F3',
+        maxYear: 2026,
+        description: 'Floor 3: Only PROCESSING, RESEARCH, ADMIN units.\nClearance 3-5 valid. Codes start with F3.\nExpiry must not be before 2023.'
+    }
+];
+
+function generateEnemyFile(enemy) {
+    const rules = FLOOR_RULES[currentFloor];
+    const isValid = Math.random() < 0.5; // 50% chance file is legitimate
+    const file = { valid: isValid, issues: [] };
+
+    if (isValid) {
+        file.dept = rules.validDepts[Math.floor(Math.random() * rules.validDepts.length)];
+        file.clearance = rules.validClearance[Math.floor(Math.random() * rules.validClearance.length)];
+        file.code = rules.codePrefix + '-' + (1000 + Math.floor(Math.random() * 9000));
+        file.expiry = (2024 + Math.floor(Math.random() * 3)) + '-' + String(1+Math.floor(Math.random()*12)).padStart(2,'0');
+    } else {
+        // Generate 1-2 issues
+        const issueType = Math.floor(Math.random() * 4);
+        // Start with valid, then corrupt one field
+        file.dept = rules.validDepts[Math.floor(Math.random() * rules.validDepts.length)];
+        file.clearance = rules.validClearance[Math.floor(Math.random() * rules.validClearance.length)];
+        file.code = rules.codePrefix + '-' + (1000 + Math.floor(Math.random() * 9000));
+        file.expiry = (2024 + Math.floor(Math.random() * 3)) + '-' + String(1+Math.floor(Math.random()*12)).padStart(2,'0');
+
+        if (issueType === 0) {
+            // Wrong department
+            const invalidDepts = DEPARTMENTS.filter(d => !rules.validDepts.includes(d));
+            file.dept = invalidDepts[Math.floor(Math.random() * invalidDepts.length)];
+            file.issues.push('dept');
+        } else if (issueType === 1) {
+            // Wrong clearance
+            const invalidClear = CLEARANCE_LEVELS.filter(c => !rules.validClearance.includes(c));
+            if (invalidClear.length > 0) {
+                file.clearance = invalidClear[Math.floor(Math.random() * invalidClear.length)];
+                file.issues.push('clearance');
+            } else {
+                file.dept = 'ANOMALOUS'; file.issues.push('dept');
+            }
+        } else if (issueType === 2) {
+            // Wrong code prefix
+            const wrongPrefixes = ['F1','F2','F3','FX','F0'].filter(p => p !== rules.codePrefix);
+            file.code = wrongPrefixes[Math.floor(Math.random() * wrongPrefixes.length)] + '-' + (1000 + Math.floor(Math.random() * 9000));
+            file.issues.push('code');
+        } else {
+            // Expired
+            file.expiry = (2018 + Math.floor(Math.random() * 5)) + '-' + String(1+Math.floor(Math.random()*12)).padStart(2,'0');
+            file.issues.push('expiry');
+        }
+    }
+
+    // Unit designation
+    const typeNames = { drone: 'Security Drone', filer: 'Filing Unit', watcher: 'Observation Node' };
+    file.unitName = (typeNames[enemy.type] || 'Unknown Unit') + ' #' + (100 + Math.floor(Math.random() * 900));
+    file.serialNum = 'B247-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + Math.floor(Math.random()*1000);
+
+    return file;
+}
+
+function openProcessingDesk(enemy) {
+    deskOpen = true;
+    deskEnemy = enemy;
+    deskFile = generateEnemyFile(enemy);
+    deskTimer = DESK_TIME_LIMIT;
+    deskResult = '';
+    deskResultTimer = 0;
+
+    // Stun the enemy while being processed
+    enemy.stunTimer = Math.max(enemy.stunTimer, DESK_TIME_LIMIT + 2000);
+
+    // Release pointer lock
+    if (document.pointerLockElement) document.exitPointerLock();
+
+    // Render the desk
+    renderProcessingDesk();
+    document.getElementById('processing-desk').style.display = 'flex';
+
+    playTerminalBootSound();
+}
+
+function closeProcessingDesk() {
+    deskOpen = false;
+    deskEnemy = null;
+    deskFile = null;
+    document.getElementById('processing-desk').style.display = 'none';
+}
+
+function renderProcessingDesk() {
+    if (!deskFile) return;
+    const f = deskFile;
+    const rules = FLOOR_RULES[currentFloor];
+
+    // File card
+    let cardHTML = '';
+    cardHTML += `<div class="file-field"><span class="label">UNIT:</span> ${f.unitName}</div>`;
+    cardHTML += `<div class="file-field"><span class="label">SERIAL:</span> ${f.serialNum}</div>`;
+    cardHTML += `<div class="file-field${f.issues.includes('dept') ? ' suspicious' : ''}"><span class="label">DEPARTMENT:</span> ${f.dept}</div>`;
+    cardHTML += `<div class="file-field${f.issues.includes('clearance') ? ' suspicious' : ''}"><span class="label">CLEARANCE:</span> LEVEL ${f.clearance}</div>`;
+    cardHTML += `<div class="file-field${f.issues.includes('code') ? ' suspicious' : ''}"><span class="label">FILING CODE:</span> ${f.code}</div>`;
+    cardHTML += `<div class="file-field${f.issues.includes('expiry') ? ' suspicious' : ''}"><span class="label">VALID UNTIL:</span> ${f.expiry}</div>`;
+    document.getElementById('desk-file-card').innerHTML = cardHTML;
+
+    // Rules
+    document.getElementById('desk-rules').textContent = rules.description;
+
+    // Result
+    document.getElementById('desk-result').textContent = '';
+    document.getElementById('desk-result').style.color = '#ffb347';
+}
+
+function updateProcessingDesk(dt) {
+    if (!deskOpen) return;
+
+    if (deskResult) {
+        // Showing result, wait then close
+        deskResultTimer -= dt;
+        if (deskResultTimer <= 0) closeProcessingDesk();
+        return;
+    }
+
+    deskTimer -= dt;
+    const pct = Math.max(0, deskTimer / DESK_TIME_LIMIT * 100);
+    document.getElementById('desk-timer-fill').style.width = pct + '%';
+
+    // Timer color: green → yellow → red
+    const fill = document.getElementById('desk-timer-fill');
+    if (pct > 50) fill.style.background = '#66cc44';
+    else if (pct > 25) fill.style.background = '#ffb347';
+    else fill.style.background = '#cc3322';
+
+    if (deskTimer <= 0) {
+        // Time's up — counts as wrong decision
+        processDeskDecision('timeout');
+    }
+}
+
+function processDeskDecision(action) {
+    if (!deskOpen || !deskFile || deskResult) return;
+
+    const f = deskFile;
+    let correct = false;
+    let resultText = '';
+
+    if (action === 'process') {
+        correct = f.valid;
+        if (correct) {
+            resultText = 'CORRECTLY PROCESSED. Unit filed.';
+        } else {
+            resultText = 'ERROR: Invalid file approved. ' + getIssueDescription(f) + ' Reality compromised.';
+        }
+    } else if (action === 'reject') {
+        correct = !f.valid;
+        if (correct) {
+            resultText = 'CORRECTLY REJECTED. ' + getIssueDescription(f) + ' Unit stunned.';
+        } else {
+            resultText = 'ERROR: Valid file rejected. Unit classification: legitimate. Reality compromised.';
+        }
+    } else if (action === 'timeout') {
+        correct = false;
+        resultText = 'PROCESSING TIMEOUT. File unresolved. Reality compromised.';
+    }
+
+    const resultEl = document.getElementById('desk-result');
+
+    if (correct) {
+        playTerminalSuccessSound();
+        resultEl.style.color = '#66cc44';
+        resultEl.textContent = resultText;
+
+        if (action === 'process') {
+            // Enemy filed
+            deskEnemy.filed = true;
+            deskEnemy.alive = false;
+            player.totalFiled++;
+            const cost = 3 + player.totalFiled; // lower cost for correct processing
+            player.realityLevel -= cost;
+            updateRealityHUD();
+            showMsg('UNIT FILED — Reality: ' + (player.realityLevel|0) + '%');
+        } else {
+            // Correct rejection — stun enemy, no reality cost
+            deskEnemy.stunTimer = 10000;
+            showMsg('UNIT REJECTED — Stunned 10s');
+        }
+    } else {
+        playTerminalErrorSound();
+        resultEl.style.color = '#cc3322';
+        resultEl.textContent = resultText;
+
+        // Penalty
+        const penalty = 10 + player.totalFiled * 2;
+        player.realityLevel -= penalty;
+        updateRealityHUD();
+
+        if (action !== 'timeout') {
+            // Enemy gets enraged
+            deskEnemy.stunTimer = 0;
+            deskEnemy.speed *= 1.3; // faster when angered
+        }
+
+        if (player.realityLevel <= 0) {
+            checkRealityDeath();
+        }
+    }
+
+    deskResult = correct ? 'correct' : 'wrong';
+    deskResultTimer = 2000; // show result for 2 seconds
+}
+
+function getIssueDescription(f) {
+    if (f.issues.includes('dept')) return `Department "${f.dept}" not authorized for this floor.`;
+    if (f.issues.includes('clearance')) return `Clearance Level ${f.clearance} insufficient.`;
+    if (f.issues.includes('code')) return `Filing code "${f.code}" has wrong prefix.`;
+    if (f.issues.includes('expiry')) return `File expired: ${f.expiry}.`;
+    return 'File is valid.';
+}
+
 function respawn() {
     player.health = player.maxHealth;
     player.realityLevel = 100;
@@ -1410,6 +1747,8 @@ function respawn() {
     player.annotateTarget = null;
     player.annotateProgress = 0;
     player.totalFiled = 0;
+    deskOpen = false; deskEnemy = null; deskFile = null;
+    document.getElementById('processing-desk').style.display = 'none';
     player.x = 2.5; player.y = 2.5; player.angle = 0;
     spawnEnemies();
     spawnItems();
@@ -2446,7 +2785,7 @@ function hasLineOfSight(x1, y1, x2, y2) {
 
 // === UPDATE ===
 function update(dt) {
-    if (dialogOpen || terminalOpen) return;
+    if (dialogOpen || terminalOpen || (deskOpen && !deskResult)) return;
 
     // Timer updates
     if (enemyRevealTimer > 0) enemyRevealTimer -= dt;
@@ -2503,47 +2842,11 @@ function update(dt) {
 
     if (moving && audioStarted) playStep();
 
-    // === ANNOTATION MECHANIC ===
-    // Hold E while facing an enemy to annotate it
-    if (keys['KeyE'] && !dialogOpen) {
-        // Find closest enemy in view
-        let closestEnemy = null;
-        let closestDist = 4; // annotation range
-        for (const e of enemies) {
-            if (!e.alive || e.filed || e.stunTimer > 0) continue;
-            const edx = e.x - player.x, edy = e.y - player.y;
-            const dist = Math.sqrt(edx*edx + edy*edy);
-            if (dist < closestDist) {
-                const eAngle = Math.atan2(edy, edx);
-                let angleDiff = eAngle - player.angle;
-                while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
-                while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
-                if (Math.abs(angleDiff) < Math.PI/6) { // narrow cone — you need to be looking at it
-                    closestEnemy = e;
-                    closestDist = dist;
-                }
-            }
-        }
-        if (closestEnemy) {
-            player.annotating = true;
-            player.annotateTarget = closestEnemy;
-            // Stun the enemy while being annotated (it freezes under observation)
-            closestEnemy.stunTimer = Math.max(closestEnemy.stunTimer, 200);
-            annotateEnemy(closestEnemy, dt);
-        } else {
-            // Not looking at an enemy — reset
-            if (player.annotating) {
-                player.annotating = false;
-                player.annotateProgress = 0;
-                document.getElementById('annotation-progress').style.display = 'none';
-            }
-        }
-    } else if (player.annotating) {
-        // E released — cancel annotation
-        player.annotating = false;
-        player.annotateProgress = 0;
-        player.annotateTarget = null;
-        document.getElementById('annotation-progress').style.display = 'none';
+    // === PROCESSING DESK MECHANIC ===
+    // Press E while facing an enemy to open Processing Desk (Papers Please-style)
+    // The old hold-E annotation is replaced by this interactive inspection minigame
+    if (deskOpen) {
+        updateProcessingDesk(dt);
     }
 
     // Enemy AI
@@ -2592,7 +2895,26 @@ function update(dt) {
         interactEl.style.display = 'inline';
         interactEl.textContent = '[E] ' + nearObject.name;
     } else {
-        interactEl.style.display = 'none';
+        // Check for nearby enemy to show process prompt
+        let canProcess = false;
+        for (const en of enemies) {
+            if (!en.alive || en.filed) continue;
+            const edx = en.x - player.x, edy = en.y - player.y;
+            const dist = Math.sqrt(edx*edx + edy*edy);
+            if (dist < 4) {
+                const eAngle = Math.atan2(edy, edx);
+                let angleDiff = eAngle - player.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
+                if (Math.abs(angleDiff) < Math.PI/4) { canProcess = true; break; }
+            }
+        }
+        if (canProcess) {
+            interactEl.style.display = 'inline';
+            interactEl.textContent = '[E] PROCESS UNIT';
+        } else {
+            interactEl.style.display = 'none';
+        }
     }
 
     tickAudio();
