@@ -744,6 +744,88 @@ const TEX_LOCKED = createTexture(data => {
     setPixel(data, 32, 49, 80, 70, 50); setPixel(data, 32, 50, 80, 70, 50);
 });
 
+// === PNG IMAGE LOADER — replaces procedural textures with real art ===
+// Sprites: OpenGunner enemies (CC-BY 3.0 Master484), Industrial Zone (OGA-BY CraftPix.net)
+// Steam Monster (CC0 blarumyrran), environment props (CC0 various OpenGameArt)
+
+const SPRITE_ASSETS = {
+    // Enemies
+    drone: 'game-assets/crawler-drone.png',
+    filer: 'game-assets/crawler-filer.png',
+    watcher: 'game-assets/crawler-watcher.png',
+    // Items
+    keycard: 'game-assets/crawler-keycard.png',
+    medkit: 'game-assets/crawler-medkit.png',
+    flashlight: 'game-assets/crawler-flashlight.png',
+    emp: 'game-assets/crawler-emp.png',
+    document: 'game-assets/crawler-document.png',
+    targetFile: 'game-assets/crawler-targetfile.png',
+    anchor: 'game-assets/crawler-anchor.png'
+};
+
+const TILESET_PATH = 'game-assets/industrial-tiles.png';
+
+// Tile coordinates in industrial-tiles.png (32x32 grid, col/row)
+const TILE_MAP = {
+    brick:   [1, 0],  // dark X-pattern metal panel
+    metal:   [0, 6],  // blue riveted panel
+    cabinet: [1, 1],  // four-section window panel
+    door:    [3, 1],  // vertical divider (door-like)
+    damaged: [3, 3],  // hazard stripes (red/orange diagonal)
+    machine: [4, 2],  // horizontal vent lines
+    floor:   [2, 2],  // dark blue floor
+    ceil:    [1, 5],  // dark cross grate ceiling
+    green:   [0, 7],  // dark panel with rivets (for floor 3)
+    locked:  [8, 0]   // red hazard stripes
+};
+
+function extractPixelData(img, sx, sy, sw, sh, targetSize) {
+    const c = document.createElement('canvas');
+    c.width = targetSize;
+    c.height = targetSize;
+    const cx = c.getContext('2d');
+    cx.imageSmoothingEnabled = false;
+    cx.drawImage(img, sx, sy, sw, sh, 0, 0, targetSize, targetSize);
+    const id = cx.getImageData(0, 0, targetSize, targetSize);
+    return new Uint8Array(id.data.buffer);
+}
+
+function loadSpritePNG(name, path) {
+    const img = new Image();
+    img.onload = () => {
+        spriteTextures[name] = extractPixelData(img, 0, 0, img.width, img.height, SPR_SIZE);
+    };
+    img.onerror = () => { /* keep procedural fallback */ };
+    img.src = path;
+}
+
+function loadTileset() {
+    const img = new Image();
+    img.onload = () => {
+        const tileSize = 32;
+        // Wall textures (scaled from 32x32 tile to 64x64)
+        const mapping = [
+            ['brick', TEX_BRICK], ['metal', TEX_METAL], ['cabinet', TEX_CABINET],
+            ['door', TEX_DOOR], ['damaged', TEX_DAMAGED], ['machine', TEX_MACHINE],
+            ['floor', TEX_FLOOR], ['ceil', TEX_CEIL], ['green', TEX_GREEN],
+            ['locked', TEX_LOCKED]
+        ];
+        for (const [key, texIdx] of mapping) {
+            const [col, row] = TILE_MAP[key];
+            const px = extractPixelData(img, col * tileSize, row * tileSize, tileSize, tileSize, TEX_SIZE);
+            textures[texIdx] = px;
+        }
+    };
+    img.onerror = () => { /* keep procedural fallback */ };
+    img.src = TILESET_PATH;
+}
+
+// Start loading immediately — procedural textures serve as fallback
+for (const [name, path] of Object.entries(SPRITE_ASSETS)) {
+    loadSpritePNG(name, path);
+}
+loadTileset();
+
 // === MAP DATA ===
 // 0=empty, 1=brick, 2=metal, 3=cabinet, 4=door, 5=damaged, 6=machine, 7=stairs_up, 8=green, 9=locked_door
 const MAP_W = 24, MAP_H = 24;
