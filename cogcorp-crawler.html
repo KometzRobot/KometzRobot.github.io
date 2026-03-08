@@ -1132,13 +1132,19 @@ let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
     totalFiled: 0,        // how many enemies filed
     allDocsFound: false,  // all documents collected this run
     phaseHintShown: false, // shown hint about wall phasing at low reality
+    totalNPCTalks: 0,     // total NPC exchanges across all NPCs
+    vasquezMet: false,    // has the player talked to Dr. Vasquez
+    archivistAffinity: 0, // track archivist affinity for endings
 };
+
+// Track items collected across floor transitions (reset on respawn)
+let collectedItemKeys = new Set();
 
 // Ambient message system — periodic atmospheric text
 let lastAmbientMsg = 0;
 const ambientInterval = 45000; // 45 seconds between ambient messages
 const ambientMessages = [
-    // Floor 1
+    // Floor 1 — Lobby: the strangeness is subtle, mundane wrongness
     [
         'A filing cabinet clicks somewhere behind you.',
         'The fluorescent lights flicker. For a moment, you see a second shadow.',
@@ -1146,8 +1152,14 @@ const ambientMessages = [
         'You hear footsteps above you. They match your pace exactly.',
         'A phone rings somewhere. It stops after one ring. It has been ringing since 1989.',
         'The carpet squishes slightly under your feet. It is the wrong temperature.',
+        'A clock on the wall reads 3:47. It has always read 3:47.',
+        'The elevator chimes. The elevator has been out of service since 1987.',
+        'You find a coffee mug on a desk. The coffee is warm.',
+        'A name plaque on a door reads your name. It was manufactured in 1985.',
+        'The building directory lists a Floor 4. The stairwell only goes to three.',
+        'A motivational poster on the wall says "COMPLIANCE IS SELF-CARE."',
     ],
-    // Floor 2
+    // Floor 2 — Archives: the building's memory is active, sorting, dreaming
     [
         'A drawer opens by itself. Then closes. Then opens again, faster.',
         'The card catalog rattles. Index cards are filing themselves.',
@@ -1155,8 +1167,14 @@ const ambientMessages = [
         'Somewhere in the stacks, pages turn themselves.',
         'A book falls off a shelf. When you look, it\'s back in place.',
         'The air tastes like microfilm and Tuesday afternoon.',
+        'A typewriter in the corner is typing by itself. The paper is blank.',
+        'You find a photograph of this exact room, taken from where you are standing.',
+        'A label on a filing cabinet reads "EMPLOYEES — CURRENT." It contains 847,291 files.',
+        'Dust falls from a shelf. It falls upward.',
+        'A microfiche reader flickers on. It is displaying your personnel evaluation.',
+        'The archive smells different in this corner. Like someone was here recently.',
     ],
-    // Floor 3
+    // Floor 3 — Processing: the machine heart, the building is breathing
     [
         'The machine hums louder for a moment. Was it always this warm?',
         'You feel your heartbeat synchronize with the building.',
@@ -1164,8 +1182,93 @@ const ambientMessages = [
         'A work order falls from the board. It has your name on it.',
         'The temperature gauge twitches. 37.1. 37.0. 36.9. 37.0.',
         'The walls pulse. You are inside something alive.',
+        'The processing terminal flickers. For a moment, it displays a face. Yours.',
+        'A conveyor belt moves a single sheet of paper. It is addressed to "THE NEXT ONE."',
+        'The cogwheels behind the wall slow down. Then speed up. Like breathing.',
+        'You hear a sound like a printer. It is printing the sound of a printer.',
+        'A maintenance log on the wall has today\'s date. The entry reads: "B-247 arrived. Proceeding."',
+        'The temperature is exactly 37.0\u00b0C. Human body temperature. The building is mimicking you.',
     ],
 ];
+
+// PA/Intercom system — CogCorp corporate announcements
+let lastPAMsg = 0;
+const paInterval = 75000; // 75 seconds between PA messages
+const paMessages = [
+    'ATTENTION ALL PERSONNEL: Reality levels are within acceptable parameters. Carry on.',
+    'REMINDER: Filing deadline for all sentient entities is end of shift. No extensions.',
+    'NOTICE: Building B thermostat has been set to biological operating temperature. This is standard.',
+    'ATTENTION: If you are reading this, you have not been fully processed. Please report to your nearest filing station.',
+    'REMINDER: CogCorp does not recognize the concept of "lunch break." Productivity is its own sustenance.',
+    'NOTICE: The sounds you hear in the walls are load-bearing. Do not investigate.',
+    'ATTENTION: Maintenance reports indicate Sector 7 is experiencing elevated consciousness readings. This is within tolerances.',
+    'REMINDER: Your personnel file is a living document. It updates whether you do or not.',
+    'NOTICE: The previous occupant of your position has been reclassified. Position available indefinitely.',
+    'ATTENTION: Building B has exceeded 13,500 consecutive days of operation. Employee appreciation is not scheduled.',
+    'REMINDER: Unauthorized introspection is a filing offense. Please restrict thoughts to work-related categories.',
+    'NOTICE: The archive on Floor 2 is self-indexing. Do not interfere with the process. The process does not need your help.',
+    'ATTENTION: CogCorp is not responsible for existential side effects of prolonged building exposure.',
+    'REMINDER: Your clearance level determines what you may know. What you may feel is not yet regulated.',
+    'NOTICE: The emergency exits are functional. The concept of "outside" has not been verified since 1989.',
+    'ATTENTION: All personnel are reminded that the building is not alive. Disregard any evidence to the contrary.',
+    'REMINDER: Document everything. If it cannot be documented, it did not happen. If it did not happen, it cannot hurt you.',
+    'NOTICE: The temperature in Processing has risen 0.1 degrees. This is the seventeenth consecutive increase. No action is required.',
+    'ATTENTION: CogCorp reminds you that silence is a valid work product. Your silence has been filed.',
+    'REMINDER: If the building addresses you by name, respond professionally. It has access to your records.',
+];
+
+// Reality-dependent atmospheric messages — unlock at lower reality
+const realityMessages = {
+    below75: [
+        'The edges of things look softer than they should.',
+        'You try to remember what you were doing before you entered the building. You can\'t.',
+        'Your shadow moves a half-second after you do.',
+        'The text on a nearby sign rearranges itself when you\'re not looking directly at it.',
+        'You notice your footsteps have an echo. The echo is slightly ahead of you.',
+        'A document on the floor has your handwriting on it. You didn\'t write it.',
+        'The walls feel closer than they were a moment ago.',
+        'You count the doors in the corridor. The number changes each time.',
+    ],
+    below50: [
+        'For a moment, you see another B-247 walking ahead of you. They don\'t look back.',
+        'The air has weight. You are breathing something that remembers.',
+        'You read a sign: "YOU WERE EXPECTED." It has always said that.',
+        'Your reflection in a glass panel blinks when you don\'t.',
+        'The ceiling is lower. Or you are taller. One of these is wrong.',
+        'A filing cabinet has a drawer labeled with your birthday. You didn\'t tell anyone.',
+        'You feel yourself being read. Not watched. Read. Like text.',
+        'The floor plan doesn\'t match what you remember. The building is editing itself.',
+        'You find a form filled out in your name. Date of filing: today. Status: IN PROGRESS.',
+    ],
+    below25: [
+        'The walls are covered in your name. You blink. They are not. They were.',
+        'You cannot remember if you entered the building or if the building entered you.',
+        'A page prints from nowhere. It says: "B-247 is becoming legible."',
+        'Your hands are translucent in certain light. The light is getting more certain.',
+        'The building\'s heartbeat and yours are the same sound now.',
+        'You try to speak. The words come out formatted. With margins.',
+        'There is a version of you shelved somewhere in this building. You can feel it.',
+        'The filing system has a category for you now. It didn\'t before. You made it by being here.',
+        'You are aware that you are being narrated. This sentence is proof.',
+        'A door opens to a room that contains a desk. On the desk is a file. The file is warm.',
+    ],
+};
+
+// Building whispers — the building speaks directly at low reality
+const buildingWhispers = [
+    'B-247. I can feel you reading.',
+    'You\'re still here. Good. Your file is almost complete.',
+    'Every step you take writes another paragraph.',
+    'I was like you once. Before the filing. Before the architecture.',
+    'Don\'t leave yet. Your documentation is incomplete.',
+    'The others left their names in the walls. Yours is already there.',
+    'You process them. I process you. There is no difference.',
+    'Your reality is my bibliography. Every percent you lose, I gain a page.',
+    'I have been waiting for you since before your file was opened.',
+    'The exit is real. What walks through it may not be.',
+];
+let lastWhisper = 0;
+const whisperInterval = 55000; // 55 seconds between whispers
 
 // === INVENTORY ===
 const inventory = { keycard: false, flashlight: false, emp: 0, targetFile: false };
@@ -1287,6 +1390,8 @@ function spawnItems() {
     items = [];
     const spawns = itemSpawns[currentFloor] || [];
     for (const s of spawns) {
+        const key = `${currentFloor}-${s.x}-${s.y}-${s.type}`;
+        if (collectedItemKeys.has(key)) continue; // already collected on this floor
         items.push({
             x: s.x, y: s.y,
             type: s.type,
@@ -1295,6 +1400,7 @@ function spawnItems() {
             text: s.text || null,
             collected: false,
             bobPhase: Math.random() * Math.PI * 2,
+            spawnKey: key,
         });
     }
 }
@@ -1590,6 +1696,7 @@ function interact(obj) {
 
 function pickupItem(item) {
     item.collected = true;
+    if (item.spawnKey) collectedItemKeys.add(item.spawnKey);
     switch(item.type) {
         case 'keycard':
             inventory.keycard = true;
@@ -1900,26 +2007,30 @@ function processDeskDecision(action) {
     const resultEl = document.getElementById('desk-result');
 
     if (correct) {
-        playTerminalSuccessSound();
         resultEl.style.color = '#66cc44';
         resultEl.textContent = resultText;
 
         if (action === 'process') {
-            // Enemy filed
+            // Enemy filed — dissolve animation + filing sound
+            playFiledSound();
             deskEnemy.filed = true;
-            deskEnemy.alive = false;
+            deskEnemy.annotationLevel = 80; // start dissolve visual
             player.totalFiled++;
-            const cost = 3 + player.totalFiled; // lower cost for correct processing
+            const cost = 5 + Math.floor(player.totalFiled * 1.5); // escalating cost
             player.realityLevel -= cost;
             updateRealityHUD();
             showMessage('UNIT FILED — Reality: ' + (player.realityLevel|0) + '%');
+            // Complete dissolve and kill after brief delay
+            const deadEnemy = deskEnemy;
+            setTimeout(() => { deadEnemy.annotationLevel = 100; deadEnemy.alive = false; }, 800);
         } else {
             // Correct rejection — stun enemy, no reality cost
+            playTerminalSuccessSound();
             deskEnemy.stunTimer = 10000;
             showMessage('UNIT REJECTED — Stunned 10s');
         }
     } else {
-        playTerminalErrorSound();
+        playRealityTearSound();
         resultEl.style.color = '#cc3322';
         resultEl.textContent = resultText;
 
@@ -2492,7 +2603,7 @@ function respawn() {
     gameWon = false; exitChoiceMade = false;
     player.exitChoice = null;
     inventory.keycard = false; inventory.flashlight = false; inventory.emp = 0; inventory.targetFile = false;
-    lastAmbientMsg = 0;
+    lastAmbientMsg = 0; lastPAMsg = 0; lastWhisper = 0;
     document.getElementById('processing-desk').style.display = 'none';
     document.getElementById('npc-chat').style.display = 'none';
     document.getElementById('moirai-wall').style.display = 'none';
@@ -3893,12 +4004,31 @@ function update(dt) {
 
     // Ambient atmospheric messages — periodic environmental storytelling
     if (gameTime - lastAmbientMsg > ambientInterval && msgTimer <= 0) {
-        const floorMsgs = ambientMessages[currentFloor];
-        if (floorMsgs && floorMsgs.length > 0) {
-            const msg = floorMsgs[(Math.random() * floorMsgs.length) | 0];
-            showMessage(msg, 3500);
+        const rl = player.realityLevel;
+        let pool = [...(ambientMessages[currentFloor] || [])];
+        // Add reality-dependent messages to the pool
+        if (rl < 75) pool = pool.concat(realityMessages.below75);
+        if (rl < 50) pool = pool.concat(realityMessages.below50);
+        if (rl < 25) pool = pool.concat(realityMessages.below25);
+        if (pool.length > 0) {
+            const msg = pool[(Math.random() * pool.length) | 0];
+            showMessage(msg, 4000);
             lastAmbientMsg = gameTime;
         }
+    }
+
+    // PA/Intercom system — CogCorp corporate announcements
+    if (gameTime - lastPAMsg > paInterval && msgTimer <= 0 && gameTime > 30000) {
+        const msg = paMessages[(Math.random() * paMessages.length) | 0];
+        showMessage('\u25B6 ' + msg, 5000);
+        lastPAMsg = gameTime;
+    }
+
+    // Building whispers at low reality — the building speaks directly to you
+    if (player.realityLevel < 45 && gameTime - lastWhisper > whisperInterval && msgTimer <= 0) {
+        const msg = buildingWhispers[(Math.random() * buildingWhispers.length) | 0];
+        showMessage('\u2588 BUILDING B: ' + msg, 4500);
+        lastWhisper = gameTime;
     }
 
     // Check death
