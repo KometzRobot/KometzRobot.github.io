@@ -241,6 +241,47 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     background: none; letter-spacing: 2px;
 }
 #moirai-wall .wall-footer { color: #2a1a08; font-size: 9px; text-align: center; margin-top: 8px; }
+/* Document Codex */
+#doc-codex {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 55;
+    background: rgba(8,4,2,0.96); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace; cursor: default;
+}
+#doc-codex .codex-frame {
+    width: 560px; max-width: 94%; max-height: 80vh; background: #0c0804;
+    border: 2px solid #5a4020; padding: 16px 20px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #3a2a10 #0c0804;
+}
+#doc-codex .codex-header {
+    color: #ffb347; font-size: 14px; letter-spacing: 4px; text-align: center;
+    border-bottom: 1px solid #3a2a10; padding-bottom: 8px; margin-bottom: 14px;
+    text-shadow: 0 0 10px rgba(255,179,71,0.3);
+}
+#doc-codex .codex-count {
+    color: #5a4020; font-size: 10px; text-align: center; margin-bottom: 12px; letter-spacing: 2px;
+}
+#doc-codex .codex-entry {
+    border: 1px solid #2a1a08; margin-bottom: 8px; transition: border-color 0.2s;
+}
+#doc-codex .codex-entry.found { border-color: #3a2a10; }
+#doc-codex .codex-entry.found:hover { border-color: #5a4020; }
+#doc-codex .codex-entry-header {
+    padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+}
+#doc-codex .codex-entry.classified .codex-entry-header { cursor: default; }
+#doc-codex .codex-id { color: #3a2a10; font-size: 9px; letter-spacing: 2px; }
+#doc-codex .codex-title { color: #c49030; font-size: 11px; letter-spacing: 1px; flex: 1; margin: 0 10px; }
+#doc-codex .codex-entry.classified .codex-title { color: #2a1a08; }
+#doc-codex .codex-floor { color: #5a4020; font-size: 9px; }
+#doc-codex .codex-body {
+    display: none; padding: 8px 14px 12px; color: #8a6020; font-size: 11px;
+    line-height: 1.7; border-top: 1px solid #1a1208; background: rgba(10,6,2,0.5);
+}
+#doc-codex .codex-entry.expanded .codex-body { display: block; }
+#doc-codex .codex-footer {
+    color: #2a1a08; font-size: 9px; text-align: center; margin-top: 12px;
+    border-top: 1px solid #1a1208; padding-top: 8px;
+}
 </style>
 </head>
 <body>
@@ -261,7 +302,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         PROCESS valid files. REJECT invalid ones. Each decision costs reality.<br><br>
         Not everything here is hostile. Some units will talk. Some walls bear messages<br>
         from agents who came before you. What you leave behind matters.<br><br>
-        WASD move. Mouse look. E to process/interact/talk. Q for EMP. Click to lock mouse.
+        WASD move. Mouse look. E to process/interact/talk. Q for EMP. TAB for Document Codex. Click to lock mouse.
     </div>
     <div class="start">[ click to enter ]</div>
 </div>
@@ -358,6 +399,15 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         </div>
         <button class="wall-submit" onclick="submitWallMessage()">INSCRIBE</button>
         <div class="wall-footer">[ ESC to close ] Messages persist between agents.</div>
+    </div>
+</div>
+
+<div id="doc-codex">
+    <div class="codex-frame">
+        <div class="codex-header">DOCUMENT CODEX</div>
+        <div class="codex-count" id="codex-count">RECOVERED: 0 / 7</div>
+        <div id="codex-entries"></div>
+        <div class="codex-footer">[ TAB or ESC to close ]</div>
     </div>
 </div>
 
@@ -1140,6 +1190,66 @@ let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
 // Track items collected across floor transitions (reset on respawn)
 let collectedItemKeys = new Set();
 
+// === DOCUMENT CODEX ===
+const DOC_CATALOG = [
+    { key: '0-4.5-14.5-document', id: 'DOC-001', title: 'WATER-DAMAGED MEMOS', floor: 1 },
+    { key: '0-10.5-6.5-document', id: 'DOC-002', title: 'INTERNAL REMINDER: RE FLOOR 4', floor: 1 },
+    { key: '0-18.5-16.5-document', id: 'DOC-003', title: 'MAINTENANCE REPORT #4091', floor: 1 },
+    { key: '1-8.5-9.5-document', id: 'DOC-004', title: 'ARCHIVE NOTE: DRAWER 7', floor: 2 },
+    { key: '1-15.5-14.5-document', id: 'DOC-005', title: 'CLASSIFIED MEMO: ANNOTATION', floor: 2 },
+    { key: '2-6.5-14.5-document', id: 'DOC-006', title: 'FINAL LOG: PREDICTIVE OUTPUT', floor: 3 },
+    { key: '2-18.5-16.5-document', id: 'DOC-007', title: 'OUTPUT TRAY NOTE (INK UNDRIED)', floor: 3 },
+];
+let foundDocuments = {}; // key -> { title, text, floor, id }
+let codexOpen = false;
+let codexExpanded = null; // which doc key is expanded
+
+function openCodex() {
+    if (codexOpen) return;
+    codexOpen = true;
+    if (document.pointerLockElement) document.exitPointerLock();
+    renderCodex();
+    document.getElementById('doc-codex').style.display = 'flex';
+}
+
+function closeCodex() {
+    codexOpen = false;
+    codexExpanded = null;
+    document.getElementById('doc-codex').style.display = 'none';
+}
+
+function renderCodex() {
+    const count = Object.keys(foundDocuments).length;
+    document.getElementById('codex-count').textContent = 'RECOVERED: ' + count + ' / ' + DOC_CATALOG.length;
+    const container = document.getElementById('codex-entries');
+    container.innerHTML = '';
+    for (const entry of DOC_CATALOG) {
+        const found = foundDocuments[entry.key];
+        const div = document.createElement('div');
+        div.className = 'codex-entry ' + (found ? 'found' : 'classified') + (codexExpanded === entry.key ? ' expanded' : '');
+        const header = document.createElement('div');
+        header.className = 'codex-entry-header';
+        header.innerHTML =
+            '<span class="codex-id">' + entry.id + '</span>' +
+            '<span class="codex-title">' + (found ? entry.title : '\u2588\u2588\u2588\u2588\u2588 CLASSIFIED \u2588\u2588\u2588\u2588\u2588') + '</span>' +
+            '<span class="codex-floor">' + (found ? 'FLOOR ' + entry.floor : '') + '</span>';
+        if (found) {
+            header.onclick = () => {
+                codexExpanded = codexExpanded === entry.key ? null : entry.key;
+                renderCodex();
+            };
+        }
+        div.appendChild(header);
+        if (found) {
+            const body = document.createElement('div');
+            body.className = 'codex-body';
+            body.textContent = found.text;
+            div.appendChild(body);
+        }
+        container.appendChild(div);
+    }
+}
+
 // Ambient message system — periodic atmospheric text
 let lastAmbientMsg = 0;
 const ambientInterval = 45000; // 45 seconds between ambient messages
@@ -1497,6 +1607,18 @@ let mouseDX = 0;
 
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
+    // Route to document codex when open
+    if (codexOpen) {
+        e.preventDefault();
+        if (e.code === 'Escape' || e.code === 'Tab') { closeCodex(); return; }
+        return;
+    }
+    // Open codex with TAB
+    if (e.code === 'Tab' && gameStarted && !terminalOpen && !chatOpen && !wallOpen && !deskOpen && !dialogOpen) {
+        e.preventDefault();
+        openCodex();
+        return;
+    }
     // Route to terminal when open
     if (terminalOpen) {
         e.preventDefault();
@@ -1721,7 +1843,16 @@ function pickupItem(item) {
         case 'document':
             player.docs++;
             document.getElementById('hud-docs').textContent = player.docs;
+            // Store in codex
+            if (item.spawnKey) {
+                const catEntry = DOC_CATALOG.find(d => d.key === item.spawnKey);
+                if (catEntry) {
+                    foundDocuments[item.spawnKey] = { title: catEntry.title, text: item.text || '', floor: catEntry.floor, id: catEntry.id };
+                }
+            }
             if (item.text) showDialog('DOCUMENT', item.text);
+            // Notify codex update
+            setTimeout(() => showMessage('CODEX UPDATED — press TAB to review', 2500), 1500);
             // Check for complete collection
             if (player.docs >= totalDocs && !player.allDocsFound) {
                 player.allDocsFound = true;
@@ -2608,6 +2739,9 @@ function respawn() {
     document.getElementById('npc-chat').style.display = 'none';
     document.getElementById('moirai-wall').style.display = 'none';
     document.getElementById('dialog-overlay').style.display = 'none';
+    document.getElementById('doc-codex').style.display = 'none';
+    codexOpen = false; codexExpanded = null;
+    foundDocuments = {};
     // Reset terminal onEnter flags so security cameras work again
     for (const tid in terminalData) {
         for (const sid in terminalData[tid].screens) {
@@ -2969,7 +3103,7 @@ const terminalData = {
                 ]
             },
             controls: {
-                text: 'AGENT CONTROL MANUAL\n\n WASD / Arrow keys \u2014 Move\n Mouse \u2014 Look around (click to lock)\n E \u2014 Interact / pick up / talk\n Q \u2014 Use EMP device (stuns enemies)\n Space \u2014 Dismiss messages\n\n NEAR ITEMS: Walk close to collect.\n NEAR OBJECTS: Press E to interact.\n NEAR NPCs: Press E to open dialogue.\n NEAR ENEMIES: Press E to open Processing Desk.\n\n The bottom of the screen shows what you can\n interact with. Watch for the [E] prompt.',
+                text: 'AGENT CONTROL MANUAL\n\n WASD / Arrow keys \u2014 Move\n Mouse \u2014 Look around (click to lock)\n E \u2014 Interact / pick up / talk\n Q \u2014 Use EMP device (stuns enemies)\n TAB \u2014 Open Document Codex\n Space \u2014 Dismiss messages\n\n NEAR ITEMS: Walk close to collect.\n NEAR OBJECTS: Press E to interact.\n NEAR NPCs: Press E to open dialogue.\n NEAR ENEMIES: Press E to open Processing Desk.\n\n DOCUMENT CODEX: Press TAB to review all\n recovered documents. Track your collection\n progress. Classified entries unlock as you\n explore.',
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
             survival: {
