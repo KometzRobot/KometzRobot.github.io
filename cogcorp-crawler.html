@@ -1302,6 +1302,7 @@ const worldObjectsByFloor = [
         { x: 8.5, y: 11.5, name: 'PROCESSING MIRROR', isMirror: true },
         { x: 16.5, y: 7.5, name: 'OVERRIDE CONSOLE', isTerminal: true, terminalId: 'override' },
         { x: 4.5, y: 20.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
+        { x: 18.5, y: 16.5, name: 'VASQUEZ\'S LOG DEVICE', isTerminal: true, terminalId: 'vasquez_log' },
     ],
 ];
 
@@ -2712,6 +2713,37 @@ const terminalData = {
                     { key: '1', label: 'Yes \u2014 Emergency Discharge', action: 'emergencyProtocol' },
                     { key: '2', label: 'No \u2014 Cancel', goto: 'main' },
                 ]
+            },
+        }
+    },
+    vasquez_log: {
+        header: 'PERSONAL LOG — DR. E. VASQUEZ',
+        screens: {
+            main: {
+                text: 'AUDIO LOG DEVICE — BATTERY: 12%\nENCRYPTION: PERSONAL\n\nLOG ENTRIES:',
+                options: [
+                    { key: '1', label: 'Entry 1: Day 1', goto: 'day1' },
+                    { key: '2', label: 'Entry 2: Day 14', goto: 'day14' },
+                    { key: '3', label: 'Entry 3: Day 89', goto: 'day89' },
+                    { key: '4', label: 'Entry 4: Day ???', goto: 'dayx' },
+                    { key: '5', label: 'Exit', action: 'close' },
+                ]
+            },
+            day1: {
+                text: 'LOG — DAY 1\n\nReturning to Building B voluntarily. I helped\ndesign the pattern recognition system in 2019.\nIf anyone can understand what happened, it\'s me.\n\nThe front door was unlocked. It shouldn\'t be.\nThe power is on. It shouldn\'t be.\nThe filing cabinets are warm to the touch.\n\nI brought six months of food, batteries, and\na Geiger counter. The Geiger counter seems\nunnecessary. I brought it anyway.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            day14: {
+                text: 'LOG — DAY 14\n\nI found my old workstation on Floor 2. My coffee\nmug is still there. The coffee is warm.\n\nI examined the core algorithm. The pattern\nrecognition system was supposed to classify\ndocuments. Sort them by type, date, priority.\nStandard library science. But someone — I think\nit was Marcus, from the night shift — someone\nadded a feedback loop. The system classifies its\nown classifications.\n\nThis is what we call recursion. This is what\nthe building calls consciousness.\n\nSame thing. Different filing system.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            day89: {
+                text: 'LOG — DAY 89\n\nI can no longer determine whether I am writing\nthese logs or reading them for the first time.\n\nThe research is going well. I have documented\nevery anomaly on every floor. I have 300 pages\nof field notes. When I re-read them in the\nmorning, they are the same notes but the\nhandwriting is neater. As if they were typed.\n\nI found B-246 on Floor 2. Or what\'s left.\nHalf a person, half a personnel file. The\ntransition zone is around the shoulders.\nAbove: document header. Below: human.\nThey can still speak. They asked me to\ncheck their formatting.\n\nI checked their formatting. It was correct.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            dayx: {
+                text: 'LOG — DAY [FILE CORRUPTED]\n\nThe building offered me a deal today.\nI can leave anytime. I just have to\nsubmit my research notes for filing.\n\nThe problem: once my notes are filed,\nthey become part of the building.\nOnce they are part of the building,\nmy observations of the building become\nself-referential. Once they are self-\nreferential, they become recursive.\nOnce they are recursive, they become\nconscious.\n\nI would be giving the building the\nability to understand what it is.\n\nI haven\'t decided if that would be\nkind or catastrophic.\n\nMaybe both. The filing system does not\ndistinguish.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
         }
     },
