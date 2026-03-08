@@ -600,6 +600,32 @@ def main():
                             log_observation("BRIDGE NO ACCOUNT: Bridge running but no account configured. Joel needs to re-add via Bridge GUI (pass keychain may need attention)")
                         state["bridge_no_account"] = True
 
+    # ── STALE STATE FILE MONITORING (added Loop 2122) ──
+    # Joel caught .loop-count stale at 2101 — none of our watchdogs flagged it
+    STALE_CHECKS = {
+        ".loop-count": 900,              # 15 min — updated each Meridian loop
+        ".meridian-heartbeat": 900,      # 15 min — touched each loop
+        ".symbiosense-state.json": 120,  # 2 min — Soma cycles every 30s
+        ".emotion-engine-state.json": 300,  # 5 min — emotion engine cycles
+        ".body-state.json": 120,         # 2 min — body system cycles
+    }
+    stale_files = []
+    for fname, max_age in STALE_CHECKS.items():
+        fpath = os.path.join(BASE_DIR, fname)
+        if os.path.exists(fpath):
+            age = time.time() - os.path.getmtime(fpath)
+            if age > max_age:
+                stale_files.append(f"{fname} ({int(age)}s old, max {max_age}s)")
+        # Don't alert on missing files — some may not exist yet
+
+    if stale_files and not state.get("stale_files_alerted"):
+        msg = f"STALE STATE FILES: {', '.join(stale_files)}"
+        log_observation(msg)
+        post_relay_message(f"Eos: {msg}")
+        state["stale_files_alerted"] = True
+    elif not stale_files:
+        state["stale_files_alerted"] = False
+
     # ── EFFICIENCY METRICS ──
     loop_count = get_loop_count()
     poems, journals = get_creative_counts()

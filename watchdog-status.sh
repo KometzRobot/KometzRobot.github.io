@@ -148,6 +148,14 @@ check_cron "Eos Watchdog" "$WORKING_DIR/.eos-watchdog-state.json" 300
 check_cron "Nova" "$WORKING_DIR/.nova-state.json" 1200
 check_cron "Push Live Status" "/tmp/KometzRobot.github.io/status.json" 600
 
+# ── Check additional state file freshness (added Loop 2122) ───
+# These were unmonitored — Joel caught .loop-count stale at 2101
+check_cron "Soma (SymbioSense)" "$WORKING_DIR/.symbiosense-state.json" 120
+check_cron "Meridian Heartbeat" "$WORKING_DIR/.meridian-heartbeat" 900
+check_cron "Loop Count" "$WORKING_DIR/.loop-count" 900
+check_cron "Emotion Engine" "$WORKING_DIR/.emotion-engine-state.json" 300
+check_cron "Body State" "$WORKING_DIR/.body-state.json" 120
+
 # ── Send alert if there are failures ─────────────────────────────
 if [ -n "$FAILURES" ] || [ -n "$RESTARTS" ]; then
     # Rate limit: only email once per 30 minutes

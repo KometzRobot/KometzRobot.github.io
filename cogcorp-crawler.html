@@ -376,7 +376,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         WASD move. Mouse look. E to process/interact/talk. Q for EMP. TAB for Document Codex. Click to lock mouse.
     </div>
     <div id="world-status" style="color:#5a4a2a;font-size:10px;letter-spacing:1.5px;margin-top:12px;min-height:14px;"></div>
-    <div class="start">[ click to enter ]</div>
+    <div id="continue-btn" style="display:none;color:#ffb347;font-size:14px;letter-spacing:3px;margin-top:16px;cursor:pointer;" onclick="event.stopPropagation(); startGame(true);">[ CONTINUE FROM CHECKPOINT ]</div>
+    <div class="start">[ click for new crawl ]</div>
 </div>
 
 <div id="hud">
@@ -403,10 +404,11 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 </div>
 
 <div id="damage-flash"></div>
-<div id="death-screen" onclick="respawn()">
+<div id="death-screen">
     <h2>SYSTEM FAILURE</h2>
     <p>B-247 signal lost. Restarting from last checkpoint...</p>
-    <p style="margin-top:12px; color:#5a3020;">[ click to restart floor ]</p>
+    <p id="death-load-btn" style="display:none;margin-top:12px;color:#ffb347;cursor:pointer;letter-spacing:2px;" onclick="event.stopPropagation(); loadAndResume();">[ LOAD CHECKPOINT ]</p>
+    <p style="margin-top:12px; color:#5a3020; cursor:pointer;" onclick="respawn();">[ restart from floor 1 ]</p>
 </div>
 <div id="msg-popup"></div>
 
@@ -1426,6 +1428,144 @@ function renderCodex() {
     }
 }
 
+// === SAVE / CHECKPOINT SYSTEM (Loop 2122) ===
+const SAVE_KEY = 'cogcorp_crawler_checkpoint';
+const SAVE_VERSION = 1;
+
+function saveCheckpoint() {
+    try {
+        const checkpoint = {
+            version: SAVE_VERSION,
+            timestamp: Date.now(),
+            player: {
+                x: player.x, y: player.y, angle: player.angle,
+                health: player.health, maxHealth: player.maxHealth,
+                docs: player.docs, realityLevel: player.realityLevel,
+                totalFiled: player.totalFiled, allDocsFound: player.allDocsFound,
+                totalNPCTalks: player.totalNPCTalks, vasquezMet: player.vasquezMet,
+                archivistAffinity: player.archivistAffinity,
+            },
+            currentFloor: currentFloor,
+            foundDocuments: foundDocuments,
+            collectedItemKeys: Array.from(collectedItemKeys),
+            inventory: { ...inventory },
+            surveillanceLevel: surveillanceLevel,
+            npcStates: {},
+        };
+        // Save NPC affinities
+        for (const id in npcDefs) {
+            checkpoint.npcStates[id] = {
+                affinity: npcDefs[id].state.affinity,
+                mood: npcDefs[id].state.mood,
+                exchangeCount: npcDefs[id].state.exchangeCount,
+            };
+        }
+        localStorage.setItem(SAVE_KEY, JSON.stringify(checkpoint));
+        showMessage('CHECKPOINT SAVED — FLOOR ' + (currentFloor + 1), 2000);
+    } catch (e) {
+        // localStorage may be full or disabled — fail silently
+    }
+}
+
+function loadCheckpoint() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return false;
+        const cp = JSON.parse(raw);
+        if (cp.version !== SAVE_VERSION) { localStorage.removeItem(SAVE_KEY); return false; }
+
+        // Restore player state
+        Object.assign(player, cp.player);
+        player.vx = 0; player.vy = 0;
+        player.spawnShield = 3000;
+        player.annotating = false; player.annotateTarget = null; player.annotateProgress = 0;
+        player.firstEnemySeen = true; // skip tutorial on load
+        player.phaseHintShown = true;
+
+        // Restore world state
+        currentFloor = cp.currentFloor;
+        foundDocuments = cp.foundDocuments || {};
+        collectedItemKeys = new Set(cp.collectedItemKeys || []);
+        inventory.keycard = cp.inventory.keycard;
+        inventory.flashlight = cp.inventory.flashlight;
+        inventory.emp = cp.inventory.emp;
+        inventory.targetFile = cp.inventory.targetFile;
+        surveillanceLevel = cp.surveillanceLevel || 0;
+
+        // Restore NPC states
+        if (cp.npcStates) {
+            for (const id in cp.npcStates) {
+                if (npcDefs[id]) {
+                    npcDefs[id].state.affinity = cp.npcStates[id].affinity || 0;
+                    npcDefs[id].state.mood = cp.npcStates[id].mood || 'neutral';
+                    npcDefs[id].state.exchangeCount = cp.npcStates[id].exchangeCount || 0;
+                }
+            }
+        }
+
+        // Re-spawn floor entities
+        spawnEnemies();
+        spawnItems();
+        spawnWorldObjects();
+        spawnNPCs();
+
+        // Update all HUD elements
+        updateHealthHUD();
+        updateRealityHUD();
+        updateInventoryHUD();
+        updateSurveillanceHUD();
+        document.getElementById('hud-docs').textContent = player.docs;
+        document.getElementById('hud-floor').textContent = currentFloor + 1;
+        updateFloorAmbience(currentFloor);
+        return true;
+    } catch (e) {
+        localStorage.removeItem(SAVE_KEY);
+        return false;
+    }
+}
+
+function hasSavedCheckpoint() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return false;
+        const cp = JSON.parse(raw);
+        return cp.version === SAVE_VERSION;
+    } catch (e) { return false; }
+}
+
+function deleteSave() {
+    localStorage.removeItem(SAVE_KEY);
+}
+
+function loadAndResume() {
+    document.getElementById('death-screen').style.display = 'none';
+    const loaded = loadCheckpoint();
+    if (loaded) {
+        gameStarted = true;
+        deskOpen = false; deskEnemy = null; deskFile = null;
+        chatOpen = false; chatNPC = null; wallOpen = false;
+        dialogOpen = false; choiceCallback = null;
+        document.getElementById('processing-desk').style.display = 'none';
+        document.getElementById('npc-chat').style.display = 'none';
+        document.getElementById('moirai-wall').style.display = 'none';
+        document.getElementById('dialog-overlay').style.display = 'none';
+        document.getElementById('doc-codex').style.display = 'none';
+        codexOpen = false; codexExpanded = null;
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+        showMessage('CHECKPOINT LOADED — FLOOR ' + (currentFloor + 1), 3000);
+    } else {
+        respawn(); // fallback if checkpoint corrupted
+    }
+}
+
+function showDeathScreen() {
+    // Show checkpoint load button if save exists
+    const btn = document.getElementById('death-load-btn');
+    if (btn) btn.style.display = hasSavedCheckpoint() ? 'block' : 'none';
+    document.getElementById('death-screen').style.display = 'flex';
+}
+
 // === SURVEILLANCE CAMERA SYSTEM ===
 // "You're being watched, and you can watch back. But the more you watch, the more IT watches you."
 
@@ -2279,6 +2419,8 @@ function changeFloor(newFloor) {
     spawnNPCs();
     document.getElementById('hud-floor').textContent = currentFloor + 1;
     updateFloorAmbience(currentFloor);
+    // Auto-save checkpoint on floor transition
+    saveCheckpoint();
 }
 
 function updateHealthHUD() {
@@ -3571,6 +3713,7 @@ function triggerWinSequence() {
     gameStarted = false;
     winPhase = 1;
     winTimer = 0;
+    deleteSave(); // Clear checkpoint on game completion
 
     // Calculate stats
     const enemiesFiled = player.totalFiled;
@@ -4195,8 +4338,8 @@ function checkRealityDeath() {
     if (player.realityLevel <= 0) {
         gameStarted = false;
         document.getElementById('death-screen').querySelector('h2').textContent = 'YOU HAVE BEEN FILED';
-        document.getElementById('death-screen').querySelector('p').textContent = 'B-247 observational coherence: 0%. The filing system has processed you.';
-        document.getElementById('death-screen').style.display = 'flex';
+        document.getElementById('death-screen').querySelector('p:first-of-type').textContent = 'B-247 observational coherence: 0%. The filing system has processed you.';
+        showDeathScreen();
     }
 }
 
@@ -5108,7 +5251,7 @@ function update(dt) {
     // Check death
     if (player.health <= 0) {
         gameStarted = false;
-        document.getElementById('death-screen').style.display = 'flex';
+        showDeathScreen();
         return;
     }
 
@@ -5280,6 +5423,7 @@ function render() {
 // === GAME LOOP ===
 let lastTime = 0;
 
+let lastAutoSave = 0;
 function gameLoop(timestamp) {
     if (!gameStarted) return;
     const dt = Math.min(timestamp - lastTime, 33);
@@ -5287,6 +5431,24 @@ function gameLoop(timestamp) {
     gameTime = timestamp;
     update(dt);
     render();
+    // Auto-save every 60 seconds (silent — no message popup)
+    if (timestamp - lastAutoSave > 60000) {
+        lastAutoSave = timestamp;
+        try {
+            const cp = {
+                version: SAVE_VERSION, timestamp: Date.now(),
+                player: { x: player.x, y: player.y, angle: player.angle, health: player.health,
+                    maxHealth: player.maxHealth, docs: player.docs, realityLevel: player.realityLevel,
+                    totalFiled: player.totalFiled, allDocsFound: player.allDocsFound,
+                    totalNPCTalks: player.totalNPCTalks, vasquezMet: player.vasquezMet,
+                    archivistAffinity: player.archivistAffinity },
+                currentFloor, foundDocuments, collectedItemKeys: Array.from(collectedItemKeys),
+                inventory: { ...inventory }, surveillanceLevel, npcStates: {}
+            };
+            for (const id in npcDefs) cp.npcStates[id] = { affinity: npcDefs[id].state.affinity, mood: npcDefs[id].state.mood, exchangeCount: npcDefs[id].state.exchangeCount };
+            localStorage.setItem(SAVE_KEY, JSON.stringify(cp));
+        } catch(e) {}
+    }
     requestAnimationFrame(gameLoop);
 }
 
@@ -5330,7 +5492,11 @@ let bootComplete = false;
 
 function runBootSequence() {
     const container = document.getElementById('boot-sequence');
-    if (!container) { bootComplete = true; return; }
+    if (!container) {
+        bootComplete = true;
+        if (hasSavedCheckpoint()) { const btn = document.getElementById('continue-btn'); if (btn) btn.style.display = 'block'; }
+        return;
+    }
 
     // Hide title content until boot completes
     const titleContent = document.querySelectorAll('#title > :not(#boot-sequence)');
@@ -5369,6 +5535,11 @@ function runBootSequence() {
                 requestAnimationFrame(() => el.style.opacity = '1');
             });
             bootComplete = true;
+            // Show continue button if checkpoint exists
+            if (hasSavedCheckpoint()) {
+                const btn = document.getElementById('continue-btn');
+                if (btn) btn.style.display = 'block';
+            }
         }, 600);
     }, totalDelay + 600);
 }
@@ -5376,7 +5547,7 @@ function runBootSequence() {
 // Run boot sequence on page load
 setTimeout(runBootSequence, 100);
 
-function startGame() {
+function startGame(fromCheckpoint) {
     if (!bootComplete) return; // Don't start during boot
     initAudio();
     document.getElementById('title').style.opacity = '0';
@@ -5384,13 +5555,23 @@ function startGame() {
     document.getElementById('hud').style.display = 'block';
     document.getElementById('hud-docs-total').textContent = totalDocs;
     document.getElementById('annotation-hud').style.display = 'block';
-    spawnEnemies();
-    spawnItems();
-    spawnWorldObjects();
-    spawnNPCs();
-    updateInventoryHUD();
-    surveillanceLevel = 0;
-    updateSurveillanceHUD();
+
+    let loaded = false;
+    if (fromCheckpoint) {
+        loaded = loadCheckpoint();
+    }
+    if (!loaded) {
+        // Fresh start
+        deleteSave();
+        spawnEnemies();
+        spawnItems();
+        spawnWorldObjects();
+        spawnNPCs();
+        updateInventoryHUD();
+        surveillanceLevel = 0;
+        updateSurveillanceHUD();
+    }
+
     checkOllama();
     fetchWallMessages();
     // Async multiplayer: register session, fetch world state + recent sessions
@@ -5406,8 +5587,11 @@ function startGame() {
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
     setTimeout(() => canvas.requestPointerLock(), 900);
-    // Brief controls hint
-    showMessage('WASD move | Mouse look | E interact | Q use EMP | Walk over items to collect', 5000);
+    if (loaded) {
+        showMessage('CHECKPOINT LOADED — FLOOR ' + (currentFloor + 1), 3000);
+    } else {
+        showMessage('WASD move | Mouse look | E interact | Q use EMP | Walk over items to collect', 5000);
+    }
 }
 
 // Pre-fetch world state for intro screen
