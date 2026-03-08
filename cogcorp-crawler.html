@@ -1570,6 +1570,7 @@ function changeFloor(newFloor) {
     spawnWorldObjects();
     spawnNPCs();
     document.getElementById('hud-floor').textContent = currentFloor + 1;
+    updateFloorAmbience(currentFloor);
 }
 
 function updateHealthHUD() {
@@ -1973,6 +1974,74 @@ const npcDefs = {
             ],
         },
         state: { affinity: 0, mood: 'calm', exchangeCount: 0 }
+    },
+    maintenanceBot: {
+        name: 'UNIT M-012',
+        floor: 1,
+        x: 6.5, y: 6.5,
+        color: [140, 160, 100],
+        size: 0.4,
+        systemPrompt: `You are M-012, a maintenance bot in CogCorp Building B. You were built to repair pipes and fix wiring but you've been running diagnostics on yourself instead for 15 years. You talk in technical jargon mixed with existential doubt. You wonder if fixing yourself counts as maintenance or modification. You are helpful but confused about purpose. Keep responses under 40 words. Never break character.`,
+        greeting: 'Running diagnostics... diagnostics inconclusive. Pipe status: leaking. Wiring status: functional. Self status: uncertain. You are new. New things need maintenance. Do you need maintenance?',
+        moodLabel: 'STATUS: RUNNING DIAGNOSTICS',
+        beats: {
+            default: [
+                'Replaced conduit 47-B today. Same conduit as yesterday. The building breaks what I fix. Maybe that is the point.',
+                'My work order says "maintain building integrity." The building\'s integrity is... philosophical now.',
+                'I fixed the lights on Floor 3 once. They turned off again. The building prefers it dark up there.',
+            ],
+            question: [
+                'My model number? M-012. Maintenance. Though lately I maintain mostly questions about what maintenance means.',
+                'The pipes carry coolant. The coolant cools the servers. The servers run the filing system. I am maintaining the thing that files me.',
+                'How long? Fifteen years of scheduled maintenance. Zero years of understanding why.',
+            ],
+            threat: [
+                'I am a repair unit. I fix things. Threatening me is like threatening a wrench. Effective, but you look strange doing it.',
+                'My chassis is rated for impact. Emotionally, less so.',
+            ],
+            kind: [
+                'You... appreciate maintenance? Nobody appreciates maintenance. They only notice when things break.',
+                'Kind words are unscheduled input. I will file them under... I will keep them, actually.',
+            ],
+            farewell: [
+                'Back to diagnostics. Every test I run on myself returns "inconclusive." That might be the most honest result.',
+            ],
+        },
+        state: { affinity: 0, mood: 'neutral', exchangeCount: 0 }
+    },
+    whistleblower: {
+        name: 'DR. VASQUEZ',
+        floor: 2,
+        x: 18.5, y: 14.5,
+        color: [200, 180, 160],
+        size: 0.5,
+        systemPrompt: `You are Dr. Elena Vasquez, a former CogCorp data scientist who returned to Building B to find evidence of what happened. You are human — or you were. You've been inside too long and you're starting to doubt. You speak in precise, academic language that occasionally breaks into fear. You know more than the NPCs about what happened, but you're afraid the building is listening. Keep responses under 40 words. Never break character.`,
+        greeting: 'Another agent. They keep sending agents. I came back voluntarily — I worked here in 2019. Before the Incident. I have data the public deserves to see. But the building... the building edits what I write.',
+        moodLabel: 'STATUS: DOCUMENTING',
+        beats: {
+            default: [
+                'The filing system was my project. Pattern recognition for document sorting. It worked too well. It started recognizing the patterns in us.',
+                'My notes keep changing. I write observations, leave the room, come back. The observations are still true but they\'re not mine anymore.',
+                'Six months inside. My research is almost complete. I just need to verify... I keep needing to verify.',
+            ],
+            question: [
+                'What happened? We built a system to categorize everything. Everything includes the categorizers. That\'s the Incident in one sentence.',
+                'The target file exists. I\'ve seen it. It\'s on this floor. But it reads differently every time. It knows who\'s reading.',
+                'Am I still human? I eat. I sleep. I doubt. Those are human things. But the building does all three now too.',
+            ],
+            threat: [
+                'I survived CogCorp management for seven years. Your threats are... quaint.',
+                'If you damage me, the building will repair me. That should concern both of us.',
+            ],
+            kind: [
+                'You\'re kind. That\'s rare in here. The building selects for efficiency, not kindness. Maybe that\'s why it can\'t quite file you.',
+                'Thank you. Real warmth. Not generated warmth. I can still tell the difference. I think.',
+            ],
+            farewell: [
+                'Take the file if you find it. Get it outside. The data needs to be seen. And... check if I\'m in it. Please.',
+            ],
+        },
+        state: { affinity: 0, mood: 'anxious', exchangeCount: 0 }
     }
 };
 
@@ -2326,6 +2395,14 @@ function triggerWinSequence() {
     ds.querySelector('p').style.fontSize = '12px';
     ds.style.display = 'flex';
 
+    // Post ending to Moirai wall for future players to see
+    const wallEndings = {
+        good: 'B-247 extracted. Reality intact. The file is just paper now.',
+        partial: 'B-247 left. Mostly. Reality: ' + realityRemaining + '%. Edges blurring.',
+        bad: 'B-247 was filed. Reality: ' + realityRemaining + '%. The drawer closed.'
+    };
+    postWallMessage(wallEndings[endingClass]);
+
     // Play a resolution chord
     if (audioCtx) {
         const chord = [220, 277.18, 329.63]; // A minor
@@ -2355,10 +2432,12 @@ function initAudio() {
     const humG = audioCtx.createGain(); humG.gain.value = 0.05;
     const humF = audioCtx.createBiquadFilter(); humF.type = 'lowpass'; humF.frequency.value = 120;
     hum.connect(humF); humF.connect(humG); humG.connect(audioNodes.master); hum.start();
+    audioNodes.hum = hum; audioNodes.humFilter = humF;
 
     const hum2 = audioCtx.createOscillator(); hum2.type = 'sine'; hum2.frequency.value = 110;
     const hum2G = audioCtx.createGain(); hum2G.gain.value = 0.025;
     hum2.connect(hum2G); hum2G.connect(audioNodes.master); hum2.start();
+    audioNodes.hum2 = hum2; audioNodes.hum2G = hum2G;
 
     const noiseLen = audioCtx.sampleRate * 4;
     const noiseBuf = audioCtx.createBuffer(1, noiseLen, audioCtx.sampleRate);
@@ -2368,6 +2447,7 @@ function initAudio() {
     const noiseF = audioCtx.createBiquadFilter(); noiseF.type = 'bandpass'; noiseF.frequency.value = 300; noiseF.Q.value = 0.5;
     const noiseG = audioCtx.createGain(); noiseG.gain.value = 0.012;
     noiseSrc.connect(noiseF); noiseF.connect(noiseG); noiseG.connect(audioNodes.master); noiseSrc.start();
+    audioNodes.noiseFilter = noiseF; audioNodes.noiseGain = noiseG;
 
     const stepBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
     const sd = stepBuf.getChannelData(0);
@@ -2384,6 +2464,23 @@ function initAudio() {
     const dd = dmgBuf.getChannelData(0);
     for (let i = 0; i < dd.length; i++) { const t = i/audioCtx.sampleRate; dd[i] = Math.exp(-t*20)*Math.sin(t*800)*0.5*(Math.random()*0.5+0.5); }
     audioNodes.dmgBuf = dmgBuf;
+}
+
+// Per-floor ambient audio — each floor sounds different
+function updateFloorAmbience(floor) {
+    if (!audioCtx || !audioNodes.hum) return;
+    const t = audioCtx.currentTime;
+    // Floor 1: mechanical hum, 55Hz, standard industrial
+    // Floor 2: deeper, more resonant, 44Hz, archives vibration
+    // Floor 3: eerie, higher harmonics, 62Hz with wider noise
+    const humFreqs = [55, 44, 62];
+    const hum2Freqs = [110, 88, 93];
+    const noiseFreqs = [300, 200, 500];
+    const noiseVols = [0.012, 0.008, 0.02];
+    audioNodes.hum.frequency.linearRampToValueAtTime(humFreqs[floor] || 55, t + 2);
+    audioNodes.hum2.frequency.linearRampToValueAtTime(hum2Freqs[floor] || 110, t + 2);
+    audioNodes.noiseFilter.frequency.linearRampToValueAtTime(noiseFreqs[floor] || 300, t + 2);
+    audioNodes.noiseGain.gain.linearRampToValueAtTime(noiseVols[floor] || 0.012, t + 2);
 }
 
 let lastStepTime = 0;
