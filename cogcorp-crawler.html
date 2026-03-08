@@ -1741,11 +1741,8 @@ const enemyDefs = {
 
 // Enemies per floor
 const enemySpawns = [
-    // Floor 1: 2 enemies — gentle introduction, far from spawn (21.5, 20.5)
-    [
-        { type: 'drone', x: 10, y: 4, patrolX1: 6, patrolX2: 14, patrolAxis: 'x' },
-        { type: 'drone', x: 4, y: 10, patrolX1: 4, patrolX2: 12, patrolAxis: 'y' },
-    ],
+    // Floor 1: SAFE — no enemies. Tutorial zone to explore, find items, talk to NPCs.
+    [],
     // Floor 2: more enemies
     [
         { type: 'drone', x: 6, y: 3, patrolX1: 3, patrolX2: 10, patrolAxis: 'x' },
@@ -4937,7 +4934,7 @@ function update(dt) {
     if (keys['KeyA']) { dx += sinA*moveSpeed; dy -= cosA*moveSpeed; moving = true; }
     if (keys['KeyD']) { dx -= sinA*moveSpeed; dy += cosA*moveSpeed; moving = true; }
 
-    const margin = 0.2;
+    const margin = 0.15;
 
     // Collision with locked door handling
     const checkX = (player.x + dx + margin * Math.sign(dx))|0;
@@ -5100,16 +5097,13 @@ function update(dt) {
     for (const item of items) {
         if (item.collected) continue;
         const dist = Math.sqrt((player.x-item.x)**2+(player.y-item.y)**2);
-        if (dist < 1.5) { nearItem = item; }
+        // Auto-pickup items when walking over them
+        if (dist < 1.2) { pickupItem(item); }
     }
 
     // Update HUD
     const interactEl = document.getElementById('hud-interact');
-    if (nearItem && !nearItem.collected) {
-        interactEl.style.display = 'inline';
-        interactEl.style.color = '#448888';
-        interactEl.textContent = '[E] ' + nearItem.label;
-    } else if (nearObject) {
+    if (nearObject) {
         interactEl.style.display = 'inline';
         interactEl.style.color = '#448888';
         interactEl.textContent = '[E] ' + nearObject.name;
@@ -5366,7 +5360,7 @@ function startGame() {
     requestAnimationFrame(gameLoop);
     setTimeout(() => canvas.requestPointerLock(), 900);
     // Brief controls hint
-    showMessage('WASD to move. Mouse to look. E to interact. Find the documents.', 4000);
+    showMessage('WASD move | Mouse look | E interact | Q use EMP | Walk over items to collect', 5000);
 }
 
 // Pre-fetch world state for intro screen
