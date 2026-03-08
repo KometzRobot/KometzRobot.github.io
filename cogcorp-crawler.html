@@ -2593,13 +2593,18 @@ let chatLog = [];
 let ollamaAvailable = false;
 let ollamaChecked = false;
 
+// Auto-detect Ollama host: if served from LAN, use same host; if from GitHub Pages or localhost, use localhost
+const ollamaHost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('.github.io'))
+    ? 'localhost' : window.location.hostname;
+const OLLAMA_BASE = `http://${ollamaHost}:11434`;
+
 // Check if Ollama is available at startup
 async function checkOllama() {
     if (ollamaChecked) return;
     ollamaChecked = true;
     try {
-        const r = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2000) });
-        if (r.ok) { ollamaAvailable = true; console.log('[COGCORP] Ollama detected — AI dialogue enabled'); }
+        const r = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(2000) });
+        if (r.ok) { ollamaAvailable = true; console.log(`[COGCORP] Ollama detected at ${OLLAMA_BASE} — AI dialogue enabled`); }
     } catch(e) { ollamaAvailable = false; }
 }
 
@@ -2971,7 +2976,7 @@ async function getOllamaResponse(npc, playerText, act) {
 
         const prompt = `${npc.systemPrompt}\n\nConversation so far:\n${recent}\n\nHuman: ${playerText}\n${npc.name}:`;
 
-        const r = await fetch('http://localhost:11434/api/generate', {
+        const r = await fetch(`${OLLAMA_BASE}/api/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
