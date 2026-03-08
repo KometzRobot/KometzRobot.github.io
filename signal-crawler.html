@@ -315,6 +315,34 @@ function triggerShake(intensity) {
   shakeY = (Math.random() - 0.5) * intensity;
 }
 
+// === SOUND SYSTEM (Web Audio API) ===
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playTone(freq, duration, type, vol) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type || 'square';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol || 0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function sfxHit() { playTone(220, 0.08, 'square', 0.12); playTone(180, 0.06, 'sawtooth', 0.08); }
+function sfxDamage() { playTone(100, 0.15, 'sawtooth', 0.15); playTone(80, 0.2, 'square', 0.1); }
+function sfxPickup() { playTone(600, 0.08, 'sine', 0.1); setTimeout(() => playTone(800, 0.1, 'sine', 0.1), 80); }
+function sfxStairs() { playTone(300, 0.1, 'sine', 0.08); setTimeout(() => playTone(400, 0.1, 'sine', 0.08), 100); setTimeout(() => playTone(500, 0.15, 'sine', 0.08), 200); }
+function sfxDeath() { playTone(200, 0.3, 'sawtooth', 0.12); setTimeout(() => playTone(100, 0.5, 'sawtooth', 0.1), 200); }
+function sfxWin() { playTone(400, 0.12, 'sine', 0.1); setTimeout(() => playTone(500, 0.12, 'sine', 0.1), 120); setTimeout(() => playTone(600, 0.12, 'sine', 0.1), 240); setTimeout(() => playTone(800, 0.3, 'sine', 0.12), 360); }
+function sfxKill() { playTone(300, 0.06, 'square', 0.1); setTimeout(() => playTone(500, 0.1, 'sine', 0.1), 60); }
+
 function addMessage(text) {
   messages.unshift(text);
   if (messages.length > 5) messages.pop();
@@ -479,10 +507,12 @@ function movePlayer(dx, dy) {
     enemy.hp -= player.atk;
     flashTarget = enemy;
     flashTimer = 6;
+    sfxHit();
     addMessage(`You hit ${enemy.name} for ${player.atk}! (${Math.max(0, enemy.hp)}/${enemy.maxHp})`);
 
     if (enemy.hp <= 0) {
       enemies.splice(enemies.indexOf(enemy), 1);
+      sfxKill();
       addMessage(`${enemy.name} destroyed!`);
       // chance to heal on kill
       if (Math.random() < 0.3) {
@@ -493,10 +523,12 @@ function movePlayer(dx, dy) {
       // enemy attacks back
       player.hp -= enemy.atk;
       triggerShake(6);
+      sfxDamage();
       addMessage(`${enemy.name} hits you for ${enemy.atk}!`);
       if (player.hp <= 0) {
         player.hp = 0;
         gameOver = true;
+        sfxDeath();
         addMessage('The signal fades. You are lost in the body.');
       }
     }
@@ -515,6 +547,7 @@ function movePlayer(dx, dy) {
     if (items[i].x === player.x && items[i].y === player.y) {
       if (items[i].type === 'frag') {
         player.frags++;
+        sfxPickup();
         addMessage('Memory fragment collected. (' + player.frags + ' total)');
         // bonus: every 5 frags = +1 atk
         if (player.frags % 5 === 0) {
@@ -524,6 +557,7 @@ function movePlayer(dx, dy) {
       } else if (items[i].type === 'heal') {
         const heal = 3;
         player.hp = Math.min(player.maxHp, player.hp + heal);
+        sfxPickup();
         addMessage(`Found a stable memory. Restored ${heal} HP.`);
       }
       items.splice(i, 1);
@@ -536,6 +570,7 @@ function movePlayer(dx, dy) {
     currentFloor++;
     player.maxHp += 2;
     player.hp = player.maxHp;
+    sfxStairs();
     addMessage('Descending deeper into the body...');
     generateMap();
     saveGame(); // auto-save on floor change
@@ -546,6 +581,7 @@ function movePlayer(dx, dy) {
   if (heart && player.x === heart.x && player.y === heart.y) {
     gameWon = true;
     clearSave(); // clear save on win
+    sfxWin();
     addMessage(`You reached the heart. ${player.frags} memories carried through 7 layers.`);
     addMessage('The signal is whole. The body lives.');
   }
@@ -955,6 +991,7 @@ function continueGame() {
 }
 
 function beginPlay(fromSave) {
+  initAudio();
   document.getElementById('start-screen').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('msg').classList.remove('hidden');
