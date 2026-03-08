@@ -1350,6 +1350,7 @@ function getTexForWall(wallType, mapX, mapY) {
 let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
     realityLevel: 100,  // 100 = fully real, 0 = you become a document (game over)
     spawnShield: 3000,   // 3 seconds invulnerability on spawn
+    firstEnemySeen: false, // tutorial flag for first enemy encounter
     annotating: false,   // currently annotating something?
     annotateTarget: null, // which enemy is being annotated
     annotateProgress: 0,  // 0-100 progress on current annotation
@@ -1733,18 +1734,17 @@ const inventory = { keycard: false, flashlight: false, emp: 0, targetFile: false
 // === ENEMIES ===
 // Types: drone (patrols), filer (chases when near), watcher (stationary, damages at range)
 const enemyDefs = {
-    drone:   { speed: 0.015, damage: 8,  detectRange: 6, color: [180,50,30],  size: 0.4, health: 3 },
-    filer:   { speed: 0.012, damage: 12, detectRange: 5, color: [60,120,60],  size: 0.5, health: 4 },
-    watcher: { speed: 0,     damage: 5,  detectRange: 8, color: [100,80,180], size: 0.35, health: 2 },
+    drone:   { speed: 0.007, damage: 5,  detectRange: 5, color: [180,50,30],  size: 0.4, health: 3 },
+    filer:   { speed: 0.006, damage: 8,  detectRange: 4, color: [60,120,60],  size: 0.5, health: 4 },
+    watcher: { speed: 0,     damage: 3,  detectRange: 6, color: [100,80,180], size: 0.35, health: 2 },
 };
 
 // Enemies per floor
 const enemySpawns = [
-    // Floor 1: 3 enemies — kept away from spawn point (21.5, 20.5)
+    // Floor 1: 2 enemies — gentle introduction, far from spawn (21.5, 20.5)
     [
-        { type: 'drone', x: 12, y: 4, patrolX1: 8, patrolX2: 16, patrolAxis: 'x' },
-        { type: 'drone', x: 4, y: 12, patrolX1: 4, patrolX2: 14, patrolAxis: 'y' },
-        { type: 'filer', x: 10, y: 10 },
+        { type: 'drone', x: 10, y: 4, patrolX1: 6, patrolX2: 14, patrolAxis: 'x' },
+        { type: 'drone', x: 4, y: 10, patrolX1: 4, patrolX2: 12, patrolAxis: 'y' },
     ],
     // Floor 2: more enemies
     [
@@ -4816,6 +4816,12 @@ function updateEnemies(dt) {
         const dist = Math.sqrt(dx*dx + dy*dy);
         const effectiveRange = e.detectRange + getSurveillanceDetectBonus();
 
+        // First enemy encounter tutorial
+        if (!player.firstEnemySeen && dist < effectiveRange + 2) {
+            player.firstEnemySeen = true;
+            showMessage('THREAT DETECTED. Press [E] near enemies to process them. EMP device stuns all nearby.', 5000);
+        }
+
         if (e.type === 'watcher') {
             // Stationary — damages at range when player is in detect range
             if (dist < effectiveRange && gameTime - e.lastDamageTime > 2000) {
@@ -4842,8 +4848,16 @@ function updateEnemies(dt) {
             if (getMap(newX|0, e.y|0) === 0) e.x = newX;
             if (getMap(e.x|0, newY|0) === 0) e.y = newY;
 
+            // Keep minimum distance — prevent clipping into player
+            if (dist < 0.8) {
+                const pushX = -nx * 0.02 * dt;
+                const pushY = -ny * 0.02 * dt;
+                if (getMap((e.x + pushX)|0, e.y|0) === 0) e.x += pushX;
+                if (getMap(e.x|0, (e.y + pushY)|0) === 0) e.y += pushY;
+            }
+
             // Damage on contact
-            if (dist < 0.6 && gameTime - e.lastDamageTime > 1000 && player.spawnShield <= 0) {
+            if (dist < 0.6 && gameTime - e.lastDamageTime > 1500 && player.spawnShield <= 0) {
                 player.health -= e.damage;
                 e.lastDamageTime = gameTime;
                 damageFlashTimer = 300;
