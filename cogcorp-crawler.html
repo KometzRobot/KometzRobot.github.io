@@ -1348,6 +1348,7 @@ function getTexForWall(wallType, mapX, mapY) {
 
 // === PLAYER STATE ===
 let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
+    vx: 0, vy: 0,       // velocity for momentum-based movement
     realityLevel: 100,  // 100 = fully real, 0 = you become a document (game over)
     spawnShield: 3000,   // 3 seconds invulnerability on spawn
     firstEnemySeen: false, // tutorial flag for first enemy encounter
@@ -2270,6 +2271,7 @@ function changeFloor(newFloor) {
     // Position player at stairs location
     if (newFloor > 0) { player.x = 2.5; player.y = 2.5; player.angle = 0; }
     else { player.x = 21.5; player.y = 20.5; player.angle = Math.PI; }
+    player.vx = 0; player.vy = 0; // reset momentum on floor change
     player.spawnShield = 3000; // 3 seconds invulnerability on floor change
     spawnEnemies();
     spawnItems();
@@ -3543,6 +3545,7 @@ function respawn() {
         npcDefs[id].state.exchangeCount = 0;
     }
     player.x = 2.5; player.y = 2.5; player.angle = 0;
+    player.vx = 0; player.vy = 0; // reset momentum on respawn
     spawnEnemies();
     spawnItems();
     spawnWorldObjects();
@@ -4924,16 +4927,43 @@ function update(dt) {
     if (keys['ArrowLeft']) player.angle -= 0.04;
     if (keys['ArrowRight']) player.angle += 0.04;
 
-    // Movement
-    const moveSpeed = 0.04;
+    // Momentum-based movement
+    const accel = 0.005;       // acceleration per frame
+    const maxSpeed = 0.045;    // top speed
+    const friction = 0.82;     // velocity decay when not pressing keys
     const cosA = Math.cos(player.angle), sinA = Math.sin(player.angle);
-    let dx = 0, dy = 0, moving = false;
+    let inputX = 0, inputY = 0, moving = false;
 
-    if (keys['KeyW'] || keys['ArrowUp']) { dx += cosA*moveSpeed; dy += sinA*moveSpeed; moving = true; }
-    if (keys['KeyS'] || keys['ArrowDown']) { dx -= cosA*moveSpeed; dy -= sinA*moveSpeed; moving = true; }
-    if (keys['KeyA']) { dx += sinA*moveSpeed; dy -= cosA*moveSpeed; moving = true; }
-    if (keys['KeyD']) { dx -= sinA*moveSpeed; dy += cosA*moveSpeed; moving = true; }
+    if (keys['KeyW'] || keys['ArrowUp']) { inputX += cosA; inputY += sinA; moving = true; }
+    if (keys['KeyS'] || keys['ArrowDown']) { inputX -= cosA; inputY -= sinA; moving = true; }
+    if (keys['KeyA']) { inputX += sinA; inputY -= cosA; moving = true; }
+    if (keys['KeyD']) { inputX -= sinA; inputY += cosA; moving = true; }
 
+    // Normalize diagonal input
+    if (inputX !== 0 || inputY !== 0) {
+        const len = Math.sqrt(inputX*inputX + inputY*inputY);
+        inputX /= len; inputY /= len;
+    }
+
+    // Apply acceleration or friction
+    if (moving) {
+        player.vx += inputX * accel;
+        player.vy += inputY * accel;
+    } else {
+        player.vx *= friction;
+        player.vy *= friction;
+    }
+
+    // Clamp to max speed
+    const speed = Math.sqrt(player.vx*player.vx + player.vy*player.vy);
+    if (speed > maxSpeed) {
+        player.vx = (player.vx / speed) * maxSpeed;
+        player.vy = (player.vy / speed) * maxSpeed;
+    }
+    // Kill tiny velocities
+    if (speed < 0.001) { player.vx = 0; player.vy = 0; }
+
+    const dx = player.vx, dy = player.vy;
     const margin = 0.15;
 
     // Collision with locked door handling
@@ -4959,10 +4989,18 @@ function update(dt) {
     }
     const wallX = getMap(checkX, player.y|0);
     const wallY = getMap(player.x|0, checkY);
-    if (wallX === 0 || (canPhase && wallX === 5)) player.x += dx;
-    if (wallY === 0 || (canPhase && wallY === 5)) player.y += dy;
+    if (wallX === 0 || (canPhase && wallX === 5)) {
+        player.x += dx;
+    } else {
+        player.vx = 0; // stop velocity on wall hit
+    }
+    if (wallY === 0 || (canPhase && wallY === 5)) {
+        player.y += dy;
+    } else {
+        player.vy = 0; // stop velocity on wall hit
+    }
 
-    if (moving && audioStarted) playStep();
+    if ((moving || speed > 0.005) && audioStarted) playStep();
 
     // === PROCESSING DESK MECHANIC ===
     // Press E while facing an enemy to open Processing Desk (Papers Please-style)
