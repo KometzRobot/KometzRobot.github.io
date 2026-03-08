@@ -304,6 +304,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         from agents who came before you. What you leave behind matters.<br><br>
         WASD move. Mouse look. E to process/interact/talk. Q for EMP. TAB for Document Codex. Click to lock mouse.
     </div>
+    <div id="world-status" style="color:#5a4a2a;font-size:10px;letter-spacing:1.5px;margin-top:12px;min-height:14px;"></div>
     <div class="start">[ click to enter ]</div>
 </div>
 
@@ -2451,6 +2452,15 @@ function openNPCChat(npcId) {
     }
     chatLog.push({ sender: 'npc', text: greeting });
 
+    // Async multiplayer: NPC world awareness — mention other players
+    const worldLine = getNPCWorldAwareness(npcId);
+    if (worldLine && npc.state.exchangeCount === 0) {
+        setTimeout(() => {
+            chatLog.push({ sender: 'npc', text: worldLine });
+            renderChat();
+        }, 2500);
+    }
+
     renderChat();
     document.getElementById('npc-chat').style.display = 'flex';
     setTimeout(() => document.getElementById('chat-input').focus(), 100);
@@ -2718,6 +2728,218 @@ async function submitWallMessage() {
     }, 500);
 }
 
+// === ASYNC MULTIPLAYER — Persistent World State ===
+let worldState = {};
+let recentSessions = [];
+let currentSessionId = null;
+let sessionStartTime = Date.now();
+let ghostEchoes = []; // traces of previous players rendered in-world
+
+async function fetchWorldState() {
+    try {
+        const r = await fetch(SUPABASE_URL + '/rest/v1/crawler_world?select=*', {
+            headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON },
+            signal: AbortSignal.timeout(4000)
+        });
+        if (r.ok) {
+            const rows = await r.json();
+            for (const row of rows) worldState[row.key] = row.value;
+        }
+    } catch(e) { /* offline */ }
+}
+
+async function fetchRecentSessions() {
+    try {
+        const r = await fetch(SUPABASE_URL + '/rest/v1/crawler_sessions?select=*&order=ended_at.desc.nullslast&limit=20', {
+            headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON },
+            signal: AbortSignal.timeout(4000)
+        });
+        if (r.ok) {
+            recentSessions = await r.json();
+            buildGhostEchoes();
+        }
+    } catch(e) { /* offline */ }
+}
+
+async function registerSession() {
+    sessionStartTime = Date.now();
+    const agentId = 'B-' + (100 + Math.floor(Math.random() * 900));
+    try {
+        const r = await fetch(SUPABASE_URL + '/rest/v1/crawler_sessions', {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+                'Content-Type': 'application/json', 'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({ agent_id: agentId }),
+            signal: AbortSignal.timeout(4000)
+        });
+        if (r.ok) {
+            const data = await r.json();
+            if (data.length > 0) currentSessionId = data[0].id;
+        }
+    } catch(e) { /* silent */ }
+    return agentId;
+}
+
+async function endSession(choice, endingClass, finalReality, docsFound, enemiesFiled) {
+    const playTime = Math.floor((Date.now() - sessionStartTime) / 1000);
+    const affinities = {};
+    for (const [id, npc] of Object.entries(npcDefs)) {
+        if (npc.state) affinities[id] = npc.state.affinity || 0;
+    }
+
+    // Update session record
+    if (currentSessionId) {
+        try {
+            await fetch(SUPABASE_URL + '/rest/v1/crawler_sessions?id=eq.' + currentSessionId, {
+                method: 'PATCH',
+                headers: {
+                    'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+                    'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                    ended_at: new Date().toISOString(),
+                    exit_choice: choice, ending_class: endingClass,
+                    final_reality: finalReality, documents_found: docsFound,
+                    enemies_filed: enemiesFiled, floor_reached: currentFloor + 1,
+                    npc_affinities: affinities, play_time_seconds: playTime
+                }),
+                signal: AbortSignal.timeout(4000)
+            });
+        } catch(e) { /* silent */ }
+    }
+
+    // Update world state counters
+    const updates = [
+        { key: 'total_sessions', delta: 1 },
+        { key: 'total_' + choice + 's', delta: 1 },
+        { key: 'total_' + endingClass + '_endings', delta: 1 },
+        { key: 'total_documents_found', delta: docsFound },
+        { key: 'total_enemies_filed', delta: enemiesFiled },
+    ];
+    for (const u of updates) {
+        try {
+            await fetch(SUPABASE_URL + '/rest/v1/rpc/increment_world_stat', {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ stat_key: u.key, delta: u.delta }),
+                signal: AbortSignal.timeout(4000)
+            });
+        } catch(e) {
+            // Fallback: direct update if RPC not available
+            try {
+                const cur = worldState[u.key] || 0;
+                await fetch(SUPABASE_URL + '/rest/v1/crawler_world?key=eq.' + u.key, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+                        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ value: cur + u.delta, updated_at: new Date().toISOString() }),
+                    signal: AbortSignal.timeout(4000)
+                });
+            } catch(e2) { /* silent */ }
+        }
+    }
+    // Update collective reality (running average)
+    const totalSessions = (worldState.total_sessions || 0) + 1;
+    const newCollective = Math.round(((worldState.collective_reality || 100) * (totalSessions - 1) + finalReality) / totalSessions);
+    try {
+        await fetch(SUPABASE_URL + '/rest/v1/crawler_world?key=eq.collective_reality', {
+            method: 'PATCH',
+            headers: {
+                'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON,
+                'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({ value: newCollective, updated_at: new Date().toISOString() }),
+            signal: AbortSignal.timeout(4000)
+        });
+    } catch(e) { /* silent */ }
+}
+
+function buildGhostEchoes() {
+    ghostEchoes = [];
+    // Create ghost positions from recent sessions that ended
+    const completed = recentSessions.filter(s => s.ended_at && s.exit_choice);
+    for (let i = 0; i < Math.min(completed.length, 5); i++) {
+        const s = completed[i];
+        const floor = (s.floor_reached || 1) - 1;
+        // Place ghost near center of their last floor
+        ghostEchoes.push({
+            x: 5 + Math.random() * 10,
+            y: 5 + Math.random() * 10,
+            floor: floor,
+            agentId: s.agent_id,
+            choice: s.exit_choice,
+            reality: s.final_reality,
+            alpha: 0.15 + Math.random() * 0.15,
+            drift: Math.random() * Math.PI * 2,
+        });
+    }
+}
+
+function getWorldNarrative() {
+    const total = worldState.total_sessions || 0;
+    if (total === 0) return 'You may be the first agent to enter Building B since The Incident.';
+    const burns = worldState.total_burns || 0;
+    const takes = worldState.total_takes || 0;
+    const returns = worldState.total_returns || 0;
+    const collective = worldState.collective_reality || 100;
+    const bad = worldState.total_bad_endings || 0;
+
+    let narrative = total + ' agent' + (total !== 1 ? 's have' : ' has') + ' entered Building B.';
+    if (burns > 0) narrative += ' ' + burns + ' burned their file' + (burns !== 1 ? 's' : '') + '.';
+    if (returns > 0) narrative += ' ' + returns + ' never left.';
+    if (bad > takes + burns + returns) narrative += ' Most didn\'t make it out intact.';
+    narrative += ' Collective reality: ' + collective + '%.';
+    if (collective < 60) narrative += ' The building is winning.';
+    else if (collective > 85) narrative += ' The agents are holding.';
+    return narrative;
+}
+
+function getNPCWorldAwareness(npcId) {
+    const total = worldState.total_sessions || 0;
+    if (total < 2) return null;
+    const burns = worldState.total_burns || 0;
+    const returns = worldState.total_returns || 0;
+    const collective = worldState.collective_reality || 100;
+    const lastSession = recentSessions.find(s => s.ended_at && s.exit_choice);
+
+    const lines = {
+        archivist: [
+            'This unit has processed ' + total + ' agents through this building. Your file will be ' + (total + 1) + '.',
+            burns > 0 ? burns + ' agent' + (burns !== 1 ? 's' : '') + ' attempted erasure. The filing system recorded their attempt. It always does.' : null,
+            collective < 50 ? 'Collective reality is degrading. The building grows stronger with each filing.' : null,
+            lastSession ? 'The last agent — ' + (lastSession.agent_id || 'unknown') + ' — chose to ' + (lastSession.exit_choice || 'unknown') + '. Reality: ' + (lastSession.final_reality || '?') + '%.' : null,
+        ],
+        b246: [
+            total > 5 ? 'I\'ve seen ' + total + ' of us come through. Most of them are in the walls now.' : null,
+            returns > 2 ? 'Some of them stayed. Voluntarily. Can you imagine? ' + returns + ' agents, just... stayed.' : null,
+            lastSession && lastSession.exit_choice === 'burn' ? 'Last one tried to burn their file. ' + (lastSession.final_reality > 50 ? 'Actually made it out.' : 'Didn\'t have enough reality left to touch paper.') : null,
+        ],
+        building: [
+            'I have consumed ' + total + ' agents. Their reality sustains me. Collective level: ' + collective + '%.',
+            burns > takes ? 'They keep trying to burn their records. As if fire could erase what I remember.' : null,
+            returns > 0 ? returns + ' chose to stay. They are part of the infrastructure now. Content.' : null,
+        ],
+        m012: [
+            total > 3 ? 'You\'re number ' + (total + 1) + '. The others left marks. On the walls. In the system.' : null,
+            lastSession ? 'Agent ' + (lastSession.agent_id || '???') + ' was here before you. They ' + (lastSession.exit_choice === 'return' ? 'never left.' : lastSession.exit_choice === 'burn' ? 'tried to burn everything.' : 'took what they came for.') : null,
+        ],
+        vasquez: [
+            total > 2 ? 'My research shows ' + total + ' subjects have entered the building. Only ' + (worldState.total_good_endings || 0) + ' left with their reality intact.' : null,
+            collective < 40 ? 'The collective reality signature is at ' + collective + '%. The building is approaching critical mass.' : null,
+        ],
+    };
+
+    const npcLines = (lines[npcId] || []).filter(l => l !== null);
+    return npcLines.length > 0 ? npcLines[Math.floor(Math.random() * npcLines.length)] : null;
+}
+
 function respawn() {
     player.health = player.maxHealth;
     player.realityLevel = 100;
@@ -2851,6 +3073,17 @@ function triggerWinSequence() {
         wallMsg = 'B-247 returned the file voluntarily. The building welcomed them. They never left.';
     }
     postWallMessage(wallMsg);
+
+    // Async multiplayer: record session ending
+    endSession(choice, endingClass, realityRemaining, docsFound, enemiesFiled);
+
+    // Show world impact on ending screen
+    const totalAgents = (worldState.total_sessions || 0) + 1;
+    const collective = worldState.collective_reality || 100;
+    const impactLine = totalAgents > 1
+        ? '<br><span style="color:#3a2a10;font-size:9px;">AGENTS WHO ENTERED: ' + totalAgents + ' | COLLECTIVE REALITY: ' + collective + '% | YOUR CHOICE SHAPES THE NEXT AGENT\'S WORLD</span>'
+        : '';
+    ds.querySelector('p').innerHTML += impactLine;
 
     // Play a resolution chord
     if (audioCtx) {
@@ -3586,6 +3819,19 @@ function drawSprites() {
             color: npc.color, npcName: npc.name });
     }
 
+    // Ghost echoes of previous players (async multiplayer)
+    for (const ghost of ghostEchoes) {
+        if (ghost.floor !== currentFloor) continue;
+        // Ghosts drift slowly
+        const gx = ghost.x + Math.sin(gameTime * 0.0005 + ghost.drift) * 0.5;
+        const gy = ghost.y + Math.cos(gameTime * 0.0007 + ghost.drift) * 0.5;
+        const dx = gx - player.x, dy = gy - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 12) continue;
+        sprites.push({ x: gx, y: gy, dist, size: 0.4, type: 'ghost',
+            agentId: ghost.agentId, ghostAlpha: ghost.alpha, ghostChoice: ghost.choice });
+    }
+
     sprites.sort((a, b) => b.dist - a.dist);
 
     // Pre-compute camera vectors (constant for all sprites)
@@ -3653,6 +3899,19 @@ function drawSprites() {
                     if (sprTex[ti+3] === 0) continue; // transparent pixel
                     cr = sprTex[ti]; cg = sprTex[ti+1]; cb = sprTex[ti+2];
                     alpha = sprTex[ti+3] / 255;
+                } else if (spr.type === 'ghost') {
+                    // Ghost echo of previous player — translucent, flickering silhouette
+                    const nx = texX / SPR_SIZE, ny = texY / SPR_SIZE;
+                    const dx2 = (nx - 0.5), dy2 = (ny - 0.5);
+                    const bodyWidth = ny > 0.35 ? 0.25 : ny > 0.2 ? 0.13 : 0.1;
+                    const headRadius = 0.09;
+                    const isHead = ny < 0.28 && Math.sqrt(dx2*dx2 + (ny-0.18)*(ny-0.18)) < headRadius;
+                    const isBody = ny >= 0.25 && ny < 0.85 && Math.abs(dx2) < bodyWidth;
+                    if (!isHead && !isBody) continue;
+                    // Ghosts are pale blue-white, flickering
+                    const flicker = 0.5 + Math.sin(gameTime * 0.01 + spr.dist * 3) * 0.3;
+                    cr = 120 * flicker; cg = 140 * flicker; cb = 180 * flicker;
+                    alpha = (spr.ghostAlpha || 0.15) * flicker;
                 } else if (spr.type === 'npc') {
                     // Procedural NPC rendering — humanoid silhouette with glow
                     const nx = texX / SPR_SIZE, ny = texY / SPR_SIZE;
@@ -4367,11 +4626,33 @@ function startGame() {
     updateInventoryHUD();
     checkOllama();
     fetchWallMessages();
+    // Async multiplayer: register session, fetch world state + recent sessions
+    registerSession();
+    fetchWorldState().then(() => {
+        fetchRecentSessions();
+        // Show world narrative after a short delay
+        const narrative = getWorldNarrative();
+        if (narrative) setTimeout(() => showMessage(narrative, 5000), 3000);
+    });
     gameStarted = true;
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
     setTimeout(() => canvas.requestPointerLock(), 900);
 }
+
+// Pre-fetch world state for intro screen
+(async function() {
+    await fetchWorldState();
+    const el = document.getElementById('world-status');
+    if (el) {
+        const total = worldState.total_sessions || 0;
+        if (total > 0) {
+            el.textContent = '// ' + getWorldNarrative() + ' //';
+        } else {
+            el.textContent = '// NO PRIOR AGENT DATA FOUND //';
+        }
+    }
+})();
 </script>
 </body>
 </html>
