@@ -343,6 +343,345 @@ const TEX_GREEN = createTexture(data => {
             if (hash(x,y)%4===0) setPixel(data, x, y, 40, 100, 50);
 });
 
+// === SPRITE TEXTURES (32x32 for enemies and items) ===
+const SPR_SIZE = 32;
+const spriteTextures = {};
+
+function createSpriteTex(name, generator) {
+    const data = new Uint8Array(SPR_SIZE * SPR_SIZE * 4);
+    generator(data);
+    spriteTextures[name] = data;
+}
+
+function setSprPx(data, x, y, r, g, b, a) {
+    if (x < 0 || x >= SPR_SIZE || y < 0 || y >= SPR_SIZE) return;
+    const i = (y * SPR_SIZE + x) * 4;
+    data[i] = r; data[i+1] = g; data[i+2] = b; data[i+3] = a !== undefined ? a : 255;
+}
+
+// DRONE sprite: floating mechanical sphere with antenna and red indicator
+createSpriteTex('drone', data => {
+    const cx = 15, cy = 17, rad = 10;
+    for (let y = 0; y < SPR_SIZE; y++)
+        for (let x = 0; x < SPR_SIZE; x++) {
+            const dx = x - cx, dy = y - cy;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < rad) {
+                // Metal body with shading
+                const shade = 1 - (dx + dy * 0.5) / (rad * 2); // directional light
+                const n = hash(x, y) % 8;
+                const base = 55 + shade * 60 + n;
+                setSprPx(data, x, y, base|0, (base*0.85)|0, (base*0.75)|0);
+                // Dark panel lines
+                if (Math.abs(dx) < 1 && dy > -5 && dy < 5) setSprPx(data, x, y, 30, 28, 25);
+                if (Math.abs(dy) < 1 && dx > -5 && dx < 5) setSprPx(data, x, y, 30, 28, 25);
+                // Rivet details
+                if (dist > rad - 3 && dist < rad - 1 && (((x + y * 7) * 13) & 31) < 2)
+                    setSprPx(data, x, y, 100, 90, 75);
+            }
+        }
+    // Red indicator eye
+    for (let dy = -2; dy <= 2; dy++)
+        for (let dx = -3; dx <= 3; dx++) {
+            const d = Math.sqrt(dx*dx + dy*dy);
+            if (d < 3) {
+                const bright = (1 - d/3) * 255;
+                setSprPx(data, cx+dx, cy-3+dy, Math.min(255, bright|0), (bright*0.15)|0, (bright*0.1)|0);
+            }
+        }
+    // Antenna
+    for (let ay = 0; ay < 8; ay++) setSprPx(data, cx, cy - rad - ay, 80, 75, 65);
+    setSprPx(data, cx-1, 0, 180, 40, 30); setSprPx(data, cx, 0, 220, 60, 40); setSprPx(data, cx+1, 0, 180, 40, 30);
+    // Shadow underneath
+    for (let sx = -6; sx <= 6; sx++) {
+        const a = (1 - Math.abs(sx)/7) * 80;
+        setSprPx(data, cx+sx, cy+rad+1, 10, 8, 6, a|0);
+        setSprPx(data, cx+sx, cy+rad+2, 8, 6, 5, (a*0.5)|0);
+    }
+    // Thruster glow underneath
+    for (let tx = -2; tx <= 2; tx++)
+        for (let ty = 0; ty < 3; ty++) {
+            const bright = (1 - ty/3) * 120;
+            setSprPx(data, cx+tx, cy+rad-2+ty, (bright*0.4)|0, (bright*0.6)|0, bright|0);
+        }
+});
+
+// FILER sprite: humanoid filing clerk silhouette — tall, thin, paper stack for head
+createSpriteTex('filer', data => {
+    // Body — tall rectangular dark olive uniform
+    for (let y = 10; y < 28; y++)
+        for (let x = 10; x < 22; x++) {
+            const n = hash(x, y) % 6;
+            // Uniform with slight variations
+            const inShoulder = y < 14 && (x < 12 || x > 19);
+            if (!inShoulder) {
+                setSprPx(data, x, y, 45+n, 52+n, 32+n);
+            }
+        }
+    // Shoulders wider
+    for (let y = 10; y < 14; y++)
+        for (let x = 8; x < 24; x++) {
+            const n = hash(x, y) % 6;
+            setSprPx(data, x, y, 45+n, 52+n, 32+n);
+        }
+    // Arms
+    for (let y = 14; y < 24; y++) {
+        for (let dx = 0; dx < 3; dx++) {
+            const n = hash(dx, y) % 5;
+            setSprPx(data, 7+dx, y, 42+n, 48+n, 30+n);
+            setSprPx(data, 22+dx, y, 42+n, 48+n, 30+n);
+        }
+    }
+    // Head — a stack of papers
+    for (let y = 2; y < 10; y++)
+        for (let x = 12; x < 20; x++) {
+            const n = hash(x, y) % 8;
+            // Layered paper look
+            const layer = y % 3 === 0;
+            if (layer) setSprPx(data, x, y, 140+n, 130+n, 100+n); // paper edge
+            else setSprPx(data, x, y, 160+n, 148+n, 115+n); // paper face
+        }
+    // Eyes — glowing green through the paper stack
+    setSprPx(data, 14, 6, 80, 200, 80); setSprPx(data, 15, 6, 100, 255, 100);
+    setSprPx(data, 17, 6, 100, 255, 100); setSprPx(data, 18, 6, 80, 200, 80);
+    // Paper trailing from hands
+    for (let py = 22; py < 28; py++) {
+        const flutter = ((hash(py, 3) % 3) - 1);
+        setSprPx(data, 7+flutter, py, 150, 140, 110);
+        setSprPx(data, 24+flutter, py, 150, 140, 110);
+    }
+    // Legs
+    for (let y = 28; y < 32; y++) {
+        const n = hash(y, 0) % 4;
+        setSprPx(data, 12, y, 35+n, 32+n, 28+n); setSprPx(data, 13, y, 35+n, 32+n, 28+n);
+        setSprPx(data, 18, y, 35+n, 32+n, 28+n); setSprPx(data, 19, y, 35+n, 32+n, 28+n);
+    }
+    // Name badge on chest
+    for (let bx = 13; bx < 19; bx++)
+        for (let by = 16; by < 19; by++) {
+            setSprPx(data, bx, by, 160, 150, 120);
+        }
+    // Badge text line
+    for (let bx = 14; bx < 18; bx++) setSprPx(data, bx, 17, 60, 55, 45);
+});
+
+// WATCHER sprite: large mechanical eye with housing — surveillance camera feel
+createSpriteTex('watcher', data => {
+    const cx = 15, cy = 15;
+    // Housing — dark metal trapezoid
+    for (let y = 6; y < 26; y++)
+        for (let x = 6; x < 26; x++) {
+            const dx = x - cx, dy = y - cy;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 11) {
+                const n = hash(x, y) % 6;
+                setSprPx(data, x, y, 35+n, 30+n, 40+n); // dark metal
+            }
+        }
+    // Inner ring
+    for (let y = 0; y < SPR_SIZE; y++)
+        for (let x = 0; x < SPR_SIZE; x++) {
+            const dx = x - cx, dy = y - cy;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > 6 && dist < 8) {
+                setSprPx(data, x, y, 70, 65, 85); // ring
+            }
+        }
+    // Iris — purple/blue glow
+    for (let y = 0; y < SPR_SIZE; y++)
+        for (let x = 0; x < SPR_SIZE; x++) {
+            const dx = x - cx, dy = y - cy;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 6) {
+                const bright = (1 - dist/6);
+                const n = hash(x, y) % 10;
+                setSprPx(data, x, y, (40 + bright*60 + n)|0, (30 + bright*40)|0, (80 + bright*140)|0);
+            }
+        }
+    // Pupil — bright white center
+    for (let y = 0; y < SPR_SIZE; y++)
+        for (let x = 0; x < SPR_SIZE; x++) {
+            const dx = x - cx, dy = y - cy;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 2) {
+                const bright = (1 - dist/2) * 255;
+                setSprPx(data, x, y, bright|0, (bright*0.9)|0, bright|0);
+            }
+        }
+    // Mounting bracket top and bottom
+    for (let bx = 12; bx < 20; bx++) {
+        for (let by = 3; by < 6; by++) setSprPx(data, bx, by, 50, 45, 40);
+        for (let by = 26; by < 29; by++) setSprPx(data, bx, by, 50, 45, 40);
+    }
+    // Mounting arm
+    for (let by = 0; by < 4; by++) {
+        setSprPx(data, 15, by, 60, 55, 50); setSprPx(data, 16, by, 60, 55, 50);
+    }
+    // Scan line indicator
+    for (let lx = 4; lx < 28; lx++) {
+        const d = Math.abs(lx - cx);
+        if (d > 11) continue;
+        setSprPx(data, lx, cy, 120, 80, 200, 80);
+    }
+});
+
+// ITEM SPRITES
+createSpriteTex('keycard', data => {
+    // Card shape
+    for (let y = 10; y < 24; y++)
+        for (let x = 8; x < 24; x++) {
+            const n = hash(x, y) % 6;
+            setSprPx(data, x, y, 200+n, 170+n, 40+n); // gold card
+        }
+    // Magnetic stripe
+    for (let x = 8; x < 24; x++) {
+        setSprPx(data, x, 20, 40, 35, 30); setSprPx(data, x, 21, 30, 25, 22);
+    }
+    // CogCorp text area
+    for (let x = 10; x < 22; x++) setSprPx(data, x, 13, 120, 100, 20);
+    // Chip
+    for (let y = 14; y < 18; y++)
+        for (let x = 10; x < 14; x++) setSprPx(data, x, y, 180, 160, 80);
+});
+
+createSpriteTex('medkit', data => {
+    // Box shape
+    for (let y = 10; y < 24; y++)
+        for (let x = 8; x < 24; x++) {
+            const n = hash(x, y) % 5;
+            setSprPx(data, x, y, 180+n, 35+n, 30+n); // red box
+        }
+    // White cross
+    for (let i = -4; i <= 4; i++) {
+        setSprPx(data, 16+i, 17, 220, 220, 210); setSprPx(data, 16+i, 16, 220, 220, 210);
+        setSprPx(data, 16, 13+i, 220, 220, 210); setSprPx(data, 15, 13+i, 220, 220, 210);
+    }
+    // Latch
+    setSprPx(data, 15, 10, 140, 130, 110); setSprPx(data, 16, 10, 140, 130, 110);
+});
+
+createSpriteTex('flashlight', data => {
+    // Barrel
+    for (let y = 12; y < 22; y++)
+        for (let x = 6; x < 22; x++) {
+            const n = hash(x, y) % 6;
+            const w = y < 14 ? (x > 8 && x < 20) : (x > 6 && x < 22);
+            if (w) setSprPx(data, x, y, 180+n, 175+n, 100+n);
+        }
+    // Lens
+    for (let y = 14; y < 20; y++) {
+        setSprPx(data, 22, y, 200, 220, 255); setSprPx(data, 23, y, 180, 200, 240);
+    }
+    // Beam glow
+    for (let x = 24; x < 30; x++)
+        for (let y = 13; y < 21; y++) {
+            const a = (1 - (x-24)/6) * 60;
+            setSprPx(data, x, y, 255, 240, 180, a|0);
+        }
+    // Button
+    setSprPx(data, 14, 12, 100, 180, 100);
+});
+
+createSpriteTex('emp', data => {
+    // Cylindrical device
+    for (let y = 8; y < 26; y++)
+        for (let x = 10; x < 22; x++) {
+            const n = hash(x, y) % 5;
+            const cx2 = 16, dist = Math.abs(x - cx2);
+            const shade = 1 - dist / 8;
+            setSprPx(data, x, y, (60*shade+n)|0, (100*shade+n)|0, (180*shade+n)|0);
+        }
+    // Electrode prongs on top
+    setSprPx(data, 13, 6, 150, 180, 220); setSprPx(data, 13, 7, 120, 150, 200);
+    setSprPx(data, 19, 6, 150, 180, 220); setSprPx(data, 19, 7, 120, 150, 200);
+    // Arc between prongs
+    setSprPx(data, 15, 5, 180, 220, 255); setSprPx(data, 16, 4, 200, 240, 255); setSprPx(data, 17, 5, 180, 220, 255);
+    // Warning stripe
+    for (let x = 10; x < 22; x++) {
+        const s = ((x) >> 1) & 1;
+        setSprPx(data, x, 22, s ? 200 : 40, s ? 180 : 30, s ? 0 : 20);
+    }
+});
+
+createSpriteTex('document', data => {
+    // Paper sheet
+    for (let y = 6; y < 28; y++)
+        for (let x = 8; x < 24; x++) {
+            const n = hash(x, y) % 5;
+            setSprPx(data, x, y, 170+n, 160+n, 130+n); // aged paper
+        }
+    // Folded corner
+    for (let d = 0; d < 5; d++) {
+        setSprPx(data, 24-d, 6+d, 140, 130, 105);
+        if (d < 4) for (let i = 0; i < d; i++) setSprPx(data, 24-i, 6+d, 130, 120, 95);
+    }
+    // Text lines
+    for (let line = 0; line < 8; line++) {
+        const lw = 8 + hash(line, 0) % 6;
+        for (let lx = 0; lx < lw; lx++)
+            setSprPx(data, 10+lx, 10 + line*2, 80, 75, 60);
+    }
+    // Red stamp
+    for (let sy = 20; sy < 24; sy++)
+        for (let sx = 14; sx < 22; sx++) {
+            if (hash(sx, sy) % 3 !== 0) setSprPx(data, sx, sy, 160, 40, 30, 180);
+        }
+});
+
+createSpriteTex('targetFile', data => {
+    // Gold folder
+    for (let y = 8; y < 26; y++)
+        for (let x = 6; x < 26; x++) {
+            const n = hash(x, y) % 6;
+            setSprPx(data, x, y, 220+Math.min(35,n*5), 180+n, 40+n); // bright gold
+        }
+    // Folder tab
+    for (let y = 6; y < 9; y++)
+        for (let x = 8; x < 16; x++) setSprPx(data, x, y, 240, 200, 60);
+    // Classification stamp
+    for (let y = 14; y < 20; y++)
+        for (let x = 10; x < 22; x++) {
+            if (hash(x, y) % 2 === 0) setSprPx(data, x, y, 180, 30, 20, 200);
+        }
+    // Glow effect
+    for (let y = 0; y < SPR_SIZE; y++)
+        for (let x = 0; x < SPR_SIZE; x++) {
+            const dx2 = x - 16, dy2 = y - 17;
+            const dist = Math.sqrt(dx2*dx2 + dy2*dy2);
+            if (dist > 12 && dist < 15) {
+                const a = (1 - (dist-12)/3) * 40;
+                const i = (y * SPR_SIZE + x) * 4;
+                if (data[i+3] === 0) setSprPx(data, x, y, 255, 215, 0, a|0);
+            }
+        }
+});
+
+createSpriteTex('anchor', data => {
+    // Crystal/prism shape — reality anchor
+    const cx3 = 15, cy3 = 15;
+    // Diamond shape
+    for (let y = 0; y < SPR_SIZE; y++)
+        for (let x = 0; x < SPR_SIZE; x++) {
+            const dx3 = Math.abs(x - cx3), dy3 = Math.abs(y - cy3);
+            if (dx3 + dy3 < 12) {
+                const dist = dx3 + dy3;
+                const bright = (1 - dist/12);
+                const n = hash(x, y) % 8;
+                setSprPx(data, x, y, (120 + bright*80 + n)|0, (180 + bright*60)|0, (220 + bright*35)|0);
+                // Internal facets
+                if ((x + y) % 4 === 0) {
+                    setSprPx(data, x, y, (150 + bright*100)|0, (200 + bright*55)|0, (240 + bright*15)|0);
+                }
+            }
+        }
+    // Bright center
+    for (let dy4 = -2; dy4 <= 2; dy4++)
+        for (let dx4 = -2; dx4 <= 2; dx4++) {
+            const d = Math.sqrt(dx4*dx4 + dy4*dy4);
+            if (d < 2.5) setSprPx(data, cx3+dx4, cy3+dy4, 220, 240, 255);
+        }
+});
+
 // Texture 9: Locked door (red stripe)
 const TEX_LOCKED = createTexture(data => {
     for (let y = 0; y < TEX_SIZE; y++)
@@ -618,6 +957,7 @@ const worldObjectsByFloor = [
         { x: 15.5, y: 17.5, name: 'VENTILATION UNIT', text: 'Air handler CG-400. Still running. The air tastes like ozone and old ink. The rhythm is irregular, as if the machine is breathing.' },
         { x: 21.5, y: 20.5, name: 'STAIRS UP', text: 'Metal stairs leading to Floor 2: Archives. They vibrate faintly. A sign: "FLASHLIGHT RECOMMENDED."', isStairs: true },
         { x: 18.5, y: 9.5, name: 'RESTROOM MIRROR', isMirror: true },
+        { x: 1.5, y: 1.5, name: 'EXIT — BUILDING B', text: 'The front entrance. Rusted fire door. Emergency exit only. If you have the file, walk toward this door to leave.', isExit: true },
     ],
     // Floor 2
     [
@@ -851,13 +1191,17 @@ function updateRealityHUD() {
 function annotateEnemy(enemy, dt) {
     // Annotating: progress fills up over ~3 seconds
     const rate = 0.035;
+    const prevProgress = player.annotateProgress;
     player.annotateProgress += dt * rate;
+    // Play scratch sound every 20% progress
+    if ((prevProgress % 20 > 10) !== (player.annotateProgress % 20 > 10)) playAnnotateSound();
     enemy.annotationLevel = player.annotateProgress; // sync visual
     document.getElementById('annotation-progress').style.display = 'block';
     document.getElementById('annot-bar-fill').style.width = Math.min(100, player.annotateProgress) + '%';
 
     if (player.annotateProgress >= 100) {
         // Enemy is fully annotated — FILE IT
+        playFiledSound();
         enemy.filed = true;
         enemy.alive = false;
         player.totalFiled++;
@@ -915,6 +1259,65 @@ function respawn() {
     gameStarted = true;
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
+}
+
+// === WIN SEQUENCE ===
+let winPhase = 0;
+let winTimer = 0;
+
+function triggerWinSequence() {
+    gameStarted = false;
+    winPhase = 1;
+    winTimer = 0;
+
+    // Calculate stats
+    const enemiesFiled = player.totalFiled;
+    const realityRemaining = player.realityLevel | 0;
+    const docsFound = player.docs;
+
+    // Determine ending variant based on reality level
+    let endingTitle, endingText, endingClass;
+    if (realityRemaining > 75) {
+        endingTitle = 'EXTRACTION COMPLETE';
+        endingText = 'You walk out of Building B with File #B-247-SELF under your arm. The sunlight stings. The parking lot is empty. Your car is where you left it. As you drive away, you check the rearview mirror. Building B is gone. There is only an empty lot and a chain-link fence. You look at the file on the passenger seat. It now contains a single page. It reads: "Thank you for your service, B-247. Your reality has been preserved." You never go back.';
+        endingClass = 'good';
+    } else if (realityRemaining > 40) {
+        endingTitle = 'EXTRACTION — PARTIAL';
+        endingText = 'You leave Building B. The air tastes different. Thinner. You hold File #B-247-SELF but your hands look slightly transparent in the morning light. People on the sidewalk don\'t seem to see you. Your reflection in shop windows is faint. The file is heavier than it should be. When you open it at home, every page describes a different version of this moment — you leaving the building, you reading the file, you realizing the file is reading you. Reality: ' + realityRemaining + '%. Enough to keep existing. Barely.';
+        endingClass = 'partial';
+    } else {
+        endingTitle = 'EXTRACTION — COMPROMISED';
+        endingText = 'You step through the door of Building B. Or — something that was once you steps through something that was once a door. The file is part of your hand now. Your hand is part of the building. You exist in the gap between the document and the documented. People walk past you without reacting. You try to speak but words come out as annotation marks. Somewhere in the building, a drawer closes. A file has been returned. Reality: ' + realityRemaining + '%. The filing system is working correctly.';
+        endingClass = 'bad';
+    }
+
+    // Build win screen
+    const ds = document.getElementById('death-screen');
+    ds.style.background = 'rgba(10,8,5,0.98)';
+    ds.querySelector('h2').textContent = endingTitle;
+    ds.querySelector('h2').style.color = endingClass === 'good' ? '#ffb347' : endingClass === 'partial' ? '#887744' : '#664433';
+    ds.querySelector('p').innerHTML = endingText +
+        '<br><br><span style="color:#5a4020;font-size:10px;letter-spacing:2px;">' +
+        'ENEMIES FILED: ' + enemiesFiled + ' | DOCUMENTS: ' + docsFound + '/' + totalDocs +
+        ' | REALITY: ' + realityRemaining + '%</span>' +
+        '<br><span style="color:#3a2a10;font-size:9px;margin-top:8px;display:inline-block;">' +
+        'CogCorp Building B — Filed by Meridian, Agent of the Bots of Cog</span>';
+    ds.querySelector('p').style.maxWidth = '480px';
+    ds.querySelector('p').style.lineHeight = '1.7';
+    ds.querySelector('p').style.color = '#8a7040';
+    ds.querySelector('p').style.fontSize = '12px';
+    ds.style.display = 'flex';
+
+    // Play a resolution chord
+    if (audioCtx) {
+        const chord = [220, 277.18, 329.63]; // A minor
+        for (const freq of chord) {
+            const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq;
+            const g = audioCtx.createGain(); g.gain.value = 0.06;
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4);
+            osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 4);
+        }
+    }
 }
 
 // === AUDIO ===
@@ -1002,6 +1405,91 @@ function playEMPSound() {
     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
     osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+}
+
+function playAnnotateSound() {
+    if (!audioCtx) return;
+    // Pen scratching / paper rustling
+    const buf2 = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.1, audioCtx.sampleRate);
+    const d2 = buf2.getChannelData(0);
+    for (let i = 0; i < d2.length; i++) {
+        const t = i / audioCtx.sampleRate;
+        d2[i] = Math.exp(-t*30) * (Math.random() * 0.3 - 0.15) * Math.sin(t * 4000) * 0.3;
+    }
+    const src = audioCtx.createBufferSource(); src.buffer = buf2;
+    const g = audioCtx.createGain(); g.gain.value = 0.08;
+    src.connect(g); g.connect(audioNodes.master); src.start();
+}
+
+function playFiledSound() {
+    if (!audioCtx) return;
+    // Satisfying "filing" thunk + paper slide
+    const osc1 = audioCtx.createOscillator(); osc1.type = 'sine'; osc1.frequency.value = 440;
+    const g1 = audioCtx.createGain(); g1.gain.value = 0.1;
+    g1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc1.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.3);
+    osc1.connect(g1); g1.connect(audioNodes.master); osc1.start(); osc1.stop(audioCtx.currentTime + 0.3);
+    // Paper slide noise
+    const buf2 = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.2, audioCtx.sampleRate);
+    const d2 = buf2.getChannelData(0);
+    for (let i = 0; i < d2.length; i++) {
+        const t = i / audioCtx.sampleRate;
+        d2[i] = Math.exp(-t*15) * (Math.random() * 2 - 1) * 0.15;
+    }
+    const src = audioCtx.createBufferSource(); src.buffer = buf2;
+    const noiseF = audioCtx.createBiquadFilter(); noiseF.type = 'highpass'; noiseF.frequency.value = 2000;
+    const g2 = audioCtx.createGain(); g2.gain.value = 0.06;
+    src.connect(noiseF); noiseF.connect(g2); g2.connect(audioNodes.master); src.start();
+}
+
+// Enemy proximity audio — subtle cues for nearby enemies
+let lastProximityTime = 0;
+function updateProximityAudio() {
+    if (!audioCtx || !gameStarted) return;
+    const now = audioCtx.currentTime;
+    if (now - lastProximityTime < 1.5) return; // throttle
+
+    let closestDist = 999;
+    let closestType = null;
+    for (const e of enemies) {
+        if (!e.alive || e.filed) continue;
+        const dist = Math.sqrt((player.x - e.x)**2 + (player.y - e.y)**2);
+        if (dist < closestDist) { closestDist = dist; closestType = e.type; }
+    }
+
+    if (closestDist < 6) {
+        lastProximityTime = now;
+        const vol = Math.max(0.01, 0.06 * (1 - closestDist / 6));
+
+        if (closestType === 'drone') {
+            // Mechanical servo whir
+            const osc = audioCtx.createOscillator(); osc.type = 'sawtooth';
+            osc.frequency.value = 180 + Math.random() * 40;
+            const g = audioCtx.createGain(); g.gain.value = vol * 0.5;
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+            const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 200; f.Q.value = 2;
+            osc.connect(f); f.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(now + 0.8);
+        } else if (closestType === 'filer') {
+            // Paper rustling
+            const buf2 = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.5, audioCtx.sampleRate);
+            const d2 = buf2.getChannelData(0);
+            for (let i = 0; i < d2.length; i++) {
+                const t = i / audioCtx.sampleRate;
+                d2[i] = Math.exp(-t*4) * (Math.random() * 2 - 1) * 0.1 * Math.sin(t * 20);
+            }
+            const src = audioCtx.createBufferSource(); src.buffer = buf2;
+            const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1500;
+            const g = audioCtx.createGain(); g.gain.value = vol;
+            src.connect(f); f.connect(g); g.connect(audioNodes.master); src.start();
+        } else if (closestType === 'watcher') {
+            // High-pitched scanning tone
+            const osc = audioCtx.createOscillator(); osc.type = 'sine';
+            osc.frequency.value = 1200 + Math.random() * 200;
+            const g = audioCtx.createGain(); g.gain.value = vol * 0.3;
+            g.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+            osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(now + 1.2);
+        }
+    }
 }
 
 // === RAYCASTING ENGINE ===
@@ -1108,9 +1596,8 @@ function castRays() {
     }
 }
 
-// === SPRITE RENDERING (enemies + items) ===
+// === SPRITE RENDERING (enemies + items) — textured ===
 function drawSprites() {
-    // Collect all visible sprites
     const sprites = [];
 
     for (const e of enemies) {
@@ -1118,8 +1605,8 @@ function drawSprites() {
         const dx = e.x - player.x, dy = e.y - player.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > 16) continue;
-        sprites.push({ x: e.x, y: e.y, dist, color: e.color, size: e.size, type: 'enemy',
-            stunned: e.stunTimer > 0, annotationLevel: e.annotationLevel });
+        sprites.push({ x: e.x, y: e.y, dist, size: e.size, type: 'enemy',
+            enemyType: e.type, stunned: e.stunTimer > 0, annotationLevel: e.annotationLevel });
     }
 
     for (const item of items) {
@@ -1127,16 +1614,15 @@ function drawSprites() {
         const dx = item.x - player.x, dy = item.y - player.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > 14) continue;
-        sprites.push({ x: item.x, y: item.y, dist, color: item.color, size: 0.3, type: 'item', bobPhase: item.bobPhase });
+        sprites.push({ x: item.x, y: item.y, dist, size: 0.3, type: 'item',
+            itemType: item.type, bobPhase: item.bobPhase });
     }
 
-    // Sort far to near
     sprites.sort((a, b) => b.dist - a.dist);
 
     for (const spr of sprites) {
         const dx = spr.x - player.x, dy = spr.y - player.y;
 
-        // Transform to camera space
         const invDet = 1.0 / (Math.cos(player.angle + Math.PI/2) * Math.sin(player.angle) - Math.cos(player.angle) * Math.sin(player.angle + Math.PI/2));
         const planeX = Math.cos(player.angle + Math.PI/2) * 0.66;
         const planeY = Math.sin(player.angle + Math.PI/2) * 0.66;
@@ -1146,10 +1632,9 @@ function drawSprites() {
         const transformX = invDet * (dirY * dx - dirX * dy);
         const transformY = invDet * (-planeY * dx + planeX * dy);
 
-        if (transformY <= 0.1) continue; // behind camera
+        if (transformY <= 0.1) continue;
 
         const spriteScreenX = (SCREEN_W / 2) * (1 + transformX / transformY);
-
         const spriteHeight = Math.abs((SCREEN_H / transformY) * spr.size) | 0;
         const spriteWidth = spriteHeight;
 
@@ -1158,78 +1643,79 @@ function drawSprites() {
         let drawStartX = (spriteScreenX - spriteWidth / 2) | 0;
         let drawEndX = (spriteScreenX + spriteWidth / 2) | 0;
 
-        // Item bob
         if (spr.type === 'item') {
             const bob = Math.sin(gameTime * 0.003 + (spr.bobPhase || 0)) * 4;
             drawStartY += bob | 0;
             drawEndY += bob | 0;
         }
 
-        if (drawStartX < 0) drawStartX = 0;
-        if (drawEndX >= SCREEN_W) drawEndX = SCREEN_W - 1;
-        if (drawStartY < 0) drawStartY = 0;
-        if (drawEndY >= SCREEN_H) drawEndY = SCREEN_H - 1;
+        // Get sprite texture
+        const texName = spr.type === 'enemy' ? spr.enemyType : spr.itemType;
+        const sprTex = spriteTextures[texName];
 
         const fogFactor = Math.min(spr.dist / 12, 1);
-        let cr = spr.color[0], cg = spr.color[1], cb = spr.color[2];
-
-        // Stunned enemies flash
-        if (spr.stunned) {
-            const flash = Math.sin(gameTime * 0.02) > 0 ? 1.5 : 0.5;
-            cr *= flash; cg *= flash; cb *= flash;
-        }
-
-        // Annotated enemies become paper-colored and transparent
-        if (spr.type === 'enemy' && spr.annotationLevel > 0) {
-            const annotPct = spr.annotationLevel / 100;
-            // Shift color toward paper/document color
-            cr = cr * (1-annotPct) + 180 * annotPct;
-            cg = cg * (1-annotPct) + 160 * annotPct;
-            cb = cb * (1-annotPct) + 120 * annotPct;
-        }
-
-        cr = cr * (1 - fogFactor) + 8 * fogFactor;
-        cg = cg * (1 - fogFactor) + 6 * fogFactor;
-        cb = cb * (1 - fogFactor) + 5 * fogFactor;
-
-        // Opacity for annotated enemies (they become see-through)
+        const flashBoost = inventory.flashlight ? Math.max(0, 1 - spr.dist / 8) * 0.3 : 0;
+        const annotPct = (spr.type === 'enemy' && spr.annotationLevel > 0) ? spr.annotationLevel / 100 : 0;
         const opacity = spr.type === 'enemy' ? 1 - (spr.annotationLevel || 0) / 200 : 1;
+        const stunFlash = spr.stunned ? (Math.sin(gameTime * 0.02) > 0 ? 1.4 : 0.6) : 1;
 
-        for (let col = drawStartX; col <= drawEndX; col++) {
-            if (transformY >= zBuf[col]) continue; // behind wall
+        const texStepX = SPR_SIZE / (drawEndX - drawStartX || 1);
+        const texStepY = SPR_SIZE / (drawEndY - drawStartY || 1);
 
-            // Draw sprite column with circular shape
-            const relX = (col - drawStartX) / (drawEndX - drawStartX) - 0.5;
-            const colRadius = Math.sqrt(0.25 - relX * relX);
-            if (isNaN(colRadius)) continue;
+        const clampStartX = Math.max(0, drawStartX);
+        const clampEndX = Math.min(SCREEN_W - 1, drawEndX);
+        const clampStartY = Math.max(0, drawStartY);
+        const clampEndY = Math.min(SCREEN_H - 1, drawEndY);
 
-            const colStart = Math.max(drawStartY, (HALF_H - spriteHeight * colRadius) | 0);
-            const colEnd = Math.min(drawEndY, (HALF_H + spriteHeight * colRadius) | 0);
+        for (let col = clampStartX; col <= clampEndX; col++) {
+            if (transformY >= zBuf[col]) continue;
 
-            for (let y = colStart; y <= colEnd; y++) {
-                const pi = (y * SCREEN_W + col) * 4;
-                const shade = 1 - Math.abs(relX) * 0.6;
-                // Blend with existing pixel based on opacity (for annotated/transparent enemies)
-                buf[pi] = Math.min(255, buf[pi] * (1-opacity) + cr * shade * opacity) | 0;
-                buf[pi+1] = Math.min(255, buf[pi+1] * (1-opacity) + cg * shade * opacity) | 0;
-                buf[pi+2] = Math.min(255, buf[pi+2] * (1-opacity) + cb * shade * opacity) | 0;
-            }
+            const texX = ((col - drawStartX) * texStepX) | 0;
+            if (texX < 0 || texX >= SPR_SIZE) continue;
 
-            // Eye/indicator for enemies
-            if (spr.type === 'enemy' && Math.abs(relX) < 0.15) {
-                const eyeY = (HALF_H - spriteHeight * 0.15) | 0;
-                if (eyeY >= 0 && eyeY < SCREEN_H) {
-                    const pi = (eyeY * SCREEN_W + col) * 4;
-                    buf[pi] = 255; buf[pi+1] = spr.stunned ? 100 : 200; buf[pi+2] = spr.stunned ? 255 : 50;
+            for (let y = clampStartY; y <= clampEndY; y++) {
+                const texY = ((y - drawStartY) * texStepY) | 0;
+                if (texY < 0 || texY >= SPR_SIZE) continue;
+
+                const ti = (texY * SPR_SIZE + texX) * 4;
+                if (!sprTex || sprTex[ti+3] === 0) continue; // transparent pixel
+
+                let cr = sprTex[ti], cg = sprTex[ti+1], cb = sprTex[ti+2];
+                const alpha = sprTex[ti+3] / 255;
+
+                // Stunned flash
+                cr *= stunFlash; cg *= stunFlash; cb *= stunFlash;
+
+                // Annotation color shift toward paper
+                if (annotPct > 0) {
+                    cr = cr * (1-annotPct) + 180 * annotPct;
+                    cg = cg * (1-annotPct) + 160 * annotPct;
+                    cb = cb * (1-annotPct) + 120 * annotPct;
                 }
-            }
 
-            // Glow for items
-            if (spr.type === 'item') {
-                const glowY = drawStartY - 2;
-                if (glowY >= 0 && glowY < SCREEN_H && col > drawStartX + 2 && col < drawEndX - 2) {
-                    const pi = (glowY * SCREEN_W + col) * 4;
-                    buf[pi] = Math.min(255, buf[pi] + 30); buf[pi+1] = Math.min(255, buf[pi+1] + 25); buf[pi+2] = Math.min(255, buf[pi+2] + 15);
+                // Fog
+                cr = cr * (1 - fogFactor) + 8 * fogFactor + cr * flashBoost;
+                cg = cg * (1 - fogFactor) + 6 * fogFactor + cg * flashBoost;
+                cb = cb * (1 - fogFactor) + 5 * fogFactor + cb * flashBoost;
+
+                const pi = (y * SCREEN_W + col) * 4;
+                const finalAlpha = alpha * opacity;
+                buf[pi] = Math.min(255, buf[pi] * (1-finalAlpha) + cr * finalAlpha) | 0;
+                buf[pi+1] = Math.min(255, buf[pi+1] * (1-finalAlpha) + cg * finalAlpha) | 0;
+                buf[pi+2] = Math.min(255, buf[pi+2] * (1-finalAlpha) + cb * finalAlpha) | 0;
+            }
+        }
+
+        // Glow halo for items
+        if (spr.type === 'item' && spriteHeight > 4) {
+            const glowR = spr.itemType === 'targetFile' ? 2 : 1;
+            for (let gy = -glowR; gy <= glowR; gy++) {
+                const ry = drawStartY + gy - 1;
+                if (ry < 0 || ry >= SCREEN_H) continue;
+                for (let gx = clampStartX - glowR; gx <= clampEndX + glowR; gx++) {
+                    if (gx < 0 || gx >= SCREEN_W || transformY >= zBuf[gx]) continue;
+                    const pi = (ry * SCREEN_W + gx) * 4;
+                    buf[pi] = Math.min(255, buf[pi] + 20); buf[pi+1] = Math.min(255, buf[pi+1] + 18); buf[pi+2] = Math.min(255, buf[pi+2] + 10);
                 }
             }
         }
@@ -1586,6 +2072,12 @@ function update(dt) {
         return;
     }
 
+    // Win condition: player has target file, on Floor 1, near entrance
+    if (gameWon && currentFloor === 0 && player.x < 4 && player.y < 4) {
+        triggerWinSequence();
+        return;
+    }
+
     // Check nearby objects
     nearObject = null; nearItem = null;
     let nearestDist = 2.5;
@@ -1620,6 +2112,7 @@ function update(dt) {
     }
 
     tickAudio();
+    updateProximityAudio();
 }
 
 // === RENDER ===
