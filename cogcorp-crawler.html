@@ -4358,10 +4358,11 @@ function drawSprites() {
                     cb = cb * (1-annotPct) + 120 * annotPct;
                 }
 
-                // Fog
-                cr = cr * (1 - fogFactor) + 8 * fogFactor + cr * flashBoost;
-                cg = cg * (1 - fogFactor) + 6 * fogFactor + cg * flashBoost;
-                cb = cb * (1 - fogFactor) + 5 * fogFactor + cb * flashBoost;
+                // Fog — uses per-floor atmosphere colors
+                const satmo = getAtmo();
+                cr = cr * (1 - fogFactor) + satmo.fogR * fogFactor + cr * flashBoost;
+                cg = cg * (1 - fogFactor) + satmo.fogG * fogFactor + cg * flashBoost;
+                cb = cb * (1 - fogFactor) + satmo.fogB * fogFactor + cb * flashBoost;
 
                 const pi = (y * SCREEN_W + col) * 4;
                 const finalAlpha = alpha * opacity;
