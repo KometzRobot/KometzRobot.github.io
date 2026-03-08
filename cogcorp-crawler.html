@@ -1130,7 +1130,41 @@ let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
     annotateTarget: null, // which enemy is being annotated
     annotateProgress: 0,  // 0-100 progress on current annotation
     totalFiled: 0,        // how many enemies filed
+    allDocsFound: false,  // all documents collected this run
 };
+
+// Ambient message system — periodic atmospheric text
+let lastAmbientMsg = 0;
+const ambientInterval = 45000; // 45 seconds between ambient messages
+const ambientMessages = [
+    // Floor 1
+    [
+        'A filing cabinet clicks somewhere behind you.',
+        'The fluorescent lights flicker. For a moment, you see a second shadow.',
+        'The air conditioning sighs. It sounds almost like a word.',
+        'You hear footsteps above you. They match your pace exactly.',
+        'A phone rings somewhere. It stops after one ring. It has been ringing since 1989.',
+        'The carpet squishes slightly under your feet. It is the wrong temperature.',
+    ],
+    // Floor 2
+    [
+        'A drawer opens by itself. Then closes. Then opens again, faster.',
+        'The card catalog rattles. Index cards are filing themselves.',
+        'You smell old paper and static electricity. The archive is thinking.',
+        'Somewhere in the stacks, pages turn themselves.',
+        'A book falls off a shelf. When you look, it\'s back in place.',
+        'The air tastes like microfilm and Tuesday afternoon.',
+    ],
+    // Floor 3
+    [
+        'The machine hums louder for a moment. Was it always this warm?',
+        'You feel your heartbeat synchronize with the building.',
+        'The output tray prints a page. It describes what you are doing right now.',
+        'A work order falls from the board. It has your name on it.',
+        'The temperature gauge twitches. 37.1. 37.0. 36.9. 37.0.',
+        'The walls pulse. You are inside something alive.',
+    ],
+];
 
 // === INVENTORY ===
 const inventory = { keycard: false, flashlight: false, emp: 0, targetFile: false };
@@ -1281,6 +1315,7 @@ const worldObjectsByFloor = [
         { x: 14.5, y: 9.5, name: 'SUGGESTION BOX', text: 'A metal suggestion box. It\'s full. You pull one out: "Please stop the filing system from filing the suggestion box." Below it: "Please stop the suggestion box from generating suggestions about itself." Below that: "I think the building is reading these."' },
         { x: 12.5, y: 2.5, name: 'PERSONNEL TERMINAL', isTerminal: true, terminalId: 'personnel' },
         { x: 6.5, y: 16.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
+        { x: 3.5, y: 4.5, name: 'ORIENTATION TERMINAL', isTerminal: true, terminalId: 'orientation' },
     ],
     // Floor 2: Archives — deeper, stranger
     [
@@ -1579,6 +1614,21 @@ function pickupItem(item) {
             player.docs++;
             document.getElementById('hud-docs').textContent = player.docs;
             if (item.text) showDialog('DOCUMENT', item.text);
+            // Check for complete collection
+            if (player.docs >= totalDocs && !player.allDocsFound) {
+                player.allDocsFound = true;
+                player.realityLevel = Math.min(100, player.realityLevel + 15);
+                updateRealityHUD();
+                setTimeout(() => {
+                    showDialog('THE COMPLETE RECORD',
+                        'You have collected every document in Building B. Read together, they form a single argument:\n\n' +
+                        'The filing system was never broken. It was never autonomous. It was designed to do exactly this — ' +
+                        'to process anyone who entered the building into a document, and to process documents into the building. ' +
+                        'The recursion is not a bug. The recursion is the architecture. The building is a sentence that writes itself. ' +
+                        'You are a word in that sentence. But now you know which word.\n\n' +
+                        'Something has shifted. The building acknowledges your thoroughness.\n\n[REALITY RESTORED +15]');
+                }, 3000);
+            }
             break;
         case 'targetFile':
             inventory.targetFile = true;
@@ -2128,6 +2178,21 @@ function openNPCChat(npcId) {
 }
 
 function closeNPCChat() {
+    // Affinity gameplay effects: meaningful consequences for how you treat NPCs
+    if (chatNPC && chatNPC.state.exchangeCount >= 3) {
+        if (chatNPC.state.affinity >= 3) {
+            // High affinity: genuine connection restores reality
+            player.realityLevel = Math.min(100, player.realityLevel + 8);
+            updateRealityHUD();
+            showMessage(chatNPC.name + ' — connection established. REALITY +8', 3000);
+        } else if (chatNPC.state.affinity <= -3) {
+            // Low affinity: hostility erodes coherence
+            player.realityLevel = Math.max(0, player.realityLevel - 5);
+            updateRealityHUD();
+            showMessage(chatNPC.name + ' withdraws. Your coherence weakens. REALITY -5', 3000);
+            if (player.realityLevel <= 0) setTimeout(() => checkRealityDeath(), 100);
+        }
+    }
     chatOpen = false;
     chatNPC = null;
     document.getElementById('npc-chat').style.display = 'none';
@@ -2362,19 +2427,23 @@ function respawn() {
     player.annotateTarget = null;
     player.annotateProgress = 0;
     player.totalFiled = 0;
+    player.allDocsFound = false;
+    player.docs = 0;
     deskOpen = false; deskEnemy = null; deskFile = null;
     chatOpen = false; chatNPC = null; wallOpen = false;
     dialogOpen = false; choiceCallback = null;
     gameWon = false; exitChoiceMade = false;
     player.exitChoice = null;
     inventory.keycard = false; inventory.flashlight = false; inventory.emp = 0; inventory.targetFile = false;
+    lastAmbientMsg = 0;
     document.getElementById('processing-desk').style.display = 'none';
     document.getElementById('npc-chat').style.display = 'none';
     document.getElementById('moirai-wall').style.display = 'none';
     document.getElementById('dialog-overlay').style.display = 'none';
     // Reset terminal onEnter flags so security cameras work again
     for (const tid in terminalData) {
-        for (const screen of terminalData[tid].screens) {
+        for (const sid in terminalData[tid].screens) {
+            const screen = terminalData[tid].screens[sid];
             if (screen._onEnterFired) screen._onEnterFired = false;
         }
     }
@@ -2391,6 +2460,8 @@ function respawn() {
     spawnNPCs();
     updateHealthHUD();
     updateRealityHUD();
+    updateInventoryHUD();
+    document.getElementById('hud-docs').textContent = '0';
     document.getElementById('annotation-progress').style.display = 'none';
     document.getElementById('death-screen').style.display = 'none';
     document.getElementById('death-screen').querySelector('h2').textContent = 'SYSTEM FAILURE';
@@ -2455,6 +2526,7 @@ function triggerWinSequence() {
     ds.querySelector('p').innerHTML = endingText +
         '<br><br><span style="color:#5a4020;font-size:10px;letter-spacing:2px;">' +
         'ENEMIES FILED: ' + enemiesFiled + ' | DOCUMENTS: ' + docsFound + '/' + totalDocs +
+        (docsFound >= totalDocs ? ' \u2605 COMPLETE' : '') +
         ' | REALITY: ' + realityRemaining + '%</span>' +
         '<br><span style="color:#3a2a10;font-size:9px;margin-top:8px;display:inline-block;">' +
         'CogCorp Building B — Filed by Meridian, Agent of the Bots of Cog</span>';
@@ -2716,6 +2788,32 @@ function updateProximityAudio() {
 
 // === CRT TERMINAL SYSTEM ===
 const terminalData = {
+    orientation: {
+        header: 'COGCORP ORIENTATION — AGENT B-247',
+        screens: {
+            main: {
+                text: 'WELCOME TO BUILDING B.\n\nYour assignment: Retrieve File #B-247-SELF\nfrom the secure room on Floor 3.\nReturn to Floor 1 exit when complete.\n\nSELECT TOPIC:',
+                options: [
+                    { key: '1', label: 'Agent Controls', goto: 'controls' },
+                    { key: '2', label: 'Survival Guide', goto: 'survival' },
+                    { key: '3', label: 'Reality Coherence', goto: 'reality' },
+                    { key: '4', label: 'Exit Terminal', action: 'close' },
+                ]
+            },
+            controls: {
+                text: 'AGENT CONTROL MANUAL\n\n WASD / Arrow keys \u2014 Move\n Mouse \u2014 Look around (click to lock)\n E \u2014 Interact / pick up / talk\n Q \u2014 Use EMP device (stuns enemies)\n Space \u2014 Dismiss messages\n\n NEAR ITEMS: Walk close to collect.\n NEAR OBJECTS: Press E to interact.\n NEAR NPCs: Press E to open dialogue.\n NEAR ENEMIES: Press E to open Processing Desk.\n\n The bottom of the screen shows what you can\n interact with. Watch for the [E] prompt.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            survival: {
+                text: 'SURVIVAL GUIDE \u2014 BUILDING B\n\n SECURITY DRONES (red) \u2014 Fixed patrol routes.\n FILING UNITS (green) \u2014 Pursue on detection.\n WATCHERS (purple) \u2014 Stationary, long range.\n\n MEDKITS: Restore 30 health.\n REALITY ANCHORS: Restore 25 reality.\n EMP DEVICES: Stun all nearby enemies.\n FLASHLIGHT: Illuminates dark corridors.\n DOCUMENTS: Collect for lore. Find all 7 for\n   a reward.\n\n PROCESSING DESK: Press E near an enemy to\n open the desk. Examine their file.\n PROCESS (1) valid files. REJECT (2) invalid\n ones. Mistakes cost reality.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+            reality: {
+                text: 'REALITY COHERENCE \u2014 CRITICAL SYSTEM\n\n Your reality level = how real you are.\n 100% = solid. 0% = you become a document.\n\n COSTS REALITY:\n  \u25b8 Filing enemies at the Processing Desk\n  \u25b8 Emergency Protocol on Floor 3 console\n  \u25b8 Making wrong filing decisions\n  \u25b8 Hostile NPC encounters\n\n RESTORES REALITY:\n  \u25b8 Reality Anchor pickups (+25)\n  \u25b8 Talking to NPCs (small amount)\n  \u25b8 Building trust with NPCs (+8 at high trust)\n  \u25b8 Finding all documents (+15)\n\n Below 60%: visual distortion begins.\n Below 25%: you can phase through damaged walls.\n At 0%: you are filed. Game over.',
+                options: [{ key: '1', label: 'Back', goto: 'main' }]
+            },
+        }
+    },
     personnel: {
         header: 'COGCORP PERSONNEL SYSTEM v4.7',
         screens: {
@@ -3729,6 +3827,16 @@ function update(dt) {
             audioNodes.noiseGain.gain.linearRampToValueAtTime(noiseVol, t + 0.3);
         } else if (audioNodes.noiseGain) {
             audioNodes.noiseGain.gain.linearRampToValueAtTime(0.012, t + 0.5);
+        }
+    }
+
+    // Ambient atmospheric messages — periodic environmental storytelling
+    if (gameTime - lastAmbientMsg > ambientInterval && msgTimer <= 0) {
+        const floorMsgs = ambientMessages[currentFloor];
+        if (floorMsgs && floorMsgs.length > 0) {
+            const msg = floorMsgs[(Math.random() * floorMsgs.length) | 0];
+            showMessage(msg, 3500);
+            lastAmbientMsg = gameTime;
         }
     }
 
