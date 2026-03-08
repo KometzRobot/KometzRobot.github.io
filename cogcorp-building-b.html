@@ -51,11 +51,36 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #m-up { right: 76px; bottom: 20px; width: 56px; height: 56px; }
 #m-act { right: 10px; bottom: 20px; width: 56px; height: 56px; font-size: 11px; letter-spacing: 1px; }
 #m-flag { right: 10px; bottom: 86px; width: 56px; height: 36px; font-size: 10px; display: none; background: rgba(204,51,51,0.12); border-color: rgba(204,51,51,0.3); color: rgba(204,51,51,0.6); }
+#boot-sequence {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200;
+    background: #020200; display: flex; flex-direction: column; justify-content: flex-start;
+    padding: 30px 40px; font-family: monospace; overflow: hidden;
+    animation: crt-on 0.3s ease-out;
+}
+#boot-sequence::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(0deg, rgba(255,179,71,0.03) 0px, transparent 1px, transparent 2px);
+    pointer-events: none; z-index: 1;
+}
+#boot-sequence::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none; z-index: 2;
+}
+@keyframes crt-on { 0% { transform: scaleY(0.005); filter: brightness(20); } 50% { transform: scaleY(1); filter: brightness(2); } 100% { transform: scaleY(1); filter: brightness(1); } }
+.boot-line { color: #ffb347; font-size: 11px; line-height: 1.5; opacity: 0; transition: opacity 0.15s; white-space: pre; letter-spacing: 0.5px; position: relative; z-index: 3; }
+.boot-line.visible { opacity: 1; }
+.boot-line.warn { color: #cc3333; }
+.boot-line.dim { color: #5a4020; }
+.boot-line.green { color: #44aa44; }
+.boot-line.bright { color: #ffd700; }
 </style>
 </head>
 <body>
 
-<div id="title" onclick="startGame()">
+<div id="boot-sequence"></div>
+
+<div id="title" onclick="startGame()" style="display:none">
     <h1>COGCORP</h1>
     <div class="sub">BUILDING B</div>
     <div class="desc">
@@ -94,8 +119,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B v4 — Industrial Atompunk Pixel Art
-// v4: dynamic lighting, ambient creatures, glitch effects, expanded content
+// COGCORP: BUILDING B v5 — Industrial Atompunk Pixel Art
+// v5: CRT boot sequence, tileset art overlay, per-floor atmosphere, enhanced visuals
 // =================================================================
 
 const W = 320, H = 180;
@@ -1456,10 +1481,29 @@ function changeFloor(newFloor) {
 }
 
 // === TILE RENDERING ===
+// Per-floor palette tint multipliers (RGB shift applied to tile rendering)
+const FLOOR_TINTS = [
+    { r: 1.0, g: 0.95, b: 0.85, fog: 'rgba(20,15,8,' },    // Floor 1: warm amber
+    { r: 1.0, g: 0.92, b: 0.82, fog: 'rgba(18,14,6,' },     // Floor 2: slightly warmer
+    { r: 0.9, g: 0.95, b: 1.0, fog: 'rgba(8,10,14,' },      // Floor 3: cool blue-grey
+    { r: 0.85, g: 0.88, b: 0.95, fog: 'rgba(6,8,12,' },     // Floor 4: colder
+    { r: 0.8, g: 0.85, b: 0.9, fog: 'rgba(4,5,8,' },        // Floor 5: darker, colder
+    { r: 0.75, g: 0.95, b: 0.8, fog: 'rgba(4,10,6,' },      // Floor 6: sickly green
+];
+
+// Tileset tile indices in buildingb-tiles.png (each 16px wide)
+const TS = { wall: 0, floor: 1, metal: 2, machine: 3, grating: 4, vent: 5, darkFloor: 6, equip: 7 };
+
+function drawTilesetOverlay(sx, sy, tileIdx, alpha) {
+    if (!tilesetLoaded) return;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(tilesetImg, tileIdx * TILE, 0, TILE, TILE, sx, sy, TILE, TILE);
+    ctx.globalAlpha = 1;
+}
+
 function drawTile(x, y, type, floorIdx) {
     const sx = x * TILE, sy = y * TILE;
     const t = state.time;
-    // Seeded pseudo-random for consistent noise
     const hash = (x * 7 + y * 13 + floorIdx * 31) & 0xFF;
 
     switch(type) {
@@ -1474,20 +1518,19 @@ function drawTile(x, y, type, floorIdx) {
                     ctx.fillRect(sx + bx, sy + by, 7, 3);
                 }
             }
-            // Mortar
             ctx.fillStyle = P.wallDk;
             for (let by = 3; by < TILE; by += 4) ctx.fillRect(sx, sy + by, TILE, 1);
-            // Occasional rust stain
             if (hash % 11 === 0) {
                 ctx.fillStyle = P.rust;
                 ctx.fillRect(sx + (hash%12), sy + (hash%8), 2, 3);
             }
-            // Rivets on edge tiles
             if (hash % 5 === 0) {
                 ctx.fillStyle = P.rivet;
                 ctx.fillRect(sx + 2, sy + 2, 1, 1);
                 ctx.fillRect(sx + 13, sy + 13, 1, 1);
             }
+            // Blend real tileset art (deeper floors use more tileset, less procedural)
+            drawTilesetOverlay(sx, sy, hash % 3 === 0 ? TS.vent : TS.wall, floorIdx >= 2 ? 0.35 : 0.2);
             break;
 
         case 2: // Floor — industrial tile with grime
@@ -1495,15 +1538,14 @@ function drawTile(x, y, type, floorIdx) {
             ctx.fillRect(sx, sy, TILE, TILE);
             ctx.fillStyle = P.floorHi;
             ctx.fillRect(sx, sy, TILE, 1);
-            // Tile grid pattern
             ctx.fillStyle = P.floorDk;
             ctx.fillRect(sx + 15, sy, 1, TILE);
             ctx.fillRect(sx, sy + 15, TILE, 1);
-            // Grime spots
             if (hash % 7 === 0) {
                 ctx.fillStyle = P.floorDk;
                 ctx.fillRect(sx + (hash%10)+2, sy + 4, 2, 2);
             }
+            drawTilesetOverlay(sx, sy, floorIdx >= 3 ? TS.darkFloor : TS.floor, 0.25);
             break;
 
         case 3: // Pillar — stone with metal bands
@@ -1514,16 +1556,15 @@ function drawTile(x, y, type, floorIdx) {
             ctx.fillRect(sx + 4, sy, 1, TILE);
             ctx.fillStyle = P.metalDk;
             ctx.fillRect(sx + 11, sy, 1, TILE);
-            // Bands
             ctx.fillStyle = P.metalLt;
             ctx.fillRect(sx + 3, sy + 2, 10, 2);
             ctx.fillRect(sx + 3, sy + 12, 10, 2);
-            // Rivets
             ctx.fillStyle = P.rivet;
             ctx.fillRect(sx + 5, sy + 3, 1, 1);
             ctx.fillRect(sx + 10, sy + 3, 1, 1);
             ctx.fillRect(sx + 5, sy + 13, 1, 1);
             ctx.fillRect(sx + 10, sy + 13, 1, 1);
+            drawTilesetOverlay(sx, sy, TS.metal, 0.2);
             break;
 
         case 4: // Counter
@@ -1556,7 +1597,6 @@ function drawTile(x, y, type, floorIdx) {
         case 6: // Metal grating/catwalk
             ctx.fillStyle = P.metalDk;
             ctx.fillRect(sx, sy, TILE, TILE);
-            // Grating pattern
             for (let gx = 0; gx < TILE; gx += 3) {
                 for (let gy = 0; gy < TILE; gy += 3) {
                     ctx.fillStyle = P.bg;
@@ -1565,6 +1605,7 @@ function drawTile(x, y, type, floorIdx) {
             }
             ctx.fillStyle = P.metalHi;
             ctx.fillRect(sx, sy, TILE, 1);
+            drawTilesetOverlay(sx, sy, TS.grating, 0.3);
             break;
 
         case 7: // Machine block
@@ -1609,6 +1650,7 @@ function drawTile(x, y, type, floorIdx) {
                     ctx.fillRect(sx + hx + 2, sy + 14, 2, 2);
                 }
             }
+            drawTilesetOverlay(sx, sy, hash % 2 === 0 ? TS.machine : TS.equip, 0.25);
             break;
     }
 }
@@ -2281,6 +2323,14 @@ function render() {
         ctx.textAlign = 'start';
     }
 
+    // Per-floor color tint (subtle atmosphere shift per floor)
+    const floorTint = FLOOR_TINTS[state.floor] || FLOOR_TINTS[0];
+    if (state.floor >= 2) {
+        // Cooler floors get a blue/grey fog overlay
+        ctx.fillStyle = floorTint.fog + '0.06)';
+        ctx.fillRect(0, 0, W, H);
+    }
+
     // Floor 6 green overlay
     if (state.floor === 5) {
         for (let y = 0; y < H; y += 3) {
@@ -2581,6 +2631,68 @@ function loop(ts) {
     requestAnimationFrame(loop);
 }
 
+// === CRT BOOT SEQUENCE ===
+const BOOT_LINES = [
+    { t: 200, text: 'COGCORP INDUSTRIAL SYSTEMS v4.7.2', cls: 'bright' },
+    { t: 400, text: 'COPYRIGHT (C) 1957 COGCORP FILING DIVISION', cls: 'dim' },
+    { t: 600, text: '' },
+    { t: 800, text: 'BIOS VACUUM TUBE CHECK .......... OK', cls: '' },
+    { t: 1000, text: 'MAGNETIC CORE MEMORY ............ 64K VERIFIED', cls: '' },
+    { t: 1200, text: 'CRT PHOSPHOR ARRAY .............. AMBER/P3', cls: '' },
+    { t: 1500, text: '' },
+    { t: 1700, text: 'SCANNING BUILDING B INFRASTRUCTURE:', cls: 'bright' },
+    { t: 1900, text: '  FLOOR 1 — LOBBY ............... NOMINAL', cls: '' },
+    { t: 2100, text: '  FLOOR 2 — FILING DIVISION ..... NOMINAL', cls: '' },
+    { t: 2300, text: '  FLOOR 3 — RECORDS ............. NOMINAL', cls: '' },
+    { t: 2500, text: '  FLOOR 4 — RESTRICTED .......... ACCESS DENIED', cls: 'warn' },
+    { t: 2700, text: '  FLOOR 5 — SUB-ARCHIVE ......... REDACTED', cls: 'warn' },
+    { t: 2900, text: '  FLOOR 6 — [DESIGNATION MISSING] ANOMALOUS', cls: 'warn' },
+    { t: 3200, text: '' },
+    { t: 3400, text: 'EMPLOYEE PROFILE LOADED:', cls: 'bright' },
+    { t: 3500, text: '  ID: B-247 | ROLE: Filing Analyst | CLEARANCE: 1', cls: '' },
+    { t: 3700, text: '  STATUS: First day. Probationary.', cls: 'dim' },
+    { t: 3900, text: '' },
+    { t: 4100, text: 'FILING SYSTEM STATUS: 9 UNRESOLVED ANOMALIES', cls: 'green' },
+    { t: 4300, text: 'BUILDING SUSPICION INDEX: NOMINAL', cls: '' },
+    { t: 4600, text: '' },
+    { t: 4800, text: 'WARNING: Fluorescent array operating at non-standard frequencies.', cls: 'warn' },
+    { t: 5100, text: 'WARNING: Filing cabinet inventory exceeds documented capacity.', cls: 'warn' },
+    { t: 5400, text: 'NOTE: Do not read the margins.', cls: 'dim' },
+    { t: 5800, text: '' },
+    { t: 6000, text: 'TERMINAL READY. INITIALIZING BUILDING B INTERFACE...', cls: 'bright' },
+];
+
+function runBootSequence() {
+    const bootEl = document.getElementById('boot-sequence');
+    if (!bootEl) { showTitle(); return; }
+    const lines = BOOT_LINES.map(line => {
+        const div = document.createElement('div');
+        div.className = 'boot-line' + (line.cls ? ' ' + line.cls : '');
+        div.textContent = line.text || '\u00A0';
+        bootEl.appendChild(div);
+        return { el: div, t: line.t };
+    });
+    lines.forEach(l => {
+        setTimeout(() => { l.el.classList.add('visible'); }, l.t);
+    });
+    const lastTime = BOOT_LINES[BOOT_LINES.length - 1].t;
+    setTimeout(() => {
+        bootEl.style.transition = 'opacity 0.6s';
+        bootEl.style.opacity = '0';
+        setTimeout(() => {
+            bootEl.style.display = 'none';
+            showTitle();
+        }, 600);
+    }, lastTime + 800);
+}
+
+function showTitle() {
+    const title = document.getElementById('title');
+    title.style.display = 'flex';
+    title.style.opacity = '0';
+    setTimeout(() => { title.style.opacity = '1'; }, 50);
+}
+
 function startGame() {
     initAudio();
     const title = document.getElementById('title');
@@ -2592,6 +2704,21 @@ function startGame() {
     updateFloorAudio(0);
     requestAnimationFrame(loop);
 }
+
+// === TILESET IMAGE LOADING ===
+let tilesetImg = null;
+let tilesetLoaded = false;
+
+function loadBuildingBTiles() {
+    const img = new Image();
+    img.onload = () => { tilesetImg = img; tilesetLoaded = true; };
+    img.onerror = () => {};
+    img.src = 'game-assets/buildingb-tiles.png';
+}
+loadBuildingBTiles();
+
+// Start boot sequence on load
+runBootSequence();
 </script>
 </body>
 </html>

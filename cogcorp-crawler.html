@@ -513,8 +513,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B — FIRST PERSON CRAWLER v2
-// Raycasting engine + enemies + items + inventory + 3 floors + puzzles
+// COGCORP: BUILDING B — FIRST PERSON CRAWLER v2 (art update v8.6)
+// Raycasting engine + enemies + items + inventory + 3 floors + puzzles + real art textures
 // =================================================================
 
 const SCREEN_W = 480, SCREEN_H = 300;
@@ -1136,10 +1136,14 @@ function loadSpritePNG(name, path) {
     img.src = path;
 }
 
-// Additional texture indices for floor-specific variants
-const TEX_FACTORY_WALL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=40;d[i+1]=50;d[i+2]=55;d[i+3]=255;} });
-const TEX_FACTORY_METAL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=35;d[i+1]=45;d[i+2]=55;d[i+3]=255;} });
-const TEX_FACTORY_FLOOR = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=30;d[i+1]=38;d[i+2]=42;d[i+3]=255;} });
+// Additional texture indices for floor-specific variants (solid-color fallbacks)
+const TEX_FACTORY_WALL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=131;d[i+1]=148;d[i+2]=155;d[i+3]=255;} });
+const TEX_FACTORY_VENT = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=130;d[i+1]=147;d[i+2]=155;d[i+3]=255;} });
+const TEX_FACTORY_METAL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=105;d[i+1]=113;d[i+2]=114;d[i+3]=255;} });
+const TEX_FACTORY_DARK = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=94;d[i+1]=98;d[i+2]=98;d[i+3]=255;} });
+const TEX_FACTORY_DEEP = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=78;d[i+1]=94;d[i+2]=96;d[i+3]=255;} });
+const TEX_FACTORY_FLOOR = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=86;d[i+1]=99;d[i+2]=104;d[i+3]=255;} });
+const TEX_FACTORY_EQUIP = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=78;d[i+1]=93;d[i+2]=97;d[i+3]=255;} });
 const TEX_OFFICE_WALL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=55;d[i+1]=48;d[i+2]=40;d[i+3]=255;} });
 const TEX_OFFICE_FLOOR = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=45;d[i+1]=42;d[i+2]=38;d[i+3]=255;} });
 
@@ -1147,7 +1151,6 @@ function loadTileset() {
     const img = new Image();
     img.onload = () => {
         const tileSize = 32;
-        // Wall textures (scaled from 32x32 tile to 64x64)
         const mapping = [
             ['brick', TEX_BRICK], ['metal', TEX_METAL], ['cabinet', TEX_CABINET],
             ['door', TEX_DOOR], ['damaged', TEX_DAMAGED], ['machine', TEX_MACHINE],
@@ -1156,37 +1159,49 @@ function loadTileset() {
         ];
         for (const [key, texIdx] of mapping) {
             const [col, row] = TILE_MAP[key];
-            const px = extractPixelData(img, col * tileSize, row * tileSize, tileSize, tileSize, TEX_SIZE);
-            textures[texIdx] = px;
+            textures[texIdx] = extractPixelData(img, col * tileSize, row * tileSize, tileSize, tileSize, TEX_SIZE);
         }
-        // Load factory tiles from expanded area (column 9)
-        textures[TEX_FACTORY_WALL] = extractPixelData(img, 9*tileSize, 0*tileSize, tileSize, tileSize, TEX_SIZE);
-        textures[TEX_FACTORY_METAL] = extractPixelData(img, 9*tileSize, 1*tileSize, tileSize, tileSize, TEX_SIZE);
-        textures[TEX_FACTORY_FLOOR] = extractPixelData(img, 9*tileSize, 2*tileSize, tileSize, tileSize, TEX_SIZE);
     };
-    img.onerror = () => { /* keep procedural fallback */ };
+    img.onerror = () => {};
     img.src = TILESET_PATH;
 }
 
-// Load lab-office tiles as separate tileset source
-function loadOfficeTileset() {
+// Load real factory art from curated tileset (CC0 license, from OpenGameArt)
+function loadFactoryTiles() {
     const img = new Image();
     img.onload = () => {
-        const tileSize = 32;
-        // Bottom-left area of lab-office-tiles.png has wall/door tiles
-        textures[TEX_OFFICE_WALL] = extractPixelData(img, 0*tileSize, 5*tileSize, tileSize, tileSize, TEX_SIZE);
-        textures[TEX_OFFICE_FLOOR] = extractPixelData(img, 4*tileSize, 0*tileSize, tileSize, tileSize, TEX_SIZE);
+        const s = TEX_SIZE; // tiles are already 64x64 in the curated strip
+        textures[TEX_FACTORY_WALL]  = extractPixelData(img, 0*s, 0, s, s, s);
+        textures[TEX_FACTORY_VENT]  = extractPixelData(img, 1*s, 0, s, s, s);
+        textures[TEX_FACTORY_METAL] = extractPixelData(img, 2*s, 0, s, s, s);
+        textures[TEX_FACTORY_DARK]  = extractPixelData(img, 3*s, 0, s, s, s);
+        textures[TEX_FACTORY_DEEP]  = extractPixelData(img, 4*s, 0, s, s, s);
+        textures[TEX_FACTORY_FLOOR] = extractPixelData(img, 5*s, 0, s, s, s);
+        textures[TEX_FACTORY_EQUIP] = extractPixelData(img, 7*s, 0, s, s, s);
     };
-    img.onerror = () => { /* keep procedural fallback */ };
-    img.src = 'game-assets/lab-office-tiles.png';
+    img.onerror = () => {};
+    img.src = 'game-assets/factory-tiles-curated.png';
 }
 
-// Start loading immediately — procedural textures serve as fallback
+// Load lab/office tiles from curated tileset (CC-BY 3.0)
+function loadLabTiles() {
+    const img = new Image();
+    img.onload = () => {
+        const s = TEX_SIZE;
+        textures[TEX_OFFICE_FLOOR] = extractPixelData(img, 0*s, 0, s, s, s);
+        textures[TEX_OFFICE_WALL]  = extractPixelData(img, 3*s, 0, s, s, s);
+    };
+    img.onerror = () => {};
+    img.src = 'game-assets/lab-tiles-curated.png';
+}
+
+// Start loading — procedural textures serve as fallback until images load
 for (const [name, path] of Object.entries(SPRITE_ASSETS)) {
     loadSpritePNG(name, path);
 }
 loadTileset();
-loadOfficeTileset();
+loadFactoryTiles();
+loadLabTiles();
 
 // === MAP DATA ===
 // 0=empty, 1=brick, 2=metal, 3=cabinet, 4=door, 5=damaged, 6=machine, 7=stairs_up, 8=green, 9=locked_door
@@ -1287,24 +1302,46 @@ function setMap(x, y, val) {
     if (x >= 0 && x < MAP_W && y >= 0 && y < MAP_H) floor[y * MAP_W + x] = val;
 }
 
-function getTexForWall(wallType) {
-    // Floor-specific primary wall textures — each floor has a distinct feel
+function getTexForWall(wallType, mapX, mapY) {
+    // Floor-specific wall textures — each floor has a distinct visual identity
     if (currentFloor === 1) {
-        // Floor 2 (Processing): cold industrial factory textures
+        // Floor 2 (Processing): cold industrial factory with real art textures
+        // Alternate wall variants based on position for visual variety
+        const posHash = ((mapX || 0) * 7 + (mapY || 0) * 13) & 3;
         switch(wallType) {
-            case 1: return TEX_FACTORY_WALL; case 2: return TEX_FACTORY_METAL;
-            case 3: return TEX_CABINET; case 4: return TEX_DOOR;
-            case 5: return TEX_DAMAGED; case 6: return TEX_MACHINE;
-            case 7: return TEX_FACTORY_METAL; case 8: return TEX_GREEN;
+            case 1: return posHash < 2 ? TEX_FACTORY_WALL : TEX_FACTORY_VENT;
+            case 2: return posHash < 2 ? TEX_FACTORY_METAL : TEX_FACTORY_DARK;
+            case 3: return TEX_FACTORY_EQUIP;
+            case 4: return TEX_DOOR;
+            case 5: return TEX_FACTORY_DEEP;
+            case 6: return TEX_FACTORY_EQUIP;
+            case 7: return TEX_FACTORY_METAL;
+            case 8: return TEX_FACTORY_DARK;
             case 9: return 9;
             default: return TEX_FACTORY_WALL;
         }
     }
-    // Floor 1 and 3 use base textures (tint handles the rest)
+    if (currentFloor === 2) {
+        // Floor 3 (Archive): mix of office walls and deep industrial
+        const posHash = ((mapX || 0) * 11 + (mapY || 0) * 17) & 3;
+        switch(wallType) {
+            case 1: return posHash === 0 ? TEX_FACTORY_DEEP : TEX_BRICK;
+            case 2: return TEX_OFFICE_WALL;
+            case 3: return TEX_CABINET;
+            case 4: return TEX_DOOR;
+            case 5: return TEX_FACTORY_DARK;
+            case 6: return posHash < 2 ? TEX_MACHINE : TEX_FACTORY_EQUIP;
+            case 7: return TEX_METAL;
+            case 8: return TEX_GREEN;
+            case 9: return 9;
+            default: return TEX_BRICK;
+        }
+    }
+    // Floor 1 (Intake): base textures with warm atmosphere tint
     switch(wallType) {
         case 1: return TEX_BRICK; case 2: return TEX_METAL; case 3: return TEX_CABINET;
         case 4: return TEX_DOOR; case 5: return TEX_DAMAGED; case 6: return TEX_MACHINE;
-        case 7: return TEX_METAL; case 8: return TEX_GREEN; case 9: return 9; // TEX_LOCKED
+        case 7: return TEX_METAL; case 8: return TEX_GREEN; case 9: return 9;
         default: return TEX_BRICK;
     }
 }
@@ -4143,7 +4180,7 @@ function castRays() {
         let texX = (wallX * TEX_SIZE) | 0;
         if (texX >= TEX_SIZE) texX = TEX_SIZE - 1;
 
-        const texIdx = getTexForWall(wallType);
+        const texIdx = getTexForWall(wallType, mapX, mapY);
         const tex = textures[texIdx];
         const fogFactor = Math.min(perpDist / 12, 1);
         const sideDim = side === 1 ? 0.7 : 1.0;
