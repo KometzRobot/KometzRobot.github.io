@@ -4328,6 +4328,9 @@ function castRays() {
         const tex = textures[texIdx];
         const fogFactor = Math.min(perpDist / 12, 1);
         const sideDim = side === 1 ? 0.7 : 1.0;
+        // Edge darkening at wall boundaries to hide seams
+        const edgeDist = Math.min(wallX, 1 - wallX);
+        const edgeDim = edgeDist < 0.05 ? 0.6 + edgeDist * 8 : 1.0;
 
         // Flashlight brightening
         const flashBoost = inventory.flashlight ? Math.max(0, 1 - perpDist / 8) * 0.3 : 0;
@@ -4338,7 +4341,7 @@ function castRays() {
         for (let y = drawStart; y <= drawEnd; y++) {
             const texY = (texPos | 0) & (TEX_SIZE - 1);
             const ti = (texY * TEX_SIZE + texX) * 4;
-            let r = tex[ti] * sideDim * atmo.tintR, g = tex[ti+1] * sideDim * atmo.tintG, b = tex[ti+2] * sideDim * atmo.tintB;
+            let r = tex[ti] * sideDim * edgeDim * atmo.tintR, g = tex[ti+1] * sideDim * edgeDim * atmo.tintG, b = tex[ti+2] * sideDim * edgeDim * atmo.tintB;
             r = r * (1 - fogFactor) + atmo.fogR * fogFactor + r * flashBoost;
             g = g * (1 - fogFactor) + atmo.fogG * fogFactor + g * flashBoost;
             b = b * (1 - fogFactor) + atmo.fogB * fogFactor + b * flashBoost;
@@ -4539,11 +4542,12 @@ function drawSprites() {
                     cb = cb * (1-annotPct) + 120 * annotPct;
                 }
 
-                // Fog — uses per-floor atmosphere colors
+                // Fog — uses per-floor atmosphere colors (items resist fog)
                 const satmo = getAtmo();
-                cr = cr * (1 - fogFactor) + satmo.fogR * fogFactor + cr * flashBoost;
-                cg = cg * (1 - fogFactor) + satmo.fogG * fogFactor + cg * flashBoost;
-                cb = cb * (1 - fogFactor) + satmo.fogB * fogFactor + cb * flashBoost;
+                const itemFogResist = spr.type === 'item' ? fogFactor * 0.5 : fogFactor;
+                cr = cr * (1 - itemFogResist) + satmo.fogR * itemFogResist + cr * flashBoost;
+                cg = cg * (1 - itemFogResist) + satmo.fogG * itemFogResist + cg * flashBoost;
+                cb = cb * (1 - itemFogResist) + satmo.fogB * itemFogResist + cb * flashBoost;
 
                 const pi = (y * SCREEN_W + col) * 4;
                 const finalAlpha = alpha * opacity;
@@ -4553,16 +4557,21 @@ function drawSprites() {
             }
         }
 
-        // Glow halo for items
-        if (spr.type === 'item' && spriteHeight > 4) {
-            const glowR = spr.itemType === 'targetFile' ? 2 : 1;
+        // Glow halo for items — bright pulsing beacon
+        if (spr.type === 'item' && spriteHeight > 3) {
+            const glowR = spr.itemType === 'targetFile' ? 4 : 3;
+            const pulse = 0.7 + Math.sin(gameTime * 0.005 + (spr.bobPhase || 0)) * 0.3;
+            const glowStr = spr.itemType === 'targetFile' ? 50 : 35;
             for (let gy = -glowR; gy <= glowR; gy++) {
-                const ry = drawStartY + gy - 1;
+                const ry = ((drawStartY + drawEndY) >> 1) + gy;
                 if (ry < 0 || ry >= SCREEN_H) continue;
                 for (let gx = clampStartX - glowR; gx <= clampEndX + glowR; gx++) {
                     if (gx < 0 || gx >= SCREEN_W || transformY >= zBuf[gx]) continue;
                     const pi = (ry * SCREEN_W + gx) * 4;
-                    buf[pi] = Math.min(255, buf[pi] + 20); buf[pi+1] = Math.min(255, buf[pi+1] + 18); buf[pi+2] = Math.min(255, buf[pi+2] + 10);
+                    const g = glowStr * pulse;
+                    buf[pi] = Math.min(255, buf[pi] + g) | 0;
+                    buf[pi+1] = Math.min(255, buf[pi+1] + g * 0.9) | 0;
+                    buf[pi+2] = Math.min(255, buf[pi+2] + g * 0.5) | 0;
                 }
             }
         }
