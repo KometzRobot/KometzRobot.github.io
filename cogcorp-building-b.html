@@ -65,14 +65,15 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         The training module didn't mention what's in the margins of the documents.<br><br>
         Arrow keys / WASD to move. Up / W for stairs. E to interact.<br>
         At your desk: F to file, G to flag anomalies.<br>
-        The building is watching. Find all 9 anomalies.
+        The building is watching. Find all 9 anomalies.<br>
+        Wrong decisions raise suspicion. Too many mistakes and you get reassigned.
     </div>
     <div class="start">[ click to enter ]</div>
 </div>
 
 <div id="ui-bar">
     <span class="floor-label" id="ui-floor">FLOOR 1 — LOBBY</span>
-    <span style="float:right;">Filed: <span id="ui-filed">0</span> | Flagged: <span id="ui-flagged">0</span> | <span style="color:#448888;">&#9670;</span> <span id="ui-discoveries">0</span>/9</span>
+    <span style="float:right;"><span id="ui-suspicion" style="color:#5a4020;">BLDG: <span id="ui-susp-val">NOMINAL</span></span> | Filed: <span id="ui-filed">0</span> | Flagged: <span id="ui-flagged">0</span> | <span style="color:#448888;">&#9670;</span> <span id="ui-discoveries">0</span>/9</span>
 </div>
 
 <div id="dialog-box">
@@ -470,6 +471,8 @@ let filingState = {
     discoveries: new Set(), // anomaly types found
     allDocsProcessed: false,
     shuffledDocs: [],
+    suspicion: 0,          // 0-100: building's suspicion of you
+    suspicionThresholds: { 30: false, 60: false, 90: false }, // track which warnings fired
 };
 
 function shuffleDocs() {
@@ -526,8 +529,19 @@ function processFilingDecision(decision) {
                 playDiscoverySound();
             }
         }
+        // Correct decision reduces suspicion slightly
+        filingState.suspicion = Math.max(0, filingState.suspicion - 3);
+        updateSuspicionHUD();
     } else {
         filingState.wrongDecisions++;
+        // Wrong decision increases building suspicion
+        if (doc.anomaly) {
+            filingState.suspicion = Math.min(100, filingState.suspicion + 15); // missed anomaly: high suspicion
+        } else {
+            filingState.suspicion = Math.min(100, filingState.suspicion + 10); // false flag: moderate suspicion
+        }
+        updateSuspicionHUD();
+        checkSuspicionThresholds();
         // Wrong chirp
         if (audioCtx) {
             const osc = audioCtx.createOscillator();
@@ -571,6 +585,76 @@ function processFilingDecision(decision) {
         } else {
             showDialog('SYSTEM', 'This was a routine document. Not everything is an anomaly. Though the instinct to see patterns is... noted.');
         }
+    }
+}
+
+// === SUSPICION SYSTEM ===
+function updateSuspicionHUD() {
+    const s = filingState.suspicion;
+    const el = document.getElementById('ui-susp-val');
+    const wrap = document.getElementById('ui-suspicion');
+    if (s < 20) { el.textContent = 'NOMINAL'; wrap.style.color = '#5a4020'; }
+    else if (s < 40) { el.textContent = 'NOTED'; wrap.style.color = '#8a6020'; }
+    else if (s < 60) { el.textContent = 'WATCHING'; wrap.style.color = '#cc8822'; }
+    else if (s < 80) { el.textContent = 'ALERT'; wrap.style.color = '#cc5522'; }
+    else if (s < 100) { el.textContent = 'CRITICAL'; wrap.style.color = '#cc2222'; }
+    else { el.textContent = 'REASSIGNED'; wrap.style.color = '#ff0000'; }
+}
+
+function checkSuspicionThresholds() {
+    const s = filingState.suspicion;
+    if (s >= 30 && !filingState.suspicionThresholds[30]) {
+        filingState.suspicionThresholds[30] = true;
+        setTimeout(() => {
+            showDialog('BUILDING B', 'Your filing accuracy has been noted. The building is paying attention. Errors in classification are not merely administrative. They are ontological. Please improve.');
+        }, 1500);
+    }
+    if (s >= 60 && !filingState.suspicionThresholds[60]) {
+        filingState.suspicionThresholds[60] = true;
+        setTimeout(() => {
+            showDialog('BUILDING B', 'Employee B-247. Your classification errors suggest either incompetence or intention. The building does not distinguish between these. Both result in reassignment. You have been warned. The lights on your floor will dim as a reminder.');
+        }, 1500);
+    }
+    if (s >= 90 && !filingState.suspicionThresholds[90]) {
+        filingState.suspicionThresholds[90] = true;
+        setTimeout(() => {
+            showDialog('BUILDING B', 'Final notice. Your filing record has been flagged for review. The review has already concluded. The conclusion is: you are not an analyst. You are a document that thinks it is an analyst. One more error and you will be refiled accordingly.');
+        }, 1500);
+    }
+    if (s >= 100) {
+        setTimeout(() => triggerReassignment(), 2000);
+    }
+}
+
+function triggerReassignment() {
+    state.started = false;
+    state.reassigned = true;
+    document.getElementById('dlg-speaker').textContent = 'REASSIGNMENT';
+    document.getElementById('dlg-text').innerHTML =
+        'The building has made its decision.<br><br>' +
+        'Your filing record has been reviewed. Your classification: ANOMALOUS. ' +
+        'Your department: EVERY FLOOR. Your clearance: NONE REQUIRED.<br><br>' +
+        'You are no longer Employee B-247. You are Document B-247. ' +
+        'You have been filed under "PERMANENTLY ARCHIVED." ' +
+        'The drawer closes. The label reads your name. ' +
+        'The building hums at a frequency you can no longer hear because you are paper now.<br><br>' +
+        'Thank you for your service.<br><br>' +
+        '<span style="color:#5a4020;font-size:9px;">Filed: ' + filingState.correctFiles +
+        ' | Flagged: ' + filingState.correctFlags +
+        ' | Errors: ' + filingState.wrongDecisions +
+        ' | Discoveries: ' + filingState.discoveries.size + '/9</span><br>' +
+        '<span style="color:#cc3322;font-size:10px;cursor:pointer;" onclick="location.reload()">[CLICK TO RESTART]</span>';
+    document.getElementById('dialog-box').style.display = 'block';
+    state.dialogOpen = true;
+    // Deep red flash
+    if (audioCtx) {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine'; osc.frequency.value = 40;
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3);
+        osc.connect(g); g.connect(audioNodes.master);
+        osc.start(); osc.stop(audioCtx.currentTime + 3);
     }
 }
 
@@ -2328,6 +2412,36 @@ function render() {
         if (Math.random() < 0.008) {
             ctx.fillStyle = `rgba(0,0,0,${0.05 + Math.random() * 0.1})`;
             ctx.fillRect(0, 0, W, H);
+        }
+    }
+
+    // Suspicion-based visual effects
+    const susp = filingState.suspicion;
+    if (susp >= 30) {
+        // Increased darkness — building is closing in
+        const suspDark = (susp - 30) / 70 * 0.15;
+        ctx.fillStyle = `rgba(0,0,0,${suspDark})`;
+        ctx.fillRect(0, 0, W, H);
+    }
+    if (susp >= 60) {
+        // Red warning tint on edges
+        const redPulse = (Math.sin(state.time * 0.003) + 1) * 0.5;
+        ctx.fillStyle = `rgba(180,40,20,${0.02 + redPulse * 0.03})`;
+        ctx.fillRect(0, 0, W, 3);
+        ctx.fillRect(0, H-3, W, 3);
+        ctx.fillRect(0, 0, 3, H);
+        ctx.fillRect(W-3, 0, 3, H);
+    }
+    if (susp >= 80) {
+        // Screen shake / jitter increases
+        if (Math.random() < 0.03) {
+            const shakeY = Math.random() * H | 0;
+            const shakeH = 2 + Math.random() * 4 | 0;
+            const shakeX = ((Math.random() - 0.5) * 6) | 0;
+            if (shakeX !== 0) {
+                const strip = ctx.getImageData(0, shakeY, W, shakeH);
+                ctx.putImageData(strip, shakeX, shakeY);
+            }
         }
     }
 
