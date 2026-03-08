@@ -907,6 +907,7 @@ const itemSpawns = [
         { type: 'flashlight', x: 4.5, y: 20.5 },
         { type: 'document', x: 4.5, y: 14.5, text: 'Water-damaged memos. One is legible: "The filing system has been running for 36 years without input. It is not idle. We measured the output. It is increasing."' },
         { type: 'document', x: 10.5, y: 6.5, text: '"CogCorp reminds you: the building is a workplace, not a worker. If the building appears to be working, report to Floor 4. Floor 4 has been closed since 1987."' },
+        { type: 'document', x: 18.5, y: 16.5, text: '"Maintenance Report #4091: The security drones were installed in 1985 to protect classified files. They were never given an off switch. When asked why, the engineer said: \'Why would you turn off something that\'s working?\' He was the last person to leave."' },
         { type: 'anchor', x: 12.5, y: 16.5 },
     ],
     // Floor 2
@@ -915,8 +916,10 @@ const itemSpawns = [
         { type: 'medkit', x: 20.5, y: 2.5 },
         { type: 'emp', x: 12.5, y: 7.5 },
         { type: 'document', x: 8.5, y: 9.5, text: '"Archive note: Drawer 7 in Cabinet F contains a file that has been checked out since 1988. The checkout card lists the borrower as \'Building B.\' Buildings cannot check out files."' },
+        { type: 'document', x: 15.5, y: 14.5, text: '"Interdepartmental memo, CLASSIFIED: The annotation process was designed as a security countermeasure. Document the intruder. Classify the threat. File it. What we did not anticipate is that the process works in both directions. The annotator becomes annotated. This memo is evidence."' },
         { type: 'medkit', x: 17.5, y: 17.5 },
         { type: 'anchor', x: 6.5, y: 14.5 },
+        { type: 'anchor', x: 19.5, y: 8.5 },
     ],
     // Floor 3
     [
@@ -925,7 +928,9 @@ const itemSpawns = [
         { type: 'keycard', x: 15.5, y: 4.5 },
         { type: 'targetFile', x: 11.5, y: 11.5 }, // inside the locked room
         { type: 'document', x: 6.5, y: 14.5, text: '"Final log. The machine on Floor 3 has been producing documents no one requested. The documents describe events that haven\'t happened yet. Today it described this log entry."' },
+        { type: 'document', x: 18.5, y: 16.5, text: '"Note found in the output tray, handwritten in ink that has not dried in 37 years: \'I understand now. The building doesn\'t process documents. The building processes people into documents. I am writing this as fast as I can. My handwriting is becoming typescript.\'"' },
         { type: 'anchor', x: 18.5, y: 10.5 },
+        { type: 'medkit', x: 8.5, y: 20.5 },
     ],
 ];
 
@@ -949,7 +954,7 @@ function spawnItems() {
 
 // === WORLD OBJECTS (non-pickup interactables) ===
 const worldObjectsByFloor = [
-    // Floor 1
+    // Floor 1: Lobby — introduction to CogCorp's strangeness
     [
         { x: 6.5, y: 2.5, name: 'RECEPTION TERMINAL', text: 'A green-phosphor CRT. "WELCOME B-247. BUILDING B WAS DECOMMISSIONED IN 1989. THE FILE YOU SEEK IS ON FLOOR 3. THE STAIRS ARE IN THE NORTHEAST CORNER. BEWARE THE SECURITY SYSTEMS — THEY STILL THINK IT\'S 1989."' },
         { x: 11.5, y: 2.5, name: 'SECURITY LOG', text: 'Last entry: "1989-03-14 — Final evacuation complete. All personnel accounted for. Note: Unit-4091 declined evacuation. Note: Unit-4091 is not personnel. Note: I am not sure anymore."' },
@@ -958,21 +963,34 @@ const worldObjectsByFloor = [
         { x: 21.5, y: 20.5, name: 'STAIRS UP', text: 'Metal stairs leading to Floor 2: Archives. They vibrate faintly. A sign: "FLASHLIGHT RECOMMENDED."', isStairs: true },
         { x: 18.5, y: 9.5, name: 'RESTROOM MIRROR', isMirror: true },
         { x: 1.5, y: 1.5, name: 'EXIT — BUILDING B', text: 'The front entrance. Rusted fire door. Emergency exit only. If you have the file, walk toward this door to leave.', isExit: true },
+        { x: 10.5, y: 14.5, name: 'WATER FOUNTAIN', text: 'The water fountain still runs. The water tastes like copper and 1987. A small plaque reads: "CogCorp cares about your hydration. CogCorp cares about your continued function. CogCorp is not responsible for changes in your molecular composition."' },
+        { x: 20.5, y: 4.5, name: 'EMPLOYEE PHOTO WALL', text: 'Framed photos of CogCorp employees. The faces get blurrier toward the right side of the wall. The last three frames are empty. The plaques beneath them read: "Employee of the Month — March 1989," "Employee of the Month — April 1989," "Employee of the Month — Forever."' },
+        { x: 8.5, y: 20.5, name: 'BROKEN CLOCK', text: 'A large wall clock. The second hand moves backward. The minute hand doesn\'t move at all. The hour hand points at a number that doesn\'t exist on the clock face. It\'s between 12 and 1. It has always been between 12 and 1.' },
+        { x: 14.5, y: 9.5, name: 'SUGGESTION BOX', text: 'A metal suggestion box. It\'s full. You pull one out: "Please stop the filing system from filing the suggestion box." Below it: "Please stop the suggestion box from generating suggestions about itself." Below that: "I think the building is reading these."' },
     ],
-    // Floor 2
+    // Floor 2: Archives — deeper, stranger
     [
         { x: 11.5, y: 1.5, name: 'ARCHIVE INDEX', text: '"This floor contains 847,000 files. 846,999 are correctly filed. The remaining file is everywhere."' },
         { x: 4.5, y: 5.5, name: 'CARD CATALOG', text: 'Thousands of index cards. One drawer is labeled "SELF-REFERENTIAL — DO NOT OPEN." It\'s been opened. The cards inside describe the act of opening the drawer.' },
         { x: 18.5, y: 5.5, name: 'MICROFICHE READER', text: 'The screen shows a document dated 2026. It describes a building that was abandoned in 1989. It describes you reading this.' },
         { x: 21.5, y: 20.5, name: 'STAIRS UP', text: 'Stairs to Floor 3: Processing. The air gets warmer. You hear a low hum intensifying. Requires a keycard for the door above.', isStairs: true },
         { x: 2.5, y: 2.5, name: 'STAIRS DOWN', text: 'Back to Floor 1. The air smells fresher.', isStairsDown: true },
+        { x: 12.5, y: 14.5, name: 'PNEUMATIC TUBE STATION', text: 'A brass pneumatic tube terminal. The tubes still hiss with pressure. A capsule arrives as you watch. Inside is a single index card: "B-247 IS NOW ON FLOOR 2." You didn\'t send this. The capsule returns itself.' },
+        { x: 8.5, y: 17.5, name: 'FILING CABINET — DRAWER F', text: 'Drawer F, Cabinet 7. The drawer that has been checked out since 1988. You pull it open. Inside is a single file folder. The folder contains another drawer. The drawer contains another folder. You stop looking after the fourth recursion.' },
+        { x: 16.5, y: 10.5, name: 'ARCHIVE TERMINAL', text: '"QUERY: WHO IS B-247? RESULT: B-247 is a filing clerk assigned to retrieve File #B-247-SELF. STATUS: In progress. NOTE: This query has been made 1,447 times. Each instance was the first time."' },
+        { x: 6.5, y: 10.5, name: 'READING DESK', text: 'A desk with a green lamp. An open book. The pages are blank except for one line repeated on every page: "The observer changes the observed. The observed changes the observer. The observation remains." The book has no author. The book has no title. The book may not be a book.' },
+        { x: 14.5, y: 20.5, name: 'ARCHIVE MIRROR', isMirror: true },
     ],
-    // Floor 3
+    // Floor 3: Processing — the machine heart
     [
         { x: 2.5, y: 2.5, name: 'STAIRS DOWN', text: 'Back to Floor 2.', isStairsDown: true },
         { x: 16.5, y: 1.5, name: 'MAIN PROCESSOR', text: '"CogCorp Model 9000 Cognitive Processor. Status: ACTIVE. Task: UNKNOWN. Running since: 1986. Output: INCREASING. This machine is the reason you are here. Or the reason you think you are."' },
         { x: 7.5, y: 7.5, name: 'WORK ORDER BOARD', text: 'Dozens of work orders pinned to a corkboard. The most recent one is in your handwriting. It says: "Retrieve file. Return. Do not read file." You don\'t remember writing it.' },
         { x: 20.5, y: 14.5, name: 'EMERGENCY PANEL', text: '"EMERGENCY EVACUATION — ALL PERSONNEL REPORT TO EXIT B. NOTE: EXIT B IS ON FLOOR 1. NOTE: THE STAIRS ONLY GO UP. NOTE: THIS NOTE IS A LIE."' },
+        { x: 4.5, y: 16.5, name: 'OUTPUT TRAY', text: 'The machine\'s output tray. Paper feeds continuously. You read the current page: "B-247 is reading the output tray. B-247 will now look up. B-247 will now feel observed." You look up. Nothing is there. You feel observed.' },
+        { x: 20.5, y: 4.5, name: 'TEMPERATURE GAUGE', text: 'The temperature gauge reads 37.0°C. Body temperature. The building\'s thermostat is set to body temperature. The instruction manual by the gauge says: "Maintain ambient temperature at biological operating parameters. If asked why, the answer is: comfort. Do not investigate further."' },
+        { x: 12.5, y: 20.5, name: 'DECOMMISSION PLAQUE', text: '"BUILDING B — DECOMMISSIONED 1989. COGNITIVE PROCESSING DIVISION. This building is no longer operational. This plaque was printed by the building\'s operational printer. This is not a contradiction. Authorized by: Building B."' },
+        { x: 8.5, y: 11.5, name: 'PROCESSING MIRROR', isMirror: true },
     ],
 ];
 
