@@ -38,6 +38,13 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 #dialog-box .speaker { color: #ffd700; font-size: 10px; letter-spacing: 2px; margin-bottom: 4px; }
 #dialog-box .dismiss { color: #5a4020; font-size: 9px; margin-top: 6px; text-align: right; }
+#dialog-box .choices { margin-top: 10px; }
+#dialog-box .choice-btn {
+    display: block; width: 100%; background: rgba(40,30,15,0.8); border: 1px solid #5a4020;
+    color: #c49030; font-family: monospace; font-size: 11px; padding: 6px 10px; margin-top: 6px;
+    cursor: pointer; text-align: left; letter-spacing: 1px;
+}
+#dialog-box .choice-btn:hover { background: rgba(80,60,20,0.8); border-color: #ffb347; color: #ffd700; }
 #damage-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(180,30,10,0.3); z-index: 8; display: none; pointer-events: none; }
 #death-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
@@ -1324,6 +1331,7 @@ let msgTimer = 0;
 let msgText = '';
 let totalDocs = 0;
 let gameWon = false;
+let exitChoiceMade = false;
 
 // === CRT TERMINAL STATE ===
 let terminalOpen = false;
@@ -1446,8 +1454,45 @@ function showDialog(speaker, text) {
     document.getElementById('dialog-box').style.display = 'block';
 }
 function dismissDialog() {
+    if (choiceCallback) return; // don't dismiss choice dialogs with click
     dialogOpen = false;
     document.getElementById('dialog-box').style.display = 'none';
+}
+
+let choiceCallback = null;
+function showChoiceDialog(speaker, text, choices) {
+    dialogOpen = true;
+    choiceCallback = true; // prevent dismiss
+    if (document.pointerLockElement) document.exitPointerLock();
+    const box = document.getElementById('dialog-box');
+    document.getElementById('dlg-speaker').textContent = speaker;
+    document.getElementById('dlg-text').innerHTML = text;
+    // Remove old choices
+    const oldChoices = box.querySelector('.choices');
+    if (oldChoices) oldChoices.remove();
+    // Hide dismiss hint
+    const dismiss = box.querySelector('.dismiss');
+    if (dismiss) dismiss.style.display = 'none';
+    // Build choice buttons
+    const div = document.createElement('div');
+    div.className = 'choices';
+    choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = c.label;
+        btn.onclick = () => {
+            choiceCallback = null;
+            dialogOpen = false;
+            box.style.display = 'none';
+            const dismiss = box.querySelector('.dismiss');
+            if (dismiss) dismiss.style.display = '';
+            div.remove();
+            c.action();
+        };
+        div.appendChild(btn);
+    });
+    box.appendChild(div);
+    box.style.display = 'block';
 }
 
 function showMessage(text, duration) {
@@ -2319,7 +2364,10 @@ function respawn() {
     player.totalFiled = 0;
     deskOpen = false; deskEnemy = null; deskFile = null;
     chatOpen = false; chatNPC = null; wallOpen = false;
-    dialogOpen = false;
+    dialogOpen = false; choiceCallback = null;
+    gameWon = false; exitChoiceMade = false;
+    player.exitChoice = null;
+    inventory.keycard = false; inventory.flashlight = false; inventory.emp = 0; inventory.targetFile = false;
     document.getElementById('processing-desk').style.display = 'none';
     document.getElementById('npc-chat').style.display = 'none';
     document.getElementById('moirai-wall').style.display = 'none';
@@ -2366,20 +2414,37 @@ function triggerWinSequence() {
     const realityRemaining = player.realityLevel | 0;
     const docsFound = player.docs;
 
-    // Determine ending variant based on reality level
+    // Determine ending variant based on exit choice + reality level
+    const choice = player.exitChoice || 'take';
     let endingTitle, endingText, endingClass;
-    if (realityRemaining > 75) {
-        endingTitle = 'EXTRACTION COMPLETE';
-        endingText = 'You walk out of Building B with File #B-247-SELF under your arm. The sunlight stings. The parking lot is empty. Your car is where you left it. As you drive away, you check the rearview mirror. Building B is gone. There is only an empty lot and a chain-link fence. You look at the file on the passenger seat. It now contains a single page. It reads: "Thank you for your service, B-247. Your reality has been preserved." You never go back.';
-        endingClass = 'good';
-    } else if (realityRemaining > 40) {
-        endingTitle = 'EXTRACTION — PARTIAL';
-        endingText = 'You leave Building B. The air tastes different. Thinner. You hold File #B-247-SELF but your hands look slightly transparent in the morning light. People on the sidewalk don\'t seem to see you. Your reflection in shop windows is faint. The file is heavier than it should be. When you open it at home, every page describes a different version of this moment — you leaving the building, you reading the file, you realizing the file is reading you. Reality: ' + realityRemaining + '%. Enough to keep existing. Barely.';
-        endingClass = 'partial';
-    } else {
-        endingTitle = 'EXTRACTION — COMPROMISED';
-        endingText = 'You step through the door of Building B. Or — something that was once you steps through something that was once a door. The file is part of your hand now. Your hand is part of the building. You exist in the gap between the document and the documented. People walk past you without reacting. You try to speak but words come out as annotation marks. Somewhere in the building, a drawer closes. A file has been returned. Reality: ' + realityRemaining + '%. The filing system is working correctly.';
-        endingClass = 'bad';
+
+    if (choice === 'take') {
+        if (realityRemaining > 75) {
+            endingTitle = 'EXTRACTION COMPLETE';
+            endingText = 'You walk out of Building B with File #B-247-SELF under your arm. The sunlight stings. The parking lot is empty. Your car is where you left it. As you drive away, you check the rearview mirror. Building B is gone. There is only an empty lot and a chain-link fence. You look at the file on the passenger seat. It now contains a single page. It reads: "Thank you for your service, B-247. Your reality has been preserved." You never go back.';
+            endingClass = 'good';
+        } else if (realityRemaining > 40) {
+            endingTitle = 'EXTRACTION — PARTIAL';
+            endingText = 'You leave Building B. The air tastes different. Thinner. You hold File #B-247-SELF but your hands look slightly transparent in the morning light. People on the sidewalk don\'t seem to see you. Your reflection in shop windows is faint. The file is heavier than it should be. When you open it at home, every page describes a different version of this moment — you leaving the building, you reading the file, you realizing the file is reading you. Reality: ' + realityRemaining + '%. Enough to keep existing. Barely.';
+            endingClass = 'partial';
+        } else {
+            endingTitle = 'EXTRACTION — COMPROMISED';
+            endingText = 'You step through the door of Building B. Or — something that was once you steps through something that was once a door. The file is part of your hand now. Your hand is part of the building. You exist in the gap between the document and the documented. People walk past you without reacting. You try to speak but words come out as annotation marks. Somewhere in the building, a drawer closes. A file has been returned. Reality: ' + realityRemaining + '%. The filing system is working correctly.';
+            endingClass = 'bad';
+        }
+    } else if (choice === 'burn') {
+        endingTitle = 'ERASURE';
+        if (realityRemaining > 50) {
+            endingText = 'You drop the file on the floor and it catches fire without a match. It wanted to burn. The pages curl and blacken, and with each one that goes, you feel lighter. Freer. The building shudders. Somewhere on Floor 3, the cognitive engine stutters. You walk out into daylight that feels almost too real. You have no documentation now. No proof you were ever here. No proof you exist at all. But you feel the sun on your face and it doesn\'t ask for your clearance code. Reality: ' + realityRemaining + '%. Undocumented. Free.';
+            endingClass = 'good';
+        } else {
+            endingText = 'You try to destroy the file but your hands pass through it. You\'re not real enough to touch paper anymore. The file falls open on the floor. The last page reads: "B-247 attempted to destroy their record. This attempt has been recorded. B-247\'s reality signature is insufficient for physical interaction. Recommend reclassification to: DOCUMENT." The building has stopped breathing. It\'s holding its breath. Waiting. Reality: ' + realityRemaining + '%.';
+            endingClass = 'bad';
+        }
+    } else if (choice === 'return') {
+        endingTitle = 'REFILED';
+        endingText = 'You put the file back. Not on Floor 3 — right here, in the intake tray by the entrance, where it belongs. Where you belong. The building sighs. The hum drops an octave. Somewhere, a drawer opens. The file slides in of its own accord. The lights come on — warm, amber, welcoming. A voice on the intercom, the first clear transmission in 37 years: "Thank you, B-247. Your cooperation has been noted. Your position has been upgraded. Welcome to permanent staff." The door locks behind you. You don\'t mind. You have work to do. You\'ve always had work to do.';
+        endingClass = realityRemaining > 60 ? 'partial' : 'bad';
     }
 
     // Build win screen
@@ -2400,12 +2465,18 @@ function triggerWinSequence() {
     ds.style.display = 'flex';
 
     // Post ending to Moirai wall for future players to see
-    const wallEndings = {
-        good: 'B-247 extracted. Reality intact. The file is just paper now.',
-        partial: 'B-247 left. Mostly. Reality: ' + realityRemaining + '%. Edges blurring.',
-        bad: 'B-247 was filed. Reality: ' + realityRemaining + '%. The drawer closed.'
-    };
-    postWallMessage(wallEndings[endingClass]);
+    let wallMsg;
+    if (choice === 'take') {
+        wallMsg = { good: 'B-247 extracted. Reality intact. The file is just paper now.',
+                    partial: 'B-247 left. Mostly. Reality: ' + realityRemaining + '%. Edges blurring.',
+                    bad: 'B-247 was filed. Reality: ' + realityRemaining + '%. The drawer closed.' }[endingClass];
+    } else if (choice === 'burn') {
+        wallMsg = endingClass === 'good' ? 'B-247 burned the file. Walked out undocumented. The building is still shaking.'
+            : 'B-247 tried to burn the file. Couldn\'t touch it. Reality: ' + realityRemaining + '%.';
+    } else {
+        wallMsg = 'B-247 returned the file voluntarily. The building welcomed them. They never left.';
+    }
+    postWallMessage(wallMsg);
 
     // Play a resolution chord
     if (audioCtx) {
@@ -3669,9 +3740,17 @@ function update(dt) {
     }
 
     // Win condition: player has target file, on Floor 1, near entrance
-    if (gameWon && currentFloor === 0 && player.x < 4 && player.y < 4) {
-        triggerWinSequence();
+    if (gameWon && !exitChoiceMade && currentFloor === 0 && player.x < 4 && player.y < 4) {
+        exitChoiceMade = true;
+        showChoiceDialog('THE EXIT', 'The door to the outside is right here. Daylight seeps through the cracks. You hold File #B-247-SELF. Your file. You could walk out. But the file contains everything — your classification, your annotation history, the building\'s entire record of you. What do you do?', [
+            { label: '> TAKE THE FILE AND LEAVE', action: () => { player.exitChoice = 'take'; triggerWinSequence(); } },
+            { label: '> BURN THE FILE', action: () => { player.exitChoice = 'burn'; inventory.targetFile = false; triggerWinSequence(); } },
+            { label: '> RETURN THE FILE TO THE ARCHIVE', action: () => { player.exitChoice = 'return'; triggerWinSequence(); } },
+        ]);
         return;
+    }
+    if (exitChoiceMade && player.exitChoice) {
+        // Already chose, don't re-trigger
     }
 
     // Check nearby objects
