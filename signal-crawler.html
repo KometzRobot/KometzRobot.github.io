@@ -307,6 +307,13 @@ let autoSaveInterval = null;
 let visible = []; // fog of war: tiles the player can currently see
 let revealed = []; // tiles the player has ever seen
 const VIEW_RADIUS = 6;
+let shakeX = 0, shakeY = 0, shakeTimer = 0;
+
+function triggerShake(intensity) {
+  shakeTimer = 8;
+  shakeX = (Math.random() - 0.5) * intensity;
+  shakeY = (Math.random() - 0.5) * intensity;
+}
 
 function addMessage(text) {
   messages.unshift(text);
@@ -485,6 +492,7 @@ function movePlayer(dx, dy) {
     } else {
       // enemy attacks back
       player.hp -= enemy.atk;
+      triggerShake(6);
       addMessage(`${enemy.name} hits you for ${enemy.atk}!`);
       if (player.hp <= 0) {
         player.hp = 0;
@@ -674,6 +682,15 @@ function render() {
   camX = player.x - Math.floor(COLS / 2);
   camY = player.y - Math.floor(ROWS / 2);
 
+  // screen shake
+  ctx.save();
+  if (shakeTimer > 0) {
+    shakeTimer--;
+    ctx.translate(shakeX * shakeTimer, shakeY * shakeTimer);
+    shakeX = (Math.random() - 0.5) * 4;
+    shakeY = (Math.random() - 0.5) * 4;
+  }
+
   // draw map
   for (let y = 0; y < ROWS + 2; y++) {
     for (let x = 0; x < COLS + 2; x++) {
@@ -789,6 +806,9 @@ function render() {
     if (flashTimer === 0) flashTarget = null;
   }
 
+  // end screen shake transform
+  ctx.restore();
+
   // ambient floor lighting — colored vignette
   const floorColor = FLOORS[currentFloor].color;
   const vGrad = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.max(W, H) * 0.7);
@@ -803,6 +823,45 @@ function render() {
   cGrad.addColorStop(1, 'rgba(0,0,0,0.4)');
   ctx.fillStyle = cGrad;
   ctx.fillRect(0, 0, W, H);
+
+  // minimap (top-right corner)
+  const mmScale = 3;
+  const mmW = MAP_W * mmScale;
+  const mmH = MAP_H * mmScale;
+  const mmX = W - mmW - 10;
+  const mmY = 10;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(mmX - 1, mmY - 1, mmW + 2, mmH + 2);
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      if (!revealed[y] || !revealed[y][x]) continue;
+      if (map[y][x] === 1) {
+        ctx.fillStyle = visible[y][x] ? '#334' : '#223';
+      } else {
+        ctx.fillStyle = visible[y][x] ? '#445' : '#334';
+      }
+      ctx.fillRect(mmX + x * mmScale, mmY + y * mmScale, mmScale, mmScale);
+    }
+  }
+  // player dot on minimap
+  ctx.fillStyle = '#44ccff';
+  ctx.fillRect(mmX + player.x * mmScale, mmY + player.y * mmScale, mmScale, mmScale);
+  // enemy dots on minimap (only if visible)
+  enemies.forEach(e => {
+    if (visible[e.y] && visible[e.y][e.x]) {
+      ctx.fillStyle = '#ff4444';
+      ctx.fillRect(mmX + e.x * mmScale, mmY + e.y * mmScale, mmScale, mmScale);
+    }
+  });
+  // stairs/heart on minimap (only if visible)
+  if (stairs && visible[stairs.y] && visible[stairs.y][stairs.x]) {
+    ctx.fillStyle = '#ffcc44';
+    ctx.fillRect(mmX + stairs.x * mmScale, mmY + stairs.y * mmScale, mmScale, mmScale);
+  }
+  if (heart && visible[heart.y] && visible[heart.y][heart.x]) {
+    ctx.fillStyle = '#ff2244';
+    ctx.fillRect(mmX + heart.x * mmScale, mmY + heart.y * mmScale, mmScale, mmScale);
+  }
 
   // game over / win overlay
   if (gameOver) {
