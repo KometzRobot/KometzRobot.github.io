@@ -2192,8 +2192,22 @@ function openNPCChat(npcId) {
 
     if (document.pointerLockElement) document.exitPointerLock();
 
-    // Add greeting
-    chatLog.push({ sender: 'npc', text: npc.greeting });
+    // Context-aware greeting
+    let greeting = npc.greeting;
+    if (npc.state.exchangeCount > 0) {
+        // Returning to an NPC you've talked to before
+        if (npc.state.affinity >= 3) {
+            greeting = 'You\'re back. Good. ' + greeting;
+        } else if (npc.state.affinity <= -3) {
+            greeting = '...you again.';
+        } else {
+            greeting = 'B-247. We\'ve spoken before. ' + greeting;
+        }
+    }
+    if (player.realityLevel < 30 && npc.state.exchangeCount === 0) {
+        greeting += ' ...you don\'t look well. Your edges are blurring.';
+    }
+    chatLog.push({ sender: 'npc', text: greeting });
 
     renderChat();
     document.getElementById('npc-chat').style.display = 'flex';
@@ -2241,8 +2255,25 @@ function renderChat() {
     logEl.innerHTML = html;
     logEl.scrollTop = logEl.scrollHeight;
 
-    // Show quick choices
-    const choices = ['What is this place?', 'Can you help me?', 'What happened here?', 'I should go.'];
+    // Show context-aware quick choices
+    const choices = [];
+    if (chatNPC.state.exchangeCount === 0) {
+        choices.push('What is this place?');
+    }
+    if (player.totalFiled > 3) {
+        choices.push('I\'ve been filing the security units...');
+    } else {
+        choices.push('Can you help me?');
+    }
+    if (player.realityLevel < 50) {
+        choices.push('My reality is fading.');
+    } else {
+        choices.push('What happened here?');
+    }
+    if (gameWon) {
+        choices.push('I found the file.');
+    }
+    choices.push('I should go.');
     choicesEl.innerHTML = choices.map(c =>
         `<div class="chat-choice" onclick="sendPresetChoice('${c.replace(/'/g, "\\'")}')">${c}</div>`
     ).join('');
