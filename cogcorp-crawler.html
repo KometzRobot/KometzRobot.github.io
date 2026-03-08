@@ -3360,6 +3360,28 @@ function applyPostEffects() {
             }
     }
 
+    if (realityPct < 0.6) {
+        // Horizontal scan distortion — random rows shift sideways
+        const shiftIntensity = (0.6 - realityPct) * 8;
+        for (let i = 0; i < shiftIntensity; i++) {
+            const row = (Math.random() * SCREEN_H) | 0;
+            const shift = ((Math.random() - 0.5) * shiftIntensity * 3) | 0;
+            if (shift === 0) continue;
+            const rowStart = row * SCREEN_W * 4;
+            if (shift > 0) {
+                for (let x = SCREEN_W - 1; x >= shift; x--) {
+                    const dst = rowStart + x * 4, src = rowStart + (x - shift) * 4;
+                    buf[dst] = buf[src]; buf[dst+1] = buf[src+1]; buf[dst+2] = buf[src+2];
+                }
+            } else {
+                for (let x = 0; x < SCREEN_W + shift; x++) {
+                    const dst = rowStart + x * 4, src = rowStart + (x - shift) * 4;
+                    buf[dst] = buf[src]; buf[dst+1] = buf[src+1]; buf[dst+2] = buf[src+2];
+                }
+            }
+        }
+    }
+
     if (realityPct < 0.5) {
         // Static noise at low reality
         const noiseAmount = (0.5 - realityPct) * 0.3;
@@ -3375,9 +3397,19 @@ function applyPostEffects() {
     }
 
     if (realityPct < 0.3) {
-        // Ghost text overlay at very low reality
-        if (Math.random() < 0.02) {
-            // This will be drawn via canvas API after putImageData
+        // Chromatic aberration — color channels separate at very low reality
+        const aberration = ((0.3 - realityPct) * 12) | 0;
+        if (aberration > 0) {
+            for (let y = 0; y < SCREEN_H; y++) {
+                for (let x = aberration; x < SCREEN_W - aberration; x++) {
+                    const pi = (y * SCREEN_W + x) * 4;
+                    // Shift red channel left, blue channel right
+                    const rSrc = (y * SCREEN_W + (x - aberration)) * 4;
+                    const bSrc = (y * SCREEN_W + (x + aberration)) * 4;
+                    buf[pi] = buf[rSrc];     // red from left
+                    buf[pi+2] = buf[bSrc+2]; // blue from right
+                }
+            }
         }
     }
 
@@ -3547,6 +3579,34 @@ function update(dt) {
 
     // Enemy AI
     updateEnemies(dt);
+
+    // Reality-based audio distortion — lower reality = more unsettling
+    if (audioCtx && audioNodes.master && gameTime % 500 < dt * 1000) {
+        const rl = player.realityLevel;
+        const t = audioCtx.currentTime;
+        if (rl < 60) {
+            // Master gain wobble — subtle tremor in all audio
+            const wobble = 0.25 + Math.sin(t * (3 + (60 - rl) * 0.1)) * (60 - rl) * 0.001;
+            audioNodes.master.gain.linearRampToValueAtTime(wobble, t + 0.1);
+        } else {
+            // Restore normal gain when reality recovers
+            audioNodes.master.gain.linearRampToValueAtTime(0.25, t + 0.5);
+        }
+        if (rl < 40 && audioNodes.hum) {
+            // Hum frequency drift — the building sounds wrong
+            const drift = Math.sin(t * 0.7) * (40 - rl) * 0.3;
+            audioNodes.hum.frequency.linearRampToValueAtTime(55 + drift, t + 0.5);
+        } else if (audioNodes.hum) {
+            audioNodes.hum.frequency.linearRampToValueAtTime(55, t + 1);
+        }
+        if (rl < 20 && audioNodes.noiseGain) {
+            // Noise volume increases — static encroachment
+            const noiseVol = 0.012 + (20 - rl) * 0.002;
+            audioNodes.noiseGain.gain.linearRampToValueAtTime(noiseVol, t + 0.3);
+        } else if (audioNodes.noiseGain) {
+            audioNodes.noiseGain.gain.linearRampToValueAtTime(0.012, t + 0.5);
+        }
+    }
 
     // Check death
     if (player.health <= 0) {
