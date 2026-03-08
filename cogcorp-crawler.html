@@ -282,6 +282,47 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     color: #2a1a08; font-size: 9px; text-align: center; margin-top: 12px;
     border-top: 1px solid #1a1208; padding-top: 8px;
 }
+#camera-feed {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 56;
+    background: rgba(2,4,2,0.94); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace;
+}
+#camera-feed .camera-frame {
+    width: 380px; max-width: 96%; background: #040804;
+    border: 2px solid #1a3a1a; padding: 12px 16px; position: relative; overflow: hidden;
+    box-shadow: 0 0 30px rgba(0,80,0,0.2), inset 0 0 60px rgba(0,20,0,0.4);
+}
+#camera-feed .camera-header {
+    color: #33aa33; font-size: 11px; letter-spacing: 3px; text-align: center;
+    border-bottom: 1px solid #1a2a1a; padding-bottom: 6px; margin-bottom: 8px;
+    text-shadow: 0 0 8px rgba(50,170,50,0.5);
+}
+#camera-feed .camera-static { opacity: 0.4; font-size: 8px; }
+#camera-feed #camera-canvas {
+    width: 100%; height: 240px; border: 1px solid #1a2a1a;
+    image-rendering: pixelated; background: #020402;
+}
+#camera-feed .camera-info {
+    display: flex; justify-content: space-between; align-items: center;
+    color: #227722; font-size: 9px; letter-spacing: 2px; margin-top: 6px;
+}
+#camera-feed .camera-scanline {
+    position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+    background: rgba(50,170,50,0.15); animation: scanline 3s linear infinite;
+    pointer-events: none;
+}
+@keyframes scanline { 0% { top: 40px; } 100% { top: 320px; } }
+#camera-feed .camera-footer {
+    color: #1a2a1a; font-size: 8px; text-align: center; margin-top: 8px;
+    border-top: 1px solid #0a1a0a; padding-top: 6px;
+}
+#hud .surveillance-meter {
+    display: inline-block; width: 60px; height: 6px; background: #1a0a0a;
+    border: 1px solid #3a1a1a; vertical-align: middle; margin-left: 4px; position: relative;
+}
+#hud .surveillance-fill {
+    height: 100%; background: #883322; transition: width 0.5s;
+}
 </style>
 </head>
 <body>
@@ -314,6 +355,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         <span><span id="health-bar"><span id="health-fill" style="width:100%"></span></span> <span id="hud-health">100</span></span>
         <span>DOCS: <span id="hud-docs">0</span>/<span id="hud-docs-total">0</span></span>
         <span id="hud-interact" style="color:#448888; display:none;">[E] INTERACT</span>
+        <span id="hud-surveillance" style="display:none;">SURV: <span class="surveillance-meter"><span class="surveillance-fill" id="surveillance-fill" style="width:0%"></span></span></span>
         <span>B-247</span>
     </div>
 </div>
@@ -417,6 +459,23 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         <div class="codex-count" id="codex-count">RECOVERED: 0 / 7</div>
         <div id="codex-entries"></div>
         <div class="codex-footer">[ TAB or ESC to close ]</div>
+    </div>
+</div>
+
+<div id="camera-feed">
+    <div class="camera-frame">
+        <div class="camera-header">
+            <span class="camera-static">▓▒░</span>
+            SECURITY FEED — FLOOR <span id="camera-floor-label">?</span>
+            <span class="camera-static">░▒▓</span>
+        </div>
+        <canvas id="camera-canvas" width="320" height="240"></canvas>
+        <div class="camera-info">
+            <span id="camera-entities">ENTITIES DETECTED: 0</span>
+            <span id="camera-warning" style="color:#cc4444;display:none;">⚠ SURVEILLANCE +10</span>
+        </div>
+        <div class="camera-scanline"></div>
+        <div class="camera-footer">[ ESC to disconnect ] Each access increases Building surveillance of YOU.</div>
     </div>
 </div>
 
@@ -1259,6 +1318,179 @@ function renderCodex() {
     }
 }
 
+// === SURVEILLANCE CAMERA SYSTEM ===
+// "You're being watched, and you can watch back. But the more you watch, the more IT watches you."
+
+function openCameraFeed(targetFloor) {
+    if (cameraOpen) return;
+    cameraOpen = true;
+    cameraViewFloor = targetFloor;
+
+    // Reality cost
+    player.realityLevel = Math.max(5, player.realityLevel - CAMERA_REALITY_COST);
+    updateRealityHUD();
+
+    // Increase surveillance
+    surveillanceLevel = Math.min(100, surveillanceLevel + 10);
+    updateSurveillanceHUD();
+
+    // Show warning flash
+    const warn = document.getElementById('camera-warning');
+    warn.style.display = 'inline';
+    setTimeout(() => { warn.style.display = 'none'; }, 2000);
+
+    document.getElementById('camera-floor-label').textContent = (targetFloor + 1);
+    document.getElementById('camera-feed').style.display = 'flex';
+
+    // Show message
+    showMessage('CAMERA ACCESS — SURVEILLANCE +10 — REALITY -' + CAMERA_REALITY_COST + '%', 2500);
+
+    // Render the camera view
+    renderCameraView(targetFloor);
+    cameraViewTimer = setInterval(() => renderCameraView(targetFloor), 500);
+}
+
+function closeCameraFeed() {
+    cameraOpen = false;
+    cameraViewFloor = -1;
+    if (cameraViewTimer) { clearInterval(cameraViewTimer); cameraViewTimer = 0; }
+    document.getElementById('camera-feed').style.display = 'none';
+}
+
+function renderCameraView(floor) {
+    const canvas = document.getElementById('camera-canvas');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const mapData = maps[floor];
+    if (!mapData) return;
+    const mapW = mapData[0].length, mapH = mapData.length;
+    const cellW = w / mapW, cellH = h / mapH;
+
+    // Clear with green-black
+    ctx.fillStyle = '#020802';
+    ctx.fillRect(0, 0, w, h);
+
+    // Draw map walls
+    for (let y = 0; y < mapH; y++) {
+        for (let x = 0; x < mapW; x++) {
+            if (mapData[y][x] > 0) {
+                ctx.fillStyle = '#0a1a0a';
+                ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+            }
+        }
+    }
+
+    // Draw grid lines (faint)
+    ctx.strokeStyle = 'rgba(30,80,30,0.1)';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x < mapW; x++) {
+        ctx.beginPath(); ctx.moveTo(x * cellW, 0); ctx.lineTo(x * cellW, h); ctx.stroke();
+    }
+    for (let y = 0; y < mapH; y++) {
+        ctx.beginPath(); ctx.moveTo(0, y * cellH); ctx.lineTo(w, y * cellH); ctx.stroke();
+    }
+
+    // Draw enemies on that floor as red blips
+    let entityCount = 0;
+    const floorEnemies = enemySpawns[floor] || [];
+    // If viewing current floor, use live enemy positions
+    if (floor === currentFloor) {
+        for (const e of enemies) {
+            if (e.health > 0) {
+                const ex = e.x * cellW, ey = e.y * cellH;
+                const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+                ctx.fillStyle = `rgba(200,50,30,${pulse})`;
+                ctx.beginPath();
+                ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+                ctx.fill();
+                // Detection range circle
+                ctx.strokeStyle = `rgba(200,50,30,0.15)`;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.arc(ex, ey, e.detectRange * cellW, 0, Math.PI * 2);
+                ctx.stroke();
+                entityCount++;
+            }
+        }
+        // Draw player position
+        const px = player.x * cellW, py = player.y * cellH;
+        ctx.fillStyle = '#33cc33';
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fill();
+        // Player direction line
+        ctx.strokeStyle = '#33cc33';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + Math.cos(player.angle) * 12, py + Math.sin(player.angle) * 12);
+        ctx.stroke();
+    } else {
+        // Show static enemy spawn positions with jitter (we can't see live data for other floors)
+        for (const spawn of floorEnemies) {
+            const jx = (spawn.x + (Math.random() - 0.5) * 0.3) * cellW;
+            const jy = (spawn.y + (Math.random() - 0.5) * 0.3) * cellH;
+            const pulse = Math.sin(Date.now() / 400 + spawn.x) * 0.3 + 0.7;
+            ctx.fillStyle = `rgba(200,50,30,${pulse})`;
+            ctx.beginPath();
+            ctx.arc(jx, jy, 3, 0, Math.PI * 2);
+            ctx.fill();
+            entityCount++;
+        }
+    }
+
+    // Draw NPCs on that floor as cyan blips (using npcDefs for all floors)
+    for (const [id, def] of Object.entries(npcDefs)) {
+        if (def.floor === floor) {
+            const nx = def.x * cellW, ny = def.y * cellH;
+            ctx.fillStyle = '#22aaaa';
+            ctx.beginPath();
+            ctx.arc(nx, ny, 3, 0, Math.PI * 2);
+            ctx.fill();
+            entityCount++;
+        }
+    }
+
+    // Static noise overlay
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        if (Math.random() < 0.02) {
+            const noise = Math.random() * 30;
+            data[i] += noise;
+            data[i+1] += noise * 1.5;
+            data[i+2] += noise;
+        }
+    }
+    ctx.putImageData(imageData, 0, 0);
+
+    // Timestamp overlay
+    ctx.fillStyle = '#227722';
+    ctx.font = '9px monospace';
+    const now = new Date();
+    ctx.fillText('REC ' + now.toLocaleTimeString() + ' F' + (floor + 1), 4, h - 4);
+
+    document.getElementById('camera-entities').textContent = 'ENTITIES DETECTED: ' + entityCount;
+}
+
+function updateSurveillanceHUD() {
+    const el = document.getElementById('hud-surveillance');
+    const fill = document.getElementById('surveillance-fill');
+    if (surveillanceLevel > 0) {
+        el.style.display = 'inline';
+        fill.style.width = surveillanceLevel + '%';
+        // Color escalation
+        if (surveillanceLevel >= 80) fill.style.background = '#cc2222';
+        else if (surveillanceLevel >= 50) fill.style.background = '#aa5522';
+        else fill.style.background = '#883322';
+    }
+}
+
+function getSurveillanceDetectBonus() {
+    // Every 20 surveillance points = +0.5 detect range for enemies
+    return Math.floor(surveillanceLevel / 20) * SURVEILLANCE_DETECT_BONUS;
+}
+
 // Ambient message system — periodic atmospheric text
 let lastAmbientMsg = 0;
 const ambientInterval = 45000; // 45 seconds between ambient messages
@@ -1542,6 +1774,7 @@ const worldObjectsByFloor = [
         { x: 12.5, y: 2.5, name: 'PERSONNEL TERMINAL', isTerminal: true, terminalId: 'personnel' },
         { x: 6.5, y: 16.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
         { x: 3.5, y: 4.5, name: 'ORIENTATION TERMINAL', isTerminal: true, terminalId: 'orientation' },
+        { x: 16.5, y: 4.5, name: 'SECURITY CAMERA — FEED 2F', isCamera: true, cameraFloor: 1 },
     ],
     // Floor 2: Archives — deeper, stranger
     [
@@ -1557,6 +1790,8 @@ const worldObjectsByFloor = [
         { x: 14.5, y: 20.5, name: 'ARCHIVE MIRROR', isMirror: true },
         { x: 11.5, y: 5.5, name: 'ARCHIVE QUERY TERMINAL', isTerminal: true, terminalId: 'archive' },
         { x: 18.5, y: 17.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
+        { x: 2.5, y: 14.5, name: 'SECURITY CAMERA — FEED 1F', isCamera: true, cameraFloor: 0 },
+        { x: 16.5, y: 14.5, name: 'SECURITY CAMERA — FEED 3F', isCamera: true, cameraFloor: 2 },
     ],
     // Floor 3: Processing — the machine heart
     [
@@ -1571,6 +1806,8 @@ const worldObjectsByFloor = [
         { x: 16.5, y: 7.5, name: 'OVERRIDE CONSOLE', isTerminal: true, terminalId: 'override' },
         { x: 4.5, y: 20.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
         { x: 18.5, y: 16.5, name: 'VASQUEZ\'S LOG DEVICE', isTerminal: true, terminalId: 'vasquez_log' },
+        { x: 10.5, y: 2.5, name: 'SECURITY CAMERA — FEED 1F', isCamera: true, cameraFloor: 0 },
+        { x: 20.5, y: 10.5, name: 'SECURITY CAMERA — FEED 2F', isCamera: true, cameraFloor: 1 },
     ],
 ];
 
@@ -1602,6 +1839,14 @@ let termCodeInput = '';
 let enemyRevealTimer = 0;
 let enemySlowTimer = 0;
 
+// === SURVEILLANCE STATE ===
+let surveillanceLevel = 0; // 0-100, how much IT is watching you
+let cameraOpen = false;
+let cameraViewFloor = -1;
+let cameraViewTimer = 0;
+const CAMERA_REALITY_COST = 3; // reality % lost per camera access
+const SURVEILLANCE_DETECT_BONUS = 0.5; // extra detect range per 20 surveillance
+
 // Count total documents across all floors
 for (const floorItems of itemSpawns) {
     for (const item of floorItems) {
@@ -1616,6 +1861,12 @@ let mouseDX = 0;
 
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
+    // Route to camera feed when open
+    if (cameraOpen) {
+        e.preventDefault();
+        if (e.code === 'Escape') { closeCameraFeed(); return; }
+        return;
+    }
     // Route to document codex when open
     if (codexOpen) {
         e.preventDefault();
@@ -1623,7 +1874,7 @@ window.addEventListener('keydown', e => {
         return;
     }
     // Open codex with TAB
-    if (e.code === 'Tab' && gameStarted && !terminalOpen && !chatOpen && !wallOpen && !deskOpen && !dialogOpen) {
+    if (e.code === 'Tab' && gameStarted && !terminalOpen && !chatOpen && !wallOpen && !deskOpen && !dialogOpen && !cameraOpen) {
         e.preventDefault();
         openCodex();
         return;
@@ -1809,6 +2060,10 @@ function interact(obj) {
     }
     if (obj.isWall) {
         fetchWallMessages().then(() => openWall());
+        return;
+    }
+    if (obj.isCamera) {
+        openCameraFeed(obj.cameraFloor);
         return;
     }
     if (obj.isMirror) {
@@ -4267,10 +4522,11 @@ function updateEnemies(dt) {
 
         const dx = player.x - e.x, dy = player.y - e.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
+        const effectiveRange = e.detectRange + getSurveillanceDetectBonus();
 
         if (e.type === 'watcher') {
             // Stationary — damages at range when player is in detect range
-            if (dist < e.detectRange && gameTime - e.lastDamageTime > 2000) {
+            if (dist < effectiveRange && gameTime - e.lastDamageTime > 2000) {
                 // Check line of sight
                 if (hasLineOfSight(e.x, e.y, player.x, player.y)) {
                     player.health -= e.damage;
@@ -4283,7 +4539,7 @@ function updateEnemies(dt) {
             continue;
         }
 
-        if (dist < e.detectRange && hasLineOfSight(e.x, e.y, player.x, player.y)) {
+        if (dist < effectiveRange && hasLineOfSight(e.x, e.y, player.x, player.y)) {
             // Chase player
             e.alertTimer = 3000;
             const nx = dx / dist, ny = dy / dist;
@@ -4470,6 +4726,27 @@ function update(dt) {
         const msg = buildingWhispers[(Math.random() * buildingWhispers.length) | 0];
         showMessage('\u2588 BUILDING B: ' + msg, 4500);
         lastWhisper = gameTime;
+    }
+
+    // Surveillance escalation messages — the building acknowledges your camera use
+    if (surveillanceLevel >= 30 && msgTimer <= 0 && Math.random() < 0.001) {
+        const survMsgs = surveillanceLevel >= 80 ? [
+            '\u2588 IT KNOWS EXACTLY WHERE YOU ARE.',
+            '\u2588 THE CAMERAS HAVE BEEN WATCHING YOU WATCH THEM.',
+            '\u2588 EVERY FEED YOU ACCESSED HAS BEEN LOGGED. EVERY ONE.',
+            '\u2588 YOU WANTED TO SEE EVERYTHING. NOW EVERYTHING SEES YOU.',
+            '\u2588 SURVEILLANCE LEVEL: TOTAL. YOU ARE TRANSPARENT.',
+        ] : surveillanceLevel >= 50 ? [
+            '\u2588 The cameras seem to track you now. Even the ones you haven\'t touched.',
+            '\u2588 A red light blinks on a camera you passed. It wasn\'t blinking before.',
+            '\u2588 You hear servos adjusting somewhere above. Lenses focusing.',
+            '\u2588 The security feeds are feeding something. You can feel it calculating.',
+        ] : [
+            'A camera lens rotates slightly as you pass.',
+            'You notice a small red LED on a wall-mounted camera. It wasn\'t on before.',
+            'The air feels heavier. Someone — something — is paying attention.',
+        ];
+        showMessage(survMsgs[(Math.random() * survMsgs.length) | 0], 4000);
     }
 
     // Check death
@@ -4672,6 +4949,8 @@ function startGame() {
     spawnWorldObjects();
     spawnNPCs();
     updateInventoryHUD();
+    surveillanceLevel = 0;
+    updateSurveillanceHUD();
     checkOllama();
     fetchWallMessages();
     // Async multiplayer: register session, fetch world state + recent sessions
