@@ -125,15 +125,28 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 const W = 320, H = 180;
 const TILE = 16;
-const SCALE = Math.min(Math.floor(window.innerWidth / W), Math.floor((window.innerHeight - ('ontouchstart' in window ? 100 : 0)) / H), 4) || 2;
+// Responsive scaling: fill viewport (no arbitrary cap)
+const mobileOffset = ('ontouchstart' in window) ? 100 : 0;
+const SCALE = Math.max(1, Math.min(
+    window.innerWidth / W,
+    (window.innerHeight - mobileOffset) / H
+));
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 canvas.width = W;
 canvas.height = H;
-canvas.style.width = (W * SCALE) + 'px';
-canvas.style.height = (H * SCALE) + 'px';
+canvas.style.width = Math.floor(W * SCALE) + 'px';
+canvas.style.height = Math.floor(H * SCALE) + 'px';
 ctx.imageSmoothingEnabled = false;
+
+// Resize handler for orientation changes
+window.addEventListener('resize', () => {
+    const mo = ('ontouchstart' in window) ? 100 : 0;
+    const s = Math.max(1, Math.min(window.innerWidth / W, (window.innerHeight - mo) / H));
+    canvas.style.width = Math.floor(W * s) + 'px';
+    canvas.style.height = Math.floor(H * s) + 'px';
+});
 
 // === ATOMPUNK PALETTE ===
 const P = {
@@ -499,6 +512,7 @@ let filingState = {
     suspicion: 0,          // 0-100: building's suspicion of you
     suspicionThresholds: { 30: false, 60: false, 90: false }, // track which warnings fired
 };
+let filingFlash = null; // { color, timer } — screen flash on filing decisions
 
 function shuffleDocs() {
     filingState.shuffledDocs = [...documents].sort(() => Math.random() - 0.5);
@@ -554,11 +568,15 @@ function processFilingDecision(decision) {
                 playDiscoverySound();
             }
         }
+        // Visual flash: brief green tint for correct
+        filingFlash = { color: decision === 'flag' ? 'rgba(204,170,50,' : 'rgba(50,170,80,', timer: 12 };
         // Correct decision reduces suspicion slightly
         filingState.suspicion = Math.max(0, filingState.suspicion - 3);
         updateSuspicionHUD();
     } else {
         filingState.wrongDecisions++;
+        // Visual flash: red tint for wrong
+        filingFlash = { color: 'rgba(180,40,20,', timer: 16 };
         // Wrong decision increases building suspicion
         if (doc.anomaly) {
             filingState.suspicion = Math.min(100, filingState.suspicion + 15); // missed anomaly: high suspicion
@@ -2521,6 +2539,15 @@ function render() {
         ctx.fillRect(0, H-2, W, 2);
         ctx.fillRect(0, 0, 2, H);
         ctx.fillRect(W-2, 0, 2, H);
+    }
+
+    // Filing decision flash (Loop 2122 — visual feedback for correct/wrong)
+    if (filingFlash && filingFlash.timer > 0) {
+        const alpha = (filingFlash.timer / 16) * 0.12;
+        ctx.fillStyle = filingFlash.color + alpha.toFixed(3) + ')';
+        ctx.fillRect(0, 0, W, H);
+        filingFlash.timer--;
+        if (filingFlash.timer <= 0) filingFlash = null;
     }
 
     // Transition fade
