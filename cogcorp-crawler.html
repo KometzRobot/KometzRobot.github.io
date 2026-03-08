@@ -2910,9 +2910,21 @@ let wallMessages = [];
 const SUPABASE_URL = 'https://temeejecxabhkmzpqzuj.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbWVlamVjeGFiaGttenBxenVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNDE5MTEsImV4cCI6MjA4NzcxNzkxMX0.DSzu8CnzLZG02LFQTFotlqsbjc_5JC-ci_kYztjfTa8';
 
+// Fallback seeded messages shown when offline or DB empty
+const SEEDED_WALL_MESSAGES = [
+    {agent_id:'B-412', message:'Floor 2 watchers move faster than they look. Stay near walls.', floor:2, reality_level:72, msg_type:'warning', votes_helpful:3, votes_deceptive:0},
+    {agent_id:'B-144', message:'Collect all 7 documents. Trust me. The building rewards completionists.', floor:1, reality_level:88, msg_type:'clue', votes_helpful:7, votes_deceptive:0},
+    {agent_id:'B-091', message:'If you find my file please dont burn it. I was real once.', floor:3, reality_level:15, msg_type:'plea', votes_helpful:2, votes_deceptive:0},
+    {agent_id:'B-733', message:'Orientation terminal on Floor 1 is worth reading. First time I actually understood the filing system.', floor:1, reality_level:92, msg_type:'message', votes_helpful:5, votes_deceptive:0},
+    {agent_id:'B-661', message:'When the walls start pulsing on Floor 3 do not stop moving. The heartbeat means it sees you.', floor:3, reality_level:31, msg_type:'warning', votes_helpful:4, votes_deceptive:1},
+    {agent_id:'B-217', message:'Vasquez left something in the Floor 2 terminal. Not the official logs. The other thing.', floor:2, reality_level:64, msg_type:'clue', votes_helpful:6, votes_deceptive:0},
+    {agent_id:'B-377', message:'I chose to return the file. I think it was the right thing to do. I hope.', floor:3, reality_level:40, msg_type:'plea', votes_helpful:3, votes_deceptive:1},
+    {agent_id:'B-444', message:'The PA announcements change depending on your reality level. Listen closely around 50%.', floor:2, reality_level:48, msg_type:'message', votes_helpful:6, votes_deceptive:0},
+];
+
 async function fetchWallMessages() {
     try {
-        const r = await fetch(SUPABASE_URL + '/rest/v1/wall_messages?select=*&order=created_at.desc&limit=8', {
+        const r = await fetch(SUPABASE_URL + '/rest/v1/wall_messages?select=*&order=created_at.desc&limit=12', {
             headers: {
                 'apikey': SUPABASE_ANON,
                 'Authorization': 'Bearer ' + SUPABASE_ANON,
@@ -2921,8 +2933,12 @@ async function fetchWallMessages() {
         });
         if (r.ok) {
             wallMessages = await r.json();
+            if (wallMessages.length === 0) wallMessages = SEEDED_WALL_MESSAGES;
         }
-    } catch(e) { /* offline — no messages */ }
+    } catch(e) {
+        // Offline — show seeded messages so the wall is never empty
+        if (wallMessages.length === 0) wallMessages = SEEDED_WALL_MESSAGES;
+    }
 }
 
 async function postWallMessage(text, msgType) {
