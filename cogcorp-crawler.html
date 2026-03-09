@@ -3562,6 +3562,7 @@ function addEncounterLog(text, cls) {
 }
 
 function updateEncounterHUD() {
+    if (!encounterEnemy) return;
     const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
     document.getElementById('enc-enemy-hp').textContent = Math.max(0, encounterEnemy.health);
     const hpPct = Math.max(0, (encounterEnemy.health / stats.maxHP) * 100);
@@ -3751,6 +3752,9 @@ function encounterFlee() {
 
     if (roll < fleeChance) {
         addEncounterLog('You disengage and retreat into the corridor.', 'heal');
+        encounterPlayerTurn = false;
+        encounterAnimating = true;
+        renderEncounterActions();
         setTimeout(() => {
             closeCombatEncounter();
             showMessage('RETREATED', 1500);
@@ -4121,6 +4125,8 @@ const npcDefs = {
         state: { affinity: 0, mood: 'gruff', exchangeCount: 0 }
     }
 };
+// Store default moodLabels for respawn reset
+for (const id in npcDefs) { npcDefs[id]._defaultMoodLabel = npcDefs[id].moodLabel; }
 
 // Classify player input into a discourse act
 function classifyInput(text) {
@@ -4287,6 +4293,9 @@ async function sendChatMessage() {
     if (chatNPC.state.affinity > 2) chatNPC.moodLabel = 'STATUS: RECEPTIVE';
     else if (chatNPC.state.affinity < -2) chatNPC.moodLabel = 'STATUS: GUARDED';
 
+    // Capture NPC reference before async operations (chatNPC may be nulled by ESC)
+    const npc = chatNPC;
+
     // Show typing indicator while waiting for response
     chatLog.push({ sender: 'npc', text: '...', typing: true });
     renderChat();
@@ -4295,14 +4304,22 @@ async function sendChatMessage() {
     let response;
     let isAI = false;
     if (ollamaAvailable) {
-        response = await getOllamaResponse(chatNPC, text, act);
+        response = await getOllamaResponse(npc, text, act);
         if (response) isAI = true;
+    }
+    // If chat was closed during async wait, bail out
+    if (!chatOpen || !chatNPC) {
+        chatLog.pop(); // remove typing indicator
+        return;
     }
     if (!response) {
         // Pre-authored beat selection with slight delay for natural feel
         await new Promise(r => setTimeout(r, 400 + Math.random() * 600));
-        const beats = chatNPC.beats[act] || chatNPC.beats.default;
-        response = beats[chatNPC.state.exchangeCount % beats.length];
+        if (!chatOpen || !chatNPC) { chatLog.pop(); return; }
+        const beats = npc.beats[act] || npc.beats.default;
+        // Use exchange count but cap at last beat (don't cycle back to first)
+        const beatIdx = Math.min(npc.state.exchangeCount - 1, beats.length - 1);
+        response = beats[beatIdx];
     }
 
     // Remove typing indicator and add actual response
@@ -4322,47 +4339,86 @@ async function sendChatMessage() {
     }
 
     // Gameplay effect: talking to NPCs slightly restores reality (connection)
-    if (chatNPC.state.exchangeCount <= 6) {
+    if (npc.state.exchangeCount <= 6) {
         player.realityLevel = Math.min(100, player.realityLevel + 2);
         updateRealityHUD();
     }
 }
 
+// Per-NPC generation parameters — personality expressed through sampling
+const npcGenParams = {
+    archivist:      { temperature: 0.4, num_predict: 80,  top_p: 0.85 }, // precise, clipped
+    b246:           { temperature: 0.9, num_predict: 100, top_p: 0.95 }, // fragmented, emotional
+    systemVoice:    { temperature: 0.6, num_predict: 90,  top_p: 0.8  }, // measured, philosophical
+    maintenanceBot: { temperature: 0.7, num_predict: 90,  top_p: 0.9  }, // technical, confused
+    whistleblower:  { temperature: 0.65, num_predict: 100, top_p: 0.85 }, // academic, scared
+    workerB119:     { temperature: 0.75, num_predict: 70,  top_p: 0.9  }, // hurried, nervous
+    workerB203:     { temperature: 0.5, num_predict: 70,  top_p: 0.85 }, // monotone, resigned
+    workerB077:     { temperature: 0.85, num_predict: 80,  top_p: 0.9  }, // conspiratorial
+    cafeUnit:       { temperature: 0.7, num_predict: 80,  top_p: 0.9  }, // cheerful, oblivious
+};
+
 async function getOllamaResponse(npc, playerText, act) {
     try {
-        // Build conversation context (exclude typing indicators)
-        const recent = chatLog.filter(m => !m.typing).slice(-8).map(m =>
-            m.sender === 'player' ? `Human: ${m.text}` : `${npc.name}: ${m.text}`
-        ).join('\n');
+        // Build chat messages for Ollama /api/chat — proper conversation format
+        const gameCtx = `Floor ${currentFloor + 1}/3. Reality: ${player.realityLevel}%. Filed: ${player.totalFiled || 0}.${gameWon ? ' Has target file.' : ''}`;
 
-        // Context about game state for richer responses
-        const gameCtx = `[Game state: Floor ${currentFloor + 1}/3, Reality: ${player.realityLevel}%, Enemies filed: ${player.totalFiled || 0}${gameWon ? ', HAS TARGET FILE' : ''}]`;
+        // Mood/affinity context the NPC should know about
+        const moodHint = npc.state.affinity > 2 ? ' The human has been kind to you.' :
+                         npc.state.affinity < -2 ? ' The human has been hostile.' : '';
 
-        const prompt = `${npc.systemPrompt}\n\n${gameCtx}\n\nConversation so far:\n${recent}\n\nThe human says: "${playerText}"\n\nRespond in character as ${npc.name}. Be conversational — ask follow-up questions, reference what the human said, share observations about the building. Do not just state facts. Engage.\n\n${npc.name}:`;
+        // System message: character prompt + minimal game context, NO generic instructions
+        const systemMsg = `${npc.systemPrompt}\n\nGame context: ${gameCtx}${moodHint}`;
 
-        const r = await fetch(`${OLLAMA_BASE}/api/generate`, {
+        // Build message history from chat log
+        const messages = [{ role: 'system', content: systemMsg }];
+        const recent = chatLog.filter(m => !m.typing).slice(-12); // More context (was 8)
+        for (const m of recent) {
+            messages.push({
+                role: m.sender === 'player' ? 'user' : 'assistant',
+                content: m.text
+            });
+        }
+        // Add current player message
+        messages.push({ role: 'user', content: playerText });
+
+        // Look up NPC-specific generation params (find key by matching npc object)
+        const npcKey = Object.keys(npcDefs).find(k => npcDefs[k] === npc) || 'archivist';
+        const params = npcGenParams[npcKey] || { temperature: 0.7, num_predict: 90, top_p: 0.9 };
+
+        const r = await fetch(`${OLLAMA_BASE}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: 'qwen2.5:7b',
-                prompt: prompt,
+                messages: messages,
                 stream: false,
-                options: { temperature: 0.8, num_predict: 120, top_p: 0.9 }
+                options: { ...params, repeat_penalty: 1.15, stop: ['Human:', 'Player:', '\n\n\n'] }
             }),
             signal: AbortSignal.timeout(15000)
         });
         if (!r.ok) return null;
         const data = await r.json();
-        if (!data.response) return null;
-        // Take first 1-2 sentences, clean up
-        let text = data.response.trim();
-        // Remove any continuation after a double newline
-        const dn = text.indexOf('\n\n');
-        if (dn > 0) text = text.substring(0, dn);
-        // Remove any "Human:" continuation the model might generate
-        const hi = text.indexOf('Human:');
-        if (hi > 0) text = text.substring(0, hi);
-        return text.trim() || null;
+        const raw = data.message?.content;
+        if (!raw) return null;
+
+        // Clean response — less aggressive truncation
+        let text = raw.trim();
+        // Remove the NPC repeating its own name prefix
+        if (text.startsWith(npc.name + ':')) text = text.substring(npc.name.length + 1).trim();
+        if (text.startsWith(npc.name + ' :')) text = text.substring(npc.name.length + 2).trim();
+        // Remove any role-play continuation the model might generate
+        for (const marker of ['Human:', 'Player:', 'B-247:', 'User:']) {
+            const idx = text.indexOf(marker);
+            if (idx > 0) text = text.substring(0, idx);
+        }
+        // Keep up to 2 paragraphs (allow some natural breaks)
+        const paras = text.split('\n\n').slice(0, 2);
+        text = paras.join(' ').trim();
+        // Cap at ~60 words to keep responses snappy in chat UI
+        const words = text.split(/\s+/);
+        if (words.length > 60) text = words.slice(0, 60).join(' ') + '...';
+        return text || null;
     } catch(e) {
         console.log('[COGCORP] Ollama error:', e.message);
         return null; // fallback to pre-authored
@@ -4404,25 +4460,26 @@ function updateNPCs(dt) {
         if (chatOpen && chatNPC && chatNPC._chatId === npc.id) continue;
 
         const p = npc.patrol;
-        const speed = p.speed * (npc.patrolDir || 1) * dt * 0.5;
+        const dir = npc.patrolDir || 1;
+        const speed = p.speed * dir * dt * 0.5;
         if (p.axis === 'x') {
             const newX = npc.x + speed;
-            if (getMap(newX | 0, npc.y | 0) === 0) {
+            if (getMap(newX | 0, npc.y | 0) === 0 && newX > p.min && newX < p.max + 1) {
                 npc.x = newX;
             } else {
-                npc.patrolDir *= -1;
+                npc.patrolDir = -dir; // reverse and skip this frame's movement
             }
-            if (npc.x > p.max + 0.5) npc.patrolDir = -1;
-            if (npc.x < p.min + 0.5) npc.patrolDir = 1;
+            if (npc.x > p.max + 0.5) { npc.patrolDir = -1; npc.x = p.max + 0.5; }
+            if (npc.x < p.min + 0.5) { npc.patrolDir = 1; npc.x = p.min + 0.5; }
         } else {
             const newY = npc.y + speed;
-            if (getMap(npc.x | 0, newY | 0) === 0) {
+            if (getMap(npc.x | 0, newY | 0) === 0 && newY > p.min && newY < p.max + 1) {
                 npc.y = newY;
             } else {
-                npc.patrolDir *= -1;
+                npc.patrolDir = -dir;
             }
-            if (npc.y > p.max + 0.5) npc.patrolDir = -1;
-            if (npc.y < p.min + 0.5) npc.patrolDir = 1;
+            if (npc.y > p.max + 0.5) { npc.patrolDir = -1; npc.y = p.max + 0.5; }
+            if (npc.y < p.min + 0.5) { npc.patrolDir = 1; npc.y = p.min + 0.5; }
         }
     }
 }
@@ -4784,6 +4841,8 @@ function getNPCWorldAwareness(npcId) {
 }
 
 function respawn() {
+    // Clear any running win sequence typewriter
+    if (winTypeInterval) { clearInterval(winTypeInterval); winTypeInterval = null; }
     player.health = player.maxHealth;
     player.spawnShield = 3000; // 3 seconds invulnerability
     player.realityLevel = 100;
@@ -4794,8 +4853,10 @@ function respawn() {
     player.allDocsFound = false;
     player.phaseHintShown = false;
     player.docs = 0;
+    surveillanceLevel = 0;
     deskOpen = false; deskEnemy = null; deskFile = null;
     encounterOpen = false; encounterEnemy = null; encounterLog = [];
+    encounterAnimating = false; encounterPlayerTurn = false;
     chatOpen = false; chatNPC = null; wallOpen = false;
     dialogOpen = false; choiceCallback = null;
     gameWon = false; exitChoiceMade = false;
@@ -4822,6 +4883,7 @@ function respawn() {
         npcDefs[id].state.affinity = 0;
         npcDefs[id].state.mood = 'neutral';
         npcDefs[id].state.exchangeCount = 0;
+        npcDefs[id].moodLabel = npcDefs[id]._defaultMoodLabel || npcDefs[id].moodLabel;
     }
     // Reset to Floor 1 properly
     currentFloor = 0;
@@ -4851,6 +4913,7 @@ function respawn() {
 // === WIN SEQUENCE ===
 let winPhase = 0;
 let winTimer = 0;
+let winTypeInterval = null;
 
 function triggerWinSequence() {
     gameStarted = false;
@@ -4951,9 +5014,10 @@ function triggerWinSequence() {
     setTimeout(() => {
         let charIdx = 0;
         const typeSpeed = 18; // ms per character
-        const typeInterval = setInterval(() => {
+        winTypeInterval = setInterval(() => {
             if (charIdx >= endingText.length) {
-                clearInterval(typeInterval);
+                clearInterval(winTypeInterval);
+                winTypeInterval = null;
                 // Phase 4: Stats fade in after typing completes
                 setTimeout(() => {
                     const statsEl = document.createElement('span');
@@ -6999,8 +7063,8 @@ function update(dt) {
     // NPC patrol movement
     updateNPCs(dt);
 
-    // Reality-based audio distortion — lower reality = more unsettling
-    if (audioCtx && audioNodes.master && gameTime % 500 < dt * 1000) {
+    // Reality-based audio distortion — lower reality = more unsettling (~every 500ms)
+    if (audioCtx && audioNodes.master && gameTime % 500 < dt) {
         const rl = player.realityLevel;
         const t = audioCtx.currentTime;
         if (rl < 60) {
