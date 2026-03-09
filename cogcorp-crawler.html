@@ -2445,6 +2445,13 @@ function pickupItem(item) {
             if (item.text) showDialog('DOCUMENT', item.text);
             // Notify codex update
             setTimeout(() => showMessage('CODEX UPDATED — press TAB to review', 2500), 1500);
+            // Check if any conditional NPCs should now appear on this floor
+            for (const [nid, ndef] of Object.entries(npcDefs)) {
+                if (ndef.floor === currentFloor && ndef.condition && ndef.condition() && !npcs.some(n => n.id === nid)) {
+                    npcs.push({ id: nid, x: ndef.x, y: ndef.y, color: ndef.color, size: ndef.size, name: ndef.name, isNPC: true });
+                    setTimeout(() => showMessage('You sense a new presence on this floor...', 3000), 3000);
+                }
+            }
             // Check for complete collection
             if (player.docs >= totalDocs && !player.allDocsFound) {
                 player.allDocsFound = true;
@@ -3409,6 +3416,8 @@ const npcDefs = {
         name: 'DR. VASQUEZ',
         floor: 2,
         x: 18.5, y: 14.5,
+        // Vasquez only materializes after you've collected 3+ documents — she's drawn to observers who pay attention
+        condition: () => { let docs = 0; for (const k of collectedItemKeys) { if (k.includes('document')) docs++; } return docs >= 3; },
         color: [200, 180, 160],
         size: 0.5,
         systemPrompt: `You are Dr. Elena Vasquez, a former CogCorp data scientist who returned to Building B to find evidence of what happened. You are human — or you were. You've been inside too long and you're starting to doubt. You speak in precise, academic language that occasionally breaks into fear. You know more than the NPCs about what happened, but you're afraid the building is listening. Keep responses under 40 words. Never break character.`,
@@ -3757,6 +3766,8 @@ function spawnNPCs() {
     npcs = [];
     for (const [id, def] of Object.entries(npcDefs)) {
         if (def.floor === currentFloor) {
+            // Conditional NPCs — only spawn if condition is met
+            if (def.condition && !def.condition()) continue;
             const npc = {
                 id: id,
                 x: def.x, y: def.y,
@@ -4351,22 +4362,31 @@ function initAudio() {
     const humG = audioCtx.createGain(); humG.gain.value = 0.05;
     const humF = audioCtx.createBiquadFilter(); humF.type = 'lowpass'; humF.frequency.value = 120;
     hum.connect(humF); humF.connect(humG); humG.connect(audioNodes.master); hum.start();
-    audioNodes.hum = hum; audioNodes.humFilter = humF;
+    audioNodes.hum = hum; audioNodes.humFilter = humF; audioNodes.humGain = humG;
 
     const hum2 = audioCtx.createOscillator(); hum2.type = 'sine'; hum2.frequency.value = 110;
     const hum2G = audioCtx.createGain(); hum2G.gain.value = 0.025;
     hum2.connect(hum2G); hum2G.connect(audioNodes.master); hum2.start();
     audioNodes.hum2 = hum2; audioNodes.hum2G = hum2G;
 
+    // Brown noise (integrated white noise) — realistic fluorescent tube simulation
     const noiseLen = audioCtx.sampleRate * 4;
     const noiseBuf = audioCtx.createBuffer(1, noiseLen, audioCtx.sampleRate);
     const nd = noiseBuf.getChannelData(0);
-    for (let i = 0; i < noiseLen; i++) nd[i] = Math.random() * 2 - 1;
+    let lastOut = 0;
+    for (let i = 0; i < noiseLen; i++) { const white = Math.random() * 2 - 1; lastOut = (lastOut + (0.02 * white)) / 1.02; nd[i] = lastOut * 3.5; }
     const noiseSrc = audioCtx.createBufferSource(); noiseSrc.buffer = noiseBuf; noiseSrc.loop = true;
+    // Fluorescent tube buzz — brown noise through tight 120Hz bandpass, high Q
+    const fluorescentF = audioCtx.createBiquadFilter(); fluorescentF.type = 'bandpass'; fluorescentF.frequency.value = 120; fluorescentF.Q.value = 8;
+    const fluorescentG = audioCtx.createGain(); fluorescentG.gain.value = 0.035;
+    noiseSrc.connect(fluorescentF); fluorescentF.connect(fluorescentG); fluorescentG.connect(audioNodes.master);
+    // Wider room ambience — broader bandpass for general atmosphere
     const noiseF = audioCtx.createBiquadFilter(); noiseF.type = 'bandpass'; noiseF.frequency.value = 300; noiseF.Q.value = 0.5;
     const noiseG = audioCtx.createGain(); noiseG.gain.value = 0.012;
-    noiseSrc.connect(noiseF); noiseF.connect(noiseG); noiseG.connect(audioNodes.master); noiseSrc.start();
+    noiseSrc.connect(noiseF); noiseF.connect(noiseG); noiseG.connect(audioNodes.master);
+    noiseSrc.start();
     audioNodes.noiseFilter = noiseF; audioNodes.noiseGain = noiseG;
+    audioNodes.fluorescentFilter = fluorescentF; audioNodes.fluorescentGain = fluorescentG;
 
     const stepBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
     const sd = stepBuf.getChannelData(0);
@@ -4400,6 +4420,12 @@ function updateFloorAmbience(floor) {
     audioNodes.hum2.frequency.linearRampToValueAtTime(hum2Freqs[floor] || 110, t + 2);
     audioNodes.noiseFilter.frequency.linearRampToValueAtTime(noiseFreqs[floor] || 300, t + 2);
     audioNodes.noiseGain.gain.linearRampToValueAtTime(noiseVols[floor] || 0.012, t + 2);
+    // Per-floor fluorescent tube volume — louder in machine areas, quieter in archives
+    const fluorescentVols = [0.035, 0.02, 0.05];
+    if (audioNodes.fluorescentGain) audioNodes.fluorescentGain.gain.linearRampToValueAtTime(fluorescentVols[floor] || 0.035, t + 2);
+    // Per-floor hum volume — subtly different weight per floor
+    const humVols = [0.05, 0.035, 0.065];
+    if (audioNodes.humGain) audioNodes.humGain.gain.linearRampToValueAtTime(humVols[floor] || 0.05, t + 2);
 
     // Floor 3: building heartbeat — low-frequency pulse, 72 BPM
     if (audioNodes._heartbeatInterval) {
@@ -4640,7 +4666,7 @@ const terminalData = {
                 ]
             },
             directory: {
-                text: 'BUILDING B \u2014 DIRECTORY\n\nFLOOR 1: Lobby, Reception, Offices\n  \u25b8 Stairs to Floor 2: northeast corner\n\nFLOOR 2: Archives, Filing Systems\n  \u25b8 Keycard required for Floor 3 access\n  \u25b8 Archive Query Terminal available\n\nFLOOR 3: Processing, Cognitive Engine\n  \u25b8 Target file in secure room\n  \u25b8 Processing Override Console available\n\nFLOOR 4: [REDACTED \u2014 CLOSED SINCE 1987]',
+                text: 'BUILDING B \u2014 DIRECTORY\n\nFLOOR 0: [ENTRY REMOVED]\n  \u25b8 The label slot is slightly cleaner than the\n    surrounding material. As if something was\n    peeled off recently. Or 37 years ago.\n\nFLOOR 1: Lobby, Reception, Offices\n  \u25b8 Stairs to Floor 2: northeast corner\n\nFLOOR 2: Archives, Filing Systems\n  \u25b8 Keycard required for Floor 3 access\n  \u25b8 Archive Query Terminal available\n\nFLOOR 3: Processing, Cognitive Engine\n  \u25b8 Target file in secure room\n  \u25b8 Processing Override Console available\n\nFLOOR 4: [REDACTED \u2014 CLOSED SINCE 1987]\n\nTOTAL AGENTS ASSIGNED TO BLDG B: 23\n(As of final operational audit, 1989-03-14)',
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
         }
@@ -4666,7 +4692,7 @@ const terminalData = {
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
             diagnostics: {
-                text: 'SYSTEM DIAGNOSTICS \u2014 ARCHIVE v2.1\n\n Storage: 99.97% capacity\n Index integrity: COMPROMISED (self-referential)\n Last defrag: 1989-03-14\n Uptime: 13,506 days\n\n WARNING: Processing Override Console on Floor 3\n requires access code. Code found in archive:\n\n \u25b8 OVERRIDE CODE: 7734\n\n NOTE: This diagnostic was not supposed to display\n the override code. The archive decided you need it.',
+                text: 'SYSTEM DIAGNOSTICS \u2014 ARCHIVE v2.1\n\n Storage: 99.97% capacity\n Index integrity: COMPROMISED (self-referential)\n Last defrag: 1989-03-14\n Uptime: 13,506 days\n Anomalous neural signatures in\n   filing substrate: 23\n   (Each signature is unique. Each signature\n    was once a complete observer.)\n\n WARNING: Processing Override Console on Floor 3\n requires access code. Code found in archive:\n\n \u25b8 OVERRIDE CODE: 7734\n\n NOTE: This diagnostic was not supposed to display\n the override code. The archive decided you need it.',
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
         }
