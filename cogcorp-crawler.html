@@ -2554,6 +2554,50 @@ const worldObjectsByFloor = [
 
 let worldObjects = [];
 
+// Wall-mounted signs — environmental text rendered in 3D world space
+const WALL_SIGNS = [
+    // Floor 1: Intake — warm amber CogCorp signage
+    [
+        { x: 4.5, y: 1.2, text: 'COGCORP BUILDING B', color: [200, 170, 100] },
+        { x: 8.5, y: 1.2, text: 'FLOOR 1 — INTAKE', color: [200, 170, 100] },
+        { x: 3.5, y: 3.8, text: '← ORIENTATION', color: [100, 180, 120] },
+        { x: 1.2, y: 1.5, text: 'EXIT', color: [200, 60, 40] },
+        { x: 20.5, y: 19.5, text: 'STAIRS ↑', color: [100, 200, 100] },
+        { x: 16.5, y: 4.2, text: 'AREA MONITORED', color: [180, 80, 60] },
+        { x: 11.5, y: 7.8, text: 'AUTHORIZED PERSONNEL', color: [180, 160, 100] },
+        { x: 6.5, y: 16.2, text: 'MESSAGE BOARD →', color: [100, 160, 180] },
+        { x: 14.5, y: 9.2, text: 'SUGGESTIONS', color: [160, 150, 110] },
+        { x: 10.5, y: 14.2, text: 'HYDRATION STATION', color: [100, 160, 200] },
+    ],
+    // Floor 2: Archives — cold blue institutional signage
+    [
+        { x: 2.5, y: 1.2, text: 'FLOOR 2 — ARCHIVES', color: [120, 150, 200] },
+        { x: 11.5, y: 1.2, text: 'DOCUMENT INDEX', color: [120, 150, 200] },
+        { x: 4.5, y: 5.2, text: 'CARD CATALOG', color: [140, 160, 180] },
+        { x: 10.8, y: 20.5, text: 'RESTRICTED', color: [200, 60, 40] },
+        { x: 21.5, y: 19.5, text: 'STAIRS ↑', color: [100, 200, 100] },
+        { x: 2.5, y: 2.2, text: 'STAIRS ↓', color: [100, 200, 100] },
+        { x: 18.5, y: 17.2, text: 'MESSAGE BOARD', color: [100, 160, 180] },
+        { x: 8.5, y: 8.2, text: 'SILENCE', color: [140, 130, 100] },
+        { x: 6.5, y: 10.2, text: 'READING ROOM', color: [140, 160, 180] },
+        { x: 16.5, y: 14.2, text: 'SURVEILLANCE', color: [180, 80, 60] },
+        { x: 20.5, y: 8.2, text: 'TALLY: XXIII', color: [120, 110, 90], style: 'scratch' },
+    ],
+    // Floor 3: Processing — green warning signage, graffiti
+    [
+        { x: 2.5, y: 1.2, text: 'FLOOR 3 — PROCESSING', color: [80, 200, 100] },
+        { x: 16.5, y: 1.2, text: 'MODEL 9000 — ACTIVE', color: [80, 200, 100] },
+        { x: 10.5, y: 9.8, text: '⚠ CENTRAL VAULT', color: [200, 80, 40] },
+        { x: 4.5, y: 16.2, text: 'OUTPUT ZONE', color: [150, 200, 80] },
+        { x: 20.5, y: 14.2, text: '⚠ EMERGENCY', color: [220, 60, 40] },
+        { x: 7.5, y: 7.2, text: 'WORK ORDERS', color: [180, 160, 100] },
+        { x: 12.5, y: 20.2, text: 'DECOMMISSIONED 1989', color: [140, 130, 100] },
+        { x: 8.5, y: 14.5, text: 'B-246 WAS HERE', color: [100, 80, 60], style: 'scratch' },
+        { x: 18.5, y: 8.5, text: 'IT KNOWS YOUR NAME', color: [60, 120, 70], style: 'scratch' },
+        { x: 4.5, y: 4.5, text: 'DONT TRUST THE FILES', color: [140, 60, 50], style: 'scratch' },
+    ],
+];
+
 function spawnWorldObjects() {
     worldObjects = worldObjectsByFloor[currentFloor] || [];
 }
@@ -8231,6 +8275,54 @@ function render() {
         ctx.fillStyle = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha * pulse})`;
         ctx.textAlign = 'center';
         ctx.fillText(label, screenX, screenY);
+    }
+    }
+
+    // Wall-mounted signs — 3D world-space environmental text
+    {
+    const sdirX = Math.cos(player.angle), sdirY = Math.sin(player.angle);
+    const splX = Math.cos(player.angle + Math.PI/2) * 0.66, splY = Math.sin(player.angle + Math.PI/2) * 0.66;
+    const sinvD = 1.0 / (splX * sdirY - sdirX * splY);
+    const signs = WALL_SIGNS[currentFloor] || [];
+    for (const sign of signs) {
+        const dx = sign.x - player.x, dy = sign.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 8 || dist < 0.3) continue;
+        const tX = sinvD * (sdirY * dx - sdirX * dy);
+        const tY = sinvD * (-splY * dx + splX * dy);
+        if (tY <= 0.2) continue;
+        const screenX = (SCREEN_W / 2) * (1 + tX / tY) + sx;
+        // Signs are wall-mounted — render at upper wall height
+        const sprH = Math.abs(SCREEN_H / tY * 0.7);
+        const screenY = HALF_H - sprH / 2 + sy;
+        if (screenX < -40 || screenX > SCREEN_W + 40 || screenY < -10 || screenY > SCREEN_H) continue;
+        // Z-buffer: signs only visible if no wall is closer at this screen column
+        const col = Math.max(0, Math.min(SCREEN_W - 1, screenX | 0));
+        if (tY > zBuf[col] + 0.3) continue;
+        // Fade with distance
+        const alpha = Math.max(0.15, 1 - dist / 8);
+        const c = sign.color;
+        ctx.font = sign.style === 'scratch' ? '5px monospace' : '6px monospace';
+        ctx.textAlign = 'center';
+        const tw = ctx.measureText(sign.text).width;
+        // Background — dark plate for official signs, none for scratched graffiti
+        if (sign.style !== 'scratch') {
+            ctx.fillStyle = `rgba(10, 8, 6, ${alpha * 0.65})`;
+            ctx.fillRect(screenX - tw/2 - 3, screenY - 7, tw + 6, 11);
+            // Thin border
+            ctx.strokeStyle = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha * 0.3})`;
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(screenX - tw/2 - 3, screenY - 7, tw + 6, 11);
+        }
+        // Text — scratched graffiti gets wobble effect
+        if (sign.style === 'scratch') {
+            const wobble = Math.sin(gameTime * 0.002 + sign.x * 7) * 0.5;
+            ctx.fillStyle = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha * 0.5})`;
+            ctx.fillText(sign.text, screenX + wobble, screenY + wobble * 0.3);
+        } else {
+            ctx.fillStyle = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha * 0.85})`;
+            ctx.fillText(sign.text, screenX, screenY);
+        }
     }
     }
 
