@@ -2051,10 +2051,38 @@ function loadAndResume() {
 }
 
 function showDeathScreen() {
+    const ds = document.getElementById('death-screen');
+    const h2 = ds.querySelector('h2');
+    const p = ds.querySelector('p');
+
+    // Context-specific death messages
+    if (player.realityLevel <= 0) {
+        h2.textContent = 'CLASSIFICATION COMPLETE';
+        const msgs = [
+            'B-247 has been fully documented. Signal converted to typescript.',
+            'Reality signature zeroed. B-247 is now a filing reference.',
+            'The building processed you before you could process it.',
+        ];
+        p.textContent = msgs[(Math.random() * msgs.length) | 0];
+    } else {
+        h2.textContent = 'SIGNAL LOST';
+        const floorMsgs = [
+            'The lobby floor is colder than you expected. You don\'t get back up.',
+            'The archive cabinets slide shut around you. A drawer opens nearby.',
+            'The processing machine hums louder. It was waiting for this.',
+        ];
+        p.textContent = floorMsgs[currentFloor] || 'B-247 signal terminated.';
+    }
+    // Brief stats
+    const playMins = (gameTime / 60000) | 0;
+    const statLine = 'Floor ' + (currentFloor + 1) + ' | Filed: ' + player.totalFiled +
+        ' | Stealth: ' + (player.stealthApproaches || 0) + ' | Time: ' + playMins + 'm';
+    p.textContent += '\n' + statLine;
+
     // Show checkpoint load button if save exists
     const btn = document.getElementById('death-load-btn');
     if (btn) btn.style.display = hasSavedCheckpoint() ? 'block' : 'none';
-    document.getElementById('death-screen').style.display = 'flex';
+    ds.style.display = 'flex';
 }
 
 // === SURVEILLANCE CAMERA SYSTEM ===
