@@ -14,11 +14,17 @@
 - Grid-based map navigation
 - The feeling of claustrophobic corridors
 
-### Papers Please (Lucas Pope, 2013) → Now "Cognitive Pattern Analyzer"
-- Inspection mini-game mechanic under time pressure
-- Moral weight of approve/reject decisions
-- Escalating rules per floor
-- **Our twist**: Instead of passports, you analyze cognitive patterns — memory fragments, neural depth, signal frequencies. False memories reference things that don't exist in the building. Player uses exploration knowledge.
+### Bethesda Lockpicking / Hacking (Skyrim, Fallout) → "Neural Signal Tuner"
+- Skill-based mini-game: sweep a needle across a frequency spectrum, press SPACE to lock in the hidden resonance zone
+- Audio/visual feedback: waveform cleans up near the zone, proximity tone rises in pitch
+- Limited attempts (lock picks): 4 on Floor 1, 3 on Floors 2-3
+- Escalating difficulty: zone narrows, needle speeds up per floor
+- **Our twist**: Instead of a lockpick, you're tuning into a unit's neural signal. The oscilloscope waveform goes from static to clean sine as you approach the resonance. Failure = reality cost + enemy enrages.
+
+### Papers Please (Lucas Pope, 2013) → Filing mechanic + moral weight
+- Filing enemies costs reality (escalating)
+- Moral weight: every unit you file brings you closer to losing yourself
+- The game tracks total filings and changes endings based on how many you filed
 
 ### D&D / Dungeon RPGs (Wizardry, Eye of the Beholder, Ultima Underworld)
 - Turn-based combat encounters (d20 rolls, armor class, damage dice)

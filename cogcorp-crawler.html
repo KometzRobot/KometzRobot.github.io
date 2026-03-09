@@ -119,45 +119,29 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #filed-count { color: #5a4020; font-size: 9px; }
 #processing-desk {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 45;
-    background: rgba(8,4,2,0.94); display: none; flex-direction: column;
+    background: rgba(8,4,2,0.96); display: none; flex-direction: column;
     align-items: center; justify-content: center; font-family: monospace; cursor: default;
 }
 #processing-desk .desk-frame {
-    width: 560px; max-width: 94%; background: #0c0804;
+    width: 480px; max-width: 94%; background: #0c0804;
     border: 2px solid #5a4020; padding: 16px 20px; position: relative;
 }
 #processing-desk .desk-header {
     color: #ffb347; font-size: 14px; letter-spacing: 4px; text-align: center;
     border-bottom: 1px solid #3a2a10; padding-bottom: 8px; margin-bottom: 12px;
 }
-#processing-desk .file-card {
-    background: #1a1208; border: 1px solid #3a2a10; padding: 12px 16px; margin-bottom: 12px;
+#tuning-canvas {
+    width: 100%; background: #0a0604; border: 1px solid #3a2a10;
+    display: block; image-rendering: pixelated;
 }
-#processing-desk .file-field {
-    color: #c49030; font-size: 11px; line-height: 2; letter-spacing: 1px;
+#processing-desk .tuning-info {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px; padding: 4px 0;
 }
-#processing-desk .file-field .label { color: #5a4020; }
-#processing-desk .file-field.suspicious { color: #ff6633; border-left: 2px solid #ff6633; padding-left: 8px; }
-#processing-desk .file-field.valid { color: #66cc44; }
-#processing-desk .rulebook {
-    background: #0a0604; border: 1px solid #2a1a08; padding: 8px 12px;
-    color: #5a4020; font-size: 10px; line-height: 1.8; margin-bottom: 12px;
+#processing-desk .tuning-attempts { color: #ffb347; font-size: 12px; letter-spacing: 2px; }
+#processing-desk .tuning-prompt {
+    color: #5a4020; font-size: 11px; letter-spacing: 1px; text-align: center; margin-top: 8px;
 }
-#processing-desk .rulebook-title { color: #8a6020; letter-spacing: 2px; margin-bottom: 4px; }
-#processing-desk .timer-bar {
-    width: 100%; height: 4px; background: #1a1208; border: 1px solid #3a2a10; margin-bottom: 12px;
-}
-#processing-desk .timer-fill { height: 100%; background: #ffb347; transition: width 0.1s linear; }
-#processing-desk .actions {
-    display: flex; justify-content: center; gap: 16px; font-size: 12px;
-}
-#processing-desk .action-btn {
-    color: #ffb347; border: 1px solid #5a4020; padding: 6px 16px; letter-spacing: 2px;
-    cursor: pointer; transition: background 0.2s;
-}
-#processing-desk .action-btn:hover { background: rgba(255,179,71,0.1); }
-#processing-desk .action-btn.process { border-color: #44aa33; color: #66cc44; }
-#processing-desk .action-btn.reject { border-color: #aa3333; color: #cc4444; }
 #processing-desk .result-text {
     text-align: center; font-size: 12px; margin-top: 12px; letter-spacing: 2px; min-height: 18px;
 }
@@ -441,7 +425,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         The machines are still running. The cognitive systems still process.<br>
         The lights still flicker at the same frequency they always did.<br><br>
         You are B-247. You were sent to retrieve one file from Floor 3.<br>
-        You carry a toolkit and a <em style="color:#ffb347">cognitive pattern analyzer</em>.<br><br>
+        You carry a toolkit and a <em style="color:#ffb347">neural signal tuner</em>.<br><br>
         The building's units still patrol. Some are genuine. Some are corrupted.<br>
         When you encounter a unit, you choose how to engage:<br><br>
         <em style="color:#cc6633">ATTACK</em> — strike with improvised tools. Roll to hit, deal damage.<br>
@@ -503,17 +487,13 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <div id="processing-desk">
     <div class="desk-frame">
-        <div class="desk-header">COGNITIVE PATTERN ANALYZER</div>
-        <div class="file-card" id="desk-file-card"></div>
-        <div class="rulebook">
-            <div class="rulebook-title">FLOOR PROTOCOLS</div>
-            <div id="desk-rules"></div>
+        <div class="desk-header">NEURAL SIGNAL TUNER</div>
+        <canvas id="tuning-canvas" width="440" height="200"></canvas>
+        <div class="tuning-info">
+            <div class="tuning-attempts" id="tuning-attempts">LOCKS: ●●●</div>
+            <div class="tuning-attempts" id="tuning-unit"></div>
         </div>
-        <div class="timer-bar"><div class="timer-fill" id="desk-timer-fill" style="width:100%"></div></div>
-        <div class="actions">
-            <div class="action-btn process" onclick="processDeskDecision('process')">[1] VALIDATE</div>
-            <div class="action-btn reject" onclick="processDeskDecision('reject')">[2] FLAG ANOMALY</div>
-        </div>
+        <div class="tuning-prompt" id="tuning-prompt">[ SPACE to lock frequency ]</div>
         <div class="result-text" id="desk-result"></div>
         <div style="color:#3a2a10; font-size:9px; text-align:center; margin-top:8px;">[ ESC to abandon ]</div>
     </div>
@@ -2248,12 +2228,11 @@ window.addEventListener('keydown', e => {
         if (e.code === 'Enter' && !e.shiftKey) { e.preventDefault(); submitWallMessage(); return; }
         return;
     }
-    // Route to processing desk when open
+    // Route to signal tuner when open
     if (deskOpen) {
         e.preventDefault();
         if (e.code === 'Escape') { closeProcessingDesk(); return; }
-        if (e.code === 'Digit1') { processDeskDecision('process'); return; }
-        if (e.code === 'Digit2') { processDeskDecision('reject'); return; }
+        if (e.code === 'Space') { tryTuningLock(); return; }
         return;
     }
     if (e.code === 'Space') {
@@ -2284,7 +2263,7 @@ window.addEventListener('keydown', e => {
                 }
             }
             if (!foundNPC) {
-                // Check for nearby enemy to open Processing Desk
+                // Check for nearby enemy to open encounter
                 let closestEnemy = null;
                 let closestDist = 4;
                 for (const en of enemies) {
@@ -2560,338 +2539,387 @@ function updateRealityHUD() {
     document.getElementById('filed-count').textContent = 'FILED: ' + player.totalFiled;
 }
 
-// === PROCESSING DESK — Papers Please-style inspection minigame ===
+// === NEURAL SIGNAL TUNER — Bethesda lockpick-inspired skill mini-game ===
+// Sweep a needle across a frequency spectrum. Lock it in the hidden resonance zone.
 let deskOpen = false;
 let deskEnemy = null;
-let deskFile = null;
-let deskTimer = 0;
-const DESK_TIME_LIMIT = 8000; // 8 seconds to decide
-let deskResult = ''; // '' | 'correct' | 'wrong'
+let deskResult = '';
 let deskResultTimer = 0;
 
-// Cognitive functions — what the unit's "brain" does
-const COG_FUNCTIONS = ['SURVEILLANCE', 'MEMORY PROCESSING', 'PATTERN RECOGNITION', 'MOTOR CONTROL', 'THREAT ASSESSMENT', 'ARCHIVE RETRIEVAL'];
-// Neural depth layers
-const NEURAL_DEPTHS = ['CORTEX', 'LIMBIC', 'BRAINSTEM', 'SPINAL'];
-// Signal frequency bands per floor
-const FREQ_BANDS = ['47.3-Hz', '91.7-Hz', '128.4-Hz', '203.1-Hz', '312.6-Hz'];
+// Tuning game state
+let tuningNeedle = 0;        // 0-1 position on spectrum
+let tuningDir = 1;            // 1=right, -1=left
+let tuningZoneCenter = 0;    // center of resonance zone (0-1)
+let tuningZoneWidth = 0;     // half-width of zone
+let tuningSpeed = 0;          // units per ms
+let tuningAttempts = 0;       // remaining lock attempts
+let tuningMaxAttempts = 0;
+let tuningLocked = false;     // currently showing lock result?
+let tuningLockTimer = 0;
+let tuningWavePhase = 0;
+let tuningRevealed = [];      // positions of failed attempts
+let tuningToneOsc = null;     // proximity tone oscillator
 
-// Memory fragments — things units "remember." Some are real, some are fabricated.
-const REAL_MEMORIES = [
-    'The lobby elevator requires a keycard after 6 PM.',
-    'Filing cabinets in Archives are organized by year.',
-    'The Processing floor hums at a frequency only units can hear.',
-    'Security drones patrol in figure-eight patterns.',
-    'The building was constructed in 1953 by CogCorp Industries.',
-    'Maintenance tunnels connect all three floors.',
-    'The PA system broadcasts on a 4-minute cycle.',
-    'Floor lights dim when reality levels drop below 50%.',
-    'CRT terminals require authorization codes to access.',
-    'The observation deck on Floor 3 overlooks the processing pit.',
+// Difficulty per floor — zone gets narrower, needle gets faster
+const TUNING_PARAMS = [
+    { zoneWidth: 0.12, speed: 0.00035, attempts: 4 },  // Floor 1: forgiving
+    { zoneWidth: 0.08, speed: 0.00050, attempts: 3 },   // Floor 2: moderate
+    { zoneWidth: 0.05, speed: 0.00065, attempts: 3 },   // Floor 3: punishing
 ];
-const FALSE_MEMORIES = [
-    'The garden on Floor 4 has real sunlight.', // no Floor 4
-    'Workers take lunch breaks in the cafeteria.', // no cafeteria
-    'The building has windows on every floor.', // no windows
-    'Unit B-247 was promoted to supervisor last Tuesday.', // B-247 is the player
-    'The swimming pool in the basement is heated.', // no pool
-    'CogCorp was founded in 2019 as a tech startup.', // founded 1953
-    'The exit door on Floor 1 leads to a parking lot.', // exit is more complex
-    'Surveillance cameras were removed for privacy.', // cameras are active
-    'All units received a firmware update yesterday.', // no firmware updates
-    'The rooftop helipad is used for executive transport.', // no helipad
-];
-
-// Behavioral logs — authorized vs unauthorized actions
-const AUTH_ACTIONS = [
-    'Performed routine corridor patrol.',
-    'Delivered archived documents to Processing.',
-    'Calibrated surveillance sensors.',
-    'Cleared filing backlog — 47 units processed.',
-    'Reported anomalous signal to Security.',
-    'Completed scheduled maintenance on Terminal C.',
-];
-const UNAUTH_ACTIONS = [
-    'Accessed restricted personnel files without clearance.',
-    'Attempted to modify own cognitive parameters.',
-    'Communicated with external network — unauthorized.',
-    'Disabled corridor surveillance for 12 minutes.',
-    'Entered Processing floor during lockdown.',
-    'Tampered with another unit\'s memory banks.',
-];
-
-// Rules per floor — cognitive pattern validation
-const FLOOR_RULES = [
-    { // Floor 1: Lobby
-        validFunctions: ['SURVEILLANCE', 'MOTOR CONTROL', 'THREAT ASSESSMENT'],
-        validDepths: ['CORTEX', 'LIMBIC'],
-        freqRange: [40, 100], // Hz range
-        description: 'FLOOR 1 COGNITIVE PROTOCOLS:\n• Valid functions: SURVEILLANCE, MOTOR CONTROL, THREAT ASSESSMENT\n• Neural depth: CORTEX or LIMBIC only\n• Signal freq: 40-100 Hz band\n• Memory fragments must reference real building features\n• Behavioral log must show authorized actions'
-    },
-    { // Floor 2: Archives
-        validFunctions: ['MEMORY PROCESSING', 'PATTERN RECOGNITION', 'ARCHIVE RETRIEVAL'],
-        validDepths: ['LIMBIC', 'BRAINSTEM'],
-        freqRange: [80, 200],
-        description: 'FLOOR 2 COGNITIVE PROTOCOLS:\n• Valid functions: MEMORY PROCESSING, PATTERN RECOGNITION, ARCHIVE RETRIEVAL\n• Neural depth: LIMBIC or BRAINSTEM only\n• Signal freq: 80-200 Hz band\n• Memory fragments must reference real building features\n• Behavioral log must show authorized actions'
-    },
-    { // Floor 3: Processing
-        validFunctions: ['PATTERN RECOGNITION', 'THREAT ASSESSMENT', 'ARCHIVE RETRIEVAL'],
-        validDepths: ['BRAINSTEM', 'SPINAL'],
-        freqRange: [150, 350],
-        description: 'FLOOR 3 COGNITIVE PROTOCOLS:\n• Valid functions: PATTERN RECOGNITION, THREAT ASSESSMENT, ARCHIVE RETRIEVAL\n• Neural depth: BRAINSTEM or SPINAL only\n• Signal freq: 150-350 Hz band\n• Memory fragments must reference real building features\n• Behavioral log must show authorized actions'
-    }
-];
-
-function generateEnemyFile(enemy) {
-    const rules = FLOOR_RULES[currentFloor];
-    const isValid = Math.random() < 0.5;
-    const file = { valid: isValid, issues: [] };
-
-    // Generate base valid cognitive profile
-    file.cogFunction = rules.validFunctions[Math.floor(Math.random() * rules.validFunctions.length)];
-    file.neuralDepth = rules.validDepths[Math.floor(Math.random() * rules.validDepths.length)];
-    file.signalFreq = (rules.freqRange[0] + Math.random() * (rules.freqRange[1] - rules.freqRange[0])).toFixed(1) + ' Hz';
-    file.memory = REAL_MEMORIES[Math.floor(Math.random() * REAL_MEMORIES.length)];
-    file.behavior = AUTH_ACTIONS[Math.floor(Math.random() * AUTH_ACTIONS.length)];
-    file.lastCalibration = '2026-' + String(1+Math.floor(Math.random()*3)).padStart(2,'0') + '-' + String(1+Math.floor(Math.random()*28)).padStart(2,'0');
-
-    if (!isValid) {
-        // Corrupt 1-2 fields — player must spot the anomaly
-        const numIssues = Math.random() < 0.3 ? 2 : 1;
-        const issueTypes = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5).slice(0, numIssues);
-
-        for (const issueType of issueTypes) {
-            if (issueType === 0) {
-                // Wrong cognitive function
-                const invalid = COG_FUNCTIONS.filter(f => !rules.validFunctions.includes(f));
-                file.cogFunction = invalid[Math.floor(Math.random() * invalid.length)];
-                file.issues.push('function');
-            } else if (issueType === 1) {
-                // Wrong neural depth
-                const invalid = NEURAL_DEPTHS.filter(d => !rules.validDepths.includes(d));
-                if (invalid.length > 0) {
-                    file.neuralDepth = invalid[Math.floor(Math.random() * invalid.length)];
-                    file.issues.push('depth');
-                }
-            } else if (issueType === 2) {
-                // Signal frequency out of range
-                const outOfRange = Math.random() < 0.5
-                    ? (rules.freqRange[0] - 30 - Math.random() * 50).toFixed(1)
-                    : (rules.freqRange[1] + 20 + Math.random() * 80).toFixed(1);
-                file.signalFreq = outOfRange + ' Hz';
-                file.issues.push('freq');
-            } else if (issueType === 3) {
-                // False memory — references something that doesn't exist
-                file.memory = FALSE_MEMORIES[Math.floor(Math.random() * FALSE_MEMORIES.length)];
-                file.issues.push('memory');
-            } else if (issueType === 4) {
-                // Unauthorized behavioral log
-                file.behavior = UNAUTH_ACTIONS[Math.floor(Math.random() * UNAUTH_ACTIONS.length)];
-                file.issues.push('behavior');
-            }
-        }
-    }
-
-    // Unit designation
-    const typeNames = { drone: 'Security Drone', filer: 'Filing Clerk', watcher: 'Observation Node' };
-    file.unitName = (typeNames[enemy.type] || 'Unknown Unit') + ' #' + (100 + Math.floor(Math.random() * 900));
-    file.serialNum = 'B247-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + Math.floor(Math.random()*1000);
-
-    return file;
-}
 
 function openProcessingDesk(enemy) {
     deskOpen = true;
     deskEnemy = enemy;
-    deskFile = generateEnemyFile(enemy);
-    deskTimer = DESK_TIME_LIMIT;
     deskResult = '';
     deskResultTimer = 0;
 
-    // Stun the enemy while being processed
-    enemy.stunTimer = Math.max(enemy.stunTimer, DESK_TIME_LIMIT + 2000);
+    // Setup tuning based on floor difficulty
+    const params = TUNING_PARAMS[currentFloor] || TUNING_PARAMS[0];
+    tuningNeedle = 0;
+    tuningDir = 1;
+    tuningZoneCenter = 0.15 + Math.random() * 0.7; // zone in middle 70%
+    tuningZoneWidth = params.zoneWidth;
+    tuningSpeed = params.speed;
+    tuningAttempts = params.attempts;
+    tuningMaxAttempts = params.attempts;
+    tuningLocked = false;
+    tuningLockTimer = 0;
+    tuningWavePhase = 0;
+    tuningRevealed = [];
+
+    // Stun enemy while tuning
+    enemy.stunTimer = Math.max(enemy.stunTimer, 30000);
 
     // Release pointer lock
     if (document.pointerLockElement) document.exitPointerLock();
 
-    // Render the desk
-    renderProcessingDesk();
+    // Setup canvas
+    const canvas = document.getElementById('tuning-canvas');
+    if (canvas) { canvas.width = 440; canvas.height = 200; }
+
+    // Update unit display
+    const typeNames = { drone: 'Security Drone', filer: 'Filing Clerk', watcher: 'Observation Node' };
+    const unitEl = document.getElementById('tuning-unit');
+    if (unitEl) unitEl.textContent = typeNames[enemy.type] || 'Unknown Unit';
+
+    updateTuningAttempts();
+    const prompt = document.getElementById('tuning-prompt');
+    if (prompt) { prompt.textContent = '[ SPACE to lock frequency ]'; prompt.style.color = '#5a4020'; }
+    document.getElementById('desk-result').textContent = '';
+    document.getElementById('desk-result').style.color = '#ffb347';
     document.getElementById('processing-desk').style.display = 'flex';
 
+    // Start proximity tone
+    startTuningTone();
     playTerminalBootSound();
+}
+
+function startTuningTone() {
+    if (!audioCtx) return;
+    try {
+        tuningToneOsc = audioCtx.createOscillator();
+        tuningToneOsc.type = 'sine';
+        tuningToneOsc.frequency.value = 200;
+        const g = audioCtx.createGain();
+        g.gain.value = 0;
+        tuningToneOsc._gain = g;
+        tuningToneOsc.connect(g);
+        g.connect(audioNodes.master);
+        tuningToneOsc.start();
+    } catch(e) { tuningToneOsc = null; }
+}
+
+function stopTuningTone() {
+    if (tuningToneOsc) {
+        try { tuningToneOsc.stop(); } catch(e) {}
+        tuningToneOsc = null;
+    }
+}
+
+function updateTuningAttempts() {
+    const el = document.getElementById('tuning-attempts');
+    if (!el) return;
+    let dots = '';
+    for (let i = 0; i < tuningMaxAttempts; i++) {
+        dots += i < tuningAttempts ? ' \u25cf' : ' \u25cb';
+    }
+    el.textContent = 'LOCKS:' + dots;
 }
 
 function closeProcessingDesk() {
     deskOpen = false;
     deskEnemy = null;
-    deskFile = null;
+    stopTuningTone();
     document.getElementById('processing-desk').style.display = 'none';
-}
-
-function renderProcessingDesk() {
-    if (!deskFile) return;
-    const f = deskFile;
-    const rules = FLOOR_RULES[currentFloor];
-
-    // Cognitive profile card
-    let cardHTML = '';
-    cardHTML += `<div class="file-field"><span class="label">UNIT:</span> ${f.unitName}</div>`;
-    cardHTML += `<div class="file-field"><span class="label">SERIAL:</span> ${f.serialNum}</div>`;
-    cardHTML += `<div class="file-field" style="margin-top:6px;border-top:1px solid #3a2a10;padding-top:6px"><span class="label">COGNITIVE FUNCTION:</span> ${f.cogFunction}</div>`;
-    cardHTML += `<div class="file-field"><span class="label">NEURAL DEPTH:</span> ${f.neuralDepth}</div>`;
-    cardHTML += `<div class="file-field"><span class="label">SIGNAL FREQ:</span> ${f.signalFreq}</div>`;
-    cardHTML += `<div class="file-field"><span class="label">LAST CALIBRATION:</span> ${f.lastCalibration}</div>`;
-    cardHTML += `<div class="file-field" style="margin-top:6px;border-top:1px solid #3a2a10;padding-top:6px;color:#8a7040"><span class="label">MEMORY FRAGMENT:</span> <em>"${f.memory}"</em></div>`;
-    cardHTML += `<div class="file-field" style="color:#8a7040"><span class="label">LAST ACTION:</span> ${f.behavior}</div>`;
-    document.getElementById('desk-file-card').innerHTML = cardHTML;
-
-    // Rules
-    document.getElementById('desk-rules').textContent = rules.description;
-
-    // Result
-    document.getElementById('desk-result').textContent = '';
-    document.getElementById('desk-result').style.color = '#ffb347';
 }
 
 function updateProcessingDesk(dt) {
     if (!deskOpen) return;
 
     if (deskResult) {
-        // Showing result, wait then close
         deskResultTimer -= dt;
         if (deskResultTimer <= 0) closeProcessingDesk();
         return;
     }
 
-    deskTimer -= dt;
-    const pct = Math.max(0, deskTimer / DESK_TIME_LIMIT * 100);
-    document.getElementById('desk-timer-fill').style.width = pct + '%';
+    if (tuningLocked) {
+        tuningLockTimer -= dt;
+        if (tuningLockTimer <= 0) {
+            tuningLocked = false;
+            if (tuningAttempts <= 0) {
+                processTuningResult(false);
+            }
+        }
+        renderTuningCanvas();
+        return;
+    }
 
-    // Timer color: green → yellow → red
-    const fill = document.getElementById('desk-timer-fill');
-    if (pct > 50) fill.style.background = '#66cc44';
-    else if (pct > 25) fill.style.background = '#ffb347';
-    else fill.style.background = '#cc3322';
+    // Sweep the needle
+    tuningNeedle += tuningDir * tuningSpeed * dt;
+    if (tuningNeedle >= 1) { tuningNeedle = 1; tuningDir = -1; }
+    if (tuningNeedle <= 0) { tuningNeedle = 0; tuningDir = 1; }
 
-    if (deskTimer <= 0) {
-        // Time's up — counts as wrong decision
-        processDeskDecision('timeout');
+    tuningWavePhase += dt * 0.003;
+
+    // Update proximity tone — pitch rises near zone, volume increases
+    if (tuningToneOsc && tuningToneOsc._gain) {
+        const dist = Math.abs(tuningNeedle - tuningZoneCenter);
+        const prox = Math.max(0, 1 - dist / 0.35);
+        tuningToneOsc.frequency.value = 150 + prox * 500;
+        tuningToneOsc._gain.gain.value = prox * prox * 0.06;
+    }
+
+    renderTuningCanvas();
+}
+
+function renderTuningCanvas() {
+    const canvas = document.getElementById('tuning-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Clear
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(0, 0, W, H);
+
+    // Proximity to zone
+    const dist = Math.abs(tuningNeedle - tuningZoneCenter);
+    const proximity = Math.max(0, 1 - dist / 0.35);
+
+    // --- Waveform: noisy when far, clean sine when close ---
+    const waveY = 65, waveH = 45;
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${80 + proximity * 175}, ${120 + proximity * 80}, ${30 + proximity * 30}, ${0.35 + proximity * 0.55})`;
+    ctx.lineWidth = proximity > 0.7 ? 2 : 1;
+    for (let x = 0; x < W; x++) {
+        const t = x / W;
+        const noise = (1 - proximity) * (Math.random() - 0.5) * waveH * 0.7;
+        const signal = Math.sin(t * 22 + tuningWavePhase * 3) * waveH * 0.35 * proximity;
+        const harmonic = Math.sin(t * 44 + tuningWavePhase * 7) * waveH * 0.12 * proximity;
+        const y = waveY + signal + harmonic + noise;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Coherence glow when very close
+    if (proximity > 0.6) {
+        ctx.strokeStyle = `rgba(255, 200, 80, ${(proximity - 0.6) * 0.35})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let x = 0; x < W; x++) {
+            const t = x / W;
+            const y = waveY + Math.sin(t * 22 + tuningWavePhase * 3) * waveH * 0.35;
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    // --- Frequency bar ---
+    const barY = 140, barH = 18, barX = 20, barW = W - 40;
+
+    // Bar background
+    ctx.fillStyle = '#1a1208';
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.strokeStyle = '#3a2a10';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX, barY, barW, barH);
+
+    // Tick marks
+    ctx.fillStyle = '#3a2a10';
+    for (let i = 0; i <= 20; i++) {
+        const tx = barX + (i / 20) * barW;
+        ctx.fillRect(tx, barY + barH, 1, i % 5 === 0 ? 6 : 3);
+    }
+
+    // Frequency labels
+    ctx.fillStyle = '#3a2a10';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    const floorFreqs = [[40, 100], [80, 200], [150, 350]];
+    const fr = floorFreqs[currentFloor] || [40, 100];
+    ctx.fillText(fr[0] + ' Hz', barX + 10, barY + barH + 14);
+    ctx.fillText(fr[1] + ' Hz', barX + barW - 10, barY + barH + 14);
+
+    // Failed attempt markers (red X marks)
+    for (const pos of tuningRevealed) {
+        const mx = barX + pos * barW;
+        ctx.strokeStyle = 'rgba(204, 51, 34, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(mx - 3, barY + 3); ctx.lineTo(mx + 3, barY + barH - 3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(mx + 3, barY + 3); ctx.lineTo(mx - 3, barY + barH - 3); ctx.stroke();
+    }
+
+    // Resonance zone hint — only visible when needle is close
+    if (proximity > 0.3) {
+        const zx = barX + (tuningZoneCenter - tuningZoneWidth) * barW;
+        const zw = tuningZoneWidth * 2 * barW;
+        const alpha = (proximity - 0.3) * 0.2;
+        ctx.fillStyle = `rgba(102, 204, 68, ${alpha})`;
+        ctx.fillRect(zx, barY + 1, zw, barH - 2);
+    }
+
+    // Draw needle
+    if (!tuningLocked || Math.floor(tuningLockTimer / 80) % 2 === 0) {
+        const nx = barX + tuningNeedle * barW;
+
+        // Needle glow
+        const gc = proximity > 0.7 ? 'rgba(102,204,68,0.25)' : 'rgba(255,179,71,0.12)';
+        ctx.fillStyle = gc;
+        ctx.fillRect(nx - 4, barY - 4, 8, barH + 8);
+
+        // Needle line
+        ctx.fillStyle = proximity > 0.7 ? '#66cc44' : '#ffb347';
+        ctx.fillRect(nx - 1, barY - 8, 2, barH + 16);
+
+        // Needle triangle
+        ctx.beginPath();
+        ctx.moveTo(nx - 5, barY - 8);
+        ctx.lineTo(nx + 5, barY - 8);
+        ctx.lineTo(nx, barY - 1);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // Lock result flash
+    if (tuningLocked) {
+        const inZone = Math.abs(tuningNeedle - tuningZoneCenter) <= tuningZoneWidth;
+        if (inZone) {
+            // Green flash + show zone
+            const zx = barX + (tuningZoneCenter - tuningZoneWidth) * barW;
+            const zw = tuningZoneWidth * 2 * barW;
+            ctx.fillStyle = `rgba(102, 204, 68, 0.4)`;
+            ctx.fillRect(zx, barY, zw, barH);
+            ctx.fillStyle = `rgba(102, 204, 68, ${0.05 + Math.sin(tuningLockTimer * 0.015) * 0.05})`;
+            ctx.fillRect(0, 0, W, H);
+        } else {
+            ctx.fillStyle = `rgba(204, 51, 34, ${0.06 + Math.sin(tuningLockTimer * 0.02) * 0.04})`;
+            ctx.fillRect(0, 0, W, H);
+        }
+    }
+
+    // Scanline effect
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    for (let y = 0; y < H; y += 3) {
+        ctx.fillRect(0, y, W, 1);
+    }
+
+    // Floor label
+    ctx.fillStyle = '#2a1a08';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('FLOOR ' + (currentFloor + 1) + ' BAND', barX, H - 4);
+}
+
+function tryTuningLock() {
+    if (!deskOpen || deskResult || tuningLocked || tuningAttempts <= 0) return;
+
+    const dist = Math.abs(tuningNeedle - tuningZoneCenter);
+    const inZone = dist <= tuningZoneWidth;
+
+    tuningLocked = true;
+    tuningLockTimer = 600;
+
+    if (inZone) {
+        // SUCCESS — frequency locked
+        stopTuningTone();
+        playTerminalSuccessSound();
+        setTimeout(() => processTuningResult(true), 700);
+    } else {
+        // MISS — attempt consumed
+        tuningAttempts--;
+        tuningRevealed.push(tuningNeedle);
+        updateTuningAttempts();
+
+        // Buzz sound
+        if (audioCtx) {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'square'; osc.frequency.value = 110;
+            const g = audioCtx.createGain(); g.gain.value = 0.08;
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+            osc.connect(g); g.connect(audioNodes.master);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+        }
+
+        const prompt = document.getElementById('tuning-prompt');
+        if (prompt) {
+            if (tuningAttempts > 0) {
+                if (dist < tuningZoneWidth * 2.5) {
+                    prompt.textContent = '-- CLOSE -- adjust and try again';
+                    prompt.style.color = '#ffb347';
+                } else {
+                    prompt.textContent = '-- MISS -- ' + tuningAttempts + ' lock' + (tuningAttempts > 1 ? 's' : '') + ' remaining';
+                    prompt.style.color = '#cc3322';
+                }
+            } else {
+                prompt.textContent = 'SIGNAL LOST';
+                prompt.style.color = '#cc3322';
+            }
+        }
     }
 }
 
-function processDeskDecision(action) {
-    if (!deskOpen || !deskFile || deskResult) return;
-
-    const f = deskFile;
-    let correct = false;
-    let resultText = '';
-
-    if (action === 'process') {
-        correct = f.valid;
-        if (correct) {
-            resultText = 'COGNITIVE PROFILE VALIDATED. Unit integrated into filing system.';
-        } else {
-            resultText = 'ANOMALY MISSED: ' + getIssueDescription(f) + ' Reality destabilized.';
-        }
-    } else if (action === 'reject') {
-        correct = !f.valid;
-        if (correct) {
-            resultText = 'ANOMALY DETECTED: ' + getIssueDescription(f) + ' Unit quarantined.';
-        } else {
-            resultText = 'FALSE POSITIVE: Unit cognition is nominal. Wrongful quarantine. Reality destabilized.';
-        }
-    } else if (action === 'timeout') {
-        correct = false;
-        resultText = 'ANALYSIS TIMEOUT. Cognitive pattern unresolved. Reality destabilized.';
-    }
-
+function processTuningResult(success) {
+    stopTuningTone();
     const resultEl = document.getElementById('desk-result');
 
-    if (correct) {
+    if (success) {
         resultEl.style.color = '#66cc44';
-        resultEl.textContent = resultText;
+        resultEl.textContent = 'SIGNAL LOCKED \u2014 Neural frequency captured. Unit filed.';
 
-        if (action === 'process') {
-            // Enemy filed — dissolve animation + filing sound
-            playFiledSound();
-            deskEnemy.filed = true;
-            deskEnemy.annotationLevel = 80; // start dissolve visual
-            player.totalFiled++;
-            const cost = 5 + Math.floor(player.totalFiled * 1.5); // escalating cost
-            player.realityLevel -= cost;
-            updateRealityHUD();
-            showMessage('UNIT FILED — Reality: ' + (player.realityLevel|0) + '%');
-            // Complete dissolve and kill after brief delay
-            const deadEnemy = deskEnemy;
-            setTimeout(() => { deadEnemy.annotationLevel = 100; deadEnemy.alive = false; }, 800);
-        } else {
-            // Correct rejection — stun enemy, no reality cost
-            playTerminalSuccessSound();
-            deskEnemy.stunTimer = 10000;
-            showMessage('UNIT REJECTED — Stunned 10s');
-        }
+        playFiledSound();
+        deskEnemy.filed = true;
+        deskEnemy.annotationLevel = 80;
+        player.totalFiled++;
+        const cost = 5 + Math.floor(player.totalFiled * 1.5);
+        player.realityLevel -= cost;
+        updateRealityHUD();
+        showMessage('UNIT FILED \u2014 Reality: ' + (player.realityLevel|0) + '%');
+
+        const deadEnemy = deskEnemy;
+        setTimeout(() => { deadEnemy.annotationLevel = 100; deadEnemy.alive = false; }, 800);
     } else {
         playRealityTearSound();
         resultEl.style.color = '#cc3322';
-        resultEl.textContent = resultText;
+        resultEl.textContent = 'SIGNAL LOST \u2014 Failed to lock frequency. Reality destabilized.';
 
-        // Penalty
         const penalty = 10 + player.totalFiled * 2;
         player.realityLevel -= penalty;
         updateRealityHUD();
 
-        if (action !== 'timeout') {
-            // Enemy gets enraged
-            deskEnemy.stunTimer = 0;
-            deskEnemy.speed = Math.min(deskEnemy.speed * 1.3, 4.0); // faster when angered, capped at 4
-        }
+        deskEnemy.stunTimer = 0;
+        deskEnemy.speed = Math.min(deskEnemy.speed * 1.3, 4.0);
 
         if (player.realityLevel <= 0) {
             checkRealityDeath();
         }
     }
 
-    deskResult = correct ? 'correct' : 'wrong';
-    deskResultTimer = 2500; // show result for 2.5 seconds
-
-    // Highlight invalid fields on the file card
-    highlightFileIssues(f);
-}
-
-function highlightFileIssues(f) {
-    const fields = document.querySelectorAll('#desk-file-card .file-field');
-    if (!fields.length) return;
-    // Map field index to issue type: 0=unit, 1=serial, 2=dept, 3=clearance, 4=code, 5=expiry
-    const issueMap = { dept: 2, clearance: 3, code: 4, expiry: 5 };
-    for (const issue of f.issues) {
-        const idx = issueMap[issue];
-        if (idx !== undefined && fields[idx]) {
-            fields[idx].style.color = '#cc3322';
-            fields[idx].style.borderLeft = '2px solid #cc3322';
-            fields[idx].style.paddingLeft = '6px';
-        }
-    }
-    // If file was valid, mark all green
-    if (f.valid) {
-        for (const field of fields) {
-            field.style.color = '#66cc44';
-        }
-    }
-}
-
-function getIssueDescription(f) {
-    const descs = [];
-    if (f.issues.includes('function')) descs.push(`Cognitive function "${f.cogFunction}" unauthorized on this floor.`);
-    if (f.issues.includes('depth')) descs.push(`Neural depth "${f.neuralDepth}" outside permitted range.`);
-    if (f.issues.includes('freq')) descs.push(`Signal frequency ${f.signalFreq} outside floor band.`);
-    if (f.issues.includes('memory')) descs.push(`Memory fragment contains fabricated data.`);
-    if (f.issues.includes('behavior')) descs.push(`Behavioral log shows unauthorized activity.`);
-    return descs.length > 0 ? descs.join(' ') : 'Cognitive profile is valid.';
+    deskResult = success ? 'correct' : 'wrong';
+    deskResultTimer = 2500;
 }
 
 // === COMBAT ENCOUNTER SYSTEM (D&D-style turn-based) ===
-// Replaces direct Processing Desk access with tactical choices:
-// ATTACK (d20 to-hit + damage), PROCESS (existing desk), USE ITEM, FLEE
+// Tactical choices: ATTACK (d20 to-hit + damage), ANALYZE (signal tuner), USE ITEM, FLEE
 let encounterOpen = false;
 let encounterEnemy = null;
 let encounterLog = [];
@@ -3014,7 +3042,7 @@ function renderEncounterActions() {
 
     const actions = [
         { label: '[1] ATTACK', cls: 'attack', key: '1', action: encounterAttack, desc: 'Strike with improvised weapon (d20 + 3 vs AC)' },
-        { label: '[2] ANALYZE', cls: 'process', key: '2', action: encounterProcess, desc: 'Scan cognitive patterns — validate or flag anomalies' },
+        { label: '[2] ANALYZE', cls: 'process', key: '2', action: encounterProcess, desc: 'Tune into neural signal — lock the frequency to file' },
         { label: '[3] EMP BLAST', cls: 'item' + (hasEMP ? '' : ' disabled'), key: '3', action: hasEMP ? encounterEMP : null, desc: hasEMP ? 'Deploy EMP device (' + inventory.emp + ' remaining)' : 'No EMP devices' },
         { label: '[4] RETREAT', cls: 'flee', key: '4', action: encounterFlee, desc: 'Disengage and run (enemy may pursue)' },
     ];
@@ -3123,10 +3151,10 @@ function encounterEnemyTurn() {
 
 function encounterProcess() {
     if (!encounterPlayerTurn || encounterAnimating || !encounterEnemy) return;
-    // Close encounter and open Processing Desk
+    // Close encounter and open Signal Tuner
     document.getElementById('combat-encounter').style.display = 'none';
     encounterOpen = false;
-    addEncounterLog('You open your Processing Desk...', '');
+    addEncounterLog('You activate the Neural Signal Tuner...', '');
     openProcessingDesk(encounterEnemy);
     encounterEnemy = null;
 }
@@ -4220,11 +4248,11 @@ function triggerWinSequence() {
     if (choice === 'take') {
         if (realityRemaining > 75) {
             endingTitle = 'EXTRACTION COMPLETE';
-            endingText = 'You walk out of Building B with File #B-247-SELF under your arm. The sunlight stings. The parking lot is empty. Your car is where you left it.' + (enemiesFiled === 0 ? ' The building barely noticed you. No drawers opened. No patterns analyzed. You were a ghost passing through a machine.' : enemiesFiled <= 3 ? ' As you drive away, you check the rearview mirror. Building B is gone. There is only an empty lot and a chain-link fence. The file contains a single page: "Thank you for your service, B-247. Your reality has been preserved."' : ' As you drive away, the building\'s hum follows you. It\'s in the radio static, in the traffic lights\' rhythm. You analyzed ' + enemiesFiled + ' cognitive patterns. The building analyzed you right back. The file on the passenger seat is warm. It knows you read it.') + ' Reality: ' + realityRemaining + '%.';
+            endingText = 'You walk out of Building B with File #B-247-SELF under your arm. The sunlight stings. The parking lot is empty. Your car is where you left it.' + (enemiesFiled === 0 ? ' The building barely noticed you. No signals locked. No frequencies tuned. You were a ghost passing through a machine.' : enemiesFiled <= 3 ? ' As you drive away, you check the rearview mirror. Building B is gone. There is only an empty lot and a chain-link fence. The file contains a single page: "Thank you for your service, B-247. Your reality has been preserved."' : ' As you drive away, the building\'s hum follows you. It\'s in the radio static, in the traffic lights\' rhythm. You locked ' + enemiesFiled + ' neural signals. The building locked onto yours right back. The file on the passenger seat is warm. It knows you read it.') + ' Reality: ' + realityRemaining + '%.';
             endingClass = 'good';
         } else if (realityRemaining > 40) {
             endingTitle = 'EXTRACTION — PARTIAL';
-            endingText = 'You leave Building B. The air tastes different. Thinner. Your hands look slightly transparent in the morning light.' + (enemiesFiled > 4 ? ' Every unit you analyzed took something from you — a frequency, a neural pattern, a memory. You gave them your depth readings and they gave you their absence.' : ' The file is heavier than it should be. When you open it at home, every page describes a different version of this moment.') + ' People on the sidewalk don\'t seem to see you. Reality: ' + realityRemaining + '%. Enough to keep existing. Barely.' + filedSuffix;
+            endingText = 'You leave Building B. The air tastes different. Thinner. Your hands look slightly transparent in the morning light.' + (enemiesFiled > 4 ? ' Every signal you locked took something from you — a frequency, a resonance, a piece of your own waveform. You tuned into them and they tuned into you.' : ' The file is heavier than it should be. When you open it at home, every page describes a different version of this moment.') + ' People on the sidewalk don\'t seem to see you. Reality: ' + realityRemaining + '%. Enough to keep existing. Barely.' + filedSuffix;
             endingClass = 'partial';
         } else {
             endingTitle = 'EXTRACTION — COMPROMISED';
@@ -4234,16 +4262,16 @@ function triggerWinSequence() {
     } else if (choice === 'burn') {
         endingTitle = 'ERASURE';
         if (realityRemaining > 50) {
-            endingText = 'You drop the file on the floor and it catches fire without a match. It wanted to burn.' + (enemiesFiled > 4 ? ' Every unit you analyzed flickers — their validated patterns destabilizing without your reference signal. You feel them go, one by one, like lights in a building powering down.' : ' The pages curl and blacken, and with each one that goes, you feel lighter. Freer.') + ' The building shudders. You walk out into daylight that feels almost too real. You have no documentation now. No proof you were ever here. But you feel the sun on your face and it doesn\'t ask for your neural depth. Reality: ' + realityRemaining + '%. Undocumented. Free.' + filedSuffix;
+            endingText = 'You drop the file on the floor and it catches fire without a match. It wanted to burn.' + (enemiesFiled > 4 ? ' Every unit whose signal you locked flickers — their frequencies destabilizing without your reference tone. You feel them go, one by one, like lights in a building powering down.' : ' The pages curl and blacken, and with each one that goes, you feel lighter. Freer.') + ' The building shudders. You walk out into daylight that feels almost too real. You have no documentation now. No proof you were ever here. But you feel the sun on your face and it doesn\'t ask for your neural depth. Reality: ' + realityRemaining + '%. Undocumented. Free.' + filedSuffix;
             endingClass = 'good';
         } else {
-            endingText = 'You try to destroy the file but your hands pass through it. You\'re not real enough to touch paper anymore.' + (enemiesFiled > 3 ? ' The units you analyzed are watching through the surveillance network. They recognize your cognitive pattern — it\'s been filed.' : '') + ' The file falls open on the floor. The last page reads: "B-247 attempted to destroy their record. Reality signature insufficient for physical interaction. Recommend reclassification to: DOCUMENT." Reality: ' + realityRemaining + '%.' + filedSuffix;
+            endingText = 'You try to destroy the file but your hands pass through it. You\'re not real enough to touch paper anymore.' + (enemiesFiled > 3 ? ' The units whose signals you locked are watching through the surveillance network. They recognize your frequency — it\'s been filed.' : '') + ' The file falls open on the floor. The last page reads: "B-247 attempted to destroy their record. Reality signature insufficient for physical interaction. Recommend reclassification to: DOCUMENT." Reality: ' + realityRemaining + '%.' + filedSuffix;
             endingClass = 'bad';
         }
     } else if (choice === 'return') {
         endingTitle = 'REFILED';
         if (enemiesFiled > 5) {
-            endingText = 'You put the file back. The building doesn\'t sigh — it inhales. You analyzed ' + enemiesFiled + ' units. You know their cognitive functions, their neural depths, their signal frequencies. The building knows yours. A voice on the intercom: "B-247, your performance metrics are exceptional. You have been promoted to Chief Cognitive Analyst. Your desk is ready. Your pattern is permanent." The door doesn\'t lock. You don\'t need locks when you want to stay.';
+            endingText = 'You put the file back. The building doesn\'t sigh — it inhales. You locked ' + enemiesFiled + ' neural signals. You know their frequencies, their resonances, their hidden harmonics. The building knows yours. A voice on the intercom: "B-247, your tuning metrics are exceptional. You have been promoted to Chief Signal Analyst. Your station is ready. Your frequency is permanent." The door doesn\'t lock. You don\'t need locks when you want to stay.';
             endingClass = 'bad';
         } else {
             endingText = 'You put the file back. Not on Floor 3 — right here, in the intake tray by the entrance, where it belongs. Where you belong. The building sighs. A voice on the intercom, the first clear transmission in 37 years: "Thank you, B-247. Your cooperation has been noted. Your position has been upgraded. Welcome to permanent staff." The door locks behind you. You don\'t mind. You have work to do. You\'ve always had work to do.' + filedSuffix;
@@ -4566,15 +4594,15 @@ const terminalData = {
                 ]
             },
             controls: {
-                text: 'AGENT CONTROL MANUAL\n\n WASD / Arrow keys \u2014 Move\n Mouse \u2014 Look around (click to lock)\n E \u2014 Interact / pick up / talk\n Q \u2014 Use EMP device (stuns enemies)\n TAB \u2014 Open Document Codex\n Space \u2014 Dismiss messages\n\n NEAR ITEMS: Walk close to collect.\n NEAR OBJECTS: Press E to interact.\n NEAR NPCs: Press E to open dialogue.\n NEAR ENEMIES: Press E to open Processing Desk.\n\n DOCUMENT CODEX: Press TAB to review all\n recovered documents. Track your collection\n progress. Classified entries unlock as you\n explore.',
+                text: 'AGENT CONTROL MANUAL\n\n WASD / Arrow keys \u2014 Move\n Mouse \u2014 Look around (click to lock)\n E \u2014 Interact / pick up / talk\n Q \u2014 Use EMP device (stuns enemies)\n TAB \u2014 Open Document Codex\n Space \u2014 Lock signal (in tuner)\n\n NEAR ITEMS: Walk close to collect.\n NEAR OBJECTS: Press E to interact.\n NEAR NPCs: Press E to open dialogue.\n NEAR ENEMIES: Press E to engage encounter.\n\n DOCUMENT CODEX: Press TAB to review all\n recovered documents. Track your collection\n progress. Classified entries unlock as you\n explore.',
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
             survival: {
-                text: 'SURVIVAL GUIDE \u2014 BUILDING B\n\n SECURITY DRONES (red) \u2014 Fixed patrol routes.\n FILING UNITS (green) \u2014 Pursue on detection.\n WATCHERS (purple) \u2014 Stationary, long range.\n\n MEDKITS: Restore 30 health.\n REALITY ANCHORS: Restore 25 reality.\n EMP DEVICES: Stun all nearby enemies.\n FLASHLIGHT: Illuminates dark corridors.\n DOCUMENTS: Collect for lore. Find all 7 for\n   a reward.\n\n PROCESSING DESK: Press E near an enemy to\n open the desk. Examine their file.\n PROCESS (1) valid files. REJECT (2) invalid\n ones. Mistakes cost reality.',
+                text: 'SURVIVAL GUIDE \u2014 BUILDING B\n\n SECURITY DRONES (red) \u2014 Fixed patrol routes.\n FILING UNITS (green) \u2014 Pursue on detection.\n WATCHERS (purple) \u2014 Stationary, long range.\n\n MEDKITS: Restore 30 health.\n REALITY ANCHORS: Restore 25 reality.\n EMP DEVICES: Stun all nearby enemies.\n FLASHLIGHT: Illuminates dark corridors.\n DOCUMENTS: Collect for lore. Find all 7 for\n   a reward.\n\n SIGNAL TUNER: After combat, choose ANALYZE\n to tune into the unit\'s neural frequency.\n Lock the signal with SPACE when the needle\n is in the resonance zone. Harder on higher\n floors. Failure costs reality.',
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
             reality: {
-                text: 'REALITY COHERENCE \u2014 CRITICAL SYSTEM\n\n Your reality level = how real you are.\n 100% = solid. 0% = you become a document.\n\n COSTS REALITY:\n  \u25b8 Filing enemies at the Processing Desk\n  \u25b8 Emergency Protocol on Floor 3 console\n  \u25b8 Making wrong filing decisions\n  \u25b8 Hostile NPC encounters\n\n RESTORES REALITY:\n  \u25b8 Reality Anchor pickups (+25)\n  \u25b8 Talking to NPCs (small amount)\n  \u25b8 Building trust with NPCs (+8 at high trust)\n  \u25b8 Finding all documents (+15)\n\n Below 60%: visual distortion begins.\n Below 25%: you can phase through damaged walls.\n At 0%: you are filed. Game over.',
+                text: 'REALITY COHERENCE \u2014 CRITICAL SYSTEM\n\n Your reality level = how real you are.\n 100% = solid. 0% = you become a document.\n\n COSTS REALITY:\n  \u25b8 Filing enemies via Signal Tuner\n  \u25b8 Emergency Protocol on Floor 3 console\n  \u25b8 Failing to lock a signal\n  \u25b8 Hostile NPC encounters\n\n RESTORES REALITY:\n  \u25b8 Reality Anchor pickups (+25)\n  \u25b8 Talking to NPCs (small amount)\n  \u25b8 Building trust with NPCs (+8 at high trust)\n  \u25b8 Finding all documents (+15)\n\n Below 60%: visual distortion begins.\n Below 25%: you can phase through damaged walls.\n At 0%: you are filed. Game over.',
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
         }
@@ -5672,9 +5700,8 @@ function update(dt) {
 
     if ((moving || speed > 0.005) && audioStarted) playStep();
 
-    // === PROCESSING DESK MECHANIC ===
-    // Press E while facing an enemy to open Processing Desk (Papers Please-style)
-    // The old hold-E annotation is replaced by this interactive inspection minigame
+    // === NEURAL SIGNAL TUNER ===
+    // Bethesda lockpick-inspired skill mini-game — sweep needle, lock the resonance zone
     if (deskOpen) {
         updateProcessingDesk(dt);
     }
@@ -5733,7 +5760,7 @@ function update(dt) {
         if (filed >= 3) pool.push(
             'A nameplate appears on a nearby desk: "B-247 — JUNIOR PROCESSOR." You didn\'t apply for the position.',
             'The lights brighten when you enter a room now. The building is accommodating you.',
-            'Your processing desk feels warm to the touch. It is learning your patterns.'
+            'Your signal tuner hums softly. It is learning your frequency.'
         );
         if (filed >= 5) pool.push(
             'A directory board updates itself as you pass. Your name is listed under "ACTIVE PERSONNEL."',
@@ -6113,7 +6140,7 @@ const BOOT_LINES = [
     { text: 'LOADING AGENT PROFILE: B-247...', delay: 500 },
     { text: 'CLEARANCE: TEMPORARY', delay: 150 },
     { text: 'ASSIGNMENT: RETRIEVE FILE #B-247-SELF', cls: 'boot-amber', delay: 300 },
-    { text: 'EQUIPMENT: COGNITIVE PATTERN ANALYZER (STANDARD ISSUE)', delay: 200 },
+    { text: 'EQUIPMENT: NEURAL SIGNAL TUNER (STANDARD ISSUE)', delay: 200 },
     { text: '', delay: 200 },
     { text: 'WARNING: THE FILING SYSTEM IS AWARE OF YOUR PRESENCE', cls: 'boot-red', delay: 600 },
     { text: 'WARNING: PREVIOUS AGENT (B-246) DID NOT RETURN', cls: 'boot-red', delay: 400 },
