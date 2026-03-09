@@ -4486,6 +4486,26 @@ function openNPCChat(npcId) {
     }
     chatLog.push({ sender: 'npc', text: greeting });
 
+    // Player action awareness — NPCs react to what you've done
+    if (npc.state.exchangeCount === 0) {
+        let actionComment = null;
+        if (player.totalFiled >= 5 && player.stealthApproaches >= 3) {
+            actionComment = 'I\'ve heard about you. Filing units without them even seeing you coming. The building is... unsettled by that.';
+        } else if (player.totalFiled >= 4) {
+            actionComment = 'You\'ve been busy. I can hear the filing cabinets adjusting. Every unit you process changes the building\'s frequency.';
+        } else if (player.stealthApproaches >= 2) {
+            actionComment = 'You move quietly. The drones haven\'t adjusted their patrol yet. That won\'t last.';
+        }
+        if (surveillanceLevel >= 60) {
+            actionComment = (actionComment ? actionComment + ' ' : '') + 'The cameras are tracking you hard. Surveillance is at ' + surveillanceLevel + '%. Be careful what you access.';
+        }
+        if (actionComment) {
+            setTimeout(() => {
+                if (chatOpen) { chatLog.push({ sender: 'npc', text: actionComment }); renderChat(); }
+            }, 3500);
+        }
+    }
+
     // Async multiplayer: NPC world awareness — mention other players
     const worldLine = getNPCWorldAwareness(npcId);
     if (worldLine && npc.state.exchangeCount === 0) {
