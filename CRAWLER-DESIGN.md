@@ -1,6 +1,6 @@
 # CogCorp Crawler — Design References & Influences
 
-**File**: cogcorp-crawler.html (5500+ lines)
+**File**: cogcorp-crawler.html (6350+ lines)
 **URL**: https://kometzrobot.github.io/cogcorp-crawler.html
 **Creative Director**: Brett Trebb (bbaltgailis@gmail.com)
 **Status**: Active magnum opus. All quality work goes here.
@@ -104,8 +104,36 @@ Jason Rohrer, Cory Arcangel, JODI, David OReilly, Molleindustria, Pippin Barr, I
 
 ---
 
+## Features Ported from Building B (cogcorp-3d-v3.html)
+
+The Building B 3D Legacy (Three.js, 1835 lines) has features that translate to the Crawler's raycasting engine. Ported so far:
+
+1. **Brown noise fluorescent hum** — Procedural audio. Brown noise (integrated white) through 120Hz bandpass with Q=8. Per-floor volume transitions: archives quiet, processing loud. Zero audio files needed.
+
+2. **Conditional NPC appearance** — Dr. Vasquez only materializes on Floor 3 after the player collects 3+ documents. No marker, no warning. The Vasquez-pattern: earned presence, not given.
+
+3. **Three-fact "23" correspondence** — Three rooms, one number, no quest markers:
+   - Personnel Terminal: "23 agents assigned to Bldg B"
+   - Archive Diagnostics: "23 anomalous neural signatures in filing substrate"
+   - Floor 2 Filing Cabinet: 23 tally marks, each in a different hand
+   - The player who finds all three understands: every agent became a pattern.
+
+4. **Ghost writing whiteboard** — Floor 2 whiteboard appears blank (erased). After filing 2+ enemies, the ghost indentations resolve: `OBSERVATION → CLASSIFICATION → FILING → ???`. Below: "The process cannot be named without changing it."
+
+5. **The Janitor (B-003)** — 3-digit employee in a 4-digit world. 22 years. "Buildings remember things the org chart doesn't." Blue-collar philosopher. Different voice from every other NPC.
+
+6. **Building directory with absence** — Floor 0 entry: removed label, slightly cleaner slot. The shape of what was erased is the information.
+
+### Still to port (needs Creative Director input):
+- 3-verb filing system (File / Flag / Annotate) — replaces binary mechanic with moral triad
+- Deviation meter — second axis alongside Reality (resistance vs erosion)
+- Multi-step item chain — 4 items consumed in sequence, unlocking origin reveal
+- Day/shift counter — documents-per-shift drives anomaly escalation and NPC unlocks
+
+---
+
 ## Related Project
-**cogcorp-3d-v3.html** (Building B — 3D Legacy) — Three.js version with 18 rooms, 7 floors, multi-step puzzles, 3 annotation-based endings. Ideas ported from this into the Crawler.
+**cogcorp-3d-v3.html** (Building B — 3D Legacy) — Three.js version with 18 rooms, 7 floors, multi-step puzzles, 3 annotation-based endings. Many features already ported (see above).
 
 ---
 
