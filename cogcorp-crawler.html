@@ -2368,23 +2368,23 @@ const enemyDefs = {
 const enemySpawns = [
     // Floor 1: SAFE — no enemies. Tutorial zone to explore, find items, talk to NPCs.
     [],
-    // Floor 2: more enemies
+    // Floor 2: more enemies — waypoint patrols through corridors
     [
-        { type: 'drone', x: 6, y: 3, patrolX1: 3, patrolX2: 10, patrolAxis: 'x' },
-        { type: 'drone', x: 18, y: 14, patrolX1: 10, patrolX2: 20, patrolAxis: 'x' },
-        { type: 'filer', x: 10, y: 10 },
-        { type: 'filer', x: 16, y: 8 },
+        { type: 'drone', x: 3, y: 3, waypoints: [{x:3,y:3,wait:0},{x:7,y:3,wait:0},{x:7,y:1,wait:0},{x:3,y:1,wait:0}] },
+        { type: 'drone', x: 17, y: 14, waypoints: [{x:17,y:14,wait:0},{x:21,y:14,wait:0},{x:21,y:17,wait:0},{x:17,y:17,wait:0}] },
+        { type: 'filer', x: 10, y: 10, waypoints: [{x:10,y:10,wait:2500},{x:10,y:6,wait:1500},{x:14,y:6,wait:2500},{x:14,y:10,wait:1500}] },
+        { type: 'filer', x: 16, y: 8, waypoints: [{x:16,y:8,wait:2000},{x:16,y:12,wait:2000},{x:13,y:12,wait:2000},{x:13,y:8,wait:2000}] },
         { type: 'watcher', x: 12, y: 20 },
     ],
-    // Floor 3: the hardest
+    // Floor 3: the hardest — tighter patrols, file room guard circles the vault
     [
-        { type: 'drone', x: 4, y: 8, patrolX1: 2, patrolX2: 8, patrolAxis: 'x' },
-        { type: 'drone', x: 20, y: 8, patrolX1: 14, patrolX2: 21, patrolAxis: 'x' },
-        { type: 'filer', x: 8, y: 16 },
-        { type: 'filer', x: 16, y: 16 },
+        { type: 'drone', x: 2, y: 8, waypoints: [{x:2,y:8,wait:0},{x:8,y:8,wait:0},{x:8,y:2,wait:0},{x:2,y:2,wait:0}] },
+        { type: 'drone', x: 21, y: 8, waypoints: [{x:21,y:8,wait:0},{x:14,y:8,wait:0},{x:14,y:2,wait:0},{x:21,y:2,wait:0}] },
+        { type: 'filer', x: 8, y: 16, waypoints: [{x:8,y:16,wait:2000},{x:4,y:16,wait:3000},{x:4,y:19,wait:2000},{x:8,y:19,wait:3000}] },
+        { type: 'filer', x: 16, y: 16, waypoints: [{x:16,y:16,wait:2000},{x:20,y:16,wait:3000},{x:20,y:19,wait:2000},{x:16,y:19,wait:3000}] },
         { type: 'watcher', x: 6, y: 6 },
         { type: 'watcher', x: 18, y: 6 },
-        { type: 'filer', x: 11.5, y: 11.5 },  // guards the file room
+        { type: 'filer', x: 9, y: 9, waypoints: [{x:9,y:9,wait:1500},{x:14,y:9,wait:1500},{x:14,y:14,wait:1500},{x:9,y:14,wait:1500}] },
     ],
 ];
 
@@ -2409,6 +2409,10 @@ function spawnEnemies() {
             patrolMin: s.patrolX1 || 0,
             patrolMax: s.patrolX2 || 0,
             patrolDir: 1,
+            waypoints: s.waypoints || null,
+            waypointIdx: 0,
+            waypointWait: 0,
+            facing: 0,
             alertTimer: 0,
             wasChasing: false,
             stunTimer: 0,
@@ -2985,6 +2989,8 @@ function useEMP() {
     shakeTimer = 300;
     shakeIntensity = 6;
     viewmodel.empFireTimer = 600; // 600ms EMP fire animation
+    // EMP noise alerts distant enemies (beyond stun range)
+    alertNearbyEnemies(player.x, player.y, 16);
 }
 
 function startFloorTransition(newFloor, direction) {
@@ -5695,7 +5701,7 @@ const terminalData = {
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
             survival: {
-                text: 'SURVIVAL GUIDE \u2014 BUILDING B\n\n SECURITY DRONES (red) \u2014 Fixed patrol routes.\n FILING UNITS (green) \u2014 Pursue on detection.\n WATCHERS (purple) \u2014 Stationary, long range.\n\n MEDKITS: Restore 30 health.\n REALITY ANCHORS: Restore 25 reality.\n EMP DEVICES: Stun all nearby enemies.\n FLASHLIGHT: Illuminates dark corridors.\n DOCUMENTS: Collect for lore. Find all 7 for\n   a reward.\n\n SIGNAL TUNER: After combat, choose ANALYZE\n to tune into the unit\'s neural frequency.\n Lock the signal with SPACE when the needle\n is in the resonance zone. Harder on higher\n floors. Failure costs reality.',
+                text: 'SURVIVAL GUIDE \u2014 BUILDING B\n\n SECURITY DRONES (red) \u2014 Patrol corridors.\n FILING UNITS (green) \u2014 Patrol between stations.\n   Pursue on detection. Combat alerts nearby units.\n WATCHERS (purple) \u2014 Stationary, long range.\n\n MEDKITS: Restore 30 health.\n REALITY ANCHORS: Restore 25 reality.\n EMP DEVICES: Stun all nearby enemies.\n FLASHLIGHT: Illuminates dark corridors.\n DOCUMENTS: Collect for lore. Find all 7 for\n   a reward.\n\n SIGNAL TUNER: After combat, choose ANALYZE\n to tune into the unit\'s neural frequency.\n Lock the signal with SPACE when the needle\n is in the resonance zone. Harder on higher\n floors. Failure costs reality.',
                 options: [{ key: '1', label: 'Back', goto: 'main' }]
             },
             reality: {
@@ -7217,6 +7223,7 @@ function updateEnemies(dt) {
                     shakeTimer = 200; shakeIntensity = 4;
                     addDamageIndicator(e.x, e.y);
                     playDamageSound();
+                    alertNearbyEnemies(player.x, player.y, 8);
                     updateHealthHUD();
                 }
             }
@@ -7257,6 +7264,7 @@ function updateEnemies(dt) {
                 shakeTimer = 200; shakeIntensity = 4;
                 addDamageIndicator(e.x, e.y);
                 playDamageSound();
+                alertNearbyEnemies(player.x, player.y, 8);
                 updateHealthHUD();
             }
         } else if (e.alertTimer > 0) {
@@ -7269,8 +7277,36 @@ function updateEnemies(dt) {
             const newY = e.y + ny * e.speed * 0.5 * sMult * dt;
             if (getMap(newX|0, e.y|0) === 0) e.x = newX;
             if (getMap(e.x|0, newY|0) === 0) e.y = newY;
+        } else if (e.waypoints && e.waypoints.length > 1) {
+            // Waypoint patrol — follow route, pause at each point
+            const wp = e.waypoints[e.waypointIdx];
+            const wpX = wp.x + 0.5, wpY = wp.y + 0.5;
+            if (e.waypointWait > 0) {
+                // Paused at waypoint (filers "working", drones scanning)
+                e.waypointWait -= dt;
+                if (e.waypointWait <= 0) {
+                    e.waypointIdx = (e.waypointIdx + 1) % e.waypoints.length;
+                }
+            } else {
+                const wdx = wpX - e.x, wdy = wpY - e.y;
+                const wdist = Math.sqrt(wdx * wdx + wdy * wdy);
+                if (wdist < 0.3) {
+                    // Reached waypoint — pause
+                    e.waypointWait = wp.wait || 0;
+                    if (e.waypointWait <= 0) e.waypointIdx = (e.waypointIdx + 1) % e.waypoints.length;
+                } else {
+                    // Move toward waypoint
+                    const sMult = enemySlowTimer > 0 ? 0.5 : 1;
+                    const spd = e.speed * 0.5 * sMult;
+                    const nx = (wdx / wdist) * spd * dt;
+                    const ny = (wdy / wdist) * spd * dt;
+                    if (getMap((e.x + nx) | 0, e.y | 0) === 0) e.x += nx;
+                    if (getMap(e.x | 0, (e.y + ny) | 0) === 0) e.y += ny;
+                    e.facing = Math.atan2(wdy, wdx);
+                }
+            }
         } else if (e.patrolAxis) {
-            // Patrol
+            // Legacy axis patrol fallback
             if (e.patrolAxis === 'x') {
                 e.x += e.speed * e.patrolDir * dt * 0.5 * (enemySlowTimer > 0 ? 0.5 : 1);
                 if (e.x > e.patrolMax + 0.5) e.patrolDir = -1;
@@ -7294,6 +7330,20 @@ function hasLineOfSight(x1, y1, x2, y2) {
         if (getMap(cx|0, cy|0) > 0) return false;
     }
     return true;
+}
+
+// Alert nearby enemies when combat occurs — creates cascading danger
+function alertNearbyEnemies(sourceX, sourceY, radius) {
+    for (const e of enemies) {
+        if (!e.alive || e.deathAnim > 0 || e.stunTimer > 0) continue;
+        if (e.alertTimer > 0 || e.type === 'watcher') continue; // already alert or stationary
+        const adx = e.x - sourceX, ady = e.y - sourceY;
+        const adist = Math.sqrt(adx * adx + ady * ady);
+        if (adist < radius && adist > 0.5) {
+            // Heard combat — set alert timer to investigate
+            e.alertTimer = 4000;
+        }
+    }
 }
 
 // === UPDATE ===
