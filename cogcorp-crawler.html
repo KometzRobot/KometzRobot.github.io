@@ -5566,6 +5566,9 @@ function tickAudio() {
             }
         }
     }
+
+    // Enemy proximity sounds — hear them before you see them
+    playEnemyProximityAudio();
 }
 
 function playDamageSound() {
@@ -5591,6 +5594,63 @@ function playEnemySpotSound() {
         const g = audioCtx.createGain(); g.gain.setValueAtTime(0.06, t);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
         osc.connect(g); g.connect(audioNodes.master); osc.start(t); osc.stop(t + 0.08);
+    }
+}
+
+// Enemy proximity audio — hear enemies before you see them
+let enemyProxLastPlay = {};  // keyed by enemy index, tracks last sound time
+function playEnemyProximityAudio() {
+    if (!audioCtx || !audioNodes.master || gamePaused) return;
+    const now = gameTime;
+    for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        if (!e.alive || e.deathAnim > 0 || e.stunTimer > 0) continue;
+        const dx = e.x - player.x, dy = e.y - player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 8 || dist < 0.5) continue; // too far or too close
+
+        // Rate limit per enemy — different intervals per type
+        const interval = e.type === 'drone' ? 1800 : e.type === 'filer' ? 2500 : 3000;
+        const lastPlay = enemyProxLastPlay[i] || 0;
+        if (now - lastPlay < interval) continue;
+        enemyProxLastPlay[i] = now;
+
+        // Volume based on distance (closer = louder)
+        const vol = Math.max(0.01, (1 - dist / 8) * 0.06);
+        const t = audioCtx.currentTime;
+
+        if (e.type === 'drone') {
+            // Mechanical buzz — low frequency oscillation
+            const osc = audioCtx.createOscillator(); osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(80 + Math.random() * 20, t);
+            osc.frequency.linearRampToValueAtTime(60, t + 0.3);
+            const g = audioCtx.createGain(); g.gain.setValueAtTime(vol, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+            const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 200;
+            osc.connect(f); f.connect(g); g.connect(audioNodes.master);
+            osc.start(t); osc.stop(t + 0.35);
+        } else if (e.type === 'filer') {
+            // Paper shuffle — short noise bursts
+            const len = audioCtx.sampleRate * 0.15;
+            const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let j = 0; j < len; j++) { const jt = j/audioCtx.sampleRate; d[j] = Math.exp(-jt*25) * (Math.random()*2-1) * 0.3; }
+            const src = audioCtx.createBufferSource(); src.buffer = buf;
+            const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1500 + Math.random()*500; f.Q.value = 0.8;
+            const g = audioCtx.createGain(); g.gain.value = vol * 1.5;
+            src.connect(f); f.connect(g); g.connect(audioNodes.master); src.start(t);
+        } else if (e.type === 'watcher') {
+            // Pulsing static — eerie sine sweep
+            const osc = audioCtx.createOscillator(); osc.type = 'sine';
+            osc.frequency.setValueAtTime(200, t);
+            osc.frequency.exponentialRampToValueAtTime(400, t + 0.2);
+            osc.frequency.exponentialRampToValueAtTime(200, t + 0.4);
+            const g = audioCtx.createGain(); g.gain.setValueAtTime(vol * 0.7, t);
+            g.gain.linearRampToValueAtTime(vol, t + 0.2);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+            osc.connect(g); g.connect(audioNodes.master);
+            osc.start(t); osc.stop(t + 0.45);
+        }
     }
 }
 
