@@ -1898,6 +1898,7 @@ function loadCheckpoint() {
         spawnItems();
         spawnWorldObjects();
         spawnNPCs();
+        computeLightMap();
 
         // Restore game won state from target file
         if (inventory.targetFile) {
@@ -2885,6 +2886,7 @@ function changeFloor(newFloor) {
     spawnItems();
     spawnWorldObjects();
     spawnNPCs();
+    computeLightMap();
     document.getElementById('hud-floor').textContent = currentFloor + 1;
     updateFloorAmbience(currentFloor);
     // Update objective HUD when carrying the file
@@ -4813,6 +4815,7 @@ function respawn() {
     spawnItems();
     spawnWorldObjects();
     spawnNPCs();
+    computeLightMap();
     updateHealthHUD();
     updateRealityHUD();
     updateInventoryHUD();
@@ -5644,6 +5647,99 @@ const FLOOR_ATMOSPHERE = [
 
 function getAtmo() { return FLOOR_ATMOSPHERE[currentFloor] || FLOOR_ATMOSPHERE[0]; }
 
+// === LIGHT MAP SYSTEM ===
+// Per-cell light intensity and color. Computed on floor change.
+const lightMap = new Float32Array(MAP_W * MAP_H); // intensity multiplier (0.3 = dark, 1.0 = normal, 1.5 = bright)
+const lightMapR = new Float32Array(MAP_W * MAP_H); // colored light R contribution
+const lightMapG = new Float32Array(MAP_W * MAP_H); // colored light G contribution
+const lightMapB = new Float32Array(MAP_W * MAP_H); // colored light B contribution
+
+// Light sources per floor: {x, y, radius, intensity, r, g, b, flicker}
+const FLOOR_LIGHTS = [
+    // Floor 1 — Lobby: overhead fluorescent strips, warm reception area
+    [
+        { x: 6.5, y: 2.5, radius: 5, intensity: 0.5, r: 220, g: 200, b: 140, flicker: 0.1 }, // reception
+        { x: 12.5, y: 2.5, radius: 4, intensity: 0.4, r: 120, g: 200, b: 120, flicker: 0 }, // terminal glow
+        { x: 3.5, y: 4.5, radius: 4, intensity: 0.4, r: 120, g: 200, b: 120, flicker: 0 }, // orientation terminal
+        { x: 10.5, y: 10.5, radius: 6, intensity: 0.5, r: 200, g: 180, b: 120, flicker: 0.15 }, // NPC area
+        { x: 16, y: 8, radius: 7, intensity: 0.3, r: 200, g: 190, b: 150, flicker: 0.05 }, // corridor light
+        { x: 8, y: 16, radius: 5, intensity: 0.3, r: 200, g: 180, b: 120, flicker: 0.2 }, // flickering hallway
+        { x: 15.5, y: 17.5, radius: 3, intensity: 0.2, r: 150, g: 200, b: 200, flicker: 0 }, // ventilation
+        { x: 1.5, y: 1.5, radius: 4, intensity: 0.4, r: 200, g: 60, b: 40, flicker: 0 }, // exit sign red glow
+    ],
+    // Floor 2 — Archives: cold industrial, blue emergency lights, sparse
+    [
+        { x: 11.5, y: 1.5, radius: 5, intensity: 0.5, r: 100, g: 140, b: 220, flicker: 0.05 }, // archive index
+        { x: 4.5, y: 5.5, radius: 4, intensity: 0.3, r: 120, g: 160, b: 200, flicker: 0.1 }, // card catalog
+        { x: 11.5, y: 5.5, radius: 4, intensity: 0.4, r: 100, g: 180, b: 120, flicker: 0 }, // terminal
+        { x: 12.5, y: 14.5, radius: 3, intensity: 0.3, r: 180, g: 160, b: 100, flicker: 0 }, // pneumatic station
+        { x: 14.5, y: 12.5, radius: 5, intensity: 0.4, r: 130, g: 150, b: 200, flicker: 0.15 }, // NPC area
+        { x: 6.5, y: 10.5, radius: 4, intensity: 0.3, r: 100, g: 180, b: 80, flicker: 0 }, // reading desk lamp
+        { x: 18, y: 10, radius: 6, intensity: 0.25, r: 120, g: 140, b: 200, flicker: 0.08 }, // corridor
+    ],
+    // Floor 3 — Processing: machinery glow, green-red, ominous
+    [
+        { x: 16.5, y: 1.5, radius: 6, intensity: 0.5, r: 80, g: 200, b: 100, flicker: 0.12 }, // main processor
+        { x: 8.5, y: 8.5, radius: 5, intensity: 0.4, r: 180, g: 120, b: 60, flicker: 0 }, // NPC area
+        { x: 16.5, y: 7.5, radius: 4, intensity: 0.4, r: 120, g: 180, b: 120, flicker: 0 }, // override console
+        { x: 4.5, y: 16.5, radius: 4, intensity: 0.3, r: 60, g: 180, b: 80, flicker: 0.2 }, // output tray
+        { x: 20.5, y: 14.5, radius: 4, intensity: 0.3, r: 200, g: 60, b: 40, flicker: 0.3 }, // emergency panel
+        { x: 12, y: 12, radius: 7, intensity: 0.35, r: 80, g: 160, b: 100, flicker: 0.1 }, // central processing glow
+        { x: 12.5, y: 20.5, radius: 3, intensity: 0.2, r: 150, g: 150, b: 80, flicker: 0 }, // decommission plaque
+    ],
+];
+
+let lastLightFlicker = 0;
+
+function computeLightMap(t) {
+    const ambient = currentFloor === 0 ? 0.6 : currentFloor === 1 ? 0.45 : 0.35;
+    lightMap.fill(ambient);
+    lightMapR.fill(0); lightMapG.fill(0); lightMapB.fill(0);
+    const baseLights = FLOOR_LIGHTS[currentFloor] || [];
+    const time = t || 0;
+    // Build working list with static lights + dynamic player flashlight
+    const lights = baseLights.slice();
+    if (inventory.flashlight) {
+        lights.push({ x: player.x, y: player.y, radius: 6, intensity: 0.35, r: 240, g: 220, b: 160, flicker: 0 });
+    }
+    for (const light of lights) {
+        // Flicker: modulate intensity with noise when flicker > 0
+        let inten = light.intensity;
+        if (light.flicker > 0) {
+            // Multiple sine waves for organic flicker
+            const f1 = Math.sin(time * 0.003 + light.x * 7.3) * 0.5;
+            const f2 = Math.sin(time * 0.007 + light.y * 11.1) * 0.3;
+            const f3 = Math.sin(time * 0.013 + light.x * light.y) * 0.2;
+            inten *= 1 + (f1 + f2 + f3) * light.flicker;
+        }
+        const r2 = light.radius * light.radius;
+        const lx = light.x | 0, ly = light.y | 0;
+        const rad = (light.radius + 1) | 0;
+        for (let cy = Math.max(0, ly - rad); cy < Math.min(MAP_H, ly + rad + 1); cy++) {
+            for (let cx = Math.max(0, lx - rad); cx < Math.min(MAP_W, lx + rad + 1); cx++) {
+                const dx = cx + 0.5 - light.x, dy = cy + 0.5 - light.y;
+                const d2 = dx * dx + dy * dy;
+                if (d2 < r2) {
+                    const falloff = 1 - Math.sqrt(d2) / light.radius;
+                    const contrib = falloff * falloff * inten;
+                    const idx = cy * MAP_W + cx;
+                    lightMap[idx] += contrib;
+                    lightMapR[idx] += light.r * contrib / 255;
+                    lightMapG[idx] += light.g * contrib / 255;
+                    lightMapB[idx] += light.b * contrib / 255;
+                }
+            }
+        }
+    }
+}
+
+function getLightAt(wx, wy) {
+    const ix = wx | 0, iy = wy | 0;
+    if (ix < 0 || ix >= MAP_W || iy < 0 || iy >= MAP_H) return { i: 0.5, r: 0, g: 0, b: 0 };
+    const idx = iy * MAP_W + ix;
+    return { i: lightMap[idx], r: lightMapR[idx], g: lightMapG[idx], b: lightMapB[idx] };
+}
+
 function castRays() {
     const atmo = getAtmo();
     // Precompute stair positions for floor glow effect
@@ -5722,13 +5818,27 @@ function castRays() {
         // Stairwell wall glow — green emergency light on wall type 7 (stairs)
         const stairGlow = wallType === 7 ? (0.15 + Math.sin(gameTime * 0.004) * 0.08) * Math.max(0, 1 - perpDist / 12) : 0;
 
+        // Light map — sample from the cell the player-side of the wall faces
+        const wallLightX = side === 0 ? mapX - stepX : mapX;
+        const wallLightY = side === 1 ? mapY - stepY : mapY;
+        const wli = (wallLightY >= 0 && wallLightY < MAP_H && wallLightX >= 0 && wallLightX < MAP_W)
+            ? wallLightY * MAP_W + wallLightX : -1;
+        const wallLight = wli >= 0 ? lightMap[wli] : 0.5;
+        const wlR = wli >= 0 ? lightMapR[wli] : 0;
+        const wlG = wli >= 0 ? lightMapG[wli] : 0;
+        const wlB = wli >= 0 ? lightMapB[wli] : 0;
+
         const step = TEX_SIZE / lineHeight;
         let texPos = (drawStart - HALF_H + lineHeight / 2) * step;
 
         for (let y = drawStart; y <= drawEnd; y++) {
             const texY = (texPos | 0) & (TEX_SIZE - 1);
             const ti = (texY * TEX_SIZE + texX) * 4;
-            let r = tex[ti] * sideDim * edgeDim * atmo.tintR, g = tex[ti+1] * sideDim * edgeDim * atmo.tintG, b = tex[ti+2] * sideDim * edgeDim * atmo.tintB;
+            let r = tex[ti] * sideDim * edgeDim * wallLight * atmo.tintR;
+            let g = tex[ti+1] * sideDim * edgeDim * wallLight * atmo.tintG;
+            let b = tex[ti+2] * sideDim * edgeDim * wallLight * atmo.tintB;
+            // Add colored light from nearby sources
+            r += tex[ti] * wlR * 0.3; g += tex[ti+1] * wlG * 0.3; b += tex[ti+2] * wlB * 0.3;
             r = r * (1 - fogFactor) + atmo.fogR * fogFactor + r * flashBoost;
             g = g * (1 - fogFactor) + atmo.fogG * fogFactor + g * flashBoost;
             b = b * (1 - fogFactor) + atmo.fogB * fogFactor + b * flashBoost;
@@ -5760,9 +5870,20 @@ function castRays() {
                 if (sd < stairGlowRadius) floorStairGlow = Math.max(floorStairGlow, (1 - sd / stairGlowRadius) * stairGlowPulse);
             }
             const pi = (y * SCREEN_W + col) * 4;
-            let fr = (floorTex[fti] * fTint[0] * (1-fFog) + atmo.fogR*fFog) * (1+fFlash);
-            let fg = (floorTex[fti+1] * fTint[1] * (1-fFog) + atmo.fogG*fFog) * (1+fFlash);
-            let fb = (floorTex[fti+2] * fTint[2] * (1-fFog) + atmo.fogB*fFog) * (1+fFlash);
+            // Light map lookup for floor pixel
+            const fli = ((fy|0) >= 0 && (fy|0) < MAP_H && (fx|0) >= 0 && (fx|0) < MAP_W)
+                ? ((fy|0) * MAP_W + (fx|0)) : -1;
+            const fLight = fli >= 0 ? lightMap[fli] : 0.5;
+            const flR = fli >= 0 ? lightMapR[fli] : 0;
+            const flG = fli >= 0 ? lightMapG[fli] : 0;
+            const flB = fli >= 0 ? lightMapB[fli] : 0;
+            let fr = (floorTex[fti] * fTint[0] * fLight * (1-fFog) + atmo.fogR*fFog) * (1+fFlash);
+            let fg = (floorTex[fti+1] * fTint[1] * fLight * (1-fFog) + atmo.fogG*fFog) * (1+fFlash);
+            let fb = (floorTex[fti+2] * fTint[2] * fLight * (1-fFog) + atmo.fogB*fFog) * (1+fFlash);
+            // Add colored light
+            fr += floorTex[fti] * flR * 0.35 * (1-fFog);
+            fg += floorTex[fti+1] * flG * 0.35 * (1-fFog);
+            fb += floorTex[fti+2] * flB * 0.35 * (1-fFog);
             if (floorStairGlow > 0) { fg += 70 * floorStairGlow; fr += 15 * floorStairGlow; }
             buf[pi] = Math.min(255, fr) | 0;
             buf[pi+1] = Math.min(255, fg) | 0;
@@ -5776,10 +5897,14 @@ function castRays() {
             const ctx2 = ((cx2 * TEX_SIZE) | 0) & (TEX_SIZE-1), cty = ((cy2 * TEX_SIZE) | 0) & (TEX_SIZE-1);
             const cti = (cty * TEX_SIZE + ctx2) * 4;
             const cFog = Math.min(cd / 10, 1);
+            // Light map for ceiling (same position as floor)
+            const cli = ((cy2|0) >= 0 && (cy2|0) < MAP_H && (cx2|0) >= 0 && (cx2|0) < MAP_W)
+                ? ((cy2|0) * MAP_W + (cx2|0)) : -1;
+            const cLight = cli >= 0 ? lightMap[cli] : 0.5;
             const pi = (y * SCREEN_W + col) * 4;
-            buf[pi] = (ceilTex[cti] * cTint[0] * (1-cFog) + atmo.fogR*0.7*cFog) | 0;
-            buf[pi+1] = (ceilTex[cti+1] * cTint[1] * (1-cFog) + atmo.fogG*0.7*cFog) | 0;
-            buf[pi+2] = (ceilTex[cti+2] * cTint[2] * (1-cFog) + atmo.fogB*0.7*cFog) | 0;
+            buf[pi] = (ceilTex[cti] * cTint[0] * cLight * (1-cFog) + atmo.fogR*0.7*cFog) | 0;
+            buf[pi+1] = (ceilTex[cti+1] * cTint[1] * cLight * (1-cFog) + atmo.fogG*0.7*cFog) | 0;
+            buf[pi+2] = (ceilTex[cti+2] * cTint[2] * cLight * (1-cFog) + atmo.fogB*0.7*cFog) | 0;
             buf[pi+3] = 255;
         }
     }
@@ -7264,6 +7389,11 @@ function gameLoop(timestamp) {
     lastTime = timestamp;
     gameTime = timestamp;
     update(dt);
+    // Recompute light map periodically for flicker animation (~7fps)
+    if (timestamp - lastLightFlicker > 150) {
+        lastLightFlicker = timestamp;
+        computeLightMap(timestamp);
+    }
     render();
     renderMinimap();
     // Auto-save every 60 seconds (silent — no message popup)
@@ -7404,6 +7534,7 @@ function startGame(fromCheckpoint) {
         spawnItems();
         spawnWorldObjects();
         spawnNPCs();
+        computeLightMap();
         updateInventoryHUD();
         surveillanceLevel = 0;
         updateSurveillanceHUD();
