@@ -3285,10 +3285,11 @@ function openProcessingDesk(enemy) {
     tuningNeedle = 0;
     tuningDir = 1;
     tuningZoneCenter = 0.15 + Math.random() * 0.7; // zone in middle 70%
-    tuningZoneWidth = params.zoneWidth;
+    tuningZoneWidth = encounterStealthBonus ? params.zoneWidth * 1.3 : params.zoneWidth; // wider zone from stealth
     tuningSpeed = params.speed;
-    tuningAttempts = params.attempts;
-    tuningMaxAttempts = params.attempts;
+    const bonusAttempts = encounterStealthBonus ? 1 : 0; // extra attempt from stealth
+    tuningAttempts = params.attempts + bonusAttempts;
+    tuningMaxAttempts = params.attempts + bonusAttempts;
     tuningLocked = false;
     tuningLockTimer = 0;
     tuningWavePhase = 0;
@@ -3762,6 +3763,7 @@ let encounterEnemy = null;
 let encounterLog = [];
 let encounterPlayerTurn = true;
 let encounterAnimating = false;
+let encounterStealthBonus = false;
 
 // D&D-style combat stats
 const COMBAT_STATS = {
@@ -3812,6 +3814,10 @@ function openCombatEncounter(enemy) {
     encounterPlayerTurn = true;
     encounterAnimating = false;
 
+    // Check for stealth approach — player is outside enemy's FOV
+    const stealthApproach = !isInEnemyFOV(enemy, player.x, player.y);
+    encounterStealthBonus = stealthApproach;
+
     // Stun enemy while in encounter
     enemy.stunTimer = Math.max(enemy.stunTimer, 30000);
 
@@ -3827,8 +3833,17 @@ function openCombatEncounter(enemy) {
     document.getElementById('enc-player-hp').textContent = player.health;
     document.getElementById('enc-player-reality').textContent = player.realityLevel | 0;
 
-    addEncounterLog('You face a ' + stats.name + '. It regards you with mechanical indifference.', '');
-    if (enemy.health < stats.maxHP) {
+    if (stealthApproach) {
+        addEncounterLog('STEALTH APPROACH — You caught it unaware. First strike advantage!', 'crit');
+        // Deal bonus damage from ambush
+        const ambushDmg = rollD(4) + 1;
+        enemy.health -= ambushDmg;
+        addEncounterLog('Ambush strike deals ' + ambushDmg + ' damage before it can react.', 'hit');
+        updateEncounterHUD();
+    } else {
+        addEncounterLog('You face a ' + stats.name + '. It regards you with mechanical indifference.', '');
+    }
+    if (enemy.health < (stealthApproach ? stats.maxHP - 5 : stats.maxHP) && enemy.health > 0) {
         addEncounterLog('The unit appears damaged. (HP: ' + enemy.health + '/' + stats.maxHP + ')', 'miss');
     }
 
@@ -7840,6 +7855,7 @@ function update(dt) {
         } else {
             // Check for nearby enemy to show process prompt
             let canProcess = false;
+            let isStealth = false;
             for (const en of enemies) {
                 if (!en.alive || en.filed) continue;
                 const edx = en.x - player.x, edy = en.y - player.y;
@@ -7849,13 +7865,17 @@ function update(dt) {
                     let angleDiff = eAngle - player.angle;
                     while (angleDiff > Math.PI) angleDiff -= Math.PI*2;
                     while (angleDiff < -Math.PI) angleDiff += Math.PI*2;
-                    if (Math.abs(angleDiff) < Math.PI/4) { canProcess = true; break; }
+                    if (Math.abs(angleDiff) < Math.PI/4) {
+                        canProcess = true;
+                        isStealth = !isInEnemyFOV(en, player.x, player.y);
+                        break;
+                    }
                 }
             }
             if (canProcess) {
                 interactEl.style.display = 'inline';
-                interactEl.style.color = '#448888';
-                interactEl.textContent = '[E] ENGAGE UNIT';
+                interactEl.style.color = isStealth ? '#44aa44' : '#448888';
+                interactEl.textContent = isStealth ? '[E] STEALTH ENGAGE' : '[E] ENGAGE UNIT';
             } else {
                 interactEl.style.display = 'none';
             }
