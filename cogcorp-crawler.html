@@ -5207,6 +5207,14 @@ function playDamageSound() {
     if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 120); }
 }
 
+function playDoorSound() {
+    if (audioCtx && audioNodes.clunkBuf) {
+        const src = audioCtx.createBufferSource(); src.buffer = audioNodes.clunkBuf;
+        const g = audioCtx.createGain(); g.gain.value = 0.3;
+        src.connect(g); g.connect(audioNodes.master); src.start();
+    }
+}
+
 function playRealityTearSound() {
     if (!audioCtx) return;
     // Harsh dissonant burst — reality tearing
@@ -6944,10 +6952,14 @@ function update(dt) {
     if (getMap(checkX, player.y|0) === 9 && inventory.keycard) {
         setMap(checkX, player.y|0, 0);
         showMessage('DOOR UNLOCKED', 1500);
+        playDoorSound();
+        shakeTimer = 100; shakeIntensity = 2;
     }
     if (getMap(player.x|0, checkY) === 9 && inventory.keycard) {
         setMap(player.x|0, checkY, 0);
         showMessage('DOOR UNLOCKED', 1500);
+        playDoorSound();
+        shakeTimer = 100; shakeIntensity = 2;
     }
 
     // Move if space is clear (re-check after potential unlock)
@@ -7638,6 +7650,15 @@ function renderMinimap() {
     mctx.lineTo(ppx + Math.cos(player.angle + 2.4) * 2, ppy + Math.sin(player.angle + 2.4) * 2);
     mctx.lineTo(ppx + Math.cos(player.angle - 2.4) * 2, ppy + Math.sin(player.angle - 2.4) * 2);
     mctx.fill();
+
+    // Floor indicator — bottom-left corner
+    const floorNames = ['LOBBY', 'ARCHIVES', 'PROCESSING'];
+    mctx.font = '7px monospace';
+    mctx.textAlign = 'left';
+    mctx.fillStyle = 'rgba(0,0,0,0.6)';
+    mctx.fillRect(1, mh - 10, 48, 9);
+    mctx.fillStyle = currentFloor === 2 ? '#cc4433' : currentFloor === 1 ? '#8888aa' : '#88aa66';
+    mctx.fillText('F' + (currentFloor + 1) + ' ' + floorNames[currentFloor], 3, mh - 3);
 }
 
 function gameLoop(timestamp) {
