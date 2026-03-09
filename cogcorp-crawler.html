@@ -5886,7 +5886,6 @@ function render() {
 
     castRays();
     drawSprites();
-    drawMinimap();
     applyPostEffects();
 
     ctx.putImageData(imgData, 0, 0);
@@ -5954,6 +5953,35 @@ function render() {
             ctx.fillStyle = `rgba(255,179,71,${0.2 + l * 0.05})`;
             ctx.fillRect(SCREEN_W/2 - 14, SCREEN_H - 52 + l * 8, lw, 1);
         }
+    }
+
+    // Weapon hand — toolkit at bottom-right (Wolfenstein-style)
+    if (!player.annotating) {
+        const moving = keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown'];
+        const bobX = moving ? Math.sin(gameTime * 0.006) * 4 : 0;
+        const bobY = moving ? Math.abs(Math.cos(gameTime * 0.006)) * 3 : 0;
+        const hx = SCREEN_W - 70 + bobX, hy = SCREEN_H - 55 + bobY;
+
+        // Arm
+        ctx.fillStyle = '#8a6535';
+        ctx.fillRect(hx + 20, hy + 15, 35, 40);
+        ctx.fillStyle = '#7a5a30';
+        ctx.fillRect(hx + 22, hy + 20, 31, 35);
+
+        // Hand/grip
+        ctx.fillStyle = '#9a7545';
+        ctx.fillRect(hx + 15, hy + 5, 18, 20);
+
+        // Tool — wrench head
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillRect(hx + 8, hy - 20, 8, 28);
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(hx + 4, hy - 24, 16, 8);
+        ctx.fillRect(hx + 6, hy - 28, 12, 6);
+
+        // Tool highlight
+        ctx.fillStyle = '#cccccc';
+        ctx.fillRect(hx + 10, hy - 18, 2, 22);
     }
 }
 
