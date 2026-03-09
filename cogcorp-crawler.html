@@ -1984,6 +1984,7 @@ function loadCheckpoint() {
         spawnItems();
         spawnWorldObjects();
         spawnNPCs();
+        spawnHazards();
         computeLightMap();
 
         // Restore game won state from target file
@@ -2409,6 +2410,21 @@ const FLOOR_MODIFIERS = [
     { speed: 1.35, detectRange: 1.25, health: 1.5, combatAC: 2, combatAtk: 1, combatDmgBonus: 1 },
 ];
 
+// Environmental hazards per floor (Floor 3 only — the machine heart)
+const FLOOR_HAZARDS = [
+    [], // Floor 1: safe
+    [], // Floor 2: archives — still relatively calm
+    [   // Floor 3: Processing — industrial hazards
+        { type: 'steam', x: 5.5,  y: 13.5, interval: 4000, duration: 1500, damage: 3, radius: 1.2 },
+        { type: 'steam', x: 15.5, y: 13.5, interval: 5000, duration: 1800, damage: 3, radius: 1.2 },
+        { type: 'steam', x: 10.5, y: 4.5,  interval: 3500, duration: 1200, damage: 4, radius: 1.0 },
+        { type: 'spark', x: 19.5, y: 9.5,  interval: 3000, duration: 800,  damage: 5, radius: 0.9 },
+        { type: 'spark', x: 3.5,  y: 9.5,  interval: 3500, duration: 900,  damage: 5, radius: 0.9 },
+        { type: 'spark', x: 12.5, y: 17.5, interval: 4500, duration: 1000, damage: 4, radius: 1.0 },
+    ],
+];
+let activeHazards = [];
+
 // Enemies per floor
 const enemySpawns = [
     // Floor 1: SAFE — no enemies. Tutorial zone to explore, find items, talk to NPCs.
@@ -2656,6 +2672,103 @@ const WALL_SIGNS = [
 
 function spawnWorldObjects() {
     worldObjects = worldObjectsByFloor[currentFloor] || [];
+}
+
+function spawnHazards() {
+    const defs = FLOOR_HAZARDS[currentFloor] || [];
+    activeHazards = defs.map(h => ({
+        ...h,
+        timer: Math.random() * h.interval,  // stagger initial activation
+        active: false,
+        activeTimer: 0,
+        lastDamageTime: 0,
+    }));
+}
+
+function updateHazards(dt) {
+    if (activeHazards.length === 0) return;
+    for (const h of activeHazards) {
+        if (h.active) {
+            h.activeTimer -= dt;
+            if (h.activeTimer <= 0) {
+                h.active = false;
+                h.timer = h.interval;
+            } else {
+                // Check player proximity for damage
+                const dx = player.x - h.x, dy = player.y - h.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < h.radius && player.spawnShield <= 0 && gameTime - h.lastDamageTime > 800) {
+                    h.lastDamageTime = gameTime;
+                    player.health -= h.damage;
+                    damageFlashTimer = 200;
+                    shakeTimer = 150;
+                    shakeIntensity = 3;
+                    updateHealthHUD();
+                    if (h.type === 'steam') {
+                        showMessage('SCALDING STEAM!', 1000);
+                    } else {
+                        showMessage('ELECTRICAL DISCHARGE!', 1000);
+                    }
+                    // Spawn damage particles
+                    for (let i = 0; i < 6; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = 0.02 + Math.random() * 0.03;
+                        particles.push({
+                            x: h.x, y: h.y,
+                            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                            life: 600 + Math.random() * 400,
+                            maxLife: 1000,
+                            r: h.type === 'steam' ? 200 : 100,
+                            g: h.type === 'steam' ? 200 : 180,
+                            b: h.type === 'steam' ? 220 : 255,
+                            size: 3 + Math.random() * 3,
+                        });
+                    }
+                    // Play hazard sound
+                    playHazardSound(h.type);
+                    if (player.health <= 0) { showDeathScreen(); return; }
+                }
+                // Spawn ambient hazard particles while active
+                if (Math.random() < 0.15) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 0.005 + Math.random() * 0.015;
+                    particles.push({
+                        x: h.x + (Math.random() - 0.5) * 0.3,
+                        y: h.y + (Math.random() - 0.5) * 0.3,
+                        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                        life: 300 + Math.random() * 500,
+                        maxLife: 800,
+                        r: h.type === 'steam' ? 180 : 80,
+                        g: h.type === 'steam' ? 180 : 160,
+                        b: h.type === 'steam' ? 200 : 255,
+                        size: 2 + Math.random() * 4,
+                    });
+                }
+            }
+        } else {
+            h.timer -= dt;
+            if (h.timer <= 0) {
+                h.active = true;
+                h.activeTimer = h.duration;
+                // Activation burst particles
+                for (let i = 0; i < 8; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 0.01 + Math.random() * 0.02;
+                    particles.push({
+                        x: h.x, y: h.y,
+                        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                        life: 400 + Math.random() * 600,
+                        maxLife: 1000,
+                        r: h.type === 'steam' ? 220 : 120,
+                        g: h.type === 'steam' ? 220 : 200,
+                        b: h.type === 'steam' ? 240 : 255,
+                        size: 3 + Math.random() * 5,
+                    });
+                }
+                playHazardSound(h.type);
+            }
+        }
+    }
 }
 
 // === GAME STATE ===
@@ -3246,6 +3359,7 @@ function changeFloor(newFloor) {
     spawnItems();
     spawnWorldObjects();
     spawnNPCs();
+    spawnHazards();
     computeLightMap();
     document.getElementById('hud-floor').textContent = currentFloor + 1;
     updateFloorAmbience(currentFloor);
@@ -5307,6 +5421,7 @@ function respawn() {
     spawnItems();
     spawnWorldObjects();
     spawnNPCs();
+    spawnHazards();
     computeLightMap();
     updateHealthHUD();
     updateRealityHUD();
@@ -5780,6 +5895,33 @@ function playDoorSound() {
         const src = audioCtx.createBufferSource(); src.buffer = audioNodes.clunkBuf;
         const g = audioCtx.createGain(); g.gain.value = 0.3;
         src.connect(g); g.connect(audioNodes.master); src.start();
+    }
+}
+
+function playHazardSound(type) {
+    if (!audioCtx || !audioNodes.master) return;
+    const t = audioCtx.currentTime;
+    const g = audioCtx.createGain();
+    g.gain.value = 0.12;
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    g.connect(audioNodes.master);
+    if (type === 'steam') {
+        // White noise burst with lowpass — hissing steam
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.4, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000;
+        src.connect(lp); lp.connect(g); src.start();
+    } else {
+        // Sharp crackling — electrical spark
+        const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.frequency.value = 2000;
+        osc.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+        const osc2 = audioCtx.createOscillator(); osc2.type = 'sawtooth'; osc2.frequency.value = 4000;
+        osc2.frequency.exponentialRampToValueAtTime(200, t + 0.25);
+        osc.connect(g); osc2.connect(g);
+        osc.start(); osc2.start();
+        osc.stop(t + 0.3); osc2.stop(t + 0.25);
     }
 }
 
@@ -7786,6 +7928,9 @@ function update(dt) {
     // Enemy AI
     updateEnemies(dt);
 
+    // Environmental hazards (steam, sparks)
+    updateHazards(dt);
+
     // NPC patrol movement
     updateNPCs(dt);
 
@@ -8990,6 +9135,23 @@ function renderMinimap() {
         }
     }
 
+    // Environmental hazards on minimap
+    for (const h of activeHazards) {
+        const hx = h.x * cellW, hy = h.y * cellH;
+        if (h.active) {
+            // Pulsing danger indicator when active
+            const pulse = 0.6 + Math.sin(gameTime * 0.008) * 0.4;
+            mctx.fillStyle = h.type === 'steam' ? `rgba(180,180,220,${pulse * 0.5})` : `rgba(100,180,255,${pulse * 0.6})`;
+            mctx.beginPath(); mctx.arc(hx, hy, h.radius * cellW * 0.5, 0, Math.PI * 2); mctx.fill();
+        }
+        // Static hazard marker (always visible on explored tiles)
+        const ti = (h.x|0) + (h.y|0) * MAP_W;
+        if (fogOfWar[currentFloor][ti]) {
+            mctx.fillStyle = h.type === 'steam' ? 'rgba(150,150,180,0.3)' : 'rgba(80,150,255,0.3)';
+            mctx.fillRect(hx - 1.5, hy - 1.5, 3, 3);
+        }
+    }
+
     // Player — triangle showing direction
     const ppx = player.x * cellW, ppy = player.y * cellH;
     mctx.fillStyle = '#ffb347';
@@ -9251,6 +9413,7 @@ function startGame(fromCheckpoint) {
         spawnItems();
         spawnWorldObjects();
         spawnNPCs();
+        spawnHazards();
         computeLightMap();
         updateInventoryHUD();
         surveillanceLevel = 0;
