@@ -8629,6 +8629,79 @@ function render() {
     }
     }
 
+    // Enemy alert indicators — "!" when spotting, "?" when searching
+    {
+    const adirX = Math.cos(player.angle), adirY = Math.sin(player.angle);
+    const aplX = Math.cos(player.angle + Math.PI/2) * 0.66, aplY = Math.sin(player.angle + Math.PI/2) * 0.66;
+    const ainvD = 1.0 / (aplX * adirY - adirX * aplY);
+    for (const e of enemies) {
+        if (e.health <= 0 || e.deathAnim > 0) continue;
+        const showExclaim = e.wasChasing && e.alertTimer > 2500; // first 500ms of chase
+        const showQuestion = !e.wasChasing && e.alertTimer > 0; // searching after losing sight
+        if (!showExclaim && !showQuestion) continue;
+        const dx = e.x - player.x, dy = e.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 12 || dist < 0.3) continue;
+        const tX = ainvD * (adirY * dx - adirX * dy);
+        const tY = ainvD * (-aplY * dx + aplX * dy);
+        if (tY <= 0.2) continue;
+        const screenX = (SCREEN_W / 2) * (1 + tX / tY) + sx;
+        const sprH = Math.abs(SCREEN_H / tY * 0.55);
+        const screenY = HALF_H - sprH / 2 - 14 + sy;
+        if (screenX < -20 || screenX > SCREEN_W + 20) continue;
+        const alpha = Math.max(0.4, 1 - dist / 12);
+        if (showExclaim) {
+            // "!" — bright red, large, pulsing
+            const pulse = 0.8 + Math.sin(gameTime * 0.012) * 0.2;
+            ctx.font = 'bold 12px monospace';
+            ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.6})`;
+            ctx.fillRect(screenX - 5, screenY - 11, 10, 14);
+            ctx.fillStyle = `rgba(255, 60, 30, ${alpha * pulse})`;
+            ctx.textAlign = 'center';
+            ctx.fillText('!', screenX, screenY);
+        } else {
+            // "?" — yellow, smaller
+            ctx.font = 'bold 10px monospace';
+            ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.4})`;
+            ctx.fillRect(screenX - 4, screenY - 9, 8, 12);
+            ctx.fillStyle = `rgba(255, 200, 50, ${alpha * 0.7})`;
+            ctx.textAlign = 'center';
+            ctx.fillText('?', screenX, screenY);
+        }
+    }
+    }
+
+    // Hazard warning labels in 3D — "STEAM" / "DANGER" when active
+    {
+    const hdirX = Math.cos(player.angle), hdirY = Math.sin(player.angle);
+    const hplX = Math.cos(player.angle + Math.PI/2) * 0.66, hplY = Math.sin(player.angle + Math.PI/2) * 0.66;
+    const hinvD = 1.0 / (hplX * hdirY - hdirX * hplY);
+    for (const h of activeHazards) {
+        if (!h.active) continue;
+        const dx = h.x - player.x, dy = h.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 8 || dist < 0.3) continue;
+        const tX = hinvD * (hdirY * dx - hdirX * dy);
+        const tY = hinvD * (-hplY * dx + hplX * dy);
+        if (tY <= 0.2) continue;
+        const screenX = (SCREEN_W / 2) * (1 + tX / tY) + sx;
+        const sprH = Math.abs(SCREEN_H / tY * 0.4);
+        const screenY = HALF_H - sprH / 2 - 6 + sy;
+        if (screenX < -20 || screenX > SCREEN_W + 20) continue;
+        const alpha = Math.max(0.3, 1 - dist / 8);
+        const pulse = 0.6 + Math.sin(gameTime * 0.01) * 0.4;
+        const label = h.type === 'steam' ? '\u26A0 STEAM' : '\u26A1 SPARK';
+        const color = h.type === 'steam' ? `rgba(200,200,240,${alpha * pulse})` : `rgba(100,180,255,${alpha * pulse})`;
+        ctx.font = '7px monospace';
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.4})`;
+        ctx.fillRect(screenX - tw/2 - 2, screenY - 7, tw + 4, 10);
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.fillText(label, screenX, screenY);
+    }
+    }
+
     // Wall-mounted signs — 3D world-space environmental text
     {
     const sdirX = Math.cos(player.angle), sdirY = Math.sin(player.angle);
