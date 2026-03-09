@@ -2364,9 +2364,9 @@ const inventory = { keycard: false, flashlight: false, emp: 0, targetFile: false
 // === ENEMIES ===
 // Types: drone (patrols), filer (chases when near), watcher (stationary, damages at range)
 const enemyDefs = {
-    drone:   { speed: 0.007, damage: 5,  detectRange: 5, color: [180,50,30],  size: 0.4, health: 3 },
-    filer:   { speed: 0.006, damage: 8,  detectRange: 4, color: [60,120,60],  size: 0.5, health: 4 },
-    watcher: { speed: 0,     damage: 3,  detectRange: 6, color: [100,80,180], size: 0.35, health: 2 },
+    drone:   { speed: 0.007, damage: 5,  detectRange: 5, color: [180,50,30],  size: 0.4, health: 3, fov: 2.1 },   // ~120° vision
+    filer:   { speed: 0.006, damage: 8,  detectRange: 4, color: [60,120,60],  size: 0.5, health: 4, fov: 1.4 },   // ~80° vision
+    watcher: { speed: 0,     damage: 3,  detectRange: 6, color: [100,80,180], size: 0.35, health: 2, fov: Math.PI * 2 }, // 360° surveillance
 };
 
 // Enemies per floor
@@ -2400,6 +2400,12 @@ function spawnEnemies() {
     const spawns = enemySpawns[currentFloor] || [];
     for (const s of spawns) {
         const def = enemyDefs[s.type];
+        // Initialize facing toward first waypoint, or random
+        let initFacing = Math.random() * Math.PI * 2;
+        if (s.waypoints && s.waypoints.length > 0) {
+            const wp = s.waypoints[0];
+            initFacing = Math.atan2(wp.y + 0.5 - (s.y + 0.5), wp.x + 0.5 - (s.x + 0.5));
+        }
         enemies.push({
             x: s.x + 0.5, y: s.y + 0.5,
             type: s.type,
@@ -2409,6 +2415,7 @@ function spawnEnemies() {
             color: [...def.color],
             size: def.size,
             health: def.health,
+            fov: def.fov,
             alive: true,
             patrolAxis: s.patrolAxis || null,
             patrolMin: s.patrolX1 || 0,
@@ -2417,7 +2424,7 @@ function spawnEnemies() {
             waypoints: s.waypoints || null,
             waypointIdx: 0,
             waypointWait: 0,
-            facing: 0,
+            facing: initFacing,
             alertTimer: 0,
             wasChasing: false,
             stunTimer: 0,
@@ -7315,7 +7322,7 @@ function updateEnemies(dt) {
         // First enemy encounter tutorial
         if (!player.firstEnemySeen && dist < effectiveRange + 2) {
             player.firstEnemySeen = true;
-            showMessage('THREAT DETECTED. Press [E] near enemies to process them. EMP device stuns all nearby.', 5000);
+            showMessage('THREAT DETECTED. Enemies have limited vision — approach from behind. Press [E] to process. EMP stuns all nearby.', 6000);
         }
 
         if (e.type === 'watcher') {
@@ -7336,7 +7343,12 @@ function updateEnemies(dt) {
             continue;
         }
 
-        if (dist < effectiveRange && hasLineOfSight(e.x, e.y, player.x, player.y)) {
+        // Detection: must be in range, in FOV (or very close = "hearing"), and have line of sight
+        const inFOV = isInEnemyFOV(e, player.x, player.y);
+        const hearingRange = 1.8; // close enough to hear regardless of facing
+        const canDetect = dist < effectiveRange && (inFOV || dist < hearingRange) && hasLineOfSight(e.x, e.y, player.x, player.y);
+
+        if (canDetect) {
             // Chase player (with dead zone to prevent jitter)
             if (!e.wasChasing) {
                 e.wasChasing = true;
@@ -7344,6 +7356,7 @@ function updateEnemies(dt) {
                 playEnemySpotSound();
             }
             e.alertTimer = 3000;
+            e.facing = Math.atan2(dy, dx); // face toward player
             const nx = dx / dist, ny = dy / dist;
             const slowMult = enemySlowTimer > 0 ? 0.5 : 1;
             const speed = (e.type === 'filer' ? e.speed * 1.2 : e.speed) * slowMult;
@@ -7376,6 +7389,7 @@ function updateEnemies(dt) {
         } else if (e.alertTimer > 0) {
             e.alertTimer -= dt;
             if (e.alertTimer <= 0) e.wasChasing = false;
+            e.facing = Math.atan2(dy, dx); // face toward last known direction
             // Continue moving toward last known position
             const nx = dx / Math.max(dist, 0.1), ny = dy / Math.max(dist, 0.1);
             const sMult = enemySlowTimer > 0 ? 0.5 : 1;
@@ -7417,10 +7431,12 @@ function updateEnemies(dt) {
                 e.x += e.speed * e.patrolDir * dt * 0.5 * (enemySlowTimer > 0 ? 0.5 : 1);
                 if (e.x > e.patrolMax + 0.5) e.patrolDir = -1;
                 if (e.x < e.patrolMin + 0.5) e.patrolDir = 1;
+                e.facing = e.patrolDir > 0 ? 0 : Math.PI; // face patrol direction
             } else {
                 e.y += e.speed * e.patrolDir * dt * 0.5 * (enemySlowTimer > 0 ? 0.5 : 1);
                 if (e.y > e.patrolMax + 0.5) e.patrolDir = -1;
                 if (e.y < e.patrolMin + 0.5) e.patrolDir = 1;
+                e.facing = e.patrolDir > 0 ? Math.PI / 2 : -Math.PI / 2; // face patrol direction
             }
         }
     }
@@ -7436,6 +7452,16 @@ function hasLineOfSight(x1, y1, x2, y2) {
         if (getMap(cx|0, cy|0) > 0) return false;
     }
     return true;
+}
+
+// Check if a target position is within an enemy's field of view cone
+function isInEnemyFOV(e, tx, ty) {
+    if (e.fov >= Math.PI * 2) return true; // 360° vision (watchers)
+    const angleToTarget = Math.atan2(ty - e.y, tx - e.x);
+    let diff = angleToTarget - e.facing;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    return Math.abs(diff) <= e.fov / 2;
 }
 
 // Alert nearby enemies when combat occurs — creates cascading danger
@@ -8677,6 +8703,47 @@ function renderMinimap() {
     }
     mctx.closePath();
     mctx.fill();
+
+    // Enemy vision cones — shows where they're looking (stealth indicator)
+    for (const e of enemies) {
+        if (e.health <= 0 || e.deathAnim > 0) continue;
+        const edx = e.x - player.x, edy = e.y - player.y;
+        const eDist = Math.sqrt(edx*edx + edy*edy);
+        if (eDist > nearRange) continue;
+        const halfFov = Math.min(e.fov / 2, Math.PI); // cap at 180° for drawing
+        if (e.fov < Math.PI * 2) {
+            // Draw directional vision cone
+            const coneLen = e.detectRange * 0.8;
+            const ec = e.type === 'drone' ? [180,50,30] : e.type === 'filer' ? [60,120,60] : [100,80,180];
+            mctx.fillStyle = `rgba(${ec[0]},${ec[1]},${ec[2]},0.08)`;
+            mctx.beginPath();
+            const epx = e.x * cellW, epy = e.y * cellH;
+            mctx.moveTo(epx, epy);
+            const cSteps = 8;
+            for (let ci = 0; ci <= cSteps; ci++) {
+                const ca = e.facing - halfFov + (e.fov) * (ci / cSteps);
+                mctx.lineTo(epx + Math.cos(ca) * coneLen * cellW, epy + Math.sin(ca) * coneLen * cellH);
+            }
+            mctx.closePath();
+            mctx.fill();
+            // Cone edge lines
+            mctx.strokeStyle = `rgba(${ec[0]},${ec[1]},${ec[2]},0.15)`;
+            mctx.lineWidth = 0.5;
+            mctx.beginPath();
+            mctx.moveTo(epx, epy);
+            mctx.lineTo(epx + Math.cos(e.facing - halfFov) * coneLen * cellW, epy + Math.sin(e.facing - halfFov) * coneLen * cellH);
+            mctx.moveTo(epx, epy);
+            mctx.lineTo(epx + Math.cos(e.facing + halfFov) * coneLen * cellW, epy + Math.sin(e.facing + halfFov) * coneLen * cellH);
+            mctx.stroke();
+        } else {
+            // 360° watcher — draw faint circle
+            const ec = [100,80,180];
+            mctx.fillStyle = `rgba(${ec[0]},${ec[1]},${ec[2]},0.04)`;
+            mctx.beginPath();
+            mctx.arc(e.x * cellW, e.y * cellH, e.detectRange * 0.6 * cellW, 0, Math.PI * 2);
+            mctx.fill();
+        }
+    }
 
     // Enemies — only visible if nearby (within nearRange)
     for (const e of enemies) {
