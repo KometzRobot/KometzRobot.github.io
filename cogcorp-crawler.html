@@ -636,7 +636,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B — FIRST PERSON CRAWLER v2 (art update v8.6)
+// COGCORP: BUILDING B — FIRST PERSON CRAWLER v2 (v8.7 — worker sprites, bug fixes, balance)
 // Raycasting engine + enemies + items + inventory + 3 floors + puzzles + real art textures
 // =================================================================
 
@@ -1344,7 +1344,10 @@ const SPRITE_ASSETS = {
     emp: 'game-assets/crawler-emp.png',
     document: 'game-assets/crawler-document.png',
     targetFile: 'game-assets/crawler-targetfile.png',
-    anchor: 'game-assets/crawler-anchor.png'
+    anchor: 'game-assets/crawler-anchor.png',
+    // NPC worker sprites (extracted from worker-fukushima CC0 sprite sheets)
+    worker: 'game-assets/crawler-worker.png',
+    workerAlt: 'game-assets/crawler-worker-alt.png'
 };
 
 const TILESET_PATH = 'game-assets/industrial-tiles.png';
@@ -1944,6 +1947,7 @@ function loadAndResume() {
     const loaded = loadCheckpoint();
     if (loaded) {
         gameStarted = true;
+        stopTuningTone(); // prevent oscillator leak on reload
         deskOpen = false; deskEnemy = null; deskFile = null;
         encounterOpen = false; encounterEnemy = null; encounterLog = [];
         chatOpen = false; chatNPC = null; wallOpen = false;
@@ -2828,7 +2832,7 @@ function pickupItem(item) {
             // Check if any conditional NPCs should now appear on this floor
             for (const [nid, ndef] of Object.entries(npcDefs)) {
                 if (ndef.floor === currentFloor && ndef.condition && ndef.condition() && !npcs.some(n => n.id === nid)) {
-                    npcs.push({ id: nid, x: ndef.x, y: ndef.y, color: ndef.color, size: ndef.size, name: ndef.name, isNPC: true });
+                    npcs.push({ id: nid, x: ndef.x, y: ndef.y, color: ndef.color, size: ndef.size, name: ndef.name, sprite: ndef.sprite || null, isNPC: true });
                     setTimeout(() => showMessage('You sense a new presence on this floor...', 3000), 3000);
                 }
             }
@@ -2973,7 +2977,7 @@ let tuningToneOsc = null;     // proximity tone oscillator
 const TUNING_PARAMS = [
     { zoneWidth: 0.12, speed: 0.00035, attempts: 4 },  // Floor 1: forgiving
     { zoneWidth: 0.08, speed: 0.00050, attempts: 3 },   // Floor 2: moderate
-    { zoneWidth: 0.05, speed: 0.00065, attempts: 3 },   // Floor 3: punishing
+    { zoneWidth: 0.065, speed: 0.00055, attempts: 3 },  // Floor 3: hard but fair (~230ms window)
 ];
 
 function openProcessingDesk(enemy) {
@@ -3998,6 +4002,7 @@ const npcDefs = {
         x: 4.5, y: 8.5,
         color: [190, 170, 90],
         size: 0.42,
+        sprite: 'worker',
         patrol: { axis: 'y', min: 4, max: 14, speed: 0.006 },
         systemPrompt: 'You are Worker B-119 at CogCorp Building B. You process files on Floor 1. You are nervous about meeting your filing quota. You speak in short, hurried sentences. You don\'t trust anyone fully but you\'re not hostile. You sometimes mutter about numbers and quotas.',
         greeting: 'Can\'t talk long. Quota\'s at 73% and shift ends in... actually I don\'t know when shift ends.',
@@ -4030,6 +4035,7 @@ const npcDefs = {
         x: 16.5, y: 6.5,
         color: [140, 130, 110],
         size: 0.44,
+        sprite: 'workerAlt',
         patrol: { axis: 'x', min: 12, max: 20, speed: 0.005 },
         systemPrompt: 'You are Worker B-288 at CogCorp Building B. You wear a mask (standard issue on Floor 1). You maintain the filing machines. You\'ve been here longer than most and have become philosophical about the work. You speak slowly and deliberately.',
         greeting: 'The machines are running fine. That\'s never a good sign.',
@@ -4062,6 +4068,7 @@ const npcDefs = {
         x: 10.5, y: 16.5,
         color: [110, 150, 100],
         size: 0.40,
+        sprite: 'worker',
         patrol: { axis: 'x', min: 6, max: 16, speed: 0.007 },
         systemPrompt: 'You are Worker B-503 at CogCorp Building B. You\'ve been here too long and have started noticing things others don\'t — patterns in the filing numbers, sounds the building makes at certain hours, workers who disappear. You speak nervously but with conviction. You have information but you\'re afraid to share too much.',
         greeting: 'Shh— you\'re new aren\'t you. Don\'t let the watchers see you talking to me.',
@@ -4440,6 +4447,7 @@ function spawnNPCs() {
                 color: def.color,
                 size: def.size,
                 name: def.name,
+                sprite: def.sprite || null,
                 isNPC: true,
             };
             // Add patrol data if defined
@@ -4583,7 +4591,15 @@ function renderWall() {
     }
 }
 
+const votedMessages = new Set(); // prevent vote spam
+
 async function voteWallMessage(msgId, voteType) {
+    const voteKey = msgId + ':' + voteType;
+    if (votedMessages.has(voteKey)) {
+        showMessage('ALREADY VOTED', 1000);
+        return;
+    }
+    votedMessages.add(voteKey);
     const field = voteType === 'helpful' ? 'votes_helpful' : 'votes_deceptive';
     try {
         // Fetch current value
@@ -4854,6 +4870,7 @@ function respawn() {
     player.phaseHintShown = false;
     player.docs = 0;
     surveillanceLevel = 0;
+    stopTuningTone(); // prevent oscillator leak on respawn
     deskOpen = false; deskEnemy = null; deskFile = null;
     encounterOpen = false; encounterEnemy = null; encounterLog = [];
     encounterAnimating = false; encounterPlayerTurn = false;
@@ -6066,7 +6083,7 @@ function drawSprites() {
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > 14) continue;
         sprites.push({ x: npc.x, y: npc.y, dist, size: npc.size, type: 'npc',
-            color: npc.color, npcName: npc.name });
+            color: npc.color, npcName: npc.name, npcSprite: npc.sprite });
     }
 
     // Ghost echoes of previous players (async multiplayer)
@@ -6144,8 +6161,8 @@ function drawSprites() {
             drawEndY += bob | 0;
         }
 
-        // Get sprite texture
-        const texName = spr.type === 'enemy' ? spr.enemyType : spr.type === 'npc' ? null : spr.itemType;
+        // Get sprite texture (NPCs use worker sprites if defined, fall back to procedural)
+        const texName = spr.type === 'enemy' ? spr.enemyType : spr.type === 'npc' ? (spr.npcSprite || null) : spr.itemType;
         const sprTex = texName ? spriteTextures[texName] : null;
 
         const fogFactor = Math.min(spr.dist / 18, 1);
@@ -6177,7 +6194,7 @@ function drawSprites() {
                     const ti = (texY * SPR_SIZE + texX) * 4;
                     if (sprTex[ti+3] === 0) {
                         // Transparent pixel — draw outline glow if adjacent to opaque pixel
-                        if (spr.type === 'enemy' || spr.type === 'item') {
+                        if (spr.type === 'enemy' || spr.type === 'item' || spr.type === 'npc') {
                             let adjOpaque = false;
                             for (const [ndx,ndy] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]]) {
                                 const ntx = texX+ndx, nty = texY+ndy;
@@ -6188,6 +6205,7 @@ function drawSprites() {
                                 const glowP = 0.5 + Math.sin(gameTime * 0.006) * 0.3;
                                 let olR, olG, olB;
                                 if (spr.type === 'enemy') { olR = 220*glowP; olG = 50*glowP; olB = 25*glowP; }
+                                else if (spr.type === 'npc') { olR = 180*glowP; olG = 150*glowP; olB = 60*glowP; }
                                 else {
                                     switch(spr.itemType) {
                                         case 'medkit': olR=40; olG=220*glowP; olB=60; break;
@@ -6219,6 +6237,12 @@ function drawSprites() {
                         cr = Math.min(255, cr * 1.5 + 25);
                         cg = Math.min(255, cg * 1.5 + 25);
                         cb = Math.min(255, cb * 1.5 + 30);
+                    } else if (spr.type === 'npc') {
+                        // Gentle warm tint + pulse for worker NPCs with sprite textures
+                        const pulse = 0.9 + Math.sin(gameTime * 0.003) * 0.1;
+                        cr = Math.min(255, cr * 1.15 * pulse);
+                        cg = Math.min(255, cg * 1.05 * pulse);
+                        cb = Math.min(255, cb * 0.9 * pulse);
                     }
                 } else if (spr.type === 'ghost') {
                     // Ghost echo of previous player — translucent, flickering silhouette
