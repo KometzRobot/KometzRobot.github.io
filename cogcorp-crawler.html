@@ -1815,6 +1815,10 @@ let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
     realityLevel: 100,  // 100 = fully real, 0 = you become a document (game over)
     spawnShield: 3000,   // 3 seconds invulnerability on spawn
     firstEnemySeen: false, // tutorial flag for first enemy encounter
+    tutorialStep: -1,      // -1 = not started, 0-4 = active steps, 5 = complete
+    tutorialTimer: 0,      // countdown for auto-advance
+    tutorialStartAngle: 0, // track initial angle for look detection
+    tutorialMoved: false,   // has player moved?
     annotating: false,   // currently annotating something?
     annotateTarget: null, // which enemy is being annotated
     annotateProgress: 0,  // 0-100 progress on current annotation
@@ -1942,6 +1946,7 @@ function loadCheckpoint() {
         player.spawnShield = 3000;
         player.annotating = false; player.annotateTarget = null; player.annotateProgress = 0;
         player.firstEnemySeen = true; // skip tutorial on load
+        player.tutorialStep = TUTORIAL_STEPS.length; // skip tutorial
         player.phaseHintShown = true;
 
         // Restore world state
@@ -7358,6 +7363,9 @@ function update(dt) {
         return;
     }
 
+    // Tutorial
+    updateTutorial(dt);
+
     // Timer updates
     if (enemyRevealTimer > 0) enemyRevealTimer -= dt;
     if (enemySlowTimer > 0) enemySlowTimer -= dt;
@@ -8348,8 +8356,94 @@ function render() {
         ctx.restore();
     }
 
+    // Tutorial overlay
+    renderTutorial();
+
     // Floor transition overlay (drawn on top of everything)
     renderFloorTransition();
+}
+
+// === TUTORIAL SYSTEM ===
+const TUTORIAL_STEPS = [
+    { text: '[ WASD ]  MOVE', key: 'move' },
+    { text: '[ MOUSE ]  LOOK AROUND', key: 'look' },
+    { text: '[ E ]  INTERACT WITH OBJECTS & NPCS', key: 'time', duration: 4000 },
+    { text: 'WALK OVER ITEMS TO COLLECT THEM', key: 'time', duration: 3500 },
+    { text: 'EXPLORE FLOOR 1 — FIND THE STAIRS', key: 'time', duration: 5000 },
+];
+
+function updateTutorial(dt) {
+    if (player.tutorialStep < 0 || player.tutorialStep >= TUTORIAL_STEPS.length) return;
+    const step = TUTORIAL_STEPS[player.tutorialStep];
+
+    if (step.key === 'move') {
+        // Advance when player moves
+        if (player.vx !== 0 || player.vy !== 0) {
+            player.tutorialMoved = true;
+        }
+        if (player.tutorialMoved) {
+            player.tutorialTimer += dt;
+            if (player.tutorialTimer > 800) {
+                player.tutorialStep++;
+                player.tutorialTimer = 0;
+                player.tutorialStartAngle = player.angle;
+            }
+        }
+    } else if (step.key === 'look') {
+        // Advance when player has looked around (rotated > 60 degrees)
+        const angleDiff = Math.abs(player.angle - player.tutorialStartAngle);
+        if (angleDiff > 1.05) { // ~60 degrees
+            player.tutorialTimer += dt;
+            if (player.tutorialTimer > 800) {
+                player.tutorialStep++;
+                player.tutorialTimer = 0;
+            }
+        }
+    } else if (step.key === 'time') {
+        // Auto-advance after duration
+        player.tutorialTimer += dt;
+        if (player.tutorialTimer > (step.duration || 4000)) {
+            player.tutorialStep++;
+            player.tutorialTimer = 0;
+        }
+    }
+}
+
+function renderTutorial() {
+    if (player.tutorialStep < 0 || player.tutorialStep >= TUTORIAL_STEPS.length) return;
+    const step = TUTORIAL_STEPS[player.tutorialStep];
+    const cw = ctx.canvas.width, ch = ctx.canvas.height;
+
+    // Fade in/out
+    let alpha = 1.0;
+    if (player.tutorialTimer < 400) {
+        alpha = player.tutorialTimer / 400; // fade in
+    }
+    if (step.key === 'time' && step.duration) {
+        const remaining = step.duration - player.tutorialTimer;
+        if (remaining < 600) alpha = Math.max(0, remaining / 600); // fade out
+    }
+
+    // Subtle pulse
+    const pulse = 0.85 + 0.15 * Math.sin(gameTime * 0.004);
+
+    // Dark strip background
+    const stripH = 44;
+    const stripY = ch - 70;
+    ctx.fillStyle = `rgba(6, 4, 2, ${0.7 * alpha})`;
+    ctx.fillRect(0, stripY, cw, stripH);
+
+    // Top and bottom accent lines
+    ctx.fillStyle = `rgba(255, 179, 71, ${0.3 * alpha})`;
+    ctx.fillRect(0, stripY, cw, 1);
+    ctx.fillRect(0, stripY + stripH - 1, cw, 1);
+
+    // Tutorial text
+    ctx.font = '16px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = `rgba(255, 200, 100, ${alpha * pulse})`;
+    ctx.fillText(step.text, cw / 2, stripY + 27);
+    ctx.textAlign = 'left'; // reset
 }
 
 // === GAME LOOP ===
@@ -8734,10 +8828,13 @@ function startGame(fromCheckpoint) {
     setTimeout(() => canvas.requestPointerLock(), 900);
     if (loaded) {
         showMessage('CHECKPOINT LOADED — FLOOR ' + (currentFloor + 1), 3000);
+        player.tutorialStep = TUTORIAL_STEPS.length; // skip tutorial on load
     } else {
-        showMessage('WASD move | Mouse look | E interact | Q use EMP | Walk over items to collect', 5000);
-        // Delayed stair hint for new players
-        setTimeout(() => showMessage('Look for the green glow — stairs to Floor 2 are in the NORTHEAST corner.', 4000), 7000);
+        // Start contextual tutorial — prompts appear one at a time as player acts
+        player.tutorialStep = 0;
+        player.tutorialTimer = 0;
+        player.tutorialMoved = false;
+        player.tutorialStartAngle = player.angle;
     }
 }
 
