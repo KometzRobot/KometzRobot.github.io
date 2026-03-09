@@ -2570,6 +2570,7 @@ let currentFloor = 0;
 let gameStarted = false;
 let gamePaused = false;
 let dialogOpen = false;
+let floorTransition = { active: false, phase: 0, targetFloor: 0, direction: 'up', elapsed: 0, duration: 1200, floorChanged: false };
 let nearObject = null;
 let nearItem = null;
 let gameTime = 0;
@@ -2809,13 +2810,7 @@ function interact(obj) {
                 return;
             }
             const newFloor = currentFloor + 1;
-            changeFloor(newFloor);
-            showMessage('ASCENDING TO FLOOR ' + (newFloor + 1), 2000);
-            if (newFloor === 1) {
-                setTimeout(() => showMessage('Stairs to Floor 3 are in the NORTHEAST. You\'ll need a KEYCARD.', 4000), 2500);
-            } else if (newFloor === 2) {
-                setTimeout(() => showMessage('The building is breathing. Stairs back down are in the SOUTHWEST.', 3000), 2500);
-            }
+            startFloorTransition(newFloor, 'up');
         } else {
             showDialog('STAIRS', 'There is no higher floor.');
         }
@@ -2826,8 +2821,7 @@ function interact(obj) {
             const prevFloor = currentFloor - 1;
             showChoiceDialog('STAIRS DOWN', 'Descend to Floor ' + (prevFloor + 1) + '?', [
                 { label: '> DESCEND', action: () => {
-                    changeFloor(prevFloor);
-                    showMessage('DESCENDING TO FLOOR ' + (prevFloor + 1), 2000);
+                    startFloorTransition(prevFloor, 'down');
                 }},
                 { label: '> STAY', action: () => {} },
             ]);
@@ -2988,6 +2982,128 @@ function useEMP() {
     shakeTimer = 300;
     shakeIntensity = 6;
     viewmodel.empFireTimer = 600; // 600ms EMP fire animation
+}
+
+function startFloorTransition(newFloor, direction) {
+    if (floorTransition.active) return;
+    floorTransition.active = true;
+    floorTransition.phase = 0; // 0=collapse, 1=hold, 2=expand
+    floorTransition.targetFloor = newFloor;
+    floorTransition.direction = direction;
+    floorTransition.elapsed = 0;
+    floorTransition.duration = 1200;
+    floorTransition.floorChanged = false;
+    // Play transition sound
+    if (audioCtx && audioNodes.master) {
+        // CRT shutdown whine — descending sweep
+        const osc = audioCtx.createOscillator(); osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.4);
+        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    }
+}
+
+function updateFloorTransition(dt) {
+    if (!floorTransition.active) return;
+    floorTransition.elapsed += dt;
+    const t = floorTransition.elapsed / floorTransition.duration;
+
+    if (t < 0.35) {
+        floorTransition.phase = 0; // collapse
+    } else if (t < 0.65) {
+        floorTransition.phase = 1; // hold — do the floor change at midpoint
+        if (!floorTransition.floorChanged) {
+            floorTransition.floorChanged = true;
+            changeFloor(floorTransition.targetFloor);
+            // Play power-on sound
+            if (audioCtx && audioNodes.master) {
+                const osc = audioCtx.createOscillator(); osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(60, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.3);
+                const g = audioCtx.createGain(); g.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            }
+        }
+    } else {
+        floorTransition.phase = 2; // expand
+    }
+
+    if (t >= 1.0) {
+        floorTransition.active = false;
+        const dir = floorTransition.direction;
+        const nf = floorTransition.targetFloor;
+        if (dir === 'up') {
+            if (nf === 1) setTimeout(() => showMessage('Stairs to Floor 3 are in the NORTHEAST. You\'ll need a KEYCARD.', 4000), 500);
+            else if (nf === 2) setTimeout(() => showMessage('The building is breathing. Stairs back down are in the SOUTHWEST.', 3000), 500);
+        }
+    }
+}
+
+function renderFloorTransition() {
+    if (!floorTransition.active) return;
+    const t = floorTransition.elapsed / floorTransition.duration;
+    const cw = SCREEN_W, ch = SCREEN_H;
+
+    if (floorTransition.phase === 0) {
+        // Collapse: black bars close from top/bottom like CRT shutdown
+        const p = Math.min(1, t / 0.35);
+        const ease = p * p; // accelerating
+        const barH = (ch / 2) * ease;
+        ctx.fillStyle = '#0a0605';
+        ctx.fillRect(0, 0, cw, barH);
+        ctx.fillRect(0, ch - barH, cw, barH);
+        // Scanline noise in the closing region
+        for (let i = 0; i < 20 * ease; i++) {
+            const ny = Math.random() * ch;
+            ctx.fillStyle = `rgba(255,179,71,${Math.random() * 0.15})`;
+            ctx.fillRect(0, ny, cw, 1);
+        }
+        // Horizontal collapse line (the bright line CRTs show when powering off)
+        if (ease > 0.7) {
+            const lineAlpha = (ease - 0.7) / 0.3;
+            ctx.fillStyle = `rgba(255,220,160,${lineAlpha * 0.8})`;
+            ctx.fillRect(0, ch/2 - 1, cw, 2);
+        }
+    } else if (floorTransition.phase === 1) {
+        // Hold: black screen with floor label
+        ctx.fillStyle = '#0a0605';
+        ctx.fillRect(0, 0, cw, ch);
+        // Floor label
+        const floorNames = ['INTAKE', 'ARCHIVES', 'PROCESSING'];
+        const label = 'FLOOR ' + (floorTransition.targetFloor + 1);
+        const sub = floorNames[floorTransition.targetFloor] || '';
+        const holdT = (t - 0.35) / 0.3;
+        const textAlpha = Math.min(1, holdT * 3);
+        ctx.font = '16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = `rgba(255,179,71,${textAlpha})`;
+        ctx.fillText(label, cw/2, ch/2 - 4);
+        ctx.font = '10px monospace';
+        ctx.fillStyle = `rgba(138,96,48,${textAlpha * 0.7})`;
+        ctx.fillText(sub, cw/2, ch/2 + 12);
+        // Arrow indicator
+        const arrow = floorTransition.direction === 'up' ? '\u25B2' : '\u25BC';
+        ctx.font = '12px monospace';
+        ctx.fillStyle = `rgba(255,179,71,${textAlpha * 0.5})`;
+        ctx.fillText(arrow, cw/2, ch/2 - 22);
+    } else {
+        // Expand: bars recede from center outward like CRT power on
+        const p = Math.min(1, (t - 0.65) / 0.35);
+        const ease = 1 - (1 - p) * (1 - p); // decelerating
+        const barH = (ch / 2) * (1 - ease);
+        ctx.fillStyle = '#0a0605';
+        ctx.fillRect(0, 0, cw, barH);
+        ctx.fillRect(0, ch - barH, cw, barH);
+        // Scanlines in expanding region
+        for (let i = 0; i < 10 * (1 - ease); i++) {
+            const ny = Math.random() * ch;
+            ctx.fillStyle = `rgba(255,179,71,${Math.random() * 0.1})`;
+            ctx.fillRect(0, ny, cw, 1);
+        }
+    }
 }
 
 function changeFloor(newFloor) {
@@ -7153,6 +7269,8 @@ function hasLineOfSight(x1, y1, x2, y2) {
 function update(dt) {
     updateParticles(dt);
     updateAmbientParticles(dt);
+    updateFloorTransition(dt);
+    if (floorTransition.active) return; // block all gameplay during transition
     if (dialogOpen || terminalOpen || chatOpen || wallOpen || encounterOpen) return;
     if (deskOpen && !deskResult) {
         updateProcessingDesk(dt);
@@ -8087,6 +8205,9 @@ function render() {
 
     // First-person viewmodel — context-sensitive weapon/tool hand
     renderViewmodel();
+
+    // Floor transition overlay (drawn on top of everything)
+    renderFloorTransition();
 }
 
 // === GAME LOOP ===
