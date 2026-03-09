@@ -5744,6 +5744,58 @@ function applyPostEffects() {
         }
     }
 
+    if (realityPct < 0.45) {
+        // CRT rolling bar — bright horizontal band scrolls down like a TV losing vertical sync
+        const barSpeed = 0.0003 + (0.45 - realityPct) * 0.001; // faster as reality drops
+        const barY = ((gameTime * barSpeed) % 1) * SCREEN_H;
+        const barWidth = 8 + (0.45 - realityPct) * 40; // wider as reality drops
+        const barBright = 0.03 + (0.45 - realityPct) * 0.15;
+        for (let y = 0; y < SCREEN_H; y++) {
+            const distFromBar = Math.abs(y - barY);
+            if (distFromBar < barWidth) {
+                const intensity = (1 - distFromBar / barWidth) * barBright;
+                for (let x = 0; x < SCREEN_W; x++) {
+                    const pi = (y * SCREEN_W + x) * 4;
+                    buf[pi]   = Math.min(255, (buf[pi]   + buf[pi]   * intensity) | 0);
+                    buf[pi+1] = Math.min(255, (buf[pi+1] + buf[pi+1] * intensity) | 0);
+                    buf[pi+2] = Math.min(255, (buf[pi+2] + buf[pi+2] * intensity) | 0);
+                }
+            }
+        }
+    }
+
+    if (realityPct < 0.35) {
+        // Enhanced vignette — tunnel vision closes in as reality degrades
+        const vignetteStrength = (0.35 - realityPct) * 2.5; // 0-0.875
+        const cx = SCREEN_W / 2, cy = SCREEN_H / 2;
+        const maxDist = Math.sqrt(cx * cx + cy * cy);
+        const threshold = 0.5 - vignetteStrength * 0.25; // shrinks from 0.5 to ~0.28
+        for (let y = 0; y < SCREEN_H; y++)
+            for (let x = 0; x < SCREEN_W; x++) {
+                const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / maxDist;
+                if (dist > threshold) {
+                    const dim = Math.max(0, 1 - (dist - threshold) * (1.5 + vignetteStrength));
+                    const pi = (y * SCREEN_W + x) * 4;
+                    buf[pi]   = (buf[pi]   * dim) | 0;
+                    buf[pi+1] = (buf[pi+1] * dim) | 0;
+                    buf[pi+2] = (buf[pi+2] * dim) | 0;
+                }
+            }
+    }
+
+    if (realityPct < 0.2) {
+        // Frame flicker — brief power flickers, screen dims sharply for 1-2 frames
+        const flickerChance = (0.2 - realityPct) * 0.08; // up to ~1.6% per frame
+        if (Math.random() < flickerChance) {
+            const dim = 0.1 + Math.random() * 0.3; // 10-40% brightness
+            for (let i = 0; i < SCREEN_W * SCREEN_H * 4; i += 4) {
+                buf[i]   = (buf[i]   * dim) | 0;
+                buf[i+1] = (buf[i+1] * dim) | 0;
+                buf[i+2] = (buf[i+2] * dim) | 0;
+            }
+        }
+    }
+
     // Annotation in progress — dim screen edges as focus narrows
     if (player.annotating) {
         for (let y = 0; y < SCREEN_H; y++)
