@@ -3091,17 +3091,28 @@ function renderFloorTransition() {
         ctx.fillRect(0, 0, cw, ch);
         // Floor label
         const floorNames = ['INTAKE', 'ARCHIVES', 'PROCESSING'];
+        const floorTaglines = [
+            'WHERE AGENTS ARE ASSIGNED',
+            'EVERYTHING IS FILED. NOTHING IS FORGOTTEN.',
+            'THE MACHINE KNOWS YOUR NAME'
+        ];
         const label = 'FLOOR ' + (floorTransition.targetFloor + 1);
         const sub = floorNames[floorTransition.targetFloor] || '';
+        const tagline = floorTaglines[floorTransition.targetFloor] || '';
         const holdT = (t - 0.35) / 0.3;
         const textAlpha = Math.min(1, holdT * 3);
         ctx.font = '16px monospace';
         ctx.textAlign = 'center';
         ctx.fillStyle = `rgba(255,179,71,${textAlpha})`;
-        ctx.fillText(label, cw/2, ch/2 - 4);
+        ctx.fillText(label, cw/2, ch/2 - 8);
         ctx.font = '10px monospace';
         ctx.fillStyle = `rgba(138,96,48,${textAlpha * 0.7})`;
-        ctx.fillText(sub, cw/2, ch/2 + 12);
+        ctx.fillText(sub, cw/2, ch/2 + 8);
+        // Atmospheric tagline — fades in slightly later
+        const tagAlpha = Math.max(0, (holdT - 0.3) * 2.5);
+        ctx.font = '8px monospace';
+        ctx.fillStyle = `rgba(100,80,50,${tagAlpha * 0.6})`;
+        ctx.fillText(tagline, cw/2, ch/2 + 22);
         // Arrow indicator
         const arrow = floorTransition.direction === 'up' ? '\u25B2' : '\u25BC';
         ctx.font = '12px monospace';
@@ -8115,6 +8126,9 @@ function render() {
         sy = ((Math.random() * 2 - 1) * shakeIntensity * t) | 0;
     } else if (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']) {
         sy = (Math.sin(gameTime * 0.008) * 2) | 0;
+    } else {
+        // Subtle idle breathing sway — very slow, very gentle
+        sy = Math.round(Math.sin(gameTime * 0.0015) * 0.8);
     }
     if (sx !== 0 || sy !== 0) {
         ctx.fillStyle = '#0a0605';
