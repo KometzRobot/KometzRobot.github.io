@@ -2599,6 +2599,7 @@ window.addEventListener('keydown', e => {
     if (e.code === 'KeyE') {
         e.preventDefault();
         viewmodel.interactTimer = 300; // hand reach animation
+        playInteractSound();
         if (dialogOpen) { dismissDialog(); }
         else if (nearItem && !nearItem.collected) { pickupItem(nearItem); }
         else if (nearObject) { interact(nearObject); }
@@ -2796,6 +2797,7 @@ function pickupItem(item) {
             updateInventoryHUD();
             pickupFlashTimer = 200; pickupFlashColor = [220, 180, 40];
             spawnItemPickupBurst([220, 180, 40]);
+            playPickupSound('keycard');
             break;
         case 'flashlight':
             inventory.flashlight = true;
@@ -2803,6 +2805,7 @@ function pickupItem(item) {
             updateInventoryHUD();
             pickupFlashTimer = 200; pickupFlashColor = [220, 200, 120];
             spawnItemPickupBurst([220, 200, 120]);
+            playPickupSound('flashlight');
             break;
         case 'emp':
             inventory.emp++;
@@ -2810,6 +2813,7 @@ function pickupItem(item) {
             updateInventoryHUD();
             pickupFlashTimer = 200; pickupFlashColor = [80, 140, 220];
             spawnItemPickupBurst([80, 140, 220]);
+            playPickupSound('emp');
             break;
         case 'medkit':
             player.health = Math.min(player.maxHealth, player.health + 30);
@@ -2817,12 +2821,14 @@ function pickupItem(item) {
             updateHealthHUD();
             pickupFlashTimer = 150; pickupFlashColor = [200, 60, 60];
             spawnItemPickupBurst([200, 60, 60]);
+            playPickupSound('medkit');
             break;
         case 'document':
             player.docs++;
             document.getElementById('hud-docs').textContent = player.docs;
             pickupFlashTimer = 150; pickupFlashColor = [180, 160, 120];
             spawnItemPickupBurst([180, 160, 120]);
+            playPickupSound('document');
             // Store in codex
             if (item.spawnKey) {
                 const catEntry = DOC_CATALOG.find(d => d.key === item.spawnKey);
@@ -2861,6 +2867,7 @@ function pickupItem(item) {
             pickupFlashTimer = 400; pickupFlashColor = [255, 215, 0];
             spawnItemPickupBurst([255, 215, 0]);
             spawnItemPickupBurst([255, 180, 0]); // double burst for the big pickup
+            playPickupSound('targetFile');
             showDialog('THE FILE', 'You found it. File #B-247-SELF. It\'s a personnel file. Your personnel file. The photo is you. The dates are wrong — it says you\'ve been here since 1986. The last entry reads: "B-247 was sent to retrieve this file. B-247 will retrieve this file. B-247 has always been retrieving this file." You take it anyway. The stairs down are to the northwest.');
             gameWon = true;
             showMessage('OBJECTIVE COMPLETE — RETURN TO FLOOR 1 EXIT', 5000);
@@ -5357,6 +5364,41 @@ function playFiledSound() {
     const noiseF = audioCtx.createBiquadFilter(); noiseF.type = 'highpass'; noiseF.frequency.value = 2000;
     const g2 = audioCtx.createGain(); g2.gain.value = 0.06;
     src.connect(noiseF); noiseF.connect(g2); g2.connect(audioNodes.master); src.start();
+}
+
+function playPickupSound(itemType) {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    // Rising tone — satisfying "got it" chime, pitch varies by item rarity
+    const baseFreq = itemType === 'emp' ? 600 : itemType === 'keycard' ? 520 : itemType === 'targetFile' ? 700 : 440;
+    const osc = audioCtx.createOscillator(); osc.type = 'sine';
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, now + 0.12);
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.12, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(now); osc.stop(now + 0.25);
+    // Second harmonic (sparkle)
+    const osc2 = audioCtx.createOscillator(); osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(baseFreq * 2, now + 0.05);
+    osc2.frequency.linearRampToValueAtTime(baseFreq * 3, now + 0.18);
+    const g2 = audioCtx.createGain(); g2.gain.setValueAtTime(0.05, now + 0.05);
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc2.connect(g2); g2.connect(audioNodes.master); osc2.start(now + 0.05); osc2.stop(now + 0.2);
+}
+
+function playInteractSound() {
+    if (!audioCtx) return;
+    // Short mechanical click — feedback for E press
+    const now = audioCtx.currentTime;
+    const buf2 = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.04, audioCtx.sampleRate);
+    const d = buf2.getChannelData(0);
+    for (let i = 0; i < d.length; i++) {
+        const t = i / audioCtx.sampleRate;
+        d[i] = Math.exp(-t * 120) * (Math.sin(t * 3000) * 0.3 + (Math.random() * 0.2 - 0.1));
+    }
+    const src = audioCtx.createBufferSource(); src.buffer = buf2;
+    const g = audioCtx.createGain(); g.gain.value = 0.1;
+    src.connect(g); g.connect(audioNodes.master); src.start();
 }
 
 // Enemy proximity audio — subtle cues for nearby enemies
