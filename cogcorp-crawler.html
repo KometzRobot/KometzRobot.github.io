@@ -123,27 +123,56 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     align-items: center; justify-content: center; font-family: monospace; cursor: default;
 }
 #processing-desk .desk-frame {
-    width: 480px; max-width: 94%; background: #0c0804;
-    border: 2px solid #5a4020; padding: 16px 20px; position: relative;
+    width: 540px; max-width: 94%; background: #0e0a06;
+    border: 3px solid #4a3518; border-radius: 6px; padding: 0; position: relative;
+    box-shadow: 0 0 30px rgba(255,179,71,0.08), inset 0 0 20px rgba(0,0,0,0.5);
+}
+#processing-desk .desk-bezel {
+    background: linear-gradient(180deg, #2a1e10 0%, #1a1208 40%, #1a1208 60%, #2a1e10 100%);
+    border-bottom: 1px solid #3a2a10; padding: 10px 16px 8px 16px; border-radius: 4px 4px 0 0;
+    display: flex; justify-content: space-between; align-items: center;
 }
 #processing-desk .desk-header {
-    color: #ffb347; font-size: 14px; letter-spacing: 4px; text-align: center;
-    border-bottom: 1px solid #3a2a10; padding-bottom: 8px; margin-bottom: 12px;
+    color: #ffb347; font-size: 13px; letter-spacing: 4px; text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(255,179,71,0.4);
+}
+#processing-desk .desk-model {
+    color: #4a3518; font-size: 9px; letter-spacing: 1px;
+}
+#processing-desk .desk-screen {
+    padding: 10px 14px 8px 14px; background: #080402;
 }
 #tuning-canvas {
-    width: 100%; background: #0a0604; border: 1px solid #3a2a10;
-    display: block; image-rendering: pixelated;
+    width: 100%; background: #050302; border: 2px solid #2a1e10;
+    display: block; image-rendering: pixelated; border-radius: 3px;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 0 6px rgba(255,179,71,0.05);
+}
+#processing-desk .tuning-readouts {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 6px; padding: 4px 2px; gap: 8px;
+}
+#processing-desk .tuning-readout-box {
+    background: #0a0604; border: 1px solid #2a1e10; border-radius: 2px;
+    padding: 3px 8px; font-size: 10px; color: #6a5020; letter-spacing: 1px;
+}
+#processing-desk .tuning-readout-box .readout-val {
+    color: #ffb347; font-size: 13px; font-weight: bold;
 }
 #processing-desk .tuning-info {
     display: flex; justify-content: space-between; align-items: center;
-    margin-top: 8px; padding: 4px 0;
+    margin-top: 6px; padding: 4px 2px;
 }
 #processing-desk .tuning-attempts { color: #ffb347; font-size: 14px; letter-spacing: 2px; }
+#processing-desk .desk-controls {
+    background: linear-gradient(180deg, #1a1208 0%, #2a1e10 100%);
+    padding: 8px 16px 10px 16px; border-radius: 0 0 4px 4px;
+    border-top: 1px solid #3a2a10;
+}
 #processing-desk .tuning-prompt {
-    color: #8a6030; font-size: 13px; letter-spacing: 1px; text-align: center; margin-top: 8px;
+    color: #8a6030; font-size: 13px; letter-spacing: 1px; text-align: center;
 }
 #processing-desk .result-text {
-    text-align: center; font-size: 14px; margin-top: 12px; letter-spacing: 2px; min-height: 18px;
+    text-align: center; font-size: 14px; margin-top: 6px; letter-spacing: 2px; min-height: 18px;
 }
 #crt-terminal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50;
@@ -487,15 +516,27 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <div id="processing-desk">
     <div class="desk-frame">
-        <div class="desk-header">NEURAL SIGNAL TUNER</div>
-        <canvas id="tuning-canvas" width="440" height="200"></canvas>
-        <div class="tuning-info">
-            <div class="tuning-attempts" id="tuning-attempts">LOCKS: ●●●</div>
-            <div class="tuning-attempts" id="tuning-unit"></div>
+        <div class="desk-bezel">
+            <div class="desk-header">NEURAL SIGNAL TUNER</div>
+            <div class="desk-model">NST-7 COGCORP</div>
         </div>
-        <div class="tuning-prompt" id="tuning-prompt">[ SPACE to lock frequency ]</div>
-        <div class="result-text" id="desk-result"></div>
-        <div style="color:#6a5020; font-size:11px; text-align:center; margin-top:8px;">[ ESC to abandon ]</div>
+        <div class="desk-screen">
+            <canvas id="tuning-canvas" width="520" height="260"></canvas>
+            <div class="tuning-readouts">
+                <div class="tuning-readout-box">FREQ <span class="readout-val" id="tuning-freq-val">---</span> Hz</div>
+                <div class="tuning-readout-box">SIG <span class="readout-val" id="tuning-sig-val">0%</span></div>
+                <div class="tuning-readout-box">COHER <span class="readout-val" id="tuning-coher-val">---</span></div>
+            </div>
+            <div class="tuning-info">
+                <div class="tuning-attempts" id="tuning-attempts">LOCKS: ●●●</div>
+                <div class="tuning-attempts" id="tuning-unit"></div>
+            </div>
+        </div>
+        <div class="desk-controls">
+            <div class="tuning-prompt" id="tuning-prompt">[ SPACE to lock frequency ]</div>
+            <div class="result-text" id="desk-result"></div>
+            <div style="color:#4a3518; font-size:10px; text-align:center; margin-top:6px; letter-spacing:1px;">[ ESC to abandon ]</div>
+        </div>
     </div>
 </div>
 
@@ -2788,7 +2829,7 @@ function openProcessingDesk(enemy) {
 
     // Setup canvas
     const canvas = document.getElementById('tuning-canvas');
-    if (canvas) { canvas.width = 440; canvas.height = 200; }
+    if (canvas) { canvas.width = 520; canvas.height = 260; }
 
     // Update unit display
     const typeNames = { drone: 'Security Drone', filer: 'Filing Clerk', watcher: 'Observation Node' };
@@ -2891,104 +2932,206 @@ function renderTuningCanvas() {
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
-    // Clear
-    ctx.fillStyle = '#0a0604';
-    ctx.fillRect(0, 0, W, H);
-
     // Proximity to zone
     const dist = Math.abs(tuningNeedle - tuningZoneCenter);
     const proximity = Math.max(0, 1 - dist / 0.35);
 
-    // --- Waveform: noisy when far, clean sine when close ---
-    const waveY = 65, waveH = 45;
-    ctx.beginPath();
-    ctx.strokeStyle = `rgba(${80 + proximity * 175}, ${120 + proximity * 80}, ${30 + proximity * 30}, ${0.35 + proximity * 0.55})`;
-    ctx.lineWidth = proximity > 0.7 ? 2 : 1;
-    for (let x = 0; x < W; x++) {
-        const t = x / W;
-        const noise = (1 - proximity) * (Math.random() - 0.5) * waveH * 0.7;
-        const signal = Math.sin(t * 22 + tuningWavePhase * 3) * waveH * 0.35 * proximity;
-        const harmonic = Math.sin(t * 44 + tuningWavePhase * 7) * waveH * 0.12 * proximity;
-        const y = waveY + signal + harmonic + noise;
-        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
+    // --- CRT background with slight green-black tint ---
+    ctx.fillStyle = '#030604';
+    ctx.fillRect(0, 0, W, H);
 
-    // Coherence glow when very close
-    if (proximity > 0.6) {
-        ctx.strokeStyle = `rgba(255, 200, 80, ${(proximity - 0.6) * 0.35})`;
-        ctx.lineWidth = 3;
+    // --- Oscilloscope grid ---
+    const scopeX = 12, scopeY = 8, scopeW = W - 24, scopeH = 120;
+    // Grid background
+    ctx.fillStyle = '#040806';
+    ctx.fillRect(scopeX, scopeY, scopeW, scopeH);
+    // Grid lines
+    ctx.strokeStyle = 'rgba(40, 80, 40, 0.25)';
+    ctx.lineWidth = 0.5;
+    for (let gx = 0; gx <= 10; gx++) {
+        const x = scopeX + (gx / 10) * scopeW;
+        ctx.beginPath(); ctx.moveTo(x, scopeY); ctx.lineTo(x, scopeY + scopeH); ctx.stroke();
+    }
+    for (let gy = 0; gy <= 4; gy++) {
+        const y = scopeY + (gy / 4) * scopeH;
+        ctx.beginPath(); ctx.moveTo(scopeX, y); ctx.lineTo(scopeX + scopeW, y); ctx.stroke();
+    }
+    // Center crosshair thicker
+    ctx.strokeStyle = 'rgba(40, 80, 40, 0.45)';
+    ctx.lineWidth = 0.8;
+    const cx = scopeX + scopeW / 2, cy = scopeY + scopeH / 2;
+    ctx.beginPath(); ctx.moveTo(scopeX, cy); ctx.lineTo(scopeX + scopeW, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, scopeY); ctx.lineTo(cx, scopeY + scopeH); ctx.stroke();
+    // Grid border
+    ctx.strokeStyle = 'rgba(60, 110, 50, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(scopeX, scopeY, scopeW, scopeH);
+
+    // --- Waveform with phosphor glow ---
+    const waveY = scopeY + scopeH / 2, waveH = scopeH * 0.4;
+    const wavePoints = [];
+    for (let x = 0; x < scopeW; x++) {
+        const t = x / scopeW;
+        const noise = (1 - proximity) * (Math.random() - 0.5) * waveH * 0.8;
+        const signal = Math.sin(t * 22 + tuningWavePhase * 3) * waveH * 0.7 * proximity;
+        const harmonic = Math.sin(t * 44 + tuningWavePhase * 7) * waveH * 0.2 * proximity;
+        const sub = Math.sin(t * 8 + tuningWavePhase * 1.5) * waveH * 0.1;
+        wavePoints.push(waveY + signal + harmonic + sub + noise);
+    }
+
+    // Phosphor bloom (wide, dim glow underneath)
+    if (proximity > 0.2) {
+        ctx.strokeStyle = `rgba(${40 + proximity * 60}, ${100 + proximity * 100}, ${30 + proximity * 40}, ${0.08 + proximity * 0.12})`;
+        ctx.lineWidth = 8;
         ctx.beginPath();
-        for (let x = 0; x < W; x++) {
-            const t = x / W;
-            const y = waveY + Math.sin(t * 22 + tuningWavePhase * 3) * waveH * 0.35;
-            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        for (let x = 0; x < scopeW; x++) {
+            const px = scopeX + x;
+            if (x === 0) ctx.moveTo(px, wavePoints[x]); else ctx.lineTo(px, wavePoints[x]);
         }
         ctx.stroke();
     }
 
-    // --- Frequency bar ---
-    const barY = 140, barH = 18, barX = 20, barW = W - 40;
+    // Main waveform line
+    const wr = 60 + proximity * 140, wg = 160 + proximity * 80, wb = 40 + proximity * 20;
+    ctx.strokeStyle = `rgba(${wr}, ${wg}, ${wb}, ${0.5 + proximity * 0.5})`;
+    ctx.lineWidth = proximity > 0.7 ? 2.5 : 1.5;
+    ctx.beginPath();
+    for (let x = 0; x < scopeW; x++) {
+        const px = scopeX + x;
+        if (x === 0) ctx.moveTo(px, wavePoints[x]); else ctx.lineTo(px, wavePoints[x]);
+    }
+    ctx.stroke();
 
-    // Bar background
-    ctx.fillStyle = '#1a1208';
-    ctx.fillRect(barX, barY, barW, barH);
-    ctx.strokeStyle = '#3a2a10';
+    // Bright core line (thin, bright center)
+    if (proximity > 0.5) {
+        ctx.strokeStyle = `rgba(180, 255, 140, ${(proximity - 0.5) * 0.7})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 0; x < scopeW; x++) {
+            const px = scopeX + x;
+            if (x === 0) ctx.moveTo(px, wavePoints[x]); else ctx.lineTo(px, wavePoints[x]);
+        }
+        ctx.stroke();
+    }
+
+    // --- Signal strength meter (right side vertical bar) ---
+    const meterX = W - 30, meterY = scopeY + 4, meterW = 12, meterH = scopeH - 8;
+    ctx.fillStyle = '#0a0604';
+    ctx.fillRect(meterX - 1, meterY - 1, meterW + 2, meterH + 2);
+    ctx.strokeStyle = 'rgba(60, 110, 50, 0.4)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(barX, barY, barW, barH);
+    ctx.strokeRect(meterX - 1, meterY - 1, meterW + 2, meterH + 2);
+    // Meter segments
+    const segs = 12;
+    for (let i = 0; i < segs; i++) {
+        const segY = meterY + meterH - (i + 1) * (meterH / segs);
+        const segH = (meterH / segs) - 2;
+        const lit = (i / segs) < proximity;
+        if (lit) {
+            const ratio = i / segs;
+            if (ratio < 0.4) ctx.fillStyle = `rgba(200, 60, 30, ${0.5 + proximity * 0.5})`;
+            else if (ratio < 0.7) ctx.fillStyle = `rgba(220, 180, 40, ${0.5 + proximity * 0.5})`;
+            else ctx.fillStyle = `rgba(60, 200, 80, ${0.5 + proximity * 0.5})`;
+        } else {
+            ctx.fillStyle = 'rgba(30, 40, 20, 0.3)';
+        }
+        ctx.fillRect(meterX, segY, meterW, segH);
+    }
+    // Meter label
+    ctx.save();
+    ctx.translate(meterX + meterW + 2, meterY + meterH);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = 'rgba(60, 110, 50, 0.5)';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('SIG', 0, 0);
+    ctx.restore();
 
-    // Tick marks
+    // --- Frequency bar ---
+    const barY2 = scopeY + scopeH + 20, barH2 = 22, barX2 = 20, barW2 = W - 60;
+
+    // Bar recessed background
+    ctx.fillStyle = '#0a0806';
+    ctx.fillRect(barX2 - 2, barY2 - 2, barW2 + 4, barH2 + 4);
+    ctx.fillStyle = '#100c08';
+    ctx.fillRect(barX2, barY2, barW2, barH2);
+    ctx.strokeStyle = '#2a1e10';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX2, barY2, barW2, barH2);
+
+    // Fine tick marks
     ctx.fillStyle = '#3a2a10';
-    for (let i = 0; i <= 20; i++) {
-        const tx = barX + (i / 20) * barW;
-        ctx.fillRect(tx, barY + barH, 1, i % 5 === 0 ? 6 : 3);
+    for (let i = 0; i <= 40; i++) {
+        const tx = barX2 + (i / 40) * barW2;
+        const tall = i % 10 === 0 ? 7 : i % 5 === 0 ? 5 : 2;
+        ctx.fillRect(tx, barY2 + barH2, 1, tall);
     }
 
     // Frequency labels
     ctx.fillStyle = '#6a5020';
-    ctx.font = '11px monospace';
+    ctx.font = '10px monospace';
     ctx.textAlign = 'center';
     const floorFreqs = [[40, 100], [80, 200], [150, 350]];
     const fr = floorFreqs[currentFloor] || [40, 100];
-    ctx.fillText(fr[0] + ' Hz', barX + 14, barY + barH + 16);
-    ctx.fillText(fr[1] + ' Hz', barX + barW - 14, barY + barH + 16);
+    ctx.fillText(fr[0] + ' Hz', barX2 + 12, barY2 + barH2 + 18);
+    ctx.fillText(((fr[0] + fr[1]) / 2 | 0) + ' Hz', barX2 + barW2 / 2, barY2 + barH2 + 18);
+    ctx.fillText(fr[1] + ' Hz', barX2 + barW2 - 12, barY2 + barH2 + 18);
 
-    // Failed attempt markers (red X marks)
+    // Failed attempt markers
     for (const pos of tuningRevealed) {
-        const mx = barX + pos * barW;
-        ctx.strokeStyle = 'rgba(204, 51, 34, 0.6)';
+        const mx = barX2 + pos * barW2;
+        ctx.strokeStyle = 'rgba(204, 51, 34, 0.7)';
         ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(mx - 3, barY + 3); ctx.lineTo(mx + 3, barY + barH - 3); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(mx + 3, barY + 3); ctx.lineTo(mx - 3, barY + barH - 3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(mx - 4, barY2 + 3); ctx.lineTo(mx + 4, barY2 + barH2 - 3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(mx + 4, barY2 + 3); ctx.lineTo(mx - 4, barY2 + barH2 - 3); ctx.stroke();
+        // Red glow around X
+        ctx.fillStyle = 'rgba(204, 51, 34, 0.1)';
+        ctx.fillRect(mx - 6, barY2, 12, barH2);
     }
 
-    // Resonance zone hint — only visible when needle is close
+    // Resonance zone hint
     if (proximity > 0.3) {
-        const zx = barX + (tuningZoneCenter - tuningZoneWidth) * barW;
-        const zw = tuningZoneWidth * 2 * barW;
-        const alpha = (proximity - 0.3) * 0.2;
-        ctx.fillStyle = `rgba(102, 204, 68, ${alpha})`;
-        ctx.fillRect(zx, barY + 1, zw, barH - 2);
+        const zx = barX2 + (tuningZoneCenter - tuningZoneWidth) * barW2;
+        const zw = tuningZoneWidth * 2 * barW2;
+        const alpha = (proximity - 0.3) * 0.25;
+        const grad = ctx.createLinearGradient(zx, barY2, zx + zw, barY2);
+        grad.addColorStop(0, `rgba(60, 180, 50, ${alpha * 0.3})`);
+        grad.addColorStop(0.5, `rgba(80, 220, 60, ${alpha})`);
+        grad.addColorStop(1, `rgba(60, 180, 50, ${alpha * 0.3})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(zx, barY2 + 1, zw, barH2 - 2);
     }
 
     // Draw needle
     if (!tuningLocked || Math.floor(tuningLockTimer / 80) % 2 === 0) {
-        const nx = barX + tuningNeedle * barW;
+        const nx = barX2 + tuningNeedle * barW2;
 
-        // Needle glow
-        const gc = proximity > 0.7 ? 'rgba(102,204,68,0.25)' : 'rgba(255,179,71,0.12)';
+        // Needle outer glow
+        const gc = proximity > 0.7 ? 'rgba(80,200,60,0.15)' : 'rgba(255,179,71,0.08)';
         ctx.fillStyle = gc;
-        ctx.fillRect(nx - 4, barY - 4, 8, barH + 8);
+        ctx.fillRect(nx - 8, barY2 - 6, 16, barH2 + 12);
+
+        // Needle inner glow
+        const gc2 = proximity > 0.7 ? 'rgba(80,200,60,0.3)' : 'rgba(255,179,71,0.2)';
+        ctx.fillStyle = gc2;
+        ctx.fillRect(nx - 3, barY2 - 4, 6, barH2 + 8);
 
         // Needle line
         ctx.fillStyle = proximity > 0.7 ? '#66cc44' : '#ffb347';
-        ctx.fillRect(nx - 1, barY - 8, 2, barH + 16);
+        ctx.fillRect(nx - 1, barY2 - 10, 3, barH2 + 20);
 
-        // Needle triangle
+        // Needle triangle (top)
         ctx.beginPath();
-        ctx.moveTo(nx - 5, barY - 8);
-        ctx.lineTo(nx + 5, barY - 8);
-        ctx.lineTo(nx, barY - 1);
+        ctx.moveTo(nx - 6, barY2 - 10);
+        ctx.lineTo(nx + 7, barY2 - 10);
+        ctx.lineTo(nx, barY2 - 1);
+        ctx.closePath();
+        ctx.fill();
+        // Needle triangle (bottom)
+        ctx.beginPath();
+        ctx.moveTo(nx - 6, barY2 + barH2 + 10);
+        ctx.lineTo(nx + 7, barY2 + barH2 + 10);
+        ctx.lineTo(nx, barY2 + barH2 + 1);
         ctx.closePath();
         ctx.fill();
     }
@@ -2997,30 +3140,59 @@ function renderTuningCanvas() {
     if (tuningLocked) {
         const inZone = Math.abs(tuningNeedle - tuningZoneCenter) <= tuningZoneWidth;
         if (inZone) {
-            // Green flash + show zone
-            const zx = barX + (tuningZoneCenter - tuningZoneWidth) * barW;
-            const zw = tuningZoneWidth * 2 * barW;
-            ctx.fillStyle = `rgba(102, 204, 68, 0.4)`;
-            ctx.fillRect(zx, barY, zw, barH);
-            ctx.fillStyle = `rgba(102, 204, 68, ${0.05 + Math.sin(tuningLockTimer * 0.015) * 0.05})`;
+            const zx = barX2 + (tuningZoneCenter - tuningZoneWidth) * barW2;
+            const zw = tuningZoneWidth * 2 * barW2;
+            ctx.fillStyle = `rgba(60, 200, 60, 0.5)`;
+            ctx.fillRect(zx, barY2, zw, barH2);
+            ctx.fillStyle = `rgba(60, 200, 60, ${0.04 + Math.sin(tuningLockTimer * 0.015) * 0.04})`;
             ctx.fillRect(0, 0, W, H);
         } else {
-            ctx.fillStyle = `rgba(204, 51, 34, ${0.06 + Math.sin(tuningLockTimer * 0.02) * 0.04})`;
+            ctx.fillStyle = `rgba(200, 50, 30, ${0.05 + Math.sin(tuningLockTimer * 0.02) * 0.04})`;
             ctx.fillRect(0, 0, W, H);
         }
     }
 
-    // Scanline effect
-    ctx.fillStyle = 'rgba(0,0,0,0.04)';
-    for (let y = 0; y < H; y += 3) {
+    // --- CRT scanlines ---
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    for (let y = 0; y < H; y += 2) {
         ctx.fillRect(0, y, W, 1);
     }
 
-    // Floor label
-    ctx.fillStyle = '#5a4020';
-    ctx.font = '10px monospace';
+    // --- Vignette ---
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.6);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,0.35)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+    // --- Floor band label ---
+    ctx.fillStyle = 'rgba(60, 110, 50, 0.4)';
+    ctx.font = '9px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('FLOOR ' + (currentFloor + 1) + ' BAND', barX, H - 4);
+    ctx.fillText('BAND: FLOOR ' + (currentFloor + 1), barX2, H - 6);
+    ctx.textAlign = 'right';
+    ctx.fillText('NST-7', barX2 + barW2, H - 6);
+
+    // --- Update HTML readouts ---
+    const freqVal = document.getElementById('tuning-freq-val');
+    const sigVal = document.getElementById('tuning-sig-val');
+    const coherVal = document.getElementById('tuning-coher-val');
+    if (freqVal) {
+        const curFreq = fr[0] + tuningNeedle * (fr[1] - fr[0]);
+        freqVal.textContent = curFreq.toFixed(1);
+        freqVal.style.color = proximity > 0.7 ? '#66cc44' : '#ffb347';
+    }
+    if (sigVal) {
+        const sigPct = (proximity * 100) | 0;
+        sigVal.textContent = sigPct + '%';
+        sigVal.style.color = sigPct > 70 ? '#66cc44' : sigPct > 30 ? '#ffb347' : '#cc3322';
+    }
+    if (coherVal) {
+        const states = ['NONE', 'WEAK', 'PARTIAL', 'STRONG', 'LOCK'];
+        const si = proximity > 0.85 ? 4 : proximity > 0.6 ? 3 : proximity > 0.35 ? 2 : proximity > 0.1 ? 1 : 0;
+        coherVal.textContent = states[si];
+        coherVal.style.color = si >= 3 ? '#66cc44' : si >= 2 ? '#ffb347' : '#cc3322';
+    }
 }
 
 function tryTuningLock() {
