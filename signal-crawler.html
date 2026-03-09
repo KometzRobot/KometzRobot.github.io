@@ -570,11 +570,56 @@ let visible = []; // fog of war: tiles the player can currently see
 let revealed = []; // tiles the player has ever seen
 const VIEW_RADIUS = 6;
 let shakeX = 0, shakeY = 0, shakeTimer = 0;
+let transitionAlpha = 0; // 0 = no transition, >0 = fading
+let transitionPhase = 0; // 0=idle, 1=fade out, 2=hold, 3=fade in
+let transitionText = '';
+let transitionTimer = 0;
 
 function triggerShake(intensity) {
   shakeTimer = 8;
   shakeX = (Math.random() - 0.5) * intensity;
   shakeY = (Math.random() - 0.5) * intensity;
+}
+
+function startTransition(text) {
+  transitionPhase = 1;
+  transitionAlpha = 0;
+  transitionText = text;
+  transitionTimer = 0;
+}
+
+function updateTransition() {
+  if (transitionPhase === 0) return;
+  transitionTimer++;
+  if (transitionPhase === 1) {
+    // fade out (to black)
+    transitionAlpha = Math.min(1, transitionAlpha + 0.06);
+    if (transitionAlpha >= 1) { transitionPhase = 2; transitionTimer = 0; }
+  } else if (transitionPhase === 2) {
+    // hold
+    if (transitionTimer > 45) { transitionPhase = 3; }
+  } else if (transitionPhase === 3) {
+    // fade in
+    transitionAlpha = Math.max(0, transitionAlpha - 0.04);
+    if (transitionAlpha <= 0) { transitionPhase = 0; }
+  }
+}
+
+function drawTransition() {
+  if (transitionPhase === 0) return;
+  ctx.fillStyle = `rgba(0,0,0,${transitionAlpha})`;
+  ctx.fillRect(0, 0, W, H);
+  if (transitionPhase === 2 || (transitionPhase === 3 && transitionAlpha > 0.5)) {
+    ctx.font = '24px monospace';
+    ctx.fillStyle = `rgba(255,255,255,${transitionAlpha})`;
+    ctx.textAlign = 'center';
+    ctx.fillText(transitionText, W / 2, H / 2);
+    if (FLOORS[currentFloor]) {
+      ctx.font = '14px monospace';
+      ctx.fillStyle = `rgba(136,136,136,${transitionAlpha})`;
+      ctx.fillText(FLOORS[currentFloor].desc, W / 2, H / 2 + 30);
+    }
+  }
 }
 
 // === SOUND SYSTEM (Web Audio API) ===
@@ -847,6 +892,7 @@ function movePlayer(dx, dy) {
     generateMap();
     saveGame(); // auto-save on floor change
     addMessage('Checkpoint saved.');
+    startTransition(FLOORS[currentFloor].name + ' — ' + FLOORS[currentFloor].agent);
   }
 
   // check heart
@@ -1216,11 +1262,15 @@ function render() {
     ctx.fillText('The signal is whole. The body lives.', W / 2, H / 2 + 60);
     ctx.fillText('Press [N] to play again', W / 2, H / 2 + 85);
   }
+
+  // floor transition overlay (draws on top of everything)
+  updateTransition();
+  drawTransition();
 }
 
-// animation loop for pulsing effects and particles
+// animation loop for pulsing effects, particles, and transitions
 function animate() {
-  if (running && (heart || items.length > 0 || particles.length > 0)) {
+  if (running && (heart || items.length > 0 || particles.length > 0 || transitionPhase > 0)) {
     render();
   }
   requestAnimationFrame(animate);
@@ -1285,10 +1335,12 @@ function beginPlay(fromSave) {
 
   if (fromSave && loadGame()) {
     // loaded from checkpoint
+    startTransition(FLOORS[currentFloor].name + ' — ' + FLOORS[currentFloor].agent);
   } else {
     currentFloor = 0;
     player = { x: 0, y: 0, hp: 10, maxHp: 10, frags: 0, atk: 2 };
     generateMap();
+    startTransition(FLOORS[0].name + ' — ' + FLOORS[0].agent);
   }
   render();
   animate();
