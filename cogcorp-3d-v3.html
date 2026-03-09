@@ -111,10 +111,14 @@
     <p>You are a new filing analyst. Employee B-247. First day.</p>
     <p style="margin-top:6px;">Building B has six floors, fluorescent lights, and filing cabinets that stretch toward walls you can't quite see. Something is happening in the margins of the documents.</p>
     <p style="margin-top:6px;">The training module didn't mention it. Your badge did not prepare you for it.</p>
-    <div class="start">[ CLICK TO ENTER BUILDING B ]</div>
+    <div id="start-buttons">
+      <div class="start" id="btn-continue" style="display:none;">[ CONTINUE ]</div>
+      <div class="start" id="btn-newgame">[ NEW GAME ]</div>
+    </div>
+    <p id="save-info" style="margin-top:8px; font-size:10px; color:#5a4020; display:none;"></p>
     <p style="margin-top:20px; font-size:10px; color:#3a3020;">
       WASD move &nbsp;|&nbsp; Mouse look &nbsp;|&nbsp; Click/E interact &nbsp;|&nbsp; ESC release cursor<br>
-      18 rooms &nbsp;|&nbsp; 7 floors &nbsp;|&nbsp; Inventory &nbsp;|&nbsp; AI-powered NPCs
+      18 rooms &nbsp;|&nbsp; 7 floors &nbsp;|&nbsp; Inventory &nbsp;|&nbsp; AI-powered NPCs &nbsp;|&nbsp; Auto-save
     </p>
   </div>
   <div id="crosshair"></div>
@@ -166,6 +170,51 @@
     };
     const inventory = ['badge'];
     const SLOTS = 6;
+
+    // ═══════════════════════════════════════════════════════════════
+    // SAVE / LOAD (localStorage)
+    // ═══════════════════════════════════════════════════════════════
+    const SAVE_KEY = 'cogcorp_buildingb_save';
+
+    function saveGame() {
+      try {
+        const save = {
+          state: { ...state, inDialog: false, selectedItem: null },
+          inventory: [...inventory],
+          visitedRooms: [], // populated after visitedRooms is defined
+          version: '3.4'
+        };
+        // visitedRooms may not exist yet at module load
+        if (typeof visitedRooms !== 'undefined') save.visitedRooms = [...visitedRooms];
+        localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+      } catch(e) { /* localStorage unavailable */ }
+    }
+
+    function loadGame() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return false;
+        const save = JSON.parse(raw);
+        if (!save.state) return false;
+        // Restore state
+        for (const key of Object.keys(save.state)) {
+          if (key in state) state[key] = save.state[key];
+        }
+        // Restore inventory
+        inventory.length = 0;
+        (save.inventory || ['badge']).forEach(i => inventory.push(i));
+        // visitedRooms restored after Set is created
+        if (save.visitedRooms) state._savedVisited = save.visitedRooms;
+        return true;
+      } catch(e) { return false; }
+    }
+
+    function deleteSave() {
+      try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+    }
+
+    // Auto-save after key actions
+    function autoSave() { saveGame(); }
 
     // ═══════════════════════════════════════════════════════════════
     // THREE.JS SETUP
@@ -1535,12 +1584,13 @@
     // SPECIAL ACTIONS (puzzles, pickups)
     // ═══════════════════════════════════════════════════════════════
     function handleSpecial(response) {
-      if (response === 'PROCESS_DOCS') { startProcessing(); return true; }
+      if (response === 'PROCESS_DOCS') { startProcessing(); autoSave(); return true; }
 
       if (response === 'PICKUP_STICKY') {
         if (!hasItem('sticky_note')) {
           addItem('sticky_note');
           showHUD('YOUR TERMINAL', 'You take the sticky note. "File everything. Annotate nothing. You\'ll understand later." The handwriting is precise. Almost mechanical. But not quite.', []);
+          autoSave();
         } else {
           showHUD('YOUR TERMINAL', 'You already have the sticky note.', []);
         }
@@ -1552,6 +1602,7 @@
           addItem('keycard');
           showHUD('VENDING MACHINE', 'Behind the machine: a Floor 5 keycard. Someone left it here. Or hid it.', []);
           state.floor5unlocked = true;
+          autoSave();
           // Unlock Floor 5 door
           floor5door.userData.locked = false;
           floor5door.material = mat.door;
@@ -1571,6 +1622,7 @@
           state.foundArcCode = true;
           addItem('arc_code');
           showHUD('SERVER TERMINAL', 'ARC-0001 access log found. Filing code: ARC-ORIGIN-001. Filed 14 months ago. Filed by: [REDACTED]. Location: Archive Room, Floor 2.', []);
+          autoSave();
         } else {
           showHUD('SERVER TERMINAL', 'ARC-0001 filing code: ARC-ORIGIN-001. Already retrieved.', []);
         }
@@ -1586,6 +1638,7 @@
           removeItem('arc_code');
           addItem('arc_document');
           showHUD('ARC-0001 — UNLOCKED', 'The code works. Inside: a single document. "THE FIRST ANNOTATION — Origin Record. Filed by employee B-001. Building B, Floor 6. Note: This floor was sealed after the filing. The safe in Records contains the stairwell key. Combination: B-001."', []);
+          autoSave();
         } else {
           showHUD('ARC-0001', 'Electronic lock. Requires a filing code. You don\'t have one. The server room on Floor 5 might have access logs.', []);
         }
@@ -1601,6 +1654,7 @@
           floor6door.userData.locked = false;
           floor6door.material = mat.door;
           showHUD('FLOOR SAFE — OPENED', 'Combination B-001 accepted. Inside: a single brass key, old, heavy. Label: "STAIRWELL — FL6." Floor 6 is real. The stairwell will take you there.', []);
+          autoSave();
         } else {
           showHUD('FLOOR SAFE', 'Digital combination lock. You don\'t know the code.', []);
         }
@@ -1741,6 +1795,7 @@
           camera.position.copy(rooms[data.target].center);
           applyFloorTheme(data.target);
           showRoomHUD();
+          autoSave();
           setTimeout(() => fade.classList.remove('active'), 50);
         }, 300);
         return;
@@ -2059,7 +2114,43 @@
     // START
     // ═══════════════════════════════════════════════════════════════
     const blocker = document.getElementById('blocker');
-    blocker.addEventListener('click', () => controls.lock());
+    let loadedSave = false;
+
+    // Check for existing save and show continue button
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) {
+        const save = JSON.parse(raw);
+        if (save.state) {
+          document.getElementById('btn-continue').style.display = 'block';
+          const info = document.getElementById('save-info');
+          info.style.display = 'block';
+          info.textContent = `Day ${save.state.day || 1} | Filed: ${save.state.filed || 0} | Room: ${(save.state.currentRoom || 'lobby').toUpperCase()}`;
+        }
+      }
+    } catch(e) {}
+
+    function startGame(useSave) {
+      if (useSave) {
+        loadedSave = loadGame();
+        if (loadedSave) {
+          // Restore visited rooms
+          if (state._savedVisited) {
+            state._savedVisited.forEach(r => visitedRooms.add(r));
+            delete state._savedVisited;
+          }
+          // Restore door unlock states
+          if (state.floor5unlocked) { floor5door.userData.locked = false; floor5door.material = mat.door; }
+          if (state.floor6unlocked) { floor6door.userData.locked = false; floor6door.material = mat.door; }
+        }
+      } else {
+        deleteSave();
+      }
+      controls.lock();
+    }
+
+    document.getElementById('btn-continue').addEventListener('click', (e) => { e.stopPropagation(); startGame(true); });
+    document.getElementById('btn-newgame').addEventListener('click', (e) => { e.stopPropagation(); startGame(false); });
 
     controls.addEventListener('lock', () => {
       blocker.style.display = 'none';
@@ -2069,6 +2160,12 @@
       document.getElementById('crosshair').style.display = 'block';
       document.getElementById('floor-indicator').style.display = 'block';
       initAudio();
+
+      if (loadedSave) {
+        camera.position.copy(rooms[state.currentRoom].center);
+        applyFloorTheme(state.currentRoom);
+        updateStats();
+      }
       renderInventory();
       showRoomHUD();
     });
