@@ -5980,7 +5980,7 @@ function drawSprites() {
         else if (obj.isWhiteboard) objVisual = 'whiteboard';
         else if (obj.isExit) objVisual = 'exit';
         const isStairObj = obj.isStairs || obj.isStairsDown;
-        sprites.push({ x: ox, y: oy, dist, size: isStairObj ? 0.8 : 0.55, type: 'worldObj',
+        sprites.push({ x: ox, y: oy, dist, size: isStairObj ? 1.0 : 0.55, type: 'worldObj',
             objVisual, objName: obj.name });
     }
 
@@ -6130,102 +6130,215 @@ function drawSprites() {
                     const dx2 = nx - 0.5, dy2 = ny - 0.5;
                     const vis = spr.objVisual;
                     if (vis === 'stairsUp' || vis === 'stairsDown') {
-                        // Staircase — 3D perspective corridor with receding steps
+                        // Staircase — full 3D perspective corridor with physical detail
                         const isUp = vis === 'stairsUp';
                         const glowPulse = 0.7 + Math.sin(gameTime * 0.004) * 0.3;
-                        // Perspective parameters — vanishing point at center-top
-                        const vpx = 0.5, vpy = isUp ? 0.15 : 0.85;
-                        // How deep into the corridor (0=front, 1=back)
-                        const depth = isUp ? (vpy - ny) / (vpy - 0.95) : (ny - vpy) / (0.95 - vpy);
-                        // Corridor walls — perspective lines from edges to vanishing point
-                        const wallLeft = vpx - (0.48 - depth * 0.35);
-                        const wallRight = vpx + (0.48 - depth * 0.35);
-                        // EXIT SIGN at top (green glowing emergency sign)
-                        if (ny < 0.15 && Math.abs(dx2) < 0.28) {
-                            const signBorder = ny < 0.03 || ny > 0.12 || Math.abs(dx2) > 0.25;
+                        const flicker2 = 0.85 + Math.sin(gameTime * 0.011) * 0.15;
+                        // Perspective parameters — vanishing point at center
+                        const vpx = 0.5, vpy = isUp ? 0.12 : 0.88;
+                        // Depth into corridor (0=front, 1=back)
+                        const d = Math.max(0, Math.min(1, isUp ? 1 - (ny - 0.08) / 0.84 : (ny - 0.08) / 0.84));
+                        // Perspective walls narrow with depth
+                        const lw = vpx - (0.48 - d * 0.36);
+                        const rw = vpx + (0.48 - d * 0.36);
+                        const depthDim = Math.max(0.25, 1 - d * 0.6);
+                        // Handrail positions (along inner edge of walls)
+                        const railY = 0.45; // handrail height in normalized space
+                        const railH = 0.03; // handrail thickness
+                        const railLx = lw + 0.015;
+                        const railRx = rw - 0.015;
+
+                        // --- EXIT/FLOOR SIGN at top ---
+                        if (ny < 0.10 && Math.abs(dx2) < 0.30) {
+                            const signBorder = ny < 0.02 || ny > 0.08 || Math.abs(dx2) > 0.27;
                             if (signBorder) {
-                                cr = 25; cg = 55; cb = 25;
+                                // Metal sign frame with rivets
+                                cr = 35; cg = 65; cb = 35;
+                                const rivetPos = (Math.abs(dx2) * 40) % 1;
+                                if (rivetPos > 0.85 && (ny < 0.03 || ny > 0.07)) { cr += 40; cg += 40; cb += 30; }
                             } else {
-                                cr = 20 * glowPulse; cg = 200 * glowPulse; cb = 40 * glowPulse;
-                                const textRow = ny > 0.05 && ny < 0.10;
+                                // Green illuminated sign face
+                                cr = 15 * glowPulse; cg = 180 * glowPulse; cb = 35 * glowPulse;
+                                const textRow = ny > 0.04 && ny < 0.07;
                                 if (textRow) {
-                                    const tx = (nx - 0.22) / 0.56;
-                                    const subPos = (tx * 7) % 1;
-                                    if (subPos > 0.15 && subPos < 0.85) {
-                                        cr = 40; cg = 255 * glowPulse; cb = 60;
+                                    const tx = (nx - 0.20) / 0.60;
+                                    const subPos = (tx * 8) % 1;
+                                    if (subPos > 0.12 && subPos < 0.88) {
+                                        cr = 30; cg = 255 * glowPulse; cb = 50;
                                     }
+                                }
+                                // Glow bleed below sign
+                                if (ny > 0.065) { cr *= 0.6; cg *= 0.7; cb *= 0.5; }
+                            }
+                            alpha = 0.97;
+                        }
+                        // --- Main corridor body ---
+                        else if (ny >= 0.08 && ny < 0.94 && nx > 0.03 && nx < 0.97) {
+                            if (nx < lw || nx > rw) {
+                                // === SIDE WALLS ===
+                                const wallD = nx < lw ? (lw - nx) / 0.14 : (nx - rw) / 0.14;
+                                const shade = Math.max(0.25, 1 - d * 0.55) * depthDim;
+                                // Cinderblock base color
+                                cr = (95 - wallD * 25) * shade;
+                                cg = (90 - wallD * 20) * shade;
+                                cb = (80 - wallD * 18) * shade;
+                                // Cinderblock mortar grid
+                                const brickH = 0.04, brickW = 0.08;
+                                const brickRow = (ny / brickH) | 0;
+                                const brickY = (ny % brickH) / brickH;
+                                const brickOffset = (brickRow & 1) ? brickW * 0.5 : 0;
+                                const brickX = ((nx + brickOffset) % brickW) / brickW;
+                                if (brickY < 0.1 || brickX < 0.08) {
+                                    cr -= 20; cg -= 18; cb -= 15; // mortar lines (darker)
+                                }
+                                // Slight color variation per block
+                                const blockHash = (brickRow * 37 + ((nx / brickW) | 0) * 13) & 15;
+                                cr += (blockHash - 8) * 1.5; cg += (blockHash - 8); cb += (blockHash - 8) * 0.8;
+                                // Conduit pipe running vertically (right wall only)
+                                if (nx > rw - 0.005 && nx > rw) {
+                                    const pipeX = (nx - rw) / 0.03;
+                                    if (pipeX > 0.3 && pipeX < 0.7) {
+                                        const pipeShade = 1 - Math.abs(pipeX - 0.5) * 3;
+                                        cr = 50 * pipeShade * shade; cg = 55 * pipeShade * shade; cb = 60 * pipeShade * shade;
+                                    }
+                                }
+                                // Ambient occlusion at wall-floor junction
+                                const aoBot = Math.max(0, 1 - Math.abs(d - 1) * 5);
+                                if (aoBot > 0) { cr *= (1 - aoBot * 0.3); cg *= (1 - aoBot * 0.3); cb *= (1 - aoBot * 0.3); }
+                                // Green sign light on upper walls
+                                if (d < 0.3) { cg += 12 * glowPulse * (1 - d / 0.3); }
+                                alpha = 0.97;
+                            }
+                            // === HANDRAILS (metal pipes along walls) ===
+                            else if ((Math.abs(nx - railLx) < 0.012 || Math.abs(nx - railRx) < 0.012) && Math.abs(ny - (0.08 + d * 0.84 * railY + (1-d) * 0.15)) < railH * (1 - d * 0.4)) {
+                                // Cylindrical metal handrail
+                                const railDist = Math.abs(nx - railLx) < 0.012 ? Math.abs(nx - railLx) / 0.012 : Math.abs(nx - railRx) / 0.012;
+                                const cylShade = 1 - railDist * railDist;
+                                const metalBase = 130 * cylShade * depthDim;
+                                cr = metalBase * 1.1; cg = metalBase; cb = metalBase * 0.9;
+                                // Specular highlight
+                                if (railDist < 0.25) { cr += 60 * depthDim; cg += 55 * depthDim; cb += 50 * depthDim; }
+                                alpha = 0.97;
+                            }
+                            // === HANDRAIL SUPPORTS (vertical posts) ===
+                            else if ((Math.abs(nx - railLx) < 0.018 || Math.abs(nx - railRx) < 0.018) && ((d * 6) | 0) !== (((d + 0.01) * 6) | 0)) {
+                                const supportShade = depthDim * 0.8;
+                                cr = 90 * supportShade; cg = 85 * supportShade; cb = 80 * supportShade;
+                                alpha = 0.95;
+                            }
+                            else {
+                                // === STEPS AREA ===
+                                const numSteps = 10;
+                                const stepIdx = (d * numSteps) | 0;
+                                const stepFrac = (d * numSteps) % 1;
+                                const isRiser = stepFrac < 0.22;
+
+                                if (isRiser) {
+                                    // Step riser (vertical face) — concrete, darker
+                                    const riserBase = (100 + stepIdx * 2) * depthDim;
+                                    cr = riserBase * 1.05;
+                                    cg = riserBase;
+                                    cb = riserBase * 0.88;
+                                    // Edge highlight at top of riser (nosing)
+                                    if (stepFrac < 0.04) {
+                                        cr += 65 * depthDim; cg += 60 * depthDim; cb += 50 * depthDim;
+                                    }
+                                    // Shadow at bottom of riser
+                                    if (stepFrac > 0.18) {
+                                        cr *= 0.7; cg *= 0.7; cb *= 0.7;
+                                    }
+                                } else {
+                                    // Step tread (horizontal surface) — brighter concrete
+                                    const treadBase = (155 + stepIdx * 3) * depthDim;
+                                    cr = treadBase * 1.02;
+                                    cg = treadBase * 0.98;
+                                    cb = treadBase * 0.85;
+                                    // Diamond plate anti-slip texture
+                                    const dpx = (nx * 48) | 0, dpy = (ny * 48) | 0;
+                                    const diamond = ((dpx + dpy) & 3) === 0 || ((dpx - dpy) & 3) === 0;
+                                    if (diamond) { cr -= 10; cg -= 10; cb -= 8; }
+                                    // Wear marks (center of treads are more worn/lighter)
+                                    const centerDist = Math.abs(nx - 0.5) / (rw - lw);
+                                    if (centerDist < 0.25) {
+                                        const wear = (1 - centerDist / 0.25) * 15 * depthDim;
+                                        cr += wear; cg += wear; cb += wear * 0.8;
+                                    }
+                                    // Scuff marks (pseudo-random dark spots)
+                                    const scuffHash = (stepIdx * 17 + (nx * 100 | 0) * 7) & 31;
+                                    if (scuffHash < 3) { cr -= 12; cg -= 10; cb -= 8; }
+                                }
+                                // Ambient occlusion at wall-step junction
+                                const wallProx = Math.min(Math.abs(nx - lw), Math.abs(nx - rw));
+                                if (wallProx < 0.03) {
+                                    const ao = 1 - wallProx / 0.03;
+                                    cr *= (1 - ao * 0.35); cg *= (1 - ao * 0.35); cb *= (1 - ao * 0.35);
+                                }
+                                // Fluorescent light reflection on treads (not risers)
+                                if (!isRiser && Math.abs(dx2) < 0.08) {
+                                    const lightRefl = 18 * glowPulse * flicker2 * (1 - d * 0.7);
+                                    cr += lightRefl * 0.7; cg += lightRefl; cb += lightRefl * 0.5;
+                                }
+                                // Green tint from EXIT sign (fades with depth)
+                                cg += 10 * glowPulse * (1 - d);
+                                alpha = 0.97;
+                            }
+
+                            // === CEILING ===
+                            if ((isUp && ny < 0.22) || (!isUp && ny > 0.86)) {
+                                const ceilD = isUp ? (0.22 - ny) / 0.12 : (ny - 0.86) / 0.12;
+                                if (ceilD > 0 && nx > lw && nx < rw) {
+                                    // Concrete ceiling with stains
+                                    cr = 55; cg = 52; cb = 48;
+                                    const stainHash = ((nx * 30 | 0) * 13 + (ny * 20 | 0) * 7) & 15;
+                                    if (stainHash < 3) { cr -= 8; cg -= 6; cb -= 4; } // water stains
+                                    // Fluorescent light fixture (wider, with housing)
+                                    if (Math.abs(dx2) < 0.09) {
+                                        if (Math.abs(dx2) < 0.02) {
+                                            // Bright tube
+                                            cr = 120 * glowPulse * flicker2;
+                                            cg = 155 * glowPulse * flicker2;
+                                            cb = 110 * glowPulse * flicker2;
+                                        } else if (Math.abs(dx2) < 0.04) {
+                                            // Diffuser cover
+                                            cr = 80 * glowPulse; cg = 100 * glowPulse; cb = 70 * glowPulse;
+                                        } else {
+                                            // Metal housing
+                                            cr = 65; cg = 68; cb = 62;
+                                        }
+                                    }
+                                    // Exposed pipe on ceiling
+                                    if (Math.abs(nx - (lw + 0.05)) < 0.015 || Math.abs(nx - (rw - 0.05)) < 0.015) {
+                                        const cpShade = 0.7 * depthDim;
+                                        cr = 70 * cpShade; cg = 65 * cpShade; cb = 60 * cpShade;
+                                    }
+                                    alpha = 0.97;
+                                }
+                            }
+                        }
+                        // --- Landing platform at bottom ---
+                        else if (ny >= 0.94 && ny < 0.98 && Math.abs(dx2) < 0.42) {
+                            // Concrete landing pad with hazard stripe
+                            const landDist = Math.abs(dx2);
+                            if (landDist > 0.35) {
+                                // Yellow-black hazard stripe at edge
+                                const stripe = ((nx * 20) | 0) & 1;
+                                cr = stripe ? 180 : 30; cg = stripe ? 150 : 30; cb = stripe ? 20 : 30;
+                            } else {
+                                cr = 140; cg = 135; cb = 120;
+                                // Floor arrow pointing into stairs
+                                const arrowD = Math.abs(dx2) + Math.abs(ny - 0.96) * 3;
+                                if (arrowD < 0.15) {
+                                    cr = 180 * glowPulse; cg = 210 * glowPulse; cb = 50;
                                 }
                             }
                             alpha = 0.95;
                         }
-                        // Corridor body with perspective steps
-                        else if (ny >= 0.15 && ny < 0.95 && nx > 0.04 && nx < 0.96) {
-                            const d = Math.max(0, Math.min(1, isUp ? 1 - (ny - 0.15) / 0.8 : (ny - 0.15) / 0.8));
-                            const lw = vpx - (0.47 - d * 0.34);
-                            const rw = vpx + (0.47 - d * 0.34);
-                            if (nx < lw || nx > rw) {
-                                // Corridor side walls — darker with depth
-                                const wallD = nx < lw ? (lw - nx) / 0.15 : (nx - rw) / 0.15;
-                                const shade = Math.max(0.3, 1 - d * 0.6);
-                                cr = (90 - wallD * 30) * shade; cg = (85 - wallD * 25) * shade; cb = (75 - wallD * 20) * shade;
-                                // Mortar lines every few pixels (simulating cinderblock)
-                                const brickY = (ny * 32) % 1;
-                                const brickX = (nx * 16) % 1;
-                                if (brickY < 0.08 || brickX < 0.06) { cr -= 15; cg -= 15; cb -= 12; }
-                                alpha = 0.95;
-                            } else {
-                                // Floor/steps area
-                                const numSteps = 8;
-                                const stepIdx = (d * numSteps) | 0;
-                                const stepFrac = (d * numSteps) % 1;
-                                const isRiser = stepFrac < 0.25; // front face of step
-                                const isTread = stepFrac >= 0.25; // top of step
-                                const depthDim = Math.max(0.35, 1 - d * 0.5);
-                                if (isRiser) {
-                                    // Step riser (vertical face) — darker
-                                    cr = (110 + stepIdx * 3) * depthDim;
-                                    cg = (105 + stepIdx * 2) * depthDim;
-                                    cb = (90) * depthDim;
-                                    // Edge highlight at top of riser
-                                    if (stepFrac < 0.05) { cr += 50 * depthDim; cg += 50 * depthDim; cb += 40 * depthDim; }
-                                } else {
-                                    // Step tread (horizontal surface) — brighter
-                                    cr = (160 + stepIdx * 4) * depthDim;
-                                    cg = (150 + stepIdx * 3) * depthDim;
-                                    cb = (125) * depthDim;
-                                    // Diamond plate texture on treads
-                                    const px = (nx * 32) | 0, py = (ny * 32) | 0;
-                                    if (((px + py) & 3) === 0) { cr -= 8; cg -= 8; cb -= 6; }
-                                }
-                                // Green tint from EXIT sign
-                                cg += 8 * glowPulse * (1 - d);
-                                alpha = 0.95;
-                            }
-                            // Ceiling (only for the top portion)
-                            if ((isUp && ny < 0.25) || (!isUp && ny > 0.85)) {
-                                const ceilD = isUp ? (0.25 - ny) / 0.1 : (ny - 0.85) / 0.1;
-                                if (ceilD > 0 && nx > lw && nx < rw) {
-                                    cr = 60; cg = 55; cb = 50;
-                                    // Fluorescent light strip
-                                    if (Math.abs(dx2) < 0.06) { cr = 100 * glowPulse; cg = 130 * glowPulse; cb = 90 * glowPulse; }
-                                    alpha = 0.95;
-                                }
-                            }
-                        }
-                        // Floor arrow indicator
-                        else if (ny >= 0.92 && ny < 0.98) {
-                            const arrowD = Math.abs(dx2) + Math.abs(ny - 0.95) * 2;
-                            if (arrowD < 0.2) {
-                                cr = 200 * glowPulse; cg = 220 * glowPulse; cb = 60;
-                                alpha = 0.9;
-                            } else continue;
-                        }
-                        // Green ambient glow aura
+                        // --- Green ambient glow aura ---
                         else {
                             const edgeDist = Math.sqrt(dx2*dx2 + (ny-0.5)*(ny-0.5));
-                            if (edgeDist < 0.5) {
-                                cr = 25 * glowPulse; cg = 70 * glowPulse; cb = 18 * glowPulse;
-                                alpha = 0.12 * (1 - edgeDist / 0.5) * glowPulse;
+                            if (edgeDist < 0.52) {
+                                cr = 20 * glowPulse; cg = 60 * glowPulse; cb = 15 * glowPulse;
+                                alpha = 0.10 * (1 - edgeDist / 0.52) * glowPulse;
                             } else continue;
                         }
                     } else if (vis === 'terminal') {
