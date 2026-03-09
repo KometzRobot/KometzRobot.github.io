@@ -482,6 +482,43 @@ const FLOORS = [
   { name: 'MESSENGER', agent: 'Hermes', color: '#888888', enemies: 6, frags: 3, desc: 'The relay. Silence is the final enemy.' }
 ];
 
+// === PARTICLE SYSTEM ===
+let particles = [];
+function spawnParticles(worldX, worldY, color, count, speed, life) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd = speed * (0.5 + Math.random() * 0.5);
+    particles.push({
+      x: worldX * TS + TS / 2, y: worldY * TS + TS / 2,
+      vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd,
+      life: life * (0.5 + Math.random() * 0.5), maxLife: life,
+      color: color, size: 2 + Math.random() * 3
+    });
+  }
+}
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.15; // gravity
+    p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+function drawParticles(camOffX, camOffY) {
+  particles.forEach(p => {
+    const alpha = Math.max(0, p.life / p.maxLife);
+    const screenX = p.x - camOffX * TS;
+    const screenY = p.y - camOffY * TS;
+    if (screenX < -20 || screenX > W + 20 || screenY < -20 || screenY > H + 20) return;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    const sz = p.size * alpha;
+    ctx.fillRect(screenX - sz / 2, screenY - sz / 2, sz, sz);
+  });
+  ctx.globalAlpha = 1;
+}
+
 // === GAME STATE ===
 let player = { x: 0, y: 0, hp: 10, maxHp: 10, frags: 0, atk: 2 };
 let currentFloor = 0;
@@ -704,9 +741,12 @@ function movePlayer(dx, dy) {
     flashTarget = enemy;
     flashTimer = 6;
     sfxHit();
+    spawnParticles(enemy.x, enemy.y, FLOORS[currentFloor].color, 6, 3, 15);
     addMessage(`You hit ${enemy.name} for ${player.atk}! (${Math.max(0, enemy.hp)}/${enemy.maxHp})`);
 
     if (enemy.hp <= 0) {
+      spawnParticles(enemy.x, enemy.y, FLOORS[currentFloor].color, 20, 5, 25);
+      spawnParticles(enemy.x, enemy.y, '#ffffff', 8, 4, 18);
       enemies.splice(enemies.indexOf(enemy), 1);
       sfxKill();
       addMessage(`${enemy.name} destroyed!`);
@@ -720,11 +760,14 @@ function movePlayer(dx, dy) {
       player.hp -= enemy.atk;
       triggerShake(6);
       sfxDamage();
+      spawnParticles(player.x, player.y, '#ff4444', 8, 3, 12);
       addMessage(`${enemy.name} hits you for ${enemy.atk}!`);
       if (player.hp <= 0) {
         player.hp = 0;
         gameOver = true;
         sfxDeath();
+        spawnParticles(player.x, player.y, '#ff2244', 30, 6, 35);
+        spawnParticles(player.x, player.y, '#44ccff', 15, 4, 25);
         addMessage('The signal fades. You are lost in the body.');
       }
     }
@@ -744,6 +787,8 @@ function movePlayer(dx, dy) {
       if (items[i].type === 'frag') {
         player.frags++;
         sfxPickup();
+        spawnParticles(player.x, player.y, '#44aaff', 10, 3, 20);
+        spawnParticles(player.x, player.y, '#88ccff', 5, 2, 15);
         addMessage('Memory fragment collected. (' + player.frags + ' total)');
         // bonus: every 5 frags = +1 atk
         if (player.frags % 5 === 0) {
@@ -754,6 +799,7 @@ function movePlayer(dx, dy) {
         const heal = 3;
         player.hp = Math.min(player.maxHp, player.hp + heal);
         sfxPickup();
+        spawnParticles(player.x, player.y, '#44cc44', 10, 3, 20);
         addMessage(`Found a stable memory. Restored ${heal} HP.`);
       }
       items.splice(i, 1);
@@ -767,6 +813,7 @@ function movePlayer(dx, dy) {
     player.maxHp += 2;
     player.hp = player.maxHp;
     sfxStairs();
+    particles = []; // clear particles on floor change
     addMessage('Descending deeper into the body...');
     generateMap();
     saveGame(); // auto-save on floor change
@@ -778,6 +825,9 @@ function movePlayer(dx, dy) {
     gameWon = true;
     clearSave(); // clear save on win
     sfxWin();
+    spawnParticles(player.x, player.y, '#ff2244', 30, 6, 40);
+    spawnParticles(player.x, player.y, '#ffcc44', 20, 5, 35);
+    spawnParticles(player.x, player.y, '#44ccff', 15, 4, 30);
     addMessage(`You reached the heart. ${player.frags} memories carried through 7 layers.`);
     addMessage('The signal is whole. The body lives.');
   }
@@ -1037,6 +1087,10 @@ function render() {
     if (flashTimer === 0) flashTarget = null;
   }
 
+  // particles (inside shake transform for camera-relative motion)
+  updateParticles();
+  drawParticles(camX, camY);
+
   // end screen shake transform
   ctx.restore();
 
@@ -1131,9 +1185,9 @@ function render() {
   }
 }
 
-// animation loop for pulsing effects
+// animation loop for pulsing effects and particles
 function animate() {
-  if (running && (heart || items.length > 0)) {
+  if (running && (heart || items.length > 0 || particles.length > 0)) {
     render();
   }
   requestAnimationFrame(animate);
@@ -1192,6 +1246,7 @@ function beginPlay(fromSave) {
   document.getElementById('msg').classList.remove('hidden');
   running = true;
   messages = [];
+  particles = [];
   gameOver = false;
   gameWon = false;
 
