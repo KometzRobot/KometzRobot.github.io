@@ -96,6 +96,12 @@
     }
     #hud-text::-webkit-scrollbar, #dialog-log::-webkit-scrollbar { width: 3px; }
     #hud-text::-webkit-scrollbar-thumb, #dialog-log::-webkit-scrollbar-thumb { background: #5a4020; }
+    #screen-fade {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 90; pointer-events: none;
+      opacity: 0; transition: opacity 0.3s ease-in-out;
+    }
+    #screen-fade.active { opacity: 1; }
   </style>
 </head>
 <body>
@@ -132,6 +138,7 @@
     </div>
   </div>
   <div id="notify"></div>
+  <div id="screen-fade"></div>
 
   <script type="importmap">
   {
@@ -246,6 +253,65 @@
       executive: 5, server: 5,
       basement: -1, stairwell: 0, floor6: 6
     };
+
+    // ═══════════════════════════════════════════════════════════════
+    // FLOOR THEMES — per-floor atmosphere
+    // ═══════════════════════════════════════════════════════════════
+    const FLOOR_THEMES = {
+      1:  { fog: 0x0a0806, bg: 0x0a0806, exposure: 0.55, label: 'Warm corporate' },
+      2:  { fog: 0x040608, bg: 0x040608, exposure: 0.4, label: 'Cold archive' },
+      3:  { fog: 0x060806, bg: 0x060806, exposure: 0.5, label: 'Worn office' },
+      4:  { fog: 0x080804, bg: 0x080804, exposure: 0.45, label: 'Aging authority' },
+      5:  { fog: 0x060404, bg: 0x060404, exposure: 0.35, label: 'Dark power' },
+      6:  { fog: 0x0a0804, bg: 0x0a0804, exposure: 0.65, label: 'Warm origin' },
+      0:  { fog: 0x030303, bg: 0x030303, exposure: 0.3, label: 'Stairwell' },
+      '-1': { fog: 0x040604, bg: 0x040604, exposure: 0.35, label: 'Industrial basement' }
+    };
+    let currentFloorTheme = null;
+
+    function applyFloorTheme(roomName) {
+      const floor = FLOOR_MAP[roomName];
+      const theme = FLOOR_THEMES[floor] || FLOOR_THEMES[1];
+      if (currentFloorTheme === floor) return;
+      currentFloorTheme = floor;
+      scene.fog.color.setHex(theme.fog);
+      scene.background.setHex(theme.bg);
+      renderer.toneMappingExposure = theme.exposure;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // NPC VISUAL BODIES
+    // ═══════════════════════════════════════════════════════════════
+    const NPC_COLORS = {
+      receptionist: 0x6a5a3a,
+      okafor: 0x3a5a6a,
+      vasquez: 0x5a3a6a,
+      breakworker: 0x5a6a3a,
+      clerk: 0x6a3a3a,
+      janitor: 0x3a6a4a
+    };
+
+    function addNpcBody(room, x, z, npcId) {
+      const color = NPC_COLORS[npcId] || 0x5a5a5a;
+      const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+      // Body — cylinder
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 1.0, 8), bodyMat);
+      body.position.set(x, 0.7, z); body.castShadow = true;
+      rooms[room].group.add(body);
+      // Head — sphere
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), bodyMat);
+      head.position.set(x, 1.32, z); head.castShadow = true;
+      rooms[room].group.add(head);
+      // Subtle highlight glow at feet
+      const glowRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.2, 0.35, 16),
+        new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
+      );
+      glowRing.rotation.x = -Math.PI / 2;
+      glowRing.position.set(x, 0.01, z);
+      rooms[room].group.add(glowRing);
+      return body;
+    }
 
     function makeRoom(name, w, d, h, ox, oz) {
       const g = new THREE.Group();
@@ -366,6 +432,7 @@
     addChair('lobby', -2, 3.2);
     addDoor('lobby', 4.9, -1, -Math.PI/2, 'security');
     addDoor('lobby', 0, -3.9, 0, 'stairwell');
+    addNpcBody('lobby', -2, 2.5, 'receptionist');
     addInteract('lobby', -2, 1.2, 2.5, { type: 'npc', npcId: 'receptionist', name: 'RECEPTIONIST' });
     // Directory board
     addInteract('lobby', 3, 1.4, -3.5, {
@@ -515,6 +582,7 @@
         { label: 'Take sticky note', response: 'PICKUP_STICKY' }
       ]
     });
+    addNpcBody('cubicle', 1.5, 0, 'okafor');
     addInteract('cubicle', 1.5, 1.2, 0, { type: 'npc', npcId: 'okafor', name: 'OKAFOR (B-248)' });
 
     // Floor 3: Break Room (6x6)
@@ -571,6 +639,7 @@
       getText: () => 'A CogCorp motivational poster: "COMPLIANCE IS CARE." Someone has written in pencil underneath: "Is it though?"' + (hasItem('keycard') ? '' : ' The corner is peeling away from the wall.'),
       actions: hasItem('keycard') ? [] : [{ label: 'Peel the corner', response: 'POSTER_PEEL' }]
     });
+    addNpcBody('breakroom', -0.5, 1, 'breakworker');
     addInteract('breakroom', -0.5, 0.8, 1, { type: 'npc', npcId: 'breakworker', name: 'BREAK ROOM WORKER' });
 
     // Floor 4: Standards Board (10x8)
@@ -607,6 +676,7 @@
     addCab('records', -2.5, -3);
     addCab('records', -2.5, -1);
     addCab('records', -2.5, 1);
+    addNpcBody('records', 0, -1, 'clerk');
     addInteract('records', 0, 1.2, -1, { type: 'npc', npcId: 'clerk', name: 'RECORDS CLERK' });
     addInteract('records', 2.5, 0.6, -3, {
       type: 'object', name: 'FLOOR SAFE',
@@ -718,10 +788,26 @@
       actions: state.annotated > 2 ? [{ label: 'Touch the writing', response: 'The graphite is warm. Or your fingers are cold. The sentence stays on the wall. It has been here longer than the maintenance ticket.' }] : []
     });
 
-    // Vasquez (conditional)
+    // Vasquez (conditional) — body hidden until condition met
+    const vasquezGroup = new THREE.Group();
+    vasquezGroup.visible = false;
+    const vColor = NPC_COLORS.vasquez;
+    const vMat = new THREE.MeshStandardMaterial({ color: vColor, roughness: 0.8 });
+    const vBody = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 1.0, 8), vMat);
+    vBody.position.set(0, 0.7, 0); vBody.castShadow = true; vasquezGroup.add(vBody);
+    const vHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), vMat);
+    vHead.position.set(0, 1.32, 0); vHead.castShadow = true; vasquezGroup.add(vHead);
+    const vGlow = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.35, 16), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.15, side: THREE.DoubleSide }));
+    vGlow.rotation.x = -Math.PI / 2; vGlow.position.set(0, 0.01, 0); vasquezGroup.add(vGlow);
+    vasquezGroup.position.set(-1, 0, -2);
+    rooms['stairwell'].group.add(vasquezGroup);
     addInteract('stairwell', -1, 1.6, -2, {
       type: 'npc', npcId: 'vasquez', name: 'VASQUEZ',
-      condition: () => state.day >= 3 && state.annotated >= 3
+      condition: () => {
+        const show = state.day >= 3 && state.annotated >= 3;
+        vasquezGroup.visible = show;
+        return show;
+      }
     });
 
     // Floor 6: The Origin Room (8x8) — hidden
@@ -983,6 +1069,7 @@
       text: 'Tools, spare parts, a half-eaten sandwich from last week. A clipboard hangs from a nail.',
       actions: [{ label: 'Read the clipboard', response: 'Work orders, oldest first: "FL6 lock repair", "FL6 light replacement", "FL6 desk polish." All signed off by "Maintenance — not assigned." Nobody is assigned to Floor 6. Someone maintains it anyway.' }]
     });
+    addNpcBody('basement', 0, 0, 'janitor');
     addInteract('basement', 0, 1.6, 0, { type: 'npc', npcId: 'janitor', name: 'JANITOR' });
 
     // Add new door connections to existing rooms
@@ -1504,10 +1591,17 @@
           }
           return;
         }
-        state.currentRoom = data.target;
-        camera.position.copy(rooms[data.target].center);
+        // Fade transition
+        const fade = document.getElementById('screen-fade');
+        fade.classList.add('active');
         playDoorSound();
-        showRoomHUD();
+        setTimeout(() => {
+          state.currentRoom = data.target;
+          camera.position.copy(rooms[data.target].center);
+          applyFloorTheme(data.target);
+          showRoomHUD();
+          setTimeout(() => fade.classList.remove('active'), 50);
+        }, 300);
         return;
       }
 
@@ -1828,6 +1922,7 @@
 
     camera.position.set(0, 1.6, 3);
     state.currentRoom = 'lobby';
+    applyFloorTheme('lobby');
     animate();
   </script>
 </body>
