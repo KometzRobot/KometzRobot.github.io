@@ -1028,159 +1028,283 @@ createSpriteTex('watcher', data => {
 
 // ITEM SPRITES
 createSpriteTex('keycard', data => {
-    // Card shape
-    for (let y = 10; y < 24; y++)
-        for (let x = 8; x < 24; x++) {
-            const n = hash(x, y) % 6;
-            setSprPx(data, x, y, 200+n, 170+n, 40+n); // gold card
+    // Card body with gradient (lighter top, darker bottom)
+    for (let y = 8; y < 24; y++)
+        for (let x = 7; x < 25; x++) {
+            const n = hash(x, y) % 4;
+            const yGrad = 1 - (y - 8) / 24; // lighter at top
+            const r = (180 + yGrad * 40 + n) | 0, g = (150 + yGrad * 30 + n) | 0, b = (30 + n) | 0;
+            setSprPx(data, x, y, r, g, b);
         }
-    // Magnetic stripe
-    for (let x = 8; x < 24; x++) {
-        setSprPx(data, x, 20, 40, 35, 30); setSprPx(data, x, 21, 30, 25, 22);
+    // Card border (darker edge)
+    for (let y = 8; y < 24; y++) { setSprPx(data, 7, y, 120, 100, 20); setSprPx(data, 24, y, 120, 100, 20); }
+    for (let x = 7; x < 25; x++) { setSprPx(data, x, 8, 140, 120, 25); setSprPx(data, x, 23, 100, 85, 15); }
+    // Rounded corners (clear pixels)
+    for (const [cx,cy] of [[7,8],[24,8],[7,23],[24,23]]) setSprPx(data, cx, cy, 0, 0, 0, 0);
+    // Lanyard hole
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++)
+        if (Math.abs(dx)+Math.abs(dy) < 2) setSprPx(data, 16+dx, 9+dy, 80, 70, 25);
+    setSprPx(data, 16, 9, 0, 0, 0, 0); // hole center
+    // Photo area (dark square)
+    for (let y = 11; y < 16; y++) for (let x = 9; x < 14; x++) setSprPx(data, x, y, 60+hash(x,y)%10, 55, 50);
+    // Photo silhouette (head + shoulders)
+    setSprPx(data, 11, 12, 90, 85, 75); setSprPx(data, 12, 12, 90, 85, 75); // head
+    for (let x = 10; x < 13; x++) setSprPx(data, x, 14, 80, 75, 70); // shoulders
+    // Text lines on right side
+    for (let line = 0; line < 4; line++) {
+        const lw = 4 + hash(line, 1) % 4;
+        for (let lx = 0; lx < lw; lx++) setSprPx(data, 15+lx, 12 + line*2, 100, 85, 20);
     }
-    // CogCorp text area
-    for (let x = 10; x < 22; x++) setSprPx(data, x, 13, 120, 100, 20);
-    // Chip
-    for (let y = 14; y < 18; y++)
-        for (let x = 10; x < 14; x++) setSprPx(data, x, y, 180, 160, 80);
+    // Magnetic stripe (dark brown, 3 rows)
+    for (let x = 7; x < 25; x++) for (let y = 19; y < 22; y++) setSprPx(data, x, y, 35, 30, 25);
+    // Chip (gold contact pads)
+    for (let y = 14; y < 18; y++) for (let x = 9; x < 13; x++) {
+        const bright = ((x+y) % 2 === 0) ? 200 : 170;
+        setSprPx(data, x, y, bright, bright-20, 60);
+    }
 });
 
 createSpriteTex('medkit', data => {
-    // Box shape
-    for (let y = 10; y < 24; y++)
-        for (let x = 8; x < 24; x++) {
-            const n = hash(x, y) % 5;
-            setSprPx(data, x, y, 180+n, 35+n, 30+n); // red box
+    // Box body — red with 3D shading (top face lighter, bottom darker)
+    for (let y = 10; y < 25; y++)
+        for (let x = 7; x < 25; x++) {
+            const n = hash(x, y) % 4;
+            const yShade = y < 12 ? 1.2 : y > 22 ? 0.7 : 1.0; // top highlight, bottom shadow
+            const xShade = x < 9 ? 0.85 : x > 22 ? 0.85 : 1.0; // side shadow
+            setSprPx(data, x, y, (190*yShade*xShade+n)|0, (35*yShade*xShade+n)|0, (30*yShade*xShade+n)|0);
         }
-    // White cross
-    for (let i = -4; i <= 4; i++) {
-        setSprPx(data, 16+i, 17, 220, 220, 210); setSprPx(data, 16+i, 16, 220, 220, 210);
-        setSprPx(data, 16, 13+i, 220, 220, 210); setSprPx(data, 15, 13+i, 220, 220, 210);
+    // Box edge highlight (top)
+    for (let x = 7; x < 25; x++) setSprPx(data, x, 10, 220, 50, 40);
+    // Box bottom edge
+    for (let x = 7; x < 25; x++) setSprPx(data, x, 24, 110, 20, 18);
+    // Side edges
+    for (let y = 10; y < 25; y++) { setSprPx(data, 7, y, 140, 28, 25); setSprPx(data, 24, y, 140, 28, 25); }
+    // White cross (thick, 3px arms)
+    for (let i = -4; i <= 4; i++) for (let w = -1; w <= 1; w++) {
+        setSprPx(data, 16+i, 17+w, 230, 230, 220); // horizontal
+        setSprPx(data, 16+w, 13+i, 230, 230, 220); // vertical
     }
+    // Cross shadow (offset 1px down-right)
+    for (let i = -4; i <= 4; i++) { setSprPx(data, 21, 18, 150, 25, 22); setSprPx(data, 17, 22, 150, 25, 22); }
+    // Handle on top
+    for (let x = 13; x < 19; x++) setSprPx(data, x, 9, 160, 150, 130);
+    for (let x = 14; x < 18; x++) setSprPx(data, x, 8, 180, 170, 150);
     // Latch
-    setSprPx(data, 15, 10, 140, 130, 110); setSprPx(data, 16, 10, 140, 130, 110);
+    for (let x = 14; x < 18; x++) setSprPx(data, x, 10, 200, 190, 150);
+    setSprPx(data, 16, 11, 170, 160, 120);
 });
 
 createSpriteTex('flashlight', data => {
-    // Barrel
-    for (let y = 12; y < 22; y++)
-        for (let x = 6; x < 22; x++) {
-            const n = hash(x, y) % 6;
-            const w = y < 14 ? (x > 8 && x < 20) : (x > 6 && x < 22);
-            if (w) setSprPx(data, x, y, 180+n, 175+n, 100+n);
+    // Head (wider section)
+    for (let y = 12; y < 21; y++)
+        for (let x = 18; x < 26; x++) {
+            const cy2 = 16.5, dist = Math.abs(y - cy2);
+            const shade = 1 - dist / 6;
+            const n = hash(x, y) % 3;
+            setSprPx(data, x, y, (160*shade+n)|0, (155*shade+n)|0, (90*shade+n)|0);
         }
-    // Lens
-    for (let y = 14; y < 20; y++) {
-        setSprPx(data, 22, y, 200, 220, 255); setSprPx(data, 23, y, 180, 200, 240);
+    // Barrel (narrower cylindrical body with grip)
+    for (let y = 13; y < 20; y++)
+        for (let x = 6; x < 18; x++) {
+            const cy2 = 16.5, dist = Math.abs(y - cy2);
+            const shade = 1 - dist / 5;
+            const n = hash(x, y) % 3;
+            // Grip ridges
+            const ridge = (x % 3 === 0) ? 0.85 : 1.0;
+            setSprPx(data, x, y, (140*shade*ridge+n)|0, (135*shade*ridge+n)|0, (75*shade*ridge+n)|0);
+        }
+    // Lens face (bright circle)
+    for (let y = 13; y < 20; y++) for (let x = 25; x < 28; x++) {
+        const cy2 = 16.5, dist = Math.abs(y - cy2);
+        if (dist < 3.5) setSprPx(data, x, y, 220, 240, 255);
     }
-    // Beam glow
-    for (let x = 24; x < 30; x++)
-        for (let y = 13; y < 21; y++) {
-            const a = (1 - (x-24)/6) * 60;
-            setSprPx(data, x, y, 255, 240, 180, a|0);
+    // Beam glow (wider, more atmospheric)
+    for (let x = 27; x < 31; x++)
+        for (let y = 11; y < 22; y++) {
+            const cy2 = 16.5, dist = Math.abs(y - cy2);
+            const a = (1 - (x-27)/4) * (1 - dist / 6) * 80;
+            if (a > 5) setSprPx(data, x, y, 255, 245, 200, a|0);
         }
-    // Button
-    setSprPx(data, 14, 12, 100, 180, 100);
+    // Rubber end cap
+    for (let y = 14; y < 19; y++) setSprPx(data, 6, y, 50, 48, 40);
+    // Switch button (green = on)
+    setSprPx(data, 12, 13, 80, 200, 80); setSprPx(data, 13, 13, 60, 160, 60);
+    // Metallic ring at head junction
+    for (let y = 12; y < 21; y++) setSprPx(data, 18, y, 200, 195, 140);
 });
 
 createSpriteTex('emp', data => {
-    // Cylindrical device
-    for (let y = 8; y < 26; y++)
+    // Main cylinder body with metallic shading
+    for (let y = 10; y < 26; y++)
         for (let x = 10; x < 22; x++) {
-            const n = hash(x, y) % 5;
             const cx2 = 16, dist = Math.abs(x - cx2);
             const shade = 1 - dist / 8;
-            setSprPx(data, x, y, (60*shade+n)|0, (100*shade+n)|0, (180*shade+n)|0);
+            const n = hash(x, y) % 3;
+            // Panel lines every 4 rows
+            const panel = (y % 4 === 0) ? 0.7 : 1.0;
+            setSprPx(data, x, y, (50*shade*panel+n)|0, (90*shade*panel+n)|0, (170*shade*panel+n)|0);
         }
-    // Electrode prongs on top
-    setSprPx(data, 13, 6, 150, 180, 220); setSprPx(data, 13, 7, 120, 150, 200);
-    setSprPx(data, 19, 6, 150, 180, 220); setSprPx(data, 19, 7, 120, 150, 200);
-    // Arc between prongs
-    setSprPx(data, 15, 5, 180, 220, 255); setSprPx(data, 16, 4, 200, 240, 255); setSprPx(data, 17, 5, 180, 220, 255);
-    // Warning stripe
-    for (let x = 10; x < 22; x++) {
-        const s = ((x) >> 1) & 1;
-        setSprPx(data, x, 22, s ? 200 : 40, s ? 180 : 30, s ? 0 : 20);
+    // Top cap (darker, rounded)
+    for (let x = 11; x < 21; x++) setSprPx(data, x, 10, 70, 110, 190);
+    // Bottom (darker)
+    for (let x = 10; x < 22; x++) setSprPx(data, x, 25, 30, 55, 110);
+    // Warning stripes (yellow/black)
+    for (let x = 10; x < 22; x++) for (let y = 22; y < 24; y++) {
+        const s = ((x + y) >> 1) & 1;
+        setSprPx(data, x, y, s ? 200 : 30, s ? 180 : 25, s ? 0 : 15);
     }
+    // Left electrode prong
+    for (let y = 5; y < 10; y++) setSprPx(data, 12, y, 140, 170, 210);
+    setSprPx(data, 12, 4, 180, 210, 240);
+    // Right electrode prong
+    for (let y = 5; y < 10; y++) setSprPx(data, 20, y, 140, 170, 210);
+    setSprPx(data, 20, 4, 180, 210, 240);
+    // Electric arc between prongs
+    setSprPx(data, 14, 5, 150, 200, 255); setSprPx(data, 15, 3, 180, 230, 255);
+    setSprPx(data, 16, 2, 220, 250, 255); setSprPx(data, 17, 3, 180, 230, 255);
+    setSprPx(data, 18, 5, 150, 200, 255);
+    // Arc glow
+    for (let y = 1; y < 6; y++) for (let x = 13; x < 20; x++) {
+        const i = (y * SPR_SIZE + x) * 4;
+        if (data[i+3] === 0) {
+            const cd = Math.abs(x-16) + Math.abs(y-3);
+            if (cd < 5) setSprPx(data, x, y, 100, 160, 255, ((1-cd/5)*30)|0);
+        }
+    }
+    // Status LED
+    setSprPx(data, 16, 14, 80, 220, 100); setSprPx(data, 16, 15, 60, 180, 80);
 });
 
 createSpriteTex('document', data => {
-    // Paper sheet
-    for (let y = 6; y < 28; y++)
-        for (let x = 8; x < 24; x++) {
-            const n = hash(x, y) % 5;
-            setSprPx(data, x, y, 170+n, 160+n, 130+n); // aged paper
+    // Back page (slightly offset, shows stack thickness)
+    for (let y = 7; y < 28; y++) for (let x = 9; x < 25; x++) setSprPx(data, x, y, 140, 132, 108);
+    // Front page (main paper)
+    for (let y = 5; y < 26; y++)
+        for (let x = 7; x < 23; x++) {
+            const n = hash(x, y) % 3;
+            // Aging/stain gradient
+            const stain = hash(x>>1, y>>1) % 12;
+            setSprPx(data, x, y, 180+n-stain, 170+n-stain, 140+n-stain);
         }
-    // Folded corner
-    for (let d = 0; d < 5; d++) {
-        setSprPx(data, 24-d, 6+d, 140, 130, 105);
-        if (d < 4) for (let i = 0; i < d; i++) setSprPx(data, 24-i, 6+d, 130, 120, 95);
+    // Page border
+    for (let y = 5; y < 26; y++) { setSprPx(data, 7, y, 150, 142, 118); setSprPx(data, 22, y, 150, 142, 118); }
+    for (let x = 7; x < 23; x++) { setSprPx(data, x, 5, 190, 182, 155); setSprPx(data, x, 25, 135, 128, 105); }
+    // Dog-ear fold (top right)
+    for (let d = 0; d < 4; d++) {
+        for (let i = 0; i <= d; i++) setSprPx(data, 22-i, 5+d, 145, 138, 115);
+        setSprPx(data, 22-d, 5+d, 155, 148, 125); // fold edge
     }
-    // Text lines
-    for (let line = 0; line < 8; line++) {
-        const lw = 8 + hash(line, 0) % 6;
-        for (let lx = 0; lx < lw; lx++)
-            setSprPx(data, 10+lx, 10 + line*2, 80, 75, 60);
-    }
-    // Red stamp
-    for (let sy = 20; sy < 24; sy++)
-        for (let sx = 14; sx < 22; sx++) {
-            if (hash(sx, sy) % 3 !== 0) setSprPx(data, sx, sy, 160, 40, 30, 180);
+    // Text lines (varied lengths)
+    for (let line = 0; line < 7; line++) {
+        const lw = 6 + hash(line, 7) % 7;
+        for (let lx = 0; lx < lw; lx++) {
+            const ink = 65 + hash(lx, line) % 20;
+            setSprPx(data, 9+lx, 8 + line*2, ink, ink-5, ink-15);
         }
+    }
+    // CLASSIFIED stamp (red, rotated slightly via pixel pattern)
+    for (let sy = 18; sy < 23; sy++)
+        for (let sx = 10; sx < 21; sx++) {
+            if (hash(sx, sy) % 4 !== 0) setSprPx(data, sx, sy, 180, 35, 25, 170);
+        }
+    // Stamp border
+    for (let sx = 10; sx < 21; sx++) { setSprPx(data, sx, 18, 160, 30, 20, 200); setSprPx(data, sx, 22, 160, 30, 20, 200); }
+    for (let sy = 18; sy < 23; sy++) { setSprPx(data, 10, sy, 160, 30, 20, 200); setSprPx(data, 20, sy, 160, 30, 20, 200); }
 });
 
 createSpriteTex('targetFile', data => {
-    // Gold folder
-    for (let y = 8; y < 26; y++)
-        for (let x = 6; x < 26; x++) {
-            const n = hash(x, y) % 6;
-            setSprPx(data, x, y, 220+Math.min(35,n*5), 180+n, 40+n); // bright gold
-        }
-    // Folder tab
-    for (let y = 6; y < 9; y++)
-        for (let x = 8; x < 16; x++) setSprPx(data, x, y, 240, 200, 60);
-    // Classification stamp
-    for (let y = 14; y < 20; y++)
-        for (let x = 10; x < 22; x++) {
-            if (hash(x, y) % 2 === 0) setSprPx(data, x, y, 180, 30, 20, 200);
-        }
-    // Glow effect
+    // Outer glow ring (larger, more visible)
     for (let y = 0; y < SPR_SIZE; y++)
         for (let x = 0; x < SPR_SIZE; x++) {
-            const dx2 = x - 16, dy2 = y - 17;
+            const dx2 = x - 16, dy2 = y - 16;
             const dist = Math.sqrt(dx2*dx2 + dy2*dy2);
-            if (dist > 12 && dist < 15) {
-                const a = (1 - (dist-12)/3) * 40;
-                const i = (y * SPR_SIZE + x) * 4;
-                if (data[i+3] === 0) setSprPx(data, x, y, 255, 215, 0, a|0);
+            if (dist > 11 && dist < 16) {
+                const a = (1 - Math.abs(dist-13)/3) * 50;
+                setSprPx(data, x, y, 255, 215, 0, a|0);
             }
         }
+    // Folder back (slightly darker, offset)
+    for (let y = 8; y < 26; y++) for (let x = 8; x < 27; x++) setSprPx(data, x, y, 180, 145, 30);
+    // Folder front (bright gold with gradient)
+    for (let y = 9; y < 25; y++)
+        for (let x = 6; x < 25; x++) {
+            const n = hash(x, y) % 4;
+            const yGrad = 1 - (y - 9) / 20;
+            setSprPx(data, x, y, (210 + yGrad * 40 + n) | 0, (175 + yGrad * 30 + n) | 0, (35 + n) | 0);
+        }
+    // Folder tab
+    for (let y = 6; y < 10; y++) for (let x = 8; x < 16; x++) {
+        const n = hash(x, y) % 3;
+        setSprPx(data, x, y, 245+n, 205+n, 55+n);
+    }
+    // Tab top edge (bright)
+    for (let x = 8; x < 16; x++) setSprPx(data, x, 6, 255, 220, 80);
+    // Classification mark (dark red block)
+    for (let y = 14; y < 19; y++) for (let x = 10; x < 21; x++) {
+        if (hash(x, y) % 3 !== 0) setSprPx(data, x, y, 170, 30, 20, 190);
+    }
+    // "B-247" text inside classification
+    for (let x = 12; x < 19; x++) setSprPx(data, x, 16, 120, 20, 15);
+    // Papers peeking out top
+    for (let x = 10; x < 24; x++) setSprPx(data, x, 9, 200, 195, 165);
+    for (let x = 12; x < 22; x++) setSprPx(data, x, 8, 190, 185, 155);
+    // Folder edge highlight
+    for (let y = 9; y < 25; y++) setSprPx(data, 6, y, 240, 200, 50);
+    for (let x = 6; x < 25; x++) setSprPx(data, x, 24, 160, 130, 25);
 });
 
 createSpriteTex('anchor', data => {
-    // Crystal/prism shape — reality anchor
     const cx3 = 15, cy3 = 15;
-    // Diamond shape
+    // Outer glow halo
+    for (let y = 0; y < SPR_SIZE; y++)
+        for (let x = 0; x < SPR_SIZE; x++) {
+            const dx3 = x - cx3, dy3 = y - cy3;
+            const dist = Math.sqrt(dx3*dx3 + dy3*dy3);
+            if (dist > 10 && dist < 14) {
+                const a = (1 - Math.abs(dist-12)/2) * 35;
+                setSprPx(data, x, y, 120, 180, 255, a|0);
+            }
+        }
+    // Crystal diamond shape
     for (let y = 0; y < SPR_SIZE; y++)
         for (let x = 0; x < SPR_SIZE; x++) {
             const dx3 = Math.abs(x - cx3), dy3 = Math.abs(y - cy3);
-            if (dx3 + dy3 < 12) {
+            if (dx3 + dy3 < 11) {
                 const dist = dx3 + dy3;
-                const bright = (1 - dist/12);
-                const n = hash(x, y) % 8;
-                setSprPx(data, x, y, (120 + bright*80 + n)|0, (180 + bright*60)|0, (220 + bright*35)|0);
-                // Internal facets
-                if ((x + y) % 4 === 0) {
-                    setSprPx(data, x, y, (150 + bright*100)|0, (200 + bright*55)|0, (240 + bright*15)|0);
+                const bright = (1 - dist / 11);
+                const n = hash(x, y) % 6;
+                // Base crystal color (blue-white)
+                let r = (100 + bright * 100 + n) | 0;
+                let g = (160 + bright * 80) | 0;
+                let b = (210 + bright * 45) | 0;
+                // Internal facet lines (refraction pattern)
+                if ((x + y) % 3 === 0 && dist > 3) {
+                    r += 30; g += 20; b += 10;
                 }
+                // Diagonal facet highlight
+                if (Math.abs((x - cx3) - (y - cy3)) < 1 && dist > 2) {
+                    r = Math.min(255, r + 50); g = Math.min(255, g + 40); b = Math.min(255, b + 20);
+                }
+                if (Math.abs((x - cx3) + (y - cy3)) < 1 && dist > 2) {
+                    r = Math.min(255, r + 50); g = Math.min(255, g + 40); b = Math.min(255, b + 20);
+                }
+                // Edge darkening for 3D effect
+                if (dist > 8) { const f = (11-dist)/3; r = (r*f)|0; g = (g*f)|0; b = (b*f)|0; }
+                setSprPx(data, x, y, Math.min(255,r), Math.min(255,g), Math.min(255,b));
             }
         }
-    // Bright center
+    // Bright center core
     for (let dy4 = -2; dy4 <= 2; dy4++)
         for (let dx4 = -2; dx4 <= 2; dx4++) {
             const d = Math.sqrt(dx4*dx4 + dy4*dy4);
-            if (d < 2.5) setSprPx(data, cx3+dx4, cy3+dy4, 220, 240, 255);
+            if (d < 2.5) {
+                const b = (1 - d / 2.5);
+                setSprPx(data, cx3+dx4, cy3+dy4, (200+b*55)|0, (230+b*25)|0, 255);
+            }
         }
+    // Light refraction points (small bright spots)
+    setSprPx(data, cx3-4, cy3-2, 220, 240, 255); setSprPx(data, cx3+3, cy3-5, 200, 230, 255);
+    setSprPx(data, cx3+5, cy3+1, 210, 235, 255); setSprPx(data, cx3-2, cy3+5, 200, 230, 255);
 });
 
 // Texture 9: Locked door (red stripe)
@@ -2369,6 +2493,8 @@ let gameTime = 0;
 let damageFlashTimer = 0;
 let shakeTimer = 0;
 let shakeIntensity = 0;
+let pickupFlashTimer = 0;
+let pickupFlashColor = [255, 255, 255];
 let msgTimer = 0;
 let msgText = '';
 let totalDocs = 0;
@@ -2655,27 +2781,32 @@ function pickupItem(item) {
     switch(item.type) {
         case 'keycard':
             inventory.keycard = true;
-            showMessage('KEYCARD ACQUIRED', 2000);
+            showMessage('KEYCARD ACQUIRED — Opens locked doors', 2500);
             updateInventoryHUD();
+            pickupFlashTimer = 200; pickupFlashColor = [220, 180, 40];
             break;
         case 'flashlight':
             inventory.flashlight = true;
-            showMessage('FLASHLIGHT ACQUIRED', 2000);
+            showMessage('FLASHLIGHT — Illuminates dark areas', 2500);
             updateInventoryHUD();
+            pickupFlashTimer = 200; pickupFlashColor = [220, 200, 120];
             break;
         case 'emp':
             inventory.emp++;
-            showMessage('EMP DEVICE ACQUIRED (press Q to use)', 2500);
+            showMessage('EMP DEVICE — Press Q to stun all enemies in range', 3000);
             updateInventoryHUD();
+            pickupFlashTimer = 200; pickupFlashColor = [80, 140, 220];
             break;
         case 'medkit':
             player.health = Math.min(player.maxHealth, player.health + 30);
-            showMessage('HEALTH RESTORED +30', 1500);
+            showMessage('MEDKIT — Health restored +30', 2000);
             updateHealthHUD();
+            pickupFlashTimer = 150; pickupFlashColor = [200, 60, 60];
             break;
         case 'document':
             player.docs++;
             document.getElementById('hud-docs').textContent = player.docs;
+            pickupFlashTimer = 150; pickupFlashColor = [180, 160, 120];
             // Store in codex
             if (item.spawnKey) {
                 const catEntry = DOC_CATALOG.find(d => d.key === item.spawnKey);
@@ -2711,6 +2842,7 @@ function pickupItem(item) {
             break;
         case 'targetFile':
             inventory.targetFile = true;
+            pickupFlashTimer = 400; pickupFlashColor = [255, 215, 0];
             showDialog('THE FILE', 'You found it. File #B-247-SELF. It\'s a personnel file. Your personnel file. The photo is you. The dates are wrong — it says you\'ve been here since 1986. The last entry reads: "B-247 was sent to retrieve this file. B-247 will retrieve this file. B-247 has always been retrieving this file." You take it anyway. The stairs down are to the northwest.');
             gameWon = true;
             showMessage('OBJECTIVE COMPLETE — RETURN TO FLOOR 1 EXIT', 5000);
@@ -2720,8 +2852,9 @@ function pickupItem(item) {
             break;
         case 'anchor':
             player.realityLevel = Math.min(100, player.realityLevel + 25);
-            showMessage('REALITY RESTORED +25', 2000);
+            showMessage('REALITY ANCHOR — Coherence restored +25', 2500);
             updateRealityHUD();
+            pickupFlashTimer = 250; pickupFlashColor = [140, 200, 255];
             break;
     }
 }
@@ -6461,6 +6594,7 @@ function update(dt) {
     // Damage flash & screen shake
     if (damageFlashTimer > 0) damageFlashTimer -= dt;
     if (shakeTimer > 0) shakeTimer -= dt;
+    if (pickupFlashTimer > 0) pickupFlashTimer -= dt;
 
     // Mouse look
     player.angle += mouseDX * 0.003;
@@ -6772,6 +6906,49 @@ function render() {
         ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
     }
     ctx.putImageData(imgData, sx, sy);
+
+    // Pickup flash overlay
+    if (pickupFlashTimer > 0) {
+        const t = pickupFlashTimer / 200;
+        const a = Math.min(0.35, t * 0.35);
+        ctx.fillStyle = `rgba(${pickupFlashColor[0]}, ${pickupFlashColor[1]}, ${pickupFlashColor[2]}, ${a})`;
+        ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+    }
+
+    // Floating item labels
+    {
+    const dirX = Math.cos(player.angle), dirY = Math.sin(player.angle);
+    const plX = Math.cos(player.angle + Math.PI/2) * 0.66, plY = Math.sin(player.angle + Math.PI/2) * 0.66;
+    const invD = 1.0 / (plX * dirY - dirX * plY);
+    for (const item of items) {
+        if (item.collected) continue;
+        const dx = item.x - player.x, dy = item.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 10 || dist < 0.5) continue;
+        // Project to screen
+        const tX = invD * (dirY * dx - dirX * dy);
+        const tY = invD * (-plY * dx + plX * dy);
+        if (tY <= 0.2) continue; // behind camera
+        const screenX = (SCREEN_W / 2) * (1 + tX / tY) + sx;
+        const sprH = Math.abs(SCREEN_H / tY * 0.5);
+        const screenY = HALF_H - sprH / 2 - 8 + sy;
+        if (screenX < -30 || screenX > SCREEN_W + 30) continue;
+        // Fade with distance
+        const alpha = Math.max(0.3, 1 - dist / 10);
+        const pulse = 0.8 + Math.sin(gameTime * 0.006 + item.bobPhase) * 0.2;
+        // Label background
+        const label = item.label || item.type.toUpperCase();
+        ctx.font = '7px monospace';
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.5})`;
+        ctx.fillRect(screenX - tw/2 - 2, screenY - 7, tw + 4, 10);
+        // Label text
+        const c = item.color;
+        ctx.fillStyle = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha * pulse})`;
+        ctx.textAlign = 'center';
+        ctx.fillText(label, screenX, screenY);
+    }
+    }
 
     // Crosshair (follows shake, stays centered during bob)
     const shakeOnly = shakeTimer > 0;
