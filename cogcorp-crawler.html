@@ -2399,6 +2399,16 @@ const enemyDefs = {
     watcher: { speed: 0,     damage: 3,  detectRange: 6, color: [100,80,180], size: 0.35, health: 2, fov: Math.PI * 2 }, // 360° surveillance
 };
 
+// Per-floor difficulty scaling (applied to enemy stats at spawn)
+const FLOOR_MODIFIERS = [
+    // Floor 1: empty (tutorial)
+    { speed: 1.0, detectRange: 1.0, health: 1.0, combatAC: 0, combatAtk: 0, combatDmgBonus: 0 },
+    // Floor 2: standard difficulty
+    { speed: 1.0, detectRange: 1.0, health: 1.0, combatAC: 0, combatAtk: 0, combatDmgBonus: 0 },
+    // Floor 3: processing level — faster, sharper, tougher
+    { speed: 1.35, detectRange: 1.25, health: 1.5, combatAC: 2, combatAtk: 1, combatDmgBonus: 1 },
+];
+
 // Enemies per floor
 const enemySpawns = [
     // Floor 1: SAFE — no enemies. Tutorial zone to explore, find items, talk to NPCs.
@@ -2428,6 +2438,7 @@ let enemies = [];
 function spawnEnemies() {
     enemies = [];
     const spawns = enemySpawns[currentFloor] || [];
+    const fm = FLOOR_MODIFIERS[currentFloor] || FLOOR_MODIFIERS[1]; // default to standard
     for (const s of spawns) {
         const def = enemyDefs[s.type];
         // Initialize facing toward first waypoint, or random
@@ -2436,16 +2447,24 @@ function spawnEnemies() {
             const wp = s.waypoints[0];
             initFacing = Math.atan2(wp.y + 0.5 - (s.y + 0.5), wp.x + 0.5 - (s.x + 0.5));
         }
+        // Apply floor difficulty modifiers
+        const scaledSpeed = def.speed * fm.speed;
+        const scaledDetect = def.detectRange * fm.detectRange;
+        const scaledHealth = Math.ceil(def.health * fm.health);
+        // Floor 3 enemies glow brighter (more dangerous visual cue)
+        const ec = [...def.color];
+        if (currentFloor === 2) { ec[0] = Math.min(255, ec[0] + 40); ec[1] = Math.min(255, ec[1] + 15); }
         enemies.push({
             x: s.x + 0.5, y: s.y + 0.5,
             type: s.type,
-            speed: def.speed,
+            speed: scaledSpeed,
             damage: def.damage,
-            detectRange: def.detectRange,
-            color: [...def.color],
+            detectRange: scaledDetect,
+            color: ec,
             size: def.size,
-            health: def.health,
+            health: scaledHealth,
             fov: def.fov,
+            floorMod: fm,  // store for combat stat adjustments
             alive: true,
             patrolAxis: s.patrolAxis || null,
             patrolMin: s.patrolX1 || 0,
@@ -3238,6 +3257,10 @@ function changeFloor(newFloor) {
             else objEl.textContent = '\u25C6 FILE RETRIEVED — DESCEND TO FLOOR 1 \u25C6';
         }
     }
+    // Floor difficulty warning
+    if (newFloor === 2) {
+        setTimeout(() => showMessage('PROCESSING LEVEL — Enhanced security protocols active', 3000), 1000);
+    }
     // Auto-save checkpoint on floor transition
     saveCheckpoint();
 }
@@ -3834,6 +3857,20 @@ const COMBAT_STATS = {
     },
 };
 
+// Get combat stats adjusted for floor difficulty
+function getEnemyCombatStats(enemy) {
+    const base = COMBAT_STATS[enemy.type] || COMBAT_STATS.drone;
+    const fm = enemy.floorMod;
+    if (!fm || (fm.combatAC === 0 && fm.combatAtk === 0 && fm.combatDmgBonus === 0)) return base;
+    return {
+        ...base,
+        ac: base.ac + fm.combatAC,
+        attackBonus: base.attackBonus + fm.combatAtk,
+        damageBonus: base.damageBonus + fm.combatDmgBonus,
+        maxHP: Math.ceil(base.maxHP * fm.health),
+    };
+}
+
 function rollD(sides) { return Math.floor(Math.random() * sides) + 1; }
 function rollD20() { return rollD(20); }
 
@@ -3855,7 +3892,7 @@ function openCombatEncounter(enemy) {
     if (document.pointerLockElement) document.exitPointerLock();
 
     // Set up display
-    const stats = COMBAT_STATS[enemy.type] || COMBAT_STATS.drone;
+    const stats = getEnemyCombatStats(enemy);
     document.getElementById('enc-enemy-name').textContent = stats.name;
     document.getElementById('enc-enemy-hp').textContent = enemy.health;
     const hpPct = Math.max(0, (enemy.health / stats.maxHP) * 100);
@@ -3905,7 +3942,7 @@ function addEncounterLog(text, cls) {
 
 function updateEncounterHUD() {
     if (!encounterEnemy) return;
-    const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
+    const stats = getEnemyCombatStats(encounterEnemy);
     document.getElementById('enc-enemy-hp').textContent = Math.max(0, encounterEnemy.health);
     const hpPct = Math.max(0, (encounterEnemy.health / stats.maxHP) * 100);
     document.getElementById('enc-enemy-hp-fill').style.width = hpPct + '%';
@@ -3944,7 +3981,7 @@ function encounterAttack() {
     if (!encounterPlayerTurn || encounterAnimating || !encounterEnemy) return;
     encounterAnimating = true;
 
-    const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
+    const stats = getEnemyCombatStats(encounterEnemy);
     const roll = rollD20();
     const total = roll + COMBAT_STATS.player.attackBonus;
     const isCrit = roll === 20;
@@ -3993,7 +4030,7 @@ function encounterAttack() {
 
 function encounterEnemyTurn() {
     if (!encounterEnemy || encounterEnemy.health <= 0) return;
-    const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
+    const stats = getEnemyCombatStats(encounterEnemy);
 
     const roll = rollD20();
     const total = roll + stats.attackBonus;
@@ -4053,7 +4090,7 @@ function encounterEMP() {
     inventory.emp--;
     updateInventoryHUD();
 
-    const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
+    const stats = getEnemyCombatStats(encounterEnemy);
     const dmg = rollD(8) + 2; // EMP: 1d8+2 electric damage
     addEncounterLog('You deploy an EMP blast!', 'crit');
     addEncounterLog('Electric surge deals ' + dmg + ' damage and stuns the unit!', 'hit');
