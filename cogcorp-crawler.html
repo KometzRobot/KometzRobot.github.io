@@ -555,6 +555,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         <div class="chat-header">
             <span id="chat-npc-name">UNIT</span>
             <span class="mood-indicator" id="chat-mood"></span>
+            <span id="chat-ai-status" style="font-size:10px; float:right; margin-top:2px;"></span>
         </div>
         <div class="chat-log" id="chat-log"></div>
         <div class="chat-choices" id="chat-choices"></div>
@@ -4022,6 +4023,10 @@ function openNPCChat(npcId) {
 
     renderChat();
     document.getElementById('npc-chat').style.display = 'flex';
+    // Show AI status
+    const aiStatus = document.getElementById('chat-ai-status');
+    if (aiStatus) aiStatus.textContent = ollamaAvailable ? '[AI DIALOGUE]' : '[SCRIPTED]';
+    if (aiStatus) aiStatus.style.color = ollamaAvailable ? '#4a8a4a' : '#8a6030';
     setTimeout(() => document.getElementById('chat-input').focus(), 100);
 
     playTerminalBootSound();
@@ -4061,7 +4066,11 @@ function renderChat() {
     // Render log
     let html = '';
     for (const msg of chatLog) {
-        html += `<div class="chat-msg ${msg.sender}">${msg.text}</div>`;
+        if (msg.typing) {
+            html += `<div class="chat-msg npc"><span class="typing">...</span></div>`;
+        } else {
+            html += `<div class="chat-msg ${msg.sender}">${msg.text}</div>`;
+        }
     }
     logEl.innerHTML = html;
     logEl.scrollTop = logEl.scrollHeight;
@@ -4098,8 +4107,10 @@ function sendPresetChoice(text) {
 async function sendChatMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
-    if (!text || !chatNPC) return;
+    if (!text || !chatNPC || input.disabled) return;
     input.value = '';
+    input.disabled = true;
+    input.placeholder = 'Waiting for response...';
 
     // Add player message
     chatLog.push({ sender: 'player', text: text });
@@ -4125,21 +4136,34 @@ async function sendChatMessage() {
     if (chatNPC.state.affinity > 2) chatNPC.moodLabel = 'STATUS: RECEPTIVE';
     else if (chatNPC.state.affinity < -2) chatNPC.moodLabel = 'STATUS: GUARDED';
 
+    // Show typing indicator while waiting for response
+    chatLog.push({ sender: 'npc', text: '...', typing: true });
+    renderChat();
+
     // Try Ollama first, fall back to pre-authored beats
     let response;
+    let isAI = false;
     if (ollamaAvailable) {
         response = await getOllamaResponse(chatNPC, text, act);
+        if (response) isAI = true;
     }
     if (!response) {
-        // Pre-authored beat selection
+        // Pre-authored beat selection with slight delay for natural feel
+        await new Promise(r => setTimeout(r, 400 + Math.random() * 600));
         const beats = chatNPC.beats[act] || chatNPC.beats.default;
         response = beats[chatNPC.state.exchangeCount % beats.length];
     }
 
-    // Add NPC response with slight delay for feel
+    // Remove typing indicator and add actual response
+    chatLog.pop();
     chatLog.push({ sender: 'npc', text: response });
     playTerminalKeySound();
     renderChat();
+
+    // Re-enable input
+    input.disabled = false;
+    input.placeholder = 'Type something...';
+    input.focus();
 
     // After farewell, auto-close after delay
     if (act === 'farewell') {
@@ -4155,12 +4179,15 @@ async function sendChatMessage() {
 
 async function getOllamaResponse(npc, playerText, act) {
     try {
-        // Build conversation context
-        const recent = chatLog.slice(-6).map(m =>
+        // Build conversation context (exclude typing indicators)
+        const recent = chatLog.filter(m => !m.typing).slice(-8).map(m =>
             m.sender === 'player' ? `Human: ${m.text}` : `${npc.name}: ${m.text}`
         ).join('\n');
 
-        const prompt = `${npc.systemPrompt}\n\nConversation so far:\n${recent}\n\nHuman: ${playerText}\n${npc.name}:`;
+        // Context about game state for richer responses
+        const gameCtx = `[Game state: Floor ${currentFloor + 1}/3, Reality: ${player.realityLevel}%, Enemies filed: ${player.totalFiled || 0}${gameWon ? ', HAS TARGET FILE' : ''}]`;
+
+        const prompt = `${npc.systemPrompt}\n\n${gameCtx}\n\nConversation so far:\n${recent}\n\nThe human says: "${playerText}"\n\nRespond in character as ${npc.name}. Be conversational — ask follow-up questions, reference what the human said, share observations about the building. Do not just state facts. Engage.\n\n${npc.name}:`;
 
         const r = await fetch(`${OLLAMA_BASE}/api/generate`, {
             method: 'POST',
@@ -4169,14 +4196,24 @@ async function getOllamaResponse(npc, playerText, act) {
                 model: 'qwen2.5:7b',
                 prompt: prompt,
                 stream: false,
-                options: { temperature: 0.7, num_predict: 60 }
+                options: { temperature: 0.8, num_predict: 120, top_p: 0.9 }
             }),
-            signal: AbortSignal.timeout(5000)
+            signal: AbortSignal.timeout(15000)
         });
         if (!r.ok) return null;
         const data = await r.json();
-        return data.response ? data.response.trim().split('\n')[0] : null;
+        if (!data.response) return null;
+        // Take first 1-2 sentences, clean up
+        let text = data.response.trim();
+        // Remove any continuation after a double newline
+        const dn = text.indexOf('\n\n');
+        if (dn > 0) text = text.substring(0, dn);
+        // Remove any "Human:" continuation the model might generate
+        const hi = text.indexOf('Human:');
+        if (hi > 0) text = text.substring(0, hi);
+        return text.trim() || null;
     } catch(e) {
+        console.log('[COGCORP] Ollama error:', e.message);
         return null; // fallback to pre-authored
     }
 }
