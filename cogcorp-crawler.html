@@ -2500,6 +2500,8 @@ let shakeTimer = 0;
 let shakeIntensity = 0;
 let pickupFlashTimer = 0;
 let pickupFlashColor = [255, 255, 255];
+// Viewmodel animation state
+const viewmodel = { empFireTimer: 0, interactTimer: 0, swayAngle: 0, lastAngle: 0, switchTimer: 0, lastTool: 'clipboard' };
 const particles = [];
 const MAX_PARTICLES = 300;
 let msgTimer = 0;
@@ -2595,6 +2597,7 @@ window.addEventListener('keydown', e => {
     }
     if (e.code === 'KeyE') {
         e.preventDefault();
+        viewmodel.interactTimer = 300; // hand reach animation
         if (dialogOpen) { dismissDialog(); }
         else if (nearItem && !nearItem.collected) { pickupItem(nearItem); }
         else if (nearObject) { interact(nearObject); }
@@ -2890,6 +2893,7 @@ function useEMP() {
     spawnEMPBurst();
     shakeTimer = 300;
     shakeIntensity = 6;
+    viewmodel.empFireTimer = 600; // 600ms EMP fire animation
 }
 
 function changeFloor(newFloor) {
@@ -7351,6 +7355,212 @@ function updateParticles(dt) {
     }
 }
 
+// === FIRST-PERSON VIEWMODEL ===
+// Draws the player's hand + tool at bottom-right, Wolfenstein-style.
+// Context-sensitive: clipboard (default), EMP device (if held), flashlight glow.
+// Pixel-art style using 2px grid units at 480x300 resolution.
+function renderViewmodel() {
+    if (player.annotating) return; // annotation overlay replaces viewmodel
+
+    const moving = keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown'];
+    // Walk bob
+    const bobX = moving ? Math.sin(gameTime * 0.007) * 5 : Math.sin(gameTime * 0.002) * 0.8;
+    const bobY = moving ? Math.abs(Math.cos(gameTime * 0.007)) * 4 : Math.sin(gameTime * 0.0015) * 0.5;
+    // Turn sway — hand lags behind camera rotation
+    const angleDelta = player.angle - viewmodel.lastAngle;
+    viewmodel.lastAngle = player.angle;
+    viewmodel.swayAngle += (angleDelta * 40 - viewmodel.swayAngle) * 0.12; // spring physics
+    viewmodel.swayAngle = Math.max(-12, Math.min(12, viewmodel.swayAngle));
+    const swayX = viewmodel.swayAngle;
+    // EMP fire raise
+    const empFire = viewmodel.empFireTimer > 0 ? Math.min(1, viewmodel.empFireTimer / 300) : 0;
+    const empRaise = empFire * -25; // raise hand up during fire
+    // Interaction reach animation
+    const interactReach = viewmodel.interactTimer > 0 ? Math.sin(viewmodel.interactTimer / 200 * Math.PI) * 8 : 0;
+
+    // Base position — bottom-right quadrant
+    const bx = SCREEN_W - 85 + bobX + swayX;
+    const by = SCREEN_H - 70 + bobY + empRaise - interactReach;
+    const p = 2; // pixel size (2x2 for chunky pixel art)
+
+    // Determine which tool to show
+    const showEMP = inventory.emp > 0;
+    const showFlashlight = inventory.flashlight && !showEMP;
+
+    // === ARM (olive drab CogCorp uniform sleeve) ===
+    ctx.fillStyle = '#4a6344'; // olive drab
+    // Forearm coming from bottom-right
+    ctx.fillRect(bx + 30*p, by + 18*p, 22*p, 30*p);
+    // Sleeve shadow
+    ctx.fillStyle = '#3a5234';
+    ctx.fillRect(bx + 32*p, by + 20*p, 18*p, 28*p);
+    // Sleeve cuff - rolled up slightly
+    ctx.fillStyle = '#546e4c';
+    ctx.fillRect(bx + 28*p, by + 16*p, 24*p, 4*p);
+    // Cuff fold shadow
+    ctx.fillStyle = '#3f5838';
+    ctx.fillRect(bx + 30*p, by + 18*p, 20*p, 2*p);
+
+    // === HAND (warm skin tone) ===
+    ctx.fillStyle = '#c8956a'; // skin
+    // Palm
+    ctx.fillRect(bx + 18*p, by + 6*p, 16*p, 14*p);
+    // Skin shadow
+    ctx.fillStyle = '#a07850';
+    ctx.fillRect(bx + 20*p, by + 10*p, 12*p, 8*p);
+    // Thumb
+    ctx.fillStyle = '#c8956a';
+    ctx.fillRect(bx + 16*p, by + 8*p, 4*p, 8*p);
+    ctx.fillStyle = '#b88a5e';
+    ctx.fillRect(bx + 16*p, by + 10*p, 2*p, 6*p);
+
+    // Fingers wrapping around tool
+    ctx.fillStyle = '#c8956a';
+    ctx.fillRect(bx + 18*p, by + 2*p, 4*p, 6*p); // index
+    ctx.fillRect(bx + 22*p, by + 1*p, 4*p, 6*p); // middle
+    ctx.fillRect(bx + 26*p, by + 2*p, 4*p, 6*p); // ring
+    ctx.fillRect(bx + 30*p, by + 4*p, 4*p, 5*p); // pinky
+    // Finger shadow (knuckles)
+    ctx.fillStyle = '#a07850';
+    ctx.fillRect(bx + 18*p, by + 4*p, 16*p, 2*p);
+
+    if (showEMP) {
+        // === EMP DEVICE — cylindrical handheld pulse emitter ===
+        // Main body (dark metal cylinder)
+        ctx.fillStyle = '#3a3a48';
+        ctx.fillRect(bx + 10*p, by - 16*p, 12*p, 24*p);
+        // Body highlight (left edge catch)
+        ctx.fillStyle = '#52526a';
+        ctx.fillRect(bx + 10*p, by - 16*p, 2*p, 24*p);
+        // Body shadow (right edge)
+        ctx.fillStyle = '#2a2a38';
+        ctx.fillRect(bx + 20*p, by - 16*p, 2*p, 24*p);
+        // Grip ridges
+        ctx.fillStyle = '#444458';
+        for (let r = 0; r < 4; r++) {
+            ctx.fillRect(bx + 12*p, by + (2 + r*3)*p, 8*p, p);
+        }
+        // Energy coil at top — glowing blue/purple
+        const empGlow = 0.5 + Math.sin(gameTime * 0.01) * 0.3 + empFire * 0.5;
+        const coilR = (80 + empFire * 175) | 0;
+        const coilG = (120 + empFire * 100) | 0;
+        const coilB = (255) | 0;
+        // Coil glow (wide, dim)
+        ctx.fillStyle = `rgba(${coilR}, ${coilG}, ${coilB}, ${empGlow * 0.15})`;
+        ctx.fillRect(bx + 6*p, by - 24*p, 20*p, 12*p);
+        // Coil rings
+        ctx.fillStyle = `rgba(${coilR}, ${coilG}, ${coilB}, ${empGlow * 0.7})`;
+        ctx.fillRect(bx + 10*p, by - 20*p, 12*p, 2*p);
+        ctx.fillRect(bx + 10*p, by - 16*p, 12*p, 2*p);
+        ctx.fillRect(bx + 12*p, by - 22*p, 8*p, 2*p);
+        // Coil core (bright)
+        ctx.fillStyle = `rgba(${Math.min(255, coilR+50)}, ${Math.min(255, coilG+50)}, 255, ${empGlow})`;
+        ctx.fillRect(bx + 13*p, by - 19*p, 6*p, 4*p);
+        // EMP fire flash — intense white-blue flash when firing
+        if (empFire > 0.5) {
+            const flashA = (empFire - 0.5) * 2;
+            ctx.fillStyle = `rgba(200, 220, 255, ${flashA * 0.4})`;
+            ctx.fillRect(bx - 10*p, by - 35*p, 50*p, 40*p);
+        }
+        // Ammo indicator — small dots on the device body
+        ctx.fillStyle = '#6688ff';
+        for (let a = 0; a < Math.min(inventory.emp, 3); a++) {
+            ctx.fillRect(bx + 14*p, by + (-12 + a*3)*p, 2*p, 2*p);
+        }
+        // CogCorp stamp on body
+        ctx.fillStyle = '#555568';
+        ctx.font = `${p*3}px monospace`;
+        ctx.fillText('EMP', bx + 11*p, by - 2*p);
+    } else if (showFlashlight) {
+        // === FLASHLIGHT — metallic tube ===
+        // Tube body
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(bx + 12*p, by - 18*p, 8*p, 26*p);
+        // Highlight
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillRect(bx + 12*p, by - 18*p, 2*p, 26*p);
+        // Shadow
+        ctx.fillStyle = '#666666';
+        ctx.fillRect(bx + 18*p, by - 18*p, 2*p, 26*p);
+        // Lens housing (wider top)
+        ctx.fillStyle = '#777777';
+        ctx.fillRect(bx + 10*p, by - 22*p, 12*p, 6*p);
+        // Lens glow
+        const flGlow = 0.6 + Math.sin(gameTime * 0.003) * 0.15;
+        ctx.fillStyle = `rgba(255, 245, 200, ${flGlow * 0.8})`;
+        ctx.fillRect(bx + 12*p, by - 22*p, 8*p, 2*p);
+        // Beam hint (subtle cone above)
+        ctx.fillStyle = `rgba(255, 245, 200, ${flGlow * 0.12})`;
+        ctx.beginPath();
+        ctx.moveTo(bx + 12*p, by - 22*p);
+        ctx.lineTo(bx + 20*p, by - 22*p);
+        ctx.lineTo(bx + 28*p, by - 50*p);
+        ctx.lineTo(bx + 4*p, by - 50*p);
+        ctx.closePath();
+        ctx.fill();
+        // Button
+        ctx.fillStyle = '#55aa55';
+        ctx.fillRect(bx + 15*p, by - 4*p, 2*p, 2*p);
+    } else {
+        // === CLIPBOARD — the default CogCorp worker tool ===
+        // Board (brown)
+        ctx.fillStyle = '#8b6914';
+        ctx.fillRect(bx + 4*p, by - 20*p, 24*p, 30*p);
+        // Board edge highlight
+        ctx.fillStyle = '#a07c1c';
+        ctx.fillRect(bx + 4*p, by - 20*p, 2*p, 30*p);
+        // Board edge shadow
+        ctx.fillStyle = '#6b5210';
+        ctx.fillRect(bx + 26*p, by - 20*p, 2*p, 30*p);
+        // Metal clip at top
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(bx + 10*p, by - 22*p, 12*p, 4*p);
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillRect(bx + 12*p, by - 24*p, 8*p, 4*p);
+        // Clip highlight
+        ctx.fillStyle = '#cccccc';
+        ctx.fillRect(bx + 14*p, by - 23*p, 4*p, p);
+        // Paper (off-white)
+        ctx.fillStyle = '#ddd8c8';
+        ctx.fillRect(bx + 7*p, by - 18*p, 18*p, 26*p);
+        // Paper shadow (subtle fold)
+        ctx.fillStyle = '#c8c4b4';
+        ctx.fillRect(bx + 22*p, by - 16*p, 2*p, 22*p);
+        // Text lines on paper (simulate writing)
+        ctx.fillStyle = '#555544';
+        const lineCount = 7;
+        for (let l = 0; l < lineCount; l++) {
+            const lw = 10 + ((Math.sin(l * 2.7 + 0.5) + 1) * 3) | 0;
+            const ly = by + (-15 + l * 3) * p;
+            ctx.fillRect(bx + 9*p, ly, lw*p, p);
+        }
+        // Annotation count — show filed documents
+        if (player.docs > 0) {
+            ctx.fillStyle = '#884422';
+            ctx.font = `${p*3}px monospace`;
+            ctx.fillText(player.docs + '/' + totalDocs, bx + 9*p, by + 8*p);
+        }
+        // CogCorp header on paper
+        ctx.fillStyle = '#777766';
+        ctx.font = `${p*2.5}px monospace`;
+        ctx.fillText('CC', bx + 9*p, by - 14*p);
+    }
+
+    // === WRIST BAND (CogCorp ID) — always visible ===
+    ctx.fillStyle = '#cc6633';
+    ctx.fillRect(bx + 28*p, by + 14*p, 6*p, 3*p);
+    ctx.fillStyle = '#ee8844';
+    ctx.fillRect(bx + 29*p, by + 14*p, 4*p, p);
+    // ID text
+    ctx.fillStyle = '#220000';
+    ctx.font = `${p*2}px monospace`;
+    ctx.fillText('247', bx + 29*p, by + 16.5*p);
+
+    // Update viewmodel timers
+    if (viewmodel.empFireTimer > 0) viewmodel.empFireTimer -= frameDt;
+    if (viewmodel.interactTimer > 0) viewmodel.interactTimer -= frameDt;
+}
+
 function renderParticles() {
     for (const p of particles) {
         const t = p.life / p.maxLife;
@@ -7542,7 +7752,7 @@ function render() {
         ctx.font = '10px monospace';
         for (let i = player._ghostTexts.length - 1; i >= 0; i--) {
             const g = player._ghostTexts[i];
-            g.life -= dt * 1000;
+            g.life -= frameDt;
             if (g.life <= 0) { player._ghostTexts.splice(i, 1); continue; }
             const fade = Math.min(1, g.life / 400) * Math.min(1, (g.maxLife - g.life) / 300);
             ctx.fillStyle = `rgba(255,179,71,${g.alpha * fade})`;
@@ -7566,38 +7776,13 @@ function render() {
         }
     }
 
-    // Weapon hand — toolkit at bottom-right (Wolfenstein-style)
-    if (!player.annotating) {
-        const moving = keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown'];
-        const bobX = moving ? Math.sin(gameTime * 0.006) * 4 : 0;
-        const bobY = moving ? Math.abs(Math.cos(gameTime * 0.006)) * 3 : 0;
-        const hx = SCREEN_W - 70 + bobX, hy = SCREEN_H - 55 + bobY;
-
-        // Arm
-        ctx.fillStyle = '#8a6535';
-        ctx.fillRect(hx + 20, hy + 15, 35, 40);
-        ctx.fillStyle = '#7a5a30';
-        ctx.fillRect(hx + 22, hy + 20, 31, 35);
-
-        // Hand/grip
-        ctx.fillStyle = '#9a7545';
-        ctx.fillRect(hx + 15, hy + 5, 18, 20);
-
-        // Tool — wrench head
-        ctx.fillStyle = '#aaaaaa';
-        ctx.fillRect(hx + 8, hy - 20, 8, 28);
-        ctx.fillStyle = '#888888';
-        ctx.fillRect(hx + 4, hy - 24, 16, 8);
-        ctx.fillRect(hx + 6, hy - 28, 12, 6);
-
-        // Tool highlight
-        ctx.fillStyle = '#cccccc';
-        ctx.fillRect(hx + 10, hy - 18, 2, 22);
-    }
+    // First-person viewmodel — context-sensitive weapon/tool hand
+    renderViewmodel();
 }
 
 // === GAME LOOP ===
 let lastTime = 0;
+let frameDt = 16; // milliseconds per frame, updated each gameLoop
 
 let lastAutoSave = 0;
 // === MINIMAP ===
@@ -7752,6 +7937,7 @@ function renderMinimap() {
 function gameLoop(timestamp) {
     if (!gameStarted) return;
     const dt = Math.min(timestamp - lastTime, 33);
+    frameDt = dt; // expose to render functions
     lastTime = timestamp;
     gameTime = timestamp;
     update(dt);
