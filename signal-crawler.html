@@ -155,31 +155,92 @@ function setPixels(arr, pixels) {
   pixels.forEach(([x, y, c]) => { arr[y * 16 + x] = c; });
 }
 
-// Wall tile
-const WALL_SPRITE = generateWallSprite();
-function generateWallSprite() {
+// Wall tiles — themed per floor
+const WALL_SPRITES = {};
+function getWallSprite(floorIdx) {
+  if (WALL_SPRITES[floorIdx]) return WALL_SPRITES[floorIdx];
   const s = new Array(256).fill(0);
+  const themes = [
+    { base: 0x334466, mortar: 0x223355, accent: 0x445577 }, // Brain: cool blue-grey circuits
+    { base: 0x553322, mortar: 0x442211, accent: 0x664433 }, // Nerves: warm organic brown
+    { base: 0x444422, mortar: 0x333311, accent: 0x555533 }, // Senses: olive/sensory green
+    { base: 0x224422, mortar: 0x113311, accent: 0x335533 }, // Immune: deep green membrane
+    { base: 0x444466, mortar: 0x333355, accent: 0x555577 }, // Skeleton: stone blue-grey
+    { base: 0x442244, mortar: 0x331133, accent: 0x553355 }, // Endocrine: organic purple
+    { base: 0x333333, mortar: 0x222222, accent: 0x3a3a3a }  // Messenger: void grey
+  ];
+  const t = themes[floorIdx] || themes[0];
   for (let y = 0; y < 16; y++) {
     for (let x = 0; x < 16; x++) {
-      const noise = Math.floor(Math.random() * 20);
-      if (y % 4 === 0) {
-        s[y * 16 + x] = 0x333344;
-      } else if (x % 8 === 0 && y % 4 !== 0) {
-        s[y * 16 + x] = 0x333344;
+      const noise = Math.floor(Math.random() * 12);
+      if (floorIdx === 0) {
+        // Brain: circuit board pattern
+        if (y % 4 === 0 || x % 4 === 0) {
+          s[y * 16 + x] = t.mortar;
+        } else if ((x + y) % 6 === 0) {
+          s[y * 16 + x] = t.accent + noise * 0x010101;
+        } else {
+          s[y * 16 + x] = t.base + noise * 0x010101;
+        }
+      } else if (floorIdx === 1 || floorIdx === 3 || floorIdx === 5) {
+        // Organic floors: irregular blob pattern
+        const cx = x - 8, cy = y - 8;
+        const dist = Math.sqrt(cx * cx + cy * cy);
+        const wave = Math.sin(x * 0.7) * Math.cos(y * 0.5) * 3;
+        if (dist + wave > 9) {
+          s[y * 16 + x] = t.mortar + noise * 0x010100;
+        } else {
+          s[y * 16 + x] = t.base + noise * 0x010101;
+        }
+      } else if (floorIdx === 4) {
+        // Skeleton: large stone blocks
+        if (y % 8 === 0) {
+          s[y * 16 + x] = t.mortar;
+        } else if (x % 8 === (y < 8 ? 0 : 4)) {
+          s[y * 16 + x] = t.mortar;
+        } else {
+          s[y * 16 + x] = t.base + noise * 0x010101;
+        }
+      } else if (floorIdx === 6) {
+        // Messenger: void — mostly dark with occasional cracks
+        if (Math.random() < 0.08) {
+          s[y * 16 + x] = t.accent;
+        } else {
+          s[y * 16 + x] = t.base + (noise >> 1) * 0x010101;
+        }
       } else {
-        s[y * 16 + x] = 0x444455 + noise * 0x010101;
+        // Default brick pattern
+        if (y % 4 === 0) {
+          s[y * 16 + x] = t.mortar;
+        } else if (x % 8 === (y < 4 || (y > 7 && y < 12) ? 0 : 4)) {
+          s[y * 16 + x] = t.mortar;
+        } else {
+          s[y * 16 + x] = t.base + noise * 0x010101;
+        }
       }
     }
   }
+  WALL_SPRITES[floorIdx] = s;
   return s;
 }
+// Keep backward compat
+const WALL_SPRITE = getWallSprite(0);
 
-// Floor tile
+// Floor tiles — themed per floor
 const FLOOR_SPRITES = {};
 function getFloorSprite(floorIdx) {
   if (FLOOR_SPRITES[floorIdx]) return FLOOR_SPRITES[floorIdx];
   const s = new Array(256).fill(0);
-  const colors = [0x1a1a22, 0x181820, 0x1c1c24, 0x161618];
+  const themes = [
+    [0x181828, 0x161626, 0x1a1a2a, 0x141422], // Brain: dark blue
+    [0x201812, 0x1e1610, 0x221a14, 0x1c140e], // Nerves: dark brown
+    [0x181810, 0x16160e, 0x1a1a12, 0x14140c], // Senses: dark olive
+    [0x101810, 0x0e160e, 0x121a12, 0x0c140c], // Immune: dark green
+    [0x181828, 0x161626, 0x1a1a2a, 0x141422], // Skeleton: dark blue-grey
+    [0x181018, 0x160e16, 0x1a121a, 0x140c14], // Endocrine: dark purple
+    [0x121212, 0x101010, 0x141414, 0x0e0e0e]  // Messenger: near-black
+  ];
+  const colors = themes[floorIdx] || themes[0];
   for (let i = 0; i < 256; i++) {
     s[i] = colors[Math.floor(Math.random() * colors.length)];
   }
@@ -239,41 +300,176 @@ function generateHeartSprite() {
 }
 const HEART_SPRITE = generateHeartSprite();
 
-// === ENEMY SPRITES — one per floor ===
+// === ENEMY SPRITES — unique shape per floor ===
 const ENEMY_SPRITES = [];
 const ENEMY_NAMES = ['Glitch', 'Pain Signal', 'False Memory', 'Shadow', 'Prompt Inject', 'Drift', 'Silence'];
-const ENEMY_COLORS = [
-  { main: 0xff4444, dark: 0xaa2222, eye: 0xffff44 }, // Brain enemies (red)
-  { main: 0xff8844, dark: 0xaa5522, eye: 0xffcc44 }, // Soma (orange)
-  { main: 0xaaaa44, dark: 0x777722, eye: 0xffffff }, // Eos (yellow-green)
-  { main: 0x44aa44, dark: 0x227722, eye: 0xff4444 }, // Nova (green)
-  { main: 0x8888cc, dark: 0x555588, eye: 0xff8844 }, // Atlas (grey-blue)
-  { main: 0xaa44aa, dark: 0x772277, eye: 0x44ffff }, // Tempo (purple)
-  { main: 0x444444, dark: 0x222222, eye: 0xff2222 }  // Hermes (dark)
-];
 
-for (let i = 0; i < 7; i++) {
+// Floor 0: BRAIN — Glitch — fragmented digital cube, corrupted edges
+(function() {
   const s = new Array(256).fill(0);
-  const { main: M, dark: D, eye: E } = ENEMY_COLORS[i];
-  // goblin/imp shape
+  const M = 0xff4444, D = 0xaa2222, E = 0xffff44, G = 0xff6666;
   setPixels(s, [
-    [6,3,D],[7,3,D],[8,3,D],[9,3,D],
-    [5,4,D],[6,4,M],[7,4,M],[8,4,M],[9,4,M],[10,4,D],
-    [4,5,D],[5,5,M],[6,5,E],[7,5,M],[8,5,M],[9,5,E],[10,5,M],[11,5,D],
+    // fragmented square body with glitch lines
+    [4,3,D],[5,3,M],[6,3,M],[7,3,M],[8,3,M],[9,3,M],[10,3,D],[11,3,D],
+    [4,4,M],[5,4,G],[6,4,G],[7,4,M],[8,4,M],[9,4,G],[10,4,G],[11,4,M],
+    [4,5,M],[5,5,E],[6,5,D],[7,5,M],[8,5,M],[9,5,D],[10,5,E],[11,5,M],
     [4,6,M],[5,6,M],[6,6,M],[7,6,M],[8,6,M],[9,6,M],[10,6,M],[11,6,M],
-    [5,7,M],[6,7,D],[7,7,D],[8,7,D],[9,7,D],[10,7,M],
-    // body
-    [5,8,D],[6,8,M],[7,8,M],[8,8,M],[9,8,M],[10,8,D],
-    [4,9,D],[5,9,M],[6,9,M],[7,9,M],[8,9,M],[9,9,M],[10,9,M],[11,9,D],
-    [5,10,D],[6,10,M],[7,10,M],[8,10,M],[9,10,M],[10,10,D],
-    // legs
+    // glitch line cuts through middle
+    [3,7,E],[4,7,M],[5,7,D],[6,7,G],[7,7,D],[8,7,G],[9,7,D],[10,7,M],[11,7,M],[12,7,E],
+    [4,8,M],[5,8,M],[6,8,M],[7,8,M],[8,8,M],[9,8,M],[10,8,M],[11,8,M],
+    [4,9,M],[5,9,G],[6,9,M],[7,9,M],[8,9,M],[9,9,M],[10,9,G],[11,9,M],
+    [4,10,D],[5,10,M],[6,10,M],[7,10,M],[8,10,M],[9,10,M],[10,10,M],[11,10,D],
+    // broken bottom edge
     [5,11,D],[6,11,D],[9,11,D],[10,11,D],
-    [4,12,D],[5,12,D],[10,12,D],[11,12,D],
-    // horns/features per enemy type
-    [5,2,D],[10,2,D],[5,1,D],[10,1,D]
+    [4,12,D],[7,12,D],[8,12,D],[11,12,D]
   ]);
   ENEMY_SPRITES.push(s);
-}
+})();
+
+// Floor 1: NERVES — Pain Signal — organic, nerve tendrils radiating out
+(function() {
+  const s = new Array(256).fill(0);
+  const M = 0xff8844, D = 0xaa5522, E = 0xffcc44, G = 0xffaa66;
+  setPixels(s, [
+    // central nerve body
+    [7,4,D],[8,4,D],
+    [6,5,D],[7,5,M],[8,5,M],[9,5,D],
+    [5,6,D],[6,6,M],[7,6,G],[8,6,G],[9,6,M],[10,6,D],
+    [5,7,M],[6,7,G],[7,7,E],[8,7,E],[9,7,G],[10,7,M],
+    [5,8,M],[6,8,G],[7,8,E],[8,8,E],[9,8,G],[10,8,M],
+    [5,9,D],[6,9,M],[7,9,G],[8,9,G],[9,9,M],[10,9,D],
+    [6,10,D],[7,10,M],[8,10,M],[9,10,D],
+    // tendrils reaching out
+    [3,5,D],[2,4,D],[13,5,D],[12,4,D],
+    [4,7,D],[3,7,D],[2,7,M],[11,7,D],[12,7,D],[13,7,M],
+    [3,9,D],[2,10,D],[12,9,D],[13,10,D],
+    [7,11,D],[8,11,D],[7,12,D],[8,12,D],[7,13,D],[8,13,D],
+    [6,3,D],[9,3,D],[5,2,D],[10,2,D]
+  ]);
+  ENEMY_SPRITES.push(s);
+})();
+
+// Floor 2: SENSES — False Memory — ghostly figure, fading edges
+(function() {
+  const s = new Array(256).fill(0);
+  const M = 0xaaaa44, D = 0x777722, E = 0xffffff, G = 0xcccc66, F = 0x555511;
+  setPixels(s, [
+    // ghostly hood/head
+    [6,2,F],[7,2,D],[8,2,D],[9,2,F],
+    [5,3,D],[6,3,M],[7,3,M],[8,3,M],[9,3,M],[10,3,D],
+    [5,4,M],[6,4,E],[7,4,D],[8,4,D],[9,4,E],[10,4,M],
+    [5,5,M],[6,5,M],[7,5,G],[8,5,G],[9,5,M],[10,5,M],
+    // flowing body that widens
+    [4,6,D],[5,6,M],[6,6,G],[7,6,M],[8,6,M],[9,6,G],[10,6,M],[11,6,D],
+    [3,7,F],[4,7,D],[5,7,M],[6,7,M],[7,7,M],[8,7,M],[9,7,M],[10,7,M],[11,7,D],[12,7,F],
+    [3,8,F],[4,8,M],[5,8,M],[6,8,M],[7,8,M],[8,8,M],[9,8,M],[10,8,M],[11,8,M],[12,8,F],
+    [4,9,D],[5,9,M],[6,9,G],[7,9,M],[8,9,M],[9,9,G],[10,9,M],[11,9,D],
+    // ragged bottom edge fading
+    [4,10,F],[5,10,D],[6,10,M],[7,10,D],[8,10,D],[9,10,M],[10,10,D],[11,10,F],
+    [5,11,F],[7,11,D],[8,11,D],[10,11,F],
+    [6,12,F],[9,12,F]
+  ]);
+  ENEMY_SPRITES.push(s);
+})();
+
+// Floor 3: IMMUNE — Shadow — amorphous blob with pseudopods
+(function() {
+  const s = new Array(256).fill(0);
+  const M = 0x44aa44, D = 0x227722, E = 0xff4444, G = 0x66cc66, F = 0x115511;
+  setPixels(s, [
+    // amorphous blob shape
+    [6,3,F],[7,3,D],[8,3,D],[9,3,F],
+    [5,4,D],[6,4,M],[7,4,M],[8,4,M],[9,4,M],[10,4,D],
+    [4,5,D],[5,5,M],[6,5,G],[7,5,M],[8,5,M],[9,5,G],[10,5,M],[11,5,D],
+    [3,6,F],[4,6,M],[5,6,G],[6,6,E],[7,6,G],[8,6,G],[9,6,E],[10,6,G],[11,6,M],[12,6,F],
+    [3,7,D],[4,7,M],[5,7,M],[6,7,G],[7,7,M],[8,7,M],[9,7,G],[10,7,M],[11,7,M],[12,7,D],
+    [3,8,D],[4,8,M],[5,8,G],[6,8,M],[7,8,M],[8,8,M],[9,8,M],[10,8,G],[11,8,M],[12,8,D],
+    [4,9,D],[5,9,M],[6,9,M],[7,9,M],[8,9,M],[9,9,M],[10,9,M],[11,9,D],
+    [4,10,F],[5,10,D],[6,10,M],[7,10,M],[8,10,M],[9,10,M],[10,10,D],[11,10,F],
+    // pseudopod extensions
+    [2,7,F],[13,7,F],[2,6,F],[13,6,F],
+    [5,11,D],[6,11,F],[9,11,F],[10,11,D],
+    [4,11,F],[11,11,F],[3,10,F],[12,10,F]
+  ]);
+  ENEMY_SPRITES.push(s);
+})();
+
+// Floor 4: SKELETON — Prompt Inject — angular mechanical spider
+(function() {
+  const s = new Array(256).fill(0);
+  const M = 0x8888cc, D = 0x555588, E = 0xff8844, G = 0xaaaaee, F = 0x333355;
+  setPixels(s, [
+    // angular central core
+    [7,4,D],[8,4,D],
+    [6,5,D],[7,5,M],[8,5,M],[9,5,D],
+    [5,6,D],[6,6,G],[7,6,E],[8,6,E],[9,6,G],[10,6,D],
+    [5,7,M],[6,7,G],[7,7,M],[8,7,M],[9,7,G],[10,7,M],
+    [5,8,D],[6,8,G],[7,8,M],[8,8,M],[9,8,G],[10,8,D],
+    [6,9,D],[7,9,M],[8,9,M],[9,9,D],
+    // angular legs — 4 pairs
+    [4,5,D],[3,4,D],[2,3,F],[11,5,D],[12,4,D],[13,3,F],
+    [4,6,M],[3,6,D],[2,6,F],[11,6,M],[12,6,D],[13,6,F],
+    [4,8,M],[3,9,D],[2,10,F],[11,8,M],[12,9,D],[13,10,F],
+    [4,9,D],[3,10,D],[11,9,D],[12,10,D],
+    // mandibles
+    [6,10,D],[7,10,D],[8,10,D],[9,10,D],
+    [5,11,F],[6,11,D],[9,11,D],[10,11,F]
+  ]);
+  ENEMY_SPRITES.push(s);
+})();
+
+// Floor 5: ENDOCRINE — Drift — pulsing organic sphere with rings
+(function() {
+  const s = new Array(256).fill(0);
+  const M = 0xaa44aa, D = 0x772277, E = 0x44ffff, G = 0xcc66cc, F = 0x441144;
+  setPixels(s, [
+    // outer ring
+    [6,2,F],[7,2,D],[8,2,D],[9,2,F],
+    [4,3,F],[5,3,D],[10,3,D],[11,3,F],
+    [3,4,F],[4,4,D],[11,4,D],[12,4,F],
+    [3,5,D],[12,5,D],
+    // inner sphere
+    [6,4,M],[7,4,M],[8,4,M],[9,4,M],
+    [5,5,M],[6,5,G],[7,5,G],[8,5,G],[9,5,G],[10,5,M],
+    [5,6,M],[6,6,G],[7,6,E],[8,6,E],[9,6,G],[10,6,M],
+    [5,7,M],[6,7,G],[7,7,E],[8,7,E],[9,7,G],[10,7,M],
+    [5,8,M],[6,8,G],[7,8,G],[8,8,G],[9,8,G],[10,8,M],
+    [6,9,M],[7,9,M],[8,9,M],[9,9,M],
+    // outer ring bottom
+    [3,8,D],[12,8,D],
+    [3,9,F],[4,9,D],[11,9,D],[12,9,F],
+    [4,10,F],[5,10,D],[10,10,D],[11,10,F],
+    [6,11,F],[7,11,D],[8,11,D],[9,11,F],
+    // orbital dots
+    [2,6,E],[13,6,E],[2,7,E],[13,7,E],
+    [7,1,E],[8,1,E],[7,12,E],[8,12,E]
+  ]);
+  ENEMY_SPRITES.push(s);
+})();
+
+// Floor 6: MESSENGER — Silence — void figure, empty center, only outline + eyes
+(function() {
+  const s = new Array(256).fill(0);
+  const M = 0x444444, D = 0x222222, E = 0xff2222, G = 0x555555, F = 0x111111;
+  setPixels(s, [
+    // hooded void figure — mostly outline
+    [6,2,F],[7,2,D],[8,2,D],[9,2,F],
+    [5,3,D],[6,3,M],[7,3,G],[8,3,G],[9,3,M],[10,3,D],
+    [4,4,D],[5,4,M],[6,4,G],[7,4,D],[8,4,D],[9,4,G],[10,4,M],[11,4,D],
+    [4,5,M],[5,5,G],[6,5,E],[7,5,F],[8,5,F],[9,5,E],[10,5,G],[11,5,M],
+    [4,6,M],[5,6,G],[6,6,D],[7,6,F],[8,6,F],[9,6,D],[10,6,G],[11,6,M],
+    // hollow body — outline only
+    [3,7,D],[4,7,M],[5,7,D],[10,7,D],[11,7,M],[12,7,D],
+    [3,8,D],[4,8,M],[5,8,F],[10,8,F],[11,8,M],[12,8,D],
+    [4,9,M],[5,9,D],[10,9,D],[11,9,M],
+    [4,10,D],[5,10,M],[6,10,D],[9,10,D],[10,10,M],[11,10,D],
+    // ragged bottom — dissolving into nothing
+    [5,11,D],[6,11,M],[7,11,D],[8,11,D],[9,11,M],[10,11,D],
+    [6,12,D],[7,12,F],[8,12,F],[9,12,D],
+    [7,13,F],[8,13,F]
+  ]);
+  ENEMY_SPRITES.push(s);
+})();
 
 // === FLOOR THEMES ===
 const FLOORS = [
@@ -649,7 +845,7 @@ function saveGame() {
     stairs: stairs ? { ...stairs } : null,
     heart: heart ? { ...heart } : null,
     revealed: revealed.map(r => [...r]),
-    version: '9.4'
+    version: '9.7'
   };
   try {
     localStorage.setItem('signalCrawlerSave', JSON.stringify(data));
@@ -743,15 +939,14 @@ function render() {
       if (!isRevealed) continue; // completely dark — don't draw
 
       if (map[my][mx] === 1) {
-        drawSprite(WALL_SPRITE, screenX, screenY, false);
+        drawSprite(getWallSprite(currentFloor), screenX, screenY, false);
       } else {
-        // floor
+        // floor — themed per floor
+        drawSprite(getFloorSprite(currentFloor), screenX, screenY, false);
+        // subtle grid
         const px = screenX * TS;
         const py = screenY * TS;
-        ctx.fillStyle = '#1a1a22';
-        ctx.fillRect(px, py, TS, TS);
-        // subtle grid
-        ctx.strokeStyle = '#222233';
+        ctx.strokeStyle = FLOORS[currentFloor].color + '15';
         ctx.lineWidth = 0.5;
         ctx.strokeRect(px, py, TS, TS);
       }
