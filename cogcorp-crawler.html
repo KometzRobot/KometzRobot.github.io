@@ -57,28 +57,28 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .crt-power-on { animation: crt-on 0.4s ease-out; }
 #hud {
     position: fixed; bottom: 0; left: 0; width: 100%; padding: 8px 16px; z-index: 10;
-    display: none; font-family: monospace; font-size: 11px; color: #ffb347;
+    display: none; font-family: monospace; font-size: 13px; color: #ffb347;
     background: linear-gradient(to top, rgba(10,8,8,0.95), transparent);
-    pointer-events: none;
+    pointer-events: none; text-shadow: 0 0 4px rgba(255,179,71,0.3);
 }
 #hud .stats { display: flex; justify-content: space-between; align-items: center; }
 #health-bar { display: inline-block; width: 60px; height: 6px; background: #2a1a10; border: 1px solid #5a4020; vertical-align: middle; }
 #health-fill { height: 100%; background: #cc6622; transition: width 0.3s; }
-#inventory-bar { position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%); display: none; z-index: 10; font-family: monospace; font-size: 10px; color: #8a6020; pointer-events: none; }
+#inventory-bar { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); display: none; z-index: 10; font-family: monospace; font-size: 12px; color: #b08030; pointer-events: none; text-shadow: 0 0 3px rgba(176,128,48,0.3); }
 #inventory-bar span { margin: 0 6px; padding: 2px 6px; border: 1px solid #3a2a10; }
 #inventory-bar span.has { color: #ffb347; border-color: #5a4020; background: rgba(255,179,71,0.08); }
 #dialog-box {
     position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
     width: 90%; max-width: 500px; background: rgba(10,8,8,0.96);
     border: 1px solid #5a4020; border-left: 3px solid #ffb347; padding: 12px 16px; z-index: 20;
-    display: none; font-family: monospace; color: #c49030; font-size: 12px; line-height: 1.6;
+    display: none; font-family: monospace; color: #d4a040; font-size: 14px; line-height: 1.7;
 }
-#dialog-box .speaker { color: #ffd700; font-size: 10px; letter-spacing: 2px; margin-bottom: 4px; }
-#dialog-box .dismiss { color: #5a4020; font-size: 9px; margin-top: 6px; text-align: right; }
+#dialog-box .speaker { color: #ffd700; font-size: 12px; letter-spacing: 2px; margin-bottom: 4px; text-shadow: 0 0 6px rgba(255,215,0,0.3); }
+#dialog-box .dismiss { color: #8a6030; font-size: 11px; margin-top: 6px; text-align: right; }
 #dialog-box .choices { margin-top: 10px; }
 #dialog-box .choice-btn {
-    display: block; width: 100%; background: rgba(40,30,15,0.8); border: 1px solid #5a4020;
-    color: #c49030; font-family: monospace; font-size: 11px; padding: 6px 10px; margin-top: 6px;
+    display: block; width: 100%; background: rgba(40,30,15,0.8); border: 1px solid #6a5020;
+    color: #d4a040; font-family: monospace; font-size: 13px; padding: 8px 12px; margin-top: 6px;
     cursor: pointer; text-align: left; letter-spacing: 1px;
 }
 #dialog-box .choice-btn:hover { background: rgba(80,60,20,0.8); border-color: #ffb347; color: #ffd700; }
@@ -104,19 +104,19 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 #annotation-hud {
     position: fixed; top: 8px; left: 8px; z-index: 10; display: none;
-    font-family: monospace; font-size: 10px; color: #8a6020; pointer-events: none;
+    font-family: monospace; font-size: 12px; color: #b08030; pointer-events: none; text-shadow: 0 0 3px rgba(176,128,48,0.3);
 }
 #annotation-hud .reality-label { letter-spacing: 2px; margin-bottom: 4px; }
-#reality-bar { width: 100px; height: 4px; background: #1a1408; border: 1px solid #3a2a10; }
+#reality-bar { width: 100px; height: 6px; background: #1a1408; border: 1px solid #5a4020; }
 #reality-fill { height: 100%; background: linear-gradient(to right, #cc6622, #ffb347); transition: width 0.5s; }
 #annotation-progress {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, 30px);
-    font-family: monospace; font-size: 10px; color: #ffb347; z-index: 15;
+    font-family: monospace; font-size: 12px; color: #ffb347; z-index: 15;
     display: none; pointer-events: none; text-align: center; letter-spacing: 1px;
 }
-#annotation-progress .bar { width: 80px; height: 3px; background: #1a1408; border: 1px solid #5a4020; margin: 4px auto; }
+#annotation-progress .bar { width: 100px; height: 5px; background: #1a1408; border: 1px solid #5a4020; margin: 4px auto; }
 #annotation-progress .bar-fill { height: 100%; background: #ffb347; transition: width 0.1s; }
-#filed-count { color: #5a4020; font-size: 9px; }
+#filed-count { color: #8a6030; font-size: 11px; }
 #processing-desk {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 45;
     background: rgba(8,4,2,0.96); display: none; flex-direction: column;
@@ -138,12 +138,12 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     display: flex; justify-content: space-between; align-items: center;
     margin-top: 8px; padding: 4px 0;
 }
-#processing-desk .tuning-attempts { color: #ffb347; font-size: 12px; letter-spacing: 2px; }
+#processing-desk .tuning-attempts { color: #ffb347; font-size: 14px; letter-spacing: 2px; }
 #processing-desk .tuning-prompt {
-    color: #5a4020; font-size: 11px; letter-spacing: 1px; text-align: center; margin-top: 8px;
+    color: #8a6030; font-size: 13px; letter-spacing: 1px; text-align: center; margin-top: 8px;
 }
 #processing-desk .result-text {
-    text-align: center; font-size: 12px; margin-top: 12px; letter-spacing: 2px; min-height: 18px;
+    text-align: center; font-size: 14px; margin-top: 12px; letter-spacing: 2px; min-height: 18px;
 }
 #crt-terminal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50;
@@ -193,7 +193,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     border-bottom: 1px solid #3a2a10; padding-bottom: 6px; margin-bottom: 10px;
     display: flex; justify-content: space-between; align-items: center;
 }
-#npc-chat .chat-header .mood-indicator { font-size: 10px; color: #5a4020; }
+#npc-chat .chat-header .mood-indicator { font-size: 12px; color: #8a6030; }
 #npc-chat .chat-log {
     min-height: 140px; max-height: 200px; overflow-y: auto;
     margin-bottom: 10px; padding-right: 4px;
@@ -204,7 +204,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 #npc-chat .chat-msg.npc { color: #c49030; border-left: 2px solid #5a4020; }
 #npc-chat .chat-msg.player { color: #8a9a70; border-left: 2px solid #4a5a30; }
-#npc-chat .chat-msg.system { color: #5a4020; font-size: 10px; font-style: italic; }
+#npc-chat .chat-msg.system { color: #8a6030; font-size: 12px; font-style: italic; }
 #npc-chat .chat-msg .typing { animation: blink 0.7s infinite; }
 #npc-chat .chat-choices {
     display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
@@ -254,7 +254,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     color: #8a6020; font-size: 11px; line-height: 1.6; margin-bottom: 8px;
     padding: 6px 10px; border-left: 2px solid #2a1a08;
 }
-#moirai-wall .wall-msg .wall-author { color: #3a2a10; font-size: 9px; }
+#moirai-wall .wall-msg .wall-author { color: #6a5020; font-size: 11px; }
 #moirai-wall .wall-input-area { margin-bottom: 12px; }
 #moirai-wall .wall-input {
     width: 100%; background: #0c0804; border: 1px solid #3a2a10; color: #c49030;
@@ -267,7 +267,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     padding: 5px 16px; font-family: monospace; font-size: 11px; cursor: pointer;
     background: none; letter-spacing: 2px;
 }
-#moirai-wall .wall-footer { color: #2a1a08; font-size: 9px; text-align: center; margin-top: 8px; }
+#moirai-wall .wall-footer { color: #5a4020; font-size: 11px; text-align: center; margin-top: 8px; }
 /* Document Codex */
 #doc-codex {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 55;
@@ -495,7 +495,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         </div>
         <div class="tuning-prompt" id="tuning-prompt">[ SPACE to lock frequency ]</div>
         <div class="result-text" id="desk-result"></div>
-        <div style="color:#3a2a10; font-size:9px; text-align:center; margin-top:8px;">[ ESC to abandon ]</div>
+        <div style="color:#6a5020; font-size:11px; text-align:center; margin-top:8px;">[ ESC to abandon ]</div>
     </div>
 </div>
 
@@ -2945,13 +2945,13 @@ function renderTuningCanvas() {
     }
 
     // Frequency labels
-    ctx.fillStyle = '#3a2a10';
-    ctx.font = '9px monospace';
+    ctx.fillStyle = '#6a5020';
+    ctx.font = '11px monospace';
     ctx.textAlign = 'center';
     const floorFreqs = [[40, 100], [80, 200], [150, 350]];
     const fr = floorFreqs[currentFloor] || [40, 100];
-    ctx.fillText(fr[0] + ' Hz', barX + 10, barY + barH + 14);
-    ctx.fillText(fr[1] + ' Hz', barX + barW - 10, barY + barH + 14);
+    ctx.fillText(fr[0] + ' Hz', barX + 14, barY + barH + 16);
+    ctx.fillText(fr[1] + ' Hz', barX + barW - 14, barY + barH + 16);
 
     // Failed attempt markers (red X marks)
     for (const pos of tuningRevealed) {
@@ -3017,8 +3017,8 @@ function renderTuningCanvas() {
     }
 
     // Floor label
-    ctx.fillStyle = '#2a1a08';
-    ctx.font = '8px monospace';
+    ctx.fillStyle = '#5a4020';
+    ctx.font = '10px monospace';
     ctx.textAlign = 'left';
     ctx.fillText('FLOOR ' + (currentFloor + 1) + ' BAND', barX, H - 4);
 }
@@ -3243,7 +3243,7 @@ function renderEncounterActions() {
     for (const a of actions) {
         const btn = document.createElement('div');
         btn.className = 'enc-btn ' + a.cls;
-        btn.innerHTML = a.label + '<br><span style="font-size:9px;color:#5a4020;">' + a.desc + '</span>';
+        btn.innerHTML = a.label + '<br><span style="font-size:11px;color:#8a6030;">' + a.desc + '</span>';
         if (a.action) btn.onclick = a.action;
         actionsEl.appendChild(btn);
     }
@@ -6091,23 +6091,25 @@ function updateEnemies(dt) {
         }
 
         if (dist < effectiveRange && hasLineOfSight(e.x, e.y, player.x, player.y)) {
-            // Chase player
+            // Chase player (with dead zone to prevent jitter)
             e.alertTimer = 3000;
             const nx = dx / dist, ny = dy / dist;
             const slowMult = enemySlowTimer > 0 ? 0.5 : 1;
             const speed = (e.type === 'filer' ? e.speed * 1.2 : e.speed) * slowMult;
-            const newX = e.x + nx * speed * dt;
-            const newY = e.y + ny * speed * dt;
-            if (getMap(newX|0, e.y|0) === 0) e.x = newX;
-            if (getMap(e.x|0, newY|0) === 0) e.y = newY;
-
-            // Keep minimum distance — prevent clipping into player
-            if (dist < 0.8) {
-                const pushX = -nx * 0.02 * dt;
-                const pushY = -ny * 0.02 * dt;
+            if (dist > 1.0) {
+                // Chase — only when far enough to avoid oscillation
+                const newX = e.x + nx * speed * dt;
+                const newY = e.y + ny * speed * dt;
+                if (getMap(newX|0, e.y|0) === 0) e.x = newX;
+                if (getMap(e.x|0, newY|0) === 0) e.y = newY;
+            } else if (dist < 0.65) {
+                // Too close — push back gently
+                const pushX = -nx * 0.008 * dt;
+                const pushY = -ny * 0.008 * dt;
                 if (getMap((e.x + pushX)|0, e.y|0) === 0) e.x += pushX;
                 if (getMap(e.x|0, (e.y + pushY)|0) === 0) e.y += pushY;
             }
+            // Between 0.65-1.0: hold position (dead zone eliminates jitter)
 
             // Damage on contact
             if (dist < 0.6 && gameTime - e.lastDamageTime > 1500 && player.spawnShield <= 0) {
