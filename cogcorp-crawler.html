@@ -5499,14 +5499,22 @@ function castRays() {
 
         let side = 0, hit = 0, wallType = 0;
 
-        for (let depth = 0; depth < 30; depth++) {
+        for (let depth = 0; depth < 50; depth++) {
             if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; }
             else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
             wallType = getMap(mapX, mapY);
             if (wallType > 0) { hit = 1; break; }
         }
 
-        if (!hit) { zBuf[col] = 999; continue; }
+        if (!hit) {
+            // Fill column with fog instead of leaving black
+            zBuf[col] = 999;
+            for (let y = 0; y < SCREEN_H; y++) {
+                const pi = (y * SCREEN_W + col) * 4;
+                buf[pi] = atmo.fogR | 0; buf[pi+1] = atmo.fogG | 0; buf[pi+2] = atmo.fogB | 0; buf[pi+3] = 255;
+            }
+            continue;
+        }
 
         let perpDist;
         if (side === 0) perpDist = (mapX - player.x + (1 - stepX) / 2) / rayCos;
@@ -5534,9 +5542,9 @@ function castRays() {
         const tex = textures[texIdx];
         const fogFactor = Math.min(perpDist / 18, 1);
         const sideDim = side === 1 ? 0.7 : 1.0;
-        // Edge darkening at wall boundaries to hide seams
+        // Subtle edge softening at wall tile boundaries
         const edgeDist = Math.min(wallX, 1 - wallX);
-        const edgeDim = edgeDist < 0.05 ? 0.6 + edgeDist * 8 : 1.0;
+        const edgeDim = edgeDist < 0.02 ? 0.94 + edgeDist * 3 : 1.0;
 
         // Flashlight brightening
         const flashBoost = inventory.flashlight ? Math.max(0, 1 - perpDist / 14) * 0.4 : 0;
