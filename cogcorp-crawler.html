@@ -3535,8 +3535,9 @@ function openProcessingDesk(enemy) {
 
     // Update unit display
     const typeNames = { drone: 'Security Drone', filer: 'Filing Clerk', watcher: 'Observation Node' };
+    const resistLabels = ['STANDARD', 'ELEVATED', 'CRITICAL'];
     const unitEl = document.getElementById('tuning-unit');
-    if (unitEl) unitEl.textContent = typeNames[enemy.type] || 'Unknown Unit';
+    if (unitEl) unitEl.textContent = (typeNames[enemy.type] || 'Unknown Unit') + ' — Resistance: ' + (resistLabels[currentFloor] || 'UNKNOWN');
 
     updateTuningAttempts();
     const prompt = document.getElementById('tuning-prompt');
@@ -8849,10 +8850,23 @@ function render() {
         }
     }
 
-    // Exit compass — golden arrow pointing to exit when carrying the file on Floor 1
-    if (gameWon && currentFloor === 0) {
-        const exitX = 2, exitY = 2; // exit in northwest corner
-        const eDx = exitX - player.x, eDy = exitY - player.y;
+    // Exit compass — golden arrow pointing to exit/stairs when carrying the file
+    if (gameWon) {
+        let targetX, targetY, label;
+        if (currentFloor === 0) {
+            targetX = 2; targetY = 2; label = 'EXIT'; // exit in northwest corner
+        } else {
+            // Point to nearest downward stairs on upper floors
+            let bestDist = Infinity;
+            targetX = 2.5; targetY = 2.5; label = 'STAIRS \u2193';
+            for (const obj of worldObjects) {
+                if (!obj.isStairsDown) continue;
+                const sdx = obj.x - player.x, sdy = obj.y - player.y;
+                const sd = Math.sqrt(sdx*sdx + sdy*sdy);
+                if (sd < bestDist) { bestDist = sd; targetX = obj.x; targetY = obj.y; }
+            }
+        }
+        const eDx = targetX - player.x, eDy = targetY - player.y;
         const eDist = Math.sqrt(eDx*eDx + eDy*eDy);
         if (eDist > 3) {
             const exitAngle = Math.atan2(eDx, -eDy);
@@ -8874,7 +8888,7 @@ function render() {
             ctx.font = '8px monospace';
             ctx.fillStyle = `rgba(255, 215, 0, ${ePulse * 0.9})`;
             ctx.textAlign = 'center';
-            ctx.fillText('EXIT', 0, 16);
+            ctx.fillText(label, 0, 16);
             ctx.restore();
         }
     }
