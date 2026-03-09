@@ -1778,7 +1778,7 @@ function setMap(x, y, val) {
 function getTexForWall(wallType, mapX, mapY) {
     // Floor-specific wall textures — each floor has a distinct visual identity
     if (currentFloor === 1) {
-        // Floor 2 (Processing): cold industrial factory with real art textures
+        // Floor 2 (Archives): cold industrial factory with real art textures
         // Alternate wall variants based on position for visual variety
         const posHash = ((mapX || 0) * 7 + (mapY || 0) * 13) & 3;
         switch(wallType) {
@@ -1795,7 +1795,7 @@ function getTexForWall(wallType, mapX, mapY) {
         }
     }
     if (currentFloor === 2) {
-        // Floor 3 (Archive): mix of office walls and deep industrial
+        // Floor 3 (Processing): mix of office walls and deep industrial
         const posHash = ((mapX || 0) * 11 + (mapY || 0) * 17) & 3;
         switch(wallType) {
             case 1: return posHash === 0 ? TEX_FACTORY_DEEP : TEX_BRICK;
@@ -1906,9 +1906,9 @@ function renderCodex() {
 
 // === SAVE / CHECKPOINT SYSTEM (Loop 2122) ===
 const SAVE_KEY = 'cogcorp_crawler_checkpoint';
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 
-function saveCheckpoint() {
+function saveCheckpoint(silent) {
     try {
         const checkpoint = {
             version: SAVE_VERSION,
@@ -1929,6 +1929,8 @@ function saveCheckpoint() {
             surveillanceLevel: surveillanceLevel,
             npcStates: {},
             fogOfWar: fogOfWar.map(f => Array.from(f)),
+            // Persist enemy kill/filed state per floor
+            deadEnemies: enemies.map(e => ({ alive: e.alive, filed: e.filed })),
         };
         // Save NPC affinities
         for (const id in npcDefs) {
@@ -1939,7 +1941,7 @@ function saveCheckpoint() {
             };
         }
         localStorage.setItem(SAVE_KEY, JSON.stringify(checkpoint));
-        showMessage('CHECKPOINT SAVED — FLOOR ' + (currentFloor + 1), 2000);
+        if (!silent) showMessage('CHECKPOINT SAVED — FLOOR ' + (currentFloor + 1), 2000);
     } catch (e) {
         // localStorage may be full or disabled — fail silently
     }
@@ -1991,6 +1993,17 @@ function loadCheckpoint() {
 
         // Re-spawn floor entities
         spawnEnemies();
+        // Restore enemy kill/filed state
+        if (cp.deadEnemies) {
+            for (let i = 0; i < enemies.length && i < cp.deadEnemies.length; i++) {
+                if (!cp.deadEnemies[i].alive || cp.deadEnemies[i].filed) {
+                    enemies[i].alive = false;
+                    enemies[i].filed = !!cp.deadEnemies[i].filed;
+                    enemies[i].deathAnim = 0; // skip dissolve animation
+                    enemies[i].health = 0;
+                }
+            }
+        }
         spawnItems();
         spawnWorldObjects();
         spawnNPCs();
@@ -2042,7 +2055,7 @@ function loadAndResume() {
     if (loaded) {
         gameStarted = true;
         stopTuningTone(); // prevent oscillator leak on reload
-        deskOpen = false; deskEnemy = null; deskFile = null;
+        deskOpen = false; deskEnemy = null;
         encounterOpen = false; encounterEnemy = null; encounterLog = [];
         chatOpen = false; chatNPC = null; wallOpen = false;
         dialogOpen = false; choiceCallback = null;
@@ -2531,7 +2544,6 @@ function spawnEnemies() {
             fov: def.fov,
             floorMod: fm,  // store for combat stat adjustments
             alive: true,
-            patrolAxis: s.patrolAxis || null,
             patrolMin: s.patrolX1 || 0,
             patrolMax: s.patrolX2 || 0,
             patrolDir: 1,
@@ -2586,7 +2598,7 @@ const itemSpawns = [
     [
         { type: 'medkit', x: 2.5, y: 2.5 },
         { type: 'emp', x: 20.5, y: 18.5 },
-        { type: 'keycard', x: 15.5, y: 4.5 },
+        { type: 'anchor', x: 15.5, y: 4.5 },
         { type: 'targetFile', x: 11.5, y: 11.5 }, // inside the locked room
         { type: 'document', x: 6.5, y: 14.5, text: '"Final log. The machine on Floor 3 has been producing documents no one requested. The documents describe events that haven\'t happened yet. Today it described this log entry."' },
         { type: 'document', x: 18.5, y: 16.5, text: '"Note found in the output tray, handwritten in ink that has not dried in 37 years: \'I understand now. The building doesn\'t process documents. The building processes people into documents. I am writing this as fast as I can. My handwriting is becoming typescript.\'"' },
@@ -3261,7 +3273,7 @@ function useEMP() {
     shakeIntensity = 6;
     viewmodel.empFireTimer = 600; // 600ms EMP fire animation
     // EMP noise alerts distant enemies (beyond stun range)
-    alertNearbyEnemies(player.x, player.y, 16);
+    alertNearbyEnemies(player.x, player.y, 10);
 }
 
 function startFloorTransition(newFloor, direction) {
@@ -4122,7 +4134,6 @@ function renderEncounterActions() {
     if (!encounterPlayerTurn || encounterAnimating) return;
 
     const hasEMP = inventory.emp > 0;
-    const hasMedkit = items.some(i => i.type === 'medkit' && !i.collected);
 
     const actions = [
         { label: '[1] ATTACK', cls: 'attack', key: '1', action: encounterAttack, desc: 'Strike with improvised weapon (d20 + 3 vs AC)' },
@@ -4918,9 +4929,6 @@ const npcGenParams = {
     maintenanceBot: { temperature: 0.7, num_predict: 90,  top_p: 0.9  }, // technical, confused
     whistleblower:  { temperature: 0.65, num_predict: 100, top_p: 0.85 }, // academic, scared
     workerB119:     { temperature: 0.75, num_predict: 70,  top_p: 0.9  }, // hurried, nervous
-    workerB203:     { temperature: 0.5, num_predict: 70,  top_p: 0.85 }, // monotone, resigned
-    workerB077:     { temperature: 0.85, num_predict: 80,  top_p: 0.9  }, // conspiratorial
-    cafeUnit:       { temperature: 0.7, num_predict: 80,  top_p: 0.9  }, // cheerful, oblivious
 };
 
 async function getOllamaResponse(npc, playerText, act) {
@@ -5430,7 +5438,7 @@ function respawn() {
     player.docs = 0;
     surveillanceLevel = 0;
     stopTuningTone(); // prevent oscillator leak on respawn
-    deskOpen = false; deskEnemy = null; deskFile = null;
+    deskOpen = false; deskEnemy = null;
     encounterOpen = false; encounterEnemy = null; encounterLog = [];
     encounterAnimating = false; encounterPlayerTurn = false;
     chatOpen = false; chatNPC = null; wallOpen = false;
@@ -7702,7 +7710,7 @@ function updateEnemies(dt) {
                     shakeTimer = 200; shakeIntensity = 4;
                     addDamageIndicator(e.x, e.y);
                     playDamageSound();
-                    alertNearbyEnemies(player.x, player.y, 8);
+                    alertNearbyEnemies(player.x, player.y, 5);
                     updateHealthHUD();
                 }
             }
@@ -7749,7 +7757,7 @@ function updateEnemies(dt) {
                 shakeTimer = 200; shakeIntensity = 4;
                 addDamageIndicator(e.x, e.y);
                 playDamageSound();
-                alertNearbyEnemies(player.x, player.y, 8);
+                alertNearbyEnemies(player.x, player.y, 5);
                 updateHealthHUD();
             }
         } else if (e.alertTimer > 0) {
@@ -7790,19 +7798,6 @@ function updateEnemies(dt) {
                     if (getMap(e.x | 0, (e.y + ny) | 0) === 0) e.y += ny;
                     e.facing = Math.atan2(wdy, wdx);
                 }
-            }
-        } else if (e.patrolAxis) {
-            // Legacy axis patrol fallback
-            if (e.patrolAxis === 'x') {
-                e.x += e.speed * e.patrolDir * dt * 0.5 * (enemySlowTimer > 0 ? 0.5 : 1);
-                if (e.x > e.patrolMax + 0.5) e.patrolDir = -1;
-                if (e.x < e.patrolMin + 0.5) e.patrolDir = 1;
-                e.facing = e.patrolDir > 0 ? 0 : Math.PI; // face patrol direction
-            } else {
-                e.y += e.speed * e.patrolDir * dt * 0.5 * (enemySlowTimer > 0 ? 0.5 : 1);
-                if (e.y > e.patrolMax + 0.5) e.patrolDir = -1;
-                if (e.y < e.patrolMin + 0.5) e.patrolDir = 1;
-                e.facing = e.patrolDir > 0 ? Math.PI / 2 : -Math.PI / 2; // face patrol direction
             }
         }
     }
@@ -8098,10 +8093,6 @@ function update(dt) {
         ]);
         return;
     }
-    if (exitChoiceMade && player.exitChoice) {
-        // Already chose, don't re-trigger
-    }
-
     // Check nearby objects
     nearObject = null; nearItem = null;
     let nearestDist = 2.5;
@@ -9402,22 +9393,7 @@ function gameLoop(timestamp) {
     // Auto-save every 60 seconds (silent — no message popup)
     if (timestamp - lastAutoSave > 60000) {
         lastAutoSave = timestamp;
-        try {
-            const cp = {
-                version: SAVE_VERSION, timestamp: Date.now(),
-                player: { x: player.x, y: player.y, angle: player.angle, health: player.health,
-                    maxHealth: player.maxHealth, docs: player.docs, realityLevel: player.realityLevel,
-                    totalFiled: player.totalFiled, stealthApproaches: player.stealthApproaches,
-                    allDocsFound: player.allDocsFound,
-                    totalNPCTalks: player.totalNPCTalks, vasquezMet: player.vasquezMet,
-                    archivistAffinity: player.archivistAffinity },
-                currentFloor, foundDocuments, collectedItemKeys: Array.from(collectedItemKeys),
-                inventory: { ...inventory }, surveillanceLevel, npcStates: {},
-                fogOfWar: fogOfWar.map(f => Array.from(f))
-            };
-            for (const id in npcDefs) cp.npcStates[id] = { affinity: npcDefs[id].state.affinity, mood: npcDefs[id].state.mood, exchangeCount: npcDefs[id].state.exchangeCount };
-            localStorage.setItem(SAVE_KEY, JSON.stringify(cp));
-        } catch(e) {}
+        saveCheckpoint(true);
     }
     requestAnimationFrame(gameLoop);
 }
@@ -9439,8 +9415,8 @@ const BOOT_LINES = [
     { text: '', delay: 100 },
     { text: 'SCANNING BUILDING B — SECTOR 7...', delay: 400 },
     { text: '  FLOOR 1 [INTAKE]      — OPERATIONAL', delay: 200 },
-    { text: '  FLOOR 2 [PROCESSING]  — OPERATIONAL', delay: 200 },
-    { text: '  FLOOR 3 [ARCHIVE]     — ████ RESTRICTED', cls: 'boot-red', delay: 350 },
+    { text: '  FLOOR 2 [ARCHIVES]    — OPERATIONAL', delay: 200 },
+    { text: '  FLOOR 3 [PROCESSING]  — ████ RESTRICTED', cls: 'boot-red', delay: 350 },
     { text: '', delay: 100 },
     { text: 'SECURITY UNITS: 12 ACTIVE', delay: 150 },
     { text: 'SURVEILLANCE: ENABLED', delay: 150 },
