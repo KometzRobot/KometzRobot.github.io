@@ -352,6 +352,68 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #hud .surveillance-fill {
     height: 100%; background: #883322; transition: width 0.5s;
 }
+/* === COMBAT ENCOUNTER OVERLAY (D&D-style) === */
+#combat-encounter {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 44;
+    background: rgba(8,4,2,0.92); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace; cursor: default;
+}
+#combat-encounter .encounter-frame {
+    width: 520px; max-width: 94%; background: #0c0804;
+    border: 2px solid #5a4020; padding: 16px 20px; position: relative;
+}
+#combat-encounter .encounter-header {
+    color: #ffb347; font-size: 14px; letter-spacing: 3px; text-align: center;
+    border-bottom: 1px solid #3a2a10; padding-bottom: 8px; margin-bottom: 12px;
+    text-shadow: 0 0 10px rgba(255,179,71,0.3);
+}
+#combat-encounter .encounter-enemy-info {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; background: #1a1208; border: 1px solid #2a1a08; margin-bottom: 10px;
+}
+#combat-encounter .enemy-name { color: #cc6633; font-size: 13px; letter-spacing: 2px; }
+#combat-encounter .enemy-hp { color: #cc4422; font-size: 11px; }
+#combat-encounter .enemy-hp-bar { display: inline-block; width: 80px; height: 5px; background: #2a0a0a; border: 1px solid #4a1a1a; vertical-align: middle; margin-left: 6px; }
+#combat-encounter .enemy-hp-fill { height: 100%; background: #cc4422; transition: width 0.3s; }
+#combat-encounter .encounter-log {
+    min-height: 60px; max-height: 120px; overflow-y: auto; margin-bottom: 12px;
+    padding: 6px 10px; background: #0a0604; border: 1px solid #1a1208;
+    scrollbar-width: thin; scrollbar-color: #3a2a10 #0a0604;
+}
+#combat-encounter .log-entry { color: #8a6020; font-size: 10px; line-height: 1.6; margin-bottom: 2px; }
+#combat-encounter .log-entry.hit { color: #cc6633; }
+#combat-encounter .log-entry.miss { color: #5a4020; }
+#combat-encounter .log-entry.crit { color: #ffb347; text-shadow: 0 0 4px rgba(255,179,71,0.4); }
+#combat-encounter .log-entry.damage { color: #cc3322; }
+#combat-encounter .log-entry.heal { color: #44aa44; }
+#combat-encounter .encounter-actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+}
+#combat-encounter .enc-btn {
+    color: #c49030; border: 1px solid #3a2a10; padding: 8px 12px;
+    font-family: monospace; font-size: 11px; cursor: pointer; background: rgba(20,14,8,0.8);
+    text-align: center; letter-spacing: 1px; transition: all 0.2s;
+}
+#combat-encounter .enc-btn:hover { background: rgba(60,40,15,0.8); border-color: #5a4020; color: #ffb347; }
+#combat-encounter .enc-btn.attack { border-color: #884422; color: #cc6633; }
+#combat-encounter .enc-btn.attack:hover { border-color: #cc6633; color: #ffb347; }
+#combat-encounter .enc-btn.process { border-color: #448833; color: #66aa44; }
+#combat-encounter .enc-btn.process:hover { border-color: #66aa44; color: #88cc66; }
+#combat-encounter .enc-btn.item { border-color: #446688; color: #6688aa; }
+#combat-encounter .enc-btn.item:hover { border-color: #6688aa; color: #88aacc; }
+#combat-encounter .enc-btn.flee { border-color: #5a4020; color: #8a6020; }
+#combat-encounter .enc-btn.flee:hover { border-color: #8a6020; color: #c49030; }
+#combat-encounter .enc-btn.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+#combat-encounter .encounter-footer {
+    color: #3a2a10; font-size: 9px; text-align: center; letter-spacing: 1px;
+}
+#combat-encounter .player-stats {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 10px; background: #0a0804; border: 1px solid #1a1208; margin-bottom: 10px;
+    font-size: 10px; color: #5a4020;
+}
+#combat-encounter .player-stats .stat-hp { color: #cc6622; }
+#combat-encounter .player-stats .stat-reality { color: #6688aa; }
 </style>
 </head>
 <body>
@@ -365,15 +427,19 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         The machines are still running. The filing system is still processing.<br>
         The lights still flicker at the same frequency they always did.<br><br>
         You are B-247. You were sent to retrieve one file from Floor 3.<br>
-        You are not armed. You were given a <em style="color:#ffb347">processing desk</em>.<br><br>
+        You carry a toolkit and a <em style="color:#ffb347">processing desk</em>.<br><br>
         The filing system knows you're here. The security units still patrol.<br>
-        You cannot fight them. But you can <em style="color:#ffb347">process</em> them.<br><br>
-        Press E near a unit to open the Processing Desk. Inspect their file.<br>
-        Check department, clearance, codes against regulations. Then decide:<br>
-        PROCESS valid files. REJECT invalid ones. Each decision costs reality.<br><br>
+        When you encounter a unit, you choose how to engage:<br><br>
+        <em style="color:#cc6633">ATTACK</em> — strike with improvised tools. Roll to hit, deal damage.<br>
+        <em style="color:#66aa44">PROCESS</em> — open the Processing Desk. Inspect files. File or reject.<br>
+        <em style="color:#6688aa">EMP</em> — deploy electromagnetic pulse. Heavy damage + stun.<br>
+        <em style="color:#8a6020">RETREAT</em> — disengage. The unit may pursue.<br><br>
         Not everything here is hostile. Some units will talk. Some walls bear messages<br>
         from agents who came before you. What you leave behind matters.<br><br>
-        WASD move. Mouse look. E to process/interact/talk. Q for EMP. TAB for Document Codex. Click to lock mouse.
+        Not everything here is hostile. Some units will talk. Some walls bear messages<br>
+        from agents who came before you. What you leave behind matters.<br><br>
+        WASD move. Mouse look. E to engage/interact/talk. Q for EMP. TAB for Document Codex. Click to lock mouse.<br>
+        Combat is turn-based. Attack, process files, use items, or retreat.
     </div>
     <div id="world-status" style="color:#5a4a2a;font-size:10px;letter-spacing:1.5px;margin-top:12px;min-height:14px;"></div>
     <div id="continue-btn" style="display:none;color:#ffb347;font-size:14px;letter-spacing:3px;margin-top:16px;cursor:pointer;" onclick="event.stopPropagation(); startGame(true);">[ CONTINUE FROM CHECKPOINT ]</div>
@@ -508,6 +574,24 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         </div>
         <div class="camera-scanline"></div>
         <div class="camera-footer">[ ESC to disconnect ] Each access increases Building surveillance of YOU.</div>
+    </div>
+</div>
+
+<div id="combat-encounter">
+    <div class="encounter-frame">
+        <div class="encounter-header">SECURITY ENCOUNTER</div>
+        <div class="encounter-enemy-info">
+            <span class="enemy-name" id="enc-enemy-name">UNIT</span>
+            <span class="enemy-hp">HP: <span id="enc-enemy-hp">3</span> <span class="enemy-hp-bar"><span class="enemy-hp-fill" id="enc-enemy-hp-fill" style="width:100%"></span></span></span>
+        </div>
+        <div class="player-stats">
+            <span>B-247</span>
+            <span class="stat-hp">HP: <span id="enc-player-hp">100</span></span>
+            <span class="stat-reality">REALITY: <span id="enc-player-reality">100</span>%</span>
+        </div>
+        <div class="encounter-log" id="enc-log"></div>
+        <div class="encounter-actions" id="enc-actions"></div>
+        <div class="encounter-footer">Turn-based encounter. Choose wisely.</div>
     </div>
 </div>
 
@@ -1543,9 +1627,11 @@ function loadAndResume() {
     if (loaded) {
         gameStarted = true;
         deskOpen = false; deskEnemy = null; deskFile = null;
+        encounterOpen = false; encounterEnemy = null; encounterLog = [];
         chatOpen = false; chatNPC = null; wallOpen = false;
         dialogOpen = false; choiceCallback = null;
         document.getElementById('processing-desk').style.display = 'none';
+        document.getElementById('combat-encounter').style.display = 'none';
         document.getElementById('npc-chat').style.display = 'none';
         document.getElementById('moirai-wall').style.display = 'none';
         document.getElementById('dialog-overlay').style.display = 'none';
@@ -2105,6 +2191,12 @@ let mouseDX = 0;
 
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
+    // Route to combat encounter when open
+    if (encounterOpen) {
+        e.preventDefault();
+        if (handleEncounterKey(e.code)) return;
+        return;
+    }
     // Route to camera feed when open
     if (cameraOpen) {
         e.preventDefault();
@@ -2118,7 +2210,7 @@ window.addEventListener('keydown', e => {
         return;
     }
     // Open codex with TAB
-    if (e.code === 'Tab' && gameStarted && !terminalOpen && !chatOpen && !wallOpen && !deskOpen && !dialogOpen && !cameraOpen) {
+    if (e.code === 'Tab' && gameStarted && !terminalOpen && !chatOpen && !wallOpen && !deskOpen && !dialogOpen && !cameraOpen && !encounterOpen) {
         e.preventDefault();
         openCodex();
         return;
@@ -2197,7 +2289,7 @@ window.addEventListener('keydown', e => {
                         }
                     }
                 }
-                if (closestEnemy) openProcessingDesk(closestEnemy);
+                if (closestEnemy) openCombatEncounter(closestEnemy);
             }
         }
     }
@@ -2728,6 +2820,330 @@ function getIssueDescription(f) {
     if (f.issues.includes('code')) return `Filing code "${f.code}" has wrong prefix.`;
     if (f.issues.includes('expiry')) return `File expired: ${f.expiry}.`;
     return 'File is valid.';
+}
+
+// === COMBAT ENCOUNTER SYSTEM (D&D-style turn-based) ===
+// Replaces direct Processing Desk access with tactical choices:
+// ATTACK (d20 to-hit + damage), PROCESS (existing desk), USE ITEM, FLEE
+let encounterOpen = false;
+let encounterEnemy = null;
+let encounterLog = [];
+let encounterPlayerTurn = true;
+let encounterAnimating = false;
+
+// D&D-style combat stats
+const COMBAT_STATS = {
+    // Player: agent B-247 with improvised tools
+    player: {
+        attackBonus: 3,   // +3 to hit (trained agent)
+        damageDie: 6,     // 1d6 base damage
+        damageBonus: 1,   // +1 damage modifier
+        ac: 12,           // armor class (field gear)
+    },
+    // Enemy stats per type
+    drone: {
+        ac: 14,           // hard to hit (small, metal)
+        attackBonus: 2,
+        damageDie: 4,     // 1d4 (electric shock)
+        damageBonus: 1,
+        maxHP: 3,
+        name: 'SECURITY DRONE',
+        xpValue: 15,
+    },
+    filer: {
+        ac: 11,           // easy to hit (large, slow)
+        attackBonus: 4,
+        damageDie: 8,     // 1d8 (paper cut swarm)
+        damageBonus: 2,
+        maxHP: 4,
+        name: 'FILING CLERK',
+        xpValue: 25,
+    },
+    watcher: {
+        ac: 16,           // very hard to hit (wall-mounted)
+        attackBonus: 3,
+        damageDie: 6,     // 1d6 (focused beam)
+        damageBonus: 0,
+        maxHP: 2,
+        name: 'SURVEILLANCE UNIT',
+        xpValue: 20,
+    },
+};
+
+function rollD(sides) { return Math.floor(Math.random() * sides) + 1; }
+function rollD20() { return rollD(20); }
+
+function openCombatEncounter(enemy) {
+    encounterOpen = true;
+    encounterEnemy = enemy;
+    encounterLog = [];
+    encounterPlayerTurn = true;
+    encounterAnimating = false;
+
+    // Stun enemy while in encounter
+    enemy.stunTimer = Math.max(enemy.stunTimer, 30000);
+
+    // Release pointer lock
+    if (document.pointerLockElement) document.exitPointerLock();
+
+    // Set up display
+    const stats = COMBAT_STATS[enemy.type] || COMBAT_STATS.drone;
+    document.getElementById('enc-enemy-name').textContent = stats.name;
+    document.getElementById('enc-enemy-hp').textContent = enemy.health;
+    const hpPct = Math.max(0, (enemy.health / stats.maxHP) * 100);
+    document.getElementById('enc-enemy-hp-fill').style.width = hpPct + '%';
+    document.getElementById('enc-player-hp').textContent = player.health;
+    document.getElementById('enc-player-reality').textContent = player.realityLevel | 0;
+
+    addEncounterLog('You face a ' + stats.name + '. It regards you with mechanical indifference.', '');
+    if (enemy.health < stats.maxHP) {
+        addEncounterLog('The unit appears damaged. (HP: ' + enemy.health + '/' + stats.maxHP + ')', 'miss');
+    }
+
+    renderEncounterActions();
+    document.getElementById('combat-encounter').style.display = 'flex';
+    playTerminalBootSound();
+}
+
+function closeCombatEncounter() {
+    encounterOpen = false;
+    if (encounterEnemy) {
+        encounterEnemy.stunTimer = 500; // brief stun on exit
+    }
+    encounterEnemy = null;
+    encounterLog = [];
+    document.getElementById('combat-encounter').style.display = 'none';
+}
+
+function addEncounterLog(text, cls) {
+    encounterLog.push({ text, cls: cls || '' });
+    const logEl = document.getElementById('enc-log');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry' + (cls ? ' ' + cls : '');
+    entry.textContent = text;
+    logEl.appendChild(entry);
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+function updateEncounterHUD() {
+    const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
+    document.getElementById('enc-enemy-hp').textContent = Math.max(0, encounterEnemy.health);
+    const hpPct = Math.max(0, (encounterEnemy.health / stats.maxHP) * 100);
+    document.getElementById('enc-enemy-hp-fill').style.width = hpPct + '%';
+    document.getElementById('enc-player-hp').textContent = Math.max(0, player.health);
+    document.getElementById('enc-player-reality').textContent = player.realityLevel | 0;
+    updateHealthHUD();
+    updateRealityHUD();
+}
+
+function renderEncounterActions() {
+    const actionsEl = document.getElementById('enc-actions');
+    actionsEl.innerHTML = '';
+
+    if (!encounterPlayerTurn || encounterAnimating) return;
+
+    const hasEMP = inventory.emp > 0;
+    const hasMedkit = items.some(i => i.type === 'medkit' && !i.collected);
+
+    const actions = [
+        { label: '[1] ATTACK', cls: 'attack', key: '1', action: encounterAttack, desc: 'Strike with improvised weapon (d20 + 3 vs AC)' },
+        { label: '[2] PROCESS', cls: 'process', key: '2', action: encounterProcess, desc: 'Open the Processing Desk to file this unit' },
+        { label: '[3] EMP BLAST', cls: 'item' + (hasEMP ? '' : ' disabled'), key: '3', action: hasEMP ? encounterEMP : null, desc: hasEMP ? 'Deploy EMP device (' + inventory.emp + ' remaining)' : 'No EMP devices' },
+        { label: '[4] RETREAT', cls: 'flee', key: '4', action: encounterFlee, desc: 'Disengage and run (enemy may pursue)' },
+    ];
+
+    for (const a of actions) {
+        const btn = document.createElement('div');
+        btn.className = 'enc-btn ' + a.cls;
+        btn.innerHTML = a.label + '<br><span style="font-size:9px;color:#5a4020;">' + a.desc + '</span>';
+        if (a.action) btn.onclick = a.action;
+        actionsEl.appendChild(btn);
+    }
+}
+
+function encounterAttack() {
+    if (!encounterPlayerTurn || encounterAnimating || !encounterEnemy) return;
+    encounterAnimating = true;
+
+    const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
+    const roll = rollD20();
+    const total = roll + COMBAT_STATS.player.attackBonus;
+    const isCrit = roll === 20;
+    const isHit = isCrit || total >= stats.ac;
+
+    if (isCrit) {
+        const dmg = rollD(COMBAT_STATS.player.damageDie) + rollD(COMBAT_STATS.player.damageDie) + COMBAT_STATS.player.damageBonus;
+        addEncounterLog('CRITICAL HIT! You roll ' + roll + ' + ' + COMBAT_STATS.player.attackBonus + ' = ' + total + ' vs AC ' + stats.ac, 'crit');
+        addEncounterLog('You deal ' + dmg + ' damage! (2d' + COMBAT_STATS.player.damageDie + ' + ' + COMBAT_STATS.player.damageBonus + ')', 'crit');
+        encounterEnemy.health -= dmg;
+        playHitSound();
+    } else if (isHit) {
+        const dmg = rollD(COMBAT_STATS.player.damageDie) + COMBAT_STATS.player.damageBonus;
+        addEncounterLog('You roll ' + roll + ' + ' + COMBAT_STATS.player.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Hit!', 'hit');
+        addEncounterLog('You deal ' + dmg + ' damage. (1d' + COMBAT_STATS.player.damageDie + ' + ' + COMBAT_STATS.player.damageBonus + ')', 'hit');
+        encounterEnemy.health -= dmg;
+        playHitSound();
+    } else {
+        addEncounterLog('You roll ' + roll + ' + ' + COMBAT_STATS.player.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Miss.', 'miss');
+    }
+
+    updateEncounterHUD();
+
+    // Check if enemy is defeated
+    if (encounterEnemy.health <= 0) {
+        encounterEnemy.health = 0;
+        encounterEnemy.alive = false;
+        encounterEnemy.filed = true;
+        encounterEnemy.annotationLevel = 100;
+        addEncounterLog('The ' + stats.name + ' sparks, shudders, and collapses.', 'crit');
+        addEncounterLog('+ ' + stats.xpValue + ' PROCESSING CREDITS', 'heal');
+        updateEncounterHUD();
+        setTimeout(() => {
+            closeCombatEncounter();
+            showMessage(stats.name + ' NEUTRALIZED', 2000);
+        }, 1500);
+        return;
+    }
+
+    // Enemy's turn
+    encounterPlayerTurn = false;
+    renderEncounterActions(); // clear action buttons during enemy turn
+    setTimeout(() => encounterEnemyTurn(), 800);
+}
+
+function encounterEnemyTurn() {
+    if (!encounterEnemy || encounterEnemy.health <= 0) return;
+    const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
+
+    const roll = rollD20();
+    const total = roll + stats.attackBonus;
+    const isCrit = roll === 20;
+    const isHit = isCrit || total >= COMBAT_STATS.player.ac;
+
+    if (isCrit) {
+        const dmg = rollD(stats.damageDie) + rollD(stats.damageDie) + stats.damageBonus;
+        addEncounterLog('The ' + stats.name + ' strikes! CRITICAL! (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ')', 'damage');
+        addEncounterLog('You take ' + dmg + ' damage!', 'damage');
+        player.health = Math.max(0, player.health - dmg);
+        playDamageSound();
+    } else if (isHit) {
+        const dmg = rollD(stats.damageDie) + stats.damageBonus;
+        addEncounterLog('The ' + stats.name + ' attacks. (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ') Hit.', 'damage');
+        addEncounterLog('You take ' + dmg + ' damage.', 'damage');
+        player.health = Math.max(0, player.health - dmg);
+        playDamageSound();
+    } else {
+        addEncounterLog('The ' + stats.name + ' attacks. (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ') Miss.', 'miss');
+    }
+
+    updateEncounterHUD();
+
+    // Check player death
+    if (player.health <= 0) {
+        addEncounterLog('SYSTEM FAILURE. B-247 signal lost.', 'damage');
+        setTimeout(() => {
+            closeCombatEncounter();
+            showDeathScreen();
+        }, 1500);
+        return;
+    }
+
+    // Back to player's turn
+    encounterPlayerTurn = true;
+    encounterAnimating = false;
+    renderEncounterActions();
+}
+
+function encounterProcess() {
+    if (!encounterPlayerTurn || encounterAnimating || !encounterEnemy) return;
+    // Close encounter and open Processing Desk
+    document.getElementById('combat-encounter').style.display = 'none';
+    encounterOpen = false;
+    addEncounterLog('You open your Processing Desk...', '');
+    openProcessingDesk(encounterEnemy);
+    encounterEnemy = null;
+}
+
+function encounterEMP() {
+    if (!encounterPlayerTurn || encounterAnimating || !encounterEnemy || inventory.emp <= 0) return;
+    encounterAnimating = true;
+
+    inventory.emp--;
+    updateInventoryHUD();
+
+    const stats = COMBAT_STATS[encounterEnemy.type] || COMBAT_STATS.drone;
+    const dmg = rollD(8) + 2; // EMP: 1d8+2 electric damage
+    addEncounterLog('You deploy an EMP blast!', 'crit');
+    addEncounterLog('Electric surge deals ' + dmg + ' damage and stuns the unit!', 'hit');
+    encounterEnemy.health -= dmg;
+    encounterEnemy.stunTimer = 15000; // 15 second stun in the world after encounter
+
+    updateEncounterHUD();
+
+    // Check if enemy is defeated
+    if (encounterEnemy.health <= 0) {
+        encounterEnemy.health = 0;
+        encounterEnemy.alive = false;
+        encounterEnemy.filed = true;
+        encounterEnemy.annotationLevel = 100;
+        addEncounterLog('The ' + stats.name + ' overloads and shuts down permanently.', 'crit');
+        updateEncounterHUD();
+        setTimeout(() => {
+            closeCombatEncounter();
+            showMessage(stats.name + ' DISABLED', 2000);
+        }, 1500);
+        return;
+    }
+
+    addEncounterLog('The ' + stats.name + ' is stunned. You can act again.', 'heal');
+    // EMP stun: skip enemy turn, player goes again
+    encounterAnimating = false;
+    renderEncounterActions();
+}
+
+function encounterFlee() {
+    if (!encounterPlayerTurn || encounterAnimating) return;
+
+    // 50% chance to flee successfully, 75% if enemy is stunned
+    const stunned = encounterEnemy && encounterEnemy.stunTimer > 0;
+    const fleeChance = stunned ? 0.85 : 0.50;
+    const roll = Math.random();
+
+    if (roll < fleeChance) {
+        addEncounterLog('You disengage and retreat into the corridor.', 'heal');
+        setTimeout(() => {
+            closeCombatEncounter();
+            showMessage('RETREATED', 1500);
+        }, 600);
+    } else {
+        addEncounterLog('You try to retreat but the unit blocks your path!', 'damage');
+        // Enemy gets a free attack
+        encounterPlayerTurn = false;
+        encounterAnimating = true;
+        renderEncounterActions();
+        setTimeout(() => encounterEnemyTurn(), 600);
+    }
+}
+
+// Handle keyboard in combat encounter
+function handleEncounterKey(code) {
+    if (!encounterOpen || !encounterPlayerTurn || encounterAnimating) return false;
+    if (code === 'Digit1' || code === 'Numpad1') { encounterAttack(); return true; }
+    if (code === 'Digit2' || code === 'Numpad2') { encounterProcess(); return true; }
+    if (code === 'Digit3' || code === 'Numpad3') { encounterEMP(); return true; }
+    if (code === 'Digit4' || code === 'Numpad4') { encounterFlee(); return true; }
+    if (code === 'Escape') { encounterFlee(); return true; }
+    return false;
+}
+
+// Sound stubs (these will use existing audio system)
+function playHitSound() { try { playEMPSound(); } catch(e) {} }
+function playDamageSound() {
+    try {
+        // Reuse existing damage flash visual
+        const flash = document.getElementById('damage-flash');
+        if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 100); }
+    } catch(e) {}
 }
 
 // === NPC DIALOGUE SYSTEM (Façade-inspired) ===
@@ -3660,6 +4076,7 @@ function respawn() {
     player.phaseHintShown = false;
     player.docs = 0;
     deskOpen = false; deskEnemy = null; deskFile = null;
+    encounterOpen = false; encounterEnemy = null; encounterLog = [];
     chatOpen = false; chatNPC = null; wallOpen = false;
     dialogOpen = false; choiceCallback = null;
     gameWon = false; exitChoiceMade = false;
@@ -3667,6 +4084,7 @@ function respawn() {
     inventory.keycard = false; inventory.flashlight = false; inventory.emp = 0; inventory.targetFile = false;
     lastAmbientMsg = 0; lastPAMsg = 0; lastWhisper = 0;
     document.getElementById('processing-desk').style.display = 'none';
+    document.getElementById('combat-encounter').style.display = 'none';
     document.getElementById('npc-chat').style.display = 'none';
     document.getElementById('moirai-wall').style.display = 'none';
     document.getElementById('dialog-overlay').style.display = 'none';
@@ -5054,7 +5472,7 @@ function hasLineOfSight(x1, y1, x2, y2) {
 
 // === UPDATE ===
 function update(dt) {
-    if (dialogOpen || terminalOpen || chatOpen || wallOpen) return;
+    if (dialogOpen || terminalOpen || chatOpen || wallOpen || encounterOpen) return;
     if (deskOpen && !deskResult) {
         updateProcessingDesk(dt);
         return;
@@ -5332,7 +5750,7 @@ function update(dt) {
             if (canProcess) {
                 interactEl.style.display = 'inline';
                 interactEl.style.color = '#448888';
-                interactEl.textContent = '[E] PROCESS UNIT';
+                interactEl.textContent = '[E] ENGAGE UNIT';
             } else {
                 interactEl.style.display = 'none';
             }
