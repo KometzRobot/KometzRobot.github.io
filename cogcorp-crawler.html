@@ -441,6 +441,54 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 #combat-encounter .player-stats .stat-hp { color: #cc6622; }
 #combat-encounter .player-stats .stat-reality { color: #6688aa; }
+/* === PAUSE MENU === */
+#pause-menu {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50;
+    background: rgba(6,4,2,0.92); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: monospace; cursor: default;
+}
+#pause-menu::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px);
+    pointer-events: none; z-index: 1;
+}
+#pause-menu .pause-frame {
+    position: relative; z-index: 2; width: 420px; max-width: 92%;
+    border: 2px solid #3a2a10; background: #0a0804;
+    box-shadow: 0 0 40px rgba(255,179,71,0.06), inset 0 0 20px rgba(0,0,0,0.5);
+}
+#pause-menu .pause-header {
+    background: linear-gradient(180deg, #2a1e10 0%, #1a1208 100%);
+    border-bottom: 1px solid #3a2a10; padding: 12px 16px; text-align: center;
+}
+#pause-menu .pause-header h2 {
+    color: #ffb347; font-size: 16px; letter-spacing: 6px; margin: 0;
+    text-shadow: 0 0 8px rgba(255,179,71,0.4);
+}
+#pause-menu .pause-header .pause-sub {
+    color: #5a4020; font-size: 10px; letter-spacing: 2px; margin-top: 4px;
+}
+#pause-menu .pause-body { padding: 16px; }
+#pause-menu .pause-btn {
+    display: block; width: 100%; background: rgba(30,22,10,0.8); border: 1px solid #3a2a10;
+    color: #d4a040; font-family: monospace; font-size: 14px; padding: 10px 14px; margin-bottom: 6px;
+    cursor: pointer; text-align: left; letter-spacing: 2px; transition: background 0.15s, border-color 0.15s;
+}
+#pause-menu .pause-btn:hover { background: rgba(60,44,16,0.8); border-color: #ffb347; color: #ffd700; }
+#pause-menu .pause-btn:last-child { margin-bottom: 0; }
+#pause-menu .pause-divider {
+    border: none; border-top: 1px solid #1a1208; margin: 10px 0;
+}
+#pause-menu .controls-grid {
+    display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+    font-size: 11px; color: #8a6030; padding: 8px 0;
+}
+#pause-menu .controls-grid .key { color: #d4a040; text-align: right; letter-spacing: 1px; }
+#pause-menu .controls-grid .desc { color: #6a5020; }
+#pause-menu .pause-footer {
+    border-top: 1px solid #1a1208; padding: 10px 16px; text-align: center;
+    font-size: 10px; color: #3a2a10; letter-spacing: 1px;
+}
 </style>
 </head>
 <body>
@@ -628,6 +676,34 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         <div class="encounter-log" id="enc-log"></div>
         <div class="encounter-actions" id="enc-actions"></div>
         <div class="encounter-footer">Turn-based encounter. Choose wisely.</div>
+    </div>
+</div>
+
+<div id="pause-menu">
+    <div class="pause-frame">
+        <div class="pause-header">
+            <h2>PAUSED</h2>
+            <div class="pause-sub">COGCORP SYSTEMS — BUILDING B</div>
+        </div>
+        <div class="pause-body">
+            <button class="pause-btn" onclick="togglePause()">&#9654; RESUME</button>
+            <button class="pause-btn" onclick="pauseSaveGame()">&#9638; SAVE CHECKPOINT</button>
+            <button class="pause-btn" id="pause-audio-btn" onclick="togglePauseAudio()">&#9835; AUDIO: ON</button>
+            <hr class="pause-divider">
+            <div class="controls-grid">
+                <span class="key">W A S D</span><span class="desc">Move</span>
+                <span class="key">MOUSE</span><span class="desc">Look around</span>
+                <span class="key">E</span><span class="desc">Interact / Pick up</span>
+                <span class="key">SPACE</span><span class="desc">Fire EMP / Dismiss</span>
+                <span class="key">F</span><span class="desc">Flashlight</span>
+                <span class="key">TAB</span><span class="desc">Document codex</span>
+                <span class="key">M</span><span class="desc">Toggle minimap</span>
+                <span class="key">ESC</span><span class="desc">Pause / Close menus</span>
+            </div>
+            <hr class="pause-divider">
+            <button class="pause-btn" onclick="pauseReturnToTitle()">&#9632; RETURN TO TITLE</button>
+        </div>
+        <div class="pause-footer">PRESS ESC TO RESUME</div>
     </div>
 </div>
 
@@ -2492,6 +2568,7 @@ function updateFogOfWar() {
 }
 let currentFloor = 0;
 let gameStarted = false;
+let gamePaused = false;
 let dialogOpen = false;
 let nearObject = null;
 let nearItem = null;
@@ -2541,6 +2618,11 @@ let mouseDX = 0;
 
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
+    // Pause menu toggle
+    if (e.code === 'Escape' && gameStarted && gamePaused) {
+        e.preventDefault(); togglePause(); return;
+    }
+    if (gamePaused) return; // block all input while paused
     // Route to combat encounter when open
     if (encounterOpen) {
         e.preventDefault();
@@ -2591,6 +2673,10 @@ window.addEventListener('keydown', e => {
         if (e.code === 'Escape') { closeProcessingDesk(); return; }
         if (e.code === 'Space') { tryTuningLock(); return; }
         return;
+    }
+    // Pause when no panel is open
+    if (e.code === 'Escape' && gameStarted && !dialogOpen) {
+        e.preventDefault(); togglePause(); return;
     }
     if (e.code === 'Space') {
         e.preventDefault();
@@ -8157,12 +8243,64 @@ function renderMinimap() {
     mctx.fillText('F' + (currentFloor + 1) + ' ' + floorNames[currentFloor], 3, mh - 3);
 }
 
+// === PAUSE MENU ===
+let audioMuted = false;
+
+function togglePause() {
+    gamePaused = !gamePaused;
+    const el = document.getElementById('pause-menu');
+    if (gamePaused) {
+        el.style.display = 'flex';
+        // Update audio button text
+        document.getElementById('pause-audio-btn').textContent =
+            '\u266B AUDIO: ' + (audioMuted ? 'OFF' : 'ON');
+        // Exit pointer lock so user can click menu buttons
+        if (document.pointerLockElement) document.exitPointerLock();
+    } else {
+        el.style.display = 'none';
+        // Re-acquire pointer lock
+        canvas.requestPointerLock();
+    }
+}
+
+function pauseSaveGame() {
+    saveCheckpoint();
+    // Brief flash on the save button
+    const btn = document.querySelectorAll('#pause-menu .pause-btn')[1];
+    btn.style.color = '#ffd700';
+    btn.textContent = '\u25A0 SAVED!';
+    setTimeout(() => { btn.style.color = ''; btn.textContent = '\u25A0 SAVE CHECKPOINT'; }, 1200);
+}
+
+function togglePauseAudio() {
+    audioMuted = !audioMuted;
+    if (audioNodes.master) {
+        audioNodes.master.gain.value = audioMuted ? 0 : 0.25;
+    }
+    document.getElementById('pause-audio-btn').textContent =
+        '\u266B AUDIO: ' + (audioMuted ? 'OFF' : 'ON');
+}
+
+function pauseReturnToTitle() {
+    gamePaused = false;
+    document.getElementById('pause-menu').style.display = 'none';
+    gameStarted = false;
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('inventory-bar').style.display = 'none';
+    document.getElementById('annotation-hud').style.display = 'none';
+    document.getElementById('minimap').style.display = 'none';
+    document.getElementById('title').style.display = 'flex';
+    document.getElementById('title').style.opacity = '1';
+    if (document.pointerLockElement) document.exitPointerLock();
+}
+
 function gameLoop(timestamp) {
     if (!gameStarted) return;
     const dt = Math.min(timestamp - lastTime, 33);
     frameDt = dt; // expose to render functions
     lastTime = timestamp;
     gameTime = timestamp;
+    if (gamePaused) { mouseDX = 0; requestAnimationFrame(gameLoop); return; }
     update(dt);
     // Recompute light map periodically for flicker animation (~7fps)
     if (timestamp - lastLightFlicker > 150) {
