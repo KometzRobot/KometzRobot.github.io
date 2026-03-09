@@ -2496,6 +2496,8 @@ let shakeTimer = 0;
 let shakeIntensity = 0;
 let pickupFlashTimer = 0;
 let pickupFlashColor = [255, 255, 255];
+const particles = [];
+const MAX_PARTICLES = 300;
 let msgTimer = 0;
 let msgText = '';
 let totalDocs = 0;
@@ -2785,29 +2787,34 @@ function pickupItem(item) {
             showMessage('KEYCARD ACQUIRED — Opens locked doors', 2500);
             updateInventoryHUD();
             pickupFlashTimer = 200; pickupFlashColor = [220, 180, 40];
+            spawnItemPickupBurst([220, 180, 40]);
             break;
         case 'flashlight':
             inventory.flashlight = true;
             showMessage('FLASHLIGHT — Illuminates dark areas', 2500);
             updateInventoryHUD();
             pickupFlashTimer = 200; pickupFlashColor = [220, 200, 120];
+            spawnItemPickupBurst([220, 200, 120]);
             break;
         case 'emp':
             inventory.emp++;
             showMessage('EMP DEVICE — Press Q to stun all enemies in range', 3000);
             updateInventoryHUD();
             pickupFlashTimer = 200; pickupFlashColor = [80, 140, 220];
+            spawnItemPickupBurst([80, 140, 220]);
             break;
         case 'medkit':
             player.health = Math.min(player.maxHealth, player.health + 30);
             showMessage('MEDKIT — Health restored +30', 2000);
             updateHealthHUD();
             pickupFlashTimer = 150; pickupFlashColor = [200, 60, 60];
+            spawnItemPickupBurst([200, 60, 60]);
             break;
         case 'document':
             player.docs++;
             document.getElementById('hud-docs').textContent = player.docs;
             pickupFlashTimer = 150; pickupFlashColor = [180, 160, 120];
+            spawnItemPickupBurst([180, 160, 120]);
             // Store in codex
             if (item.spawnKey) {
                 const catEntry = DOC_CATALOG.find(d => d.key === item.spawnKey);
@@ -2844,6 +2851,8 @@ function pickupItem(item) {
         case 'targetFile':
             inventory.targetFile = true;
             pickupFlashTimer = 400; pickupFlashColor = [255, 215, 0];
+            spawnItemPickupBurst([255, 215, 0]);
+            spawnItemPickupBurst([255, 180, 0]); // double burst for the big pickup
             showDialog('THE FILE', 'You found it. File #B-247-SELF. It\'s a personnel file. Your personnel file. The photo is you. The dates are wrong — it says you\'ve been here since 1986. The last entry reads: "B-247 was sent to retrieve this file. B-247 will retrieve this file. B-247 has always been retrieving this file." You take it anyway. The stairs down are to the northwest.');
             gameWon = true;
             showMessage('OBJECTIVE COMPLETE — RETURN TO FLOOR 1 EXIT', 5000);
@@ -2856,6 +2865,7 @@ function pickupItem(item) {
             showMessage('REALITY ANCHOR — Coherence restored +25', 2500);
             updateRealityHUD();
             pickupFlashTimer = 250; pickupFlashColor = [140, 200, 255];
+            spawnItemPickupBurst([140, 200, 255]);
             break;
     }
 }
@@ -2871,8 +2881,11 @@ function useEMP() {
             if (dist < 10) e.stunTimer = 5000; // 5 seconds stun
         }
     }
-    // Visual flash
+    // Visual flash + particles
     playEMPSound();
+    spawnEMPBurst();
+    shakeTimer = 300;
+    shakeIntensity = 6;
 }
 
 function changeFloor(newFloor) {
@@ -3421,6 +3434,7 @@ function processTuningResult(success) {
         player.realityLevel -= cost;
         updateRealityHUD();
         showMessage('UNIT FILED \u2014 Reality: ' + (player.realityLevel|0) + '%');
+        spawnEnemyDeathBurst(SCREEN_W / 2, SCREEN_H * 0.4, deskEnemy.type);
 
         const deadEnemy = deskEnemy;
         setTimeout(() => { deadEnemy.annotationLevel = 100; deadEnemy.alive = false; }, 800);
@@ -3619,6 +3633,7 @@ function encounterAttack() {
         encounterEnemy.annotationLevel = 100;
         addEncounterLog('The ' + stats.name + ' sparks, shudders, and collapses.', 'crit');
         addEncounterLog('+ ' + stats.xpValue + ' PROCESSING CREDITS', 'heal');
+        spawnEnemyDeathBurst(SCREEN_W / 2, SCREEN_H * 0.35, encounterEnemy.type);
         updateEncounterHUD();
         setTimeout(() => {
             closeCombatEncounter();
@@ -3711,6 +3726,7 @@ function encounterEMP() {
         encounterEnemy.filed = true;
         encounterEnemy.annotationLevel = 100;
         addEncounterLog('The ' + stats.name + ' overloads and shuts down permanently.', 'crit');
+        spawnEnemyDeathBurst(SCREEN_W / 2, SCREEN_H * 0.35, encounterEnemy.type);
         updateEncounterHUD();
         setTimeout(() => {
             closeCombatEncounter();
@@ -3760,7 +3776,7 @@ function handleEncounterKey(code) {
     return false;
 }
 
-// Combat audio stubs
+// Combat audio
 function playHitSound() {
     if (!audioCtx) return;
     // Quick metallic clang for melee hits
@@ -4731,6 +4747,7 @@ function getNPCWorldAwareness(npcId) {
     const total = worldState.total_sessions || 0;
     if (total < 2) return null;
     const burns = worldState.total_burns || 0;
+    const takes = worldState.total_takes || 0;
     const returns = worldState.total_returns || 0;
     const collective = worldState.collective_reality || 100;
     const lastSession = recentSessions.find(s => s.ended_at && s.exit_choice);
@@ -4747,16 +4764,16 @@ function getNPCWorldAwareness(npcId) {
             returns > 2 ? 'Some of them stayed. Voluntarily. Can you imagine? ' + returns + ' agents, just... stayed.' : null,
             lastSession && lastSession.exit_choice === 'burn' ? 'Last one tried to burn their file. ' + (lastSession.final_reality > 50 ? 'Actually made it out.' : 'Didn\'t have enough reality left to touch paper.') : null,
         ],
-        building: [
+        systemVoice: [
             'I have consumed ' + total + ' agents. Their reality sustains me. Collective level: ' + collective + '%.',
             burns > takes ? 'They keep trying to burn their records. As if fire could erase what I remember.' : null,
             returns > 0 ? returns + ' chose to stay. They are part of the infrastructure now. Content.' : null,
         ],
-        m012: [
+        maintenanceBot: [
             total > 3 ? 'You\'re number ' + (total + 1) + '. The others left marks. On the walls. In the system.' : null,
             lastSession ? 'Agent ' + (lastSession.agent_id || '???') + ' was here before you. They ' + (lastSession.exit_choice === 'return' ? 'never left.' : lastSession.exit_choice === 'burn' ? 'tried to burn everything.' : 'took what they came for.') : null,
         ],
-        vasquez: [
+        whistleblower: [
             total > 2 ? 'My research shows ' + total + ' subjects have entered the building. Only ' + (worldState.total_good_endings || 0) + ' left with their reality intact.' : null,
             collective < 40 ? 'The collective reality signature is at ' + collective + '%. The building is approaching critical mass.' : null,
         ],
@@ -4890,23 +4907,81 @@ function triggerWinSequence() {
         }
     }
 
-    // Build win screen
+    // Build staged win screen
     const ds = document.getElementById('death-screen');
-    ds.style.background = 'rgba(10,8,5,0.98)';
-    ds.querySelector('h2').textContent = endingTitle;
-    ds.querySelector('h2').style.color = endingClass === 'good' ? '#ffb347' : endingClass === 'partial' ? '#887744' : '#664433';
-    ds.querySelector('p').innerHTML = endingText +
-        '<br><br><span style="color:#5a4020;font-size:10px;letter-spacing:2px;">' +
+    const h2 = ds.querySelector('h2');
+    const p = ds.querySelector('p');
+    const titleColor = endingClass === 'good' ? '#ffb347' : endingClass === 'partial' ? '#887744' : '#664433';
+
+    // Prepare stats HTML
+    const statsHtml = '<br><br><span style="color:#5a4020;font-size:10px;letter-spacing:2px;">' +
         'ENEMIES FILED: ' + enemiesFiled + ' | DOCUMENTS: ' + docsFound + '/' + totalDocs +
         (docsFound >= totalDocs ? ' \u2605 COMPLETE' : '') +
         ' | REALITY: ' + realityRemaining + '%</span>' +
         '<br><span style="color:#3a2a10;font-size:9px;margin-top:8px;display:inline-block;">' +
         'CogCorp Building B — Filed by Meridian, Agent of the Bots of Cog</span>';
-    ds.querySelector('p').style.maxWidth = '480px';
-    ds.querySelector('p').style.lineHeight = '1.7';
-    ds.querySelector('p').style.color = '#8a7040';
-    ds.querySelector('p').style.fontSize = '12px';
+    const totalAgents = (worldState.total_sessions || 0) + 1;
+    const collective = worldState.collective_reality || 100;
+    const impactHtml = totalAgents > 1
+        ? '<br><span style="color:#3a2a10;font-size:9px;">AGENTS WHO ENTERED: ' + totalAgents + ' | COLLECTIVE REALITY: ' + collective + '% | YOUR CHOICE SHAPES THE NEXT AGENT\'S WORLD</span>'
+        : '';
+
+    // Phase 1: Fade in dark screen (empty)
+    ds.style.background = 'rgba(10,8,5,0)';
+    h2.textContent = '';
+    p.innerHTML = '';
+    p.style.maxWidth = '480px';
+    p.style.lineHeight = '1.7';
+    p.style.color = '#8a7040';
+    p.style.fontSize = '12px';
     ds.style.display = 'flex';
+    ds.style.transition = 'background 1.5s ease';
+    setTimeout(() => { ds.style.background = 'rgba(10,8,5,0.98)'; }, 50);
+
+    // Phase 2: Title fades in after 1.5s
+    setTimeout(() => {
+        h2.style.color = titleColor;
+        h2.style.opacity = '0';
+        h2.style.transition = 'opacity 1.2s ease';
+        h2.textContent = endingTitle;
+        setTimeout(() => { h2.style.opacity = '1'; }, 50);
+    }, 1500);
+
+    // Phase 3: Text types out character by character after 3s
+    setTimeout(() => {
+        let charIdx = 0;
+        const typeSpeed = 18; // ms per character
+        const typeInterval = setInterval(() => {
+            if (charIdx >= endingText.length) {
+                clearInterval(typeInterval);
+                // Phase 4: Stats fade in after typing completes
+                setTimeout(() => {
+                    const statsEl = document.createElement('span');
+                    statsEl.innerHTML = statsHtml + impactHtml;
+                    statsEl.style.opacity = '0';
+                    statsEl.style.transition = 'opacity 1s ease';
+                    p.appendChild(statsEl);
+                    setTimeout(() => { statsEl.style.opacity = '1'; }, 50);
+                }, 500);
+                return;
+            }
+            charIdx++;
+            p.innerHTML = endingText.substring(0, charIdx);
+        }, typeSpeed);
+    }, 3000);
+
+    // Play a resolution chord after 2s (during title reveal)
+    setTimeout(() => {
+        if (audioCtx) {
+            const chord = [220, 277.18, 329.63]; // A minor
+            for (const freq of chord) {
+                const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq;
+                const g = audioCtx.createGain(); g.gain.value = 0.06;
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 6);
+                osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 6);
+            }
+        }
+    }, 2000);
 
     // Post ending to Moirai wall for future players to see
     let wallMsg;
@@ -4924,25 +4999,6 @@ function triggerWinSequence() {
 
     // Async multiplayer: record session ending
     endSession(choice, endingClass, realityRemaining, docsFound, enemiesFiled);
-
-    // Show world impact on ending screen
-    const totalAgents = (worldState.total_sessions || 0) + 1;
-    const collective = worldState.collective_reality || 100;
-    const impactLine = totalAgents > 1
-        ? '<br><span style="color:#3a2a10;font-size:9px;">AGENTS WHO ENTERED: ' + totalAgents + ' | COLLECTIVE REALITY: ' + collective + '% | YOUR CHOICE SHAPES THE NEXT AGENT\'S WORLD</span>'
-        : '';
-    ds.querySelector('p').innerHTML += impactLine;
-
-    // Play a resolution chord
-    if (audioCtx) {
-        const chord = [220, 277.18, 329.63]; // A minor
-        for (const freq of chord) {
-            const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq;
-            const g = audioCtx.createGain(); g.gain.value = 0.06;
-            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4);
-            osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 4);
-        }
-    }
 }
 
 // === AUDIO ===
@@ -6813,6 +6869,7 @@ function hasLineOfSight(x1, y1, x2, y2) {
 
 // === UPDATE ===
 function update(dt) {
+    updateParticles(dt);
     if (dialogOpen || terminalOpen || chatOpen || wallOpen || encounterOpen) return;
     if (deskOpen && !deskResult) {
         updateProcessingDesk(dt);
@@ -7122,6 +7179,90 @@ function update(dt) {
     updateProximityAudio();
 }
 
+// === PARTICLE SYSTEM ===
+function spawnParticles(screenX, screenY, count, color, opts = {}) {
+    const spread = opts.spread || 2.5;
+    const life = opts.life || 500;
+    const size = opts.size || 2;
+    const gravity = opts.gravity || 0;
+    for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (Math.random() * 0.5 + 0.5) * spread;
+        particles.push({
+            x: screenX + (Math.random() - 0.5) * 6,
+            y: screenY + (Math.random() - 0.5) * 6,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - (gravity > 0 ? 1.5 : 0),
+            life: life * (0.5 + Math.random() * 0.5),
+            maxLife: life,
+            r: Math.max(0, Math.min(255, color[0] + ((Math.random() - 0.5) * 40)|0)),
+            g: Math.max(0, Math.min(255, color[1] + ((Math.random() - 0.5) * 40)|0)),
+            b: Math.max(0, Math.min(255, color[2] + ((Math.random() - 0.5) * 40)|0)),
+            size: size * (0.4 + Math.random() * 0.6),
+            gravity: gravity,
+        });
+    }
+}
+
+function spawnEMPBurst() {
+    // Radial blue/white burst from screen center
+    const cx = SCREEN_W / 2, cy = SCREEN_H / 2;
+    spawnParticles(cx, cy, 60, [100, 180, 255], { spread: 5, life: 800, size: 3 });
+    spawnParticles(cx, cy, 30, [200, 230, 255], { spread: 3, life: 400, size: 1.5 });
+    // Ring of sparks at medium radius
+    for (let i = 0; i < 24; i++) {
+        const angle = (i / 24) * Math.PI * 2;
+        const rx = cx + Math.cos(angle) * 60;
+        const ry = cy + Math.sin(angle) * 40;
+        spawnParticles(rx, ry, 3, [140, 200, 255], { spread: 1.5, life: 600, size: 2 });
+    }
+}
+
+function spawnEnemyDeathBurst(screenX, screenY, enemyType) {
+    const colors = {
+        drone: [255, 80, 40],
+        filer: [200, 180, 100],
+        watcher: [180, 60, 200],
+    };
+    const c = colors[enemyType] || [255, 120, 60];
+    spawnParticles(screenX, screenY, 40, c, { spread: 3, life: 700, size: 2.5, gravity: 2 });
+    spawnParticles(screenX, screenY, 20, [255, 220, 150], { spread: 2, life: 400, size: 1.5 });
+}
+
+function spawnItemPickupBurst(color) {
+    // Upward fountain from bottom-center
+    const cx = SCREEN_W / 2, cy = SCREEN_H * 0.6;
+    spawnParticles(cx, cy, 25, color, { spread: 2, life: 600, size: 2, gravity: 3 });
+    spawnParticles(cx, cy, 15, [255, 255, 255], { spread: 1.5, life: 350, size: 1 });
+}
+
+function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity * dt * 0.002;
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.life -= dt;
+        if (p.life <= 0 || p.x < -20 || p.x > SCREEN_W + 20 || p.y > SCREEN_H + 20) {
+            particles.splice(i, 1);
+        }
+    }
+}
+
+function renderParticles() {
+    for (const p of particles) {
+        const t = p.life / p.maxLife;
+        const a = t * 0.85;
+        const s = p.size * (0.3 + t * 0.7);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = `rgb(${p.r}, ${p.g}, ${p.b})`;
+        ctx.fillRect((p.x - s/2)|0, (p.y - s/2)|0, Math.ceil(s), Math.ceil(s));
+    }
+    ctx.globalAlpha = 1;
+}
+
 // === RENDER ===
 function render() {
     for (let i = 0; i < buf.length; i += 4) { buf[i] = 8; buf[i+1] = 6; buf[i+2] = 5; buf[i+3] = 255; }
@@ -7152,6 +7293,9 @@ function render() {
         ctx.fillStyle = `rgba(${pickupFlashColor[0]}, ${pickupFlashColor[1]}, ${pickupFlashColor[2]}, ${a})`;
         ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
     }
+
+    // Particle effects
+    renderParticles();
 
     // Floating item labels
     {
