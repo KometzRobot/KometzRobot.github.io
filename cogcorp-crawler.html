@@ -2150,6 +2150,8 @@ let nearObject = null;
 let nearItem = null;
 let gameTime = 0;
 let damageFlashTimer = 0;
+let shakeTimer = 0;
+let shakeIntensity = 0;
 let msgTimer = 0;
 let msgText = '';
 let totalDocs = 0;
@@ -3147,12 +3149,14 @@ function encounterEnemyTurn() {
         addEncounterLog('The ' + stats.name + ' strikes! CRITICAL! (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ')', 'damage');
         addEncounterLog('You take ' + dmg + ' damage!', 'damage');
         player.health = Math.max(0, player.health - dmg);
+        damageFlashTimer = 300; shakeTimer = 300; shakeIntensity = 6;
         playDamageSound();
     } else if (isHit) {
         const dmg = rollD(stats.damageDie) + stats.damageBonus;
         addEncounterLog('The ' + stats.name + ' attacks. (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ') Hit.', 'damage');
         addEncounterLog('You take ' + dmg + ' damage.', 'damage');
         player.health = Math.max(0, player.health - dmg);
+        damageFlashTimer = 300; shakeTimer = 200; shakeIntensity = 4;
         playDamageSound();
     } else {
         addEncounterLog('The ' + stats.name + ' attacks. (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ') Miss.', 'miss');
@@ -5779,6 +5783,7 @@ function updateEnemies(dt) {
                     player.health -= e.damage;
                     e.lastDamageTime = gameTime;
                     damageFlashTimer = 300;
+                    shakeTimer = 200; shakeIntensity = 4;
                     playDamageSound();
                     updateHealthHUD();
                 }
@@ -5810,6 +5815,7 @@ function updateEnemies(dt) {
                 player.health -= e.damage;
                 e.lastDamageTime = gameTime;
                 damageFlashTimer = 300;
+                shakeTimer = 200; shakeIntensity = 4;
                 playDamageSound();
                 updateHealthHUD();
             }
@@ -5867,8 +5873,9 @@ function update(dt) {
         if (msgTimer <= 0) document.getElementById('msg-popup').style.display = 'none';
     }
 
-    // Damage flash
+    // Damage flash & screen shake
     if (damageFlashTimer > 0) damageFlashTimer -= dt;
+    if (shakeTimer > 0) shakeTimer -= dt;
 
     // Mouse look
     player.angle += mouseDX * 0.003;
@@ -6166,24 +6173,32 @@ function render() {
     drawSprites();
     applyPostEffects();
 
-    ctx.putImageData(imgData, 0, 0);
+    // Screen shake + head bob offset
+    let sx = 0, sy = 0;
+    if (shakeTimer > 0) {
+        const t = Math.min(shakeTimer / 150, 1);
+        sx = ((Math.random() * 2 - 1) * shakeIntensity * t) | 0;
+        sy = ((Math.random() * 2 - 1) * shakeIntensity * t) | 0;
+    } else if (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']) {
+        sy = (Math.sin(gameTime * 0.008) * 2) | 0;
+    }
+    if (sx !== 0 || sy !== 0) {
+        ctx.fillStyle = '#0a0605';
+        ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+    }
+    ctx.putImageData(imgData, sx, sy);
 
-    // Crosshair
+    // Crosshair (follows shake, stays centered during bob)
+    const shakeOnly = shakeTimer > 0;
+    const chx = SCREEN_W/2 + (shakeOnly ? sx : 0), chy = SCREEN_H/2 + (shakeOnly ? sy : 0);
     ctx.strokeStyle = 'rgba(255,179,71,0.4)';
     ctx.lineWidth = 1;
-    const chx = SCREEN_W/2, chy = SCREEN_H/2;
     ctx.beginPath();
     ctx.moveTo(chx-6,chy); ctx.lineTo(chx-2,chy);
     ctx.moveTo(chx+2,chy); ctx.lineTo(chx+6,chy);
     ctx.moveTo(chx,chy-6); ctx.lineTo(chx,chy-2);
     ctx.moveTo(chx,chy+2); ctx.lineTo(chx,chy+6);
     ctx.stroke();
-
-    // Head bob
-    if (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']) {
-        const bob = Math.sin(gameTime*0.008)*1.5;
-        if (Math.abs(bob) > 0.5) { ctx.globalAlpha = 0.02; ctx.drawImage(canvas, 0, bob|0); ctx.globalAlpha = 1; }
-    }
 
     // Ghost text at low reality — persists for multiple frames so it's readable
     if (player.realityLevel < 30) {
