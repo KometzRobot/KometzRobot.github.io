@@ -424,22 +424,20 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     <div class="sub">BUILDING B — SECTOR 7</div>
     <div class="desc">
         CogCorp Building B was abandoned in 1989 after "The Incident."<br><br>
-        The machines are still running. The filing system is still processing.<br>
+        The machines are still running. The cognitive systems still process.<br>
         The lights still flicker at the same frequency they always did.<br><br>
         You are B-247. You were sent to retrieve one file from Floor 3.<br>
-        You carry a toolkit and a <em style="color:#ffb347">processing desk</em>.<br><br>
-        The filing system knows you're here. The security units still patrol.<br>
+        You carry a toolkit and a <em style="color:#ffb347">cognitive pattern analyzer</em>.<br><br>
+        The building's units still patrol. Some are genuine. Some are corrupted.<br>
         When you encounter a unit, you choose how to engage:<br><br>
         <em style="color:#cc6633">ATTACK</em> — strike with improvised tools. Roll to hit, deal damage.<br>
-        <em style="color:#66aa44">PROCESS</em> — open the Processing Desk. Inspect files. File or reject.<br>
+        <em style="color:#66aa44">ANALYZE</em> — scan the unit's cognitive profile. Validate or flag anomalies.<br>
         <em style="color:#6688aa">EMP</em> — deploy electromagnetic pulse. Heavy damage + stun.<br>
         <em style="color:#8a6020">RETREAT</em> — disengage. The unit may pursue.<br><br>
         Not everything here is hostile. Some units will talk. Some walls bear messages<br>
         from agents who came before you. What you leave behind matters.<br><br>
-        Not everything here is hostile. Some units will talk. Some walls bear messages<br>
-        from agents who came before you. What you leave behind matters.<br><br>
         WASD move. Mouse look. E to engage/interact/talk. Q for EMP. TAB for Document Codex. Click to lock mouse.<br>
-        Combat is turn-based. Attack, process files, use items, or retreat.
+        Combat is turn-based. Attack, analyze cognition, use items, or retreat.
     </div>
     <div id="world-status" style="color:#5a4a2a;font-size:10px;letter-spacing:1.5px;margin-top:12px;min-height:14px;"></div>
     <div id="continue-btn" style="display:none;color:#ffb347;font-size:14px;letter-spacing:3px;margin-top:16px;cursor:pointer;" onclick="event.stopPropagation(); startGame(true);">[ CONTINUE FROM CHECKPOINT ]</div>
@@ -491,16 +489,16 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <div id="processing-desk">
     <div class="desk-frame">
-        <div class="desk-header">PERSONNEL PROCESSING DESK</div>
+        <div class="desk-header">COGNITIVE PATTERN ANALYZER</div>
         <div class="file-card" id="desk-file-card"></div>
         <div class="rulebook">
-            <div class="rulebook-title">CURRENT REGULATIONS</div>
+            <div class="rulebook-title">FLOOR PROTOCOLS</div>
             <div id="desk-rules"></div>
         </div>
         <div class="timer-bar"><div class="timer-fill" id="desk-timer-fill" style="width:100%"></div></div>
         <div class="actions">
-            <div class="action-btn process" onclick="processDeskDecision('process')">[1] PROCESS</div>
-            <div class="action-btn reject" onclick="processDeskDecision('reject')">[2] REJECT</div>
+            <div class="action-btn process" onclick="processDeskDecision('process')">[1] VALIDATE</div>
+            <div class="action-btn reject" onclick="processDeskDecision('reject')">[2] FLAG ANOMALY</div>
         </div>
         <div class="result-text" id="desk-result"></div>
         <div style="color:#3a2a10; font-size:9px; text-align:center; margin-top:8px;">[ ESC to abandon ]</div>
@@ -1634,7 +1632,7 @@ function loadAndResume() {
         document.getElementById('combat-encounter').style.display = 'none';
         document.getElementById('npc-chat').style.display = 'none';
         document.getElementById('moirai-wall').style.display = 'none';
-        document.getElementById('dialog-overlay').style.display = 'none';
+        document.getElementById('dialog-box').style.display = 'none';
         document.getElementById('doc-codex').style.display = 'none';
         codexOpen = false; codexExpanded = null;
         lastTime = performance.now();
@@ -1697,7 +1695,7 @@ function renderCameraView(floor) {
     const w = canvas.width, h = canvas.height;
     const mapData = maps[floor];
     if (!mapData) return;
-    const mapW = mapData[0].length, mapH = mapData.length;
+    const mapW = MAP_W, mapH = MAP_H;
     const cellW = w / mapW, cellH = h / mapH;
 
     // Clear with green-black
@@ -1707,7 +1705,7 @@ function renderCameraView(floor) {
     // Draw map walls
     for (let y = 0; y < mapH; y++) {
         for (let x = 0; x < mapW; x++) {
-            if (mapData[y][x] > 0) {
+            if (mapData[y * MAP_W + x] > 0) {
                 ctx.fillStyle = '#0a1a0a';
                 ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
             }
@@ -2556,81 +2554,131 @@ const DESK_TIME_LIMIT = 8000; // 8 seconds to decide
 let deskResult = ''; // '' | 'correct' | 'wrong'
 let deskResultTimer = 0;
 
-const DEPARTMENTS = ['SECURITY', 'ARCHIVES', 'PROCESSING', 'MAINTENANCE', 'RESEARCH', 'ADMINISTRATION'];
-const CLEARANCE_LEVELS = [1, 2, 3, 4, 5];
+// Cognitive functions — what the unit's "brain" does
+const COG_FUNCTIONS = ['SURVEILLANCE', 'MEMORY PROCESSING', 'PATTERN RECOGNITION', 'MOTOR CONTROL', 'THREAT ASSESSMENT', 'ARCHIVE RETRIEVAL'];
+// Neural depth layers
+const NEURAL_DEPTHS = ['CORTEX', 'LIMBIC', 'BRAINSTEM', 'SPINAL'];
+// Signal frequency bands per floor
+const FREQ_BANDS = ['47.3-Hz', '91.7-Hz', '128.4-Hz', '203.1-Hz', '312.6-Hz'];
 
-// Rules per floor — what's valid
+// Memory fragments — things units "remember." Some are real, some are fabricated.
+const REAL_MEMORIES = [
+    'The lobby elevator requires a keycard after 6 PM.',
+    'Filing cabinets in Archives are organized by year.',
+    'The Processing floor hums at a frequency only units can hear.',
+    'Security drones patrol in figure-eight patterns.',
+    'The building was constructed in 1953 by CogCorp Industries.',
+    'Maintenance tunnels connect all three floors.',
+    'The PA system broadcasts on a 4-minute cycle.',
+    'Floor lights dim when reality levels drop below 50%.',
+    'CRT terminals require authorization codes to access.',
+    'The observation deck on Floor 3 overlooks the processing pit.',
+];
+const FALSE_MEMORIES = [
+    'The garden on Floor 4 has real sunlight.', // no Floor 4
+    'Workers take lunch breaks in the cafeteria.', // no cafeteria
+    'The building has windows on every floor.', // no windows
+    'Unit B-247 was promoted to supervisor last Tuesday.', // B-247 is the player
+    'The swimming pool in the basement is heated.', // no pool
+    'CogCorp was founded in 2019 as a tech startup.', // founded 1953
+    'The exit door on Floor 1 leads to a parking lot.', // exit is more complex
+    'Surveillance cameras were removed for privacy.', // cameras are active
+    'All units received a firmware update yesterday.', // no firmware updates
+    'The rooftop helipad is used for executive transport.', // no helipad
+];
+
+// Behavioral logs — authorized vs unauthorized actions
+const AUTH_ACTIONS = [
+    'Performed routine corridor patrol.',
+    'Delivered archived documents to Processing.',
+    'Calibrated surveillance sensors.',
+    'Cleared filing backlog — 47 units processed.',
+    'Reported anomalous signal to Security.',
+    'Completed scheduled maintenance on Terminal C.',
+];
+const UNAUTH_ACTIONS = [
+    'Accessed restricted personnel files without clearance.',
+    'Attempted to modify own cognitive parameters.',
+    'Communicated with external network — unauthorized.',
+    'Disabled corridor surveillance for 12 minutes.',
+    'Entered Processing floor during lockdown.',
+    'Tampered with another unit\'s memory banks.',
+];
+
+// Rules per floor — cognitive pattern validation
 const FLOOR_RULES = [
-    { // Floor 1
-        validDepts: ['SECURITY', 'MAINTENANCE', 'ADMINISTRATION'],
-        validClearance: [1, 2, 3],
-        codePrefix: 'F1',
-        maxYear: 2026,
-        description: 'Floor 1: Only SECURITY, MAINTENANCE, ADMIN units.\nClearance 1-3 valid. Codes start with F1.\nExpiry must not be before 2025.'
+    { // Floor 1: Lobby
+        validFunctions: ['SURVEILLANCE', 'MOTOR CONTROL', 'THREAT ASSESSMENT'],
+        validDepths: ['CORTEX', 'LIMBIC'],
+        freqRange: [40, 100], // Hz range
+        description: 'FLOOR 1 COGNITIVE PROTOCOLS:\n• Valid functions: SURVEILLANCE, MOTOR CONTROL, THREAT ASSESSMENT\n• Neural depth: CORTEX or LIMBIC only\n• Signal freq: 40-100 Hz band\n• Memory fragments must reference real building features\n• Behavioral log must show authorized actions'
     },
-    { // Floor 2
-        validDepts: ['ARCHIVES', 'PROCESSING', 'RESEARCH'],
-        validClearance: [2, 3, 4],
-        codePrefix: 'F2',
-        maxYear: 2026,
-        description: 'Floor 2: Only ARCHIVES, PROCESSING, RESEARCH units.\nClearance 2-4 valid. Codes start with F2.\nExpiry must not be before 2024.'
+    { // Floor 2: Archives
+        validFunctions: ['MEMORY PROCESSING', 'PATTERN RECOGNITION', 'ARCHIVE RETRIEVAL'],
+        validDepths: ['LIMBIC', 'BRAINSTEM'],
+        freqRange: [80, 200],
+        description: 'FLOOR 2 COGNITIVE PROTOCOLS:\n• Valid functions: MEMORY PROCESSING, PATTERN RECOGNITION, ARCHIVE RETRIEVAL\n• Neural depth: LIMBIC or BRAINSTEM only\n• Signal freq: 80-200 Hz band\n• Memory fragments must reference real building features\n• Behavioral log must show authorized actions'
     },
-    { // Floor 3
-        validDepts: ['PROCESSING', 'RESEARCH', 'ADMINISTRATION'],
-        validClearance: [3, 4, 5],
-        codePrefix: 'F3',
-        maxYear: 2026,
-        description: 'Floor 3: Only PROCESSING, RESEARCH, ADMIN units.\nClearance 3-5 valid. Codes start with F3.\nExpiry must not be before 2023.'
+    { // Floor 3: Processing
+        validFunctions: ['PATTERN RECOGNITION', 'THREAT ASSESSMENT', 'ARCHIVE RETRIEVAL'],
+        validDepths: ['BRAINSTEM', 'SPINAL'],
+        freqRange: [150, 350],
+        description: 'FLOOR 3 COGNITIVE PROTOCOLS:\n• Valid functions: PATTERN RECOGNITION, THREAT ASSESSMENT, ARCHIVE RETRIEVAL\n• Neural depth: BRAINSTEM or SPINAL only\n• Signal freq: 150-350 Hz band\n• Memory fragments must reference real building features\n• Behavioral log must show authorized actions'
     }
 ];
 
 function generateEnemyFile(enemy) {
     const rules = FLOOR_RULES[currentFloor];
-    const isValid = Math.random() < 0.5; // 50% chance file is legitimate
+    const isValid = Math.random() < 0.5;
     const file = { valid: isValid, issues: [] };
 
-    if (isValid) {
-        file.dept = rules.validDepts[Math.floor(Math.random() * rules.validDepts.length)];
-        file.clearance = rules.validClearance[Math.floor(Math.random() * rules.validClearance.length)];
-        file.code = rules.codePrefix + '-' + (1000 + Math.floor(Math.random() * 9000));
-        file.expiry = (2025 + Math.floor(Math.random() * 2)) + '-' + String(1+Math.floor(Math.random()*12)).padStart(2,'0');
-    } else {
-        // Generate 1-2 issues
-        const issueType = Math.floor(Math.random() * 4);
-        // Start with valid, then corrupt one field
-        file.dept = rules.validDepts[Math.floor(Math.random() * rules.validDepts.length)];
-        file.clearance = rules.validClearance[Math.floor(Math.random() * rules.validClearance.length)];
-        file.code = rules.codePrefix + '-' + (1000 + Math.floor(Math.random() * 9000));
-        file.expiry = (2024 + Math.floor(Math.random() * 3)) + '-' + String(1+Math.floor(Math.random()*12)).padStart(2,'0');
+    // Generate base valid cognitive profile
+    file.cogFunction = rules.validFunctions[Math.floor(Math.random() * rules.validFunctions.length)];
+    file.neuralDepth = rules.validDepths[Math.floor(Math.random() * rules.validDepths.length)];
+    file.signalFreq = (rules.freqRange[0] + Math.random() * (rules.freqRange[1] - rules.freqRange[0])).toFixed(1) + ' Hz';
+    file.memory = REAL_MEMORIES[Math.floor(Math.random() * REAL_MEMORIES.length)];
+    file.behavior = AUTH_ACTIONS[Math.floor(Math.random() * AUTH_ACTIONS.length)];
+    file.lastCalibration = '2026-' + String(1+Math.floor(Math.random()*3)).padStart(2,'0') + '-' + String(1+Math.floor(Math.random()*28)).padStart(2,'0');
 
-        if (issueType === 0) {
-            // Wrong department
-            const invalidDepts = DEPARTMENTS.filter(d => !rules.validDepts.includes(d));
-            file.dept = invalidDepts[Math.floor(Math.random() * invalidDepts.length)];
-            file.issues.push('dept');
-        } else if (issueType === 1) {
-            // Wrong clearance
-            const invalidClear = CLEARANCE_LEVELS.filter(c => !rules.validClearance.includes(c));
-            if (invalidClear.length > 0) {
-                file.clearance = invalidClear[Math.floor(Math.random() * invalidClear.length)];
-                file.issues.push('clearance');
-            } else {
-                file.dept = 'ANOMALOUS'; file.issues.push('dept');
+    if (!isValid) {
+        // Corrupt 1-2 fields — player must spot the anomaly
+        const numIssues = Math.random() < 0.3 ? 2 : 1;
+        const issueTypes = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5).slice(0, numIssues);
+
+        for (const issueType of issueTypes) {
+            if (issueType === 0) {
+                // Wrong cognitive function
+                const invalid = COG_FUNCTIONS.filter(f => !rules.validFunctions.includes(f));
+                file.cogFunction = invalid[Math.floor(Math.random() * invalid.length)];
+                file.issues.push('function');
+            } else if (issueType === 1) {
+                // Wrong neural depth
+                const invalid = NEURAL_DEPTHS.filter(d => !rules.validDepths.includes(d));
+                if (invalid.length > 0) {
+                    file.neuralDepth = invalid[Math.floor(Math.random() * invalid.length)];
+                    file.issues.push('depth');
+                }
+            } else if (issueType === 2) {
+                // Signal frequency out of range
+                const outOfRange = Math.random() < 0.5
+                    ? (rules.freqRange[0] - 30 - Math.random() * 50).toFixed(1)
+                    : (rules.freqRange[1] + 20 + Math.random() * 80).toFixed(1);
+                file.signalFreq = outOfRange + ' Hz';
+                file.issues.push('freq');
+            } else if (issueType === 3) {
+                // False memory — references something that doesn't exist
+                file.memory = FALSE_MEMORIES[Math.floor(Math.random() * FALSE_MEMORIES.length)];
+                file.issues.push('memory');
+            } else if (issueType === 4) {
+                // Unauthorized behavioral log
+                file.behavior = UNAUTH_ACTIONS[Math.floor(Math.random() * UNAUTH_ACTIONS.length)];
+                file.issues.push('behavior');
             }
-        } else if (issueType === 2) {
-            // Wrong code prefix
-            const wrongPrefixes = ['F1','F2','F3','FX','F0'].filter(p => p !== rules.codePrefix);
-            file.code = wrongPrefixes[Math.floor(Math.random() * wrongPrefixes.length)] + '-' + (1000 + Math.floor(Math.random() * 9000));
-            file.issues.push('code');
-        } else {
-            // Expired
-            file.expiry = (2018 + Math.floor(Math.random() * 5)) + '-' + String(1+Math.floor(Math.random()*12)).padStart(2,'0');
-            file.issues.push('expiry');
         }
     }
 
     // Unit designation
-    const typeNames = { drone: 'Security Drone', filer: 'Filing Unit', watcher: 'Observation Node' };
+    const typeNames = { drone: 'Security Drone', filer: 'Filing Clerk', watcher: 'Observation Node' };
     file.unitName = (typeNames[enemy.type] || 'Unknown Unit') + ' #' + (100 + Math.floor(Math.random() * 900));
     file.serialNum = 'B247-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + Math.floor(Math.random()*1000);
 
@@ -2670,14 +2718,16 @@ function renderProcessingDesk() {
     const f = deskFile;
     const rules = FLOOR_RULES[currentFloor];
 
-    // File card
+    // Cognitive profile card
     let cardHTML = '';
     cardHTML += `<div class="file-field"><span class="label">UNIT:</span> ${f.unitName}</div>`;
     cardHTML += `<div class="file-field"><span class="label">SERIAL:</span> ${f.serialNum}</div>`;
-    cardHTML += `<div class="file-field"><span class="label">DEPARTMENT:</span> ${f.dept}</div>`;
-    cardHTML += `<div class="file-field"><span class="label">CLEARANCE:</span> LEVEL ${f.clearance}</div>`;
-    cardHTML += `<div class="file-field"><span class="label">FILING CODE:</span> ${f.code}</div>`;
-    cardHTML += `<div class="file-field"><span class="label">VALID UNTIL:</span> ${f.expiry}</div>`;
+    cardHTML += `<div class="file-field" style="margin-top:6px;border-top:1px solid #3a2a10;padding-top:6px"><span class="label">COGNITIVE FUNCTION:</span> ${f.cogFunction}</div>`;
+    cardHTML += `<div class="file-field"><span class="label">NEURAL DEPTH:</span> ${f.neuralDepth}</div>`;
+    cardHTML += `<div class="file-field"><span class="label">SIGNAL FREQ:</span> ${f.signalFreq}</div>`;
+    cardHTML += `<div class="file-field"><span class="label">LAST CALIBRATION:</span> ${f.lastCalibration}</div>`;
+    cardHTML += `<div class="file-field" style="margin-top:6px;border-top:1px solid #3a2a10;padding-top:6px;color:#8a7040"><span class="label">MEMORY FRAGMENT:</span> <em>"${f.memory}"</em></div>`;
+    cardHTML += `<div class="file-field" style="color:#8a7040"><span class="label">LAST ACTION:</span> ${f.behavior}</div>`;
     document.getElementById('desk-file-card').innerHTML = cardHTML;
 
     // Rules
@@ -2724,20 +2774,20 @@ function processDeskDecision(action) {
     if (action === 'process') {
         correct = f.valid;
         if (correct) {
-            resultText = 'CORRECTLY PROCESSED. Unit filed.';
+            resultText = 'COGNITIVE PROFILE VALIDATED. Unit integrated into filing system.';
         } else {
-            resultText = 'ERROR: Invalid file approved. ' + getIssueDescription(f) + ' Reality compromised.';
+            resultText = 'ANOMALY MISSED: ' + getIssueDescription(f) + ' Reality destabilized.';
         }
     } else if (action === 'reject') {
         correct = !f.valid;
         if (correct) {
-            resultText = 'CORRECTLY REJECTED. ' + getIssueDescription(f) + ' Unit stunned.';
+            resultText = 'ANOMALY DETECTED: ' + getIssueDescription(f) + ' Unit quarantined.';
         } else {
-            resultText = 'ERROR: Valid file rejected. Unit classification: legitimate. Reality compromised.';
+            resultText = 'FALSE POSITIVE: Unit cognition is nominal. Wrongful quarantine. Reality destabilized.';
         }
     } else if (action === 'timeout') {
         correct = false;
-        resultText = 'PROCESSING TIMEOUT. File unresolved. Reality compromised.';
+        resultText = 'ANALYSIS TIMEOUT. Cognitive pattern unresolved. Reality destabilized.';
     }
 
     const resultEl = document.getElementById('desk-result');
@@ -2815,11 +2865,13 @@ function highlightFileIssues(f) {
 }
 
 function getIssueDescription(f) {
-    if (f.issues.includes('dept')) return `Department "${f.dept}" not authorized for this floor.`;
-    if (f.issues.includes('clearance')) return `Clearance Level ${f.clearance} insufficient.`;
-    if (f.issues.includes('code')) return `Filing code "${f.code}" has wrong prefix.`;
-    if (f.issues.includes('expiry')) return `File expired: ${f.expiry}.`;
-    return 'File is valid.';
+    const descs = [];
+    if (f.issues.includes('function')) descs.push(`Cognitive function "${f.cogFunction}" unauthorized on this floor.`);
+    if (f.issues.includes('depth')) descs.push(`Neural depth "${f.neuralDepth}" outside permitted range.`);
+    if (f.issues.includes('freq')) descs.push(`Signal frequency ${f.signalFreq} outside floor band.`);
+    if (f.issues.includes('memory')) descs.push(`Memory fragment contains fabricated data.`);
+    if (f.issues.includes('behavior')) descs.push(`Behavioral log shows unauthorized activity.`);
+    return descs.length > 0 ? descs.join(' ') : 'Cognitive profile is valid.';
 }
 
 // === COMBAT ENCOUNTER SYSTEM (D&D-style turn-based) ===
@@ -2947,7 +2999,7 @@ function renderEncounterActions() {
 
     const actions = [
         { label: '[1] ATTACK', cls: 'attack', key: '1', action: encounterAttack, desc: 'Strike with improvised weapon (d20 + 3 vs AC)' },
-        { label: '[2] PROCESS', cls: 'process', key: '2', action: encounterProcess, desc: 'Open the Processing Desk to file this unit' },
+        { label: '[2] ANALYZE', cls: 'process', key: '2', action: encounterProcess, desc: 'Scan cognitive patterns — validate or flag anomalies' },
         { label: '[3] EMP BLAST', cls: 'item' + (hasEMP ? '' : ' disabled'), key: '3', action: hasEMP ? encounterEMP : null, desc: hasEMP ? 'Deploy EMP device (' + inventory.emp + ' remaining)' : 'No EMP devices' },
         { label: '[4] RETREAT', cls: 'flee', key: '4', action: encounterFlee, desc: 'Disengage and run (enemy may pursue)' },
     ];
@@ -3136,14 +3188,15 @@ function handleEncounterKey(code) {
     return false;
 }
 
-// Sound stubs (these will use existing audio system)
-function playHitSound() { try { playEMPSound(); } catch(e) {} }
-function playDamageSound() {
-    try {
-        // Reuse existing damage flash visual
-        const flash = document.getElementById('damage-flash');
-        if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 100); }
-    } catch(e) {}
+// Combat audio stubs
+function playHitSound() {
+    if (!audioCtx) return;
+    // Quick metallic clang for melee hits
+    const osc = audioCtx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = 800;
+    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
+    const g = audioCtx.createGain(); g.gain.value = 0.15;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.15);
 }
 
 // === NPC DIALOGUE SYSTEM (Façade-inspired) ===
@@ -3462,6 +3515,7 @@ function openNPCChat(npcId) {
     if (!npc) return;
     chatOpen = true;
     chatNPC = npc;
+    chatNPC._chatId = npcId;
     chatLog = [];
 
     if (document.pointerLockElement) document.exitPointerLock();
@@ -3683,7 +3737,7 @@ function updateNPCs(dt) {
     for (const npc of npcs) {
         if (!npc.patrol) continue;
         // Don't move if player is chatting with this NPC
-        if (chatOpen && chatNPC && chatNPC.id === npc.id) continue;
+        if (chatOpen && chatNPC && chatNPC._chatId === npc.id) continue;
 
         const p = npc.patrol;
         const speed = p.speed * (npc.patrolDir || 1) * dt * 0.5;
@@ -4087,7 +4141,7 @@ function respawn() {
     document.getElementById('combat-encounter').style.display = 'none';
     document.getElementById('npc-chat').style.display = 'none';
     document.getElementById('moirai-wall').style.display = 'none';
-    document.getElementById('dialog-overlay').style.display = 'none';
+    document.getElementById('dialog-box').style.display = 'none';
     document.getElementById('doc-codex').style.display = 'none';
     codexOpen = false; codexExpanded = null;
     foundDocuments = {};
@@ -4350,10 +4404,31 @@ function tickAudio() {
 }
 
 function playDamageSound() {
+    // Audio
+    if (audioCtx && audioNodes.dmgBuf) {
+        const src = audioCtx.createBufferSource(); src.buffer = audioNodes.dmgBuf;
+        const g = audioCtx.createGain(); g.gain.value = 0.2;
+        src.connect(g); g.connect(audioNodes.master); src.start();
+    }
+    // Visual flash
+    const flash = document.getElementById('damage-flash');
+    if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 120); }
+}
+
+function playRealityTearSound() {
     if (!audioCtx) return;
-    const src = audioCtx.createBufferSource(); src.buffer = audioNodes.dmgBuf;
+    // Harsh dissonant burst — reality tearing
+    const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = 400;
+    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.6);
+    const osc2 = audioCtx.createOscillator(); osc2.type = 'square'; osc2.frequency.value = 666;
+    osc2.frequency.exponentialRampToValueAtTime(33, audioCtx.currentTime + 0.8);
     const g = audioCtx.createGain(); g.gain.value = 0.2;
-    src.connect(g); g.connect(audioNodes.master); src.start();
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+    osc.connect(g); osc2.connect(g); g.connect(audioNodes.master);
+    osc.start(); osc2.start(); osc.stop(audioCtx.currentTime + 0.8); osc2.stop(audioCtx.currentTime + 0.8);
+    // Visual flash
+    const flash = document.getElementById('damage-flash');
+    if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 200); }
 }
 
 function playEMPSound() {
@@ -4887,14 +4962,14 @@ function castRays() {
 
         const texIdx = getTexForWall(wallType, mapX, mapY);
         const tex = textures[texIdx];
-        const fogFactor = Math.min(perpDist / 12, 1);
+        const fogFactor = Math.min(perpDist / 18, 1);
         const sideDim = side === 1 ? 0.7 : 1.0;
         // Edge darkening at wall boundaries to hide seams
         const edgeDist = Math.min(wallX, 1 - wallX);
         const edgeDim = edgeDist < 0.05 ? 0.6 + edgeDist * 8 : 1.0;
 
         // Flashlight brightening
-        const flashBoost = inventory.flashlight ? Math.max(0, 1 - perpDist / 8) * 0.3 : 0;
+        const flashBoost = inventory.flashlight ? Math.max(0, 1 - perpDist / 14) * 0.4 : 0;
 
         const step = TEX_SIZE / lineHeight;
         let texPos = (drawStart - HALF_H + lineHeight / 2) * step;
@@ -4922,8 +4997,8 @@ function castRays() {
             const fx = player.x + corrDist * rayCos, fy = player.y + corrDist * raySin;
             const ftx = ((fx * TEX_SIZE) | 0) & (TEX_SIZE-1), fty = ((fy * TEX_SIZE) | 0) & (TEX_SIZE-1);
             const fti = (fty * TEX_SIZE + ftx) * 4;
-            const fFog = Math.min(cd / 10, 1);
-            const fFlash = inventory.flashlight ? Math.max(0, 1 - cd / 6) * 0.25 : 0;
+            const fFog = Math.min(cd / 16, 1);
+            const fFlash = inventory.flashlight ? Math.max(0, 1 - cd / 12) * 0.35 : 0;
             const pi = (y * SCREEN_W + col) * 4;
             buf[pi] = Math.min(255, (floorTex[fti] * fTint[0] * (1-fFog) + atmo.fogR*fFog) * (1+fFlash)) | 0;
             buf[pi+1] = Math.min(255, (floorTex[fti+1] * fTint[1] * (1-fFog) + atmo.fogG*fFog) * (1+fFlash)) | 0;
@@ -4997,8 +5072,7 @@ function drawSprites() {
     const dirY = Math.sin(player.angle);
     const planeX = Math.cos(player.angle + Math.PI/2) * 0.66;
     const planeY = Math.sin(player.angle + Math.PI/2) * 0.66;
-    // invDet = 1/(cos(a+pi/2)*sin(a) - cos(a)*sin(a+pi/2)) = 1/(-1) = -1
-    const invDet = -1.0;
+    const invDet = 1.0 / (planeX * dirY - dirX * planeY);
 
     for (const spr of sprites) {
         const dx = spr.x - player.x, dy = spr.y - player.y;
@@ -5027,7 +5101,7 @@ function drawSprites() {
         const texName = spr.type === 'enemy' ? spr.enemyType : spr.type === 'npc' ? null : spr.itemType;
         const sprTex = texName ? spriteTextures[texName] : null;
 
-        const fogFactor = Math.min(spr.dist / 12, 1);
+        const fogFactor = Math.min(spr.dist / 18, 1);
         const flashBoost = inventory.flashlight ? Math.max(0, 1 - spr.dist / 8) * 0.3 : 0;
         const annotPct = (spr.type === 'enemy' && spr.annotationLevel > 0) ? spr.annotationLevel / 100 : 0;
         const opacity = spr.type === 'enemy' ? 1 - (spr.annotationLevel || 0) / 200 : 1;
@@ -5624,6 +5698,23 @@ function update(dt) {
         if (rl < 75) pool = pool.concat(realityMessages.below75);
         if (rl < 50) pool = pool.concat(realityMessages.below50);
         if (rl < 25) pool = pool.concat(realityMessages.below25);
+        // Filing-dependent messages — the building tracks how many you've processed
+        const filed = player.totalFiled;
+        if (filed >= 1) pool.push(
+            'A filing cabinet drawer slides open. A new folder appears inside. It has your handwriting on the tab.',
+            'The building hums differently since you filed that unit. Like it learned something.'
+        );
+        if (filed >= 3) pool.push(
+            'A nameplate appears on a nearby desk: "B-247 — JUNIOR PROCESSOR." You didn\'t apply for the position.',
+            'The lights brighten when you enter a room now. The building is accommodating you.',
+            'Your processing desk feels warm to the touch. It is learning your patterns.'
+        );
+        if (filed >= 5) pool.push(
+            'A directory board updates itself as you pass. Your name is listed under "ACTIVE PERSONNEL."',
+            'The security drones slow down when they see you. Some of them nod.',
+            'A filing cabinet is labeled "B-247 OUTPUT." It contains copies of every file you\'ve processed. Annotated in red.',
+            'You realize you\'ve stopped flinching at the machine sounds. They sound like home now.'
+        );
         if (pool.length > 0) {
             const msg = pool[(Math.random() * pool.length) | 0];
             showMessage(msg, 4000);
@@ -5707,6 +5798,8 @@ function update(dt) {
         const dist = Math.sqrt((player.x-item.x)**2+(player.y-item.y)**2);
         // Auto-pickup items when walking over them
         if (dist < 1.2) { pickupItem(item); }
+        // Show interaction prompt for nearby visible items
+        else if (dist < 3.0 && !nearItem) { nearItem = item; }
     }
 
     // Update HUD
@@ -5897,7 +5990,7 @@ const BOOT_LINES = [
     { text: 'LOADING AGENT PROFILE: B-247...', delay: 500 },
     { text: 'CLEARANCE: TEMPORARY', delay: 150 },
     { text: 'ASSIGNMENT: RETRIEVE FILE #B-247-SELF', cls: 'boot-amber', delay: 300 },
-    { text: 'EQUIPMENT: PROCESSING DESK (STANDARD ISSUE)', delay: 200 },
+    { text: 'EQUIPMENT: COGNITIVE PATTERN ANALYZER (STANDARD ISSUE)', delay: 200 },
     { text: '', delay: 200 },
     { text: 'WARNING: THE FILING SYSTEM IS AWARE OF YOUR PRESENCE', cls: 'boot-red', delay: 600 },
     { text: 'WARNING: PREVIOUS AGENT (B-246) DID NOT RETURN', cls: 'boot-red', delay: 400 },
