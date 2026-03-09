@@ -4583,10 +4583,49 @@ let nextClunk = 0;
 function tickAudio() {
     if (!audioCtx) return;
     if (gameTime > nextClunk) {
-        nextClunk = gameTime + 4000 + Math.random() * 8000;
-        const src = audioCtx.createBufferSource(); src.buffer = audioNodes.clunkBuf;
-        const g = audioCtx.createGain(); g.gain.value = 0.08 + Math.random() * 0.06;
-        src.connect(g); g.connect(audioNodes.master); src.start();
+        nextClunk = gameTime + 5000 + Math.random() * 10000;
+        // Per-floor ambient events — each floor has distinct environmental sounds
+        const sr = audioCtx.sampleRate;
+        const now = audioCtx.currentTime;
+        if (currentFloor === 0) {
+            // Lobby: distant door thud + latch rattle
+            const buf = audioCtx.createBuffer(1, sr * 0.3, sr);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) { const t = i/sr; d[i] = Math.exp(-t*8)*Math.sin(t*120)*0.15 + (t>0.1&&t<0.2 ? Math.exp(-(t-0.1)*30)*(Math.random()*0.1-0.05) : 0); }
+            const src = audioCtx.createBufferSource(); src.buffer = buf;
+            const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 400;
+            const g = audioCtx.createGain(); g.gain.value = 0.06 + Math.random() * 0.04;
+            src.connect(f); f.connect(g); g.connect(audioNodes.master); src.start();
+        } else if (currentFloor === 1) {
+            // Archives: paper rustle / cabinet drawer slide
+            const buf = audioCtx.createBuffer(1, sr * 0.25, sr);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) { const t = i/sr; const env = Math.sin(t*Math.PI/0.25)*Math.exp(-t*6); d[i] = env*(Math.random()*0.12-0.06); }
+            const src = audioCtx.createBufferSource(); src.buffer = buf;
+            const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2000; f.Q.value = 0.5;
+            const g = audioCtx.createGain(); g.gain.value = 0.04 + Math.random() * 0.03;
+            src.connect(f); f.connect(g); g.connect(audioNodes.master); src.start();
+        } else {
+            // Processing: steam hiss / machine stress groan
+            if (Math.random() < 0.5) {
+                // Steam hiss
+                const buf = audioCtx.createBuffer(1, sr * 0.4, sr);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) { const t = i/sr; d[i] = (t<0.05?t/0.05:Math.exp(-(t-0.05)*5))*(Math.random()*0.15-0.075); }
+                const src = audioCtx.createBufferSource(); src.buffer = buf;
+                const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000;
+                const g = audioCtx.createGain(); g.gain.value = 0.05 + Math.random() * 0.04;
+                src.connect(f); f.connect(g); g.connect(audioNodes.master); src.start();
+            } else {
+                // Metal stress groan
+                const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = 60 + Math.random()*30;
+                osc.frequency.linearRampToValueAtTime(40 + Math.random()*20, now + 0.8);
+                const g = audioCtx.createGain(); g.gain.value = 0.04;
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 200;
+                osc.connect(f); f.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(now + 0.8);
+            }
+        }
     }
 }
 
