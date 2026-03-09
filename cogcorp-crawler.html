@@ -379,6 +379,13 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #hud .surveillance-fill {
     height: 100%; background: #883322; transition: width 0.5s;
 }
+#hud .stealth-meter {
+    display: inline-block; width: 50px; height: 6px; background: #0a1a0a;
+    border: 1px solid #1a3a1a; vertical-align: middle; margin-left: 4px; position: relative;
+}
+#hud .stealth-fill {
+    height: 100%; background: #228833; transition: width 0.2s;
+}
 /* === COMBAT ENCOUNTER OVERLAY (D&D-style) === */
 #combat-encounter {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 44;
@@ -526,6 +533,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         <span>DOCS: <span id="hud-docs">0</span>/<span id="hud-docs-total">0</span></span>
         <span id="hud-interact" style="color:#448888; display:none;">[E] INTERACT</span>
         <span id="hud-surveillance" style="display:none;">SURV: <span class="surveillance-meter"><span class="surveillance-fill" id="surveillance-fill" style="width:0%"></span></span></span>
+        <span id="hud-stealth" style="display:none;"><span id="stealth-label" style="color:#228833;">HIDDEN</span> <span class="stealth-meter"><span class="stealth-fill" id="stealth-fill" style="width:0%"></span></span></span>
         <span>B-247</span>
     </div>
     <div id="hud-objective" style="display:none; text-align:center; color:#ffd700; font-size:12px; letter-spacing:2px; padding-top:4px; text-shadow: 0 0 8px rgba(255,215,0,0.5);"></div>
@@ -2257,6 +2265,45 @@ function updateSurveillanceHUD() {
 function getSurveillanceDetectBonus() {
     // Every 20 surveillance points = +0.5 detect range for enemies
     return Math.floor(surveillanceLevel / 20) * SURVEILLANCE_DETECT_BONUS;
+}
+
+function updateStealthHUD() {
+    const el = document.getElementById('hud-stealth');
+    const fill = document.getElementById('stealth-fill');
+    const label = document.getElementById('stealth-label');
+    if (!el || currentFloor === 0) { if (el) el.style.display = 'none'; return; }
+    el.style.display = 'inline';
+    // Calculate max exposure: how close the nearest enemy is to detecting player
+    let maxExposure = 0;
+    for (const e of enemies) {
+        if (e.health <= 0 || e.deathAnim > 0) continue;
+        const dx = player.x - e.x, dy = player.y - e.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > e.detectRange * 1.5) continue; // too far to matter
+        const inFOV = isInEnemyFOV(e, player.x, player.y);
+        const hasLOS = hasLineOfSight(e.x, e.y, player.x, player.y);
+        if (!hasLOS) continue;
+        // Exposure = combination of distance and FOV
+        const distFactor = 1 - (dist / (e.detectRange * 1.5));
+        const fovFactor = inFOV ? 1.0 : (dist < 1.8 ? 0.6 : 0); // hearing range
+        const exposure = distFactor * fovFactor * 100;
+        maxExposure = Math.max(maxExposure, exposure);
+    }
+    maxExposure = Math.min(100, maxExposure);
+    fill.style.width = maxExposure + '%';
+    if (maxExposure >= 80) {
+        label.textContent = 'EXPOSED'; label.style.color = '#cc3322';
+        fill.style.background = '#cc3322';
+    } else if (maxExposure >= 50) {
+        label.textContent = 'CAUTION'; label.style.color = '#cc8822';
+        fill.style.background = '#cc8822';
+    } else if (maxExposure >= 20) {
+        label.textContent = 'ALERT'; label.style.color = '#aaaa44';
+        fill.style.background = '#aaaa44';
+    } else {
+        label.textContent = 'HIDDEN'; label.style.color = '#228833';
+        fill.style.background = '#228833';
+    }
 }
 
 // Ambient message system — periodic atmospheric text
@@ -7930,6 +7977,9 @@ function update(dt) {
 
     // Environmental hazards (steam, sparks)
     updateHazards(dt);
+
+    // Stealth visibility meter
+    updateStealthHUD();
 
     // NPC patrol movement
     updateNPCs(dt);
