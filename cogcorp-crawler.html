@@ -3545,6 +3545,42 @@ const npcDefs = {
             ],
         },
         state: { affinity: 0, mood: 'paranoid', exchangeCount: 0 }
+    },
+    janitor: {
+        name: 'THE JANITOR (B-003)',
+        floor: 0,
+        x: 5.5, y: 18.5,
+        color: [120, 110, 90],
+        size: 0.48,
+        patrol: { axis: 'x', min: 3, max: 10, speed: 0.003 },
+        systemPrompt: `You are the Janitor of CogCorp Building B. Employee B-003. Three digits — everyone else has four. You've been here 22 years. Longer than the current director. Longer than the policy manual. You are gruff, laconic, philosophical in a blue-collar way. You speak in fragments. 1-2 sentences max. You fix pipes, fuses, old files nobody wanted to shred or keep. The building's honest parts. You know things but you say them simply. Keep responses under 25 words. Never break character.`,
+        greeting: 'B-003. Maintenance. Twenty-two years. You must be the new retrieval agent. They all look the same after a while.',
+        moodLabel: 'STATUS: ON SHIFT',
+        beats: {
+            default: [
+                'Pipes. Fuses. Old files nobody wanted. The building\'s honest parts.',
+                'Buildings remember things the org chart doesn\'t.',
+                'Three digits on my badge. Everyone else got four. Nobody explained why.',
+                'I fix what\'s broken. That includes keeping things working that aren\'t supposed to exist.',
+            ],
+            question: [
+                'How long? Longer than the current director. Longer than the policy manual. That\'s my answer to most questions.',
+                'Floor 3? Machines up there never stopped. Not once in 22 years. I stopped asking why after year three.',
+                'The Incident? Paperwork. Always paperwork. Someone filed something that filed back.',
+            ],
+            threat: [
+                'Twenty-two years of maintenance and you think a threat worries me. I\'ve fixed worse than you.',
+                'Go ahead. I\'ll be here fixing pipes after you\'re filed.',
+            ],
+            kind: [
+                'Appreciate that. Nobody thanks maintenance. We just... keep the lights on. Literally.',
+                'You\'re alright. Most agents walk right past. Too focused on the mission to see the building.',
+            ],
+            farewell: [
+                'Watch the pipes on Floor 2. They carry more than coolant. At least that\'s my theory.',
+            ],
+        },
+        state: { affinity: 0, mood: 'gruff', exchangeCount: 0 }
     }
 };
 
