@@ -1658,9 +1658,36 @@
       });
     }
 
+    // Room entry descriptions — shown on first visit
+    const ROOM_DESCRIPTIONS = {
+      lobby: 'Fluorescent light hums above polished tile. The reception desk faces the entrance. A CogCorp gear logo watches from the back wall. The air smells like new carpet and old coffee.',
+      security: 'Three monitors glow in a dim room. The guard station is unmanned. Whoever watches the cameras isn\'t here right now.',
+      mailroom: 'Paper and cardboard. The mail slots are labeled by building — A, B, D. There is no Building C.',
+      filing: 'Filing cabinets stretch in rows. The fluorescent light here is slightly colder. This is where the documents live.',
+      archive: 'Deeper storage. The cabinets here are older, heavier. One cabinet — ARC-0001 — has a different kind of lock.',
+      shredder: 'Red light. The shredder hums faintly — it was used recently. The room is warmer than it should be.',
+      copyroom: 'A copier, paper trays, and a vending machine that seems to be processing something. The room smells like toner.',
+      cubicle: 'Your cubicle. B-247. The desk lamp is on. Your terminal glows. The cubicle next to yours — B-248 — is occupied.',
+      breakroom: 'Coffee machine, a table, a bulletin board. The fluorescents buzz slightly louder here. People take breaks. Sometimes they talk.',
+      supply: 'Paper. Pencils. Office supplies in careful stacks. One shelf has exactly twenty-three pencils. Someone counted.',
+      standards: 'A long table. Chairs. Wall charts outlining DSA-200 filing standards. Everything here is about how things should be done.',
+      records: 'Cabinets and a floor safe. The Records Clerk keeps things in order. The safe has a combination lock.',
+      conference: 'A projector illuminates nothing on the far wall. Chairs around a table. A whiteboard with erased writing — the ghost of a diagram is still faintly visible.',
+      executive: 'Dark wood tones. A floor lamp. Bookshelves. The Director\'s desk faces the door. No one has sat here in weeks. The coffee is cold.',
+      server: 'Cool air. Cable bundles cross the floor. Server racks blink green and amber. The hum here is lower, steadier — mechanical breath.',
+      basement: 'Underground. Red and yellow work lights. Old pipes. The maintenance area smells like rust and cleaning solution. Someone works here. Alone.',
+      stairwell: 'Concrete steps. A single flickering light. Doors to each floor. The walls are close. Something is written on the far wall.',
+      floor6: 'Warm amber light. A single desk. A single chair. This room is older than the building directory remembers. Someone has maintained it for twenty-two years.'
+    };
+    const visitedRooms = new Set();
+
     function showRoomHUD() {
       const name = ROOM_NAMES[state.currentRoom] || state.currentRoom.toUpperCase();
-      showHUD(name, 'Point at glowing orbs and click to interact. Doors lead between rooms.', []);
+      const desc = visitedRooms.has(state.currentRoom)
+        ? 'Point at glowing orbs and click to interact.'
+        : (ROOM_DESCRIPTIONS[state.currentRoom] || 'A room in Building B.');
+      visitedRooms.add(state.currentRoom);
+      showHUD(name, desc, []);
       document.getElementById('floor-indicator').textContent = 'FLOOR ' + (FLOOR_MAP[state.currentRoom] || '?');
     }
 
