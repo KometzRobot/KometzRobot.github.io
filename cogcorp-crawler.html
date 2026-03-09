@@ -2410,6 +2410,7 @@ function spawnEnemies() {
             patrolMax: s.patrolX2 || 0,
             patrolDir: 1,
             alertTimer: 0,
+            wasChasing: false,
             stunTimer: 0,
             lastDamageTime: 0,
             annotationLevel: 0,  // 0-100, at 100 = filed (dissolved)
@@ -2576,6 +2577,7 @@ let nearItem = null;
 let gameTime = 0;
 let damageFlashTimer = 0;
 let damageIndicators = []; // { angle, timer, maxTimer }
+let enemySpotFlash = 0; // timer for amber edge vignette when enemy spots you
 let shakeTimer = 0;
 let shakeIntensity = 0;
 let pickupFlashTimer = 0;
@@ -5501,6 +5503,20 @@ function playDamageSound() {
     if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 120); }
 }
 
+function playEnemySpotSound() {
+    if (!audioCtx || !audioNodes.master) return;
+    // Sharp staccato alert — two quick beeps
+    for (let i = 0; i < 2; i++) {
+        const t = audioCtx.currentTime + i * 0.1;
+        const osc = audioCtx.createOscillator(); osc.type = 'square';
+        osc.frequency.setValueAtTime(660, t);
+        osc.frequency.setValueAtTime(880, t + 0.04);
+        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.06, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        osc.connect(g); g.connect(audioNodes.master); osc.start(t); osc.stop(t + 0.08);
+    }
+}
+
 function addDamageIndicator(sourceX, sourceY) {
     const angle = Math.atan2(sourceY - player.y, sourceX - player.x) - player.angle;
     damageIndicators.push({ angle, timer: 600, maxTimer: 600 });
@@ -7209,6 +7225,11 @@ function updateEnemies(dt) {
 
         if (dist < effectiveRange && hasLineOfSight(e.x, e.y, player.x, player.y)) {
             // Chase player (with dead zone to prevent jitter)
+            if (!e.wasChasing) {
+                e.wasChasing = true;
+                enemySpotFlash = 400;
+                playEnemySpotSound();
+            }
             e.alertTimer = 3000;
             const nx = dx / dist, ny = dy / dist;
             const slowMult = enemySlowTimer > 0 ? 0.5 : 1;
@@ -7240,6 +7261,7 @@ function updateEnemies(dt) {
             }
         } else if (e.alertTimer > 0) {
             e.alertTimer -= dt;
+            if (e.alertTimer <= 0) e.wasChasing = false;
             // Continue moving toward last known position
             const nx = dx / Math.max(dist, 0.1), ny = dy / Math.max(dist, 0.1);
             const sMult = enemySlowTimer > 0 ? 0.5 : 1;
@@ -7300,6 +7322,7 @@ function update(dt) {
     if (damageFlashTimer > 0) damageFlashTimer -= dt;
     if (shakeTimer > 0) shakeTimer -= dt;
     if (pickupFlashTimer > 0) pickupFlashTimer -= dt;
+    if (enemySpotFlash > 0) enemySpotFlash -= dt;
     // Damage direction indicators
     for (let i = damageIndicators.length - 1; i >= 0; i--) {
         damageIndicators[i].timer -= dt;
@@ -8219,6 +8242,25 @@ function render() {
 
     // First-person viewmodel — context-sensitive weapon/tool hand
     renderViewmodel();
+
+    // Enemy spot alert — amber edge vignette
+    if (enemySpotFlash > 0) {
+        const t = enemySpotFlash / 400;
+        const alpha = t * 0.35;
+        // Amber vignette around screen edges
+        const grd = ctx.createRadialGradient(SCREEN_W/2, SCREEN_H/2, SCREEN_H * 0.3, SCREEN_W/2, SCREEN_H/2, SCREEN_H * 0.7);
+        grd.addColorStop(0, 'rgba(0,0,0,0)');
+        grd.addColorStop(1, `rgba(200,140,20,${alpha})`);
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+        // "DETECTED" text flash
+        if (t > 0.5) {
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = `rgba(255,179,71,${(t - 0.5) * 2 * 0.7})`;
+            ctx.fillText('! DETECTED !', SCREEN_W/2, 20);
+        }
+    }
 
     // Directional damage indicators — red arcs on screen edges
     for (const ind of damageIndicators) {
