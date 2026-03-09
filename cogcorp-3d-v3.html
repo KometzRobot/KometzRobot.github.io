@@ -718,16 +718,68 @@
     const execDesk = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.85, 1.0), mat.desk);
     execDesk.position.set(0, 0.425, -2.5);
     rooms['executive'].group.add(execDesk);
+    // Bookshelf
+    const bookshelf = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.2, 0.35), mat.cabinet);
+    bookshelf.position.set(-3.5, 1.1, -1);
+    rooms['executive'].group.add(bookshelf);
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 5; col++) {
+        const book = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.28 + Math.random() * 0.06, 0.2),
+          new THREE.MeshStandardMaterial({ color: [0x3a2020, 0x20303a, 0x2a3020, 0x302a20, 0x202030][col % 5], roughness: 0.7 }));
+        book.position.set(-3.5 - 0.6 + col * 0.3, 0.25 + row * 0.5, -1);
+        rooms['executive'].group.add(book);
+      }
+    }
+    // Empty portrait frame
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.8, 0.04), new THREE.MeshStandardMaterial({ color: 0x3a2a18, roughness: 0.5, metalness: 0.2 }));
+    frame.position.set(0, 2.0, -3.95);
+    rooms['executive'].group.add(frame);
+    const frameInner = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.6), new THREE.MeshStandardMaterial({ color: 0x1a1a18, roughness: 0.95 }));
+    frameInner.position.set(0, 2.0, -3.93);
+    rooms['executive'].group.add(frameInner);
+    // Floor lamp
+    const flLampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.03, 8), mat.metal);
+    flLampBase.position.set(3.2, 0.015, -3.2);
+    rooms['executive'].group.add(flLampBase);
+    const flLampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.5, 6), mat.metal);
+    flLampPole.position.set(3.2, 0.78, -3.2);
+    rooms['executive'].group.add(flLampPole);
+    const flLampShade = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.2, 8), new THREE.MeshStandardMaterial({ color: 0x4a3a20, roughness: 0.6 }));
+    flLampShade.position.set(3.2, 1.56, -3.2);
+    rooms['executive'].group.add(flLampShade);
+    const flLampGlow = new THREE.PointLight(0xffcc77, 0.4, 5);
+    flLampGlow.position.set(3.2, 1.5, -3.2);
+    rooms['executive'].group.add(flLampGlow);
+    // Coffee mug on desk
+    const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.08, 8), new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.4 }));
+    mug.position.set(0.8, 0.89, -2.3);
+    rooms['executive'].group.add(mug);
+
     addDoor('executive', 0, 3.9, Math.PI, 'stairwell');
     addDoor('executive', 3.9, -1, -Math.PI/2, 'server');
     addInteract('executive', 0, 1.2, -2.5, {
       type: 'object', name: 'EXECUTIVE DESK',
       getText: () => {
-        return 'A large desk. Nameplate: "DIRECTOR — BUILDING B." No name, just the title. A single document sits in the center of the desk, face down.';
+        return 'A large desk. Nameplate: "DIRECTOR — BUILDING B." No name, just the title. A single document sits in the center, face down. A white mug — cold coffee, untouched for weeks.';
       },
       actions: [
         { label: 'Turn over the document', response: 'A memo from 14 months ago: "RE: Annotation Anomaly. Recommendation: no action. Annotation does not violate filing standards. Annotation does not conform to filing standards. Both statements are true. The unnamed practice will be allowed to continue unnamed. — Director, Building B"' },
         { label: 'Open desk drawers', response: 'Empty except for one item: a photograph of Building B from the outside. On the back, pencil: "The building knows." The handwriting matches the stairwell wall.' }
+      ]
+    });
+    addInteract('executive', -3.5, 1.5, -1, {
+      type: 'object', name: 'BOOKSHELF',
+      text: 'Standard management texts. One shelf is different — handbound notebooks, unlabeled. You count twelve. The oldest has a CogCorp seal pressed into the leather.',
+      actions: [
+        { label: 'Open a notebook', response: 'Page after page of margin notes — annotations. Not from filed documents. From the notebooks themselves. The Director was annotating their own thoughts. The practice predates the filing room.' },
+        { label: 'Count the notebooks', response: 'Twelve notebooks. The first is dated twenty-two years ago. The janitor has been here twenty-two years. The annotation desk was not placed by a filing analyst.' }
+      ]
+    });
+    addInteract('executive', 0, 2.0, -3.9, {
+      type: 'object', name: 'PORTRAIT FRAME',
+      text: 'An empty frame. The portrait has been removed. A faint rectangle of un-faded wall paint behind it — something hung here for a long time.',
+      actions: [
+        { label: 'Check behind the frame', response: 'Pencil on the wall, hidden by the frame: "Every building has a practice the building does not name. Ours annotates. — B-001." Employee number one. The first.' }
       ]
     });
 
@@ -747,6 +799,40 @@
         rooms['server'].group.add(led);
       }
     }
+    // Cable bundles on floor
+    for (let i = 0; i < 3; i++) {
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3, 6),
+        new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
+      cable.rotation.z = Math.PI / 2;
+      cable.position.set(0, 0.03, -2.5 + i * 0.15);
+      rooms['server'].group.add(cable);
+    }
+    // Cooling unit
+    const cooler = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.5), mat.metal);
+    cooler.position.set(2.5, 0.7, -2);
+    rooms['server'].group.add(cooler);
+    const coolerVent = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.6),
+      new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.6, roughness: 0.3 }));
+    coolerVent.position.set(2.5, 0.7, -1.74);
+    rooms['server'].group.add(coolerVent);
+    // UPS battery backup
+    const ups = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.3),
+      new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.4, roughness: 0.5 }));
+    ups.position.set(-2.5, 0.3, -2);
+    rooms['server'].group.add(ups);
+    const upsLed = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.01),
+      new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+    upsLed.position.set(-2.5, 0.5, -1.84);
+    rooms['server'].group.add(upsLed);
+    // Printout tray near terminal
+    const printTray = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.4), mat.desk);
+    printTray.position.set(1, 0.76, 1);
+    rooms['server'].group.add(printTray);
+    // Cold blue-green accent light for server room
+    const serverAccent = new THREE.PointLight(0x4488aa, 0.3, 5);
+    serverAccent.position.set(0, 2.5, -2);
+    rooms['server'].group.add(serverAccent);
+
     // Terminal
     addDesk('server', 0, 1);
     addChair('server', 0, 1.7);
@@ -761,6 +847,21 @@
         { label: 'Search for Floor 6', response: 'Search results: 0 entries. The database doesn\'t acknowledge Floor 6.' },
         { label: 'Search for "annotation"', response: 'Search results: 2,847 entries. First entry: 14 months ago. Last entry: today. Total unique annotators: 23. Active annotators: 5. The number has never exceeded 12.' }
       ]
+    });
+    addInteract('server', 2.5, 1.0, -2, {
+      type: 'object', name: 'COOLING UNIT',
+      text: 'Industrial cooling. The air near it is cold. A maintenance tag reads: "Serviced quarterly — Maintenance." The same unsigned maintenance as Floor 6.',
+      actions: [
+        { label: 'Check temperature readout', response: 'Server room: 18.2°C. Normal range. But the readout has a second line: "FL6 RELAY: ACTIVE." Floor 6 is connected to this server infrastructure.' }
+      ]
+    });
+    addInteract('server', 1, 0.8, 1, {
+      type: 'object', name: 'PRINTOUT TRAY',
+      getText: () => {
+        if (state.annotated > 5) return 'A stack of automated reports. The top one: "ANNOTATION FREQUENCY REPORT — AUTOMATED. Do not file. Do not flag. Do not annotate." The system tracks the practice it does not name.';
+        return 'A tray of automated server reports. Routine system logs. Nothing unusual.';
+      },
+      actions: []
     });
 
     // Stairwell (8x8x4)
