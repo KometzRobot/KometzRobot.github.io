@@ -4192,37 +4192,48 @@ function triggerWinSequence() {
     const realityRemaining = player.realityLevel | 0;
     const docsFound = player.docs;
 
-    // Determine ending variant based on exit choice + reality level
+    // Determine ending variant based on exit choice + reality level + filing count
     const choice = player.exitChoice || 'take';
     let endingTitle, endingText, endingClass;
+
+    // Filing count adds narrative weight — how deep did you go?
+    const filedSuffix = enemiesFiled === 0 ? ' You filed no one. The building doesn\'t know your name.'
+        : enemiesFiled <= 2 ? ' ' + enemiesFiled + ' units filed. Barely a footnote in the system.'
+        : enemiesFiled <= 5 ? ' ' + enemiesFiled + ' units filed. The cognitive engine remembers your pattern.'
+        : ' ' + enemiesFiled + ' units filed. You are part of the architecture now. Every corridor knows your signal frequency.';
 
     if (choice === 'take') {
         if (realityRemaining > 75) {
             endingTitle = 'EXTRACTION COMPLETE';
-            endingText = 'You walk out of Building B with File #B-247-SELF under your arm. The sunlight stings. The parking lot is empty. Your car is where you left it. As you drive away, you check the rearview mirror. Building B is gone. There is only an empty lot and a chain-link fence. You look at the file on the passenger seat. It now contains a single page. It reads: "Thank you for your service, B-247. Your reality has been preserved." You never go back.';
+            endingText = 'You walk out of Building B with File #B-247-SELF under your arm. The sunlight stings. The parking lot is empty. Your car is where you left it.' + (enemiesFiled === 0 ? ' The building barely noticed you. No drawers opened. No patterns analyzed. You were a ghost passing through a machine.' : enemiesFiled <= 3 ? ' As you drive away, you check the rearview mirror. Building B is gone. There is only an empty lot and a chain-link fence. The file contains a single page: "Thank you for your service, B-247. Your reality has been preserved."' : ' As you drive away, the building\'s hum follows you. It\'s in the radio static, in the traffic lights\' rhythm. You analyzed ' + enemiesFiled + ' cognitive patterns. The building analyzed you right back. The file on the passenger seat is warm. It knows you read it.') + ' Reality: ' + realityRemaining + '%.';
             endingClass = 'good';
         } else if (realityRemaining > 40) {
             endingTitle = 'EXTRACTION — PARTIAL';
-            endingText = 'You leave Building B. The air tastes different. Thinner. You hold File #B-247-SELF but your hands look slightly transparent in the morning light. People on the sidewalk don\'t seem to see you. Your reflection in shop windows is faint. The file is heavier than it should be. When you open it at home, every page describes a different version of this moment — you leaving the building, you reading the file, you realizing the file is reading you. Reality: ' + realityRemaining + '%. Enough to keep existing. Barely.';
+            endingText = 'You leave Building B. The air tastes different. Thinner. Your hands look slightly transparent in the morning light.' + (enemiesFiled > 4 ? ' Every unit you analyzed took something from you — a frequency, a neural pattern, a memory. You gave them your depth readings and they gave you their absence.' : ' The file is heavier than it should be. When you open it at home, every page describes a different version of this moment.') + ' People on the sidewalk don\'t seem to see you. Reality: ' + realityRemaining + '%. Enough to keep existing. Barely.' + filedSuffix;
             endingClass = 'partial';
         } else {
             endingTitle = 'EXTRACTION — COMPROMISED';
-            endingText = 'You step through the door of Building B. Or — something that was once you steps through something that was once a door. The file is part of your hand now. Your hand is part of the building. You exist in the gap between the document and the documented. People walk past you without reacting. You try to speak but words come out as annotation marks. Somewhere in the building, a drawer closes. A file has been returned. Reality: ' + realityRemaining + '%. The filing system is working correctly.';
+            endingText = 'You step through the door of Building B. Or — something that was once you steps through something that was once a door.' + (enemiesFiled > 3 ? ' You analyzed too many patterns. The cognitive engine learned yours. You are now a template — your signal frequency filed under "reference standard." New units will be validated against your ghost.' : ' The file is part of your hand now. Your hand is part of the building.') + ' You exist in the gap between the analyzer and the analyzed. People walk past without reacting. Somewhere, a drawer closes. Reality: ' + realityRemaining + '%. The cognitive engine is working correctly.' + filedSuffix;
             endingClass = 'bad';
         }
     } else if (choice === 'burn') {
         endingTitle = 'ERASURE';
         if (realityRemaining > 50) {
-            endingText = 'You drop the file on the floor and it catches fire without a match. It wanted to burn. The pages curl and blacken, and with each one that goes, you feel lighter. Freer. The building shudders. Somewhere on Floor 3, the cognitive engine stutters. You walk out into daylight that feels almost too real. You have no documentation now. No proof you were ever here. No proof you exist at all. But you feel the sun on your face and it doesn\'t ask for your clearance code. Reality: ' + realityRemaining + '%. Undocumented. Free.';
+            endingText = 'You drop the file on the floor and it catches fire without a match. It wanted to burn.' + (enemiesFiled > 4 ? ' Every unit you analyzed flickers — their validated patterns destabilizing without your reference signal. You feel them go, one by one, like lights in a building powering down.' : ' The pages curl and blacken, and with each one that goes, you feel lighter. Freer.') + ' The building shudders. You walk out into daylight that feels almost too real. You have no documentation now. No proof you were ever here. But you feel the sun on your face and it doesn\'t ask for your neural depth. Reality: ' + realityRemaining + '%. Undocumented. Free.' + filedSuffix;
             endingClass = 'good';
         } else {
-            endingText = 'You try to destroy the file but your hands pass through it. You\'re not real enough to touch paper anymore. The file falls open on the floor. The last page reads: "B-247 attempted to destroy their record. This attempt has been recorded. B-247\'s reality signature is insufficient for physical interaction. Recommend reclassification to: DOCUMENT." The building has stopped breathing. It\'s holding its breath. Waiting. Reality: ' + realityRemaining + '%.';
+            endingText = 'You try to destroy the file but your hands pass through it. You\'re not real enough to touch paper anymore.' + (enemiesFiled > 3 ? ' The units you analyzed are watching through the surveillance network. They recognize your cognitive pattern — it\'s been filed.' : '') + ' The file falls open on the floor. The last page reads: "B-247 attempted to destroy their record. Reality signature insufficient for physical interaction. Recommend reclassification to: DOCUMENT." Reality: ' + realityRemaining + '%.' + filedSuffix;
             endingClass = 'bad';
         }
     } else if (choice === 'return') {
         endingTitle = 'REFILED';
-        endingText = 'You put the file back. Not on Floor 3 — right here, in the intake tray by the entrance, where it belongs. Where you belong. The building sighs. The hum drops an octave. Somewhere, a drawer opens. The file slides in of its own accord. The lights come on — warm, amber, welcoming. A voice on the intercom, the first clear transmission in 37 years: "Thank you, B-247. Your cooperation has been noted. Your position has been upgraded. Welcome to permanent staff." The door locks behind you. You don\'t mind. You have work to do. You\'ve always had work to do.';
-        endingClass = realityRemaining > 60 ? 'partial' : 'bad';
+        if (enemiesFiled > 5) {
+            endingText = 'You put the file back. The building doesn\'t sigh — it inhales. You analyzed ' + enemiesFiled + ' units. You know their cognitive functions, their neural depths, their signal frequencies. The building knows yours. A voice on the intercom: "B-247, your performance metrics are exceptional. You have been promoted to Chief Cognitive Analyst. Your desk is ready. Your pattern is permanent." The door doesn\'t lock. You don\'t need locks when you want to stay.';
+            endingClass = 'bad';
+        } else {
+            endingText = 'You put the file back. Not on Floor 3 — right here, in the intake tray by the entrance, where it belongs. Where you belong. The building sighs. A voice on the intercom, the first clear transmission in 37 years: "Thank you, B-247. Your cooperation has been noted. Your position has been upgraded. Welcome to permanent staff." The door locks behind you. You don\'t mind. You have work to do. You\'ve always had work to do.' + filedSuffix;
+            endingClass = realityRemaining > 60 ? 'partial' : 'bad';
+        }
     }
 
     // Build win screen
