@@ -6141,7 +6141,8 @@ function computeLightMap(t) {
     // Build working list with static lights + dynamic player flashlight
     const lights = baseLights.slice();
     if (inventory.flashlight) {
-        lights.push({ x: player.x, y: player.y, radius: 6, intensity: 0.35, r: 240, g: 220, b: 160, flicker: 0 });
+        // Subtle ambient scatter — the directional cone in the renderer is the primary beam
+        lights.push({ x: player.x, y: player.y, radius: 4, intensity: 0.15, r: 240, g: 220, b: 160, flicker: 0 });
     }
     for (const light of lights) {
         // Flicker: modulate intensity with noise when flicker > 0
@@ -6190,8 +6191,13 @@ function castRays() {
     }
     const stairGlowRadius = 3.5; // tiles radius for floor glow
     const stairGlowPulse = 0.12 + Math.sin(gameTime * 0.004) * 0.06;
+    // Flashlight cone — directional beam, not uniform glow
+    const FLASH_CONE_HALF = 0.35; // ~20 degree half-angle
     for (let col = 0; col < NUM_RAYS; col++) {
         const rayAngle = player.angle - HALF_FOV + col * RAY_STEP;
+        // Flashlight cone factor for this column (1.0 at center, 0.0 at edges)
+        const flashConeDev = Math.abs(rayAngle - player.angle);
+        const flashCone = inventory.flashlight ? Math.max(0, 1 - flashConeDev / FLASH_CONE_HALF) : 0;
         const rayCos = Math.cos(rayAngle);
         const raySin = Math.sin(rayAngle);
 
@@ -6253,8 +6259,8 @@ function castRays() {
         const edgeDist = Math.min(wallX, 1 - wallX);
         const edgeDim = edgeDist < 0.02 ? 0.94 + edgeDist * 3 : 1.0;
 
-        // Flashlight brightening
-        const flashBoost = inventory.flashlight ? Math.max(0, 1 - perpDist / 14) * 0.4 : 0;
+        // Flashlight brightening — directional cone beam
+        const flashBoost = flashCone * Math.max(0, 1 - perpDist / 14) * 0.5;
 
         // Stairwell wall glow — green emergency light on wall type 7 (stairs)
         const stairGlow = wallType === 7 ? (0.15 + Math.sin(gameTime * 0.004) * 0.08) * Math.max(0, 1 - perpDist / 12) : 0;
@@ -6302,7 +6308,7 @@ function castRays() {
             const ftx = ((fx * TEX_SIZE) | 0) & (TEX_SIZE-1), fty = ((fy * TEX_SIZE) | 0) & (TEX_SIZE-1);
             const fti = (fty * TEX_SIZE + ftx) * 4;
             const fFog = Math.min(cd / 16, 1);
-            const fFlash = inventory.flashlight ? Math.max(0, 1 - cd / 12) * 0.35 : 0;
+            const fFlash = flashCone * Math.max(0, 1 - cd / 12) * 0.45;
             // Floor glow near stairwells — green light pool
             let floorStairGlow = 0;
             for (const sp of stairPositions) {
@@ -6342,10 +6348,11 @@ function castRays() {
             const cli = ((cy2|0) >= 0 && (cy2|0) < MAP_H && (cx2|0) >= 0 && (cx2|0) < MAP_W)
                 ? ((cy2|0) * MAP_W + (cx2|0)) : -1;
             const cLight = cli >= 0 ? lightMap[cli] : 0.5;
+            const cFlash = flashCone * Math.max(0, 1 - cd / 10) * 0.35;
             const pi = (y * SCREEN_W + col) * 4;
-            buf[pi] = (ceilTex[cti] * cTint[0] * cLight * (1-cFog) + atmo.fogR*0.7*cFog) | 0;
-            buf[pi+1] = (ceilTex[cti+1] * cTint[1] * cLight * (1-cFog) + atmo.fogG*0.7*cFog) | 0;
-            buf[pi+2] = (ceilTex[cti+2] * cTint[2] * cLight * (1-cFog) + atmo.fogB*0.7*cFog) | 0;
+            buf[pi] = Math.min(255, (ceilTex[cti] * cTint[0] * cLight * (1-cFog) + atmo.fogR*0.7*cFog) * (1+cFlash)) | 0;
+            buf[pi+1] = Math.min(255, (ceilTex[cti+1] * cTint[1] * cLight * (1-cFog) + atmo.fogG*0.7*cFog) * (1+cFlash)) | 0;
+            buf[pi+2] = Math.min(255, (ceilTex[cti+2] * cTint[2] * cLight * (1-cFog) + atmo.fogB*0.7*cFog) * (1+cFlash)) | 0;
             buf[pi+3] = 255;
         }
     }
@@ -6463,7 +6470,16 @@ function drawSprites() {
         const sprTex = texName ? spriteTextures[texName] : null;
 
         const fogFactor = Math.min(spr.dist / 18, 1);
-        const flashBoost = inventory.flashlight ? Math.max(0, 1 - spr.dist / 14) * 0.4 : 0;
+        // Flashlight cone for sprites — directional beam based on angle from view center
+        let sprFlashCone = 0;
+        if (inventory.flashlight) {
+            const sprAngle = Math.atan2(spr.y - player.y, spr.x - player.x);
+            let sprAngleDiff = sprAngle - player.angle;
+            while (sprAngleDiff > Math.PI) sprAngleDiff -= Math.PI * 2;
+            while (sprAngleDiff < -Math.PI) sprAngleDiff += Math.PI * 2;
+            sprFlashCone = Math.max(0, 1 - Math.abs(sprAngleDiff) / 0.35);
+        }
+        const flashBoost = sprFlashCone * Math.max(0, 1 - spr.dist / 14) * 0.5;
         const annotPct = (spr.type === 'enemy' && spr.annotationLevel > 0) ? spr.annotationLevel / 100 : 0;
         const opacity = spr.type === 'enemy' ? 1 - (spr.annotationLevel || 0) / 200 : 1;
         const stunFlash = spr.stunned ? (Math.sin(gameTime * 0.02) > 0 ? 1.4 : 0.6) : 1;
@@ -7002,6 +7018,32 @@ function applyPostEffects() {
             buf[pi] = Math.min(255, buf[pi]+2);
             buf[pi+2] = Math.max(0, buf[pi+2]-1);
         }
+
+    // Flashlight cone edge — visible beam boundary when flashlight is active
+    if (inventory.flashlight) {
+        const coneCenterCol = SCREEN_W / 2;
+        const coneEdgePixels = (0.35 / FOV) * SCREEN_W; // cone half-angle in screen columns
+        for (let y = 0; y < SCREEN_H; y++) {
+            for (let x = 0; x < SCREEN_W; x++) {
+                const colDev = Math.abs(x - coneCenterCol);
+                const pi = (y * SCREEN_W + x) * 4;
+                if (colDev > coneEdgePixels) {
+                    // Outside cone — subtle darkening to make beam shape visible
+                    const overshoot = Math.min((colDev - coneEdgePixels) / (SCREEN_W * 0.15), 1);
+                    const dim = 1 - overshoot * 0.15;
+                    buf[pi] = (buf[pi] * dim) | 0;
+                    buf[pi+1] = (buf[pi+1] * dim) | 0;
+                    buf[pi+2] = (buf[pi+2] * dim) | 0;
+                } else if (colDev > coneEdgePixels - 3) {
+                    // Thin warm edge glow at cone boundary — dust catching light
+                    const edgeFade = (colDev - (coneEdgePixels - 3)) / 3;
+                    const glow = edgeFade * 8;
+                    buf[pi] = Math.min(255, buf[pi] + glow * 1.2) | 0;
+                    buf[pi+1] = Math.min(255, buf[pi+1] + glow * 0.9) | 0;
+                }
+            }
+        }
+    }
 
     // Floor 3: green tint + building heartbeat
     if (currentFloor === 2) {
@@ -8086,7 +8128,17 @@ function renderAmbientParticles() {
         const lifeFade = Math.min(1, p.life / 1000) * Math.min(1, (p.maxLife - p.life + p.life) / p.maxLife);
         const distFade = Math.max(0, 1 - tY / AMBIENT_RANGE);
         const shimmer = 0.7 + Math.sin(gameTime * 0.008 + p.phase) * 0.3;
-        const alpha = fc.alpha * lifeFade * distFade * shimmer;
+        // Particles in flashlight beam glow brighter — dust catching light
+        let flashBright = 1;
+        if (inventory.flashlight) {
+            const pAngle = Math.atan2(p.y - player.y, p.x - player.x);
+            let pDiff = pAngle - player.angle;
+            while (pDiff > Math.PI) pDiff -= Math.PI * 2;
+            while (pDiff < -Math.PI) pDiff += Math.PI * 2;
+            const pCone = Math.max(0, 1 - Math.abs(pDiff) / 0.35);
+            flashBright = 1 + pCone * Math.max(0, 1 - tY / 10) * 2.5;
+        }
+        const alpha = fc.alpha * lifeFade * distFade * shimmer * flashBright;
         if (alpha < 0.02) continue;
         // Floor 3 variation: alternate between orange sparks and blue glints
         let pr = fc.r, pg = fc.g, pb = fc.b;
