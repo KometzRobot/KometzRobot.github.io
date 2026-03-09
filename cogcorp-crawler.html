@@ -2338,6 +2338,7 @@ function spawnEnemies() {
             lastDamageTime: 0,
             annotationLevel: 0,  // 0-100, at 100 = filed (dissolved)
             filed: false,
+            deathAnim: 0,  // 0 = alive, >0 = dissolving (counts down from 1.0)
         });
     }
 }
@@ -3437,15 +3438,13 @@ function processTuningResult(success) {
         playFiledSound();
         deskEnemy.filed = true;
         deskEnemy.annotationLevel = 80;
+        deskEnemy.deathAnim = 1.0; // start dissolution animation
         player.totalFiled++;
         const cost = 5 + Math.floor(player.totalFiled * 1.5);
         player.realityLevel -= cost;
         updateRealityHUD();
         showMessage('UNIT FILED \u2014 Reality: ' + (player.realityLevel|0) + '%');
         spawnEnemyDeathBurst(SCREEN_W / 2, SCREEN_H * 0.4, deskEnemy.type);
-
-        const deadEnemy = deskEnemy;
-        setTimeout(() => { deadEnemy.annotationLevel = 100; deadEnemy.alive = false; }, 800);
     } else {
         playRealityTearSound();
         resultEl.style.color = '#cc3322';
@@ -3637,9 +3636,9 @@ function encounterAttack() {
     // Check if enemy is defeated
     if (encounterEnemy.health <= 0) {
         encounterEnemy.health = 0;
-        encounterEnemy.alive = false;
         encounterEnemy.filed = true;
         encounterEnemy.annotationLevel = 100;
+        encounterEnemy.deathAnim = 1.0; // start dissolution
         addEncounterLog('The ' + stats.name + ' sparks, shudders, and collapses.', 'crit');
         addEncounterLog('+ ' + stats.xpValue + ' PROCESSING CREDITS', 'heal');
         spawnEnemyDeathBurst(SCREEN_W / 2, SCREEN_H * 0.35, encounterEnemy.type);
@@ -3731,9 +3730,9 @@ function encounterEMP() {
     // Check if enemy is defeated
     if (encounterEnemy.health <= 0) {
         encounterEnemy.health = 0;
-        encounterEnemy.alive = false;
         encounterEnemy.filed = true;
         encounterEnemy.annotationLevel = 100;
+        encounterEnemy.deathAnim = 1.0; // start dissolution
         addEncounterLog('The ' + stats.name + ' overloads and shuts down permanently.', 'crit');
         spawnEnemyDeathBurst(SCREEN_W / 2, SCREEN_H * 0.35, encounterEnemy.type);
         updateEncounterHUD();
@@ -6064,12 +6063,13 @@ function drawSprites() {
     const sprites = [];
 
     for (const e of enemies) {
-        if (!e.alive || e.filed) continue;
+        if (!e.alive) continue;
         const dx = e.x - player.x, dy = e.y - player.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > 16) continue;
         sprites.push({ x: e.x, y: e.y, dist, size: e.size, type: 'enemy',
-            enemyType: e.type, stunned: e.stunTimer > 0, annotationLevel: e.annotationLevel });
+            enemyType: e.type, stunned: e.stunTimer > 0, annotationLevel: e.annotationLevel,
+            deathAnim: e.deathAnim });
     }
 
     for (const item of items) {
@@ -6596,6 +6596,35 @@ function drawSprites() {
                     cb = cb * (1-annotPct) + 120 * annotPct;
                 }
 
+                // Death dissolution effect — scanline glitch, color shift, pixel dropout
+                if (spr.deathAnim > 0) {
+                    const da = spr.deathAnim; // 1.0 = just died, 0.0 = fully dissolved
+                    // Scanline skip — horizontal bands disappear first
+                    const scanPhase = (y + (gameTime * 0.3) | 0) % 6;
+                    if (scanPhase < (1 - da) * 5) continue;
+                    // Pixel dropout — random pixels vanish, increasing as dissolution progresses
+                    const dropChance = (1 - da) * 0.7;
+                    if (Math.random() < dropChance) continue;
+                    // Horizontal glitch displacement — shift color toward adjacent column
+                    const glitchShift = ((Math.sin(y * 0.8 + gameTime * 0.02) * (1 - da) * 8) | 0);
+                    if (glitchShift !== 0) {
+                        const srcCol = col + glitchShift;
+                        if (srcCol >= 0 && srcCol < SCREEN_W) {
+                            const spi = (y * SCREEN_W + srcCol) * 4;
+                            cr = cr * 0.5 + buf[spi] * 0.5;
+                            cg = cg * 0.5 + buf[spi+1] * 0.5;
+                            cb = cb * 0.5 + buf[spi+2] * 0.5;
+                        }
+                    }
+                    // Color shift toward CogCorp amber-green (filing color)
+                    const filingShift = 1 - da;
+                    cr = cr * da + 200 * filingShift;
+                    cg = cg * da + 180 * filingShift;
+                    cb = cb * da + 60 * filingShift;
+                    // Fade opacity
+                    alpha *= da * da; // quadratic fade — slow start, fast end
+                }
+
                 // Fog — uses per-floor atmosphere colors (items resist fog)
                 const satmo = getAtmo();
                 const itemFogResist = (spr.type === 'item' || spr.type === 'enemy') ? fogFactor * 0.45 : fogFactor;
@@ -6873,6 +6902,31 @@ function applyPostEffects() {
 function updateEnemies(dt) {
     for (const e of enemies) {
         if (!e.alive) continue;
+        // Death dissolution animation — enemy fades/glitches out over ~1.5 seconds
+        if (e.deathAnim > 0) {
+            e.deathAnim -= dt * 0.0007; // ~1.5s dissolution
+            // Spawn dissolution particles at enemy's screen position periodically
+            if (Math.random() < 0.15) {
+                const edx = e.x - player.x, edy = e.y - player.y;
+                const edist = Math.sqrt(edx*edx + edy*edy);
+                if (edist < 16 && edist > 0.5) {
+                    const dirX = Math.cos(player.angle), dirY = Math.sin(player.angle);
+                    const plX = Math.cos(player.angle + Math.PI/2) * 0.66, plY = Math.sin(player.angle + Math.PI/2) * 0.66;
+                    const invD = 1.0 / (plX * dirY - dirX * plY);
+                    const tY = invD * (-plY * edx + plX * edy);
+                    if (tY > 0.2) {
+                        const tX = invD * (dirY * edx - dirX * edy);
+                        const sx = (SCREEN_W / 2) * (1 + tX / tY);
+                        const sy = HALF_H;
+                        const typeColors = { drone: [255, 80, 40], filer: [200, 180, 100], watcher: [180, 60, 200] };
+                        const c = typeColors[e.type] || [200, 160, 60];
+                        spawnParticles(sx, sy, 3, c, { spread: 2, life: 400, size: 1.5, gravity: 1.5 });
+                    }
+                }
+            }
+            if (e.deathAnim <= 0) { e.deathAnim = 0; e.alive = false; }
+            continue; // dying enemies don't move or interact
+        }
         if (e.stunTimer > 0) { e.stunTimer -= dt; continue; }
 
         const dx = player.x - e.x, dy = player.y - e.y;
