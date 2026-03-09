@@ -1216,15 +1216,152 @@ function loadSpritePNG(name, path) {
 }
 
 // Additional texture indices for floor-specific variants (solid-color fallbacks)
-const TEX_FACTORY_WALL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=131;d[i+1]=148;d[i+2]=155;d[i+3]=255;} });
-const TEX_FACTORY_VENT = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=130;d[i+1]=147;d[i+2]=155;d[i+3]=255;} });
-const TEX_FACTORY_METAL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=105;d[i+1]=113;d[i+2]=114;d[i+3]=255;} });
-const TEX_FACTORY_DARK = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=94;d[i+1]=98;d[i+2]=98;d[i+3]=255;} });
-const TEX_FACTORY_DEEP = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=78;d[i+1]=94;d[i+2]=96;d[i+3]=255;} });
-const TEX_FACTORY_FLOOR = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=86;d[i+1]=99;d[i+2]=104;d[i+3]=255;} });
-const TEX_FACTORY_EQUIP = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=78;d[i+1]=93;d[i+2]=97;d[i+3]=255;} });
-const TEX_OFFICE_WALL = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=55;d[i+1]=48;d[i+2]=40;d[i+3]=255;} });
-const TEX_OFFICE_FLOOR = createTexture(d => { for(let i=0;i<d.length;i+=4){d[i]=45;d[i+1]=42;d[i+2]=38;d[i+3]=255;} });
+// Factory fallback textures — detailed procedural patterns (replaced by PNG if image loads)
+const TEX_FACTORY_WALL = createTexture(data => {
+    // Concrete panels with seam lines and surface variation
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x,y) % 10 - 5;
+            const seam = (x % 32 < 2 || y % 32 < 2) ? -25 : 0;
+            const crack = (hash(x*3,y*7)%100 < 2) ? -20 : 0;
+            setPixel(data, x, y, 135+n+seam+crack, 130+n+seam+crack, 125+n+seam+crack);
+        }
+    // Rivet dots at panel intersections
+    for (let rx = 0; rx < TEX_SIZE; rx += 32)
+        for (let ry = 0; ry < TEX_SIZE; ry += 32)
+            for (let dx = -1; dx <= 1; dx++)
+                for (let dy = -1; dy <= 1; dy++)
+                    if (rx+3+dx >= 0 && ry+3+dy >= 0) setPixel(data, (rx+3+dx)%TEX_SIZE, (ry+3+dy)%TEX_SIZE, 100, 95, 90);
+});
+const TEX_FACTORY_VENT = createTexture(data => {
+    // Horizontal vent slats — very distinctive pattern
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const slat = (y % 8) < 3; // 3px slat, 5px gap
+            if (slat) setPixel(data, x, y, 95 + hash(x,y)%8, 90 + hash(x,y)%6, 82);
+            else setPixel(data, x, y, 25 + hash(x,y)%6, 28 + hash(x,y)%6, 30); // dark gap
+        }
+    // Frame border
+    for (let i = 0; i < TEX_SIZE; i++) {
+        setPixel(data, i, 0, 70, 68, 60); setPixel(data, i, 1, 70, 68, 60);
+        setPixel(data, i, TEX_SIZE-1, 70, 68, 60); setPixel(data, i, TEX_SIZE-2, 70, 68, 60);
+        setPixel(data, 0, i, 70, 68, 60); setPixel(data, 1, i, 70, 68, 60);
+        setPixel(data, TEX_SIZE-1, i, 70, 68, 60); setPixel(data, TEX_SIZE-2, i, 70, 68, 60);
+    }
+});
+const TEX_FACTORY_METAL = createTexture(data => {
+    // Brushed steel — bright with horizontal brush marks
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const brush = hash(x+y*997, y)%12 - 6; // horizontal variation
+            setPixel(data, x, y, 160+brush, 165+brush, 170+brush);
+        }
+    // Corner bolts
+    const boltPos = [[5,5],[58,5],[5,58],[58,58]];
+    for (const [bx,by] of boltPos)
+        for (let dx = -2; dx <= 2; dx++)
+            for (let dy = -2; dy <= 2; dy++)
+                if (dx*dx+dy*dy <= 5) setPixel(data, bx+dx, by+dy, 110, 105, 100);
+});
+const TEX_FACTORY_DARK = createTexture(data => {
+    // Dark panel with yellow hazard stripe across lower section
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x,y)%6 - 3;
+            if (y > 42 && y < 58) {
+                // Diagonal hazard stripe
+                const stripe = ((x + y) % 12) < 6;
+                if (stripe) setPixel(data, x, y, 190+n, 170+n, 30);
+                else setPixel(data, x, y, 30+n, 28+n, 25);
+            } else {
+                setPixel(data, x, y, 42+n, 40+n, 38+n);
+            }
+        }
+});
+const TEX_FACTORY_DEEP = createTexture(data => {
+    // Deep industrial with horizontal pipes
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x,y)%8 - 4;
+            setPixel(data, x, y, 35+n, 52+n, 55+n);
+        }
+    // Two horizontal pipes
+    for (const pipeY of [18, 45]) {
+        for (let x = 0; x < TEX_SIZE; x++) {
+            for (let dy = -4; dy <= 4; dy++) {
+                const shade = 1 - Math.abs(dy)/5;
+                const pr = (65 * shade + 10) | 0, pg = (80 * shade + 12) | 0, pb = (75 * shade + 10) | 0;
+                setPixel(data, x, pipeY+dy, pr, pg, pb);
+            }
+            // Pipe highlight
+            setPixel(data, x, pipeY-2, 95, 105, 100);
+        }
+        // Pipe clamps every 16px
+        for (let cx = 8; cx < TEX_SIZE; cx += 16)
+            for (let dy = -5; dy <= 5; dy++)
+                for (let dx = -1; dx <= 1; dx++)
+                    setPixel(data, (cx+dx)%TEX_SIZE, pipeY+dy, 55, 52, 48);
+    }
+});
+const TEX_FACTORY_FLOOR = createTexture(data => {
+    // Diamond plate metal floor
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x,y)%8 - 4;
+            const diamond = ((x+y)%8 < 2 || (x-y+TEX_SIZE)%8 < 2);
+            if (diamond) setPixel(data, x, y, 115+n, 108+n, 95+n);
+            else setPixel(data, x, y, 90+n, 85+n, 78+n);
+        }
+});
+const TEX_FACTORY_EQUIP = createTexture(data => {
+    // Equipment/control panel with indicator lights
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x,y)%6 - 3;
+            setPixel(data, x, y, 48+n, 48+n, 52+n);
+        }
+    // Panel border
+    for (let i = 0; i < TEX_SIZE; i++) {
+        setPixel(data, i, 0, 65, 62, 58); setPixel(data, i, TEX_SIZE-1, 65, 62, 58);
+        setPixel(data, 0, i, 65, 62, 58); setPixel(data, TEX_SIZE-1, i, 65, 62, 58);
+    }
+    // Red indicator light (top)
+    for (let dx = -3; dx <= 3; dx++)
+        for (let dy = -3; dy <= 3; dy++)
+            if (dx*dx+dy*dy <= 10) setPixel(data, 32+dx, 14+dy, 200, 35, 25);
+    // Green indicator (middle)
+    for (let dx = -2; dx <= 2; dx++)
+        for (let dy = -2; dy <= 2; dy++)
+            if (dx*dx+dy*dy <= 5) setPixel(data, 32+dx, 30+dy, 30, 180, 40);
+    // Amber indicator (lower)
+    for (let dx = -2; dx <= 2; dx++)
+        for (let dy = -2; dy <= 2; dy++)
+            if (dx*dx+dy*dy <= 5) setPixel(data, 32+dx, 44+dy, 200, 160, 30);
+    // Horizontal switch slots
+    for (let sx = 18; sx < 46; sx++) { setPixel(data, sx, 55, 80, 78, 72); setPixel(data, sx, 56, 80, 78, 72); }
+});
+const TEX_OFFICE_WALL = createTexture(data => {
+    // Warm wood paneling with baseboard
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x+y*3, y)%8 - 4;
+            const grain = hash(x, y*5)%4; // horizontal wood grain
+            if (y > 54) setPixel(data, x, y, 60+n, 48+n, 35+n); // dark baseboard
+            else setPixel(data, x, y, 115+n+grain, 95+n+grain, 70+n+grain);
+        }
+    // Panel divider lines
+    for (let y = 0; y < 54; y++) { setPixel(data, 31, y, 85, 70, 50); setPixel(data, 32, y, 85, 70, 50); }
+});
+const TEX_OFFICE_FLOOR = createTexture(data => {
+    // Warm beige office tile with grout lines
+    for (let y = 0; y < TEX_SIZE; y++)
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const n = hash(x,y)%8 - 4;
+            const grout = (x % 16 < 1 || y % 16 < 1);
+            if (grout) setPixel(data, x, y, 90+n, 80+n, 65+n);
+            else setPixel(data, x, y, 150+n, 138+n, 118+n);
+        }
+});
 
 function loadTileset() {
     const img = new Image();
@@ -5409,9 +5546,51 @@ function drawSprites() {
                 let cr, cg, cb, alpha;
                 if (sprTex) {
                     const ti = (texY * SPR_SIZE + texX) * 4;
-                    if (sprTex[ti+3] === 0) continue; // transparent pixel
+                    if (sprTex[ti+3] === 0) {
+                        // Transparent pixel — draw outline glow if adjacent to opaque pixel
+                        if (spr.type === 'enemy' || spr.type === 'item') {
+                            let adjOpaque = false;
+                            for (const [ndx,ndy] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]]) {
+                                const ntx = texX+ndx, nty = texY+ndy;
+                                if (ntx >= 0 && ntx < SPR_SIZE && nty >= 0 && nty < SPR_SIZE &&
+                                    sprTex[(nty*SPR_SIZE+ntx)*4+3] > 0) { adjOpaque = true; break; }
+                            }
+                            if (adjOpaque) {
+                                const glowP = 0.5 + Math.sin(gameTime * 0.006) * 0.3;
+                                let olR, olG, olB;
+                                if (spr.type === 'enemy') { olR = 220*glowP; olG = 50*glowP; olB = 25*glowP; }
+                                else {
+                                    switch(spr.itemType) {
+                                        case 'medkit': olR=40; olG=220*glowP; olB=60; break;
+                                        case 'keycard': olR=60; olG=130; olB=230*glowP; break;
+                                        case 'document': case 'targetFile': olR=230*glowP; olG=210*glowP; olB=60; break;
+                                        case 'emp': olR=140; olG=60; olB=230*glowP; break;
+                                        case 'flashlight': olR=230*glowP; olG=210*glowP; olB=140; break;
+                                        case 'anchor': olR=60; olG=190*glowP; olB=210*glowP; break;
+                                        default: olR=190*glowP; olG=190*glowP; olB=100; break;
+                                    }
+                                }
+                                const pi = (y * SCREEN_W + col) * 4;
+                                const oa = 0.55;
+                                buf[pi] = Math.min(255, buf[pi]*(1-oa) + olR*oa) | 0;
+                                buf[pi+1] = Math.min(255, buf[pi+1]*(1-oa) + olG*oa) | 0;
+                                buf[pi+2] = Math.min(255, buf[pi+2]*(1-oa) + olB*oa) | 0;
+                            }
+                        }
+                        continue;
+                    }
                     cr = sprTex[ti]; cg = sprTex[ti+1]; cb = sprTex[ti+2];
                     alpha = sprTex[ti+3] / 255;
+                    // Brightness boost — enemies get red tint, items get bright boost
+                    if (spr.type === 'enemy') {
+                        cr = Math.min(255, cr * 1.4 + 35);
+                        cg = Math.min(255, cg * 0.85);
+                        cb = Math.min(255, cb * 0.75);
+                    } else if (spr.type === 'item') {
+                        cr = Math.min(255, cr * 1.5 + 25);
+                        cg = Math.min(255, cg * 1.5 + 25);
+                        cb = Math.min(255, cb * 1.5 + 30);
+                    }
                 } else if (spr.type === 'ghost') {
                     // Ghost echo of previous player — translucent, flickering silhouette
                     const nx = texX / SPR_SIZE, ny = texY / SPR_SIZE;
@@ -5623,7 +5802,7 @@ function drawSprites() {
 
                 // Fog — uses per-floor atmosphere colors (items resist fog)
                 const satmo = getAtmo();
-                const itemFogResist = spr.type === 'item' ? fogFactor * 0.5 : fogFactor;
+                const itemFogResist = (spr.type === 'item' || spr.type === 'enemy') ? fogFactor * 0.45 : fogFactor;
                 cr = cr * (1 - itemFogResist) + satmo.fogR * itemFogResist + cr * flashBoost;
                 cg = cg * (1 - itemFogResist) + satmo.fogG * itemFogResist + cg * flashBoost;
                 cb = cb * (1 - itemFogResist) + satmo.fogB * itemFogResist + cb * flashBoost;
@@ -5636,22 +5815,43 @@ function drawSprites() {
             }
         }
 
-        // Glow halo for items — bright pulsing beacon
-        if ((spr.type === 'item' || spr.type === 'worldObj') && spriteHeight > 3) {
+        // Glow halo for items, enemies, and world objects — colored border glow
+        if ((spr.type === 'item' || spr.type === 'enemy' || spr.type === 'worldObj') && spriteHeight > 5) {
             const isWorldObj = spr.type === 'worldObj';
-            const glowR = spr.itemType === 'targetFile' ? 4 : isWorldObj ? 2 : 3;
-            const pulse = 0.7 + Math.sin(gameTime * 0.005 + (spr.bobPhase || 0)) * 0.3;
-            const glowStr = spr.itemType === 'targetFile' ? 50 : isWorldObj ? 15 : 35;
-            for (let gy = -glowR; gy <= glowR; gy++) {
-                const ry = ((drawStartY + drawEndY) >> 1) + gy;
-                if (ry < 0 || ry >= SCREEN_H) continue;
-                for (let gx = clampStartX - glowR; gx <= clampEndX + glowR; gx++) {
-                    if (gx < 0 || gx >= SCREEN_W || transformY >= zBuf[gx]) continue;
-                    const pi = (ry * SCREEN_W + gx) * 4;
-                    const g = glowStr * pulse;
-                    buf[pi] = Math.min(255, buf[pi] + g) | 0;
-                    buf[pi+1] = Math.min(255, buf[pi+1] + g * 0.9) | 0;
-                    buf[pi+2] = Math.min(255, buf[pi+2] + g * 0.5) | 0;
+            const isEnemy = spr.type === 'enemy';
+            const border = isEnemy ? 5 : isWorldObj ? 2 : 6;
+            const pulse = 0.5 + Math.sin(gameTime * 0.005 + (spr.bobPhase || 0)) * 0.5;
+            const glowStr = isEnemy ? 55 : spr.itemType === 'targetFile' ? 70 : isWorldObj ? 18 : 60;
+            // Type-specific glow color multipliers
+            let hr, hg, hb;
+            if (isEnemy) { hr = 1.0; hg = 0.25; hb = 0.12; }
+            else if (spr.itemType === 'medkit') { hr = 0.15; hg = 1.0; hb = 0.25; }
+            else if (spr.itemType === 'keycard') { hr = 0.15; hg = 0.45; hb = 1.0; }
+            else if (spr.itemType === 'document' || spr.itemType === 'targetFile') { hr = 1.0; hg = 0.9; hb = 0.2; }
+            else if (spr.itemType === 'emp') { hr = 0.55; hg = 0.25; hb = 1.0; }
+            else if (spr.itemType === 'flashlight') { hr = 1.0; hg = 0.9; hb = 0.55; }
+            else if (spr.itemType === 'anchor') { hr = 0.25; hg = 0.8; hb = 1.0; }
+            else { hr = 0.85; hg = 0.8; hb = 0.45; }
+            // Draw full-border glow around sprite
+            const gY0 = Math.max(0, clampStartY - border);
+            const gY1 = Math.min(SCREEN_H - 1, clampEndY + border);
+            const gX0 = Math.max(0, clampStartX - border);
+            const gX1 = Math.min(SCREEN_W - 1, clampEndX + border);
+            for (let gy = gY0; gy <= gY1; gy++) {
+                for (let gx = gX0; gx <= gX1; gx++) {
+                    if (transformY >= zBuf[gx]) continue;
+                    // Skip pixels inside the actual sprite — only glow the border
+                    if (gx >= clampStartX && gx <= clampEndX && gy >= clampStartY && gy <= clampEndY) continue;
+                    const dx = gx < clampStartX ? clampStartX - gx : gx > clampEndX ? gx - clampEndX : 0;
+                    const dy = gy < clampStartY ? clampStartY - gy : gy > clampEndY ? gy - clampEndY : 0;
+                    const edgeDist = Math.sqrt(dx*dx + dy*dy);
+                    if (edgeDist > border) continue;
+                    const fade = 1 - edgeDist / border;
+                    const g = glowStr * pulse * fade * fade;
+                    const pi = (gy * SCREEN_W + gx) * 4;
+                    buf[pi] = Math.min(255, buf[pi] + g * hr) | 0;
+                    buf[pi+1] = Math.min(255, buf[pi+1] + g * hg) | 0;
+                    buf[pi+2] = Math.min(255, buf[pi+2] + g * hb) | 0;
                 }
             }
         }
