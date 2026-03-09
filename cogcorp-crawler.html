@@ -2575,6 +2575,7 @@ let nearObject = null;
 let nearItem = null;
 let gameTime = 0;
 let damageFlashTimer = 0;
+let damageIndicators = []; // { angle, timer, maxTimer }
 let shakeTimer = 0;
 let shakeIntensity = 0;
 let pickupFlashTimer = 0;
@@ -5500,6 +5501,12 @@ function playDamageSound() {
     if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 120); }
 }
 
+function addDamageIndicator(sourceX, sourceY) {
+    const angle = Math.atan2(sourceY - player.y, sourceX - player.x) - player.angle;
+    damageIndicators.push({ angle, timer: 600, maxTimer: 600 });
+    if (damageIndicators.length > 8) damageIndicators.shift();
+}
+
 function playDoorSound() {
     if (audioCtx && audioNodes.clunkBuf) {
         const src = audioCtx.createBufferSource(); src.buffer = audioNodes.clunkBuf;
@@ -7192,6 +7199,7 @@ function updateEnemies(dt) {
                     e.lastDamageTime = gameTime;
                     damageFlashTimer = 300;
                     shakeTimer = 200; shakeIntensity = 4;
+                    addDamageIndicator(e.x, e.y);
                     playDamageSound();
                     updateHealthHUD();
                 }
@@ -7226,6 +7234,7 @@ function updateEnemies(dt) {
                 e.lastDamageTime = gameTime;
                 damageFlashTimer = 300;
                 shakeTimer = 200; shakeIntensity = 4;
+                addDamageIndicator(e.x, e.y);
                 playDamageSound();
                 updateHealthHUD();
             }
@@ -7291,6 +7300,11 @@ function update(dt) {
     if (damageFlashTimer > 0) damageFlashTimer -= dt;
     if (shakeTimer > 0) shakeTimer -= dt;
     if (pickupFlashTimer > 0) pickupFlashTimer -= dt;
+    // Damage direction indicators
+    for (let i = damageIndicators.length - 1; i >= 0; i--) {
+        damageIndicators[i].timer -= dt;
+        if (damageIndicators[i].timer <= 0) damageIndicators.splice(i, 1);
+    }
 
     // Mouse look
     player.angle += mouseDX * 0.003;
@@ -8205,6 +8219,42 @@ function render() {
 
     // First-person viewmodel — context-sensitive weapon/tool hand
     renderViewmodel();
+
+    // Directional damage indicators — red arcs on screen edges
+    for (const ind of damageIndicators) {
+        const t = ind.timer / ind.maxTimer;
+        const alpha = t * 0.6;
+        // Calculate screen-relative angle (0 = top, clockwise)
+        let a = ind.angle;
+        while (a > Math.PI) a -= Math.PI * 2;
+        while (a < -Math.PI) a += Math.PI * 2;
+        // Map world angle to screen position — center of screen is forward (angle 0)
+        const cx = SCREEN_W / 2;
+        const cy = SCREEN_H / 2;
+        const rx = SCREEN_W * 0.45;
+        const ry = SCREEN_H * 0.45;
+        // Draw arc at edge of screen
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(a);
+        // Draw a wedge pointing toward damage source
+        const wedgeW = 0.3; // radians
+        ctx.beginPath();
+        ctx.moveTo(0, -ry + 10);
+        ctx.lineTo(-Math.sin(wedgeW) * rx * 0.3, -ry);
+        ctx.lineTo(Math.sin(wedgeW) * rx * 0.3, -ry);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(200, 40, 20, ${alpha})`;
+        ctx.fill();
+        // Glow line
+        ctx.beginPath();
+        ctx.moveTo(-Math.sin(wedgeW) * rx * 0.4, -ry + 2);
+        ctx.lineTo(Math.sin(wedgeW) * rx * 0.4, -ry + 2);
+        ctx.strokeStyle = `rgba(255, 80, 40, ${alpha * 0.8})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+    }
 
     // Floor transition overlay (drawn on top of everything)
     renderFloorTransition();
