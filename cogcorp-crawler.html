@@ -2379,8 +2379,13 @@ function interact(obj) {
     if (obj.isStairsDown) {
         if (currentFloor > 0) {
             const prevFloor = currentFloor - 1;
-            changeFloor(prevFloor);
-            showMessage('DESCENDING TO FLOOR ' + (prevFloor + 1), 2000);
+            showChoiceDialog('STAIRS DOWN', 'Descend to Floor ' + (prevFloor + 1) + '?', [
+                { label: '> DESCEND', action: () => {
+                    changeFloor(prevFloor);
+                    showMessage('DESCENDING TO FLOOR ' + (prevFloor + 1), 2000);
+                }},
+                { label: '> STAY', action: () => {} },
+            ]);
         }
         return;
     }
@@ -2514,9 +2519,9 @@ function useEMP() {
 
 function changeFloor(newFloor) {
     currentFloor = newFloor;
-    // Position player at stairs location
-    if (newFloor > 0) { player.x = 2.5; player.y = 2.5; player.angle = 0; }
-    else { player.x = 21.5; player.y = 20.5; player.angle = Math.PI; }
+    // Position player near stairs — NOT on the stairs world object to prevent re-interaction
+    if (newFloor > 0) { player.x = 2.5; player.y = 3.5; player.angle = 0; } // near stairs down at (2.5,2.5) but offset
+    else { player.x = 20.5; player.y = 20.5; player.angle = Math.PI; } // near stairs up, open cell (tile 7 at 21,20 is wall)
     player.vx = 0; player.vy = 0; // reset momentum on floor change
     player.spawnShield = 3000; // 3 seconds invulnerability on floor change
     spawnEnemies();
@@ -4263,6 +4268,9 @@ function respawn() {
         npcDefs[id].state.mood = 'neutral';
         npcDefs[id].state.exchangeCount = 0;
     }
+    // Reset to Floor 1 properly
+    currentFloor = 0;
+    collectedItemKeys.clear();
     player.x = 2.5; player.y = 2.5; player.angle = 0;
     player.vx = 0; player.vy = 0; // reset momentum on respawn
     spawnEnemies();
@@ -4272,6 +4280,8 @@ function respawn() {
     updateHealthHUD();
     updateRealityHUD();
     updateInventoryHUD();
+    document.getElementById('hud-floor').textContent = 1;
+    updateFloorAmbience(0);
     document.getElementById('hud-docs').textContent = '0';
     document.getElementById('annotation-progress').style.display = 'none';
     document.getElementById('death-screen').style.display = 'none';
@@ -5196,6 +5206,35 @@ function drawSprites() {
             agentId: ghost.agentId, ghostAlpha: ghost.alpha, ghostChoice: ghost.choice });
     }
 
+    // World objects — stairs, terminals, mirrors, etc. rendered as 3D sprites
+    for (const obj of worldObjects) {
+        let ox = obj.x, oy = obj.y;
+        // Offset objects in wall tiles toward nearest open space so they're visible
+        const mapVal = getMap(ox | 0, oy | 0);
+        if (mapVal > 0) {
+            // Check adjacent cells and offset toward first open one
+            const offsets = [[0,-0.6],[0,0.6],[-0.6,0],[0.6,0]];
+            for (const [ddx, ddy] of offsets) {
+                if (getMap((ox+ddx)|0, (oy+ddy)|0) === 0) { ox += ddx * 0.5; oy += ddy * 0.5; break; }
+            }
+        }
+        const dx = ox - player.x, dy = oy - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > 14 || dist < 0.5) continue;
+        // Determine visual subtype
+        let objVisual = 'generic';
+        if (obj.isStairs) objVisual = 'stairsUp';
+        else if (obj.isStairsDown) objVisual = 'stairsDown';
+        else if (obj.isTerminal) objVisual = 'terminal';
+        else if (obj.isMirror) objVisual = 'mirror';
+        else if (obj.isWall) objVisual = 'messageBoard';
+        else if (obj.isCamera) objVisual = 'camera';
+        else if (obj.isWhiteboard) objVisual = 'whiteboard';
+        else if (obj.isExit) objVisual = 'exit';
+        sprites.push({ x: ox, y: oy, dist, size: 0.55, type: 'worldObj',
+            objVisual, objName: obj.name });
+    }
+
     sprites.sort((a, b) => b.dist - a.dist);
 
     // Pre-compute camera vectors (constant for all sprites)
@@ -5294,6 +5333,125 @@ function drawSprites() {
                     const pulse = 0.85 + Math.sin(gameTime * 0.003) * 0.15;
                     cr *= pulse; cg *= pulse; cb *= pulse;
                     alpha = 1;
+                } else if (spr.type === 'worldObj') {
+                    // Procedural world object rendering
+                    const nx = texX / SPR_SIZE, ny = texY / SPR_SIZE;
+                    const dx2 = nx - 0.5, dy2 = ny - 0.5;
+                    const vis = spr.objVisual;
+                    if (vis === 'stairsUp' || vis === 'stairsDown') {
+                        // Staircase icon — ascending/descending metal steps
+                        const isUp = vis === 'stairsUp';
+                        const numSteps = 5;
+                        const stepH = 0.7 / numSteps;
+                        let isStep = false;
+                        for (let s = 0; s < numSteps; s++) {
+                            const stepLeft = 0.15 + s * 0.13;
+                            const stepRight = stepLeft + 0.16;
+                            const stepTop = isUp ? (0.8 - s * stepH) : (0.2 + s * stepH);
+                            const stepBot = stepTop + stepH * 0.7;
+                            if (nx >= stepLeft && nx <= stepRight && ny >= stepTop && ny <= stepBot) {
+                                isStep = true;
+                                // Metal color with edge highlight
+                                const edgeFactor = (nx - stepLeft) / (stepRight - stepLeft);
+                                cr = 140 + edgeFactor * 40; cg = 130 + edgeFactor * 30; cb = 110;
+                                if (ny - stepTop < stepH * 0.15) { cr += 50; cg += 50; cb += 40; } // top edge bright
+                                break;
+                            }
+                        }
+                        if (!isStep) {
+                            // Arrow indicator
+                            const arrowCx = 0.5, arrowCy = isUp ? 0.12 : 0.88;
+                            const arrowDist = Math.abs(dx2) + Math.abs(ny - arrowCy);
+                            if (arrowDist < 0.12 && ((isUp && ny < arrowCy + 0.06) || (!isUp && ny > arrowCy - 0.06))) {
+                                cr = 200; cg = 180; cb = 100;
+                            } else continue;
+                        }
+                        alpha = 0.9;
+                    } else if (vis === 'terminal') {
+                        // CRT terminal — amber screen with bezel
+                        const inScreen = Math.abs(dx2) < 0.3 && ny > 0.15 && ny < 0.7;
+                        const bezel = Math.abs(dx2) < 0.35 && ny > 0.1 && ny < 0.75;
+                        const stand = Math.abs(dx2) < 0.1 && ny >= 0.75 && ny < 0.9;
+                        if (inScreen) {
+                            // Amber phosphor glow with scanlines
+                            const scanline = Math.sin(ny * 80) > 0.3 ? 1 : 0.8;
+                            const flicker = 0.9 + Math.sin(gameTime * 0.008) * 0.1;
+                            cr = 40 * scanline * flicker; cg = 50 * scanline * flicker; cb = 10;
+                            // Random "text" pixels
+                            const textHash = ((texX * 7 + texY * 13) % 17);
+                            if (textHash < 5 && nx > 0.25 && nx < 0.7) { cr += 160; cg += 130; cb += 20; }
+                            alpha = 0.95;
+                        } else if (bezel) {
+                            cr = 60; cg = 55; cb = 45; alpha = 0.95; // dark metal bezel
+                        } else if (stand) {
+                            cr = 70; cg = 65; cb = 50; alpha = 0.9;
+                        } else continue;
+                    } else if (vis === 'mirror') {
+                        // Reflective rectangle
+                        if (Math.abs(dx2) < 0.25 && ny > 0.15 && ny < 0.85) {
+                            const shimmer = 0.7 + Math.sin(gameTime * 0.004 + nx * 10) * 0.3;
+                            cr = 150 * shimmer; cg = 160 * shimmer; cb = 170 * shimmer;
+                            // Frame
+                            if (Math.abs(dx2) > 0.2 || ny < 0.2 || ny > 0.8) { cr = 100; cg = 80; cb = 50; }
+                            alpha = 0.85;
+                        } else continue;
+                    } else if (vis === 'messageBoard') {
+                        // Cork board with papers
+                        if (Math.abs(dx2) < 0.35 && ny > 0.1 && ny < 0.85) {
+                            cr = 130; cg = 95; cb = 60; // cork color
+                            // Paper notes
+                            const noteHash = ((texX * 11 + texY * 7) % 23);
+                            if (noteHash < 4) { cr = 220; cg = 210; cb = 190; } // white paper
+                            else if (noteHash === 5) { cr = 200; cg = 200; cb = 120; } // yellow note
+                            alpha = 0.9;
+                        } else continue;
+                    } else if (vis === 'camera') {
+                        // Security camera — small box with red LED
+                        const camBody = Math.abs(dx2) < 0.15 && ny > 0.2 && ny < 0.5;
+                        const camLens = Math.sqrt(dx2*dx2 + (ny-0.55)*(ny-0.55)) < 0.08;
+                        const camMount = Math.abs(dx2) < 0.04 && ny > 0.05 && ny < 0.2;
+                        if (camBody) {
+                            cr = 50; cg = 50; cb = 55; alpha = 0.9;
+                        } else if (camLens) {
+                            // Pulsing red LED
+                            const redPulse = 0.6 + Math.sin(gameTime * 0.006) * 0.4;
+                            cr = 200 * redPulse; cg = 20; cb = 20; alpha = 0.95;
+                        } else if (camMount) {
+                            cr = 80; cg = 80; cb = 85; alpha = 0.9;
+                        } else continue;
+                    } else if (vis === 'whiteboard') {
+                        // Whiteboard — white rectangle with faint marks
+                        if (Math.abs(dx2) < 0.35 && ny > 0.1 && ny < 0.8) {
+                            cr = 230; cg = 230; cb = 225;
+                            // Faint ghost writing
+                            const markHash = ((texX * 5 + texY * 3) % 19);
+                            if (markHash < 2) { cr -= 30; cg -= 30; cb -= 25; }
+                            // Frame
+                            if (Math.abs(dx2) > 0.3 || ny < 0.15 || ny > 0.75) { cr = 160; cg = 160; cb = 165; }
+                            alpha = 0.9;
+                        } else continue;
+                    } else if (vis === 'exit') {
+                        // Exit door — red EXIT sign glow
+                        if (Math.abs(dx2) < 0.3 && ny > 0.05 && ny < 0.25) {
+                            // EXIT sign
+                            const pulse = 0.7 + Math.sin(gameTime * 0.004) * 0.3;
+                            cr = 220 * pulse; cg = 40 * pulse; cb = 30 * pulse;
+                            alpha = 0.95;
+                        } else if (Math.abs(dx2) < 0.3 && ny > 0.25 && ny < 0.9) {
+                            // Door frame
+                            cr = 80; cg = 70; cb = 55;
+                            if (Math.abs(dx2) > 0.25 || ny > 0.85) { cr = 50; cg = 45; cb = 35; }
+                            alpha = 0.9;
+                        } else continue;
+                    } else {
+                        // Generic interactive object — glowing interaction marker
+                        const markerDist = Math.sqrt(dx2*dx2 + dy2*dy2);
+                        if (markerDist < 0.3) {
+                            const pulse = 0.6 + Math.sin(gameTime * 0.005) * 0.4;
+                            cr = 100 * pulse; cg = 140 * pulse; cb = 120 * pulse;
+                            alpha = 0.6 * pulse;
+                        } else continue;
+                    }
                 } else {
                     continue;
                 }
@@ -5324,10 +5482,11 @@ function drawSprites() {
         }
 
         // Glow halo for items — bright pulsing beacon
-        if (spr.type === 'item' && spriteHeight > 3) {
-            const glowR = spr.itemType === 'targetFile' ? 4 : 3;
+        if ((spr.type === 'item' || spr.type === 'worldObj') && spriteHeight > 3) {
+            const isWorldObj = spr.type === 'worldObj';
+            const glowR = spr.itemType === 'targetFile' ? 4 : isWorldObj ? 2 : 3;
             const pulse = 0.7 + Math.sin(gameTime * 0.005 + (spr.bobPhase || 0)) * 0.3;
-            const glowStr = spr.itemType === 'targetFile' ? 50 : 35;
+            const glowStr = spr.itemType === 'targetFile' ? 50 : isWorldObj ? 15 : 35;
             for (let gy = -glowR; gy <= glowR; gy++) {
                 const ry = ((drawStartY + drawEndY) >> 1) + gy;
                 if (ry < 0 || ry >= SCREEN_H) continue;
@@ -5393,6 +5552,21 @@ function drawMinimap() {
         if (ix >= 0 && ix < mmSize && iy >= 0 && iy < mmSize) {
             const pi = ((mmY+iy)*SCREEN_W+mmX+ix)*4;
             buf[pi] = 220; buf[pi+1] = 200; buf[pi+2] = 50; buf[pi+3] = 255;
+        }
+    }
+
+    // World object dots on minimap (interactive objects — subtle teal)
+    for (const obj of worldObjects) {
+        const ox = (obj.x*mmScale)|0, oy = (obj.y*mmScale)|0;
+        if (ox >= 0 && ox < mmSize && oy >= 0 && oy < mmSize) {
+            const pi = ((mmY+oy)*SCREEN_W+mmX+ox)*4;
+            if (obj.isStairs || obj.isStairsDown) {
+                buf[pi] = 200; buf[pi+1] = 180; buf[pi+2] = 80; buf[pi+3] = 255; // gold for stairs
+            } else if (obj.isTerminal) {
+                buf[pi] = 60; buf[pi+1] = 180; buf[pi+2] = 60; buf[pi+3] = 255; // green for terminals
+            } else {
+                buf[pi] = 80; buf[pi+1] = 120; buf[pi+2] = 120; buf[pi+3] = 200; // teal for others
+            }
         }
     }
 
