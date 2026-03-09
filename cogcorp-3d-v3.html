@@ -258,15 +258,24 @@
     // FLOOR THEMES — per-floor atmosphere
     // ═══════════════════════════════════════════════════════════════
     const FLOOR_THEMES = {
-      1:  { fog: 0x0a0806, bg: 0x0a0806, exposure: 0.55, label: 'Warm corporate' },
-      2:  { fog: 0x040608, bg: 0x040608, exposure: 0.4, label: 'Cold archive' },
-      3:  { fog: 0x060806, bg: 0x060806, exposure: 0.5, label: 'Worn office' },
-      4:  { fog: 0x080804, bg: 0x080804, exposure: 0.45, label: 'Aging authority' },
-      5:  { fog: 0x060404, bg: 0x060404, exposure: 0.35, label: 'Dark power' },
-      6:  { fog: 0x0a0804, bg: 0x0a0804, exposure: 0.65, label: 'Warm origin' },
-      0:  { fog: 0x030303, bg: 0x030303, exposure: 0.3, label: 'Stairwell' },
-      '-1': { fog: 0x040604, bg: 0x040604, exposure: 0.35, label: 'Industrial basement' }
+      1:  { fog: 0x0a0806, bg: 0x0a0806, exposure: 0.55, wall: 0x3a3828, floor: 0x2a2820 },
+      2:  { fog: 0x040608, bg: 0x040608, exposure: 0.4, wall: 0x303840, floor: 0x222830 },
+      3:  { fog: 0x060806, bg: 0x060806, exposure: 0.5, wall: 0x343830, floor: 0x262822 },
+      4:  { fog: 0x080804, bg: 0x080804, exposure: 0.45, wall: 0x3a3828, floor: 0x2a2818 },
+      5:  { fog: 0x060404, bg: 0x060404, exposure: 0.35, wall: 0x2a2222, floor: 0x1a1414 },
+      6:  { fog: 0x0a0804, bg: 0x0a0804, exposure: 0.65, wall: 0x3a3020, floor: 0x2a2418 },
+      0:  { fog: 0x030303, bg: 0x030303, exposure: 0.3, wall: 0x2a2a2a, floor: 0x1a1a1a },
+      '-1': { fog: 0x040604, bg: 0x040604, exposure: 0.35, wall: 0x283028, floor: 0x1a2218 }
     };
+
+    // Per-floor materials (created once, recolored on room build)
+    const floorMats = {};
+    for (const [fnum, theme] of Object.entries(FLOOR_THEMES)) {
+      floorMats[fnum] = {
+        wall: new THREE.MeshStandardMaterial({ color: theme.wall, roughness: 0.8 }),
+        floor: new THREE.MeshStandardMaterial({ color: theme.floor, roughness: 0.9 })
+      };
+    }
     let currentFloorTheme = null;
 
     function applyFloorTheme(roomName) {
@@ -317,7 +326,11 @@
       const g = new THREE.Group();
       g.userData = { name };
 
-      const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat.floor);
+      // Use floor-specific materials if available
+      const fnum = FLOOR_MAP[name];
+      const fMats = floorMats[fnum] || floorMats[1];
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), fMats.floor);
       floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
       g.add(floor);
 
@@ -327,7 +340,7 @@
 
       // 4 walls
       const makeWall = (ww, wh, pos, rotY) => {
-        const wall = new THREE.Mesh(new THREE.PlaneGeometry(ww, wh), mat.wall);
+        const wall = new THREE.Mesh(new THREE.PlaneGeometry(ww, wh), fMats.wall);
         wall.position.set(...pos); wall.rotation.y = rotY;
         g.add(wall);
       };
@@ -1794,21 +1807,50 @@
       osc.stop(audioCtx.currentTime + 0.08);
     }
 
+    // Per-floor ambient tone layers
+    let floorToneNode = null;
+    let floorToneGain = null;
+
     function updateRoomAmbience() {
       if (!audioCtx || !ambientGain) return;
       const room = state.currentRoom;
       if (room === lastRoom) return;
       lastRoom = room;
-      // Adjust ambient volume by room — Floor 6 is quiet
-      if (room === 'floor6') {
-        ambientGain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.5);
-      } else if (room === 'shredder') {
-        ambientGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.3);
-      } else if (room === 'stairwell') {
-        ambientGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.3);
-      } else {
-        ambientGain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.3);
+      const floor = FLOOR_MAP[room];
+
+      // Base ambient volume by room
+      const volumes = { floor6: 0.02, shredder: 0.18, stairwell: 0.08, basement: 0.14 };
+      const vol = volumes[room] || 0.12;
+      ambientGain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.3);
+
+      // Floor-specific tone color (subtle frequency shift in hum)
+      if (floorToneNode) { try { floorToneNode.stop(); } catch(e) {} }
+      if (floorToneGain) floorToneGain.disconnect();
+
+      const toneFreqs = { 1: 120, 2: 95, 3: 110, 4: 100, 5: 80, 6: 60, 0: 70, '-1': 85 };
+      const toneVols = { 1: 0.15, 2: 0.2, 3: 0.12, 4: 0.18, 5: 0.25, 6: 0.05, 0: 0.1, '-1': 0.22 };
+
+      floorToneGain = audioCtx.createGain();
+      floorToneGain.gain.value = toneVols[floor] || 0.15;
+
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < d.length; i++) {
+        d[i] = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+        last = d[i]; d[i] *= 3;
       }
+      floorToneNode = audioCtx.createBufferSource();
+      floorToneNode.buffer = buf;
+      floorToneNode.loop = true;
+      const bp = audioCtx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = toneFreqs[floor] || 120;
+      bp.Q.value = 12;
+      floorToneNode.connect(bp);
+      bp.connect(floorToneGain);
+      floorToneGain.connect(ambientGain);
+      floorToneNode.start();
     }
 
     // ═══════════════════════════════════════════════════════════════
