@@ -1823,6 +1823,7 @@ let player = { x: 2.5, y: 2.5, angle: 0, docs: 0, health: 100, maxHealth: 100,
     annotateTarget: null, // which enemy is being annotated
     annotateProgress: 0,  // 0-100 progress on current annotation
     totalFiled: 0,        // how many enemies filed
+    stealthApproaches: 0, // how many stealth engagements
     allDocsFound: false,  // all documents collected this run
     phaseHintShown: false, // shown hint about wall phasing at low reality
     totalNPCTalks: 0,     // total NPC exchanges across all NPCs
@@ -1906,7 +1907,8 @@ function saveCheckpoint() {
                 x: player.x, y: player.y, angle: player.angle,
                 health: player.health, maxHealth: player.maxHealth,
                 docs: player.docs, realityLevel: player.realityLevel,
-                totalFiled: player.totalFiled, allDocsFound: player.allDocsFound,
+                totalFiled: player.totalFiled, stealthApproaches: player.stealthApproaches,
+                allDocsFound: player.allDocsFound,
                 totalNPCTalks: player.totalNPCTalks, vasquezMet: player.vasquezMet,
                 archivistAffinity: player.archivistAffinity,
             },
@@ -3834,6 +3836,7 @@ function openCombatEncounter(enemy) {
     document.getElementById('enc-player-reality').textContent = player.realityLevel | 0;
 
     if (stealthApproach) {
+        player.stealthApproaches++;
         addEncounterLog('STEALTH APPROACH — You caught it unaware. First strike advantage!', 'crit');
         // Deal bonus damage from ambush
         const ambushDmg = rollD(4) + 1;
@@ -5173,6 +5176,7 @@ function respawn() {
     player.annotateTarget = null;
     player.annotateProgress = 0;
     player.totalFiled = 0;
+    player.stealthApproaches = 0;
     player.allDocsFound = false;
     player.phaseHintShown = false;
     player.docs = 0;
@@ -5301,10 +5305,21 @@ function triggerWinSequence() {
     const titleColor = endingClass === 'good' ? '#ffb347' : endingClass === 'partial' ? '#887744' : '#664433';
 
     // Prepare stats HTML
+    const playMins = (gameTime / 60000) | 0;
+    const playSecs = ((gameTime / 1000) % 60) | 0;
+    const timeStr = playMins + ':' + (playSecs < 10 ? '0' : '') + playSecs;
+    const stealthCount = player.stealthApproaches || 0;
+    const survLevel = surveillanceLevel;
     const statsHtml = '<br><br><span style="color:#5a4020;font-size:10px;letter-spacing:2px;">' +
-        'ENEMIES FILED: ' + enemiesFiled + ' | DOCUMENTS: ' + docsFound + '/' + totalDocs +
-        (docsFound >= totalDocs ? ' \u2605 COMPLETE' : '') +
+        'FILED: ' + enemiesFiled + ' | STEALTH: ' + stealthCount +
+        ' | DOCS: ' + docsFound + '/' + totalDocs +
+        (docsFound >= totalDocs ? ' \u2605' : '') +
         ' | REALITY: ' + realityRemaining + '%</span>' +
+        '<br><span style="color:#4a3a15;font-size:9px;letter-spacing:1px;">' +
+        'TIME: ' + timeStr + ' | SURVEILLANCE: ' + survLevel + '%' +
+        (stealthCount > enemiesFiled / 2 && enemiesFiled > 0 ? ' | GHOST OPERATIVE' : '') +
+        (survLevel === 0 ? ' | UNSEEN' : survLevel >= 80 ? ' | FULLY DOCUMENTED' : '') +
+        '</span>' +
         '<br><span style="color:#3a2a10;font-size:9px;margin-top:8px;display:inline-block;">' +
         'CogCorp Building B — Filed by Meridian, Agent of the Bots of Cog</span>';
     const totalAgents = (worldState.total_sessions || 0) + 1;
@@ -9020,7 +9035,8 @@ function gameLoop(timestamp) {
                 version: SAVE_VERSION, timestamp: Date.now(),
                 player: { x: player.x, y: player.y, angle: player.angle, health: player.health,
                     maxHealth: player.maxHealth, docs: player.docs, realityLevel: player.realityLevel,
-                    totalFiled: player.totalFiled, allDocsFound: player.allDocsFound,
+                    totalFiled: player.totalFiled, stealthApproaches: player.stealthApproaches,
+                    allDocsFound: player.allDocsFound,
                     totalNPCTalks: player.totalNPCTalks, vasquezMet: player.vasquezMet,
                     archivistAffinity: player.archivistAffinity },
                 currentFloor, foundDocuments, collectedItemKeys: Array.from(collectedItemKeys),
