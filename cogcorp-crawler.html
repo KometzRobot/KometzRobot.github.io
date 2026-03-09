@@ -697,7 +697,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
                 <span class="key">SPACE</span><span class="desc">Fire EMP / Dismiss</span>
                 <span class="key">F</span><span class="desc">Flashlight</span>
                 <span class="key">TAB</span><span class="desc">Document codex</span>
-                <span class="key">M</span><span class="desc">Toggle minimap</span>
+                <span class="key">M</span><span class="desc">Map legend</span>
                 <span class="key">ESC</span><span class="desc">Pause / Close menus</span>
             </div>
             <hr class="pause-divider">
@@ -2579,6 +2579,7 @@ function updateFogOfWar() {
 let currentFloor = 0;
 let gameStarted = false;
 let gamePaused = false;
+let minimapLegendVisible = true; // M toggles minimap legend
 let dialogOpen = false;
 let floorTransition = { active: false, phase: 0, targetFloor: 0, direction: 'up', elapsed: 0, duration: 1200, floorChanged: false };
 let nearObject = null;
@@ -2690,6 +2691,9 @@ window.addEventListener('keydown', e => {
     // Pause when no panel is open
     if (e.code === 'Escape' && gameStarted && !dialogOpen) {
         e.preventDefault(); togglePause(); return;
+    }
+    if (e.code === 'KeyM' && gameStarted) {
+        minimapLegendVisible = !minimapLegendVisible; return;
     }
     if (e.code === 'Space') {
         e.preventDefault();
@@ -8598,6 +8602,43 @@ function renderMinimap() {
     mctx.fillRect(1, mh - 10, 48, 9);
     mctx.fillStyle = currentFloor === 2 ? '#cc4433' : currentFloor === 1 ? '#8888aa' : '#88aa66';
     mctx.fillText('F' + (currentFloor + 1) + ' ' + floorNames[currentFloor], 3, mh - 3);
+
+    // Minimap legend — compact icon key, bottom-right
+    if (minimapLegendVisible) {
+        const legend = [
+            { color: '#ffb347', label: 'YOU' },
+            { color: '#cc3322', label: 'DRONE' },
+            { color: '#cc8822', label: 'FILER' },
+            { color: '#8844aa', label: 'WATCH' },
+            { color: '#44aa44', label: 'ITEM' },
+            { color: '#4488cc', label: 'NPC' },
+            { color: '#66cc44', label: 'STAIR', diamond: true },
+        ];
+        const lh = 8, lw = 42, lpad = 2;
+        const lx = mw - lw - 2, ly = mh - (legend.length * lh) - 4;
+        // Background
+        mctx.fillStyle = 'rgba(0,0,0,0.7)';
+        mctx.fillRect(lx - 1, ly - 1, lw + 2, legend.length * lh + lpad + 2);
+        mctx.strokeStyle = 'rgba(255,179,71,0.25)';
+        mctx.lineWidth = 0.5;
+        mctx.strokeRect(lx - 1, ly - 1, lw + 2, legend.length * lh + lpad + 2);
+        mctx.font = '6px monospace';
+        mctx.textAlign = 'left';
+        for (let i = 0; i < legend.length; i++) {
+            const ey = ly + i * lh + lpad + 4;
+            mctx.fillStyle = legend[i].color;
+            if (legend[i].diamond) {
+                mctx.beginPath();
+                mctx.moveTo(lx + 3, ey - 3); mctx.lineTo(lx + 5, ey - 1);
+                mctx.lineTo(lx + 3, ey + 1); mctx.lineTo(lx + 1, ey - 1);
+                mctx.fill();
+            } else {
+                mctx.fillRect(lx + 1, ey - 3, 4, 3);
+            }
+            mctx.fillStyle = '#999';
+            mctx.fillText(legend[i].label, lx + 8, ey);
+        }
+    }
 }
 
 // === PAUSE MENU ===
