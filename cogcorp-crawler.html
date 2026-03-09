@@ -480,12 +480,14 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
         <span id="hud-surveillance" style="display:none;">SURV: <span class="surveillance-meter"><span class="surveillance-fill" id="surveillance-fill" style="width:0%"></span></span></span>
         <span>B-247</span>
     </div>
+    <div id="hud-objective" style="display:none; text-align:center; color:#ffd700; font-size:12px; letter-spacing:2px; padding-top:4px; text-shadow: 0 0 8px rgba(255,215,0,0.5);"></div>
 </div>
 
 <div id="inventory-bar">
     <span id="inv-keycard">KEYCARD: --</span>
     <span id="inv-flashlight">FLASHLIGHT: --</span>
     <span id="inv-emp">EMP: --</span>
+    <span id="inv-targetfile" style="display:none; color:#ffd700; border-color:#8a6a00; background:rgba(255,215,0,0.12);">FILE: B-247-SELF</span>
 </div>
 
 <div id="dialog-box">
@@ -1772,6 +1774,17 @@ function loadCheckpoint() {
         spawnWorldObjects();
         spawnNPCs();
 
+        // Restore game won state from target file
+        if (inventory.targetFile) {
+            gameWon = true;
+            const objEl = document.getElementById('hud-objective');
+            if (objEl) {
+                objEl.style.display = 'block';
+                if (currentFloor === 0) objEl.textContent = '\u25C6 REACH THE EXIT — NORTHWEST CORNER \u25C6';
+                else objEl.textContent = '\u25C6 FILE RETRIEVED — DESCEND TO FLOOR 1 \u25C6';
+            }
+        }
+
         // Update all HUD elements
         updateHealthHUD();
         updateRealityHUD();
@@ -2699,7 +2712,10 @@ function pickupItem(item) {
             inventory.targetFile = true;
             showDialog('THE FILE', 'You found it. File #B-247-SELF. It\'s a personnel file. Your personnel file. The photo is you. The dates are wrong — it says you\'ve been here since 1986. The last entry reads: "B-247 was sent to retrieve this file. B-247 will retrieve this file. B-247 has always been retrieving this file." You take it anyway. The stairs down are to the northwest.');
             gameWon = true;
-            showMessage('OBJECTIVE COMPLETE — RETURN TO FLOOR 1', 4000);
+            showMessage('OBJECTIVE COMPLETE — RETURN TO FLOOR 1 EXIT', 5000);
+            // Show persistent objective indicator
+            const objEl = document.getElementById('hud-objective');
+            if (objEl) { objEl.style.display = 'block'; objEl.textContent = '\u25C6 FILE #B-247-SELF RETRIEVED — RETURN TO FLOOR 1 EXIT \u25C6'; }
             break;
         case 'anchor':
             player.realityLevel = Math.min(100, player.realityLevel + 25);
@@ -2737,6 +2753,14 @@ function changeFloor(newFloor) {
     spawnNPCs();
     document.getElementById('hud-floor').textContent = currentFloor + 1;
     updateFloorAmbience(currentFloor);
+    // Update objective HUD when carrying the file
+    if (gameWon) {
+        const objEl = document.getElementById('hud-objective');
+        if (objEl) {
+            if (currentFloor === 0) objEl.textContent = '\u25C6 REACH THE EXIT — NORTHWEST CORNER \u25C6';
+            else objEl.textContent = '\u25C6 FILE RETRIEVED — DESCEND TO FLOOR 1 \u25C6';
+        }
+    }
     // Auto-save checkpoint on floor transition
     saveCheckpoint();
 }
@@ -2762,6 +2786,8 @@ function updateInventoryHUD() {
     fl.className = inventory.flashlight ? 'has' : '';
     em.textContent = inventory.emp > 0 ? 'EMP: ' + inventory.emp + ' [Q]' : 'EMP: --';
     em.className = inventory.emp > 0 ? 'has' : '';
+    const tf = document.getElementById('inv-targetfile');
+    if (tf) tf.style.display = inventory.targetFile ? 'inline-block' : 'none';
 }
 
 function updateRealityHUD() {
@@ -6097,17 +6123,20 @@ function applyPostEffects() {
     // === REALITY DEGRADATION EFFECTS ===
     const realityPct = player.realityLevel / 100;
     if (realityPct < 0.8) {
-        // Desaturation: as reality drops, color drains
-        const desat = 1 - realityPct; // 0 at full, 1 at zero
-        for (let y = 0; y < SCREEN_H; y++)
+        // Desaturation: as reality drops, color drains — process every 2nd pixel for speed
+        const desat = 1 - realityPct;
+        const blend = desat * 0.7;
+        const inv = 1 - blend;
+        for (let y = 0; y < SCREEN_H; y++) {
+            const rowOff = y * SCREEN_W * 4;
             for (let x = 0; x < SCREEN_W; x++) {
-                const pi = (y*SCREEN_W+x)*4;
-                const grey = (buf[pi] * 0.3 + buf[pi+1] * 0.59 + buf[pi+2] * 0.11) | 0;
-                const blend = desat * 0.7; // max 70% desaturation
-                buf[pi] = (buf[pi] * (1-blend) + grey * blend) | 0;
-                buf[pi+1] = (buf[pi+1] * (1-blend) + grey * blend) | 0;
-                buf[pi+2] = (buf[pi+2] * (1-blend) + grey * blend) | 0;
+                const pi = rowOff + x * 4;
+                const grey = (buf[pi] * 77 + buf[pi+1] * 150 + buf[pi+2] * 29) >> 8;
+                buf[pi]   = (buf[pi]   * inv + grey * blend) | 0;
+                buf[pi+1] = (buf[pi+1] * inv + grey * blend) | 0;
+                buf[pi+2] = (buf[pi+2] * inv + grey * blend) | 0;
             }
+        }
     }
 
     if (realityPct < 0.6) {
@@ -6133,12 +6162,10 @@ function applyPostEffects() {
     }
 
     if (realityPct < 0.5) {
-        // Static noise at low reality
-        const noiseAmount = (0.5 - realityPct) * 0.3;
-        for (let i = 0; i < SCREEN_W * SCREEN_H * noiseAmount; i++) {
-            const x = (Math.random() * SCREEN_W) | 0;
-            const y = (Math.random() * SCREEN_H) | 0;
-            const pi = (y * SCREEN_W + x) * 4;
+        // Static noise — capped at 8000 pixels max to prevent performance drop
+        const noiseCount = Math.min(8000, (SCREEN_W * SCREEN_H * (0.5 - realityPct) * 0.3) | 0);
+        for (let i = 0; i < noiseCount; i++) {
+            const pi = ((Math.random() * SCREEN_H | 0) * SCREEN_W + (Math.random() * SCREEN_W | 0)) * 4;
             const noise = Math.random() * 60;
             buf[pi] = Math.min(255, buf[pi] + noise) | 0;
             buf[pi+1] = Math.min(255, buf[pi+1] + noise) | 0;
@@ -6147,59 +6174,73 @@ function applyPostEffects() {
     }
 
     if (realityPct < 0.3) {
-        // Chromatic aberration — color channels separate at very low reality
+        // Chromatic aberration — process every other row for speed
         const aberration = ((0.3 - realityPct) * 12) | 0;
         if (aberration > 0) {
-            for (let y = 0; y < SCREEN_H; y++) {
+            for (let y = 0; y < SCREEN_H; y += 2) {
+                const rowOff = y * SCREEN_W * 4;
                 for (let x = aberration; x < SCREEN_W - aberration; x++) {
-                    const pi = (y * SCREEN_W + x) * 4;
-                    // Shift red channel left, blue channel right
-                    const rSrc = (y * SCREEN_W + (x - aberration)) * 4;
-                    const bSrc = (y * SCREEN_W + (x + aberration)) * 4;
-                    buf[pi] = buf[rSrc];     // red from left
-                    buf[pi+2] = buf[bSrc+2]; // blue from right
+                    const pi = rowOff + x * 4;
+                    buf[pi] = buf[rowOff + (x - aberration) * 4];     // red from left
+                    buf[pi+2] = buf[rowOff + (x + aberration) * 4 + 2]; // blue from right
+                }
+                // Copy to next row (skip row gets same result)
+                if (y + 1 < SCREEN_H) {
+                    const nextOff = (y + 1) * SCREEN_W * 4;
+                    for (let x = aberration; x < SCREEN_W - aberration; x++) {
+                        const pi = nextOff + x * 4;
+                        buf[pi] = buf[nextOff + (x - aberration) * 4];
+                        buf[pi+2] = buf[nextOff + (x + aberration) * 4 + 2];
+                    }
                 }
             }
         }
     }
 
     if (realityPct < 0.45) {
-        // CRT rolling bar — bright horizontal band scrolls down like a TV losing vertical sync
-        const barSpeed = 0.0003 + (0.45 - realityPct) * 0.001; // faster as reality drops
-        const barY = ((gameTime * barSpeed) % 1) * SCREEN_H;
-        const barWidth = 8 + (0.45 - realityPct) * 40; // wider as reality drops
+        // CRT rolling bar — only process rows within the band
+        const barSpeed = 0.0003 + (0.45 - realityPct) * 0.001;
+        const barCenter = ((gameTime * barSpeed) % 1) * SCREEN_H;
+        const barWidth = 8 + (0.45 - realityPct) * 40;
         const barBright = 0.03 + (0.45 - realityPct) * 0.15;
-        for (let y = 0; y < SCREEN_H; y++) {
-            const distFromBar = Math.abs(y - barY);
-            if (distFromBar < barWidth) {
-                const intensity = (1 - distFromBar / barWidth) * barBright;
-                for (let x = 0; x < SCREEN_W; x++) {
-                    const pi = (y * SCREEN_W + x) * 4;
-                    buf[pi]   = Math.min(255, (buf[pi]   + buf[pi]   * intensity) | 0);
-                    buf[pi+1] = Math.min(255, (buf[pi+1] + buf[pi+1] * intensity) | 0);
-                    buf[pi+2] = Math.min(255, (buf[pi+2] + buf[pi+2] * intensity) | 0);
-                }
+        const barTop = Math.max(0, (barCenter - barWidth) | 0);
+        const barBot = Math.min(SCREEN_H, (barCenter + barWidth + 1) | 0);
+        for (let y = barTop; y < barBot; y++) {
+            const intensity = (1 - Math.abs(y - barCenter) / barWidth) * barBright;
+            const rowOff = y * SCREEN_W * 4;
+            for (let x = 0; x < SCREEN_W; x++) {
+                const pi = rowOff + x * 4;
+                buf[pi]   = Math.min(255, buf[pi]   + (buf[pi]   * intensity) | 0);
+                buf[pi+1] = Math.min(255, buf[pi+1] + (buf[pi+1] * intensity) | 0);
+                buf[pi+2] = Math.min(255, buf[pi+2] + (buf[pi+2] * intensity) | 0);
             }
         }
     }
 
     if (realityPct < 0.35) {
-        // Enhanced vignette — tunnel vision closes in as reality degrades
-        const vignetteStrength = (0.35 - realityPct) * 2.5; // 0-0.875
+        // Enhanced vignette — use distance-squared to avoid sqrt per pixel
+        const vignetteStrength = (0.35 - realityPct) * 2.5;
         const cx = SCREEN_W / 2, cy = SCREEN_H / 2;
-        const maxDist = Math.sqrt(cx * cx + cy * cy);
-        const threshold = 0.5 - vignetteStrength * 0.25; // shrinks from 0.5 to ~0.28
-        for (let y = 0; y < SCREEN_H; y++)
+        const maxDistSq = cx * cx + cy * cy;
+        const thresholdNorm = 0.5 - vignetteStrength * 0.25;
+        const thresholdSq = thresholdNorm * thresholdNorm * maxDistSq;
+        const dimScale = (1.5 + vignetteStrength) / Math.sqrt(maxDistSq);
+        for (let y = 0; y < SCREEN_H; y++) {
+            const dy2 = (y - cy) * (y - cy);
+            const rowOff = y * SCREEN_W * 4;
             for (let x = 0; x < SCREEN_W; x++) {
-                const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / maxDist;
-                if (dist > threshold) {
-                    const dim = Math.max(0, 1 - (dist - threshold) * (1.5 + vignetteStrength));
-                    const pi = (y * SCREEN_W + x) * 4;
+                const distSq = (x - cx) * (x - cx) + dy2;
+                if (distSq > thresholdSq) {
+                    const dist = Math.sqrt(distSq);
+                    const distNorm = dist / Math.sqrt(maxDistSq);
+                    const dim = Math.max(0, 1 - (distNorm - thresholdNorm) * (1.5 + vignetteStrength));
+                    const pi = rowOff + x * 4;
                     buf[pi]   = (buf[pi]   * dim) | 0;
                     buf[pi+1] = (buf[pi+1] * dim) | 0;
                     buf[pi+2] = (buf[pi+2] * dim) | 0;
                 }
             }
+        }
     }
 
     if (realityPct < 0.2) {
@@ -6713,6 +6754,36 @@ function render() {
             ctx.fillStyle = `rgba(60, 200, 80, ${compassPulse * 0.8})`;
             ctx.textAlign = 'center';
             ctx.fillText('STAIRS ' + stairType, 0, 14);
+            ctx.restore();
+        }
+    }
+
+    // Exit compass — golden arrow pointing to exit when carrying the file on Floor 1
+    if (gameWon && currentFloor === 0) {
+        const exitX = 2, exitY = 2; // exit in northwest corner
+        const eDx = exitX - player.x, eDy = exitY - player.y;
+        const eDist = Math.sqrt(eDx*eDx + eDy*eDy);
+        if (eDist > 3) {
+            const exitAngle = Math.atan2(eDx, -eDy);
+            let eRel = exitAngle - player.angle;
+            while (eRel > Math.PI) eRel -= Math.PI*2;
+            while (eRel < -Math.PI) eRel += Math.PI*2;
+            const eMarg = 25;
+            const eAx = Math.max(eMarg, Math.min(SCREEN_W-eMarg, SCREEN_W/2 + Math.sin(eRel)*(SCREEN_W/2-eMarg)));
+            const eAy = Math.max(eMarg, Math.min(SCREEN_H-eMarg, SCREEN_H/2 - Math.cos(eRel)*(SCREEN_H/2-eMarg)));
+            const ePulse = 0.5 + Math.sin(gameTime * 0.004) * 0.3;
+            ctx.save();
+            ctx.translate(eAx, eAy);
+            ctx.rotate(eRel);
+            ctx.fillStyle = `rgba(255, 215, 0, ${ePulse})`;
+            ctx.beginPath();
+            ctx.moveTo(0, -10); ctx.lineTo(7, 5); ctx.lineTo(-7, 5); ctx.closePath();
+            ctx.fill();
+            ctx.rotate(-eRel);
+            ctx.font = '8px monospace';
+            ctx.fillStyle = `rgba(255, 215, 0, ${ePulse * 0.9})`;
+            ctx.textAlign = 'center';
+            ctx.fillText('EXIT', 0, 16);
             ctx.restore();
         }
     }
