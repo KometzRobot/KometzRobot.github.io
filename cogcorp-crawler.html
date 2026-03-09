@@ -2115,6 +2115,7 @@ const worldObjectsByFloor = [
         { x: 18.5, y: 17.5, name: 'MESSAGE BOARD', text: 'Messages left by previous agents.', isWall: true },
         { x: 2.5, y: 14.5, name: 'SECURITY CAMERA — FEED 1F', isCamera: true, cameraFloor: 0 },
         { x: 16.5, y: 14.5, name: 'SECURITY CAMERA — FEED 3F', isCamera: true, cameraFloor: 2 },
+        { x: 10.5, y: 2.5, name: 'CONFERENCE WHITEBOARD', isWhiteboard: true },
     ],
     // Floor 3: Processing — the machine heart
     [
@@ -2392,6 +2393,19 @@ function interact(obj) {
     }
     if (obj.isCamera) {
         openCameraFeed(obj.cameraFloor);
+        return;
+    }
+    if (obj.isWhiteboard) {
+        let wbText;
+        if (player.totalFiled >= 2) {
+            wbText = 'The ghost impressions on the whiteboard resolve into focus. A flow diagram:\n\n' +
+                'OBSERVATION → CLASSIFICATION → FILING → ???\n\n' +
+                'The arrow after FILING points to a circle with "???" inside it. Someone drew it in pencil, then erased it, but the indentation remains.\n\n' +
+                'Below, in a different hand, barely legible:\n"Proposal: formalize the neural filing process.\nREJECTED.\nReason: The process cannot be named without changing it.\nThe act of documentation alters the documented."';
+        } else {
+            wbText = 'A whiteboard in an alcove. It has been erased, but faint ghost impressions remain in the surface — indentations from someone who pressed too hard with the marker. You can\'t quite make out the text. Maybe if you understood the building\'s filing process better, the patterns would resolve.';
+        }
+        showDialog(obj.name, wbText);
         return;
     }
     if (obj.isMirror) {
