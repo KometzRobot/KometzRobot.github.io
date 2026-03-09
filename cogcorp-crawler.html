@@ -4478,10 +4478,22 @@ function initAudio() {
     audioNodes.noiseFilter = noiseF; audioNodes.noiseGain = noiseG;
     audioNodes.fluorescentFilter = fluorescentF; audioNodes.fluorescentGain = fluorescentG;
 
-    const stepBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
-    const sd = stepBuf.getChannelData(0);
-    for (let i = 0; i < sd.length; i++) { const t = i/audioCtx.sampleRate; sd[i] = Math.exp(-t*40)*(Math.random()*0.4-0.2)+Math.exp(-t*60)*Math.sin(t*300)*0.2; }
-    audioNodes.stepBuf = stepBuf;
+    // Per-floor footstep materials — each floor sounds different underfoot
+    const sr = audioCtx.sampleRate;
+    // Floor 0 (Lobby): Linoleum tile — sharp click, fast decay, higher pitch
+    const tileBuf = audioCtx.createBuffer(1, sr * 0.06, sr);
+    const td = tileBuf.getChannelData(0);
+    for (let i = 0; i < td.length; i++) { const t = i/sr; td[i] = Math.exp(-t*55)*(Math.random()*0.3-0.15) + Math.exp(-t*80)*Math.sin(t*600)*0.15; }
+    // Floor 1 (Archives): Concrete — muffled thud, softer, slower decay
+    const concBuf = audioCtx.createBuffer(1, sr * 0.1, sr);
+    const cd2 = concBuf.getChannelData(0);
+    for (let i = 0; i < cd2.length; i++) { const t = i/sr; cd2[i] = Math.exp(-t*25)*(Math.random()*0.25-0.125) + Math.exp(-t*35)*Math.sin(t*180)*0.2; }
+    // Floor 2 (Processing): Metal grating — resonant ring, metallic harmonics
+    const metalBuf = audioCtx.createBuffer(1, sr * 0.15, sr);
+    const md = metalBuf.getChannelData(0);
+    for (let i = 0; i < md.length; i++) { const t = i/sr; md[i] = Math.exp(-t*20)*Math.sin(t*900)*0.1 + Math.exp(-t*35)*Math.sin(t*1400)*0.06 + Math.exp(-t*50)*(Math.random()*0.2-0.1); }
+    audioNodes.stepBufs = [tileBuf, concBuf, metalBuf];
+    audioNodes.stepBuf = tileBuf; // fallback
 
     const clunkBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
     const cd = clunkBuf.getChannelData(0);
@@ -4556,9 +4568,14 @@ function playStep() {
     const now = audioCtx.currentTime;
     if (now - lastStepTime < 0.35) return;
     lastStepTime = now;
-    const src = audioCtx.createBufferSource(); src.buffer = audioNodes.stepBuf;
-    src.playbackRate.value = 0.8 + Math.random() * 0.4;
-    const g = audioCtx.createGain(); g.gain.value = 0.12;
+    // Per-floor footstep material
+    const buf = (audioNodes.stepBufs && audioNodes.stepBufs[currentFloor]) || audioNodes.stepBuf;
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    // Floor-specific pitch/volume variation
+    const floorPitch = [1.0, 0.85, 1.1][currentFloor] || 1.0;
+    const floorVol = [0.12, 0.08, 0.14][currentFloor] || 0.12;
+    src.playbackRate.value = floorPitch * (0.9 + Math.random() * 0.2);
+    const g = audioCtx.createGain(); g.gain.value = floorVol;
     src.connect(g); g.connect(audioNodes.master); src.start();
 }
 
