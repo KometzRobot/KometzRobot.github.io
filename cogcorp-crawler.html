@@ -5827,76 +5827,102 @@ function drawSprites() {
                     const dx2 = nx - 0.5, dy2 = ny - 0.5;
                     const vis = spr.objVisual;
                     if (vis === 'stairsUp' || vis === 'stairsDown') {
-                        // Staircase — bright metal steps with glowing EXIT sign above
+                        // Staircase — 3D perspective corridor with receding steps
                         const isUp = vis === 'stairsUp';
                         const glowPulse = 0.7 + Math.sin(gameTime * 0.004) * 0.3;
+                        // Perspective parameters — vanishing point at center-top
+                        const vpx = 0.5, vpy = isUp ? 0.15 : 0.85;
+                        // How deep into the corridor (0=front, 1=back)
+                        const depth = isUp ? (vpy - ny) / (vpy - 0.95) : (ny - vpy) / (0.95 - vpy);
+                        // Corridor walls — perspective lines from edges to vanishing point
+                        const wallLeft = vpx - (0.48 - depth * 0.35);
+                        const wallRight = vpx + (0.48 - depth * 0.35);
                         // EXIT SIGN at top (green glowing emergency sign)
-                        if (ny < 0.18 && Math.abs(dx2) < 0.28) {
-                            // Green emergency exit sign
-                            const signBorder = ny < 0.04 || ny > 0.15 || Math.abs(dx2) > 0.25;
+                        if (ny < 0.15 && Math.abs(dx2) < 0.28) {
+                            const signBorder = ny < 0.03 || ny > 0.12 || Math.abs(dx2) > 0.25;
                             if (signBorder) {
-                                cr = 30; cg = 60; cb = 30;
+                                cr = 25; cg = 55; cb = 25;
                             } else {
                                 cr = 20 * glowPulse; cg = 200 * glowPulse; cb = 40 * glowPulse;
-                                // "STAIRS" text approximation — bright bars
-                                const textRow = ny > 0.06 && ny < 0.13;
+                                const textRow = ny > 0.05 && ny < 0.10;
                                 if (textRow) {
-                                    const tx = (nx - 0.22) / 0.56; // 0-1 across sign
-                                    const charSlot = (tx * 7) | 0;
+                                    const tx = (nx - 0.22) / 0.56;
                                     const subPos = (tx * 7) % 1;
-                                    // S-T-A-I-R-S pattern with arrow
-                                    if (subPos > 0.15 && subPos < 0.85 && charSlot >= 0 && charSlot <= 6) {
+                                    if (subPos > 0.15 && subPos < 0.85) {
                                         cr = 40; cg = 255 * glowPulse; cb = 60;
                                     }
                                 }
                             }
                             alpha = 0.95;
                         }
-                        // Steps (wider, brighter than before)
-                        else if (ny >= 0.2 && ny < 0.92) {
-                            const numSteps = 6;
-                            const stepH = 0.7 / numSteps;
-                            let isStep = false;
-                            for (let s = 0; s < numSteps; s++) {
-                                const stepLeft = 0.1 + s * 0.12;
-                                const stepRight = stepLeft + 0.18;
-                                const stepTop = isUp ? (0.85 - s * stepH) : (0.22 + s * stepH);
-                                const stepBot = stepTop + stepH * 0.75;
-                                if (nx >= stepLeft && nx <= stepRight && ny >= stepTop && ny <= stepBot) {
-                                    isStep = true;
-                                    const edgeFactor = (nx - stepLeft) / (stepRight - stepLeft);
-                                    // Brighter metallic colors
-                                    cr = 170 + edgeFactor * 50; cg = 160 + edgeFactor * 40; cb = 130;
-                                    // Top edge highlight
-                                    if (ny - stepTop < stepH * 0.18) { cr += 60; cg += 60; cb += 50; }
-                                    // Subtle amber glow from exit sign
-                                    cg += 15 * glowPulse;
-                                    break;
+                        // Corridor body with perspective steps
+                        else if (ny >= 0.15 && ny < 0.95 && nx > 0.04 && nx < 0.96) {
+                            const d = Math.max(0, Math.min(1, isUp ? 1 - (ny - 0.15) / 0.8 : (ny - 0.15) / 0.8));
+                            const lw = vpx - (0.47 - d * 0.34);
+                            const rw = vpx + (0.47 - d * 0.34);
+                            if (nx < lw || nx > rw) {
+                                // Corridor side walls — darker with depth
+                                const wallD = nx < lw ? (lw - nx) / 0.15 : (nx - rw) / 0.15;
+                                const shade = Math.max(0.3, 1 - d * 0.6);
+                                cr = (90 - wallD * 30) * shade; cg = (85 - wallD * 25) * shade; cb = (75 - wallD * 20) * shade;
+                                // Mortar lines every few pixels (simulating cinderblock)
+                                const brickY = (ny * 32) % 1;
+                                const brickX = (nx * 16) % 1;
+                                if (brickY < 0.08 || brickX < 0.06) { cr -= 15; cg -= 15; cb -= 12; }
+                                alpha = 0.95;
+                            } else {
+                                // Floor/steps area
+                                const numSteps = 8;
+                                const stepIdx = (d * numSteps) | 0;
+                                const stepFrac = (d * numSteps) % 1;
+                                const isRiser = stepFrac < 0.25; // front face of step
+                                const isTread = stepFrac >= 0.25; // top of step
+                                const depthDim = Math.max(0.35, 1 - d * 0.5);
+                                if (isRiser) {
+                                    // Step riser (vertical face) — darker
+                                    cr = (110 + stepIdx * 3) * depthDim;
+                                    cg = (105 + stepIdx * 2) * depthDim;
+                                    cb = (90) * depthDim;
+                                    // Edge highlight at top of riser
+                                    if (stepFrac < 0.05) { cr += 50 * depthDim; cg += 50 * depthDim; cb += 40 * depthDim; }
+                                } else {
+                                    // Step tread (horizontal surface) — brighter
+                                    cr = (160 + stepIdx * 4) * depthDim;
+                                    cg = (150 + stepIdx * 3) * depthDim;
+                                    cb = (125) * depthDim;
+                                    // Diamond plate texture on treads
+                                    const px = (nx * 32) | 0, py = (ny * 32) | 0;
+                                    if (((px + py) & 3) === 0) { cr -= 8; cg -= 8; cb -= 6; }
+                                }
+                                // Green tint from EXIT sign
+                                cg += 8 * glowPulse * (1 - d);
+                                alpha = 0.95;
+                            }
+                            // Ceiling (only for the top portion)
+                            if ((isUp && ny < 0.25) || (!isUp && ny > 0.85)) {
+                                const ceilD = isUp ? (0.25 - ny) / 0.1 : (ny - 0.85) / 0.1;
+                                if (ceilD > 0 && nx > lw && nx < rw) {
+                                    cr = 60; cg = 55; cb = 50;
+                                    // Fluorescent light strip
+                                    if (Math.abs(dx2) < 0.06) { cr = 100 * glowPulse; cg = 130 * glowPulse; cb = 90 * glowPulse; }
+                                    alpha = 0.95;
                                 }
                             }
-                            if (!isStep) {
-                                // Railing on sides
-                                if ((Math.abs(nx - 0.08) < 0.03 || Math.abs(nx - 0.92) < 0.03) && ny > 0.2 && ny < 0.9) {
-                                    cr = 120; cg = 115; cb = 100; isStep = true;
-                                }
-                                // Big arrow indicator below steps
-                                else if (ny > 0.85) {
-                                    const arrowDist = Math.abs(dx2) + Math.abs(ny - 0.9);
-                                    if (arrowDist < 0.15) {
-                                        cr = 220 * glowPulse; cg = 200 * glowPulse; cb = 80;
-                                        isStep = true;
-                                    }
-                                }
-                                if (!isStep) continue;
-                            }
-                            alpha = 0.95;
                         }
-                        // Ambient glow aura around the whole sprite
+                        // Floor arrow indicator
+                        else if (ny >= 0.92 && ny < 0.98) {
+                            const arrowD = Math.abs(dx2) + Math.abs(ny - 0.95) * 2;
+                            if (arrowD < 0.2) {
+                                cr = 200 * glowPulse; cg = 220 * glowPulse; cb = 60;
+                                alpha = 0.9;
+                            } else continue;
+                        }
+                        // Green ambient glow aura
                         else {
                             const edgeDist = Math.sqrt(dx2*dx2 + (ny-0.5)*(ny-0.5));
                             if (edgeDist < 0.5) {
-                                cr = 30 * glowPulse; cg = 80 * glowPulse; cb = 20 * glowPulse;
-                                alpha = 0.15 * (1 - edgeDist / 0.5) * glowPulse;
+                                cr = 25 * glowPulse; cg = 70 * glowPulse; cb = 18 * glowPulse;
+                                alpha = 0.12 * (1 - edgeDist / 0.5) * glowPulse;
                             } else continue;
                         }
                     } else if (vis === 'terminal') {
