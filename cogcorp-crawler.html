@@ -1528,6 +1528,7 @@ function saveCheckpoint() {
             inventory: { ...inventory },
             surveillanceLevel: surveillanceLevel,
             npcStates: {},
+            fogOfWar: fogOfWar.map(f => Array.from(f)),
         };
         // Save NPC affinities
         for (const id in npcDefs) {
@@ -1568,6 +1569,13 @@ function loadCheckpoint() {
         inventory.emp = cp.inventory.emp;
         inventory.targetFile = cp.inventory.targetFile;
         surveillanceLevel = cp.surveillanceLevel || 0;
+
+        // Restore fog of war
+        if (cp.fogOfWar) {
+            for (let f = 0; f < 3; f++) {
+                if (cp.fogOfWar[f]) fogOfWar[f].set(cp.fogOfWar[f]);
+            }
+        }
 
         // Restore NPC states
         if (cp.npcStates) {
@@ -2143,6 +2151,23 @@ function spawnWorldObjects() {
 }
 
 // === GAME STATE ===
+// Fog of war — persistent per-floor explored cells
+const fogOfWar = [
+    new Uint8Array(MAP_W * MAP_H),
+    new Uint8Array(MAP_W * MAP_H),
+    new Uint8Array(MAP_W * MAP_H),
+];
+function updateFogOfWar() {
+    const fog = fogOfWar[currentFloor];
+    const px = player.x | 0, py = player.y | 0;
+    const revealRadius = 5;
+    for (let dy = -revealRadius; dy <= revealRadius; dy++)
+        for (let dx = -revealRadius; dx <= revealRadius; dx++) {
+            const mx = px + dx, my = py + dy;
+            if (mx >= 0 && mx < MAP_W && my >= 0 && my < MAP_H && dx*dx + dy*dy <= revealRadius*revealRadius)
+                fog[my * MAP_W + mx] = 1;
+        }
+}
 let currentFloor = 0;
 let gameStarted = false;
 let dialogOpen = false;
@@ -5507,110 +5532,6 @@ function drawSprites() {
     }
 }
 
-// === MINIMAP ===
-function drawMinimap() {
-    const mmSize = 80, mmScale = mmSize / MAP_W;
-    const mmX = SCREEN_W - mmSize - 8, mmY = 8;
-
-    for (let y = 0; y < mmSize; y++)
-        for (let x = 0; x < mmSize; x++) {
-            const pi = ((mmY+y)*SCREEN_W+mmX+x)*4;
-            buf[pi] = 5; buf[pi+1] = 5; buf[pi+2] = 5; buf[pi+3] = 200;
-        }
-
-    for (let my = 0; my < MAP_H; my++)
-        for (let mx = 0; mx < MAP_W; mx++)
-            if (getMap(mx, my) > 0) {
-                const sx = (mx*mmScale)|0, sy = (my*mmScale)|0, sw = Math.max(1, mmScale|0);
-                const wt = getMap(mx, my);
-                const wr = wt === 9 ? 120 : 60, wg = wt === 9 ? 30 : 50, wb = wt === 9 ? 30 : 40;
-                for (let dy = 0; dy < sw; dy++)
-                    for (let dx = 0; dx < sw; dx++) {
-                        const pi = ((mmY+sy+dy)*SCREEN_W+mmX+sx+dx)*4;
-                        buf[pi] = wr; buf[pi+1] = wg; buf[pi+2] = wb; buf[pi+3] = 255;
-                    }
-            }
-
-    // Enemy dots (bigger when camera reveal active)
-    for (const e of enemies) {
-        if (!e.alive) continue;
-        const ex = (e.x*mmScale)|0, ey = (e.y*mmScale)|0;
-        const revealed = enemyRevealTimer > 0;
-        const cr = e.stunTimer > 0 ? 100 : (revealed ? 255 : 200);
-        const cg = revealed ? 60 : 30, cb = revealed ? 60 : 30;
-        const dotR = revealed ? 2 : 0;
-        for (let ddy = -dotR; ddy <= dotR; ddy++)
-            for (let ddx = -dotR; ddx <= dotR; ddx++) {
-                const px = ex+ddx, py = ey+ddy;
-                if (px >= 0 && px < mmSize && py >= 0 && py < mmSize) {
-                    const pi = ((mmY+py)*SCREEN_W+mmX+px)*4;
-                    buf[pi] = cr; buf[pi+1] = cg; buf[pi+2] = cb; buf[pi+3] = 255;
-                }
-            }
-    }
-
-    // Item dots
-    for (const item of items) {
-        if (item.collected) continue;
-        const ix = (item.x*mmScale)|0, iy = (item.y*mmScale)|0;
-        if (ix >= 0 && ix < mmSize && iy >= 0 && iy < mmSize) {
-            const pi = ((mmY+iy)*SCREEN_W+mmX+ix)*4;
-            buf[pi] = 220; buf[pi+1] = 200; buf[pi+2] = 50; buf[pi+3] = 255;
-        }
-    }
-
-    // World object dots on minimap (interactive objects — subtle teal)
-    for (const obj of worldObjects) {
-        const ox = (obj.x*mmScale)|0, oy = (obj.y*mmScale)|0;
-        if (ox >= 0 && ox < mmSize && oy >= 0 && oy < mmSize) {
-            const pi = ((mmY+oy)*SCREEN_W+mmX+ox)*4;
-            if (obj.isStairs || obj.isStairsDown) {
-                buf[pi] = 200; buf[pi+1] = 180; buf[pi+2] = 80; buf[pi+3] = 255; // gold for stairs
-            } else if (obj.isTerminal) {
-                buf[pi] = 60; buf[pi+1] = 180; buf[pi+2] = 60; buf[pi+3] = 255; // green for terminals
-            } else {
-                buf[pi] = 80; buf[pi+1] = 120; buf[pi+2] = 120; buf[pi+3] = 200; // teal for others
-            }
-        }
-    }
-
-    // NPC dots (friendly — cyan pulsing)
-    for (const npc of npcs) {
-        const nx = (npc.x*mmScale)|0, ny = (npc.y*mmScale)|0;
-        const pulse = 150 + Math.sin(gameTime*0.004)*50|0;
-        for (let ddy = -1; ddy <= 1; ddy++)
-            for (let ddx = -1; ddx <= 1; ddx++) {
-                const px2 = nx+ddx, py2 = ny+ddy;
-                if (px2 >= 0 && px2 < mmSize && py2 >= 0 && py2 < mmSize) {
-                    const pi = ((mmY+py2)*SCREEN_W+mmX+px2)*4;
-                    buf[pi] = 80; buf[pi+1] = pulse; buf[pi+2] = pulse; buf[pi+3] = 255;
-                }
-            }
-    }
-
-    // Player
-    const px = (player.x*mmScale)|0, py = (player.y*mmScale)|0;
-    for (let dy = -1; dy <= 1; dy++)
-        for (let dx = -1; dx <= 1; dx++) {
-            const pi = ((mmY+py+dy)*SCREEN_W+mmX+px+dx)*4;
-            buf[pi] = 255; buf[pi+1] = 179; buf[pi+2] = 71; buf[pi+3] = 255;
-        }
-
-    const dirX = (px+Math.cos(player.angle)*4)|0, dirY = (py+Math.sin(player.angle)*4)|0;
-    if (dirX >= 0 && dirX < mmSize && dirY >= 0 && dirY < mmSize) {
-        const pi = ((mmY+dirY)*SCREEN_W+mmX+dirX)*4;
-        buf[pi] = 255; buf[pi+1] = 220; buf[pi+2] = 100; buf[pi+3] = 255;
-    }
-
-    // Border
-    for (let i = 0; i < mmSize; i++) {
-        for (const [bx, by] of [[i,0],[i,mmSize-1],[0,i],[mmSize-1,i]]) {
-            const pi = ((mmY+by)*SCREEN_W+mmX+bx)*4;
-            buf[pi] = 100; buf[pi+1] = 80; buf[pi+2] = 60; buf[pi+3] = 255;
-        }
-    }
-}
-
 // === POST-PROCESSING ===
 function applyPostEffects() {
     for (let y = 0; y < SCREEN_H; y += 2)
@@ -6341,58 +6262,110 @@ function renderMinimap() {
     const mw = mc.width, mh = mc.height;
     const cellW = mw / MAP_W, cellH = mh / MAP_H;
     const floor = maps[currentFloor];
+    const fog = fogOfWar[currentFloor];
     if (!floor) return;
 
-    // Background
-    mctx.fillStyle = '#080604';
+    // Update fog of war
+    updateFogOfWar();
+
+    // Background — pitch black (unexplored)
+    mctx.fillStyle = '#030302';
     mctx.fillRect(0, 0, mw, mh);
 
-    // Walls — only show visited area (within 6 cells of player)
     const px = player.x | 0, py = player.y | 0;
-    const viewRange = 6;
-    for (let y = Math.max(0, py - viewRange); y < Math.min(MAP_H, py + viewRange + 1); y++) {
-        for (let x = Math.max(0, px - viewRange); x < Math.min(MAP_W, px + viewRange + 1); x++) {
+    const nearRange = 6;
+
+    // Draw all explored cells (fog of war)
+    for (let y = 0; y < MAP_H; y++) {
+        for (let x = 0; x < MAP_W; x++) {
+            if (!fog[y * MAP_W + x]) continue; // unexplored — stays black
+
             const dx = x - px, dy = y - py;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist > viewRange) continue;
-            const alpha = Math.max(0.1, 1 - dist / viewRange);
+            const isNear = dist <= nearRange;
+            const nearAlpha = isNear ? Math.max(0.15, 1 - dist / nearRange) : 0;
+
             if (floor[y * MAP_W + x] > 0) {
-                mctx.fillStyle = `rgba(58,42,16,${alpha})`;
+                // Wall
+                if (isNear) {
+                    mctx.fillStyle = `rgba(58,42,16,${nearAlpha})`;
+                } else {
+                    mctx.fillStyle = 'rgba(35,26,12,0.4)'; // dim explored wall
+                }
                 mctx.fillRect(x * cellW, y * cellH, cellW, cellH);
             } else {
-                mctx.fillStyle = `rgba(26,20,8,${alpha * 0.3})`;
+                // Open space
+                if (isNear) {
+                    mctx.fillStyle = `rgba(26,20,8,${nearAlpha * 0.4})`;
+                } else {
+                    mctx.fillStyle = 'rgba(16,12,6,0.25)'; // dim explored floor
+                }
                 mctx.fillRect(x * cellW, y * cellH, cellW, cellH);
             }
         }
     }
 
-    // Enemies — red dots
+    // FOV cone — highlight player's view direction
+    const fovHalf = 0.52; // ~60 degree FOV
+    const fovLen = 7;
+    mctx.fillStyle = 'rgba(255,179,71,0.06)';
+    mctx.beginPath();
+    const ppxF = player.x * cellW, ppyF = player.y * cellH;
+    mctx.moveTo(ppxF, ppyF);
+    const steps = 12;
+    for (let i = 0; i <= steps; i++) {
+        const a = player.angle - fovHalf + (fovHalf * 2) * (i / steps);
+        mctx.lineTo(ppxF + Math.cos(a) * fovLen * cellW, ppyF + Math.sin(a) * fovLen * cellH);
+    }
+    mctx.closePath();
+    mctx.fill();
+
+    // Enemies — only visible if nearby (within nearRange)
     for (const e of enemies) {
         if (e.health <= 0) continue;
         const dx = e.x - player.x, dy = e.y - player.y;
-        if (Math.sqrt(dx*dx + dy*dy) > viewRange) continue;
+        if (Math.sqrt(dx*dx + dy*dy) > nearRange) continue;
         mctx.fillStyle = e.type === 'watcher' ? '#8844aa' : e.type === 'filer' ? '#cc8822' : '#cc3322';
         mctx.fillRect(e.x * cellW - 1, e.y * cellH - 1, 3, 3);
     }
 
-    // Items — green dots
+    // Items — only visible if nearby
     for (const item of items) {
         if (item.collected) continue;
         const dx = item.x - player.x, dy = item.y - player.y;
-        if (Math.sqrt(dx*dx + dy*dy) > viewRange) continue;
+        if (Math.sqrt(dx*dx + dy*dy) > nearRange) continue;
         mctx.fillStyle = '#44aa44';
         mctx.fillRect(item.x * cellW - 1, item.y * cellH - 1, 2, 2);
     }
 
-    // NPCs — blue dots
+    // NPCs — visible if in explored area (fog of war)
     for (const npc of npcs) {
-        const dx = npc.x - player.x, dy = npc.y - player.y;
-        if (Math.sqrt(dx*dx + dy*dy) > viewRange) continue;
-        mctx.fillStyle = '#4488cc';
-        mctx.fillRect(npc.x * cellW - 1, npc.y * cellH - 1, 3, 3);
+        const nx = npc.x | 0, ny = npc.y | 0;
+        if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H && fog[ny * MAP_W + nx]) {
+            const dx = npc.x - player.x, dy = npc.y - player.y;
+            const isNear = Math.sqrt(dx*dx + dy*dy) <= nearRange;
+            mctx.fillStyle = isNear ? '#4488cc' : '#223344'; // bright if near, dim if explored
+            mctx.fillRect(npc.x * cellW - 1, npc.y * cellH - 1, 3, 3);
+        }
     }
 
-    // Player — white triangle showing direction
+    // World objects — stairs/terminals visible in explored areas
+    for (const obj of worldObjects) {
+        const ox = obj.x | 0, oy = obj.y | 0;
+        if (ox >= 0 && ox < MAP_W && oy >= 0 && oy < MAP_H && fog[oy * MAP_W + ox]) {
+            const dx = obj.x - player.x, dy = obj.y - player.y;
+            const isNear = Math.sqrt(dx*dx + dy*dy) <= nearRange;
+            if (obj.isStairs || obj.isStairsDown) {
+                mctx.fillStyle = isNear ? '#ccaa44' : '#554422'; // gold stairs
+                mctx.fillRect(obj.x * cellW - 1, obj.y * cellH - 1, 3, 3);
+            } else if (obj.isTerminal) {
+                mctx.fillStyle = isNear ? '#44aa44' : '#224422'; // green terminals
+                mctx.fillRect(obj.x * cellW - 1, obj.y * cellH - 1, 2, 2);
+            }
+        }
+    }
+
+    // Player — triangle showing direction
     const ppx = player.x * cellW, ppy = player.y * cellH;
     mctx.fillStyle = '#ffb347';
     mctx.beginPath();
@@ -6422,7 +6395,8 @@ function gameLoop(timestamp) {
                     totalNPCTalks: player.totalNPCTalks, vasquezMet: player.vasquezMet,
                     archivistAffinity: player.archivistAffinity },
                 currentFloor, foundDocuments, collectedItemKeys: Array.from(collectedItemKeys),
-                inventory: { ...inventory }, surveillanceLevel, npcStates: {}
+                inventory: { ...inventory }, surveillanceLevel, npcStates: {},
+                fogOfWar: fogOfWar.map(f => Array.from(f))
             };
             for (const id in npcDefs) cp.npcStates[id] = { affinity: npcDefs[id].state.affinity, mood: npcDefs[id].state.mood, exchangeCount: npcDefs[id].state.exchangeCount };
             localStorage.setItem(SAVE_KEY, JSON.stringify(cp));
