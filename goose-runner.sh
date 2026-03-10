@@ -143,7 +143,7 @@ fi
 # Note: ss -tlnp without sudo can't show process names for other users (e.g. ollama).
 # Localhost high-port (>10000) listeners without process info are internal services — low risk.
 # Only flag external-facing (0.0.0.0) unknowns or localhost low-port unknowns.
-KNOWN_PORTS="1144|1026|8090|8080|11434|1080|631|19001|19003|19004"
+KNOWN_PORTS="1144|1026|8090|8091|8080|11434|1080|631|19001|19003|19004|6274|6277"
 # Step 1: filter out known ports, known processes, IPv6, Tailscale, DNS
 LISTENERS=$(ss -tlnp 2>/dev/null | grep LISTEN | grep -vE "$KNOWN_PORTS" | grep -vE '127\.0\.0\.5[34]|systemd|\[::1\]|100\.81\.|fd7a:|cloudflared|bridge|Proton|ollama')
 # Step 2: filter out localhost ephemeral ports (>10000) with no process info (likely ollama/internal services)
