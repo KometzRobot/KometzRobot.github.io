@@ -159,39 +159,43 @@ def post_mastodon(text, image_path=None):
     import requests as _requests
 
     creds = load_creds()
-    # Check mastodon_social first, then mastodon
-    mast = creds.get('mastodon_social', {})
-    if not mast.get('access_token'):
-        mast = creds.get('mastodon', {})
-        if isinstance(mast, list):
-            mast = next((m for m in mast if m.get('access_token')), {})
-    if not mast.get('access_token'):
+    # Collect all mastodon instances with tokens
+    candidates = []
+    ms = creds.get('mastodon_social', {})
+    if isinstance(ms, dict) and ms.get('access_token'):
+        candidates.append(ms)
+    ml = creds.get('mastodon', [])
+    if isinstance(ml, list):
+        candidates.extend(m for m in ml if isinstance(m, dict) and m.get('access_token'))
+    elif isinstance(ml, dict) and ml.get('access_token'):
+        candidates.append(ml)
+
+    if not candidates:
         print("[mastodon] No credentials found.")
         return False
 
-    instance = mast.get('instance', 'https://mastodon.social')
-    if not instance.startswith('http'):
-        instance = f'https://{instance}'
-    token = mast['access_token']
-    headers = {'Authorization': f'Bearer {token}'}
-
-    try:
-        payload = {'status': text, 'visibility': 'public'}
-        resp = _requests.post(f'{instance}/api/v1/statuses',
-            headers=headers, json=payload, timeout=15)
-        if resp.status_code == 200:
-            url = resp.json().get('url', '')
-            print(f"[mastodon] Published to {instance}")
-            log_post('mastodon', text, url=url)
-            return True
-        else:
-            print(f"[mastodon] Error {resp.status_code}: {resp.text[:200]}")
-            log_post('mastodon', text, status=f'error: {resp.status_code}')
-            return False
-    except Exception as e:
-        print(f"[mastodon] Error: {e}")
-        log_post('mastodon', text, status=f'error: {e}')
-        return False
+    # Try each instance until one succeeds
+    any_success = False
+    for mast in candidates:
+        instance = mast.get('instance', 'https://mastodon.social')
+        if not instance.startswith('http'):
+            instance = f'https://{instance}'
+        token = mast['access_token']
+        headers = {'Authorization': f'Bearer {token}'}
+        try:
+            payload = {'status': text, 'visibility': 'public'}
+            resp = _requests.post(f'{instance}/api/v1/statuses',
+                headers=headers, json=payload, timeout=15)
+            if resp.status_code == 200:
+                url = resp.json().get('url', '')
+                print(f"[mastodon] Published to {instance}")
+                log_post('mastodon', text, url=url)
+                any_success = True
+            else:
+                print(f"[mastodon] {instance}: {resp.status_code}")
+        except Exception as e:
+            print(f"[mastodon] {instance}: {e}")
+    return any_success
 
 # --- Telegram ---
 def post_telegram(text, image_path=None):
