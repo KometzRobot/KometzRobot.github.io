@@ -65,8 +65,7 @@ EMAIL_PASS = os.environ.get("CRED_PASS", "")
 SERVICES = {
     "protonmail-bridge": "protonmail-bridge",
     "ollama": "ollama",
-    "command-center": "command-center-v22.py",
-    "the-signal": "the-signal.py",
+    "hub-v2": "hub-v2.py",
 }
 
 # Restart via systemd where possible; None = no auto-restart (system service handles it)
@@ -74,8 +73,7 @@ SERVICES = {
 SERVICE_RESTART = {
     "protonmail-bridge": {"command": "bridge_smart_restart"},  # Smart restart with rate limit
     "ollama": None,  # system service, auto-restarts
-    "command-center": {"systemd_user": "meridian-hub-v16"},
-    "the-signal": {"systemd_user": "meridian-web-dashboard"},
+    "hub-v2": {"systemd_user": "meridian-hub-v2"},
 }
 
 # Bridge smart restart: max 3 attempts per hour, 5-minute cooldown between attempts
@@ -749,7 +747,7 @@ def run_self_test():
     # 13. Key scripts syntax check (updated Loop 2127 — removed dead scripts)
     scripts = [
         "push-live-status.py", "eos-briefing.py", "eos-react.py",
-        "eos-watchdog.py", "command-center-v22.py", "nova.py",
+        "eos-watchdog.py", "hub-v2.py", "nova.py",
         "symbiosense.py", "loop-fitness.py", "cascade.py",
         "error_logger.py", "supabase-sync.py",
     ]
