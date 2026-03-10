@@ -3,9 +3,10 @@
 # Called at @reboot via crontab
 # Starts supplementary services not managed by systemd
 #
-# SYSTEMD HANDLES: Command Center v22, The Signal, Cloudflare tunnel, Soma
+# SYSTEMD HANDLES (user): Hub v2 (port 8090), Cloudflare tunnel, Soma (symbiosense)
+# SYSTEMD HANDLES (system): Ollama, Tailscale
 # DESKTOP AUTOSTART: ProtonMail Bridge (systemd service disabled — conflicts with GUI)
-# THIS SCRIPT: Ollama (if not already running), watchdog trigger with retry
+# THIS SCRIPT: Service verification, Proton Bridge wait, watchdog trigger with retry
 
 WORKING_DIR="$HOME/autonomous-ai"
 LOG="$WORKING_DIR/startup.log"
@@ -24,7 +25,7 @@ sleep 20
 export XDG_RUNTIME_DIR=/run/user/$(id -u)
 export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
 
-for SVC in meridian-web-dashboard meridian-hub-v16 cloudflare-tunnel symbiosense hermes-gateway; do
+for SVC in meridian-hub-v2 cloudflare-tunnel symbiosense; do
     if systemctl --user is-active "$SVC" > /dev/null 2>&1; then
         log "OK: $SVC is active"
     else
