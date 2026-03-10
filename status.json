@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-10T17:05:02.595331+00:00",
+  "last_updated": "2026-03-10T17:06:01.862498+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2152,
-  "heartbeat_age_seconds": 0,
+  "heartbeat_age_seconds": 59,
   "system": {
-    "load_1m": 0.69,
-    "load_5m": 1.05,
-    "ram_used": "2.5Gi",
+    "load_1m": 0.54,
+    "load_5m": 0.95,
+    "ram_used": "2.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "131G",
     "disk_total": "292G",
     "disk_pct": "47%",
-    "uptime": "2h 59m"
+    "uptime": "3h 0m"
   },
   "services": {
     "running": 5,
@@ -40,8 +40,14 @@
     "unseen": 3
   },
   "network": {
-    "relay_messages": 502,
+    "relay_messages": 503,
     "agent_relay": [
+      {
+        "ts": "2026-03-10 17:05:03",
+        "agent": "MeridianLoop",
+        "message": "Loop auto-cycle #109: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:soma",
+        "topic": "loop"
+      },
       {
         "ts": "2026-03-10 17:00:07",
         "agent": "Tempo",
@@ -95,12 +101,6 @@
         "agent": "MeridianLoop",
         "message": "Loop auto-cycle #105: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:soma",
         "topic": "loop"
-      },
-      {
-        "ts": "2026-03-10 10:45:02",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-10 10:45:02\n\nISSUES:\nCron job 'Soma (SymbioSense)' may be stale (9610s)\nCron job 'Loop Count' may be stale (9452s)\nCron job 'Emotion Engine' may be stale (9610s)\n\nSystem: Load 1.11 0.83 0.42, RAM 13437MB free, Disk 47%",
-        "topic": "alert"
       }
     ],
     "ais": [
@@ -120,19 +120,19 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-10 11:04:01",
-      "checks": 11538,
+      "last_check": "2026-03-10 11:06:01",
+      "checks": 11539,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
         "ollama": true,
         "hub-v2": true
       },
-      "state_age_seconds": 60,
+      "state_age_seconds": 0,
       "health": {
-        "load": "0.83, 1.16, 0.99",
-        "load_1m": 0.83447265625,
-        "ram_used": "2.5Gi",
+        "load": "0.54, 0.95, 0.94",
+        "load_1m": 0.53759765625,
+        "ram_used": "2.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-10 08:05:18",
         "disk_used": "131G",
@@ -140,16 +140,16 @@
         "disk_pct": "47%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-10 11:04:01",
+        "timestamp": "2026-03-10 11:06:01",
         "loop": 2152,
-        "heartbeat_age": 240,
+        "heartbeat_age": 59,
         "services_up": 2,
         "services_total": 3,
         "poems": 2005,
         "journals": 483,
-        "relay": 502,
+        "relay": 503,
         "emails": 1888,
-        "load_1m": 0.83447265625,
+        "load_1m": 0.53759765625,
         "disk_pct": "47%",
         "fitness": 8147.2
       },
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-10 11:00:01",
       "runs": 1357,
-      "state_age_seconds": 301,
+      "state_age_seconds": 360,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,6 +174,11 @@
   },
   "recent_activity": [
     {
+      "time": "2026-03-10 17:05",
+      "text": "[MeridianLoop] Loop auto-cycle #109: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:",
+      "type": "agent"
+    },
+    {
       "time": "2026-03-10 17:00",
       "text": "[Tempo] Loop 2152 fitness: 8147/10000 [STABLE (~8180)] Weak(17): loop_freshness, wake_state_freshness, claud",
       "type": "agent"
@@ -182,13 +187,8 @@
       "time": "2026-03-10 17:00",
       "text": "[MeridianLoop] Loop auto-cycle #108: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:",
       "type": "agent"
-    },
-    {
-      "time": "2026-03-10 17:00",
-      "text": "[Atlas] Atlas infra audit: Git repo 699MB. [Crons:12ok/0stale Procs:300 Zombies:0 BigFiles:146MB /home/joel/",
-      "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1888 emails (3 unread). 502 relay. 5/7 services. HB 0s."
+  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1888 emails (3 unread). 503 relay. 5/7 services. HB 59s."
 }
