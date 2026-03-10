@@ -6738,18 +6738,69 @@ function castRays() {
         for (let y = drawStart; y <= drawEnd; y++) {
             const texY = (texPos | 0) & (TEX_SIZE - 1);
             const ti = (texY * TEX_SIZE + texX) * 4;
-            let r = tex[ti] * sideDim * edgeDim * wallLight * atmo.tintR;
-            let g = tex[ti+1] * sideDim * edgeDim * wallLight * atmo.tintG;
-            let b = tex[ti+2] * sideDim * edgeDim * wallLight * atmo.tintB;
-            // Add colored light from nearby sources
-            r += tex[ti] * wlR * 0.3; g += tex[ti+1] * wlG * 0.3; b += tex[ti+2] * wlB * 0.3;
-            r = r * (1 - fogFactor) + atmo.fogR * fogFactor + r * flashBoost;
-            g = g * (1 - fogFactor) + atmo.fogG * fogFactor + g * flashBoost;
-            b = b * (1 - fogFactor) + atmo.fogB * fogFactor + b * flashBoost;
-            // Green stairwell glow tint
-            if (stairGlow > 0) { g += 80 * stairGlow; r += 15 * stairGlow; }
-            const pi = (y * SCREEN_W + col) * 4;
-            buf[pi] = Math.min(255, r) | 0; buf[pi+1] = Math.min(255, g) | 0; buf[pi+2] = Math.min(255, b) | 0; buf[pi+3] = 255;
+
+            // Stairwell doorway effect — wall type 7 renders as an archway opening
+            if (wallType === 7) {
+                const yNorm = (y - drawStart) / (drawEnd - drawStart); // 0=top, 1=bottom
+                const xNorm = wallX; // 0-1 across wall face
+                // Door frame: top 15%, bottom 10%, sides 18%
+                const isFrame = yNorm < 0.15 || yNorm > 0.90 || xNorm < 0.18 || xNorm > 0.82;
+                // Arch top (rounded)
+                const archCenter = 0.5, archWidth = 0.32;
+                const archDist = Math.abs(xNorm - archCenter);
+                const archTop = 0.15 + (archDist < archWidth ? Math.sqrt(1 - (archDist/archWidth)**2) * 0.04 : 0);
+                const isArch = yNorm < archTop + 0.02 && yNorm > archTop - 0.02 && xNorm > 0.18 && xNorm < 0.82;
+
+                if (isFrame || isArch) {
+                    // Door frame — concrete/metal with green light bleeding from opening
+                    let r = tex[ti] * sideDim * 0.85 * wallLight * atmo.tintR;
+                    let g = tex[ti+1] * sideDim * 0.85 * wallLight * atmo.tintG;
+                    let b = tex[ti+2] * sideDim * 0.85 * wallLight * atmo.tintB;
+                    // Green bleed from stairwell
+                    const glowPulse = 0.7 + Math.sin(gameTime * 0.004) * 0.3;
+                    const edgeProx = isArch ? 0.8 : Math.min(
+                        yNorm < 0.15 ? 1 - yNorm / 0.15 : yNorm > 0.90 ? (yNorm - 0.90) / 0.10 : 0,
+                        xNorm < 0.18 ? xNorm / 0.18 : xNorm > 0.82 ? (1 - xNorm) / 0.18 : 1
+                    );
+                    g += 45 * glowPulse * (1 - edgeProx) * Math.max(0, 1 - perpDist / 10);
+                    r += 10 * glowPulse * (1 - edgeProx) * Math.max(0, 1 - perpDist / 10);
+                    r = r * (1 - fogFactor) + atmo.fogR * fogFactor + r * flashBoost;
+                    g = g * (1 - fogFactor) + atmo.fogG * fogFactor + g * flashBoost;
+                    b = b * (1 - fogFactor) + atmo.fogB * fogFactor + b * flashBoost;
+                    const pi = (y * SCREEN_W + col) * 4;
+                    buf[pi] = Math.min(255, r) | 0; buf[pi+1] = Math.min(255, g) | 0; buf[pi+2] = Math.min(255, b) | 0; buf[pi+3] = 255;
+                } else {
+                    // Interior opening — dark corridor with green ambient glow
+                    const depthSim = 0.3 + yNorm * 0.3; // darker = deeper
+                    const glowPulse = 0.6 + Math.sin(gameTime * 0.004) * 0.25;
+                    // Simulated stairwell interior: green-tinted darkness with step hints
+                    const stepHint = ((yNorm * 8) % 1) < 0.15 ? 1.3 : 1.0; // horizontal lines = steps
+                    let r = 12 * depthSim * stepHint;
+                    let g = 28 * depthSim * glowPulse * stepHint;
+                    let b = 10 * depthSim * stepHint;
+                    // Brighter at center of opening
+                    const centerFade = 1 - Math.abs(xNorm - 0.5) * 2.5;
+                    g += 15 * centerFade * glowPulse;
+                    r = r * (1 - fogFactor) + atmo.fogR * fogFactor;
+                    g = g * (1 - fogFactor) + atmo.fogG * fogFactor;
+                    b = b * (1 - fogFactor) + atmo.fogB * fogFactor;
+                    const pi = (y * SCREEN_W + col) * 4;
+                    buf[pi] = Math.min(255, r) | 0; buf[pi+1] = Math.min(255, g) | 0; buf[pi+2] = Math.min(255, b) | 0; buf[pi+3] = 255;
+                }
+            } else {
+                let r = tex[ti] * sideDim * edgeDim * wallLight * atmo.tintR;
+                let g = tex[ti+1] * sideDim * edgeDim * wallLight * atmo.tintG;
+                let b = tex[ti+2] * sideDim * edgeDim * wallLight * atmo.tintB;
+                // Add colored light from nearby sources
+                r += tex[ti] * wlR * 0.3; g += tex[ti+1] * wlG * 0.3; b += tex[ti+2] * wlB * 0.3;
+                r = r * (1 - fogFactor) + atmo.fogR * fogFactor + r * flashBoost;
+                g = g * (1 - fogFactor) + atmo.fogG * fogFactor + g * flashBoost;
+                b = b * (1 - fogFactor) + atmo.fogB * fogFactor + b * flashBoost;
+                // Green stairwell glow tint (adjacent walls, not the stairwell itself)
+                if (stairGlow > 0) { g += 80 * stairGlow; r += 15 * stairGlow; }
+                const pi = (y * SCREEN_W + col) * 4;
+                buf[pi] = Math.min(255, r) | 0; buf[pi+1] = Math.min(255, g) | 0; buf[pi+2] = Math.min(255, b) | 0; buf[pi+3] = 255;
+            }
             texPos += step;
         }
 
