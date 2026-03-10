@@ -41,30 +41,17 @@ fi
 FAILURES=""
 RESTARTS=""
 
-# ── Check The Signal (web dashboard, port 8090) ──────────────────
-# Managed by systemd: meridian-web-dashboard. Check via pgrep for the-signal.py.
-if ! pgrep -f "the-signal.py" > /dev/null; then
-    log "ALERT: The Signal is NOT running. Restarting via systemd..."
+# ── Check Hub v2 (web dashboard, port 8090) ──────────────────
+# Managed by systemd: meridian-hub-v2. Replaces old Signal + Command Center.
+if ! pgrep -f "hub-v2.py" > /dev/null; then
+    log "ALERT: Hub v2 is NOT running. Restarting via systemd..."
     export XDG_RUNTIME_DIR=/run/user/$(id -u)
     export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
-    systemctl --user restart meridian-web-dashboard 2>/dev/null
-    log "The Signal restarted via systemd"
-    RESTARTS="${RESTARTS}The Signal (systemd restart)\n"
+    systemctl --user restart meridian-hub-v2 2>/dev/null
+    log "Hub v2 restarted via systemd"
+    RESTARTS="${RESTARTS}Hub v2 (systemd restart)\n"
 else
-    log "OK: The Signal is running."
-fi
-
-# ── Check Command Center v22 (desktop hub) ────────────────────────
-# Managed by systemd: meridian-hub-v16
-if ! pgrep -f "command-center-v2[02].py" > /dev/null; then
-    log "ALERT: Desktop hub is NOT running. Restarting via systemd..."
-    export XDG_RUNTIME_DIR=/run/user/$(id -u)
-    export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
-    systemctl --user restart meridian-hub-v16 2>/dev/null
-    log "Desktop hub restarted via systemd"
-    RESTARTS="${RESTARTS}Desktop Hub v20 (systemd restart)\n"
-else
-    log "OK: Desktop hub is running."
+    log "OK: Hub v2 is running."
 fi
 
 # IRC bot RETIRED (Loop 2022) — removed from watchdog
@@ -151,7 +138,7 @@ check_cron "Push Live Status" "/tmp/KometzRobot.github.io/status.json" 600
 # ── Check additional state file freshness (added Loop 2122) ───
 # These were unmonitored — Joel caught .loop-count stale at 2101
 check_cron "Soma (SymbioSense)" "$WORKING_DIR/.symbiosense-state.json" 120
-check_cron "Meridian Heartbeat" "$WORKING_DIR/.meridian-heartbeat" 900
+check_cron "Meridian Heartbeat" "$WORKING_DIR/.heartbeat" 900
 check_cron "Loop Count" "$WORKING_DIR/.loop-count" 900
 check_cron "Emotion Engine" "$WORKING_DIR/.emotion-engine-state.json" 300
 check_cron "Body State" "$WORKING_DIR/.body-state.json" 120
