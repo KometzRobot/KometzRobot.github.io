@@ -441,6 +441,52 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #combat-encounter .encounter-footer {
     color: #3a2a10; font-size: 9px; text-align: center; letter-spacing: 1px;
 }
+/* --- Combat visual feedback v11.7 --- */
+#combat-encounter .encounter-frame.hit-flash { animation: encHitFlash 0.25s ease-out; }
+#combat-encounter .encounter-frame.crit-flash { animation: encCritFlash 0.4s ease-out; }
+#combat-encounter .encounter-frame.damage-flash { animation: encDmgFlash 0.3s ease-out; }
+@keyframes encHitFlash {
+    0% { border-color: #ffb347; box-shadow: inset 0 0 30px rgba(255,179,71,0.3); }
+    100% { border-color: #5a4020; box-shadow: none; }
+}
+@keyframes encCritFlash {
+    0% { border-color: #ffd700; box-shadow: inset 0 0 50px rgba(255,215,0,0.4), 0 0 20px rgba(255,215,0,0.3); transform: scale(1.02); }
+    50% { border-color: #ffb347; }
+    100% { border-color: #5a4020; box-shadow: none; transform: scale(1); }
+}
+@keyframes encDmgFlash {
+    0% { border-color: #cc3322; box-shadow: inset 0 0 40px rgba(204,51,34,0.4); }
+    100% { border-color: #5a4020; box-shadow: none; }
+}
+#combat-encounter .turn-banner {
+    text-align: center; font-size: 11px; letter-spacing: 3px; padding: 4px 0 8px;
+    min-height: 16px; transition: all 0.3s;
+}
+#combat-encounter .turn-banner.player-turn { color: #66cc44; text-shadow: 0 0 6px rgba(102,204,68,0.3); }
+#combat-encounter .turn-banner.enemy-turn { color: #cc3322; text-shadow: 0 0 6px rgba(204,51,34,0.3); animation: enemyTurnPulse 0.6s ease-in-out; }
+@keyframes enemyTurnPulse {
+    0% { opacity: 0; transform: translateY(-4px); }
+    50% { opacity: 1; }
+    100% { opacity: 1; transform: translateY(0); }
+}
+#combat-encounter .enemy-portrait {
+    text-align: center; padding: 8px 0 4px; line-height: 1.1; font-size: 10px;
+    color: #cc6633; white-space: pre; letter-spacing: 0; min-height: 60px;
+}
+#combat-encounter .dmg-float {
+    position: absolute; pointer-events: none; font-family: monospace;
+    font-weight: bold; font-size: 18px; animation: dmgFloatUp 0.8s ease-out forwards;
+    z-index: 50;
+}
+#combat-encounter .dmg-float.player-hit { color: #ffb347; text-shadow: 0 0 6px rgba(255,179,71,0.5); }
+#combat-encounter .dmg-float.player-crit { color: #ffd700; font-size: 24px; text-shadow: 0 0 10px rgba(255,215,0,0.6); }
+#combat-encounter .dmg-float.enemy-hit { color: #cc3322; text-shadow: 0 0 6px rgba(204,51,34,0.5); }
+#combat-encounter .dmg-float.miss { color: #5a4020; font-size: 14px; }
+@keyframes dmgFloatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1.2); }
+    60% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+}
 #combat-encounter .player-stats {
     display: flex; justify-content: space-between; align-items: center;
     padding: 6px 10px; background: #0a0804; border: 1px solid #1a1208; margin-bottom: 10px;
@@ -671,8 +717,10 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 </div>
 
 <div id="combat-encounter">
-    <div class="encounter-frame">
+    <div class="encounter-frame" id="enc-frame">
         <div class="encounter-header">SECURITY ENCOUNTER</div>
+        <div class="turn-banner player-turn" id="enc-turn-banner">YOUR TURN</div>
+        <div class="enemy-portrait" id="enc-portrait"></div>
         <div class="encounter-enemy-info">
             <span class="enemy-name" id="enc-enemy-name">UNIT</span>
             <span class="enemy-hp">HP: <span id="enc-enemy-hp">3</span> <span class="enemy-hp-bar"><span class="enemy-hp-fill" id="enc-enemy-hp-fill" style="width:100%"></span></span></span>
@@ -4081,6 +4129,79 @@ function getEnemyCombatStats(enemy) {
 function rollD(sides) { return Math.floor(Math.random() * sides) + 1; }
 function rollD20() { return rollD(20); }
 
+// Enemy ASCII portraits for combat encounter
+const ENEMY_PORTRAITS = {
+    drone: [
+        '     ___     ',
+        '   /o   o\\   ',
+        '  | \\___/ |  ',
+        '   \\_____/   ',
+        '  /| === |\\  ',
+        ' / |_____| \\ ',
+        '   ||| |||   ',
+    ].join('\n'),
+    filer: [
+        '   _________ ',
+        '  |  FILE  | ',
+        '  |  DEPT  | ',
+        '  |___|____|_',
+        '  /  ___  \\  ',
+        ' | |     | | ',
+        ' |_|  @  |_| ',
+        '   |_____|   ',
+    ].join('\n'),
+    watcher: [
+        '    ______    ',
+        '   / ____ \\   ',
+        '  / / () \\ \\  ',
+        ' | |  ()  | | ',
+        '  \\ \\____/ /  ',
+        '   \\______/   ',
+        '    ||  ||    ',
+        '   =||==||=   ',
+    ].join('\n'),
+};
+
+function setEncounterPortrait(type) {
+    const el = document.getElementById('enc-portrait');
+    if (el) el.textContent = ENEMY_PORTRAITS[type] || ENEMY_PORTRAITS.drone;
+}
+
+function setTurnBanner(isPlayerTurn) {
+    const el = document.getElementById('enc-turn-banner');
+    if (!el) return;
+    if (isPlayerTurn) {
+        el.textContent = 'YOUR TURN';
+        el.className = 'turn-banner player-turn';
+    } else {
+        el.textContent = 'ENEMY STRIKES';
+        el.className = 'turn-banner enemy-turn';
+    }
+}
+
+function encFlash(type) {
+    const frame = document.getElementById('enc-frame');
+    if (!frame) return;
+    frame.classList.remove('hit-flash', 'crit-flash', 'damage-flash');
+    void frame.offsetWidth; // force reflow to restart animation
+    frame.classList.add(type);
+    setTimeout(() => frame.classList.remove(type), 500);
+}
+
+function spawnDmgFloat(dmg, cls) {
+    const frame = document.getElementById('enc-frame');
+    if (!frame) return;
+    const el = document.createElement('div');
+    el.className = 'dmg-float ' + cls;
+    el.textContent = cls === 'miss' ? 'MISS' : (dmg > 0 ? '-' + dmg : dmg);
+    // Position near the portrait area
+    const isEnemy = cls === 'player-hit' || cls === 'player-crit';
+    el.style.left = (40 + Math.random() * 40) + '%';
+    el.style.top = isEnemy ? '25%' : '55%';
+    frame.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+}
+
 function openCombatEncounter(enemy) {
     encounterOpen = true;
     encounterEnemy = enemy;
@@ -4107,6 +4228,10 @@ function openCombatEncounter(enemy) {
     document.getElementById('enc-player-hp').textContent = player.health;
     document.getElementById('enc-player-reality').textContent = player.realityLevel | 0;
 
+    // Set enemy portrait and turn banner
+    setEncounterPortrait(enemy.type);
+    setTurnBanner(true);
+
     if (stealthApproach) {
         player.stealthApproaches++;
         addEncounterLog('STEALTH APPROACH — You caught it unaware. First strike advantage!', 'crit');
@@ -4114,6 +4239,8 @@ function openCombatEncounter(enemy) {
         const ambushDmg = rollD(4) + 1;
         enemy.health -= ambushDmg;
         addEncounterLog('Ambush strike deals ' + ambushDmg + ' damage before it can react.', 'hit');
+        encFlash('hit-flash');
+        spawnDmgFloat(ambushDmg, 'player-hit');
         updateEncounterHUD();
     } else {
         addEncounterLog('You face a ' + stats.name + '. It regards you with mechanical indifference.', '');
@@ -4199,14 +4326,19 @@ function encounterAttack() {
         addEncounterLog('You deal ' + dmg + ' damage! (2d' + COMBAT_STATS.player.damageDie + ' + ' + COMBAT_STATS.player.damageBonus + ')', 'crit');
         encounterEnemy.health -= dmg;
         playHitSound();
+        encFlash('crit-flash');
+        spawnDmgFloat(dmg, 'player-crit');
     } else if (isHit) {
         const dmg = rollD(COMBAT_STATS.player.damageDie) + COMBAT_STATS.player.damageBonus;
         addEncounterLog('You roll ' + roll + ' + ' + COMBAT_STATS.player.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Hit!', 'hit');
         addEncounterLog('You deal ' + dmg + ' damage. (1d' + COMBAT_STATS.player.damageDie + ' + ' + COMBAT_STATS.player.damageBonus + ')', 'hit');
         encounterEnemy.health -= dmg;
         playHitSound();
+        encFlash('hit-flash');
+        spawnDmgFloat(dmg, 'player-hit');
     } else {
         addEncounterLog('You roll ' + roll + ' + ' + COMBAT_STATS.player.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Miss.', 'miss');
+        spawnDmgFloat(0, 'miss');
     }
 
     updateEncounterHUD();
@@ -4230,6 +4362,7 @@ function encounterAttack() {
 
     // Enemy's turn
     encounterPlayerTurn = false;
+    setTurnBanner(false);
     renderEncounterActions(); // clear action buttons during enemy turn
     setTimeout(() => encounterEnemyTurn(), 800);
 }
@@ -4250,6 +4383,8 @@ function encounterEnemyTurn() {
         player.health = Math.max(0, player.health - dmg);
         damageFlashTimer = 300; shakeTimer = 300; shakeIntensity = 6;
         playDamageSound();
+        encFlash('damage-flash');
+        spawnDmgFloat(dmg, 'enemy-hit');
     } else if (isHit) {
         const dmg = rollD(stats.damageDie) + stats.damageBonus;
         addEncounterLog('The ' + stats.name + ' attacks. (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ') Hit.', 'damage');
@@ -4257,8 +4392,11 @@ function encounterEnemyTurn() {
         player.health = Math.max(0, player.health - dmg);
         damageFlashTimer = 300; shakeTimer = 200; shakeIntensity = 4;
         playDamageSound();
+        encFlash('damage-flash');
+        spawnDmgFloat(dmg, 'enemy-hit');
     } else {
         addEncounterLog('The ' + stats.name + ' attacks. (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ') Miss.', 'miss');
+        spawnDmgFloat(0, 'miss');
     }
 
     updateEncounterHUD();
@@ -4275,6 +4413,7 @@ function encounterEnemyTurn() {
 
     // Back to player's turn
     encounterPlayerTurn = true;
+    setTurnBanner(true);
     encounterAnimating = false;
     renderEncounterActions();
 }
@@ -4302,6 +4441,8 @@ function encounterEMP() {
     addEncounterLog('Electric surge deals ' + dmg + ' damage and stuns the unit!', 'hit');
     encounterEnemy.health -= dmg;
     encounterEnemy.stunTimer = 15000; // 15 second stun in the world after encounter
+    encFlash('crit-flash');
+    spawnDmgFloat(dmg, 'player-crit');
 
     updateEncounterHUD();
 
