@@ -39,6 +39,11 @@ import json
 import os
 from datetime import datetime, timezone
 
+try:
+    from error_logger import log_exception
+except ImportError:
+    log_exception = lambda **kw: None
+
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent-relay.db")
 
 # The cascade chain — Joel's circle
@@ -83,17 +88,43 @@ def _next_agent(current):
         return CASCADE_CHAIN[0]
 
 
+def cleanup_old_cascades(max_age_hours=1):
+    """Delete cascades older than max_age_hours to prevent DB bloat."""
+    _ensure_table()
+    db = _get_db()
+    db.execute(f"""
+        DELETE FROM cascades
+        WHERE created_at < datetime('now', '-{int(max_age_hours)} hours')
+    """)
+    db.commit()
+    db.close()
+
+
 def trigger_cascade(source_agent, event_type, event_data=None):
     """
     Start a new cascade from source_agent.
     The next agent in the chain receives the first cascade message.
+    Debounced: skips if same event_type was triggered in last 10 minutes.
 
     Returns: cascade_group ID (UUID-like timestamp string)
     """
     _ensure_table()
     db = _get_db()
-    now = datetime.now(timezone.utc).isoformat()
-    cascade_group = f"cascade-{source_agent.lower()}-{now.replace(':', '').replace('-', '')[:15]}"
+
+    # Debounce: skip if same event_type was triggered in last 10 minutes
+    recent = db.execute("""
+        SELECT COUNT(*) FROM cascades
+        WHERE event_type = ? AND created_at > datetime('now', '-10 minutes')
+    """, (event_type,)).fetchone()[0]
+    if recent > 0:
+        db.close()
+        return None
+
+    # Clean up old cascades while we're here
+    db.execute("DELETE FROM cascades WHERE created_at < datetime('now', '-1 hours')")
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")  # SQLite-compatible format
+    cascade_group = f"cascade-{source_agent.lower()}-{now.replace(':', '').replace('-', '').replace(' ', '')[:15]}"
     target = _next_agent(source_agent)
 
     db.execute("""
@@ -156,7 +187,7 @@ def respond_cascade(agent_name, cascade_id, response_data=None):
     """
     _ensure_table()
     db = _get_db()
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     # Get the cascade
     row = db.execute("SELECT * FROM cascades WHERE id = ?", (cascade_id,)).fetchone()
@@ -211,7 +242,7 @@ def respond_cascade(agent_name, cascade_id, response_data=None):
                 "response": rd.get("response", "")
             })
         except (json.JSONDecodeError, TypeError):
-            pass
+            log_exception(agent="Cascade")
 
     # Add current response
     accumulated.append({

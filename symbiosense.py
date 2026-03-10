@@ -41,7 +41,7 @@ REFLEX_FILE = os.path.join(BASE, ".body-reflexes.json")
 KINECT_STATE_FILE = os.path.join(BASE, ".kinect-state.json")
 VISION_INTERVAL = 300  # seconds between Kinect captures (5 minutes)
 INTERVAL = 30  # seconds between checks
-MOOD_HISTORY_MAX = 288  # 24 hours at 5-min intervals
+MOOD_HISTORY_MAX = 144  # 12 hours at 5-min intervals
 
 # ── EMOTION ENGINE INTEGRATION ──────────────────────────────────
 try:
@@ -56,6 +56,11 @@ try:
     CASCADE_AVAILABLE = True
 except ImportError:
     CASCADE_AVAILABLE = False
+
+try:
+    from error_logger import log_exception
+except ImportError:
+    log_exception = lambda **kw: None
 
 # Thresholds for alerting
 LOAD_SPIKE_DELTA = 2.0      # load increase per check
@@ -1670,6 +1675,7 @@ def main():
 
         except Exception as e:
             log(f"ERROR: {e}")
+            log_exception(agent="Soma")
 
         time.sleep(INTERVAL)
 

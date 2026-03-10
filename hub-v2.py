@@ -26,7 +26,7 @@ from pathlib import Path
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════
 
-PORT = int(os.environ.get("HUB_PORT", 8091))
+PORT = int(os.environ.get("HUB_PORT", 8090))
 BASE = os.path.dirname(os.path.abspath(__file__)) if '__file__' in dir() else os.getcwd()
 RELAY_DB = os.path.join(BASE, "agent-relay.db")
 MEMORY_DB = os.path.join(BASE, "memory.db")
