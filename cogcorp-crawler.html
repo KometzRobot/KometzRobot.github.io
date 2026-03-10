@@ -4355,7 +4355,7 @@ function encounterAttack() {
         addEncounterLog('CRITICAL HIT! (' + roll + ' + ' + wpn.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + ')', 'crit');
         addEncounterLog(wpn.name + ' deals ' + dmg + ' damage! (2d' + wpn.damageDie + ' + ' + wpn.damageBonus + ')', 'crit');
         encounterEnemy.health -= dmg;
-        playHitSound();
+        playCritSound();
         encFlash('crit-flash');
         spawnDmgFloat(dmg, 'player-crit');
     } else if (isHit) {
@@ -4368,6 +4368,7 @@ function encounterAttack() {
         spawnDmgFloat(dmg, 'player-hit');
     } else {
         addEncounterLog('You roll ' + roll + ' + ' + wpn.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Miss.', 'miss');
+        playMissSound();
         spawnDmgFloat(0, 'miss');
     }
 
@@ -4426,6 +4427,7 @@ function encounterEnemyTurn() {
         spawnDmgFloat(dmg, 'enemy-hit');
     } else {
         addEncounterLog('The ' + stats.name + ' attacks. (' + roll + ' + ' + stats.attackBonus + ' = ' + total + ') Miss.', 'miss');
+        playMissSound();
         spawnDmgFloat(0, 'miss');
     }
 
@@ -4536,15 +4538,64 @@ function handleEncounterKey(code) {
     return false;
 }
 
-// Combat audio
+// Combat audio — varies by weapon tier
 function playHitSound() {
     if (!audioCtx) return;
-    // Quick metallic clang for melee hits
-    const osc = audioCtx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = 800;
-    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
-    const g = audioCtx.createGain(); g.gain.value = 0.15;
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-    osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    const tier = inventory.weapon || 0;
+    const t = audioCtx.currentTime;
+    if (tier === 0) {
+        // Improvised: quick metallic clang
+        const osc = audioCtx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = 800;
+        osc.frequency.exponentialRampToValueAtTime(200, t + 0.15);
+        const g = audioCtx.createGain(); g.gain.value = 0.15;
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(t + 0.15);
+    } else if (tier === 1) {
+        // Pipe wrench: heavy thud + metallic ring
+        const osc1 = audioCtx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.value = 200;
+        osc1.frequency.exponentialRampToValueAtTime(60, t + 0.2);
+        const g1 = audioCtx.createGain(); g1.gain.value = 0.18;
+        g1.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        osc1.connect(g1); g1.connect(audioNodes.master); osc1.start(); osc1.stop(t + 0.2);
+        const osc2 = audioCtx.createOscillator(); osc2.type = 'triangle'; osc2.frequency.value = 1200;
+        osc2.frequency.exponentialRampToValueAtTime(400, t + 0.1);
+        const g2 = audioCtx.createGain(); g2.gain.value = 0.08;
+        g2.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        osc2.connect(g2); g2.connect(audioNodes.master); osc2.start(); osc2.stop(t + 0.12);
+    } else {
+        // Stun baton: electric zap + buzz
+        const osc1 = audioCtx.createOscillator(); osc1.type = 'square'; osc1.frequency.value = 2000;
+        osc1.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+        const g1 = audioCtx.createGain(); g1.gain.value = 0.1;
+        g1.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc1.connect(g1); g1.connect(audioNodes.master); osc1.start(); osc1.stop(t + 0.18);
+        const osc2 = audioCtx.createOscillator(); osc2.type = 'sawtooth'; osc2.frequency.value = 120;
+        const g2 = audioCtx.createGain(); g2.gain.value = 0.12;
+        g2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        osc2.connect(g2); g2.connect(audioNodes.master); osc2.start(); osc2.stop(t + 0.25);
+    }
+}
+
+function playMissSound() {
+    if (!audioCtx) return;
+    // Quick whoosh — filtered noise burst
+    const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 400;
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.12);
+    const g = audioCtx.createGain(); g.gain.value = 0.06;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+}
+
+function playCritSound() {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    // Impact + rising tone
+    playHitSound();
+    const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 600;
+    osc.frequency.exponentialRampToValueAtTime(1400, t + 0.3);
+    const g = audioCtx.createGain(); g.gain.value = 0.1;
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(); osc.stop(t + 0.35);
 }
 
 // === NPC DIALOGUE SYSTEM (Façade-inspired) ===
