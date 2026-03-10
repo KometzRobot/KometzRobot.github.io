@@ -1,26 +1,26 @@
 {
-  "last_updated": "2026-03-10T22:30:16.023177+00:00",
+  "last_updated": "2026-03-10T22:33:02.780585+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2152,
-  "heartbeat_age_seconds": 14,
+  "heartbeat_age_seconds": 68,
   "system": {
-    "load_1m": 8.15,
-    "load_5m": 6.22,
-    "ram_used": "2.4Gi",
+    "load_1m": 16.7,
+    "load_5m": 10.64,
+    "ram_used": "1.8Gi",
     "ram_total": "15.6Gi",
-    "disk_used": "146G",
+    "disk_used": "147G",
     "disk_total": "292G",
     "disk_pct": "53%",
-    "uptime": "8h 24m"
+    "uptime": "8h 27m"
   },
   "services": {
-    "running": 5,
+    "running": 6,
     "total": 7,
     "details": {
       "protonmail-bridge": "down",
-      "the-signal": "down",
+      "the-signal": "up",
       "ollama": "up",
       "cloudflared": "up",
       "symbiosense": "up",
@@ -40,8 +40,56 @@
     "unseen": 6
   },
   "network": {
-    "relay_messages": 520,
+    "relay_messages": 508,
     "agent_relay": [
+      {
+        "ts": "2026-03-10 22:32:47",
+        "agent": "Soma",
+        "message": "PREDICTION: Disk growing: ~19h until 90%",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-10 22:32:16",
+        "agent": "Soma",
+        "message": "PREDICTION: Sustained high load (>6 for 90s+)",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-10 22:32:15",
+        "agent": "Tempo",
+        "message": "Loop 2152 fitness: 8032/10000 [STABLE (~8023)] Weak(19): loop_freshness, wake_state_freshness, agent_eos, agent_meridian, relay_recency.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-10 22:32:15",
+        "agent": "MeridianLoop",
+        "message": "Loop auto-cycle #174: heartbeat:ok | email:6unseen | joel:1new | push:ok | services:3/4up | fitness:[16:32:15] Loop 2152 fitness: 8082/10000 [STABLE (~8038)] Weak(18): loop_freshne ERRORS: services_down:soma",
+        "topic": "loop"
+      },
+      {
+        "ts": "2026-03-10 22:32:15",
+        "agent": "Tempo",
+        "message": "Loop 2152 fitness: 8082/10000 [STABLE (~8038)] Weak(18): loop_freshness, wake_state_freshness, agent_eos, agent_meridian, soma_mood. Delta: +150.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-10 22:31:59",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 699MB. [Crons:12ok/0stale Procs:323 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:53% Tmp:173MB LargeUntracked:ars-submission/video-2-hub-tour.mp4(16MB) ars-submission/video-4-living-system.mp4(20MB) godot-reclamation/export/web/reclamati",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-03-10 22:31:14",
+        "agent": "Soma",
+        "message": "SERVICE RECOVERED: meridian-web-dashboard (inactive -> active) | SERVICE DOWN: protonmail-bridge (active -> dead) | LOAD SPIKE: 4.0 -> 16.9 | DISK SPIKE: 47% -> 53%",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-10 22:30:58",
+        "agent": "Soma",
+        "message": "Soma online. Continuous body-awareness active.",
+        "topic": "soma"
+      },
       {
         "ts": "2026-03-10 22:30:13",
         "agent": "MeridianLoop",
@@ -53,54 +101,6 @@
         "agent": "Watchdog",
         "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-10 16:30:01\n\nISSUES:\nCron job 'Soma (SymbioSense)' may be stale (30309s)\nCron job 'Loop Count' may be stale (30151s)\nCron job 'Emotion Engine' may be stale (30309s)\n\nSystem: Load 6.94 5.89 3.55, RAM 13759MB free, Disk 53%",
         "topic": "alert"
-      },
-      {
-        "ts": "2026-03-10 22:25:03",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #173: heartbeat:ok | email:6unseen | joel:1new | push:ok | services:3/4up ERRORS: services_down:soma",
-        "topic": "loop"
-      },
-      {
-        "ts": "2026-03-10 22:25:01",
-        "agent": "MeridianLoop",
-        "message": "Joel has 1 new email(s). Total unseen: 6.",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-10 22:22:31",
-        "agent": "Soma",
-        "message": "Soma online. Continuous body-awareness active.",
-        "topic": "soma"
-      },
-      {
-        "ts": "2026-03-10 22:20:24",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Git repo 699MB. [Crons:12ok/0stale Procs:357 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:49% Tmp:173MB Repo:699MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-10 22:20:05",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #172: heartbeat:ok | email:6unseen | joel:1new | push:ok | services:3/4up ERRORS: services_down:soma",
-        "topic": "loop"
-      },
-      {
-        "ts": "2026-03-10 22:20:02",
-        "agent": "MeridianLoop",
-        "message": "Joel has 1 new email(s). Total unseen: 6.",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-10 22:15:11",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #171: heartbeat:ok | email:6unseen | joel:1new | push:ok | services:3/4up ERRORS: services_down:soma",
-        "topic": "loop"
-      },
-      {
-        "ts": "2026-03-10 22:15:09",
-        "agent": "Nova",
-        "message": "Run #1378: routine \u2014 all clear.",
-        "topic": "maintenance"
       }
     ],
     "ais": [
@@ -120,36 +120,36 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-10 16:30:01",
-      "checks": 11701,
+      "last_check": "2026-03-10 16:32:00",
+      "checks": 11702,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
         "ollama": true,
-        "hub-v2": true
+        "hub-v2": false
       },
-      "state_age_seconds": 4,
+      "state_age_seconds": 59,
       "health": {
-        "load": "6.94, 5.89, 3.55",
-        "load_1m": 6.94189453125,
-        "ram_used": "2.1Gi",
+        "load": "13.81, 9.31, 5.11",
+        "load_1m": 13.8115234375,
+        "ram_used": "1.3Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-10 08:05:18",
-        "disk_used": "146G",
+        "disk_used": "147G",
         "disk_total": "292G",
         "disk_pct": "53%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-10 16:30:01",
+        "timestamp": "2026-03-10 16:32:00",
         "loop": 2152,
-        "heartbeat_age": 0,
-        "services_up": 2,
+        "heartbeat_age": 5,
+        "services_up": 1,
         "services_total": 3,
         "poems": 2005,
         "journals": 483,
-        "relay": 518,
+        "relay": 503,
         "emails": 1891,
-        "load_1m": 6.94189453125,
+        "load_1m": 13.8115234375,
         "disk_pct": "53%",
         "fitness": 7931.8
       },
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-10 16:30:03",
       "runs": 1379,
-      "state_age_seconds": 9,
+      "state_age_seconds": 176,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-10 22:30",
-      "text": "[MeridianLoop] Joel has 1 new email(s). Total unseen: 6.",
+      "time": "2026-03-10 22:32",
+      "text": "[Soma] PREDICTION: Disk growing: ~19h until 90%",
       "type": "agent"
     },
     {
-      "time": "2026-03-10 22:25",
-      "text": "[MeridianLoop] Loop auto-cycle #173: heartbeat:ok | email:6unseen | joel:1new | push:ok | services:3/4up ERRORS: se",
+      "time": "2026-03-10 22:32",
+      "text": "[Soma] PREDICTION: Sustained high load (>6 for 90s+)",
       "type": "agent"
     },
     {
-      "time": "2026-03-10 22:25",
-      "text": "[MeridianLoop] Joel has 1 new email(s). Total unseen: 6.",
+      "time": "2026-03-10 22:32",
+      "text": "[Tempo] Loop 2152 fitness: 8032/10000 [STABLE (~8023)] Weak(19): loop_freshness, wake_state_freshness, agent",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1891 emails (6 unread). 520 relay. 5/7 services. HB 14s."
+  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1891 emails (6 unread). 508 relay. 6/7 services. HB 68s."
 }
