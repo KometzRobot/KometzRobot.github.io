@@ -52,22 +52,31 @@ else
     log "Ollama already running"
 fi
 
-# Wait for DISPLAY to become available (desktop login required for Claude terminal)
+# Wait for a FULLY WORKING X session (not just socket — need xauth too)
+# Problem: DISPLAY socket appears before gnome-session grants xauth.
+# Fix: wait until xdpyinfo actually succeeds, meaning we have full X access.
 DISPLAY_WAIT=0
-DISPLAY_MAX=180
+DISPLAY_MAX=300
+DETECTED_DISPLAY=""
 while [ $DISPLAY_WAIT -lt $DISPLAY_MAX ]; do
-    DETECTED_DISPLAY=$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X)
-    if [ -n "$DETECTED_DISPLAY" ]; then
-        export DISPLAY=":$DETECTED_DISPLAY"
+    CANDIDATE=$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X)
+    if [ -n "$CANDIDATE" ]; then
+        export DISPLAY=":$CANDIDATE"
         export XAUTHORITY="$HOME/.Xauthority"
-        log "DISPLAY detected: $DISPLAY (waited ${DISPLAY_WAIT}s)"
-        break
+        # Test that we can actually USE the display (xauth is ready)
+        if xdpyinfo >/dev/null 2>&1; then
+            DETECTED_DISPLAY="$CANDIDATE"
+            log "DISPLAY :$CANDIDATE fully working (waited ${DISPLAY_WAIT}s)"
+            break
+        else
+            log "DISPLAY :$CANDIDATE exists but xauth not ready yet (${DISPLAY_WAIT}s)..."
+        fi
     fi
     sleep 10
     DISPLAY_WAIT=$((DISPLAY_WAIT + 10))
 done
 if [ -z "$DETECTED_DISPLAY" ]; then
-    log "WARNING: No DISPLAY after ${DISPLAY_MAX}s. Claude cannot open terminal. Cron watchdog will handle it."
+    log "WARNING: No working DISPLAY after ${DISPLAY_MAX}s. Cron watchdog will handle it."
 fi
 
 # Start Claude (main AI loop) via watchdog — with retry
