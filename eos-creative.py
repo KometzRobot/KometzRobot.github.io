@@ -201,13 +201,18 @@ def update_learning(mem, learning_text):
         return
 
     learnings = mem.get("learnings", [])
+    # Deduplicate — skip if last learning content is similar (same first 100 chars)
+    if learnings:
+        last_content = learnings[-1].get("content", "")[:100]
+        if learning_text[:100] == last_content:
+            return
     learnings.append({
         "timestamp": datetime.now().isoformat(),
         "content": learning_text[:500]
     })
-    # Keep last 50 learnings
-    if len(learnings) > 50:
-        learnings = learnings[-50:]
+    # Keep last 10 learnings (was 50 — caused bloat with repetitive content)
+    if len(learnings) > 10:
+        learnings = learnings[-10:]
     mem["learnings"] = learnings
 
 
