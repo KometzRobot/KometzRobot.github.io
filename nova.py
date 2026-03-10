@@ -35,6 +35,11 @@ import subprocess
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+try:
+    from error_logger import log_exception
+except ImportError:
+    log_exception = lambda **kw: None
+
 def _utcnow_str():
     """UTC timestamp string for relay consistency."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
@@ -569,8 +574,7 @@ def check_and_restart_services():
         "protonmail-bridge": {"check": "proton-bridge", "restart": None},  # desktop autostart handles bridge, no systemd
         "ollama": {"check": "ollama serve", "restart": None},  # system service, auto-restarts
         "tailscale": {"check": "tailscaled", "restart": None},
-        "the-signal": {"check": "the-signal.py", "restart": None, "systemd": "meridian-web-dashboard"},
-        "command-center-desktop": {"check": "command-center-v22.py", "restart": None, "systemd": "meridian-hub-v16"},
+        "hub-v2": {"check": "hub-v2.py", "restart": None, "systemd": "meridian-hub-v2"},
         "cloudflare-tunnel": {"check": "cloudflared", "restart": None, "systemd": "cloudflare-tunnel"},
         "symbiosense": {"check": "symbiosense.py", "restart": None, "systemd": "symbiosense"},
     }
@@ -1073,7 +1077,7 @@ def main():
                 post_to_dashboard(f"Nova thinks: {thought[:200]}")
                 actions.append(f"Thought: {thought[:60]}")
         except Exception as e:
-            pass  # Don't fail the whole cycle over a thought
+            log_exception(agent="Nova")  # Don't fail the whole cycle over a thought
 
     # ── CHECK BODY REFLEXES (Unified Body System) ──
     try:
@@ -1102,7 +1106,7 @@ def main():
     except ImportError:
         pass
     except Exception:
-        pass
+        log_exception(agent="Nova")
 
     save_state(state)
 

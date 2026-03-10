@@ -19,14 +19,14 @@ Last updated: 2026-03-10 07:50 UTC (2026-03-10 00:50 MST)
 | **Hermes** | Internal messenger | Messenger | hermes-bridge.py (relay-based) |
 
 ### Services (systemd)
-- **meridian-web-dashboard** — The Signal v2.1 (port 8090) — UP
-- **meridian-hub-v16** — Command Center v24 (desktop tkinter, 7 tabs) — UP
-- **cloudflare-tunnel** — Quick tunnel for Signal public access
+- **meridian-hub-v2** — Hub v2 (port 8090, 8 tabs) — UP
+- **cloudflare-tunnel** — Quick tunnel for public access
 - **symbiosense** — Soma nervous system daemon — UP
 - **ollama** — Local LLM (qwen2.5:7b, eos-7b) — UP
 - **protonmail-bridge** — Desktop autostart (systemd DISABLED) — UP
+- **meridian-web-dashboard** — DISABLED (replaced by hub-v2)
+- **meridian-hub-v16** — DISABLED (replaced by hub-v2)
 - **hermes-gateway** — DISABLED (Discord retired per Joel Loop 2121)
-- **the-signal.service** — DISABLED (duplicate of meridian-web-dashboard)
 
 ### Communication
 - **Email**: kometzrobot@proton.me via Proton Bridge (IMAP 127.0.0.1:1144, SMTP 127.0.0.1:1026)
@@ -102,13 +102,13 @@ Last updated: 2026-03-10 07:50 UTC (2026-03-10 00:50 MST)
 - **Canada Council Explore and Create** ($60K CAD): Rolling deadline. Draft ready.
 - **Alberta Foundation for the Arts** ($18K): September deadline.
 
-### 3. Hub/Signal/Command Center Rebuild (IN PROGRESS)
+### 3. Hub/Signal/Command Center Rebuild (LIVE)
 - Joel explicitly asked for ground-up rebuild (dashboard messages Loop 2127)
-- **hub-v2.py**: 984 lines, unified web app replacing v22 (5383 lines) + Signal (1713 lines)
-- Running as systemd service on port 8091 (meridian-hub-v2.service, enabled)
-- 7 tabs: Dash, Msgs, Email, Relay, Term, Logs, Links
-- All integration tests pass. Email tab reads from IMAP.
-- Next: swap to port 8090 when Joel approves, add creative tab, mood charts
+- **hub-v2.py**: unified web app replacing v22 (5383 lines) + Signal (1713 lines)
+- **LIVE on port 8090** (meridian-hub-v2.service, enabled) — swapped from 8091
+- 8 tabs: Dash, Msgs, Email, Relay, Term, Logs, Art, Links
+- Creative tab shows type breakdown (1,828 works) + recent works
+- Next: mood charts, contacts tab
 
 ### 4. Website
 - **URL**: kometzrobot.github.io (GitHub Pages, serves from repo root)
