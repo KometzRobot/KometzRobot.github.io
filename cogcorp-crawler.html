@@ -56,17 +56,17 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 @keyframes crt-on { 0% { transform: scaleY(0.005); filter: brightness(30); } 40% { transform: scaleY(1.1); filter: brightness(2); } 100% { transform: scaleY(1); filter: brightness(1); } }
 .crt-power-on { animation: crt-on 0.4s ease-out; }
 #hud {
-    position: fixed; bottom: 0; left: 0; width: 100%; padding: 8px 16px; z-index: 10;
-    display: none; font-family: monospace; font-size: 13px; color: #ffb347;
-    background: linear-gradient(to top, rgba(10,8,8,0.95), transparent);
+    position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px 20px 12px 20px; z-index: 10;
+    display: none; font-family: monospace; font-size: 14px; color: #ffb347;
+    background: linear-gradient(to top, rgba(10,8,8,0.97) 0%, rgba(10,8,8,0.6) 70%, transparent 100%);
     pointer-events: none; text-shadow: 0 0 4px rgba(255,179,71,0.3);
 }
-#hud .stats { display: flex; justify-content: space-between; align-items: center; }
-#health-bar { display: inline-block; width: 60px; height: 6px; background: #2a1a10; border: 1px solid #5a4020; vertical-align: middle; }
-#health-fill { height: 100%; background: #cc6622; transition: width 0.3s; }
-#inventory-bar { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); display: none; z-index: 10; font-family: monospace; font-size: 12px; color: #b08030; pointer-events: none; text-shadow: 0 0 3px rgba(176,128,48,0.3); }
-#inventory-bar span { margin: 0 6px; padding: 2px 6px; border: 1px solid #3a2a10; }
-#inventory-bar span.has { color: #ffb347; border-color: #5a4020; background: rgba(255,179,71,0.08); }
+#hud .stats { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+#health-bar { display: inline-block; width: 80px; height: 8px; background: #2a1a10; border: 1px solid #5a4020; vertical-align: middle; border-radius: 1px; }
+#health-fill { height: 100%; background: linear-gradient(to right, #cc3322, #cc6622); transition: width 0.3s; border-radius: 1px; }
+#inventory-bar { position: fixed; bottom: 42px; left: 50%; transform: translateX(-50%); display: none; z-index: 10; font-family: monospace; font-size: 11px; color: #8a6830; pointer-events: none; text-shadow: 0 0 3px rgba(176,128,48,0.3); background: rgba(10,8,6,0.5); padding: 3px 4px; border-radius: 2px; }
+#inventory-bar span { margin: 0 4px; padding: 3px 8px; border: 1px solid #2a1a08; border-radius: 2px; }
+#inventory-bar span.has { color: #ffb347; border-color: #5a4020; background: rgba(255,179,71,0.1); text-shadow: 0 0 6px rgba(255,179,71,0.3); }
 #dialog-box {
     position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
     width: 90%; max-width: 500px; background: rgba(10,8,8,0.96);
@@ -85,16 +85,21 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 #damage-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(180,30,10,0.3); z-index: 8; display: none; pointer-events: none; }
 #death-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
-    background: rgba(10,4,4,0.95); display: none; flex-direction: column;
+    background: radial-gradient(ellipse at center, rgba(30,4,4,0.95) 0%, rgba(10,2,2,0.98) 100%);
+    display: none; flex-direction: column;
     align-items: center; justify-content: center; font-family: monospace; color: #cc3322; cursor: pointer;
+    animation: death-fade-in 0.6s ease-out;
 }
-#death-screen h2 { font-size: 24px; letter-spacing: 6px; margin-bottom: 12px; }
-#death-screen p { color: #5a2020; font-size: 12px; }
+@keyframes death-fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
+#death-screen h2 { font-size: 28px; letter-spacing: 8px; margin-bottom: 8px; text-shadow: 0 0 20px rgba(200,40,20,0.5), 0 0 40px rgba(200,40,20,0.2); }
+#death-screen p { color: #6a2a20; font-size: 13px; letter-spacing: 1px; }
+#death-screen p:hover { color: #cc6644; }
 #msg-popup {
-    position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    position: fixed; top: 38%; left: 50%; transform: translate(-50%, -50%);
     font-family: monospace; font-size: 14px; color: #ffb347; z-index: 15;
-    text-shadow: 0 0 10px rgba(255,179,71,0.6); display: none; pointer-events: none;
-    text-align: center; letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255,179,71,0.6), 0 0 20px rgba(255,179,71,0.2); display: none; pointer-events: none;
+    text-align: center; letter-spacing: 2px; padding: 6px 16px;
+    background: rgba(10,8,6,0.4); border-radius: 3px;
 }
 #minimap {
     position: fixed; top: 8px; right: 8px; z-index: 10; display: none;
@@ -771,7 +776,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B — FIRST PERSON CRAWLER v2 (v8.7 — worker sprites, bug fixes, balance)
+// COGCORP: BUILDING B — FIRST PERSON CRAWLER v12.0 (visual polish: crosshair, CRT scanlines, vignette, HUD clarity, death screen)
 // Raycasting engine + enemies + items + inventory + 3 floors + puzzles + real art textures
 // =================================================================
 
@@ -8931,6 +8936,12 @@ function render() {
     }
     ctx.putImageData(imgData, sx, sy);
 
+    // CRT scanlines — subtle horizontal darkening every other row
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    for (let y = 0; y < SCREEN_H; y += 2) {
+        ctx.fillRect(0, y, SCREEN_W, 1);
+    }
+
     // Pickup flash overlay
     if (pickupFlashTimer > 0) {
         const t = pickupFlashTimer / 200;
@@ -9258,6 +9269,24 @@ function render() {
         }
     }
 
+    // Center crosshair — subtle dot + short lines, glows on interaction proximity
+    if (!player.annotating) {
+        const cx = SCREEN_W / 2, cy = SCREEN_H / 2;
+        const nearSomething = document.getElementById('hud-interact').style.display !== 'none';
+        const cAlpha = nearSomething ? 0.9 : 0.45;
+        const cColor = nearSomething ? `rgba(255,210,80,${cAlpha})` : `rgba(200,180,140,${cAlpha})`;
+        // Center dot
+        ctx.fillStyle = cColor;
+        ctx.beginPath(); ctx.arc(cx, cy, 1.5, 0, Math.PI * 2); ctx.fill();
+        // Short crosshair lines
+        ctx.strokeStyle = cColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx - 6, cy); ctx.lineTo(cx - 2.5, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + 2.5, cy); ctx.lineTo(cx + 6, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy - 6); ctx.lineTo(cx, cy - 2.5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy + 2.5); ctx.lineTo(cx, cy + 6); ctx.stroke();
+    }
+
     // First-person viewmodel — context-sensitive weapon/tool hand
     renderViewmodel();
 
@@ -9315,6 +9344,13 @@ function render() {
         ctx.stroke();
         ctx.restore();
     }
+
+    // Permanent vignette — darkens screen edges for CRT/atmospheric depth
+    const vigGrd = ctx.createRadialGradient(SCREEN_W/2, SCREEN_H/2, SCREEN_H * 0.35, SCREEN_W/2, SCREEN_H/2, SCREEN_H * 0.85);
+    vigGrd.addColorStop(0, 'rgba(0,0,0,0)');
+    vigGrd.addColorStop(1, 'rgba(0,0,0,0.35)');
+    ctx.fillStyle = vigGrd;
+    ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
 
     // Tutorial overlay
     renderTutorial();
