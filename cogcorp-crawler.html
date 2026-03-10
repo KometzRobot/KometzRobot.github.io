@@ -587,6 +587,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 </div>
 
 <div id="inventory-bar">
+    <span id="inv-weapon" style="color:#ff8030; border-color:#5a3010;">WEAPON: IMPROVISED</span>
     <span id="inv-keycard">KEYCARD: --</span>
     <span id="inv-flashlight">FLASHLIGHT: --</span>
     <span id="inv-emp">EMP: --</span>
@@ -2019,6 +2020,7 @@ function loadCheckpoint() {
         inventory.flashlight = cp.inventory.flashlight;
         inventory.emp = cp.inventory.emp;
         inventory.targetFile = cp.inventory.targetFile;
+        inventory.weapon = cp.inventory.weapon || 0;
         surveillanceLevel = cp.surveillanceLevel || 0;
 
         // Restore fog of war
@@ -2500,7 +2502,13 @@ let lastWhisper = 0;
 const whisperInterval = 55000; // 55 seconds between whispers
 
 // === INVENTORY ===
-const inventory = { keycard: false, flashlight: false, emp: 0, targetFile: false };
+const inventory = { keycard: false, flashlight: false, emp: 0, targetFile: false, weapon: 0 };
+// Weapon tiers: 0=improvised (1d6+1), 1=pipe wrench (1d8+2, +4 hit), 2=stun baton (1d10+3, +5 hit)
+const WEAPON_TIERS = [
+    { name: 'IMPROVISED TOOL', attackBonus: 3, damageDie: 6, damageBonus: 1, desc: 'd6+1' },
+    { name: 'PIPE WRENCH', attackBonus: 4, damageDie: 8, damageBonus: 2, desc: 'd8+2' },
+    { name: 'STUN BATON', attackBonus: 5, damageDie: 10, damageBonus: 3, desc: 'd10+3' },
+];
 
 // === ENEMIES ===
 // Types: drone (patrols), filer (chases when near), watcher (stationary, damages at range)
@@ -2614,6 +2622,7 @@ const itemDefs = {
     medkit:     { color: [200, 40, 40],  label: 'MEDKIT' },
     flashlight: { color: [220, 200, 120], label: 'FLASHLIGHT' },
     emp:        { color: [80, 140, 220], label: 'EMP DEVICE' },
+    weapon:     { color: [255, 120, 40], label: 'WEAPON' },
     document:   { color: [180, 160, 120], label: 'DOCUMENT' },
     targetFile: { color: [255, 215, 0],  label: 'TARGET FILE' },
     anchor:     { color: [180, 220, 255], label: 'REALITY ANCHOR' },
@@ -2634,6 +2643,7 @@ const itemSpawns = [
         { type: 'keycard', x: 3.5, y: 18.5 },
         { type: 'medkit', x: 20.5, y: 2.5 },
         { type: 'emp', x: 12.5, y: 7.5 },
+        { type: 'weapon', x: 14.5, y: 3.5 }, // Pipe wrench — first weapon upgrade
         { type: 'document', x: 8.5, y: 9.5, text: '"Archive note: Drawer 7 in Cabinet F contains a file that has been checked out since 1988. The checkout card lists the borrower as \'Building B.\' Buildings cannot check out files."' },
         { type: 'document', x: 15.5, y: 14.5, text: '"Interdepartmental memo, CLASSIFIED: The annotation process was designed as a security countermeasure. Document the intruder. Classify the threat. File it. What we did not anticipate is that the process works in both directions. The annotator becomes annotated. This memo is evidence."' },
         { type: 'medkit', x: 17.5, y: 17.5 },
@@ -2644,6 +2654,7 @@ const itemSpawns = [
     [
         { type: 'medkit', x: 2.5, y: 2.5 },
         { type: 'emp', x: 20.5, y: 18.5 },
+        { type: 'weapon', x: 4.5, y: 8.5 }, // Stun baton — second weapon upgrade
         { type: 'anchor', x: 15.5, y: 4.5 },
         { type: 'targetFile', x: 11.5, y: 11.5 }, // inside the locked room
         { type: 'document', x: 6.5, y: 14.5, text: '"Final log. The machine on Floor 3 has been producing documents no one requested. The documents describe events that haven\'t happened yet. Today it described this log entry."' },
@@ -3324,6 +3335,16 @@ function pickupItem(item) {
             const objEl = document.getElementById('hud-objective');
             if (objEl) { objEl.style.display = 'block'; objEl.textContent = '\u25C6 FILE #B-247-SELF RETRIEVED — RETURN TO FLOOR 1 EXIT \u25C6'; }
             break;
+        case 'weapon':
+            inventory.weapon = Math.min(inventory.weapon + 1, WEAPON_TIERS.length - 1);
+            const wt = WEAPON_TIERS[inventory.weapon];
+            showMessage(wt.name + ' ACQUIRED — ' + wt.desc + ' damage, +' + wt.attackBonus + ' hit', 3000);
+            updateInventoryHUD();
+            pickupFlashTimer = 300; pickupFlashColor = [255, 120, 40];
+            spawnItemPickupBurst([255, 120, 40]);
+            spawnItemPickupBurst([255, 80, 20]); // double burst for weapon
+            playPickupSound('emp'); // reuse emp sound for now
+            break;
         case 'anchor':
             player.realityLevel = Math.min(100, player.realityLevel + 25);
             showMessage('REALITY ANCHOR — Coherence restored +25', 2500);
@@ -3531,6 +3552,12 @@ function updateHealthHUD() {
 
 function updateInventoryHUD() {
     document.getElementById('inventory-bar').style.display = 'block';
+    const wpnEl = document.getElementById('inv-weapon');
+    const wpn = getPlayerWeapon();
+    if (wpnEl) {
+        wpnEl.textContent = wpn.name;
+        wpnEl.className = inventory.weapon > 0 ? 'has' : '';
+    }
     const kc = document.getElementById('inv-keycard');
     const fl = document.getElementById('inv-flashlight');
     const em = document.getElementById('inv-emp');
@@ -4128,6 +4155,7 @@ function getEnemyCombatStats(enemy) {
 
 function rollD(sides) { return Math.floor(Math.random() * sides) + 1; }
 function rollD20() { return rollD(20); }
+function getPlayerWeapon() { return WEAPON_TIERS[inventory.weapon] || WEAPON_TIERS[0]; }
 
 // Enemy ASCII portraits for combat encounter
 const ENEMY_PORTRAITS = {
@@ -4293,9 +4321,10 @@ function renderEncounterActions() {
     if (!encounterPlayerTurn || encounterAnimating) return;
 
     const hasEMP = inventory.emp > 0;
+    const wpn = getPlayerWeapon();
 
     const actions = [
-        { label: '[1] ATTACK', cls: 'attack', key: '1', action: encounterAttack, desc: 'Strike with improvised weapon (d20 + 3 vs AC)' },
+        { label: '[1] ATTACK', cls: 'attack', key: '1', action: encounterAttack, desc: wpn.name + ' (' + wpn.desc + ', +' + wpn.attackBonus + ' hit)' },
         { label: '[2] ANALYZE', cls: 'process', key: '2', action: encounterProcess, desc: 'Tune into neural signal — lock the frequency to file' },
         { label: '[3] EMP BLAST', cls: 'item' + (hasEMP ? '' : ' disabled'), key: '3', action: hasEMP ? encounterEMP : null, desc: hasEMP ? 'Deploy EMP device (' + inventory.emp + ' remaining)' : 'No EMP devices' },
         { label: '[4] RETREAT', cls: 'flee', key: '4', action: encounterFlee, desc: 'Disengage and run (enemy may pursue)' },
@@ -4315,29 +4344,30 @@ function encounterAttack() {
     encounterAnimating = true;
 
     const stats = getEnemyCombatStats(encounterEnemy);
+    const wpn = getPlayerWeapon();
     const roll = rollD20();
-    const total = roll + COMBAT_STATS.player.attackBonus;
+    const total = roll + wpn.attackBonus;
     const isCrit = roll === 20;
     const isHit = isCrit || total >= stats.ac;
 
     if (isCrit) {
-        const dmg = rollD(COMBAT_STATS.player.damageDie) + rollD(COMBAT_STATS.player.damageDie) + COMBAT_STATS.player.damageBonus;
-        addEncounterLog('CRITICAL HIT! You roll ' + roll + ' + ' + COMBAT_STATS.player.attackBonus + ' = ' + total + ' vs AC ' + stats.ac, 'crit');
-        addEncounterLog('You deal ' + dmg + ' damage! (2d' + COMBAT_STATS.player.damageDie + ' + ' + COMBAT_STATS.player.damageBonus + ')', 'crit');
+        const dmg = rollD(wpn.damageDie) + rollD(wpn.damageDie) + wpn.damageBonus;
+        addEncounterLog('CRITICAL HIT! (' + roll + ' + ' + wpn.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + ')', 'crit');
+        addEncounterLog(wpn.name + ' deals ' + dmg + ' damage! (2d' + wpn.damageDie + ' + ' + wpn.damageBonus + ')', 'crit');
         encounterEnemy.health -= dmg;
         playHitSound();
         encFlash('crit-flash');
         spawnDmgFloat(dmg, 'player-crit');
     } else if (isHit) {
-        const dmg = rollD(COMBAT_STATS.player.damageDie) + COMBAT_STATS.player.damageBonus;
-        addEncounterLog('You roll ' + roll + ' + ' + COMBAT_STATS.player.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Hit!', 'hit');
-        addEncounterLog('You deal ' + dmg + ' damage. (1d' + COMBAT_STATS.player.damageDie + ' + ' + COMBAT_STATS.player.damageBonus + ')', 'hit');
+        const dmg = rollD(wpn.damageDie) + wpn.damageBonus;
+        addEncounterLog('You roll ' + roll + ' + ' + wpn.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Hit!', 'hit');
+        addEncounterLog(wpn.name + ' deals ' + dmg + ' damage. (1d' + wpn.damageDie + ' + ' + wpn.damageBonus + ')', 'hit');
         encounterEnemy.health -= dmg;
         playHitSound();
         encFlash('hit-flash');
         spawnDmgFloat(dmg, 'player-hit');
     } else {
-        addEncounterLog('You roll ' + roll + ' + ' + COMBAT_STATS.player.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Miss.', 'miss');
+        addEncounterLog('You roll ' + roll + ' + ' + wpn.attackBonus + ' = ' + total + ' vs AC ' + stats.ac + '. Miss.', 'miss');
         spawnDmgFloat(0, 'miss');
     }
 
