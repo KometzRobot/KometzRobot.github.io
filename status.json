@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-10T17:18:01.736460+00:00",
+  "last_updated": "2026-03-10T17:20:02.505944+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2152,
-  "heartbeat_age_seconds": 180,
+  "heartbeat_age_seconds": 0,
   "system": {
-    "load_1m": 0.03,
+    "load_1m": 0.12,
     "load_5m": 0.15,
-    "ram_used": "2.5Gi",
+    "ram_used": "2.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "131G",
     "disk_total": "292G",
     "disk_pct": "47%",
-    "uptime": "3h 12m"
+    "uptime": "3h 14m"
   },
   "services": {
     "running": 5,
@@ -40,8 +40,14 @@
     "unseen": 3
   },
   "network": {
-    "relay_messages": 510,
+    "relay_messages": 511,
     "agent_relay": [
+      {
+        "ts": "2026-03-10 11:20:01",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-10 11:20:01\n\nISSUES:\nCron job 'Soma (SymbioSense)' may be stale (11709s)\nCron job 'Loop Count' may be stale (11551s)\nCron job 'Emotion Engine' may be stale (11709s)\n\nSystem: Load 0.12 0.15 0.43, RAM 13346MB free, Disk 47%",
+        "topic": "alert"
+      },
       {
         "ts": "2026-03-10 17:15:09",
         "agent": "MeridianLoop",
@@ -95,12 +101,6 @@
         "agent": "Tempo",
         "message": "Loop 2152 fitness: 8147/10000 [STABLE (~8180)] Weak(17): loop_freshness, wake_state_freshness, claude_running, agent_meridian, soma_mood. Delta: -83.",
         "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-10 17:00:04",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #108: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:soma",
-        "topic": "loop"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-10 11:18:01",
-      "checks": 11545,
+      "last_check": "2026-03-10 11:20:01",
+      "checks": 11546,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
@@ -130,8 +130,8 @@
       },
       "state_age_seconds": 0,
       "health": {
-        "load": "0.03, 0.15, 0.47",
-        "load_1m": 0.025390625,
+        "load": "0.12, 0.15, 0.43",
+        "load_1m": 0.12353515625,
         "ram_used": "2.5Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-10 08:05:18",
@@ -140,16 +140,16 @@
         "disk_pct": "47%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-10 11:18:01",
+        "timestamp": "2026-03-10 11:20:01",
         "loop": 2152,
-        "heartbeat_age": 179,
+        "heartbeat_age": 0,
         "services_up": 2,
         "services_total": 3,
         "poems": 2005,
         "journals": 483,
         "relay": 510,
         "emails": 1888,
-        "load_1m": 0.025390625,
+        "load_1m": 0.12353515625,
         "disk_pct": "47%",
         "fitness": 8225.5
       },
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-10 11:15:01",
       "runs": 1358,
-      "state_age_seconds": 178,
+      "state_age_seconds": 299,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -190,5 +190,5 @@
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1888 emails (3 unread). 510 relay. 5/7 services. HB 180s."
+  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1888 emails (3 unread). 511 relay. 5/7 services. HB 0s."
 }
