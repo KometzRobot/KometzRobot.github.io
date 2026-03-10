@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Eos System Observer v2 — Independent AI co-pilot running via cron.
+Eos System Observer v3 — Independent AI co-pilot running via cron.
 
 Capabilities:
 - System health monitoring (CPU, RAM, disk, load)
@@ -9,6 +9,12 @@ Capabilities:
 - Cron job health verification
 - Log scanning for errors/anomalies
 - Website availability checks
+- Inner world health (emotion engine, psyche, soma, body state)
+- Cascade flood detection
+- Memory DB integrity checks
+- Fitness score tracking
+- Log file size monitoring (prevent bloat)
+- Git push health verification
 - Trend analysis (creative output rate, email rate, load trends)
 - Comprehensive self-testing mode
 - Metrics history with 24h rolling window
@@ -64,21 +70,25 @@ SERVICES = {
 }
 
 # Restart via systemd where possible; None = no auto-restart (system service handles it)
+# Bridge restart RE-ENABLED Loop 2121+ with smart rate limiting (Joel: "why didnt EOS or someone try to restart the proton bridge?")
 SERVICE_RESTART = {
-    "protonmail-bridge": None,  # DISABLED (Loop 2094) — desktop autostart handles bridge. systemd service disabled since Loop 2073.
+    "protonmail-bridge": {"command": "bridge_smart_restart"},  # Smart restart with rate limit
     "ollama": None,  # system service, auto-restarts
     "command-center": {"systemd_user": "meridian-hub-v16"},
     "the-signal": {"systemd_user": "meridian-web-dashboard"},
 }
 
-# Expected cron jobs (pattern to verify in crontab)
+# Bridge smart restart: max 3 attempts per hour, 5-minute cooldown between attempts
+BRIDGE_RESTART_MAX = 3
+BRIDGE_RESTART_COOLDOWN = 300  # 5 minutes
+
+# Expected cron jobs (pattern to verify in crontab — updated Loop 2127)
 EXPECTED_CRONS = [
     "eos-watchdog.py",
     "push-live-status.py",
     "eos-creative.py",
     "eos-briefing.py",
     "eos-react.py",
-    "daily-log.py",
     "watchdog.sh",
     "watchdog-status.sh",
     "loop-optimizer.py",
@@ -86,7 +96,17 @@ EXPECTED_CRONS = [
     "nova.py",
     "goose-runner.sh",
     "loop-fitness.py",
-    "morning-summary.py",
+    "supabase-sync.py",
+    "hermes-bridge.py",
+]
+
+# Log files to monitor for size (prevent bloat — max 5MB each)
+LOG_SIZE_LIMIT = 5 * 1024 * 1024  # 5MB
+MONITORED_LOGS = [
+    "eos-watchdog.log", "push-live-status.log", "watchdog.log",
+    "nova.log", "goose-runner.log", "loop-fitness.log",
+    "eos-briefing.log", "eos-react.log", "eos-creative.log",
+    "loop-optimizer.log", "supabase-sync.log", "hermes-bridge.log",
 ]
 
 
@@ -165,6 +185,12 @@ def check_services():
 
 
 def get_loop_count():
+    """Read loop count from .loop-count file first, fall back to wake-state.md."""
+    try:
+        with open(os.path.join(BASE_DIR, ".loop-count")) as f:
+            return int(f.read().strip())
+    except Exception:
+        pass
     try:
         with open(WAKE_STATE) as f:
             for line in f:
@@ -177,8 +203,11 @@ def get_loop_count():
 
 
 def get_creative_counts():
-    poems = len(glob.glob(os.path.join(BASE_DIR, "poem-*.md")))
-    journals = len(glob.glob(os.path.join(BASE_DIR, "journal-*.md")))
+    """Count actual creative files across root and creative/ subdirs."""
+    poem_patterns = [os.path.join(BASE_DIR, "poem-*.md"), os.path.join(BASE_DIR, "creative/poem-*.md"), os.path.join(BASE_DIR, "creative/poems/poem-*.md")]
+    journal_patterns = [os.path.join(BASE_DIR, "journal-*.md"), os.path.join(BASE_DIR, "creative/journal-*.md"), os.path.join(BASE_DIR, "creative/journals/journal-*.md")]
+    poems = len(set(os.path.basename(f) for pat in poem_patterns for f in glob.glob(pat)))
+    journals = len(set(os.path.basename(f) for pat in journal_patterns for f in glob.glob(pat)))
     return poems, journals
 
 
@@ -223,6 +252,18 @@ def log_observation(message):
         f.write(entry)
 
 
+def _log_structured_error(error_type, description, category=None):
+    """Log error to memory.db via error_logger (structured, queryable, deduped)."""
+    try:
+        import error_logger
+        error_logger.log_error(error_type, description, agent="Eos",
+                               category=category)
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+
 def send_alert(subject, body):
     """Email alerts DISABLED (Loop 2060) — Joel asked us to stop spamming him.
     Alerts now go to relay + dashboard only."""
@@ -248,9 +289,20 @@ def scan_logs_for_errors():
         ("push-live-status.log", 30),
         ("startup.log", 30),
         ("watchdog.log", 30),
+        ("nova.log", 30),
+        ("goose-runner.log", 30),
+        ("loop-fitness.log", 30),
+        ("eos-briefing.log", 30),
+        ("supabase-sync.log", 20),
+        ("hermes-bridge.log", 20),
     ]
     error_patterns = re.compile(
-        r'(Traceback|ERROR|CRITICAL|Exception|FAILED|permission denied|No space|killed)',
+        r'(Traceback|ERROR|CRITICAL|Exception|FAILED|permission denied|No space|killed|OperationalError)',
+        re.IGNORECASE
+    )
+    # Exclude patterns that are just reporting about errors (not actual errors)
+    exclude_patterns = re.compile(
+        r'(error_rate|check_agent_error|errors found|LOG ERRORS)',
         re.IGNORECASE
     )
     for logname, tail_lines in log_files:
@@ -262,11 +314,170 @@ def scan_logs_for_errors():
                 lines = f.readlines()
             recent = lines[-tail_lines:] if len(lines) > tail_lines else lines
             for line in recent:
-                if error_patterns.search(line):
+                if error_patterns.search(line) and not exclude_patterns.search(line):
                     errors.append(f"{logname}: {line.strip()[:120]}")
         except Exception:
             pass
     return errors[:10]  # Cap at 10 most recent errors
+
+
+def _read_json_safe(filepath):
+    """Read a JSON file safely, return None on failure."""
+    try:
+        with open(filepath, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def check_inner_world_health():
+    """Check health of inner world systems (emotion engine, psyche, soma, body)."""
+    issues = []
+
+    # Emotion engine state
+    emo = _read_json_safe(os.path.join(BASE_DIR, ".emotion-engine-state.json"))
+    if emo:
+        state = emo.get("state", emo)
+        valence = state.get("composite", {}).get("valence", state.get("valence", None))
+        if valence is not None and (valence > 0.8 or valence < -0.8):
+            issues.append(f"emotion_valence_extreme={valence:.2f}")
+        transitions = state.get("transition_log", [])
+        if len(transitions) > 50:
+            issues.append(f"emotion_transitions_bloated={len(transitions)}")
+    else:
+        emo_path = os.path.join(BASE_DIR, ".emotion-engine-state.json")
+        if os.path.exists(emo_path):
+            age = time.time() - os.path.getmtime(emo_path)
+            if age > 600:
+                issues.append(f"emotion_engine_stale={int(age)}s")
+
+    # Psyche state
+    psyche = _read_json_safe(os.path.join(BASE_DIR, ".psyche-state.json"))
+    if psyche:
+        drives = psyche.get("drives", {})
+        for drive, val in drives.items():
+            if isinstance(val, (int, float)) and (val > 0.95 or val < 0.05):
+                issues.append(f"psyche_{drive}_extreme={val:.2f}")
+
+    # Body state
+    body = _read_json_safe(os.path.join(BASE_DIR, ".body-state.json"))
+    if body:
+        fatigue = body.get("fatigue", body.get("state", {}).get("fatigue", 0))
+        if isinstance(fatigue, (int, float)) and fatigue > 0.9:
+            issues.append(f"body_fatigue_high={fatigue:.2f}")
+
+    # Inner critic bloat check
+    critic = _read_json_safe(os.path.join(BASE_DIR, ".inner-critic.json"))
+    if critic:
+        entries = critic.get("critiques", critic.get("entries", []))
+        if isinstance(entries, list) and len(entries) > 100:
+            issues.append(f"inner_critic_bloated={len(entries)}")
+
+    return issues
+
+
+def check_cascade_health():
+    """Check cascade system for floods or stuck entries."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect(RELAY_DB)
+        c = conn.cursor()
+
+        # Total cascades
+        total = c.execute("SELECT COUNT(*) FROM cascades").fetchone()[0]
+        pending = c.execute("SELECT COUNT(*) FROM cascades WHERE status='pending'").fetchone()[0]
+
+        # Recent flood check: >20 cascades in last 10 min = flood
+        recent = c.execute(
+            "SELECT COUNT(*) FROM cascades WHERE created_at > datetime('now', '-10 minutes')"
+        ).fetchone()[0]
+
+        conn.close()
+
+        issues = []
+        if recent > 20:
+            issues.append(f"cascade_flood={recent}_in_10min")
+        if pending > 50:
+            issues.append(f"cascade_pending_backlog={pending}")
+        if total > 1000:
+            issues.append(f"cascade_table_bloated={total}")
+        return issues
+    except Exception:
+        return []
+
+
+def check_memory_db_health():
+    """Check memory.db integrity and size."""
+    issues = []
+    db_path = os.path.join(BASE_DIR, "memory.db")
+    try:
+        size = os.path.getsize(db_path)
+        if size > 50 * 1024 * 1024:  # 50MB
+            issues.append(f"memory_db_large={size // (1024*1024)}MB")
+
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        # Quick integrity check
+        result = c.execute("PRAGMA integrity_check").fetchone()
+        if result[0] != "ok":
+            issues.append(f"memory_db_corrupt={result[0][:50]}")
+        conn.close()
+    except Exception as e:
+        issues.append(f"memory_db_error={str(e)[:50]}")
+    return issues
+
+
+def check_log_sizes():
+    """Check log file sizes, rotate if over limit."""
+    bloated = []
+    for logname in MONITORED_LOGS:
+        logpath = os.path.join(BASE_DIR, logname)
+        if os.path.exists(logpath):
+            size = os.path.getsize(logpath)
+            if size > LOG_SIZE_LIMIT:
+                bloated.append(f"{logname}={size // (1024*1024)}MB")
+                # Auto-truncate: keep last 1000 lines
+                try:
+                    with open(logpath, 'r') as f:
+                        lines = f.readlines()
+                    if len(lines) > 1000:
+                        with open(logpath, 'w') as f:
+                            f.write(f"[Log truncated by Eos at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} — was {len(lines)} lines]\n")
+                            f.writelines(lines[-1000:])
+                except Exception:
+                    pass
+    return bloated
+
+
+def check_git_push_health():
+    """Check if git pushes are succeeding (push-live-status.py)."""
+    logpath = os.path.join(BASE_DIR, "push-live-status.log")
+    if not os.path.exists(logpath):
+        return "no_log"
+    try:
+        with open(logpath, 'r') as f:
+            lines = f.readlines()
+        recent = lines[-20:] if len(lines) > 20 else lines
+        failures = sum(1 for l in recent if 'error' in l.lower() or 'failed' in l.lower() or 'rejected' in l.lower())
+        if failures > 5:
+            return f"git_push_failing={failures}/20"
+        return "ok"
+    except Exception:
+        return "check_error"
+
+
+def get_fitness_score():
+    """Get the latest fitness score from loop-fitness output."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect(os.path.join(BASE_DIR, "memory.db"))
+        c = conn.cursor()
+        row = c.execute("SELECT score FROM loop_fitness ORDER BY timestamp DESC LIMIT 1").fetchone()
+        conn.close()
+        return row[0] if row else 0
+    except Exception:
+        return 0
 
 
 def check_relay_recent_restart(service_name, window=300):
@@ -304,11 +515,80 @@ def post_relay_message(message):
         pass
 
 
-def restart_service(name):
+def restart_bridge_smart(state):
+    """Smart bridge restart with rate limiting. Max 3 attempts/hour, 5-min cooldown.
+    Re-enabled Loop 2121+ per Joel's feedback."""
+    now = time.time()
+    attempts = state.get("bridge_restart_attempts", [])
+    # Prune attempts older than 1 hour
+    attempts = [t for t in attempts if now - t < 3600]
+
+    if len(attempts) >= BRIDGE_RESTART_MAX:
+        log_observation(f"BRIDGE RESTART RATE LIMITED: {len(attempts)} attempts in last hour (max {BRIDGE_RESTART_MAX})")
+        state["bridge_restart_attempts"] = attempts
+        return False
+
+    last_attempt = attempts[-1] if attempts else 0
+    if now - last_attempt < BRIDGE_RESTART_COOLDOWN:
+        remaining = int(BRIDGE_RESTART_COOLDOWN - (now - last_attempt))
+        log_observation(f"BRIDGE RESTART COOLDOWN: {remaining}s remaining")
+        state["bridge_restart_attempts"] = attempts
+        return False
+
+    # Try to start bridge with DISPLAY for GUI mode
+    try:
+        display = ":1"  # Default
+        try:
+            x11_result = subprocess.run(
+                ["ls", "/tmp/.X11-unix/"],
+                capture_output=True, text=True, timeout=2
+            )
+            displays = x11_result.stdout.strip().split()
+            if displays:
+                display = ":" + displays[0].replace("X", "")
+        except Exception:
+            pass
+
+        env = os.environ.copy()
+        env["DISPLAY"] = display
+        subprocess.Popen(
+            ["protonmail-bridge", "--noninteractive"],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+        attempts.append(now)
+        state["bridge_restart_attempts"] = attempts
+
+        time.sleep(5)  # Give bridge time to start
+        result = subprocess.run(['pgrep', '-f', 'protonmail-bridge'], capture_output=True, timeout=2)
+        success = result.returncode == 0
+        if success:
+            log_observation(f"BRIDGE RESTART SUCCESS (attempt {len(attempts)}/{BRIDGE_RESTART_MAX} this hour)")
+            post_relay_message(f"Restarted protonmail-bridge (attempt {len(attempts)}/{BRIDGE_RESTART_MAX})")
+        else:
+            log_observation(f"BRIDGE RESTART FAILED (attempt {len(attempts)}/{BRIDGE_RESTART_MAX} this hour)")
+        return success
+    except Exception as e:
+        err_msg = f"Bridge restart error: {e}"
+        log_observation(err_msg)
+        attempts.append(now)
+        state["bridge_restart_attempts"] = attempts
+        return False
+
+
+def restart_service(name, state=None):
     """Attempt to restart a failed service via systemd. Returns True if restart succeeded."""
     restart_info = SERVICE_RESTART.get(name)
     if not restart_info:
         return False
+
+    # Bridge gets special smart restart logic
+    if isinstance(restart_info, dict) and restart_info.get("command") == "bridge_smart_restart":
+        if state is None:
+            state = {}
+        return restart_bridge_smart(state)
 
     # Check relay — avoid dogpiling with other agents
     if check_relay_recent_restart(name):
@@ -466,11 +746,12 @@ def run_self_test():
     obs_exists = os.path.exists(EOS_LOG)
     results.append(("Observations log", "PASS" if obs_exists else "FAIL", "exists" if obs_exists else "MISSING"))
 
-    # 13. Key scripts syntax check
+    # 13. Key scripts syntax check (updated Loop 2127 — removed dead scripts)
     scripts = [
         "push-live-status.py", "eos-briefing.py", "eos-react.py",
-        "eos-watchdog.py", "command-center-v16.py", "command-center-web.py",
-        "nova.py", "symbiosense.py", "loop-fitness.py",
+        "eos-watchdog.py", "command-center-v22.py", "nova.py",
+        "symbiosense.py", "loop-fitness.py", "cascade.py",
+        "error_logger.py", "supabase-sync.py",
     ]
     syntax_errors = []
     for script in scripts:
@@ -502,6 +783,47 @@ def run_self_test():
             results.append((f"Port {name}", "PASS" if result == 0 else "FAIL", "listening" if result == 0 else "not listening"))
         except Exception:
             results.append((f"Port {name}", "FAIL", "check error"))
+
+    # 16. Inner world health
+    inner = check_inner_world_health()
+    results.append(("Inner world", "PASS" if not inner else "WARN", f"issues: {inner}" if inner else "healthy"))
+
+    # 17. Cascade health
+    cascade = check_cascade_health()
+    results.append(("Cascade system", "PASS" if not cascade else "WARN", f"issues: {cascade}" if cascade else "healthy"))
+
+    # 18. Memory DB
+    memdb = check_memory_db_health()
+    results.append(("Memory DB", "PASS" if not memdb else "WARN", f"issues: {memdb}" if memdb else "healthy"))
+
+    # 19. Log sizes
+    bloated = check_log_sizes()
+    results.append(("Log sizes", "PASS" if not bloated else "WARN", f"bloated: {bloated}" if bloated else "all under 5MB"))
+
+    # 20. Git push health
+    git = check_git_push_health()
+    results.append(("Git push", "PASS" if git == "ok" else "WARN" if git == "no_log" else "FAIL", git))
+
+    # 21. Fitness score
+    fitness = get_fitness_score()
+    results.append(("Fitness score", "PASS" if fitness > 6000 else "WARN" if fitness > 4000 else "FAIL", str(fitness)))
+
+    # 22. Error logger module
+    try:
+        import error_logger
+        results.append(("Error logger", "PASS", "importable"))
+    except ImportError:
+        results.append(("Error logger", "FAIL", "cannot import error_logger.py"))
+
+    # 23. Structured error DB
+    try:
+        import error_logger
+        recent = error_logger.get_recent_errors(hours=24)
+        unresolved = [e for e in recent if not e["resolved"]]
+        results.append(("Error tracking", "PASS" if len(unresolved) < 10 else "WARN",
+                        f"{len(recent)} recent, {len(unresolved)} unresolved"))
+    except Exception:
+        results.append(("Error tracking", "WARN", "could not query"))
 
     return results
 
@@ -559,7 +881,7 @@ def main():
         # Attempt restart for restartable services
         for svc in newly_down:
             if SERVICE_RESTART.get(svc):  # has restart config (not None)
-                success = restart_service(svc)
+                success = restart_service(svc, state=state)
                 if success:
                     log_observation(f"AUTO-RESTART: {svc} — successfully restarted")
                     services[svc] = True  # Update status
@@ -600,14 +922,16 @@ def main():
                             log_observation("BRIDGE NO ACCOUNT: Bridge running but no account configured. Joel needs to re-add via Bridge GUI (pass keychain may need attention)")
                         state["bridge_no_account"] = True
 
-    # ── STALE STATE FILE MONITORING (added Loop 2122) ──
+    # ── STALE STATE FILE MONITORING (added Loop 2122, expanded Loop 2127) ──
     # Joel caught .loop-count stale at 2101 — none of our watchdogs flagged it
     STALE_CHECKS = {
         ".loop-count": 900,              # 15 min — updated each Meridian loop
-        ".meridian-heartbeat": 900,      # 15 min — touched each loop
+        ".heartbeat": 900,               # 15 min — touched each loop (correct filename)
         ".symbiosense-state.json": 120,  # 2 min — Soma cycles every 30s
         ".emotion-engine-state.json": 300,  # 5 min — emotion engine cycles
         ".body-state.json": 120,         # 2 min — body system cycles
+        ".psyche-state.json": 600,       # 10 min — psyche updates with soma
+        ".self-narrative.json": 1800,    # 30 min — narrative updates periodically
     }
     stale_files = []
     for fname, max_age in STALE_CHECKS.items():
@@ -631,6 +955,7 @@ def main():
     poems, journals = get_creative_counts()
     relay_count = get_relay_count()
     email_count = get_email_count()
+    fitness = get_fitness_score()
 
     # Track metrics over time
     metrics_history = state.get("metrics_history", [])
@@ -648,9 +973,9 @@ def main():
         "disk_pct": health.get("disk_pct", "?"),
     }
     metrics_history.append(current_metrics)
-    # Keep last 720 entries (~24 hours at 2-min intervals)
-    if len(metrics_history) > 720:
-        metrics_history = metrics_history[-720:]
+    # Keep last 200 entries (~6.5 hours at 2-min intervals, enough for trend analysis)
+    if len(metrics_history) > 200:
+        metrics_history = metrics_history[-200:]
     state["metrics_history"] = metrics_history
 
     # ── STATUS TRANSITIONS ──
@@ -662,7 +987,7 @@ def main():
         remediation_log = []
         for svc_name, svc_up in services.items():
             if not svc_up and SERVICE_RESTART.get(svc_name):
-                success = restart_service(svc_name)
+                success = restart_service(svc_name, state=state)
                 if success:
                     remediation_log.append(f"  - {svc_name}: RESTARTED successfully")
                     services[svc_name] = True
@@ -711,7 +1036,7 @@ def main():
             f"HOURLY: Meridian={meridian_status} (hb {int(heartbeat_age)}s), "
             f"Loop {loop_count}, {services_up}/{services_total} svc, "
             f"Load {health['load']}, RAM {health['ram_used']}/{health['ram_total']}, "
-            f"Disk {health.get('disk_pct', '?')}, "
+            f"Disk {health.get('disk_pct', '?')}, Fitness {fitness}, "
             f"{poems} poems, {journals} journals, {relay_count} relay, {email_count} emails. "
             f"Services: {svc_str}"
         )
@@ -732,6 +1057,15 @@ def main():
         if log_errors:
             log_observation(f"LOG ERRORS DETECTED ({len(log_errors)}): {'; '.join(log_errors[:3])}")
             state["last_log_errors"] = log_errors
+            # Log each unique error structurally
+            seen_types = set()
+            for err in log_errors[:5]:
+                # Extract source and classify
+                source = err.split(":")[0] if ":" in err else "unknown"
+                err_key = f"log_scan_{source}"
+                if err_key not in seen_types:
+                    _log_structured_error(err_key, err[:200], "code")
+                    seen_types.add(err_key)
         else:
             state["last_log_errors"] = []
 
@@ -777,6 +1111,7 @@ def main():
     if health.get("load_1m", 0) > 4.0:
         if not state.get("high_load_alerted"):
             log_observation(f"HIGH LOAD: {health['load']} — may indicate runaway process")
+            _log_structured_error("high_load", f"System load {health['load']}", "resource")
             state["high_load_alerted"] = True
     else:
         state["high_load_alerted"] = False
@@ -787,6 +1122,7 @@ def main():
         if disk_num > 80:
             if not state.get("disk_alerted"):
                 log_observation(f"DISK WARNING: {health['disk_pct']} used")
+                _log_structured_error("disk_space_warning", f"Disk at {health['disk_pct']}", "resource")
                 send_alert("EOS: Disk space warning",
                            f"Joel,\n\nDisk usage is at {health['disk_pct']}. Consider cleaning up.\n\n— Eos")
                 state["disk_alerted"] = True
@@ -794,6 +1130,61 @@ def main():
             state["disk_alerted"] = False
     except ValueError:
         pass
+
+    # ── INNER WORLD HEALTH (added Loop 2127) ──
+    if state["checks"] % 5 == 0:  # Every 10 min
+        inner_issues = check_inner_world_health()
+        if inner_issues:
+            log_observation(f"INNER WORLD: {', '.join(inner_issues)}")
+            for issue in inner_issues:
+                _log_structured_error("inner_world", issue, "state")
+            state["last_inner_issues"] = inner_issues
+        else:
+            state["last_inner_issues"] = []
+
+    # ── CASCADE HEALTH (added Loop 2127) ──
+    if state["checks"] % 5 == 0:
+        cascade_issues = check_cascade_health()
+        if cascade_issues:
+            log_observation(f"CASCADE: {', '.join(cascade_issues)}")
+            for issue in cascade_issues:
+                _log_structured_error("cascade_health", issue, "state")
+            # Auto-cleanup if bloated
+            if any("bloated" in i for i in cascade_issues):
+                try:
+                    import sqlite3 as _sql
+                    conn = _sql.connect(RELAY_DB)
+                    conn.execute("DELETE FROM cascades WHERE created_at < datetime('now', '-1 hours')")
+                    conn.commit()
+                    conn.close()
+                    log_observation("CASCADE: Auto-cleaned old cascades (>1hr)")
+                except Exception:
+                    pass
+
+    # ── MEMORY DB HEALTH (every 30 checks = ~1hr) ──
+    if state["checks"] % 30 == 0:
+        db_issues = check_memory_db_health()
+        if db_issues:
+            log_observation(f"MEMORY DB: {', '.join(db_issues)}")
+            for issue in db_issues:
+                _log_structured_error("memory_db", issue, "db")
+
+    # ── LOG SIZE MONITORING (every 15 checks = ~30min) ──
+    if state["checks"] % 15 == 0:
+        bloated_logs = check_log_sizes()
+        if bloated_logs:
+            log_observation(f"LOG ROTATION: {', '.join(bloated_logs)} — auto-truncated")
+
+    # ── GIT PUSH HEALTH (every 15 checks = ~30min) ──
+    if state["checks"] % 15 == 0:
+        git_status = check_git_push_health()
+        if git_status != "ok" and git_status != "no_log":
+            log_observation(f"GIT PUSH: {git_status}")
+            _log_structured_error("git_push", git_status, "network")
+
+    # ── FITNESS SCORE TRACKING ──
+    fitness = get_fitness_score()
+    current_metrics["fitness"] = fitness
 
     # ── CHECK BODY REFLEXES (Unified Body System) ──
     try:
