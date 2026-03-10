@@ -2491,13 +2491,11 @@ let activeHazards = [];
 const enemySpawns = [
     // Floor 1: SAFE — no enemies. Tutorial zone to explore, find items, talk to NPCs.
     [],
-    // Floor 2: more enemies — waypoint patrols through corridors
+    // Floor 2: archives — moderate enemies. Eased from 5→3 to soften the 0-enemy Floor 1 transition.
     [
         { type: 'drone', x: 3, y: 3, waypoints: [{x:3,y:3,wait:0},{x:7,y:3,wait:0},{x:7,y:1,wait:0},{x:3,y:1,wait:0}] },
-        { type: 'drone', x: 17, y: 14, waypoints: [{x:17,y:14,wait:0},{x:21,y:14,wait:0},{x:21,y:17,wait:0},{x:17,y:17,wait:0}] },
         { type: 'filer', x: 10, y: 10, waypoints: [{x:10,y:10,wait:2500},{x:10,y:6,wait:1500},{x:14,y:6,wait:2500},{x:14,y:10,wait:1500}] },
         { type: 'filer', x: 16, y: 8, waypoints: [{x:16,y:8,wait:2000},{x:16,y:12,wait:2000},{x:13,y:12,wait:2000},{x:13,y:8,wait:2000}] },
-        { type: 'watcher', x: 12, y: 20 },
     ],
     // Floor 3: the hardest — tighter patrols, file room guard circles the vault
     [
@@ -2741,6 +2739,7 @@ function spawnHazards() {
         ...h,
         timer: Math.random() * h.interval,  // stagger initial activation
         active: false,
+        warning: false,   // 1-second pre-warning before activation
         activeTimer: 0,
         lastDamageTime: 0,
     }));
@@ -2753,6 +2752,7 @@ function updateHazards(dt) {
             h.activeTimer -= dt;
             if (h.activeTimer <= 0) {
                 h.active = false;
+                h.warning = false;
                 h.timer = h.interval;
             } else {
                 // Check player proximity for damage
@@ -2808,8 +2808,39 @@ function updateHazards(dt) {
             }
         } else {
             h.timer -= dt;
+            // Pre-warning phase: 1 second before activation, show visual cue
+            if (!h.warning && h.timer <= 1000 && h.timer > 0) {
+                h.warning = true;
+                // Warning particles — amber flicker at hazard location
+                for (let i = 0; i < 4; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    particles.push({
+                        x: h.x + (Math.random() - 0.5) * 0.4,
+                        y: h.y + (Math.random() - 0.5) * 0.4,
+                        vx: Math.cos(angle) * 0.003, vy: Math.sin(angle) * 0.003,
+                        life: 800, maxLife: 800,
+                        r: 255, g: 200, b: 60, size: 2,
+                    });
+                }
+                // Proximity warning message
+                const dx = player.x - h.x, dy = player.y - h.y;
+                if (Math.sqrt(dx * dx + dy * dy) < h.radius + 1.5) {
+                    showMessage(h.type === 'steam' ? 'STEAM PRESSURE BUILDING...' : 'CAPACITOR CHARGING...', 800);
+                }
+            }
+            // Spawn ongoing warning particles during warning phase
+            if (h.warning && Math.random() < 0.25) {
+                particles.push({
+                    x: h.x + (Math.random() - 0.5) * 0.5,
+                    y: h.y + (Math.random() - 0.5) * 0.5,
+                    vx: 0, vy: -0.01 - Math.random() * 0.01,
+                    life: 400, maxLife: 400,
+                    r: 255, g: 180, b: 40, size: 1 + Math.random() * 2,
+                });
+            }
             if (h.timer <= 0) {
                 h.active = true;
+                h.warning = false;
                 h.activeTimer = h.duration;
                 // Activation burst particles
                 for (let i = 0; i < 8; i++) {
@@ -3959,7 +3990,7 @@ function processTuningResult(success) {
         deskEnemy.annotationLevel = 80;
         deskEnemy.deathAnim = 1.0; // start dissolution animation
         player.totalFiled++;
-        const cost = 5 + Math.floor(player.totalFiled * 1.5);
+        const cost = 4 + player.totalFiled;  // linear scaling: 5,6,7,8... (was 5,6,8,9,11... — too punishing)
         player.realityLevel -= cost;
         updateRealityHUD();
         showMessage('UNIT FILED \u2014 Reality: ' + (player.realityLevel|0) + '%');
@@ -4023,7 +4054,7 @@ const COMBAT_STATS = {
         xpValue: 25,
     },
     watcher: {
-        ac: 16,           // very hard to hit (wall-mounted)
+        ac: 14,           // hard to hit (wall-mounted, but exposed lens)
         attackBonus: 3,
         damageDie: 6,     // 1d6 (focused beam)
         damageBonus: 0,
@@ -8721,7 +8752,7 @@ function render() {
     const hplX = Math.cos(player.angle + Math.PI/2) * 0.66, hplY = Math.sin(player.angle + Math.PI/2) * 0.66;
     const hinvD = 1.0 / (hplX * hdirY - hdirX * hplY);
     for (const h of activeHazards) {
-        if (!h.active) continue;
+        if (!h.active && !h.warning) continue;
         const dx = h.x - player.x, dy = h.y - player.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > 8 || dist < 0.3) continue;
@@ -8733,16 +8764,29 @@ function render() {
         const screenY = HALF_H - sprH / 2 - 6 + sy;
         if (screenX < -20 || screenX > SCREEN_W + 20) continue;
         const alpha = Math.max(0.3, 1 - dist / 8);
-        const pulse = 0.6 + Math.sin(gameTime * 0.01) * 0.4;
-        const label = h.type === 'steam' ? '\u26A0 STEAM' : '\u26A1 SPARK';
-        const color = h.type === 'steam' ? `rgba(200,200,240,${alpha * pulse})` : `rgba(100,180,255,${alpha * pulse})`;
-        ctx.font = '7px monospace';
-        const tw = ctx.measureText(label).width;
-        ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.4})`;
-        ctx.fillRect(screenX - tw/2 - 2, screenY - 7, tw + 4, 10);
-        ctx.fillStyle = color;
-        ctx.textAlign = 'center';
-        ctx.fillText(label, screenX, screenY);
+        if (h.active) {
+            const pulse = 0.6 + Math.sin(gameTime * 0.01) * 0.4;
+            const label = h.type === 'steam' ? '\u26A0 STEAM' : '\u26A1 SPARK';
+            const color = h.type === 'steam' ? `rgba(200,200,240,${alpha * pulse})` : `rgba(100,180,255,${alpha * pulse})`;
+            ctx.font = '7px monospace';
+            const tw = ctx.measureText(label).width;
+            ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.4})`;
+            ctx.fillRect(screenX - tw/2 - 2, screenY - 7, tw + 4, 10);
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.fillText(label, screenX, screenY);
+        } else {
+            // Warning phase — amber flashing "WARNING" label
+            const wPulse = Math.sin(gameTime * 0.015) > 0 ? 0.8 : 0.3;
+            ctx.font = 'bold 7px monospace';
+            const wLabel = h.type === 'steam' ? 'PRESSURE' : 'CHARGING';
+            const tw = ctx.measureText(wLabel).width;
+            ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.3})`;
+            ctx.fillRect(screenX - tw/2 - 2, screenY - 7, tw + 4, 10);
+            ctx.fillStyle = `rgba(255, 200, 60, ${alpha * wPulse})`;
+            ctx.textAlign = 'center';
+            ctx.fillText(wLabel, screenX, screenY);
+        }
     }
     }
 
@@ -9273,6 +9317,12 @@ function renderMinimap() {
             const pulse = 0.6 + Math.sin(gameTime * 0.008) * 0.4;
             mctx.fillStyle = h.type === 'steam' ? `rgba(180,180,220,${pulse * 0.5})` : `rgba(100,180,255,${pulse * 0.6})`;
             mctx.beginPath(); mctx.arc(hx, hy, h.radius * cellW * 0.5, 0, Math.PI * 2); mctx.fill();
+        } else if (h.warning) {
+            // Warning phase — amber pulsing ring on minimap
+            const wPulse = 0.4 + Math.sin(gameTime * 0.015) * 0.6;
+            mctx.strokeStyle = `rgba(255,200,60,${wPulse * 0.7})`;
+            mctx.lineWidth = 1;
+            mctx.beginPath(); mctx.arc(hx, hy, h.radius * cellW * 0.4, 0, Math.PI * 2); mctx.stroke();
         }
         // Static hazard marker (always visible on explored tiles)
         const ti = (h.x|0) + (h.y|0) * MAP_W;
