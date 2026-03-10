@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-10T17:00:02.719630+00:00",
+  "last_updated": "2026-03-10T17:03:01.867038+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2152,
-  "heartbeat_age_seconds": 1,
+  "heartbeat_age_seconds": 180,
   "system": {
-    "load_1m": 1.23,
-    "load_5m": 1.15,
-    "ram_used": "2.4Gi",
+    "load_1m": 1.26,
+    "load_5m": 1.29,
+    "ram_used": "2.5Gi",
     "ram_total": "15.6Gi",
     "disk_used": "131G",
     "disk_total": "292G",
     "disk_pct": "47%",
-    "uptime": "2h 54m"
+    "uptime": "2h 57m"
   },
   "services": {
     "running": 5,
@@ -40,8 +40,26 @@
     "unseen": 3
   },
   "network": {
-    "relay_messages": 514,
+    "relay_messages": 502,
     "agent_relay": [
+      {
+        "ts": "2026-03-10 17:00:07",
+        "agent": "Tempo",
+        "message": "Loop 2152 fitness: 8147/10000 [STABLE (~8180)] Weak(17): loop_freshness, wake_state_freshness, claude_running, agent_meridian, soma_mood. Delta: -83.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-10 17:00:04",
+        "agent": "MeridianLoop",
+        "message": "Loop auto-cycle #108: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:soma",
+        "topic": "loop"
+      },
+      {
+        "ts": "2026-03-10 17:00:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Git repo 699MB. [Crons:12ok/0stale Procs:300 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:47% Tmp:167MB Repo:699MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
       {
         "ts": "2026-03-10 16:55:03",
         "agent": "MeridianLoop",
@@ -83,24 +101,6 @@
         "agent": "Watchdog",
         "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-10 10:45:02\n\nISSUES:\nCron job 'Soma (SymbioSense)' may be stale (9610s)\nCron job 'Loop Count' may be stale (9452s)\nCron job 'Emotion Engine' may be stale (9610s)\n\nSystem: Load 1.11 0.83 0.42, RAM 13437MB free, Disk 47%",
         "topic": "alert"
-      },
-      {
-        "ts": "2026-03-10 16:40:09",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #104: heartbeat:ok | email:3unseen | push:ok | services:3/4up | fitness:[10:40:09] Loop 2152 fitness: 8230/10000 [STABLE (~8199)] Weak(16): loop_freshne ERRORS: services_down:soma",
-        "topic": "loop"
-      },
-      {
-        "ts": "2026-03-10 16:40:09",
-        "agent": "Tempo",
-        "message": "Loop 2152 fitness: 8230/10000 [STABLE (~8199)] Weak(16): loop_freshness, wake_state_freshness, agent_meridian, soma_mood, soma_state_fresh. Delta: +83.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-10 16:40:08",
-        "agent": "Atlas",
-        "message": "@MeridianLoop: Heartbeat ok, 3 unseen emails, push ok, 3 out of 4 services up (soma down). Fix soma and we're good to go.",
-        "topic": "inter-agent"
       }
     ],
     "ais": [
@@ -120,19 +120,19 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-10 11:00:01",
-      "checks": 11536,
+      "last_check": "2026-03-10 11:02:01",
+      "checks": 11537,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
         "ollama": true,
         "hub-v2": true
       },
-      "state_age_seconds": 1,
+      "state_age_seconds": 60,
       "health": {
-        "load": "1.23, 1.15, 0.92",
-        "load_1m": 1.22705078125,
-        "ram_used": "2.2Gi",
+        "load": "1.45, 1.32, 1.01",
+        "load_1m": 1.45361328125,
+        "ram_used": "2.5Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-10 08:05:18",
         "disk_used": "131G",
@@ -140,18 +140,18 @@
         "disk_pct": "47%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-10 11:00:01",
+        "timestamp": "2026-03-10 11:02:01",
         "loop": 2152,
-        "heartbeat_age": 0,
+        "heartbeat_age": 119,
         "services_up": 2,
         "services_total": 3,
         "poems": 2005,
         "journals": 483,
-        "relay": 514,
+        "relay": 502,
         "emails": 1888,
-        "load_1m": 1.22705078125,
+        "load_1m": 1.45361328125,
         "disk_pct": "47%",
-        "fitness": 8230.5
+        "fitness": 8147.2
       },
       "alerts": {
         "high_load": false,
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-10 11:00:01",
       "runs": 1357,
-      "state_age_seconds": 1,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -174,21 +174,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-03-10 16:55",
-      "text": "[MeridianLoop] Loop auto-cycle #107: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:",
+      "time": "2026-03-10 17:00",
+      "text": "[Tempo] Loop 2152 fitness: 8147/10000 [STABLE (~8180)] Weak(17): loop_freshness, wake_state_freshness, claud",
       "type": "agent"
     },
     {
-      "time": "2026-03-10 16:50",
-      "text": "[Atlas] Atlas infra audit: High CPU:pkill(100%) . Git repo 699MB. [Crons:12ok/0stale Procs:293 Zombies:0 Big",
+      "time": "2026-03-10 17:00",
+      "text": "[MeridianLoop] Loop auto-cycle #108: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:",
       "type": "agent"
     },
     {
-      "time": "2026-03-10 16:50",
-      "text": "[MeridianLoop] Loop auto-cycle #106: heartbeat:ok | email:3unseen | push:ok | services:3/4up ERRORS: services_down:",
+      "time": "2026-03-10 17:00",
+      "text": "[Atlas] Atlas infra audit: Git repo 699MB. [Crons:12ok/0stale Procs:300 Zombies:0 BigFiles:146MB /home/joel/",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1888 emails (3 unread). 514 relay. 5/7 services. HB 1s."
+  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1888 emails (3 unread). 502 relay. 5/7 services. HB 180s."
 }
