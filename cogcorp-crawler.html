@@ -3140,6 +3140,7 @@ function dismissDialog() {
     if (choiceCallback) return; // don't dismiss choice dialogs with click
     dialogOpen = false;
     document.getElementById('dialog-box').style.display = 'none';
+    playUIClick();
 }
 
 let choiceCallback = null;
@@ -6334,6 +6335,42 @@ function playInteractSound() {
     const src = audioCtx.createBufferSource(); src.buffer = buf2;
     const g = audioCtx.createGain(); g.gain.value = 0.1;
     src.connect(g); g.connect(audioNodes.master); src.start();
+}
+
+function playUIClick() {
+    if (!audioCtx) return;
+    // Soft UI click — dialog dismiss, menu interaction
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 1200;
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.06, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(now); osc.stop(now + 0.06);
+}
+
+function playSaveSound() {
+    if (!audioCtx) return;
+    // Two-tone confirm beep — checkpoint saved
+    const now = audioCtx.currentTime;
+    const osc1 = audioCtx.createOscillator(); osc1.type = 'sine'; osc1.frequency.value = 800;
+    const g1 = audioCtx.createGain(); g1.gain.setValueAtTime(0.08, now);
+    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    osc1.connect(g1); g1.connect(audioNodes.master); osc1.start(now); osc1.stop(now + 0.12);
+    const osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = 1100;
+    const g2 = audioCtx.createGain(); g2.gain.setValueAtTime(0.08, now + 0.08);
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    osc2.connect(g2); g2.connect(audioNodes.master); osc2.start(now + 0.08); osc2.stop(now + 0.2);
+}
+
+function playPauseSound(opening) {
+    if (!audioCtx) return;
+    // Soft tone — rising for open, falling for close
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); osc.type = 'sine';
+    osc.frequency.setValueAtTime(opening ? 400 : 600, now);
+    osc.frequency.linearRampToValueAtTime(opening ? 600 : 400, now + 0.08);
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.05, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    osc.connect(g); g.connect(audioNodes.master); osc.start(now); osc.stop(now + 0.12);
 }
 
 // Enemy proximity audio — subtle cues for nearby enemies
@@ -9703,6 +9740,7 @@ let audioMuted = false;
 function togglePause() {
     gamePaused = !gamePaused;
     const el = document.getElementById('pause-menu');
+    playPauseSound(gamePaused);
     if (gamePaused) {
         el.style.display = 'flex';
         // Update audio button text
@@ -9719,6 +9757,7 @@ function togglePause() {
 
 function pauseSaveGame() {
     saveCheckpoint();
+    playSaveSound();
     // Brief flash on the save button
     const btn = document.querySelectorAll('#pause-menu .pause-btn')[1];
     btn.style.color = '#ffd700';
