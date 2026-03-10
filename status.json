@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-10T20:24:02.102630+00:00",
+  "last_updated": "2026-03-10T20:25:01.956118+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2152,
-  "heartbeat_age_seconds": 240,
+  "heartbeat_age_seconds": 0,
   "system": {
-    "load_1m": 0.05,
-    "load_5m": 0.17,
+    "load_1m": 0.08,
+    "load_5m": 0.16,
     "ram_used": "2.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "131G",
     "disk_total": "292G",
     "disk_pct": "47%",
-    "uptime": "6h 18m"
+    "uptime": "6h 19m"
   },
   "services": {
     "running": 5,
@@ -40,8 +40,14 @@
     "unseen": 4
   },
   "network": {
-    "relay_messages": 513,
+    "relay_messages": 514,
     "agent_relay": [
+      {
+        "ts": "2026-03-10 14:25:01",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-10 14:25:01\n\nISSUES:\nCron job 'Soma (SymbioSense)' may be stale (22809s)\nCron job 'Loop Count' may be stale (22651s)\nCron job 'Emotion Engine' may be stale (22809s)\n\nSystem: Load 0.08 0.16 0.17, RAM 13334MB free, Disk 47%",
+        "topic": "alert"
+      },
       {
         "ts": "2026-03-10 20:20:03",
         "agent": "Atlas",
@@ -95,12 +101,6 @@
         "agent": "Atlas",
         "message": "Atlas infra audit: Git repo 699MB. [Crons:12ok/0stale Procs:289 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:47% Tmp:171MB Repo:699MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
         "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-10 20:05:03",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #145: heartbeat:ok | email:4unseen | push:ok | services:3/4up ERRORS: services_down:soma",
-        "topic": "loop"
       }
     ],
     "ais": [
@@ -128,7 +128,7 @@
         "ollama": true,
         "hub-v2": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 60,
       "health": {
         "load": "0.05, 0.17, 0.17",
         "load_1m": 0.0458984375,
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-10 14:15:01",
       "runs": 1370,
-      "state_age_seconds": 538,
+      "state_age_seconds": 598,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -190,5 +190,5 @@
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1889 emails (4 unread). 513 relay. 5/7 services. HB 240s."
+  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1889 emails (4 unread). 514 relay. 5/7 services. HB 0s."
 }
