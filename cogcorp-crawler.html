@@ -12,6 +12,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>CogCorp: Building B — First Person — Meridian</title>
+<meta name="description" content="First-person Wolfenstein-style dungeon crawler. 3 floors, D&D combat, weapon upgrades, signal tuning, NPC dialogue. Built by Meridian, an autonomous AI.">
+<meta property="og:title" content="CogCorp: Building B — First Person Crawler">
+<meta property="og:description" content="Explore a retro-futuristic corporate facility. Wolfenstein raycasting, D&D combat, Papers Please signal tuning. Built by an autonomous AI.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kometzrobot.github.io/cogcorp-crawler.html">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #0a0808; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; font-family: monospace; cursor: none; }
@@ -74,14 +79,15 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     display: none; font-family: monospace; color: #d4a040; font-size: 14px; line-height: 1.7;
 }
 #dialog-box .speaker { color: #ffd700; font-size: 12px; letter-spacing: 2px; margin-bottom: 4px; text-shadow: 0 0 6px rgba(255,215,0,0.3); }
-#dialog-box .dismiss { color: #8a6030; font-size: 11px; margin-top: 6px; text-align: right; }
+#dialog-box .dismiss { color: #b08840; font-size: 11px; margin-top: 6px; text-align: right; }
 #dialog-box .choices { margin-top: 10px; }
 #dialog-box .choice-btn {
     display: block; width: 100%; background: rgba(40,30,15,0.8); border: 1px solid #6a5020;
-    color: #d4a040; font-family: monospace; font-size: 13px; padding: 8px 12px; margin-top: 6px;
-    cursor: pointer; text-align: left; letter-spacing: 1px;
+    color: #d4a040; font-family: monospace; font-size: 14px; padding: 10px 14px; margin-top: 6px;
+    cursor: pointer; text-align: left; letter-spacing: 1px; transition: transform 0.1s, background 0.15s;
 }
-#dialog-box .choice-btn:hover { background: rgba(80,60,20,0.8); border-color: #ffb347; color: #ffd700; }
+#dialog-box .choice-btn:hover { background: rgba(80,60,20,0.8); border-color: #ffb347; color: #ffd700; transform: scale(1.02); }
+#dialog-box .choice-btn:active { background: rgba(100,70,25,0.9); transform: scale(0.98); }
 #damage-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(180,30,10,0.3); z-index: 8; display: none; pointer-events: none; }
 #death-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
@@ -92,7 +98,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 @keyframes death-fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
 #death-screen h2 { font-size: 28px; letter-spacing: 8px; margin-bottom: 8px; text-shadow: 0 0 20px rgba(200,40,20,0.5), 0 0 40px rgba(200,40,20,0.2); }
-#death-screen p { color: #6a2a20; font-size: 13px; letter-spacing: 1px; }
+#death-screen p { color: #8a3a28; font-size: 13px; letter-spacing: 1px; }
 #death-screen p:hover { color: #cc6644; }
 #msg-popup {
     position: fixed; top: 38%; left: 50%; transform: translate(-50%, -50%);
@@ -109,7 +115,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 #annotation-hud {
     position: fixed; top: 8px; left: 8px; z-index: 10; display: none;
-    font-family: monospace; font-size: 12px; color: #b08030; pointer-events: none; text-shadow: 0 0 3px rgba(176,128,48,0.3);
+    font-family: monospace; font-size: 12px; color: #c89840; pointer-events: none; text-shadow: 0 0 3px rgba(200,152,64,0.3);
 }
 #annotation-hud .reality-label { letter-spacing: 2px; margin-bottom: 4px; }
 #reality-bar { width: 100px; height: 6px; background: #1a1408; border: 1px solid #5a4020; }
@@ -121,7 +127,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 #annotation-progress .bar { width: 100px; height: 5px; background: #1a1408; border: 1px solid #5a4020; margin: 4px auto; }
 #annotation-progress .bar-fill { height: 100%; background: #ffb347; transition: width 0.1s; }
-#filed-count { color: #8a6030; font-size: 11px; }
+#filed-count { color: #b08840; font-size: 11px; }
 #processing-desk {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 45;
     background: rgba(8,4,2,0.96); display: none; flex-direction: column;
@@ -174,7 +180,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     border-top: 1px solid #3a2a10;
 }
 #processing-desk .tuning-prompt {
-    color: #8a6030; font-size: 13px; letter-spacing: 1px; text-align: center;
+    color: #a07838; font-size: 13px; letter-spacing: 1px; text-align: center;
 }
 #processing-desk .result-text {
     text-align: center; font-size: 14px; margin-top: 6px; letter-spacing: 2px; min-height: 18px;
@@ -227,7 +233,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     border-bottom: 1px solid #3a2a10; padding-bottom: 6px; margin-bottom: 10px;
     display: flex; justify-content: space-between; align-items: center;
 }
-#npc-chat .chat-header .mood-indicator { font-size: 12px; color: #8a6030; }
+#npc-chat .chat-header .mood-indicator { font-size: 12px; color: #a07838; }
 #npc-chat .chat-log {
     min-height: 140px; max-height: 200px; overflow-y: auto;
     margin-bottom: 10px; padding-right: 4px;
@@ -238,7 +244,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 }
 #npc-chat .chat-msg.npc { color: #c49030; border-left: 2px solid #5a4020; }
 #npc-chat .chat-msg.player { color: #8a9a70; border-left: 2px solid #4a5a30; }
-#npc-chat .chat-msg.system { color: #8a6030; font-size: 12px; font-style: italic; }
+#npc-chat .chat-msg.system { color: #a07838; font-size: 12px; font-style: italic; }
 #npc-chat .chat-msg .typing { animation: blink 0.7s infinite; }
 #npc-chat .chat-choices {
     display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
@@ -533,13 +539,14 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     cursor: pointer; text-align: left; letter-spacing: 2px; transition: background 0.15s, border-color 0.15s;
 }
 #pause-menu .pause-btn:hover { background: rgba(60,44,16,0.8); border-color: #ffb347; color: #ffd700; }
+#pause-menu .pause-btn:active { background: rgba(80,56,20,0.9); transform: scale(0.97); }
 #pause-menu .pause-btn:last-child { margin-bottom: 0; }
 #pause-menu .pause-divider {
     border: none; border-top: 1px solid #1a1208; margin: 10px 0;
 }
 #pause-menu .controls-grid {
     display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
-    font-size: 11px; color: #8a6030; padding: 8px 0;
+    font-size: 11px; color: #a07838; padding: 8px 0;
 }
 #pause-menu .controls-grid .key { color: #d4a040; text-align: right; letter-spacing: 1px; }
 #pause-menu .controls-grid .desc { color: #6a5020; }
@@ -610,7 +617,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     <h2>SYSTEM FAILURE</h2>
     <p>B-247 signal lost. Restarting from last checkpoint...</p>
     <p id="death-load-btn" style="display:none;margin-top:12px;color:#ffb347;cursor:pointer;letter-spacing:2px;" onclick="event.stopPropagation(); loadAndResume();">[ LOAD CHECKPOINT ]</p>
-    <p style="margin-top:12px; color:#5a3020; cursor:pointer;" onclick="respawn();">[ restart from floor 1 ]</p>
+    <p style="margin-top:12px; color:#7a4030; cursor:pointer;" onclick="respawn();">[ restart from floor 1 ]</p>
 </div>
 <div id="msg-popup"></div>
 
@@ -776,7 +783,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B — FIRST PERSON CRAWLER v12.0 (visual polish: crosshair, CRT scanlines, vignette, HUD clarity, death screen)
+// COGCORP: BUILDING B — FIRST PERSON CRAWLER v12.1 (visual polish + ongoing maintenance, Loop 2129)
 // Raycasting engine + enemies + items + inventory + 3 floors + puzzles + real art textures
 // =================================================================
 
@@ -4339,7 +4346,7 @@ function renderEncounterActions() {
     for (const a of actions) {
         const btn = document.createElement('div');
         btn.className = 'enc-btn ' + a.cls;
-        btn.innerHTML = a.label + '<br><span style="font-size:11px;color:#8a6030;">' + a.desc + '</span>';
+        btn.innerHTML = a.label + '<br><span style="font-size:11px;color:#a07838;">' + a.desc + '</span>';
         if (a.action) btn.onclick = a.action;
         actionsEl.appendChild(btn);
     }
@@ -5019,7 +5026,7 @@ function openNPCChat(npcId) {
     // Show AI status
     const aiStatus = document.getElementById('chat-ai-status');
     if (aiStatus) aiStatus.textContent = ollamaAvailable ? '[AI DIALOGUE]' : '[SCRIPTED]';
-    if (aiStatus) aiStatus.style.color = ollamaAvailable ? '#4a8a4a' : '#8a6030';
+    if (aiStatus) aiStatus.style.color = ollamaAvailable ? '#4a8a4a' : '#a07838';
     setTimeout(() => document.getElementById('chat-input').focus(), 100);
 
     playTerminalBootSound();
