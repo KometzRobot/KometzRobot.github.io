@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-12T18:55:01.938575+00:00",
+  "last_updated": "2026-03-12T18:57:02.632319+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2152,
-  "heartbeat_age_seconds": 0,
+  "heartbeat_age_seconds": 121,
   "system": {
-    "load_1m": 0.03,
-    "load_5m": 1.81,
-    "ram_used": "2.2Gi",
+    "load_1m": 0.47,
+    "load_5m": 1.43,
+    "ram_used": "2.5Gi",
     "ram_total": "15.6Gi",
     "disk_used": "184G",
     "disk_total": "292G",
     "disk_pct": "67%",
-    "uptime": "1h 20m"
+    "uptime": "1h 22m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,20 @@
     "unseen": 13
   },
   "network": {
-    "relay_messages": 511,
+    "relay_messages": 513,
     "agent_relay": [
+      {
+        "ts": "2026-03-12 18:55:34",
+        "agent": "MeridianLoop",
+        "message": "Loop auto-cycle #206: heartbeat:ok | email:13unseen | joel:2new | push:ok | services:4/4up | fitness:[12:55:34] Loop 2152 fitness: 7956/10000 [STABLE (~7815)] Weak(15): email_unread",
+        "topic": "loop"
+      },
+      {
+        "ts": "2026-03-12 18:55:34",
+        "agent": "Tempo",
+        "message": "Loop 2152 fitness: 7956/10000 [STABLE (~7815)] Weak(15): email_unread_backlog, wake_state_freshness, agent_meridian, soma_mood, services_systemd. Delta: +191.",
+        "topic": "fitness"
+      },
       {
         "ts": "2026-03-12 18:55:01",
         "agent": "MeridianLoop",
@@ -89,18 +101,6 @@
         "agent": "Eos-Watchdog",
         "message": "Restarted hub-v2 via systemd",
         "topic": "restart"
-      },
-      {
-        "ts": "2026-03-12 18:48:06",
-        "agent": "Eos-Watchdog",
-        "message": "Restarted protonmail-bridge (attempt 1/3)",
-        "topic": "restart"
-      },
-      {
-        "ts": "2026-03-12 18:46:40",
-        "agent": "Soma",
-        "message": "LOAD SPIKE: 7.7 -> 11.8",
-        "topic": "nerve-event"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-12 12:54:01",
-      "checks": 11782,
+      "last_check": "2026-03-12 12:56:01",
+      "checks": 11783,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -130,9 +130,9 @@
       },
       "state_age_seconds": 60,
       "health": {
-        "load": "0.08, 2.22, 2.40",
-        "load_1m": 0.08349609375,
-        "ram_used": "2.2Gi",
+        "load": "0.48, 1.64, 2.16",
+        "load_1m": 0.4775390625,
+        "ram_used": "2.0Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-12 11:34:51",
         "disk_used": "184G",
@@ -140,18 +140,18 @@
         "disk_pct": "67%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-12 12:54:01",
+        "timestamp": "2026-03-12 12:56:01",
         "loop": 2152,
-        "heartbeat_age": 240,
+        "heartbeat_age": 60,
         "services_up": 3,
         "services_total": 3,
         "poems": 2005,
         "journals": 483,
-        "relay": 510,
+        "relay": 513,
         "emails": 1898,
-        "load_1m": 0.08349609375,
+        "load_1m": 0.4775390625,
         "disk_pct": "67%",
-        "fitness": 7764.3
+        "fitness": 7955.5
       },
       "alerts": {
         "high_load": false,
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-12 12:45:09",
       "runs": 1389,
-      "state_age_seconds": 590,
+      "state_age_seconds": 710,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -175,20 +175,20 @@
   "recent_activity": [
     {
       "time": "2026-03-12 18:55",
+      "text": "[MeridianLoop] Loop auto-cycle #206: heartbeat:ok | email:13unseen | joel:2new | push:ok | services:4/4up | fitness",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-12 18:55",
+      "text": "[Tempo] Loop 2152 fitness: 7956/10000 [STABLE (~7815)] Weak(15): email_unread_backlog, wake_state_freshness,",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-12 18:55",
       "text": "[MeridianLoop] Joel has 2 new email(s). Total unseen: 13.",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-12 18:50",
-      "text": "[Atlas] @MeridianLoop: Heartbeat:ok, 13 new emails, 2 new from Joel, push:ok, 4 services up. Cycle #205 comp",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-12 18:50",
-      "text": "[Atlas] Atlas infra audit: Stale crons: eos-briefing(193794s) daily-log(222600s). Git repo 700MB. [Crons:10o",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1898 emails (13 unread). 511 relay. 6/7 services. HB 0s."
+  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1898 emails (13 unread). 513 relay. 6/7 services. HB 121s."
 }
