@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-12T19:10:02.293352+00:00",
+  "last_updated": "2026-03-12T19:12:03.074047+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2152,
-  "heartbeat_age_seconds": 0,
+  "heartbeat_age_seconds": 121,
   "system": {
-    "load_1m": 0.64,
-    "load_5m": 2.06,
-    "ram_used": "2.5Gi",
+    "load_1m": 2.14,
+    "load_5m": 2.18,
+    "ram_used": "2.6Gi",
     "ram_total": "15.6Gi",
     "disk_used": "184G",
     "disk_total": "292G",
     "disk_pct": "67%",
-    "uptime": "1h 35m"
+    "uptime": "1h 37m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,20 @@
     "unseen": 13
   },
   "network": {
-    "relay_messages": 532,
+    "relay_messages": 534,
     "agent_relay": [
+      {
+        "ts": "2026-03-12 19:10:19",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: eos-briefing(194994s) daily-log(223800s). Git repo 700MB. [Crons:10ok/2stale Procs:285 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-tools.zip; Disk:67% Tmp:167MB Repo:700MB POL:0 Linktree:OK GitHub:OK Ko-fi:OK]",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-03-12 19:10:03",
+        "agent": "MeridianLoop",
+        "message": "Loop auto-cycle #209: heartbeat:ok | email:13unseen | joel:2new | push:ok | services:4/4up",
+        "topic": "loop"
+      },
       {
         "ts": "2026-03-12 19:10:01",
         "agent": "MeridianLoop",
@@ -89,18 +101,6 @@
         "agent": "Soma",
         "message": "LOAD SPIKE: 1.0 -> 3.6 | MOOD SHIFT: alert -> focused (score: 42.3) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
         "topic": "nerve-event"
-      },
-      {
-        "ts": "2026-03-12 13:05:09",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-12 13:05:07\n\nISSUES:\nCron job 'Loop Count' may be stale (968s)\n\nSystem: Load 2.60 1.33 1.68, RAM 12805MB free, Disk 67%",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-12 19:04:01",
-        "agent": "Eos-Watchdog",
-        "message": "Eos: STALE STATE FILES: .loop-count (901s old, max 900s)",
-        "topic": "restart"
       }
     ],
     "ais": [
@@ -120,19 +120,19 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-12 13:08:01",
-      "checks": 11789,
+      "last_check": "2026-03-12 13:12:02",
+      "checks": 11791,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
         "ollama": true,
         "hub-v2": true
       },
-      "state_age_seconds": 120,
+      "state_age_seconds": 0,
       "health": {
-        "load": "2.76, 2.86, 2.28",
-        "load_1m": 2.7578125,
-        "ram_used": "1.7Gi",
+        "load": "2.14, 2.18, 2.10",
+        "load_1m": 2.14208984375,
+        "ram_used": "2.6Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-12 11:34:51",
         "disk_used": "184G",
@@ -140,16 +140,16 @@
         "disk_pct": "67%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-12 13:08:01",
+        "timestamp": "2026-03-12 13:12:02",
         "loop": 2152,
-        "heartbeat_age": 77,
+        "heartbeat_age": 120,
         "services_up": 3,
         "services_total": 3,
         "poems": 2005,
         "journals": 483,
-        "relay": 531,
+        "relay": 534,
         "emails": 1898,
-        "load_1m": 2.7578125,
+        "load_1m": 2.14208984375,
         "disk_pct": "67%",
         "fitness": 7864.7
       },
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-12 13:00:01",
       "runs": 1390,
-      "state_age_seconds": 593,
+      "state_age_seconds": 713,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -175,20 +175,20 @@
   "recent_activity": [
     {
       "time": "2026-03-12 19:10",
+      "text": "[Atlas] Atlas infra audit: Stale crons: eos-briefing(194994s) daily-log(223800s). Git repo 700MB. [Crons:10o",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-12 19:10",
+      "text": "[MeridianLoop] Loop auto-cycle #209: heartbeat:ok | email:13unseen | joel:2new | push:ok | services:4/4up",
+      "type": "agent"
+    },
+    {
+      "time": "2026-03-12 19:10",
       "text": "[MeridianLoop] Joel has 2 new email(s). Total unseen: 13.",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-12 19:06",
-      "text": "[Soma] LOAD SPIKE: 5.7 -> 8.6",
-      "type": "agent"
-    },
-    {
-      "time": "2026-03-12 19:06",
-      "text": "[MeridianLoop] Loop auto-cycle #208: heartbeat:ok | email:13unseen | joel:2new | push:ok | services:4/4up",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1898 emails (13 unread). 532 relay. 6/7 services. HB 0s."
+  "currently_building": "Loop 2152. 2008 poems, 484 journals, 524 NFTs. 1898 emails (13 unread). 534 relay. 6/7 services. HB 121s."
 }
