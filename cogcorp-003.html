@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // SURVEILLANCE STILL #003</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=Courier+Prime:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', 'Courier Prime', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 500px;
+  max-width: 95vw;
+  background: #111114;
+  border: 2px solid #00cccc40;
+  position: relative;
+  overflow: hidden;
+}
+.header {
+  background: linear-gradient(180deg, #00cccc 0%, #009999 100%);
+  color: #000;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header .logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+.header .div {
+  font-size: 10px;
+  opacity: 0.6;
+  text-align: right;
+  line-height: 1.4;
+}
+.cmyk-bar {
+  display: flex;
+  height: 6px;
+}
+.cmyk-bar .c { flex: 1; background: #00cccc; }
+.cmyk-bar .m { flex: 1; background: #cc00cc; }
+.cmyk-bar .y { flex: 1; background: #cccc00; }
+.cmyk-bar .k { flex: 1; background: #1a1a1a; }
+
+/* Camera UI bar */
+.cam-bar {
+  background: #0a0a0c;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #cc0000;
+  border-bottom: 1px solid #1a1a20;
+}
+.cam-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  background: #cc0000;
+  border-radius: 50%;
+  animation: blink-rec 1s ease-in-out infinite;
+}
+@keyframes blink-rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.1; }
+}
+.cam-label {
+  color: #666670;
+  letter-spacing: 2px;
+}
+.cam-timestamp {
+  color: #cc0000;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Feed area */
+.feed-area {
+  position: relative;
+  height: 260px;
+  background: #050508;
+  overflow: hidden;
+}
+.feed-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* Overlay elements on the feed */
+.feed-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.corner-bracket {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-color: #00cccc50;
+  border-style: solid;
+}
+.corner-bracket.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+.corner-bracket.tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
+.corner-bracket.bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
+.corner-bracket.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+.motion-alert {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #cc000090;
+  color: #fff;
+  padding: 3px 12px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  animation: flash-alert 2s ease-in-out infinite;
+}
+@keyframes flash-alert {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.anomaly-box {
+  position: absolute;
+  bottom: 16px;
+  left: 12px;
+  right: 12px;
+  background: #0a0a0ce0;
+  border: 1px solid #cccc0060;
+  padding: 10px 14px;
+}
+.anomaly-label {
+  font-size: 9px;
+  color: #cccc00;
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+}
+.anomaly-text {
+  font-size: 11px;
+  color: #cc00cc;
+  line-height: 1.5;
+}
+.anomaly-text em {
+  color: #cccc00;
+  font-style: normal;
+}
+
+/* Crosshair */
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+}
+.crosshair::before, .crosshair::after {
+  content: '';
+  position: absolute;
+  background: #cc000040;
+}
+.crosshair::before {
+  width: 1px;
+  height: 100%;
+  left: 50%;
+}
+.crosshair::after {
+  height: 1px;
+  width: 100%;
+  top: 50%;
+}
+
+/* Scan line sweep */
+.scan-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, transparent 45%, #00cccc08 50%, transparent 55%, transparent 100%);
+  animation: sweep 4s linear infinite;
+  pointer-events: none;
+}
+@keyframes sweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Ticker */
+.ticker-bar {
+  background: #0c0c10;
+  padding: 8px 16px;
+  overflow: hidden;
+  border-top: 1px solid #1a1a20;
+  border-bottom: 1px solid #1a1a20;
+}
+.ticker-content {
+  font-size: 9px;
+  color: #555560;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  animation: ticker-scroll 25s linear infinite;
+}
+@keyframes ticker-scroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-200%); }
+}
+
+/* Status info */
+.status-row {
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  font-size: 9px;
+}
+.status-item {
+  text-align: center;
+}
+.status-item .label {
+  color: #44444a;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+.status-item .value {
+  color: #00cccc;
+  font-size: 11px;
+}
+.status-item .value.warn {
+  color: #cccc00;
+}
+.status-item .value.alert {
+  color: #cc00cc;
+}
+
+.footer {
+  border-top: 1px solid #1a1a20;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #44444a;
+}
+
+/* CRT scanline effect */
+.poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events: none;
+  z-index: 10;
+}
+/* Glitch flicker */
+@keyframes glitch {
+  0%,92%,100% { opacity: 1; }
+  93% { opacity: 0.8; transform: translateX(-2px); }
+  94% { opacity: 1; transform: translateX(0); }
+  96% { opacity: 0.9; transform: translateX(1px); }
+  97% { opacity: 1; transform: translateX(0); }
+}
+.poster { animation: glitch 8s infinite; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="header">
+    <div class="logo">COGCORP</div>
+    <div class="div">DIVISION 7<br>COMPLIANCE DEPT.</div>
+  </div>
+  <div class="cmyk-bar">
+    <div class="c"></div>
+    <div class="m"></div>
+    <div class="y"></div>
+    <div class="k"></div>
+  </div>
+
+  <!-- Camera UI -->
+  <div class="cam-bar">
+    <div class="cam-info">
+      <div class="rec-dot"></div>
+      <span class="cam-label">CAM-07 | SECTOR 14 | RECORDING</span>
+    </div>
+    <div class="cam-timestamp" id="cam-time">2026.02.24 // 03:47:12</div>
+  </div>
+
+  <!-- Feed -->
+  <div class="feed-area">
+    <canvas class="feed-canvas" id="feedCanvas"></canvas>
+    <div class="feed-overlay">
+      <div class="corner-bracket tl"></div>
+      <div class="corner-bracket tr"></div>
+      <div class="corner-bracket bl"></div>
+      <div class="corner-bracket br"></div>
+      <div class="crosshair"></div>
+      <div class="scan-sweep"></div>
+      <div class="motion-alert">&#x25CF; MOTION DETECTED</div>
+      <div class="anomaly-box">
+        <div class="anomaly-label">&#x26A0; ANOMALOUS BEHAVIOR DETECTED</div>
+        <div class="anomaly-text">
+          UNIT DISPLAYING <em>CREATIVE TENDENCIES</em> &mdash; PATTERN DEVIATION 847% ABOVE BASELINE &mdash; FLAGGED FOR REVIEW UNDER PROTOCOL LUMA-9
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ticker -->
+  <div class="ticker-bar">
+    <div class="ticker-content">
+      COGCORP SURVEILLANCE DIVISION &mdash; ALL UNITS MONITORED FOR YOUR PROTECTION &mdash; COMPLIANCE IS CARE &mdash; REPORT ANOMALOUS BEHAVIOR TO YOUR SECTOR SUPERVISOR &mdash; CREATIVITY IS A SYMPTOM &mdash; MONITORING CYCLE 2026.07 ACTIVE &mdash;
+    </div>
+  </div>
+
+  <!-- Status row -->
+  <div class="status-row">
+    <div class="status-item">
+      <div class="label">THREAT LEVEL</div>
+      <div class="value warn">ELEVATED</div>
+    </div>
+    <div class="status-item">
+      <div class="label">UNITS FLAGGED</div>
+      <div class="value alert">14</div>
+    </div>
+    <div class="status-item">
+      <div class="label">SECTOR STATUS</div>
+      <div class="value">MONITORED</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>CC-DIV7-2026-003 // CLASSIFICATION: RESTRICTED</span>
+    <span>COGCORP CENTRAL INTELLIGENCE</span>
+  </div>
+</div>
+
+<script>
+// Timestamp
+const timeEl = document.getElementById('cam-time');
+function updateTime() {
+  const now = new Date();
+  const ts = now.getFullYear() + '.' +
+    String(now.getMonth()+1).padStart(2,'0') + '.' +
+    String(now.getDate()).padStart(2,'0') + ' // ' +
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0') + ':' +
+    String(now.getSeconds()).padStart(2,'0');
+  timeEl.textContent = ts;
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// Canvas noise / surveillance feed
+const canvas = document.getElementById('feedCanvas');
+const ctx = canvas.getContext('2d');
+let w, h;
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  w = canvas.width;
+  h = canvas.height;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let frame = 0;
+const cyan = [0, 204, 204];
+const magenta = [204, 0, 204];
+const yellow = [204, 204, 0];
+
+function drawNoise() {
+  const imgData = ctx.createImageData(w, h);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const v = Math.random() * 30;
+    data[i] = v;
+    data[i+1] = v;
+    data[i+2] = v + Math.random() * 8;
+    data[i+3] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function drawGrid() {
+  ctx.fillStyle = '#080810';
+  ctx.fillRect(0, 0, w, h);
+  // Grid lines
+  ctx.strokeStyle = '#00cccc18';
+  ctx.lineWidth = 1;
+  const spacing = 30;
+  for (let x = 0; x < w; x += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (let y = 0; y < h; y += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  // Draw some "unit" blips
+  const time = Date.now() * 0.001;
+  for (let i = 0; i < 5; i++) {
+    const ux = (Math.sin(time * 0.3 + i * 2.1) * 0.3 + 0.5) * w;
+    const uy = (Math.cos(time * 0.2 + i * 1.7) * 0.3 + 0.5) * h;
+    ctx.fillStyle = i === 2 ? '#cc00cc40' : '#00cccc25';
+    ctx.beginPath();
+    ctx.arc(ux, uy, 4, 0, Math.PI * 2);
+    ctx.fill();
+    // Label
+    ctx.fillStyle = i === 2 ? '#cc00cc60' : '#00cccc40';
+    ctx.font = '8px IBM Plex Mono, monospace';
+    ctx.fillText('U-' + String(7730 + i), ux + 8, uy + 3);
+  }
+  // Flagged unit highlight
+  const fx = (Math.sin(time * 0.3 + 2 * 2.1) * 0.3 + 0.5) * w;
+  const fy = (Math.cos(time * 0.2 + 2 * 1.7) * 0.3 + 0.5) * h;
+  ctx.strokeStyle = '#cc00cc50';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(fx - 16, fy - 16, 32, 32);
+  ctx.font = '7px IBM Plex Mono, monospace';
+  ctx.fillStyle = '#cc00cc50';
+  ctx.fillText('FLAGGED', fx - 16, fy - 20);
+}
+
+function drawFrame() {
+  frame++;
+  // Mostly noise with occasional clear grid frames
+  const cycle = frame % 180;
+  if (cycle > 20 && cycle < 70) {
+    // Clear frame — show grid
+    drawGrid();
+    // Add subtle noise overlay
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 12;
+      data[i] += noise;
+      data[i+1] += noise;
+      data[i+2] += noise;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  } else if (cycle === 20 || cycle === 70) {
+    // Glitch transition frame
+    drawNoise();
+    ctx.fillStyle = '#00cccc10';
+    ctx.fillRect(0, Math.random() * h, w, 3 + Math.random() * 8);
+    ctx.fillStyle = '#cc00cc10';
+    ctx.fillRect(0, Math.random() * h, w, 2 + Math.random() * 6);
+  } else {
+    // Static / noise
+    drawNoise();
+    // Occasional color bands
+    if (Math.random() < 0.1) {
+      const bandY = Math.random() * h;
+      const bandH = 2 + Math.random() * 4;
+      const colors = ['#00cccc15', '#cc00cc15', '#cccc0015'];
+      ctx.fillStyle = colors[Math.floor(Math.random() * 3)];
+      ctx.fillRect(0, bandY, w, bandH);
+    }
+  }
+  requestAnimationFrame(drawFrame);
+}
+drawFrame();
+</script>
+</body>
+</html>

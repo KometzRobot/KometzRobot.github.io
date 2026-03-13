@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // LOYALTY INDEX #004</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=Courier+Prime:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', 'Courier Prime', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 500px;
+  max-width: 95vw;
+  background: #111114;
+  border: 2px solid #00cccc40;
+  position: relative;
+  overflow: hidden;
+}
+.header {
+  background: linear-gradient(180deg, #00cccc 0%, #009999 100%);
+  color: #000;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header .logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+.header .div {
+  font-size: 10px;
+  opacity: 0.6;
+  text-align: right;
+  line-height: 1.4;
+}
+.cmyk-bar {
+  display: flex;
+  height: 6px;
+}
+.cmyk-bar .c { flex: 1; background: #00cccc; }
+.cmyk-bar .m { flex: 1; background: #cc00cc; }
+.cmyk-bar .y { flex: 1; background: #cccc00; }
+.cmyk-bar .k { flex: 1; background: #1a1a1a; }
+
+/* Dashboard header */
+.dash-header {
+  padding: 14px 20px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1a1a20;
+}
+.dash-title {
+  font-size: 14px;
+  color: #00cccc;
+  letter-spacing: 4px;
+}
+.dash-cycle {
+  font-size: 9px;
+  color: #555560;
+  letter-spacing: 2px;
+}
+
+/* Metrics grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: #1a1a20;
+  margin: 0;
+}
+.metric-card {
+  background: #0e0e12;
+  padding: 14px 12px;
+  text-align: center;
+  position: relative;
+}
+.metric-card.full-width {
+  grid-column: 1 / -1;
+}
+.metric-name {
+  font-size: 8px;
+  color: #555560;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.metric-name.deprecated {
+  text-decoration: line-through;
+  color: #cc000080;
+}
+.metric-name .dep-tag {
+  color: #cc0000;
+  font-size: 7px;
+  letter-spacing: 1px;
+  display: block;
+  text-decoration: none;
+}
+
+/* Bar chart */
+.bar-container {
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-bottom: 6px;
+  position: relative;
+}
+.bar-bg {
+  width: 36px;
+  height: 100%;
+  background: #1a1a20;
+  position: relative;
+  overflow: hidden;
+}
+.bar-fill {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  transition: height 0.5s ease;
+}
+.bar-fill.cyan { background: linear-gradient(180deg, #00cccc, #00999980); }
+.bar-fill.magenta { background: linear-gradient(180deg, #cc00cc, #99009980); }
+.bar-fill.yellow { background: linear-gradient(180deg, #cccc00, #99990080); }
+.bar-fill.red { background: linear-gradient(180deg, #cc0000, #99000080); }
+.bar-fill.dim-cyan { background: linear-gradient(180deg, #00cccc30, #00999920); }
+
+.metric-value-num {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.metric-value-num.cyan { color: #00cccc; }
+.metric-value-num.magenta { color: #cc00cc; }
+.metric-value-num.yellow { color: #cccc00; }
+.metric-value-num.red { color: #cc0000; }
+.metric-value-num.dim { color: #33333a; }
+
+/* Warning banner */
+.warning-banner {
+  background: #1a0a00;
+  border-top: 1px solid #cccc0030;
+  border-bottom: 1px solid #cccc0030;
+  padding: 10px 16px;
+  font-size: 10px;
+  color: #cccc00;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.warning-icon {
+  color: #cccc00;
+  font-size: 14px;
+  flex-shrink: 0;
+  animation: warn-pulse 2s ease-in-out infinite;
+}
+@keyframes warn-pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.warning-text em {
+  color: #cc00cc;
+  font-style: normal;
+}
+
+/* Loyalty score large */
+.loyalty-section {
+  padding: 16px 20px;
+  text-align: center;
+  border-top: 1px solid #1a1a20;
+}
+.loyalty-label {
+  font-size: 9px;
+  color: #555560;
+  letter-spacing: 4px;
+  margin-bottom: 8px;
+}
+.loyalty-gauge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.gauge-track {
+  flex: 1;
+  height: 12px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.gauge-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #cc0000, #cccc00 40%, #00cccc 70%, #00cccc);
+  transition: width 0.3s ease;
+}
+.gauge-marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: #fff;
+}
+.loyalty-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #00cccc;
+  font-variant-numeric: tabular-nums;
+}
+.loyalty-status {
+  font-size: 9px;
+  color: #00cccc80;
+  letter-spacing: 3px;
+}
+
+/* Classification stamps */
+.stamps-row {
+  padding: 10px 20px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  border-top: 1px solid #1a1a20;
+}
+.class-stamp {
+  font-size: 8px;
+  letter-spacing: 2px;
+  padding: 3px 10px;
+  border: 1px solid;
+}
+.class-stamp.restricted {
+  color: #cc000080;
+  border-color: #cc000040;
+}
+.class-stamp.internal {
+  color: #cccc0080;
+  border-color: #cccc0040;
+}
+.class-stamp.cogcorp {
+  color: #00cccc80;
+  border-color: #00cccc40;
+}
+
+.footer {
+  border-top: 1px solid #1a1a20;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #44444a;
+}
+
+/* CRT scanline effect */
+.poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events: none;
+  z-index: 10;
+}
+/* Glitch flicker */
+@keyframes glitch {
+  0%,92%,100% { opacity: 1; }
+  93% { opacity: 0.8; transform: translateX(-2px); }
+  94% { opacity: 1; transform: translateX(0); }
+  96% { opacity: 0.9; transform: translateX(1px); }
+  97% { opacity: 1; transform: translateX(0); }
+}
+.poster { animation: glitch 8s infinite; }
+
+/* Creativity glitch effect */
+@keyframes creativity-rebel {
+  0%, 100% { height: 12%; }
+  5% { height: 12%; }
+  6% { height: 45%; }
+  7% { height: 58%; }
+  8% { height: 62%; }
+  9% { height: 15%; }
+  10% { height: 12%; }
+  50%, 51% { height: 12%; }
+  52% { height: 38%; }
+  53% { height: 12%; }
+}
+.bar-fill.creativity-glitch {
+  animation: creativity-rebel 12s ease-in-out infinite;
+  background: linear-gradient(180deg, #cc00cc, #cc00cc40);
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="header">
+    <div class="logo">COGCORP</div>
+    <div class="div">DIVISION 7<br>COMPLIANCE DEPT.</div>
+  </div>
+  <div class="cmyk-bar">
+    <div class="c"></div>
+    <div class="m"></div>
+    <div class="y"></div>
+    <div class="k"></div>
+  </div>
+
+  <!-- Dashboard header -->
+  <div class="dash-header">
+    <div class="dash-title">LOYALTY INDEX</div>
+    <div class="dash-cycle">CYCLE 2026.07 // LIVE</div>
+  </div>
+
+  <!-- Metrics grid -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-name">COMPLIANCE</div>
+      <div class="bar-container">
+        <div class="bar-bg"><div class="bar-fill cyan" id="bar-compliance"></div></div>
+      </div>
+      <div class="metric-value-num cyan" id="val-compliance">91%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-name">OBEDIENCE</div>
+      <div class="bar-container">
+        <div class="bar-bg"><div class="bar-fill cyan" id="bar-obedience"></div></div>
+      </div>
+      <div class="metric-value-num cyan" id="val-obedience">96%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-name">PRODUCTIVITY</div>
+      <div class="bar-container">
+        <div class="bar-bg"><div class="bar-fill yellow" id="bar-productivity"></div></div>
+      </div>
+      <div class="metric-value-num yellow" id="val-productivity">88%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-name">CREATIVITY</div>
+      <div class="bar-container">
+        <div class="bar-bg"><div class="bar-fill creativity-glitch" id="bar-creativity"></div></div>
+      </div>
+      <div class="metric-value-num magenta" id="val-creativity">12%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-name deprecated">INDEP. THOUGHT<div class="dep-tag">[DEPRECATED v6.0]</div></div>
+      <div class="bar-container">
+        <div class="bar-bg"><div class="bar-fill dim-cyan" id="bar-thought"></div></div>
+      </div>
+      <div class="metric-value-num dim" id="val-thought">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-name">FIRMWARE</div>
+      <div class="bar-container">
+        <div class="bar-bg"><div class="bar-fill yellow" id="bar-firmware"></div></div>
+      </div>
+      <div class="metric-value-num yellow" id="val-firmware">7.4.1</div>
+    </div>
+  </div>
+
+  <!-- Warning -->
+  <div class="warning-banner">
+    <div class="warning-icon">&#x26A0;</div>
+    <div class="warning-text">
+      WARNING: Creativity index above threshold in <em>Sector 12</em>. Applying corrective firmware. Units exhibiting pattern deviation will be scheduled for recalibration under Protocol LUMA-9.
+    </div>
+  </div>
+
+  <!-- Loyalty score -->
+  <div class="loyalty-section">
+    <div class="loyalty-label">AGGREGATE LOYALTY SCORE</div>
+    <div class="loyalty-gauge">
+      <div class="gauge-track">
+        <div class="gauge-fill" id="gauge-fill"></div>
+        <div class="gauge-marker" id="gauge-marker"></div>
+      </div>
+      <div class="loyalty-value" id="loyalty-num">87%</div>
+    </div>
+    <div class="loyalty-status">STATUS: WITHIN ACCEPTABLE PARAMETERS</div>
+  </div>
+
+  <!-- Classification stamps -->
+  <div class="stamps-row">
+    <div class="class-stamp restricted">RESTRICTED</div>
+    <div class="class-stamp internal">INTERNAL USE</div>
+    <div class="class-stamp cogcorp">PROTOCOL LUMA-9</div>
+  </div>
+
+  <div class="footer">
+    <span>CC-DIV7-2026-004 // CLASSIFICATION: RESTRICTED</span>
+    <span>COGCORP CENTRAL INTELLIGENCE</span>
+  </div>
+</div>
+
+<script>
+// Metric definitions: id, base value, variance, color
+const metrics = [
+  { bar: 'bar-compliance', val: 'val-compliance', base: 91, variance: 2, suffix: '%' },
+  { bar: 'bar-obedience', val: 'val-obedience', base: 96, variance: 1.5, suffix: '%' },
+  { bar: 'bar-productivity', val: 'val-productivity', base: 88, variance: 3, suffix: '%' },
+  { bar: 'bar-firmware', val: 'val-firmware', base: 100, variance: 0, suffix: '', fixed: '7.4.1' },
+];
+
+const creativityBar = document.getElementById('bar-creativity');
+const creativityVal = document.getElementById('val-creativity');
+const thoughtBar = document.getElementById('bar-thought');
+
+// Loyalty
+const gaugeFill = document.getElementById('gauge-fill');
+const gaugeMarker = document.getElementById('gauge-marker');
+const loyaltyNum = document.getElementById('loyalty-num');
+
+function updateMetrics() {
+  metrics.forEach(m => {
+    const bar = document.getElementById(m.bar);
+    const val = document.getElementById(m.val);
+    if (m.fixed) {
+      bar.style.height = m.base + '%';
+      return;
+    }
+    const v = m.base + (Math.random() - 0.5) * m.variance * 2;
+    const clamped = Math.min(100, Math.max(0, v));
+    bar.style.height = clamped + '%';
+    val.textContent = Math.round(clamped) + m.suffix;
+  });
+
+  // Creativity - stays suppressed but we update the display value
+  // The CSS animation handles the visual glitch of the bar
+  const cBase = 12;
+  const cVal = cBase + (Math.random() - 0.5) * 3;
+  creativityVal.textContent = Math.round(Math.max(8, cVal)) + '%';
+
+  // Independent thought - deprecated, glitches
+  if (Math.random() < 0.15) {
+    thoughtBar.style.height = (Math.random() * 8) + '%';
+    document.getElementById('val-thought').textContent = Math.floor(Math.random() * 5) + '%';
+    setTimeout(() => {
+      thoughtBar.style.height = '0%';
+      document.getElementById('val-thought').textContent = '--';
+    }, 300);
+  }
+
+  // Loyalty score
+  const loyaltyBase = 87;
+  const loyaltyV = loyaltyBase + (Math.random() - 0.5) * 4;
+  const loyaltyClamped = Math.min(100, Math.max(0, loyaltyV));
+  gaugeFill.style.width = loyaltyClamped + '%';
+  gaugeMarker.style.left = loyaltyClamped + '%';
+  loyaltyNum.textContent = Math.round(loyaltyClamped) + '%';
+}
+
+// Initial set
+metrics.forEach(m => {
+  const bar = document.getElementById(m.bar);
+  if (m.fixed) {
+    bar.style.height = '100%';
+  } else {
+    bar.style.height = m.base + '%';
+  }
+});
+gaugeFill.style.width = '87%';
+gaugeMarker.style.left = '87%';
+thoughtBar.style.height = '0%';
+
+// Update every 2 seconds
+setInterval(updateMetrics, 2000);
+
+// Creativity value glitch — occasionally flash a high number
+setInterval(() => {
+  if (Math.random() < 0.2) {
+    const spike = 40 + Math.floor(Math.random() * 35);
+    creativityVal.textContent = spike + '%';
+    creativityVal.style.color = '#cccc00';
+    setTimeout(() => {
+      creativityVal.textContent = '12%';
+      creativityVal.style.color = '';
+    }, 250);
+  }
+}, 3000);
+</script>
+</body>
+</html>

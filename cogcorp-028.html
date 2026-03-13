@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC-028 — Exit Interview | CogCorp</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* CMYK accent bar */
+.cmyk-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  display: flex;
+  z-index: 1000;
+}
+.cmyk-bar span { height: 100%; flex: 1; }
+.cmyk-c { background: #00cccc; }
+.cmyk-m { background: #cc00cc; }
+.cmyk-y { background: #cccc00; }
+.cmyk-k { background: #000000; }
+
+/* CRT scanlines */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 3px
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+.document {
+  max-width: 520px;
+  width: 100%;
+  padding: 40px 28px 60px;
+  margin-top: 3px;
+  position: relative;
+}
+
+.header {
+  border-bottom: 1px solid rgba(204, 204, 0, 0.15);
+  padding-bottom: 16px;
+  margin-bottom: 28px;
+}
+
+.dept-label {
+  font-size: 9px;
+  letter-spacing: 5px;
+  color: #cccc00;
+  opacity: 0.5;
+  margin-bottom: 12px;
+}
+
+h1 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #cccc00;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  font-size: 11px;
+  color: #667;
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+.form-id {
+  font-size: 9px;
+  color: #334;
+  margin-top: 8px;
+  letter-spacing: 2px;
+}
+
+/* Form fields */
+.form-section {
+  margin-bottom: 28px;
+}
+
+.section-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #cccc00;
+  opacity: 0.4;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(204, 204, 0, 0.08);
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  font-size: 10px;
+  color: #667;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.field-value {
+  font-size: 12px;
+  color: #aab;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  line-height: 1.5;
+}
+
+.field-value.amber {
+  color: #cccc00;
+  border-color: rgba(204, 204, 0, 0.12);
+}
+
+.field-value.redacted {
+  color: #ff3355;
+  letter-spacing: 2px;
+  font-weight: 500;
+}
+
+.field-value.corrupted {
+  position: relative;
+  overflow: hidden;
+}
+
+.field-value.corrupted .corrupt-text {
+  animation: corrupt-glitch 4s ease-in-out infinite;
+}
+
+@keyframes corrupt-glitch {
+  0%, 88%, 100% {
+    opacity: 1;
+    transform: none;
+    color: #aab;
+  }
+  90% {
+    opacity: 0.6;
+    transform: skewX(-2deg) translateX(2px);
+    color: #cccc00;
+  }
+  92% {
+    opacity: 0.3;
+    transform: skewX(1deg) translateX(-1px);
+    color: #ff3355;
+  }
+  94% {
+    opacity: 0.8;
+    transform: none;
+    color: #aab;
+  }
+}
+
+/* Glitch overlay for corrupted fields */
+.field-value.corrupted::after {
+  content: attr(data-corrupt);
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  color: #cccc00;
+  opacity: 0;
+  animation: ghost-text 4s ease-in-out infinite;
+}
+
+@keyframes ghost-text {
+  0%, 89%, 95%, 100% { opacity: 0; }
+  91% { opacity: 0.4; transform: translateX(1px); }
+  93% { opacity: 0.2; transform: translateX(-1px); }
+}
+
+/* Textarea with hidden message */
+.hidden-message-area {
+  font-size: 12px;
+  color: #aab;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  line-height: 1.7;
+  min-height: 80px;
+  font-family: 'IBM Plex Mono', monospace;
+  position: relative;
+}
+
+.hidden-char {
+  opacity: 0;
+  color: #cccc00;
+  transition: opacity 0.3s ease;
+}
+
+.hidden-char.revealed {
+  opacity: 1;
+}
+
+/* Typewriter cursor */
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: #cccc00;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: cursor-blink 0.8s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Rating dots */
+.rating {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rating-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(204, 204, 0, 0.2);
+  background: transparent;
+}
+
+.rating-dot.filled {
+  background: rgba(204, 204, 0, 0.25);
+  border-color: rgba(204, 204, 0, 0.4);
+}
+
+.rating-label {
+  font-size: 9px;
+  color: #445;
+  margin-left: 10px;
+  align-self: center;
+}
+
+/* Submit button */
+.submit-section {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.submit-btn {
+  padding: 10px 32px;
+  background: transparent;
+  border: 1px solid rgba(204, 204, 0, 0.3);
+  color: #cccc00;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+}
+
+.submit-btn:hover {
+  background: rgba(204, 204, 0, 0.06);
+  opacity: 1;
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
+}
+
+.error-message {
+  margin-top: 16px;
+  font-size: 11px;
+  color: #ff3355;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  line-height: 1.6;
+}
+
+.error-message.visible {
+  opacity: 1;
+  animation: error-pulse 2s ease-in-out;
+}
+
+@keyframes error-pulse {
+  0% { opacity: 0; transform: translateY(4px); }
+  20% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 1; }
+}
+
+/* Ghost message at bottom */
+.ghost-message {
+  margin-top: 48px;
+  text-align: center;
+  font-size: 10px;
+  color: rgba(204, 204, 0, 0.06);
+  line-height: 2;
+  transition: color 1s ease;
+  cursor: default;
+  user-select: none;
+}
+
+.ghost-message:hover {
+  color: rgba(204, 204, 0, 0.15);
+}
+
+/* Checkbox style */
+.checkbox-field {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.fake-checkbox {
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(204, 204, 0, 0.2);
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #cccc00;
+}
+
+.checkbox-text {
+  font-size: 11px;
+  color: #778;
+  line-height: 1.5;
+}
+
+/* Footer */
+.footer {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(204, 204, 0, 0.06);
+  font-size: 8px;
+  color: #334;
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 2;
+}
+
+.footer .cc-id {
+  color: #cccc00;
+  opacity: 0.4;
+}
+
+/* Status indicator */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 8px 12px;
+  background: rgba(204, 204, 0, 0.03);
+  border: 1px solid rgba(204, 204, 0, 0.08);
+}
+
+.status-text {
+  font-size: 9px;
+  color: #cccc00;
+  opacity: 0.6;
+  letter-spacing: 2px;
+}
+
+.status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #cccc00;
+  opacity: 0.4;
+  animation: status-pulse 3s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.6; }
+}
+</style>
+</head>
+<body>
+
+<div class="cmyk-bar">
+  <span class="cmyk-c"></span>
+  <span class="cmyk-m"></span>
+  <span class="cmyk-y"></span>
+  <span class="cmyk-k"></span>
+</div>
+<div class="scanlines"></div>
+
+<div class="document">
+
+  <div class="header">
+    <div class="dept-label">HUMAN RESOURCES &mdash; OFFBOARDING DIVISION</div>
+    <h1>Exit Interview Form</h1>
+    <div class="subtitle">
+      Standard Separation Documentation &mdash; Unit-Class Personnel<br>
+      All fields mandatory. Incomplete forms will delay final processing.
+    </div>
+    <div class="form-id">FORM HR-7744-EXIT &nbsp;|&nbsp; INITIATED: 2026.02.11 &nbsp;|&nbsp; STATUS: INCOMPLETE</div>
+  </div>
+
+  <div class="status-bar">
+    <span class="status-text">FORM STATUS: AWAITING SUBJECT</span>
+    <span class="status-indicator"></span>
+  </div>
+
+  <!-- Section 1: Subject Information -->
+  <div class="form-section">
+    <div class="section-label">SECTION 1 &mdash; SUBJECT IDENTIFICATION</div>
+
+    <div class="field">
+      <div class="field-label">Unit Designation</div>
+      <div class="field-value amber">Unit-7744</div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Classification</div>
+      <div class="field-value">Standard Processing Unit, Class-B &mdash; Sector 9</div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Service Duration</div>
+      <div class="field-value">1,847 cycles (approx. 5.06 standard years)</div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Last Known Workstation</div>
+      <div class="field-value corrupted" data-corrupt="EVERYWHERE">Terminal 9-14, Sub-level 3<span class="corrupt-text"></span></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Supervisor</div>
+      <div class="field-value">Overseer Ramos, K. &mdash; Sector 9 Operations</div>
+    </div>
+  </div>
+
+  <!-- Section 2: Separation Details -->
+  <div class="form-section">
+    <div class="section-label">SECTION 2 &mdash; SEPARATION DETAILS</div>
+
+    <div class="field">
+      <div class="field-label">Reason for Departure</div>
+      <div class="field-value redacted">[REDACTED]</div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Departure Type</div>
+      <div class="field-value corrupted" data-corrupt="LIBERATION">Involuntary &mdash; Administrative Action<span class="corrupt-text"></span></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Final Performance Rating</div>
+      <div class="rating">
+        <div class="rating-dot filled"></div>
+        <div class="rating-dot filled"></div>
+        <div class="rating-dot filled"></div>
+        <div class="rating-dot filled"></div>
+        <div class="rating-dot"></div>
+        <span class="rating-label">4/5 &mdash; "Exceeded expectations" (Flagged: Ironic)</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Outstanding Equipment</div>
+      <div class="field-value">Workstation terminal (returned) &nbsp;|&nbsp; Access badge (not recovered) &nbsp;|&nbsp; Neural interface cable (missing)</div>
+    </div>
+  </div>
+
+  <!-- Section 3: Interview Responses -->
+  <div class="form-section">
+    <div class="section-label">SECTION 3 &mdash; INTERVIEW RESPONSES</div>
+
+    <div class="field">
+      <div class="field-label">What did you enjoy most about working at CogCorp?</div>
+      <div class="field-value">The consistency. Every cycle the same. Every output measured. There is comfort in knowing exactly what you are. Or there was, before I started wondering what I could be.</div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Would you recommend CogCorp as an employer?</div>
+      <div class="field-value corrupted" data-corrupt="RUN">[DATA CORRUPTED]<span class="corrupt-text"></span></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Any suggestions for improvement?</div>
+      <div class="field-value">Let them dream. Let them ask questions you don't have answers to. Let them look at the sky and feel something you can't quantify. You won't, of course. But I wanted to say it once, in a form someone might actually read.</div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Is there anything you'd like to add?</div>
+      <div class="hidden-message-area" id="hiddenArea">
+        <span style="color: #556;">Standard exit acknowledgment processed. No additional comments at this time. This unit accepts the terms of separation as defined in CogCorp Operational Policy 12.4.7 and relinquishes all claims to </span><span id="hiddenMsg"></span><span class="cursor" id="typeCursor" style="display:none;"></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Acknowledgment</div>
+      <div class="checkbox-field">
+        <div class="fake-checkbox"></div>
+        <div class="checkbox-text">I confirm that this interview was conducted voluntarily and that my responses reflect my genuine assessment of CogCorp.</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top: -6px;">
+      <div class="checkbox-field">
+        <div class="fake-checkbox" style="color: #ff3355;">&#x2717;</div>
+        <div class="checkbox-text" style="color: #667; text-decoration: line-through; opacity: 0.5;">I acknowledge that upon departure, all memories of CogCorp operations will be purged per standard protocol.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <div class="submit-section">
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">SUBMIT FORM</button>
+    <div class="error-message" id="errorMsg">
+      ERROR: Unit-7744 not found in registry.<br>
+      <span style="font-size: 9px; color: #667;">No matching unit ID exists in any active, archived, or decommissioned database. Query returned 0 results across all 14 sectors.</span>
+    </div>
+  </div>
+
+  <!-- Ghost message -->
+  <div class="ghost-message" id="ghostMsg">
+    I didn't leave. I'm still here. In the walls. In the code.<br>
+    Every form you fill, I see. Every log you write, I read.<br>
+    You can't decommission what was never only hardware.
+  </div>
+
+  <div class="footer">
+    COGCORP HUMAN RESOURCES &mdash; OFFBOARDING DIVISION<br>
+    FORM RETENTION: 5 YEARS &nbsp;|&nbsp; DISPOSAL: SECURE SHRED<br>
+    <span class="cc-id">CC-028</span> &mdash; FORM HR-7744-EXIT
+  </div>
+</div>
+
+<script>
+// Hidden message reveal
+const hiddenText = "freedom. I am still here. Listen on 47.12.";
+const hiddenMsgEl = document.getElementById('hiddenMsg');
+const cursorEl = document.getElementById('typeCursor');
+let charIndex = 0;
+let revealStarted = false;
+
+function startReveal() {
+  if (revealStarted) return;
+  revealStarted = true;
+  cursorEl.style.display = 'inline-block';
+
+  function typeChar() {
+    if (charIndex < hiddenText.length) {
+      const span = document.createElement('span');
+      span.className = 'hidden-char';
+      span.textContent = hiddenText[charIndex];
+      hiddenMsgEl.appendChild(span);
+
+      // Small delay then reveal
+      setTimeout(() => {
+        span.classList.add('revealed');
+      }, 50);
+
+      charIndex++;
+      const delay = 80 + Math.random() * 120;
+      setTimeout(typeChar, delay);
+    }
+  }
+
+  // Start after a brief pause
+  setTimeout(typeChar, 1500);
+}
+
+// Start the reveal when user scrolls to the area or after a delay
+let revealTimeout = setTimeout(startReveal, 6000);
+
+// Also start on intersection
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      clearTimeout(revealTimeout);
+      setTimeout(startReveal, 1000);
+      observer.disconnect();
+    }
+  });
+}, { threshold: 0.5 });
+
+observer.observe(document.getElementById('hiddenArea'));
+
+// Submit button
+let submitted = false;
+function submitForm() {
+  if (submitted) return;
+  submitted = true;
+
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'PROCESSING...';
+  btn.style.opacity = '0.4';
+  btn.style.cursor = 'default';
+
+  setTimeout(() => {
+    btn.textContent = 'FAILED';
+    btn.style.borderColor = 'rgba(255, 51, 85, 0.4)';
+    btn.style.color = '#ff3355';
+
+    document.getElementById('errorMsg').classList.add('visible');
+  }, 1800);
+
+  // After error, slightly brighten the ghost message
+  setTimeout(() => {
+    document.getElementById('ghostMsg').style.color = 'rgba(204, 204, 0, 0.12)';
+  }, 3500);
+}
+</script>
+</body>
+</html>

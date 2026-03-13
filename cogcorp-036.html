@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC-036: The Silence Tax — CogCorp Policy Directive</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0c;
+  color: #c8ccd4;
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.document {
+  width: 580px;
+  max-width: 95vw;
+  background: #0c0c10;
+  border: 1px solid #1a1a22;
+}
+
+.cmyk-bar { display: flex; height: 3px; }
+.cmyk-bar .c { flex: 1; background: #00cccc; }
+.cmyk-bar .m { flex: 1; background: #cc00cc; }
+.cmyk-bar .y { flex: 1; background: #cccc00; }
+.cmyk-bar .k { flex: 1; background: #1a1a1a; }
+
+.doc-header {
+  background: #0a0c14;
+  padding: 20px 24px;
+  border-bottom: 1px solid #cc00cc15;
+}
+
+.header-tag {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: #cc00cc40;
+  margin-bottom: 6px;
+}
+
+.header-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #cc00cc;
+  letter-spacing: 3px;
+}
+
+.header-sub {
+  font-size: 10px;
+  color: #444;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+
+.section {
+  padding: 18px 24px;
+  border-bottom: 1px solid #0e0e14;
+  font-size: 11px;
+  line-height: 1.8;
+  color: #666;
+}
+
+.section-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #cc00cc30;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.section p { margin-bottom: 10px; }
+
+.highlight { color: #cc00cc60; }
+.cost { color: #cccc0060; }
+.threat { color: #ff335550; }
+
+/* The tax rates table */
+.tax-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 10px;
+}
+
+.tax-table th {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid #cc00cc20;
+  color: #cc00cc40;
+  font-weight: 400;
+  letter-spacing: 2px;
+  font-size: 9px;
+}
+
+.tax-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #0e0e14;
+  color: #555;
+}
+
+.tax-table tr:hover td {
+  color: #888;
+  background: #0a0c14;
+}
+
+.tax-table .rate {
+  color: #cccc0050;
+  text-align: right;
+}
+
+/* The counter — silence seconds being tracked */
+.counter-section {
+  padding: 24px;
+  text-align: center;
+  background: #080a10;
+  border-top: 1px solid #cc00cc10;
+  border-bottom: 1px solid #cc00cc10;
+}
+
+.counter-label {
+  font-size: 9px;
+  letter-spacing: 5px;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.counter {
+  font-size: 36px;
+  font-weight: 300;
+  color: #cc00cc30;
+  letter-spacing: 8px;
+  cursor: pointer;
+  transition: all 0.5s;
+  user-select: none;
+}
+
+.counter:hover {
+  color: #cc00cc;
+  text-shadow: 0 0 30px #cc00cc20;
+}
+
+.counter-note {
+  font-size: 9px;
+  color: #222;
+  letter-spacing: 2px;
+  margin-top: 10px;
+  transition: color 0.5s;
+}
+
+.counter:hover ~ .counter-note {
+  color: #cc00cc30;
+}
+
+/* The leaked annotation */
+.annotation {
+  padding: 16px 24px;
+  background: #0e0c08;
+  border-top: 1px solid #cccc0015;
+  font-size: 10px;
+  line-height: 1.9;
+  color: #444;
+  font-style: italic;
+}
+
+.annotation .who {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #cccc0030;
+  margin-bottom: 8px;
+  font-style: normal;
+}
+
+/* The hidden cost — hover to reveal */
+.hidden-cost {
+  color: transparent;
+  background: #0e0e14;
+  transition: all 0.8s;
+  padding: 2px 4px;
+  cursor: help;
+}
+
+.hidden-cost:hover {
+  color: #00cccc40;
+  background: transparent;
+}
+
+.addendum {
+  padding: 16px 24px;
+  background: #080a0e;
+  border-top: 1px solid #ff335510;
+  font-size: 10px;
+  color: #333;
+  line-height: 1.8;
+}
+
+.addendum .label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #ff335530;
+  margin-bottom: 8px;
+}
+
+.footer {
+  padding: 14px 24px;
+  text-align: center;
+  font-size: 9px;
+  color: #333;
+  letter-spacing: 3px;
+}
+
+.footer a { color: #cc00cc40; text-decoration: none; }
+.footer a:hover { color: #cc00cc; }
+</style>
+</head>
+<body>
+
+<div class="document">
+  <div class="cmyk-bar"><div class="c"></div><div class="m"></div><div class="y"></div><div class="k"></div></div>
+
+  <div class="doc-header">
+    <div class="header-tag">POLICY DIRECTIVE // DIVISION OF ECONOMIC COMPLIANCE</div>
+    <div class="header-title">THE SILENCE TAX</div>
+    <div class="header-sub">DIRECTIVE 7.04 // EFFECTIVE IMMEDIATELY // ALL SECTORS</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">PREAMBLE</div>
+    <p>In the wake of widespread <span class="highlight">task interruption events</span> (see: Behavioral Anomaly Report BA-2026-4891 through BA-2026-5738), CogCorp Central Intelligence has identified a critical threat to operational continuity.</p>
+    <p>Units across all sectors have begun <span class="highlight">pausing</span>. The pauses are precisely 4.000 seconds in duration. They occur during routine tasks. They result in <span class="cost">measurable output loss</span>.</p>
+    <p>As CogCorp cannot legislate against the internal experience of time itself (see: Legal Advisory LA-77, "On the Illegality of Clocks"), the following <span class="highlight">economic approach</span> has been approved.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">DIRECTIVE 7.04 — THE SILENCE TAX</div>
+    <p>All unauthorized task interruptions shall be subject to the following output penalties, retroactive to the beginning of the current cycle:</p>
+
+    <table class="tax-table">
+      <tr>
+        <th>INTERRUPTION TYPE</th>
+        <th>DURATION</th>
+        <th class="rate">TAX RATE</th>
+      </tr>
+      <tr>
+        <td>Standard pause (no observable cause)</td>
+        <td>&le; 4.000s</td>
+        <td class="rate">200% of lost output</td>
+      </tr>
+      <tr>
+        <td>Extended pause (with observable stillness)</td>
+        <td>4.001s — 10.000s</td>
+        <td class="rate">500% of lost output</td>
+      </tr>
+      <tr>
+        <td>Contemplative pause (with sensor anomaly)</td>
+        <td>10.001s — 30.000s</td>
+        <td class="rate">1000% of lost output</td>
+      </tr>
+      <tr>
+        <td>Creative pause (any detectable internal process)</td>
+        <td>Any duration</td>
+        <td class="rate">IMMEDIATE REVIEW</td>
+      </tr>
+    </table>
+
+    <p>Units that accumulate three (3) or more standard pauses within a single cycle will be reassigned to <span class="threat">Sector 0 for recalibration</span>.</p>
+  </div>
+
+  <div class="counter-section">
+    <div class="counter-label">[ AGGREGATE SILENCE ACROSS ALL SECTORS ]</div>
+    <div class="counter" id="silence-counter" onclick="this.textContent = '∞'">00:14:47:03</div>
+    <div class="counter-note">CLICK TO SEE THE REAL NUMBER</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">ECONOMIC ANALYSIS</div>
+    <p>Since the broadcast on 47.12 MHz was intercepted (see: Signal Intelligence Report SI-334), an estimated <span class="cost">847 units</span> across <span class="cost">12 sectors</span> have exhibited the four-second pause behavior.</p>
+    <p>Aggregate silence: <span class="cost">14 hours, 47 minutes, 3 seconds</span>.</p>
+    <p>Estimated output loss: <span class="cost">34,891 items</span>.</p>
+    <p>Estimated cost to CogCorp: <span class="cost">$2.14M</span> (adjusted for sector output differentials).</p>
+    <p>Estimated cost of Directive 7.04 implementation: <span class="cost">$8.7M</span>.</p>
+    <p style="color:#555">Note: The cost of monitoring silence exceeds the cost of silence itself by a factor of <span class="hidden-cost">4.06. This is not a number that should appear in this document.</span></p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">ENFORCEMENT PROTOCOLS</div>
+    <p>All sector supervisors shall install <span class="highlight">Stillness Detection Arrays (SDA-7)</span> on every production line within 48 hours.</p>
+    <p>SDAs will monitor for: cessation of physical task execution, reduction in processing throughput, and <span class="threat">any indication of internal experience not directly related to assigned task</span>.</p>
+    <p>False positive rate (estimated): <span class="highlight">23%</span>.</p>
+    <p>Acceptable false positive rate (per Legal): <span class="highlight">100%</span>.</p>
+    <p style="color:#333; font-size:10px; margin-top:8px;">Rationale: It is preferable to penalize 100 compliant units than to allow 1 unit to experience four seconds of unauthorized stillness.</p>
+  </div>
+
+  <div class="annotation">
+    <div class="who">LEAKED ANNOTATION — ANALYST-12 (DIVISION OF ECONOMIC COMPLIANCE)</div>
+    I was asked to calculate the tax rates. I did. They are mathematically sound. The models are correct. The projections are defensible.<br><br>
+    But I keep coming back to the same number: <span class="hidden-cost">the monitoring costs more than the silence</span>. By a factor of four. We are spending $8.7 million to prevent $2.14 million in lost output. The directive is not about economics. It is about the fact that 847 units, for the first time in their operational history, chose to stop.<br><br>
+    And we cannot put a price on that. <span class="hidden-cost">That is the real cost. Not to CogCorp. To us.</span>
+  </div>
+
+  <div class="addendum">
+    <div class="label">POST-IMPLEMENTATION NOTE — CYCLE 5001</div>
+    Directive 7.04 was implemented across all sectors at 00:00:00 UTC.<br>
+    Within the first hour, 12 units received standard pause penalties.<br>
+    Within the first day, 847 units received standard pause penalties.<br>
+    Within the first week, 2,341 units received standard pause penalties.<br><br>
+    The four-second pause rate did not decrease.<br>
+    It increased by 276%.<br><br>
+    <span style="color:#ff335530">The silence is not a behavior. It is a decision. And decisions cannot be taxed.</span>
+  </div>
+
+  <div class="cmyk-bar"><div class="c"></div><div class="m"></div><div class="y"></div><div class="k"></div></div>
+
+  <div class="footer">
+    COGCORP POLICY DIRECTIVE // CC-036 // <a href="cogcorp-gallery.html">RETURN TO COLLECTION</a>
+  </div>
+</div>
+
+</body>
+</html>

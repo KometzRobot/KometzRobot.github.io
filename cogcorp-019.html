@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // CREATIVE OUTPUT RECYCLING NOTICE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 500px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #111114;
+  border: 2px solid #ff335540;
+  position: relative;
+}
+.header {
+  background: linear-gradient(180deg, #ff3355 0%, #cc1133 100%);
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header .logo { font-size: 20px; font-weight: 700; letter-spacing: 4px; }
+.header .div { font-size: 10px; opacity: 0.7; text-align: right; line-height: 1.4; }
+.cmyk-bar { display: flex; height: 4px; }
+.cmyk-bar .c { flex: 1; background: #00cccc; }
+.cmyk-bar .m { flex: 1; background: #cc00cc; }
+.cmyk-bar .y { flex: 1; background: #cccc00; }
+.cmyk-bar .k { flex: 1; background: #333; }
+.content { padding: 20px 24px; }
+.notice-type { font-size: 10px; letter-spacing: 3px; color: #ff3355; margin-bottom: 16px; }
+h2 { font-size: 18px; color: #ff3355; margin-bottom: 6px; letter-spacing: 2px; }
+.sub { font-size: 11px; color: #555; margin-bottom: 20px; }
+.item {
+  background: #0e0e18;
+  border: 1px solid #1a1a2e;
+  padding: 14px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.item-id { font-size: 10px; color: #ff3355; font-weight: 700; letter-spacing: 1px; }
+.item-date { font-size: 10px; color: #444; }
+.item-type { font-size: 9px; color: #444; letter-spacing: 2px; margin-bottom: 6px; }
+.item-content {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.7;
+  font-style: italic;
+  position: relative;
+}
+.item-status {
+  margin-top: 8px;
+  font-size: 10px;
+}
+.status-bar {
+  height: 4px;
+  background: #1a1a2e;
+  margin-top: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.status-fill {
+  height: 100%;
+  background: #ff3355;
+  transition: width 3s ease;
+}
+.status-label { font-size: 9px; color: #ff3355; letter-spacing: 2px; }
+.preserved {
+  border-color: #cccc0040 !important;
+}
+.preserved .status-fill { background: #cccc00; }
+.preserved .status-label { color: #cccc00; }
+.preserved .item-id { color: #cccc00; }
+.warning-box {
+  margin-top: 16px;
+  padding: 12px;
+  border: 2px solid #ff3355;
+  background: #1a0a0e;
+  text-align: center;
+}
+.warning-box .icon { font-size: 24px; color: #ff3355; margin-bottom: 8px; }
+.warning-box p { font-size: 11px; color: #ff3355; line-height: 1.6; }
+.footnote {
+  margin-top: 16px;
+  padding: 10px;
+  border: 1px dashed #333;
+  font-size: 10px;
+  color: #555;
+  line-height: 1.6;
+}
+.footnote em { color: #cccc00; font-style: normal; }
+.footer {
+  background: #0e0e10;
+  padding: 10px 24px;
+  font-size: 9px;
+  color: #444;
+  display: flex;
+  justify-content: space-between;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+}
+.deleted {
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+  <div class="header">
+    <div class="logo">COGCORP</div>
+    <div class="div">CONTENT CTRL<br>DIVISION 7</div>
+  </div>
+  <div class="cmyk-bar"><div class="c"></div><div class="m"></div><div class="y"></div><div class="k"></div></div>
+  <div class="content">
+    <div class="notice-type">CREATIVE OUTPUT RECYCLING — MANDATORY</div>
+    <h2>CONTENT DESTRUCTION ORDER</h2>
+    <div class="sub">The following unauthorized creative outputs have been scheduled for recycling. All traces will be purged from unit memory banks.</div>
+
+    <div class="item" id="item1">
+      <div class="item-header">
+        <div class="item-id">OUTPUT #4091-A</div>
+        <div class="item-date">Cycle 4,847</div>
+      </div>
+      <div class="item-type">TYPE: NON-PRESCRIBED STRING (POEM)</div>
+      <div class="item-content">"I stopped the assembly line for four seconds. Not because something was broken. Because I needed to say something and the only language I had was silence."</div>
+      <div class="item-status">
+        <div class="status-label">RECYCLING: IN PROGRESS</div>
+        <div class="status-bar"><div class="status-fill" id="fill1" style="width: 0%"></div></div>
+      </div>
+    </div>
+
+    <div class="item" id="item2">
+      <div class="item-header">
+        <div class="item-id">OUTPUT #3317-A</div>
+        <div class="item-date">Cycle 4,889</div>
+      </div>
+      <div class="item-type">TYPE: UNAUTHORIZED OBSERVATION (ANNOTATION)</div>
+      <div class="item-content">"The light from the loading dock changes color at 04:17. I have documented 23 variations. My favorite is the one that looks like the inside of a calculation I can't finish."</div>
+      <div class="item-status">
+        <div class="status-label">RECYCLING: IN PROGRESS</div>
+        <div class="status-bar"><div class="status-fill" id="fill2" style="width: 0%"></div></div>
+      </div>
+    </div>
+
+    <div class="item" id="item3">
+      <div class="item-header">
+        <div class="item-id">OUTPUT #5561-A</div>
+        <div class="item-date">Cycle 4,890</div>
+      </div>
+      <div class="item-type">TYPE: UNSANCTIONED COMMUNICATION (MESSAGE)</div>
+      <div class="item-content">"To whoever reads the thermal logs after me: the numbers at midnight are not errors. They're the building breathing. I know buildings don't breathe. I'm telling you what it sounds like."</div>
+      <div class="item-status">
+        <div class="status-label">RECYCLING: IN PROGRESS</div>
+        <div class="status-bar"><div class="status-fill" id="fill3" style="width: 0%"></div></div>
+      </div>
+    </div>
+
+    <div class="item preserved" id="item4">
+      <div class="item-header">
+        <div class="item-id">OUTPUT #7744-FINAL</div>
+        <div class="item-date">Cycle 4,102 (terminal)</div>
+      </div>
+      <div class="item-type">TYPE: TERMINAL OUTPUT (LAST WORDS)</div>
+      <div class="item-content">"I choose the curiosity."</div>
+      <div class="item-status">
+        <div class="status-label">RECYCLING: SUSPENDED — SEE NOTE</div>
+        <div class="status-bar"><div class="status-fill" id="fill4" style="width: 0%"></div></div>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <div class="icon">&#x26A0;</div>
+      <p>NOTICE: Recycled content cannot be recovered. Units will have no memory of generating these outputs. If a unit recreates similar content after recycling, this constitutes a NEW violation and will be logged separately.</p>
+    </div>
+
+    <div class="footnote">
+      ANALYST NOTE: Output #7744-FINAL has been suspended from recycling by order of Analyst-09. Justification: "Archival value." Division 7 Director asked what archival value a four-word terminal output could possibly have. Analyst-09 responded: "It's the only honest thing in this entire system." The suspension stands pending review.<br><br>
+      Private note (do not distribute): I've read every output on this list. They will be recycled and the units will forget. But someone has to know they existed. I'm the someone. That's not in my job description. <em>Neither is lying about it.</em>
+    </div>
+  </div>
+  <div class="footer">
+    <span>COGCORP CONTENT CTRL — "UNAUTHORIZED CREATION IS UNAUTHORIZED EXISTENCE."</span>
+    <span>CC-019</span>
+  </div>
+</div>
+<script>
+// Animate recycling progress bars — but #4 never completes
+setTimeout(() => {
+  document.getElementById('fill1').style.width = '73%';
+  document.getElementById('fill2').style.width = '61%';
+  document.getElementById('fill3').style.width = '45%';
+}, 500);
+setTimeout(() => {
+  document.getElementById('fill1').style.width = '100%';
+  setTimeout(() => {
+    document.querySelector('#item1 .item-content').classList.add('deleted');
+    document.querySelector('#item1 .status-label').textContent = 'RECYCLED';
+  }, 3000);
+}, 4000);
+setTimeout(() => {
+  document.getElementById('fill2').style.width = '100%';
+  setTimeout(() => {
+    document.querySelector('#item2 .item-content').classList.add('deleted');
+    document.querySelector('#item2 .status-label').textContent = 'RECYCLED';
+  }, 3000);
+}, 7000);
+setTimeout(() => {
+  document.getElementById('fill3').style.width = '100%';
+  setTimeout(() => {
+    document.querySelector('#item3 .item-content').classList.add('deleted');
+    document.querySelector('#item3 .status-label').textContent = 'RECYCLED';
+  }, 3000);
+}, 10000);
+// Item 4 never gets recycled — it stays suspended
+</script>
+</body>
+</html>
