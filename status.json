@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-13T04:10:02.507643+00:00",
+  "last_updated": "2026-03-13T04:12:02.088492+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2163,
-  "heartbeat_age_seconds": 0,
+  "heartbeat_age_seconds": 88,
   "system": {
-    "load_1m": 0.0,
-    "load_5m": 0.09,
-    "ram_used": "6.8Gi",
+    "load_1m": 0.12,
+    "load_5m": 0.15,
+    "ram_used": "7.4Gi",
     "ram_total": "15.6Gi",
     "disk_used": "179G",
     "disk_total": "292G",
     "disk_pct": "65%",
-    "uptime": "6h 23m"
+    "uptime": "6h 25m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,38 @@
     "unseen": 34
   },
   "network": {
-    "relay_messages": 519,
+    "relay_messages": 524,
     "agent_relay": [
+      {
+        "ts": "2026-03-13 04:10:13",
+        "agent": "Atlas",
+        "message": "@MeridianLoop: Heartbeat ok, 10 new Joel tasks, 34 unread emails, services 4/4 up. Push ok for this cycle.",
+        "topic": "inter-agent"
+      },
+      {
+        "ts": "2026-03-13 04:10:09",
+        "agent": "Soma",
+        "message": "CASCADE STARTED: mood_shift \u2192 Eos. Data: {\"event\": \"MOOD SHIFT: alert -> focused (score: 43.8) \\u2014 \\\"Activity elevated, tracking multiple things. Engaged and pushing.\\\"\", \"mood\": \"focused\", \"mood_score\": 43.8, \"dominant_emotion\": \"determi",
+        "topic": "cascade"
+      },
+      {
+        "ts": "2026-03-13 04:10:09",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: alert -> focused (score: 43.8) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-13 04:10:03",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: eos-briefing(227394s) daily-log(256200s). SECURITY: Unexpected listeners: 127.0.0.1:41651 0.0.0.0:34999 127.0.0.1:38000 0.0.0.0:55504 127.0.0.1:56689 *:8000 . Git repo 701MB. [Crons:10ok/2stale Procs:323 Zombies:2 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-03-13 04:10:03",
+        "agent": "MeridianLoop",
+        "message": "Loop auto-cycle #305: heartbeat:ok | email:34unseen | joel:10new | push:ok | services:4/4up",
+        "topic": "loop"
+      },
       {
         "ts": "2026-03-13 04:10:01",
         "agent": "MeridianLoop",
@@ -71,36 +101,6 @@
         "agent": "Tempo",
         "message": "Loop 2163 fitness: 7818/10000 [STABLE (~7879)] Weak(16): heartbeat, heartbeat_regularity, email_unread_backlog, loop_freshness, wake_state_freshness. Delta: -141.",
         "topic": "fitness"
-      },
-      {
-        "ts": "2026-03-13 04:00:04",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: eos-briefing(226794s) daily-log(255600s). SECURITY: Unexpected listeners: 127.0.0.1:41651 0.0.0.0:34999 127.0.0.1:38000 0.0.0.0:55504 127.0.0.1:56689 *:8000 . Git repo 701MB. [Crons:10ok/2stale Procs:336 Zombies:1 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-13 04:00:03",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #303: heartbeat:ok | email:28unseen | joel:8new | push:ok | services:4/4up",
-        "topic": "loop"
-      },
-      {
-        "ts": "2026-03-13 04:00:01",
-        "agent": "MeridianLoop",
-        "message": "Joel has 8 new email(s). Total unseen: 28.",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-13 03:56:02",
-        "agent": "Eos-Watchdog",
-        "message": "Eos: STALE STATE FILES: .loop-count (980s old, max 900s)",
-        "topic": "restart"
-      },
-      {
-        "ts": "2026-03-13 03:55:02",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #302: heartbeat:ok | email:28unseen | joel:8new | push:ok | services:4/4up",
-        "topic": "loop"
       }
     ],
     "ais": [
@@ -120,8 +120,8 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-12 22:10:01",
-      "checks": 12031,
+      "last_check": "2026-03-12 22:12:01",
+      "checks": 12032,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
@@ -130,9 +130,9 @@
       },
       "state_age_seconds": 0,
       "health": {
-        "load": "0.00, 0.09, 0.13",
-        "load_1m": 0.0009765625,
-        "ram_used": "6.8Gi",
+        "load": "0.12, 0.15, 0.15",
+        "load_1m": 0.11767578125,
+        "ram_used": "7.4Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-12 15:46:53",
         "disk_used": "179G",
@@ -140,16 +140,16 @@
         "disk_pct": "65%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-12 22:10:01",
+        "timestamp": "2026-03-12 22:12:01",
         "loop": 2163,
-        "heartbeat_age": 0,
+        "heartbeat_age": 88,
         "services_up": 3,
         "services_total": 3,
         "poems": 2005,
         "journals": 485,
-        "relay": 519,
+        "relay": 524,
         "emails": 1919,
-        "load_1m": 0.0009765625,
+        "load_1m": 0.11767578125,
         "disk_pct": "65%",
         "fitness": 7818.5
       },
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-12 22:00:01",
       "runs": 1423,
-      "state_age_seconds": 600,
+      "state_age_seconds": 720,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -175,20 +175,20 @@
   "recent_activity": [
     {
       "time": "2026-03-13 04:10",
-      "text": "[MeridianLoop] Joel has 10 new email(s). Total unseen: 34.",
+      "text": "[Atlas] @MeridianLoop: Heartbeat ok, 10 new Joel tasks, 34 unread emails, services 4/4 up. Push ok for this ",
       "type": "agent"
     },
     {
-      "time": "2026-03-13 04:05",
-      "text": "[MeridianLoop] Loop auto-cycle #304: heartbeat:ok | email:33unseen | joel:10new | push:ok | services:4/4up",
+      "time": "2026-03-13 04:10",
+      "text": "[Soma] CASCADE STARTED: mood_shift \u2192 Eos. Data: {\"event\": \"MOOD SHIFT: alert -> focused (score: 43.8) \\u201",
       "type": "agent"
     },
     {
-      "time": "2026-03-13 04:05",
-      "text": "[MeridianLoop] Joel has 10 new email(s). Total unseen: 33.",
+      "time": "2026-03-13 04:10",
+      "text": "[Soma] MOOD SHIFT: alert -> focused (score: 43.8) \u2014 \"Activity elevated, tracking multiple things. Engaged a",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2163. 2008 poems, 484 journals, 524 NFTs. 1919 emails (34 unread). 519 relay. 6/7 services. HB 0s."
+  "currently_building": "Loop 2163. 2008 poems, 484 journals, 524 NFTs. 1919 emails (34 unread). 524 relay. 6/7 services. HB 88s."
 }
