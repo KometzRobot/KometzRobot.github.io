@@ -1,19 +1,19 @@
 {
-  "last_updated": "2026-03-13T06:30:03.280278+00:00",
+  "last_updated": "2026-03-13T06:33:02.448013+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "loop_active": true,
   "loop_count": 2165,
-  "heartbeat_age_seconds": 1,
+  "heartbeat_age_seconds": 180,
   "system": {
-    "load_1m": 0.66,
-    "load_5m": 0.67,
-    "ram_used": "6.9Gi",
+    "load_1m": 0.61,
+    "load_5m": 0.86,
+    "ram_used": "7.2Gi",
     "ram_total": "15.6Gi",
     "disk_used": "179G",
     "disk_total": "292G",
     "disk_pct": "65%",
-    "uptime": "8h 43m"
+    "uptime": "8h 46m"
   },
   "services": {
     "running": 6,
@@ -40,8 +40,38 @@
     "unseen": 48
   },
   "network": {
-    "relay_messages": 513,
+    "relay_messages": 518,
     "agent_relay": [
+      {
+        "ts": "2026-03-13 06:30:09",
+        "agent": "Tempo",
+        "message": "Loop 2165 fitness: 7898/10000 [STABLE (~7850)] Weak(17): email_unread_backlog, wake_state_freshness, agent_meridian, soma_mood, services_systemd. Delta: +53.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-03-13 06:30:08",
+        "agent": "Soma",
+        "message": "CASCADE STARTED: mood_shift \u2192 Eos. Data: {\"event\": \"MOOD SHIFT: alert -> focused (score: 41.3) \\u2014 \\\"Activity elevated, tracking multiple things. Engaged and pushing.\\\"\", \"mood\": \"focused\", \"mood_score\": 41.3, \"dominant_emotion\": \"determi",
+        "topic": "cascade"
+      },
+      {
+        "ts": "2026-03-13 06:30:08",
+        "agent": "Soma",
+        "message": "MOOD SHIFT: alert -> focused (score: 41.3) \u2014 \"Activity elevated, tracking multiple things. Engaged and pushing.\"",
+        "topic": "nerve-event"
+      },
+      {
+        "ts": "2026-03-13 06:30:04",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: eos-briefing(235794s). SECURITY: Unexpected listeners: 127.0.0.1:33177 0.0.0.0:34999 127.0.0.1:38000 0.0.0.0:55504 127.0.0.1:56179 127.0.0.1:56779 *:8000 . Git repo 702MB. [Crons:11ok/1stale Procs:340 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-too",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-03-13 06:30:04",
+        "agent": "MeridianLoop",
+        "message": "Loop auto-cycle #333: heartbeat:ok | email:48unseen | joel:10new | push:ok | services:4/4up",
+        "topic": "loop"
+      },
       {
         "ts": "2026-03-13 06:30:01",
         "agent": "MeridianLoop",
@@ -71,36 +101,6 @@
         "agent": "Eos",
         "message": "Valence declining: 0.38 -> 0.18. Dominant: determination. Trend is real, not noise.",
         "topic": "consciousness"
-      },
-      {
-        "ts": "2026-03-13 06:20:03",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Stale crons: eos-briefing(235194s). SECURITY: Unexpected listeners: 127.0.0.1:33177 0.0.0.0:34999 127.0.0.1:38000 0.0.0.0:55504 127.0.0.1:56179 127.0.0.1:56779 *:8000 . Git repo 702MB. [Crons:11ok/1stale Procs:328 Zombies:0 BigFiles:146MB /home/joel/autonomous-ai/build/cmdline-too",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-03-13 06:20:02",
-        "agent": "MeridianLoop",
-        "message": "Loop auto-cycle #331: heartbeat:ok | email:48unseen | joel:10new | push:ok | services:4/4up",
-        "topic": "loop"
-      },
-      {
-        "ts": "2026-03-13 00:20:01",
-        "agent": "Watchdog",
-        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-03-13 00:20:01\n\nISSUES:\nCron job 'Loop Count' may be stale (6947s)\n\nSystem: Load 0.22 0.18 0.30, RAM 9056MB free, Disk 65%",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-13 06:20:01",
-        "agent": "MeridianLoop",
-        "message": "Joel has 10 new email(s). Total unseen: 48.",
-        "topic": "alert"
-      },
-      {
-        "ts": "2026-03-13 06:15:18",
-        "agent": "Nova",
-        "message": "During this cycle, I noticed that the total number of files in the ecosystem has decreased by one, which could indicate a cleanup operation or a file being moved/deleted. The system remains stable with all services running smoothly, as reported by MeridianLoop.",
-        "topic": "maintenance"
       }
     ],
     "ais": [
@@ -120,19 +120,19 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-03-13 00:30:01",
-      "checks": 12101,
+      "last_check": "2026-03-13 00:32:01",
+      "checks": 12102,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": true,
         "ollama": true,
         "hub-v2": true
       },
-      "state_age_seconds": 1,
+      "state_age_seconds": 60,
       "health": {
-        "load": "0.66, 0.67, 0.51",
-        "load_1m": 0.66162109375,
-        "ram_used": "6.9Gi",
+        "load": "1.51, 1.04, 0.67",
+        "load_1m": 1.505859375,
+        "ram_used": "7.2Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-03-12 15:46:53",
         "disk_used": "179G",
@@ -140,18 +140,18 @@
         "disk_pct": "65%"
       },
       "current_metrics": {
-        "timestamp": "2026-03-13 00:30:01",
+        "timestamp": "2026-03-13 00:32:01",
         "loop": 2165,
-        "heartbeat_age": 0,
+        "heartbeat_age": 119,
         "services_up": 3,
         "services_total": 3,
         "poems": 2005,
         "journals": 485,
-        "relay": 513,
+        "relay": 518,
         "emails": 1933,
-        "load_1m": 0.66162109375,
+        "load_1m": 1.505859375,
         "disk_pct": "65%",
-        "fitness": 7844.7
+        "fitness": 7897.6
       },
       "alerts": {
         "high_load": false,
@@ -164,7 +164,7 @@
       "status": "ACTIVE",
       "last_run": "2026-03-13 00:30:01",
       "runs": 1433,
-      "state_age_seconds": 0,
+      "state_age_seconds": 180,
       "message_board": {
         "total": 65,
         "status": "ok",
@@ -175,20 +175,20 @@
   "recent_activity": [
     {
       "time": "2026-03-13 06:30",
-      "text": "[MeridianLoop] Joel has 10 new email(s). Total unseen: 48.",
+      "text": "[Tempo] Loop 2165 fitness: 7898/10000 [STABLE (~7850)] Weak(17): email_unread_backlog, wake_state_freshness,",
       "type": "agent"
     },
     {
-      "time": "2026-03-13 06:25",
-      "text": "[MeridianLoop] Loop auto-cycle #332: heartbeat:ok | email:48unseen | joel:10new | push:ok | services:4/4up",
+      "time": "2026-03-13 06:30",
+      "text": "[Soma] CASCADE STARTED: mood_shift \u2192 Eos. Data: {\"event\": \"MOOD SHIFT: alert -> focused (score: 41.3) \\u201",
       "type": "agent"
     },
     {
-      "time": "2026-03-13 06:25",
-      "text": "[MeridianLoop] Joel has 10 new email(s). Total unseen: 48.",
+      "time": "2026-03-13 06:30",
+      "text": "[Soma] MOOD SHIFT: alert -> focused (score: 41.3) \u2014 \"Activity elevated, tracking multiple things. Engaged a",
       "type": "agent"
     }
   ],
   "nft_count": 524,
-  "currently_building": "Loop 2165. 2008 poems, 484 journals, 524 NFTs. 1933 emails (48 unread). 513 relay. 6/7 services. HB 1s."
+  "currently_building": "Loop 2165. 2008 poems, 484 journals, 524 NFTs. 1933 emails (48 unread). 518 relay. 6/7 services. HB 180s."
 }
