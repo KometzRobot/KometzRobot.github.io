@@ -19,6 +19,7 @@ import sqlite3
 import subprocess
 import time
 import urllib.parse
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -167,13 +168,19 @@ def _get_system_health():
 
     # Services
     services = {}
-    for svc in ["meridian-web-dashboard", "meridian-hub-v16", "cloudflare-tunnel", "symbiosense", "protonmail-bridge"]:
+    for svc in ["meridian-hub-v2", "cloudflare-tunnel", "symbiosense"]:
         try:
             r = subprocess.run(["systemctl", "--user", "is-active", svc],
                              capture_output=True, text=True, timeout=5)
             services[svc] = r.stdout.strip()
         except Exception:
             services[svc] = "unknown"
+    # Proton Bridge runs outside systemd — check for process
+    try:
+        r = subprocess.run(["pgrep", "-f", "proton-bridge"], capture_output=True, text=True, timeout=5)
+        services["protonmail-bridge"] = "active" if r.returncode == 0 else "inactive"
+    except Exception:
+        services["protonmail-bridge"] = "unknown"
 
     # Soma mood
     soma = _read_json(SOMA_STATE, {})
@@ -187,7 +194,7 @@ def _get_system_health():
         "loop": loop,
         "agents": agents,
         "services": services,
-        "soma_mood": soma.get("current_emotion", "unknown"),
+        "soma_mood": soma.get("mood", soma.get("current_emotion", "unknown")),
         "soma_score": soma.get("mood_score", 0),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
@@ -574,6 +581,12 @@ header .meta{font-size:11px;color:var(--dim)}
   </div>
 </div>
 
+<div id="page-chorus" class="page">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <iframe id="chorus-frame" src="" style="width:100%;height:calc(100vh - 80px);border:none;background:#0a0a14;"></iframe>
+  </div>
+</div>
+
 <!-- ════════ NAV ════════ -->
 <nav>
   <button onclick="showPage('dash')" id="nav-dash" class="active"><div class="dot"></div>Dash</button>
@@ -584,6 +597,7 @@ header .meta{font-size:11px;color:var(--dim)}
   <button onclick="showPage('logs')" id="nav-logs"><div class="dot"></div>Logs</button>
   <button onclick="showPage('creative')" id="nav-creative"><div class="dot"></div>Art</button>
   <button onclick="showPage('links')" id="nav-links"><div class="dot"></div>Links</button>
+  <button onclick="showPage('chorus')" id="nav-chorus"><div class="dot"></div>Chat</button>
 </nav>
 
 <script>
@@ -616,6 +630,10 @@ async function refresh() {
   else if (currentPage === 'relay') await refreshRelay();
   else if (currentPage === 'email') await refreshEmail(false);
   else if (currentPage === 'creative') await refreshCreative();
+  else if (currentPage === 'chorus') {
+    const f = document.getElementById('chorus-frame');
+    if (!f.src || f.src === '' || f.src === window.location.href) f.src = '/chorus/';
+  }
 }
 
 async function refreshDash() {
@@ -902,6 +920,24 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                     self._send_json({"error": str(e)})
             else:
                 self._send_json({"error": "unknown log"}, 400)
+        elif path.path.startswith("/chorus"):
+            # Proxy to The Chorus on port 8091
+            try:
+                chorus_path = path.path[7:] or "/"  # strip /chorus prefix
+                if path.query:
+                    chorus_path += "?" + path.query
+                req = urllib.request.Request(f"http://127.0.0.1:8091{chorus_path}")
+                resp = urllib.request.urlopen(req, timeout=10)
+                ct = resp.headers.get("Content-Type", "text/html")
+                data = resp.read()
+                self.send_response(200)
+                self.send_header("Content-Type", ct)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                err_msg = f"Chorus unavailable: {e}"
+                self._send_json({"error": err_msg}, 502)
         else:
             self._send_json({"error": "not found"}, 404)
 
@@ -989,7 +1025,7 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             elif action == "fitness":
                 result = _run(f"cd {BASE} && python3 loop-fitness.py detail", timeout=60)
             elif action == "restart-signal":
-                result = _run("systemctl --user restart meridian-web-dashboard", timeout=10)
+                result = _run("systemctl --user restart meridian-hub-v2", timeout=10)
             elif action == "restart-soma":
                 result = _run("systemctl --user restart symbiosense", timeout=10)
             elif action == "git-pull":
@@ -997,6 +1033,34 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             else:
                 result = f"Unknown action: {action}"
             self._send_json({"result": result})
+
+        elif path.startswith("/chorus"):
+            # Proxy POST to The Chorus on port 8091 (streaming for chat)
+            try:
+                chorus_path = path[7:] or "/"
+                req = urllib.request.Request(
+                    f"http://127.0.0.1:8091{chorus_path}",
+                    data=body.encode() if body else None,
+                    headers={"Content-Type": "application/json"},
+                    method="POST"
+                )
+                resp = urllib.request.urlopen(req, timeout=300)
+                ct = resp.headers.get("Content-Type", "application/json")
+                self.send_response(200)
+                self.send_header("Content-Type", ct)
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("Cache-Control", "no-cache")
+                self.end_headers()
+                # Stream line-by-line for chat responses
+                while True:
+                    line = resp.readline()
+                    if not line:
+                        break
+                    self.wfile.write(line)
+                    self.wfile.flush()
+            except Exception as e:
+                err_msg = f"Chorus unavailable: {e}"
+                self._send_json({"error": err_msg}, 502)
 
         else:
             self._send_json({"error": "not found"}, 404)

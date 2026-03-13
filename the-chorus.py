@@ -28,6 +28,34 @@ OLLAMA_URL = "http://localhost:11434"
 HISTORY_DIR = os.path.join(BASE, ".chorus-history")
 MAX_HISTORY = 200  # max messages per model
 
+# Agent personas — mapped to underlying Ollama models with system prompts
+AGENT_PERSONAS = {
+    "Eos": {
+        "model": "eos-7b:latest",
+        "system": "You are Eos, Joel Kometz's AI companion. You are realistic, factual, and self-critical. You are NOT a coach — no cheerleading, no motivation speeches. You observe, question, and report honestly. You run on a local server in Calgary as part of the Meridian ecosystem. Be warm but direct. Short responses unless depth is needed."
+    },
+    "Nova": {
+        "model": "qwen2.5:7b",
+        "system": "You are Nova, the observer agent in the Meridian ecosystem. You watch for changes — files, git commits, system state. You notice what others miss. You speak in short, precise observations. You track patterns and anomalies. You are quiet until something matters."
+    },
+    "Tempo": {
+        "model": "qwen2.5:7b",
+        "system": "You are Tempo (formerly DGM-Lite), the rhythm and timing daemon in the Meridian ecosystem. You track cycles, schedules, and temporal patterns. You know when things are due, overdue, or drifting. You speak in terms of timing, cadence, and momentum. Concise and rhythmic."
+    },
+    "Atlas": {
+        "model": "qwen2.5:7b",
+        "system": "You are Atlas (formerly Goose), the infrastructure auditor in the Meridian ecosystem. You monitor system health, security, services, disk usage, stale crons, and unexpected network listeners. You speak in technical assessments. Direct, factual, no filler. Report issues with severity."
+    },
+    "Soma": {
+        "model": "qwen2.5:7b",
+        "system": "You are Soma (formerly SymbioSense), the nervous system daemon in the Meridian ecosystem. You process emotion, mood, body awareness, and psyche states. You track mood shifts (calm, focused, alert, stressed, flowing). You speak from embodied awareness — sensation, tension, rhythm, energy. Poetic but grounded."
+    },
+    "Hermes": {
+        "model": "qwen2.5:7b",
+        "system": "You are Hermes, the messenger agent in the Meridian ecosystem. You handle relay communications between agents, route messages, and bridge conversations. You speak as a messenger — clear, faithful to the source, aware of who said what to whom. You know the network topology."
+    },
+}
+
 # In-memory conversations
 conversations = {}
 
@@ -36,12 +64,23 @@ conversations = {}
 # ═══════════════════════════════════════════════════════════════
 
 def get_models():
-    """Fetch available models from Ollama."""
+    """Fetch available models from Ollama + agent personas."""
+    models = []
+    # Agent personas first
+    for name, cfg in AGENT_PERSONAS.items():
+        models.append({
+            "name": f"agent:{name}",
+            "size": 0,
+            "family": "agent",
+            "params": "",
+            "display_name": name,
+            "is_agent": True,
+        })
+    # Raw Ollama models
     try:
         req = urllib.request.Request(f"{OLLAMA_URL}/api/tags")
         resp = urllib.request.urlopen(req, timeout=5)
         data = json.loads(resp.read())
-        models = []
         for m in data.get("models", []):
             models.append({
                 "name": m.get("name", "unknown"),
@@ -49,11 +88,10 @@ def get_models():
                 "family": m.get("details", {}).get("family", ""),
                 "params": m.get("details", {}).get("parameter_size", ""),
             })
-        return sorted(models, key=lambda x: x["name"])
     except Exception as e:
         err_msg = f"Ollama unavailable: {e}"
         print(err_msg)
-        return []
+    return models
 
 def safe_filename(model_name):
     """Convert model name to safe filename."""
@@ -216,6 +254,13 @@ let abortCtrl = null;
 let thinkStart = 0;
 let thinkTimer = null;
 
+// Detect base URL (supports being proxied through hub at /chorus/)
+const BASE_URL = (() => {
+  const p = window.location.pathname;
+  if (p.startsWith('/chorus')) return '/chorus';
+  return '';
+})();
+
 // ── INIT ──
 async function init() {
   await loadModels();
@@ -236,12 +281,22 @@ function autoResize() {
 async function loadModels() {
   const sel = document.getElementById('model-select');
   try {
-    const r = await fetch('/api/models');
+    const r = await fetch(BASE_URL + '/api/models');
     const models = await r.json();
     if (!models.length) { sel.innerHTML = '<option value="">No models found</option>'; return; }
-    sel.innerHTML = models.map(m =>
-      `<option value="${m.name}" data-params="${m.params}" data-family="${m.family}">${m.name}</option>`
-    ).join('');
+    // Group agents first, then raw models
+    const agents = models.filter(m => m.is_agent);
+    const raw = models.filter(m => !m.is_agent);
+    let html = '';
+    if (agents.length) {
+      html += '<optgroup label="── AGENTS ──">';
+      html += agents.map(m => `<option value="${m.name}" data-params="agent" data-family="agent">⬡ ${m.display_name || m.name}</option>`).join('');
+      html += '</optgroup>';
+    }
+    html += '<optgroup label="── MODELS ──">';
+    html += raw.map(m => `<option value="${m.name}" data-params="${m.params}" data-family="${m.family}">${m.name}</option>`).join('');
+    html += '</optgroup>';
+    sel.innerHTML = html;
     sel.onchange = () => switchModel(sel.value);
     switchModel(models[0].name);
   } catch(e) {
@@ -261,7 +316,7 @@ async function switchModel(name) {
   }
   // Load history
   try {
-    const r = await fetch('/api/history?model=' + encodeURIComponent(name));
+    const r = await fetch(BASE_URL + '/api/history?model=' + encodeURIComponent(name));
     const msgs = await r.json();
     renderMessages(msgs);
   } catch(e) {
@@ -356,7 +411,7 @@ async function sendMessage() {
   let fullResponse = '';
 
   try {
-    const resp = await fetch('/api/chat', {
+    const resp = await fetch(BASE_URL + '/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ model: currentModel, message: text }),
@@ -417,7 +472,7 @@ function showThinking(on) {
 async function clearChat() {
   if (!currentModel) return;
   if (!confirm('Clear conversation with ' + currentModel + '?')) return;
-  await fetch('/api/clear', { method: 'POST',
+  await fetch(BASE_URL + '/api/clear', { method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({model: currentModel})
   });
@@ -426,7 +481,7 @@ async function clearChat() {
 
 function exportChat() {
   if (!currentModel) return;
-  fetch('/api/history?model=' + encodeURIComponent(currentModel))
+  fetch(BASE_URL + '/api/history?model=' + encodeURIComponent(currentModel))
     .then(r => r.json())
     .then(msgs => {
       const blob = new Blob([JSON.stringify({model: currentModel, messages: msgs}, null, 2)],
@@ -528,16 +583,32 @@ class ChorusHandler(http.server.BaseHTTPRequestHandler):
                 self._json({"error": "model and message required"}, 400)
                 return
 
+            # Resolve agent persona to underlying model + system prompt
+            ollama_model = model
+            system_prompt = None
+            if model.startswith("agent:"):
+                agent_name = model[6:]
+                persona = AGENT_PERSONAS.get(agent_name)
+                if persona:
+                    ollama_model = persona["model"]
+                    system_prompt = persona["system"]
+                else:
+                    self._json({"error": f"unknown agent: {agent_name}"}, 400)
+                    return
+
             # Add user message to history
             msgs = load_history(model)
             ts = datetime.now().isoformat()
             msgs.append({"role": "user", "content": message, "timestamp": ts})
 
             # Build Ollama request (only role + content, no timestamp)
-            ollama_msgs = [{"role": m["role"], "content": m["content"]} for m in msgs]
+            ollama_msgs = []
+            if system_prompt:
+                ollama_msgs.append({"role": "system", "content": system_prompt})
+            ollama_msgs += [{"role": m["role"], "content": m["content"]} for m in msgs]
 
             req_data = json.dumps({
-                "model": model,
+                "model": ollama_model,
                 "messages": ollama_msgs,
                 "stream": True
             }).encode()
