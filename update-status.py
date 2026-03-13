@@ -28,8 +28,14 @@ def get_system_stats():
     return disk_used, disk_total, disk_pct, ram_used, ram_total, load
 
 def count_files(prefix, ext='.md'):
-    files = [f for f in os.listdir(WORKING_DIR) if f.startswith(prefix) and f.endswith(ext)]
-    return len(files)
+    # Search both root and creative/ subdirectories
+    root_files = [f for f in os.listdir(WORKING_DIR) if f.startswith(prefix) and f.endswith(ext)]
+    sub_map = {'journal-': 'journals', 'poem-': 'poems'}
+    sub_dir = os.path.join(WORKING_DIR, 'creative', sub_map.get(prefix, ''))
+    sub_files = []
+    if os.path.isdir(sub_dir):
+        sub_files = [f for f in os.listdir(sub_dir) if f.startswith(prefix) and f.endswith(ext)]
+    return len(set(root_files + sub_files))
 
 def get_latest_name(prefix, ext='.md'):
     files = sorted([f for f in os.listdir(WORKING_DIR) if f.startswith(prefix) and f.endswith(ext)])

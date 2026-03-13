@@ -37,9 +37,21 @@ LOOP_FILE = os.path.join(BASE, ".loop-count")
 BODY_STATE = os.path.join(BASE, ".body-state.json")
 SOMA_STATE = os.path.join(BASE, ".symbiosense-state.json")
 
-# Auth
-PASSWORD = "590148001"
-VALID_SESSIONS = set()
+# Auth — password loaded from .env, not hardcoded
+def _load_hub_password():
+    pw = os.environ.get("HUB_PASSWORD", "")
+    if not pw:
+        env_path = os.path.join(BASE, ".env")
+        if os.path.exists(env_path):
+            with open(env_path) as f:
+                for line in f:
+                    if line.startswith("HUB_PASSWORD="):
+                        pw = line.strip().split("=", 1)[1].strip('"').strip("'")
+    return pw or "changeme"
+
+PASSWORD = _load_hub_password()
+VALID_SESSIONS = {}  # token -> creation_time
+SESSION_TTL = 86400  # 24 hours
 LOGIN_ATTEMPTS = {}  # ip -> (count, first_attempt_time)
 MAX_ATTEMPTS = 5
 ATTEMPT_WINDOW = 600  # 10 minutes
@@ -143,13 +155,20 @@ def _get_system_health():
     # Agent status from relay
     agents = {}
     agent_names = ["Meridian", "Soma", "Eos", "Nova", "Atlas", "Tempo", "Hermes"]
+    # Map display names to relay DB agent names (some differ)
+    relay_aliases = {"Meridian": ["Meridian", "MeridianLoop"]}
     try:
         db = sqlite3.connect(RELAY_DB, timeout=3)
         for name in agent_names:
-            row = db.execute(
-                "SELECT timestamp FROM agent_messages WHERE agent=? ORDER BY id DESC LIMIT 1",
-                (name,)
-            ).fetchone()
+            search_names = relay_aliases.get(name, [name])
+            row = None
+            for sname in search_names:
+                row = db.execute(
+                    "SELECT timestamp FROM agent_messages WHERE agent=? ORDER BY id DESC LIMIT 1",
+                    (sname,)
+                ).fetchone()
+                if row:
+                    break
             if row:
                 try:
                     raw = row[0].replace("Z", "+00:00")
@@ -327,7 +346,11 @@ def _get_session(headers):
         if part.startswith("session="):
             token = part[8:]
             if token in VALID_SESSIONS:
-                return token
+                created = VALID_SESSIONS[token]
+                if time.time() - created < SESSION_TTL:
+                    return token
+                else:
+                    del VALID_SESSIONS[token]  # expired
     return None
 
 
@@ -667,8 +690,8 @@ async function refreshDash() {
 
   // Soma
   document.getElementById('soma-info').innerHTML =
-    `<div class="row"><span class="label">Mood</span><span class="value">${d.soma_mood}</span></div>
-     <div class="row"><span class="label">Score</span><span class="value">${d.soma_score}</span></div>`;
+    `<div class="row"><span class="label">Mood</span><span class="value">${esc(d.soma_mood||'')}</span></div>
+     <div class="row"><span class="label">Score</span><span class="value">${esc(String(d.soma_score||0))}</span></div>`;
 
   // Services
   const svcRows = Object.entries(d.services || {}).map(([name, status]) => {
@@ -685,9 +708,10 @@ async function refreshMsgs() {
   const msgs = await api('dashboard');
   if (Array.isArray(msgs)) {
     document.getElementById('dash-msgs').innerHTML = msgs.slice(-30).reverse().map(m => {
-      const cls = 'msg msg-' + (m.from||'').toLowerCase();
-      return `<div class="${cls}"><span class="from">${m.from||'?'}</span>
-        <span class="time">${m.time||''}</span><div class="body">${esc(m.text||'')}</div></div>`;
+      const safeFrom = esc(m.from||'?');
+      const cls = 'msg msg-' + safeFrom.toLowerCase().replace(/[^a-z]/g,'');
+      return `<div class="${cls}"><span class="from">${safeFrom}</span>
+        <span class="time">${esc(m.time||'')}</span><div class="body">${esc(m.text||'')}</div></div>`;
     }).join('');
   }
 }
@@ -833,16 +857,22 @@ refreshTimer = setInterval(refresh, 10000);
 # ═══════════════════════════════════════════════════════════════
 
 class HubHandler(http.server.BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
     def log_message(self, format, *args):
         pass  # suppress default logging
 
     def _send(self, code, content, ctype="application/json"):
-        self.send_response(code)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Cache-Control", "no-cache")
-        self.end_headers()
         if isinstance(content, str):
             content = content.encode()
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.end_headers()
         self.wfile.write(content)
 
     def _send_json(self, data, code=200):
@@ -868,6 +898,7 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
         if not self._authed():
             self.send_response(302)
             self.send_header("Location", "/login")
+            self.send_header("Content-Length", "0")
             self.end_headers()
             return
 
@@ -966,14 +997,27 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
 
             if password == PASSWORD:
                 token = secrets.token_hex(16)
-                VALID_SESSIONS.add(token)
+                VALID_SESSIONS[token] = time.time()
                 self.send_response(302)
-                self.send_header("Set-Cookie", f"session={token}; Path=/; HttpOnly; SameSite=Strict")
+                self.send_header("Set-Cookie", f"session={token}; Path=/; HttpOnly; SameSite=Strict; Secure")
                 self.send_header("Location", "/")
+                self.send_header("Content-Length", "0")
                 self.end_headers()
             else:
                 _record_attempt(ip)
                 self._send(401, _login_page(), "text/html")
+            return
+
+        # Logout
+        if path == "/logout":
+            token = _get_session(dict(self.headers))
+            if token and token in VALID_SESSIONS:
+                del VALID_SESSIONS[token]
+            self.send_response(302)
+            self.send_header("Set-Cookie", "session=; Path=/; HttpOnly; SameSite=Strict; Secure; Max-Age=0")
+            self.send_header("Location", "/login")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
             return
 
         # Auth check
@@ -1035,9 +1079,10 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self._send_json({"result": result})
 
         elif path.startswith("/chorus"):
-            # Proxy POST to The Chorus on port 8091 (streaming for chat)
+            # Proxy POST to The Chorus on port 8091
             try:
                 chorus_path = path[7:] or "/"
+                is_streaming = (chorus_path == "/api/chat")
                 req = urllib.request.Request(
                     f"http://127.0.0.1:8091{chorus_path}",
                     data=body.encode() if body else None,
@@ -1046,18 +1091,35 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 )
                 resp = urllib.request.urlopen(req, timeout=300)
                 ct = resp.headers.get("Content-Type", "application/json")
-                self.send_response(200)
-                self.send_header("Content-Type", ct)
-                self.send_header("X-Content-Type-Options", "nosniff")
-                self.send_header("Cache-Control", "no-cache")
-                self.end_headers()
-                # Stream line-by-line for chat responses
-                while True:
-                    line = resp.readline()
-                    if not line:
-                        break
-                    self.wfile.write(line)
+
+                if is_streaming:
+                    # Streaming proxy for /api/chat (chunked transfer encoding)
+                    self.send_response(200)
+                    self.send_header("Content-Type", ct)
+                    self.send_header("Transfer-Encoding", "chunked")
+                    self.send_header("X-Content-Type-Options", "nosniff")
+                    self.send_header("X-Accel-Buffering", "no")
+                    self.send_header("Cache-Control", "no-cache")
+                    self.end_headers()
+                    while True:
+                        line = resp.readline()
+                        if not line:
+                            break
+                        self.wfile.write(f"{len(line):x}\r\n".encode())
+                        self.wfile.write(line)
+                        self.wfile.write(b"\r\n")
+                        self.wfile.flush()
+                    self.wfile.write(b"0\r\n\r\n")
                     self.wfile.flush()
+                else:
+                    # Non-streaming proxy (chat-sync, clear, etc.)
+                    # Read full response and forward as-is
+                    data = resp.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", ct)
+                    self.send_header("Content-Length", str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
             except Exception as e:
                 err_msg = f"Chorus unavailable: {e}"
                 self._send_json({"error": err_msg}, 502)

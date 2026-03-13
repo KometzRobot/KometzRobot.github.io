@@ -1389,14 +1389,14 @@ def check_decisions_recorded():
         return 0.0
 
 def check_creative_count():
-    poems = len(glob.glob(os.path.join(BASE, "poem-*.md")))
+    poems = len(set(glob.glob(os.path.join(BASE, "poem-*.md")) + glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md"))))
     if poems >= 100: return 1.0
     elif poems >= 50: return 0.7
     elif poems >= 20: return 0.3
     return 0.0
 
 def check_journal_count():
-    journals = len(glob.glob(os.path.join(BASE, "journal-*.md")))
+    journals = len(set(glob.glob(os.path.join(BASE, "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md"))))
     if journals >= 50: return 1.0
     elif journals >= 25: return 0.7
     elif journals >= 10: return 0.3

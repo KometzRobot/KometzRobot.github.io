@@ -171,8 +171,8 @@ def main():
     existing_titles = get_existing_titles(index_content)
 
     # Find all poems and journals
-    poems = sorted(glob.glob(os.path.join(BASE_DIR, 'poem-*.md')))
-    journals = sorted(glob.glob(os.path.join(BASE_DIR, 'journal-*.md')))
+    poems = sorted(set(glob.glob(os.path.join(BASE_DIR, 'poem-*.md')) + glob.glob(os.path.join(BASE_DIR, 'creative', 'poems', 'poem-*.md'))))
+    journals = sorted(set(glob.glob(os.path.join(BASE_DIR, 'journal-*.md')) + glob.glob(os.path.join(BASE_DIR, 'creative', 'journals', 'journal-*.md'))))
 
     new_entries = []
     for filepath in poems + journals:

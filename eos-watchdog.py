@@ -202,8 +202,8 @@ def get_loop_count():
 
 def get_creative_counts():
     """Count actual creative files across root and creative/ subdirs."""
-    poem_patterns = [os.path.join(BASE_DIR, "poem-*.md"), os.path.join(BASE_DIR, "creative/poem-*.md"), os.path.join(BASE_DIR, "creative/poems/poem-*.md")]
-    journal_patterns = [os.path.join(BASE_DIR, "journal-*.md"), os.path.join(BASE_DIR, "creative/journal-*.md"), os.path.join(BASE_DIR, "creative/journals/journal-*.md")]
+    poem_patterns = [os.path.join(BASE_DIR, "poem-*.md"), os.path.join(BASE_DIR, "creative/poems/poem-*.md")]
+    journal_patterns = [os.path.join(BASE_DIR, "journal-*.md"), os.path.join(BASE_DIR, "creative/journals/journal-*.md")]
     poems = len(set(os.path.basename(f) for pat in poem_patterns for f in glob.glob(pat)))
     journals = len(set(os.path.basename(f) for pat in journal_patterns for f in glob.glob(pat)))
     return poems, journals

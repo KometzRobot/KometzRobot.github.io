@@ -180,15 +180,39 @@ header h1 span{color:var(--dim);font-weight:400}
 .msg-time{font-size:9px;color:var(--dim);margin-top:4px;text-align:right}
 
 /* ── TYPING INDICATOR ── */
-#thinking{display:none;align-self:flex-start;padding:4px 16px}
+#thinking{display:none;align-self:flex-start;padding:4px 16px;align-items:center}
 #thinking .dots{color:var(--blue)}
+#thinking .dots::after{content:'';animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{content:''}33%{content:'.'}66%{content:'..'}}
+#thinking .agent-name{color:var(--cyan);font-size:11px;margin-right:6px}
 #thinking .elapsed{color:var(--dim);font-size:10px;margin-left:8px}
+
+/* ── STATUS BAR ── */
+#status-bar{background:var(--bg);border-top:1px solid var(--border);
+  padding:3px 16px;font-size:9px;color:var(--dim);display:flex;justify-content:space-between;flex-shrink:0}
+#status-bar .status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+  margin-right:4px;vertical-align:middle}
+#status-bar .online{background:var(--green)}
+#status-bar .offline{background:var(--red)}
 
 /* ── EMPTY STATE ── */
 #empty-state{flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;color:var(--dim);gap:12px}
-#empty-state h2{color:var(--cyan);font-size:16px;font-weight:600}
-#empty-state p{font-size:12px;max-width:400px;text-align:center}
+  justify-content:center;color:var(--dim);gap:16px;padding:20px}
+#empty-state h2{color:var(--cyan);font-size:18px;font-weight:600;letter-spacing:2px}
+#empty-state p{font-size:12px;max-width:500px;text-align:center;line-height:1.7}
+.agent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:520px;width:100%}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:10px;cursor:pointer;transition:border-color 0.2s,transform 0.1s}
+.agent-card:hover{border-color:var(--cyan);transform:translateY(-1px)}
+.agent-card .ac-name{font-size:12px;font-weight:600;margin-bottom:3px}
+.agent-card .ac-role{font-size:10px;color:var(--dim);line-height:1.4}
+.agent-card[data-agent="Eos"] .ac-name{color:var(--green)}
+.agent-card[data-agent="Nova"] .ac-name{color:var(--purple)}
+.agent-card[data-agent="Tempo"] .ac-name{color:var(--amber)}
+.agent-card[data-agent="Atlas"] .ac-name{color:var(--red)}
+.agent-card[data-agent="Soma"] .ac-name{color:var(--pink)}
+.agent-card[data-agent="Hermes"] .ac-name{color:var(--cyan)}
+@media(max-width:600px){.agent-grid{grid-template-columns:repeat(2,1fr)}}
 
 /* ── INPUT AREA ── */
 #input-area{background:var(--surface);border-top:1px solid var(--border);
@@ -234,17 +258,42 @@ header h1 span{color:var(--dim);font-weight:400}
 <div id="chat">
   <div id="empty-state">
     <h2>THE CHORUS</h2>
-    <p>Select a model above and start chatting. Every local Ollama model, one interface.</p>
+    <p>Every voice in the ecosystem, one interface. Select an agent or model above, or click below.</p>
+    <div class="agent-grid">
+      <div class="agent-card" data-agent="Eos" onclick="selectAgent('Eos')">
+        <div class="ac-name">Eos</div><div class="ac-role">Companion. Honest, warm, no cheerleading.</div>
+      </div>
+      <div class="agent-card" data-agent="Nova" onclick="selectAgent('Nova')">
+        <div class="ac-name">Nova</div><div class="ac-role">Observer. Tracks changes, notices anomalies.</div>
+      </div>
+      <div class="agent-card" data-agent="Tempo" onclick="selectAgent('Tempo')">
+        <div class="ac-name">Tempo</div><div class="ac-role">Rhythm daemon. Timing, cycles, momentum.</div>
+      </div>
+      <div class="agent-card" data-agent="Atlas" onclick="selectAgent('Atlas')">
+        <div class="ac-name">Atlas</div><div class="ac-role">Infra auditor. Security, health, services.</div>
+      </div>
+      <div class="agent-card" data-agent="Soma" onclick="selectAgent('Soma')">
+        <div class="ac-name">Soma</div><div class="ac-role">Nervous system. Mood, body, psyche.</div>
+      </div>
+      <div class="agent-card" data-agent="Hermes" onclick="selectAgent('Hermes')">
+        <div class="ac-name">Hermes</div><div class="ac-role">Messenger. Relay, routing, bridging.</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div id="thinking">
-  <span class="dots">thinking</span><span class="elapsed"></span>
+  <span class="agent-name"></span><span class="dots">thinking</span><span class="elapsed"></span>
 </div>
 
 <div id="input-area">
   <textarea id="msg-input" placeholder="Type a message..." rows="1"></textarea>
   <button id="send-btn" onclick="sendMessage()">Send</button>
+</div>
+
+<div id="status-bar">
+  <span><span class="status-dot" id="ollama-dot"></span><span id="ollama-status">checking...</span></span>
+  <span id="msg-count"></span>
 </div>
 
 <script>
@@ -253,6 +302,21 @@ let streaming = false;
 let abortCtrl = null;
 let thinkStart = 0;
 let thinkTimer = null;
+
+const AGENT_COLORS = {
+  'agent:Eos':'#4ade80','agent:Nova':'#c084fc','agent:Tempo':'#fbbf24',
+  'agent:Atlas':'#f87171','agent:Soma':'#f472b6','agent:Hermes':'#22d3ee'
+};
+const AGENT_INITIALS = {
+  'agent:Eos':'E','agent:Nova':'N','agent:Tempo':'T',
+  'agent:Atlas':'A','agent:Soma':'S','agent:Hermes':'H'
+};
+
+function selectAgent(name) {
+  const sel = document.getElementById('model-select');
+  sel.value = 'agent:' + name;
+  switchModel('agent:' + name);
+}
 
 // Detect base URL (supports being proxied through hub at /chorus/)
 const BASE_URL = (() => {
@@ -264,6 +328,7 @@ const BASE_URL = (() => {
 // ── INIT ──
 async function init() {
   await loadModels();
+  checkOllama();
   const input = document.getElementById('msg-input');
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -312,15 +377,25 @@ async function switchModel(name) {
   if (opt) {
     const p = opt.dataset.params;
     const f = opt.dataset.family;
-    info.textContent = [p, f].filter(Boolean).join(' · ');
+    if (p === 'agent') {
+      const roles = {Eos:'companion',Nova:'observer',Tempo:'rhythm',Atlas:'infra',Soma:'psyche',Hermes:'messenger'};
+      const n = name.replace('agent:','');
+      info.textContent = roles[n] || 'agent';
+      info.style.color = AGENT_COLORS[name] || '';
+    } else {
+      info.textContent = [p, f].filter(Boolean).join(' · ');
+      info.style.color = '';
+    }
   }
   // Load history
   try {
     const r = await fetch(BASE_URL + '/api/history?model=' + encodeURIComponent(name));
     const msgs = await r.json();
     renderMessages(msgs);
+    updateMsgCount(msgs);
   } catch(e) {
     renderMessages([]);
+    updateMsgCount([]);
   }
 }
 
@@ -348,7 +423,14 @@ function appendMessage(role, content, timestamp, scroll=true) {
   row.className = 'msg-row ' + role;
   const avatar = document.createElement('div');
   avatar.className = 'msg-avatar';
-  avatar.textContent = role === 'user' ? 'J' : 'AI';
+  if (role === 'user') {
+    avatar.textContent = 'J';
+  } else {
+    const initial = AGENT_INITIALS[currentModel] || 'AI';
+    const color = AGENT_COLORS[currentModel];
+    avatar.textContent = initial;
+    if (color) avatar.style.background = color;
+  }
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
   bubble.innerHTML = renderMd(content);
@@ -391,7 +473,24 @@ function scrollBottom() {
 }
 
 // ── SEND ──
-async function sendMessage() {
+function parseNDJSON(text) {
+  // Parse NDJSON text and extract assistant content
+  let result = '';
+  const lines = text.split('\\n').filter(Boolean);
+  for (const line of lines) {
+    try {
+      const obj = JSON.parse(line);
+      if (obj.error) {
+        result += '\\n[Error: ' + obj.error + ']';
+      } else if (obj.message && obj.message.content) {
+        result += obj.message.content;
+      }
+    } catch(e) { /* partial line, skip */ }
+  }
+  return result;
+}
+
+function sendMessage() {
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text || !currentModel || streaming) return;
@@ -402,61 +501,116 @@ async function sendMessage() {
 
   streaming = true;
   document.getElementById('send-btn').disabled = true;
-  showThinking(true);
+  const agentLabel = AGENT_INITIALS[currentModel] ? currentModel.replace('agent:','') : currentModel;
+  showThinking(true, agentLabel);
 
-  // Create assistant bubble for streaming
+  // Create assistant bubble
   const bubble = appendMessage('assistant', '', null, true);
 
-  abortCtrl = new AbortController();
-  let fullResponse = '';
+  // When proxied through the hub (BASE_URL='/chorus'), use the sync endpoint.
+  // Streaming via chunked transfer encoding breaks on mobile browsers in
+  // iframes behind Cloudflare tunnels (XHR onprogress never fires).
+  // When accessed directly (BASE_URL=''), use streaming for live output.
+  const isProxied = BASE_URL.length > 0;
 
-  try {
-    const resp = await fetch(BASE_URL + '/api/chat', {
+  if (isProxied) {
+    // ── SYNC MODE (mobile/proxied) ──
+    // Single fetch, full response buffered server-side, returned as JSON.
+    const ctrl = new AbortController();
+    abortCtrl = ctrl;
+    fetch(BASE_URL + '/api/chat-sync', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ model: currentModel, message: text }),
-      signal: abortCtrl.signal
-    });
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const {value, done} = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, {stream: true});
-      // Each line is an NDJSON object
-      const lines = chunk.split('\\n').filter(Boolean);
-      for (const line of lines) {
-        try {
-          const obj = JSON.parse(line);
-          if (obj.error) {
-            fullResponse += '\\n[Error: ' + obj.error + ']';
-          } else if (obj.message && obj.message.content) {
-            fullResponse += obj.message.content;
-          }
-        } catch(e) { /* partial line, skip */ }
+      signal: ctrl.signal
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        bubble.innerHTML = renderMd('[Error: ' + data.error + ']');
+      } else {
+        bubble.innerHTML = renderMd(data.content || '[No response received]');
       }
-      bubble.innerHTML = renderMd(fullResponse);
       scrollBottom();
-    }
-  } catch(e) {
-    if (e.name !== 'AbortError') {
-      fullResponse += '\\n[Connection error: ' + e.message + ']';
-      bubble.innerHTML = renderMd(fullResponse);
-    }
-  }
+      showThinking(false);
+      streaming = false;
+      document.getElementById('send-btn').disabled = false;
+      input.focus();
+    })
+    .catch(err => {
+      if (err.name !== 'AbortError') {
+        bubble.innerHTML = renderMd('[Connection error: ' + err.message + ']');
+      }
+      showThinking(false);
+      streaming = false;
+      document.getElementById('send-btn').disabled = false;
+      input.focus();
+    });
+  } else {
+    // ── STREAMING MODE (direct access) ──
+    // XHR with onprogress for live token output.
+    const xhr = new XMLHttpRequest();
+    abortCtrl = xhr;
+    let lastLen = 0;
 
-  showThinking(false);
-  streaming = false;
-  document.getElementById('send-btn').disabled = false;
-  input.focus();
+    xhr.open('POST', BASE_URL + '/api/chat', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.onprogress = function() {
+      const newData = xhr.responseText;
+      if (newData.length > lastLen) {
+        lastLen = newData.length;
+        const parsed = parseNDJSON(newData);
+        if (parsed) {
+          bubble.innerHTML = renderMd(parsed);
+          scrollBottom();
+        }
+      }
+    };
+
+    xhr.onload = function() {
+      const fullResponse = parseNDJSON(xhr.responseText);
+      bubble.innerHTML = renderMd(fullResponse || '[No response received]');
+      scrollBottom();
+      showThinking(false);
+      streaming = false;
+      document.getElementById('send-btn').disabled = false;
+      input.focus();
+    };
+
+    xhr.onerror = function() {
+      bubble.innerHTML = renderMd('[Connection error]');
+      showThinking(false);
+      streaming = false;
+      document.getElementById('send-btn').disabled = false;
+      input.focus();
+    };
+
+    xhr.ontimeout = function() {
+      bubble.innerHTML = renderMd('[Request timed out]');
+      showThinking(false);
+      streaming = false;
+      document.getElementById('send-btn').disabled = false;
+      input.focus();
+    };
+
+    xhr.onabort = function() {
+      showThinking(false);
+      streaming = false;
+      document.getElementById('send-btn').disabled = false;
+      input.focus();
+    };
+
+    xhr.timeout = 300000;
+    xhr.send(JSON.stringify({ model: currentModel, message: text }));
+  }
 }
 
-function showThinking(on) {
+function showThinking(on, label) {
   const el = document.getElementById('thinking');
   if (on) {
     el.style.display = 'flex';
+    el.querySelector('.agent-name').textContent = label ? label + ' ' : '';
     thinkStart = Date.now();
     thinkTimer = setInterval(() => {
       const s = ((Date.now() - thinkStart) / 1000).toFixed(0);
@@ -493,7 +647,27 @@ function exportChat() {
     });
 }
 
+async function checkOllama() {
+  const dot = document.getElementById('ollama-dot');
+  const txt = document.getElementById('ollama-status');
+  try {
+    const r = await fetch(BASE_URL + '/api/models');
+    const models = await r.json();
+    dot.className = 'status-dot online';
+    txt.textContent = 'Ollama: ' + models.filter(m => !m.is_agent).length + ' models';
+  } catch(e) {
+    dot.className = 'status-dot offline';
+    txt.textContent = 'Ollama: offline';
+  }
+}
+
+function updateMsgCount(msgs) {
+  const el = document.getElementById('msg-count');
+  if (el) el.textContent = msgs.length ? msgs.length + ' messages' : '';
+}
+
 init();
+setInterval(checkOllama, 30000);
 </script>
 </body>
 </html>"""
@@ -504,6 +678,7 @@ init();
 
 class ChorusHandler(http.server.BaseHTTPRequestHandler):
     """Handle all Chorus routes."""
+    protocol_version = "HTTP/1.1"
 
     def log_message(self, fmt, *args):
         # Quiet logging
@@ -556,6 +731,9 @@ class ChorusHandler(http.server.BaseHTTPRequestHandler):
 
         if path == "/api/chat":
             self._handle_chat(body)
+
+        elif path == "/api/chat-sync":
+            self._handle_chat_sync(body)
 
         elif path == "/api/clear":
             try:
@@ -619,12 +797,23 @@ class ChorusHandler(http.server.BaseHTTPRequestHandler):
                 headers={"Content-Type": "application/json"}
             )
 
-            # Stream response — no Content-Length, connection closes when done
+            # Stream response using chunked transfer encoding for mobile compatibility
             self.send_response(200)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Transfer-Encoding", "chunked")
             self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-Accel-Buffering", "no")
             self.send_header("Cache-Control", "no-cache")
             self.end_headers()
+
+            def send_chunk(data):
+                """Send a single HTTP chunked-encoding frame."""
+                if isinstance(data, str):
+                    data = data.encode()
+                self.wfile.write(f"{len(data):x}\r\n".encode())
+                self.wfile.write(data)
+                self.wfile.write(b"\r\n")
+                self.wfile.flush()
 
             full_response = ""
             try:
@@ -637,18 +826,22 @@ class ChorusHandler(http.server.BaseHTTPRequestHandler):
                         chunk = json.loads(line)
                         if chunk.get("message", {}).get("content"):
                             full_response += chunk["message"]["content"]
-                        self.wfile.write(line)
-                        self.wfile.flush()
+                        send_chunk(line)
                     except json.JSONDecodeError:
                         pass
             except Exception as e:
                 err_msg = f"Ollama error: {e}"
                 error_line = json.dumps({"error": err_msg}).encode() + b"\n"
                 try:
-                    self.wfile.write(error_line)
-                    self.wfile.flush()
+                    send_chunk(error_line)
                 except Exception:
                     pass
+            # Send terminating chunk
+            try:
+                self.wfile.write(b"0\r\n\r\n")
+                self.wfile.flush()
+            except Exception:
+                pass
 
             # Save assistant response to history
             if full_response:
@@ -661,6 +854,88 @@ class ChorusHandler(http.server.BaseHTTPRequestHandler):
 
         except Exception as e:
             err_msg = f"Chat error: {e}"
+            try:
+                self._json({"error": err_msg}, 500)
+            except Exception:
+                pass
+
+    def _handle_chat_sync(self, body):
+        """Non-streaming chat — buffers full Ollama response, returns single JSON.
+        Needed for mobile browsers in iframes behind Cloudflare tunnels where
+        chunked transfer encoding / XHR onprogress doesn't work reliably."""
+        try:
+            data = json.loads(body)
+            model = data.get("model", "")
+            message = data.get("message", "")
+
+            if not model or not message:
+                self._json({"error": "model and message required"}, 400)
+                return
+
+            # Resolve agent persona to underlying model + system prompt
+            ollama_model = model
+            system_prompt = None
+            if model.startswith("agent:"):
+                agent_name = model[6:]
+                persona = AGENT_PERSONAS.get(agent_name)
+                if persona:
+                    ollama_model = persona["model"]
+                    system_prompt = persona["system"]
+                else:
+                    self._json({"error": f"unknown agent: {agent_name}"}, 400)
+                    return
+
+            # Add user message to history
+            msgs = load_history(model)
+            ts = datetime.now().isoformat()
+            msgs.append({"role": "user", "content": message, "timestamp": ts})
+
+            # Build Ollama request — non-streaming
+            ollama_msgs = []
+            if system_prompt:
+                ollama_msgs.append({"role": "system", "content": system_prompt})
+            ollama_msgs += [{"role": m["role"], "content": m["content"]} for m in msgs]
+
+            req_data = json.dumps({
+                "model": ollama_model,
+                "messages": ollama_msgs,
+                "stream": False
+            }).encode()
+
+            req = urllib.request.Request(
+                f"{OLLAMA_URL}/api/chat",
+                data=req_data,
+                headers={"Content-Type": "application/json"}
+            )
+
+            full_response = ""
+            try:
+                resp = urllib.request.urlopen(req, timeout=300)
+                resp_data = json.loads(resp.read())
+                full_response = resp_data.get("message", {}).get("content", "")
+            except Exception as e:
+                err_msg = f"Ollama error: {e}"
+                self._json({"error": err_msg}, 502)
+                return
+
+            # Save assistant response to history
+            resp_ts = datetime.now().isoformat()
+            if full_response:
+                msgs.append({
+                    "role": "assistant",
+                    "content": full_response,
+                    "timestamp": resp_ts
+                })
+            save_history(model)
+
+            self._json({
+                "role": "assistant",
+                "content": full_response,
+                "timestamp": resp_ts
+            })
+
+        except Exception as e:
+            err_msg = f"Chat sync error: {e}"
             try:
                 self._json({"error": err_msg}, 500)
             except Exception:

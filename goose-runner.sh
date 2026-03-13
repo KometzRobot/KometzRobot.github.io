@@ -55,16 +55,16 @@ CRON_FAIL=0
 declare -A CRON_LOGS
 CRON_LOGS=(
     ["watchdog"]="watchdog.log:900"
-    ["watchdog-status"]="watchdog-status.log:300"
+    ["watchdog-status"]="watchdog-status.log:360"
     ["eos-watchdog"]="eos-watchdog.log:180"
-    ["push-live-status"]="push-live-status.log:300"
+    ["push-live-status"]="push-live-status.log:360"
     ["loop-optimizer"]="loop-optimizer.log:2400"
     ["eos-creative"]="eos-creative.log:900"
     ["nova"]="nova.log:1200"
     ["eos-react"]="eos-react.log:900"
     ["goose"]="goose.log:900"
     ["loop-fitness"]="loop-fitness.log:2400"
-    ["daily-log"]="daily-log.log:130000"
+    # daily-log REMOVED — cron was deleted (file doesn't exist)
     ["eos-briefing"]="eos-briefing.log:130000"
     # morning-summary DISABLED (duplicate of eos-briefing) — removed from stale check
 )
@@ -275,9 +275,16 @@ db.close()
 
 echo "[$(date)] $RELAY_MSG" >> "$LOG"
 
-# Dashboard post only for issues
+# Dashboard post only for issues — with dedup to avoid flooding
+ATLAS_LAST_DASH="/tmp/.atlas-last-dash"
 if [ -n "$ISSUES" ]; then
-    python3 -c "
+    CURRENT_ISSUES=$(echo "$ISSUES" | tr -s ' ')
+    # Normalize for comparison: strip changing numbers like "(238794s)" and "703MB"
+    NORM_CURRENT=$(echo "$CURRENT_ISSUES" | sed 's/([0-9]*s)/(Xs)/g; s/[0-9]*MB/XMB/g')
+    NORM_LAST=$(cat "$ATLAS_LAST_DASH" 2>/dev/null | sed 's/([0-9]*s)/(Xs)/g; s/[0-9]*MB/XMB/g')
+    if [ "$NORM_CURRENT" != "$NORM_LAST" ]; then
+        echo "$CURRENT_ISSUES" > "$ATLAS_LAST_DASH"
+        python3 -c "
 import json, os
 f = '$DASH_FILE'
 try:
@@ -290,6 +297,9 @@ msgs.append({'from': 'Atlas', 'text': '''Infra audit:$(echo "$ISSUES" | sed "s/'
 msgs = msgs[-50:]
 json.dump({'messages': msgs}, open(f, 'w'))
 " 2>/dev/null
+    fi
+else
+    rm -f "$ATLAS_LAST_DASH"
 fi
 
 # Hourly: Run Atlas AI for deeper infrastructure analysis

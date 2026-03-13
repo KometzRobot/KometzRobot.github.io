@@ -140,10 +140,11 @@ function getCreativeStats() {
   const code = `
 import glob, json, os
 BASE = "${BASE}"
-poems = sorted(glob.glob(os.path.join(BASE, "poem-*.md")))
-journals = sorted(glob.glob(os.path.join(BASE, "journal-*.md")))
-cogcorp = sorted(glob.glob(os.path.join(BASE, "cogcorp-0*.html")))
-nft_protos = glob.glob(os.path.join(BASE, "nft-prototypes", "*.html"))
+# Search both root and creative/ subdirectories
+poems = sorted(set(glob.glob(os.path.join(BASE, "poem-*.md")) + glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md"))))
+journals = sorted(set(glob.glob(os.path.join(BASE, "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md"))))
+cogcorp = sorted(set(glob.glob(os.path.join(BASE, "cogcorp-fiction", "cogcorp-[0-9]*.html")) + glob.glob(os.path.join(BASE, "creative", "cogcorp", "CC-*.md"))))
+nft_protos = glob.glob(os.path.join(BASE, "archive", "nft", "nft-prototypes", "*.html"))
 meridian_nfts = [f for f in nft_protos if 'cogcorp' not in os.path.basename(f)]
 
 # Get latest file names

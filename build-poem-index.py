@@ -16,7 +16,6 @@ REPO = "/home/joel/autonomous-ai"
 SCAN_ORDER = [
     os.path.join(REPO, "creative", "poems", "poem-*.md"),
     os.path.join(REPO, "poem-*.md"),
-    os.path.join(REPO, "creative", "poem-*.md"),
 ]
 
 # Regex to extract poem number from filename

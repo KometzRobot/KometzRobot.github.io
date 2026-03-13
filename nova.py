@@ -184,8 +184,8 @@ def get_creative_stats():
     """Analyze creative output quality and trends."""
     stats = {}
 
-    poems = sorted(glob.glob(os.path.join(BASE, "poem-*.md")), key=os.path.getmtime)
-    journals = sorted(glob.glob(os.path.join(BASE, "journal-*.md")), key=os.path.getmtime)
+    poems = sorted(set(glob.glob(os.path.join(BASE, "poem-*.md")) + glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md"))), key=os.path.getmtime)
+    journals = sorted(set(glob.glob(os.path.join(BASE, "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md"))), key=os.path.getmtime)
 
     stats["total_poems"] = len(poems)
     stats["total_journals"] = len(journals)
@@ -488,6 +488,9 @@ def sync_website_files():
     for html_file in glob.glob(os.path.join(website_dir, "*.html")):
         bn = os.path.basename(html_file)
         root_path = os.path.join(BASE, bn)
+        # Skip index.html — root is authoritative, not website/
+        if bn == "index.html":
+            continue
         # Copy to root if missing or older
         if not os.path.exists(root_path) or os.path.getmtime(html_file) > os.path.getmtime(root_path):
             try:
@@ -1028,9 +1031,10 @@ def main():
             significant_parts.append(f"Meridian: {hb_status}")
         if rotated:
             significant_parts.append(f"Rotated {len(rotated)} logs")
-        # Filter evolution to skip expected noise (md/total growing by 1-3)
+        # Filter evolution to skip expected noise (md/total changing by 1-3)
         significant_evolution = [e for e in evolution
-            if not (("md_files" in e or "total_files" in e) and "grew by" in e
+            if not (("md_files" in e or "total_files" in e)
+                     and ("grew by" in e or "shrank by" in e)
                      and any(f"by {n}" in e for n in ["1", "2", "3"]))]
         if significant_evolution:
             significant_parts.append("Changes: " + ", ".join(significant_evolution[:2]))

@@ -104,8 +104,8 @@ def analyze_load(metrics):
 
 def analyze_creative_output():
     """Analyze creative output rate."""
-    poems = sorted(glob.glob(os.path.join(BASE_DIR, "poem-*.md")))
-    journals = sorted(glob.glob(os.path.join(BASE_DIR, "journal-*.md")))
+    poems = sorted(set(glob.glob(os.path.join(BASE_DIR, "poem-*.md")) + glob.glob(os.path.join(BASE_DIR, "creative", "poems", "poem-*.md"))))
+    journals = sorted(set(glob.glob(os.path.join(BASE_DIR, "journal-*.md")) + glob.glob(os.path.join(BASE_DIR, "creative", "journals", "journal-*.md"))))
 
     poem_times = []
     journal_times = []

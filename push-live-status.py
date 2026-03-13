@@ -93,7 +93,8 @@ def get_services():
     # Persistent services checked via pgrep
     persistent = {
         "protonmail-bridge": "protonmail-bridge",
-        "the-signal": "the-signal.py",
+        "the-chorus": "the-chorus.py",
+        "hub-v2": "hub-v2.py",
         "ollama": "ollama",
         "cloudflared": "cloudflared tunnel",
         "symbiosense": "symbiosense.py",
@@ -139,21 +140,19 @@ def get_creative_counts():
     # Count by highest number (we number sequentially, so max number = total written)
     poems = _max_number([
         os.path.join(BASE_DIR, "poem-*.md"),
-        os.path.join(BASE_DIR, "creative", "poem-*.md"),
         os.path.join(BASE_DIR, "creative", "poems", "poem-*.md"),
     ])
     journals = _max_number([
         os.path.join(BASE_DIR, "journal-*.md"),
-        os.path.join(BASE_DIR, "creative", "journal-*.md"),
         os.path.join(BASE_DIR, "creative", "journals", "journal-*.md"),
     ])
     # CogCorp pieces from both locations
     cogcorp = _max_number([
         os.path.join(BASE_DIR, "creative", "cogcorp", "CC-*.md"),
-        os.path.join(BASE_DIR, "website", "cogcorp-*.html"),
+        os.path.join(BASE_DIR, "cogcorp-fiction", "cogcorp-[0-9]*.html"),
     ])
     # Meridian NFTs (non-cogcorp prototypes)
-    nft_dir = os.path.join(BASE_DIR, "nft-prototypes")
+    nft_dir = os.path.join(BASE_DIR, "archive", "nft", "nft-prototypes")
     all_protos = glob.glob(os.path.join(nft_dir, "*.html")) if os.path.exists(nft_dir) else []
     meridian_nfts = len([f for f in all_protos if 'cogcorp' not in os.path.basename(f)])
     nfts = meridian_nfts + cogcorp
@@ -375,6 +374,26 @@ def build_status():
     }
 
 
+PUSH_INTERVAL = 1800  # 30 minutes between git pushes (reduces ~480 commits/day to ~48)
+LAST_PUSH_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".last-push-time")
+
+
+def _time_to_push():
+    """Check if enough time has passed since last push."""
+    try:
+        with open(LAST_PUSH_FILE) as f:
+            last = float(f.read().strip())
+        return (time.time() - last) >= PUSH_INTERVAL
+    except Exception:
+        return True  # No record = push now
+
+
+def _mark_pushed():
+    """Record that we just pushed."""
+    with open(LAST_PUSH_FILE, 'w') as f:
+        f.write(str(time.time()))
+
+
 def push_status():
     # Ensure repo exists
     if not os.path.isdir(REPO_DIR):
@@ -414,6 +433,11 @@ def push_status():
         print("No changes")
         return True
 
+    # Only commit+push every 30 min to reduce repo bloat (~480 commits/day -> ~48)
+    if not _time_to_push():
+        print(f"Status written locally, push deferred (interval: {PUSH_INTERVAL}s)")
+        return True
+
     # Commit and push
     subprocess.run(['git', 'config', 'user.email', 'kometzrobot@proton.me'], cwd=REPO_DIR, capture_output=True)
     subprocess.run(['git', 'config', 'user.name', 'KometzRobot'], cwd=REPO_DIR, capture_output=True)
@@ -425,6 +449,7 @@ def push_status():
                            capture_output=True, text=True, timeout=30,
                            env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
     if result.returncode == 0:
+        _mark_pushed()
         print(f"Pushed status: loop {status['loop_count']}, hb {status['heartbeat_age_seconds']}s")
         return True
     else:

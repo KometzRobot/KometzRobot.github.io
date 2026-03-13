@@ -190,8 +190,8 @@ def cron_ok():
 
 def creative_counts():
     # Scan both root AND creative/ subdirectories for full counts
-    p = len(glob.glob(os.path.join(BASE, "poem-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "poem-*.md")))
-    j = len(glob.glob(os.path.join(BASE, "journal-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "journal-*.md")))
+    p = len(glob.glob(os.path.join(BASE, "poem-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md")))
+    j = len(glob.glob(os.path.join(BASE, "journal-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")))
     exclude = {"cogcorp-gallery.html", "cogcorp-article.html"}
     cc_files = (glob.glob(os.path.join(BASE, "cogcorp-*.html")) +
                 glob.glob(os.path.join(BASE, "website", "cogcorp-*.html")) +

@@ -25,13 +25,24 @@ HEARTBEAT = "/home/joel/autonomous-ai/.heartbeat"
 BASE = "/home/joel/autonomous-ai"
 
 def count_files(pattern):
-    return len(glob.glob(os.path.join(BASE, pattern)))
+    # Search both root and creative/ subdirectories
+    root_files = glob.glob(os.path.join(BASE, pattern))
+    # Determine subdirectory from pattern
+    if pattern.startswith('journal'):
+        sub_files = glob.glob(os.path.join(BASE, "creative", "journals", pattern))
+    elif pattern.startswith('poem'):
+        sub_files = glob.glob(os.path.join(BASE, "creative", "poems", pattern))
+    else:
+        sub_files = []
+    return len(set(root_files + sub_files))
 
 def count_cogcorp():
     exclude = {"cogcorp-gallery.html", "cogcorp-article.html"}
-    # CogCorp HTML files are in repo root, not website/ subdirectory
-    files = glob.glob(os.path.join(BASE, "cogcorp-*.html"))
-    return len([f for f in files if os.path.basename(f) not in exclude])
+    # CogCorp HTML files in cogcorp-fiction/ + CC-*.md files in creative/cogcorp/
+    root_files = glob.glob(os.path.join(BASE, "cogcorp-fiction", "cogcorp-[0-9]*.html"))
+    root_count = len(root_files)
+    cc_files = glob.glob(os.path.join(BASE, "creative", "cogcorp", "CC-*.md"))
+    return root_count + len(cc_files)
 
 def get_loop():
     try:

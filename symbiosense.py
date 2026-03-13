@@ -1315,7 +1315,7 @@ def sense_cycle():
                 "agents_alive": alive_agents,
                 "agents_total": 6,
                 "poems_total": len(_glob_module.glob(os.path.join(BASE, "creative/poems/poem-*.md"))) + len(_glob_module.glob(os.path.join(BASE, "poem-*.md"))),
-                "cogcorp_total": len(_glob_module.glob(os.path.join(BASE, "creative/cogcorp/CC-*.md"))) + len([f for f in _glob_module.glob(os.path.join(BASE, "cogcorp-*.html")) if os.path.basename(f) not in ("cogcorp-gallery.html", "cogcorp-article.html")]),
+                "cogcorp_total": len(_glob_module.glob(os.path.join(BASE, "creative/cogcorp/CC-*.md"))) + len(_glob_module.glob(os.path.join(BASE, "cogcorp-fiction/cogcorp-[0-9]*.html"))),
                 "journals_total": len(_glob_module.glob(os.path.join(BASE, "creative/journals/journal-*.md"))) + len(_glob_module.glob(os.path.join(BASE, "journal-*.md"))),
                 "creative_last_24h": creative_24h,
                 "loop_count": loop_count,

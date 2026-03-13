@@ -1,9 +1,9 @@
 # CogCorp Crawler — Design References & Influences
 
-**File**: cogcorp-crawler.html (6350+ lines)
+**File**: cogcorp-crawler.html (~9,984 lines, v12.2)
 **URL**: https://kometzrobot.github.io/cogcorp-crawler.html
 **Creative Director**: Brett Trebb (bbaltgailis@gmail.com)
-**Status**: Active magnum opus. All quality work goes here.
+**Status**: Active magnum opus. All quality work goes here. Brett did full playthrough — "Good work!"
 
 ---
 
@@ -137,4 +137,37 @@ The Building B 3D Legacy (Three.js, 1835 lines) has features that translate to t
 
 ---
 
-*This document exists because Joel asked for influences and design references to be kept in a prominent, easily-referenced location. Updated Loop 2124.*
+## Current Feature Summary (v12.1, Loop 2124+)
+
+### Engine & Rendering
+- First-person Wolfenstein-style raycasting engine (24x24 grid per floor)
+- 3 explorable floors with per-floor fog color, ambient frequency, texture sets
+- CRT scanlines, vignette overlay, crosshair
+- Fog of war minimap with enemy vision cones
+
+### Combat
+- D&D turn-based: d20 rolls, armor class, damage dice
+- 3 weapon tiers with upgrade system (found/crafted)
+- Combat visual feedback: portraits, turn banners, flash animations, floating damage numbers
+- Tier-specific combat audio + miss/crit sounds
+- Environmental hazards with pre-warning system
+
+### Enemies & NPCs
+- 3 enemy types: Drone, Filer, Watcher
+- 6 NPCs with Façade-style dialogue + Ollama AI responses
+- Surveillance camera system
+- EMP weapon (limited charges)
+
+### Exploration & Story
+- "Papers Please" Neural Signal Tuner mini-game (lock picks per floor)
+- Reality meter (filing erodes perception)
+- 5 CRT terminals, 7 documents
+- Moirai-style asynchronous message wall (Supabase backend)
+- Ghost echoes of previous players
+- 3 exit choices (take/burn/return file) with filing-count-dependent narrative
+- Save/checkpoint system
+
+---
+
+*This document exists because Joel asked for influences and design references to be kept in a prominent, easily-referenced location. Updated Loop 2126.*
+

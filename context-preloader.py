@@ -192,8 +192,8 @@ def get_service_status():
 
 
 def get_creative_counts():
-    poems = len(glob.glob(os.path.join(BASE, "poem-*.md")))
-    journals = len(glob.glob(os.path.join(BASE, "journal-*.md")))
+    poems = len(set(glob.glob(os.path.join(BASE, "poem-*.md")) + glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md"))))
+    journals = len(set(glob.glob(os.path.join(BASE, "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md"))))
     return poems, journals
 
 

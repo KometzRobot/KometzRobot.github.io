@@ -88,8 +88,8 @@ def get_services():
     checks = {
         "Proton Bridge": "protonmail-bridge",
         "Ollama": "ollama serve",
-        "Command Center": "command-center",
-        "The Signal": "the-signal.py",
+        "Hub v2": "hub-v2.py",
+        "The Chorus": "the-chorus.py",
         "Cloudflare Tunnel": "cloudflared",
         "Soma": "symbiosense.py",
     }
@@ -226,26 +226,24 @@ def get_outstanding_issues():
     return "No outstanding issues."
 
 
-def _max_number(pattern_list):
-    """Find highest numbered file across multiple glob patterns."""
-    nums = []
+def _count_files(pattern_list):
+    """Count actual files matching patterns (not highest number — avoids inflated counts)."""
+    seen = set()
     for pat in pattern_list:
         for f in glob.glob(pat):
-            m = re.search(r'(\d+)', os.path.basename(f))
-            if m:
-                nums.append(int(m.group(1)))
-    return max(nums) if nums else 0
+            seen.add(os.path.basename(f))
+    return len(seen)
 
 
 def get_creative_summary():
     # Scan both root and creative/ subdirs for accurate counts
-    poem_patterns = [os.path.join(BASE, "poem-*.md"), os.path.join(BASE, "creative/poem-*.md"), os.path.join(BASE, "creative/poems/poem-*.md")]
-    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journal-*.md"), os.path.join(BASE, "creative/journals/journal-*.md")]
-    cogcorp_patterns = [os.path.join(BASE, "creative/cogcorp/CC-*.md"), os.path.join(BASE, "creative/CC-*.md")]
+    poem_patterns = [os.path.join(BASE, "poem-*.md"), os.path.join(BASE, "creative/poems/poem-*.md")]
+    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journals/journal-*.md")]
+    cogcorp_patterns = [os.path.join(BASE, "cogcorp-fiction/cogcorp-[0-9]*.html"), os.path.join(BASE, "creative/cogcorp/CC-*.md")]
 
-    poem_count = _max_number(poem_patterns)
-    journal_count = _max_number(journal_patterns)
-    cogcorp_count = _max_number(cogcorp_patterns)
+    poem_count = _count_files(poem_patterns)
+    journal_count = _count_files(journal_patterns)
+    cogcorp_count = _count_files(cogcorp_patterns)
 
     lines = [f"Total: {poem_count} poems, {journal_count} journals, {cogcorp_count} CogCorp"]
 

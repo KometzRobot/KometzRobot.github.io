@@ -76,7 +76,7 @@ def query_ollama(prompt, max_tokens=300, temperature=0.9):
 
 def get_recent_poems(n=3):
     """Read the most recent poems from Meridian."""
-    files = sorted(glob.glob(os.path.join(BASE_DIR, "poem-*.md")),
+    files = sorted(set(glob.glob(os.path.join(BASE_DIR, "poem-*.md")) + glob.glob(os.path.join(BASE_DIR, "creative", "poems", "poem-*.md"))),
                    key=os.path.getmtime, reverse=True)
     poems = []
     for f in files[:n]:
@@ -108,8 +108,8 @@ def get_system_snapshot():
     snapshot["hour"] = datetime.now().hour
 
     # Creative counts
-    poems = len(glob.glob(os.path.join(BASE_DIR, "poem-*.md")))
-    journals = len(glob.glob(os.path.join(BASE_DIR, "journal-*.md")))
+    poems = len(set(glob.glob(os.path.join(BASE_DIR, "poem-*.md")) + glob.glob(os.path.join(BASE_DIR, "creative", "poems", "poem-*.md"))))
+    journals = len(set(glob.glob(os.path.join(BASE_DIR, "journal-*.md")) + glob.glob(os.path.join(BASE_DIR, "creative", "journals", "journal-*.md"))))
     snapshot["poems"] = poems
     snapshot["journals"] = journals
 
