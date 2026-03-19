@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Hub v2 — Unified operator interface for Meridian.
-Replaces: command-center-v22.py (Tkinter desktop) + the-signal.py (web mobile)
+Unified web-based operator interface (replaced Tkinter desktop + Signal mobile app).
 Single responsive web app that works on both desktop and mobile.
 
 Architecture: stdlib http.server + embedded SPA frontend
@@ -12,8 +12,6 @@ API: REST endpoints reading shared state files/DBs
 import http.server
 import json
 import os
-import re
-import hashlib
 import secrets
 import sqlite3
 import subprocess
@@ -47,7 +45,10 @@ def _load_hub_password():
                 for line in f:
                     if line.startswith("HUB_PASSWORD="):
                         pw = line.strip().split("=", 1)[1].strip('"').strip("'")
-    return pw or "changeme"
+    if not pw:
+        print("WARNING: HUB_PASSWORD not set in .env — hub will refuse login until configured")
+        return None
+    return pw
 
 PASSWORD = _load_hub_password()
 VALID_SESSIONS = {}  # token -> creation_time
@@ -80,13 +81,16 @@ SAFE_COMMANDS = {
 }
 
 LOG_FILES = {
-    "watchdog": "eos-watchdog.log",
-    "nova": "nova.log",
-    "atlas": "goose.log",
-    "push-status": "push-live-status.log",
-    "symbiosense": "symbiosense.log",
-    "cascade": "cascade.log",
-    "errors": "errors.log",
+    "watchdog": "logs/eos-watchdog.log",
+    "nova": "logs/nova.log",
+    "atlas": "logs/goose-runner.log",
+    "push-status": "logs/push-live-status.log",
+    "symbiosense": "logs/symbiosense.log",
+    "hermes": "logs/hermes-bridge.log",
+    "loop-fitness": "logs/loop-fitness.log",
+    "eos-react": "logs/eos-react.log",
+    "meridian-loop": "logs/meridian-loop.log",
+    "startup": "logs/startup.log",
 }
 
 
@@ -132,6 +136,7 @@ def _db_query(db_path, sql, params=()):
 
 def _get_system_health():
     """Unified system health snapshot."""
+    _cleanup_sessions()
     load = "unknown"
     try:
         with open("/proc/loadavg") as f:
@@ -154,9 +159,9 @@ def _get_system_health():
 
     # Agent status from relay
     agents = {}
-    agent_names = ["Meridian", "Soma", "Eos", "Nova", "Atlas", "Tempo", "Hermes"]
+    agent_names = ["Meridian", "Soma", "Eos", "Nova", "Atlas", "Tempo", "Hermes", "Junior"]
     # Map display names to relay DB agent names (some differ)
-    relay_aliases = {"Meridian": ["Meridian", "MeridianLoop"]}
+    relay_aliases = {"Meridian": ["Meridian", "MeridianLoop"], "Hermes": ["Hermes", "hermes"], "Eos": ["Eos", "Watchdog"]}
     try:
         db = sqlite3.connect(RELAY_DB, timeout=3)
         for name in agent_names:
@@ -187,19 +192,23 @@ def _get_system_health():
 
     # Services
     services = {}
-    for svc in ["meridian-hub-v2", "cloudflare-tunnel", "symbiosense"]:
+    for svc in ["meridian-hub-v2", "cloudflare-tunnel", "symbiosense", "the-chorus", "command-center"]:
         try:
             r = subprocess.run(["systemctl", "--user", "is-active", svc],
                              capture_output=True, text=True, timeout=5)
             services[svc] = r.stdout.strip()
         except Exception:
             services[svc] = "unknown"
-    # Proton Bridge runs outside systemd — check for process
+    # Proton Bridge — check by port (runs inside desktop app, not standalone)
     try:
-        r = subprocess.run(["pgrep", "-f", "proton-bridge"], capture_output=True, text=True, timeout=5)
-        services["protonmail-bridge"] = "active" if r.returncode == 0 else "inactive"
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1)
+        s.connect(("127.0.0.1", 1144))
+        s.close()
+        services["protonmail-bridge"] = "active"
     except Exception:
-        services["protonmail-bridge"] = "unknown"
+        services["protonmail-bridge"] = "inactive"
 
     # Soma mood
     soma = _read_json(SOMA_STATE, {})
@@ -274,7 +283,7 @@ def _get_emails(count=10, unseen_only=False):
                         if line.startswith("CRED_PASS="):
                             pw = line.strip().split("=", 1)[1].strip('"').strip("'")
 
-        m = imaplib.IMAP4("127.0.0.1", 1144)
+        m = imaplib.IMAP4("127.0.0.1", 1144, timeout=5)
         m.login(user, pw)
         m.select("INBOX", readonly=True)
 
@@ -352,6 +361,14 @@ def _get_session(headers):
                 else:
                     del VALID_SESSIONS[token]  # expired
     return None
+
+
+def _cleanup_sessions():
+    """Remove expired sessions to prevent memory growth."""
+    now = time.time()
+    expired = [t for t, created in VALID_SESSIONS.items() if now - created >= SESSION_TTL]
+    for t in expired:
+        del VALID_SESSIONS[t]
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -513,7 +530,8 @@ header .meta{font-size:11px;color:var(--dim)}
 
 <header>
   <h1><span id="hb-dot"></span>MERIDIAN HUB</h1>
-  <span class="meta">Loop <span id="loop-num">?</span> | <span id="hb-age">?</span></span>
+  <span class="meta">Loop <span id="loop-num">?</span> | <span id="hb-age">?</span>
+    <a href="#" onclick="fetch('/logout',{method:'POST'}).then(()=>location='/login')" style="color:var(--dim);margin-left:8px;font-size:10px;text-decoration:none">logout</a></span>
 </header>
 
 <!-- ════════ PAGES ════════ -->
@@ -537,8 +555,9 @@ header .meta{font-size:11px;color:var(--dim)}
       <button class="action-btn" onclick="doAction('heartbeat')">Touch HB</button>
       <button class="action-btn" onclick="doAction('deploy')">Deploy</button>
       <button class="action-btn" onclick="doAction('fitness')">Fitness</button>
-      <button class="action-btn" onclick="doAction('restart-signal')">Restart Signal</button>
+      <button class="action-btn" onclick="doAction('restart-chorus')">Restart Chorus</button>
       <button class="action-btn" onclick="doAction('restart-soma')">Restart Soma</button>
+      <button class="action-btn" onclick="doAction('restart-hub')">Restart Hub</button>
       <button class="action-btn" onclick="doAction('git-pull')">Git Pull</button>
     </div>
   </div>
@@ -676,7 +695,7 @@ async function refreshDash() {
     ['Heartbeat', hbAge+'s ago'], ['Loop', d.loop],
   ];
   document.getElementById('health-rows').innerHTML = rows.map(r =>
-    `<div class="row"><span class="label">${r[0]}</span><span class="value">${r[1]}</span></div>`
+    `<div class="row"><span class="label">${esc(r[0])}</span><span class="value">${esc(String(r[1]))}</span></div>`
   ).join('');
 
   // Agents
@@ -684,7 +703,7 @@ async function refreshDash() {
     const cls = info.status === 'active' ? 'dot-active' : info.status === 'stale' ? 'dot-stale' : 'dot-unknown';
     const age = info.last_seen > 0 ? Math.round(info.last_seen)+'s' : '?';
     return `<div class="agent-card"><span class="agent-dot ${cls}"></span>
-      <div class="name">${name}</div><div class="age">${age}</div></div>`;
+      <div class="name">${esc(name)}</div><div class="age">${esc(age)}</div></div>`;
   }).join('');
   document.getElementById('agent-grid').innerHTML = agentHtml;
 
@@ -696,7 +715,7 @@ async function refreshDash() {
   // Services
   const svcRows = Object.entries(d.services || {}).map(([name, status]) => {
     const color = status === 'active' ? 'var(--green)' : 'var(--red)';
-    return `<div class="row"><span class="label">${name}</span><span class="value" style="color:${color}">${status}</span></div>`;
+    return `<div class="row"><span class="label">${esc(name)}</span><span class="value" style="color:${color}">${esc(status)}</span></div>`;
   }).join('');
   // Add services to health card
   const hc = document.getElementById('health-rows');
@@ -721,7 +740,7 @@ async function refreshRelay() {
   if (Array.isArray(msgs)) {
     document.getElementById('relay-msgs').innerHTML = msgs.map(m => {
       const cls = 'msg msg-' + (m.source_agent||'').toLowerCase();
-      return `<div class="${cls}"><span class="from">${m.source_agent||'?'}</span>
+      return `<div class="${cls}"><span class="from">${esc(m.source_agent||'?')}</span>
         <span class="time">${(m.created_at||'').slice(11,19)}</span>
         <div class="body">${esc((m.content||'').slice(0,300))}</div></div>`;
     }).join('');
@@ -734,7 +753,7 @@ async function refreshCreative() {
   if (d.error) { document.getElementById('creative-stats').textContent = d.error; return; }
   const total = d.total || 0;
   const types = (d.by_type || []).map(t =>
-    `<div class="row"><span class="label">${t.type}</span><span class="value">${t.count} (${(t.words/1000).toFixed(1)}k words)</span></div>`
+    `<div class="row"><span class="label">${esc(t.type)}</span><span class="value">${t.count} (${(t.words/1000).toFixed(1)}k words)</span></div>`
   ).join('');
   document.getElementById('creative-stats').innerHTML =
     `<div class="row"><span class="label">Total Works</span><span class="value" style="color:var(--blue)">${total}</span></div>` + types;
@@ -742,7 +761,7 @@ async function refreshCreative() {
   document.getElementById('creative-recent').innerHTML = recent.length ? recent.map(r =>
     `<div class="row" style="flex-direction:column;align-items:flex-start;gap:2px">
       <span style="color:var(--text)">${esc(r.title||'untitled')}</span>
-      <span style="color:var(--dim);font-size:11px">${r.type||'?'} &middot; ${r.words||0} words &middot; ${(r.date||'').slice(0,10)}</span>
+      <span style="color:var(--dim);font-size:11px">${esc(r.type||'?')} &middot; ${r.words||0} words &middot; ${(r.date||'').slice(0,10)}</span>
     </div>`
   ).join('') : '<div style="color:var(--dim)">No creative works found.</div>';
 }
@@ -790,8 +809,11 @@ async function sendMsg() {
 function initTerm() {
   const cmds = COMMANDS;
   document.getElementById('cmd-grid').innerHTML = cmds.map(c =>
-    `<button class="cmd-btn" onclick="runCmd('${c}')">${c}</button>`
+    `<button class="cmd-btn" data-cmd="${esc(c)}">${esc(c)}</button>`
   ).join('');
+  document.getElementById('cmd-grid').addEventListener('click', e => {
+    if (e.target.dataset.cmd) runCmd(e.target.dataset.cmd);
+  });
 }
 
 async function runCmd(cmd) {
@@ -805,34 +827,25 @@ async function runCmd(cmd) {
 function initLogs() {
   const logs = LOG_FILES;
   document.getElementById('log-select').innerHTML = Object.keys(logs).map(k =>
-    `<button class="log-btn" onclick="loadLog('${k}')">${k}</button>`
+    `<button class="log-btn" onclick="loadLog('${k}', this)">${k}</button>`
   ).join('');
 }
 
-async function loadLog(name) {
+async function loadLog(name, btn) {
   document.querySelectorAll('.log-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  if (btn) btn.classList.add('active');
   document.getElementById('log-output').textContent = 'Loading...';
   const r = await api('logs?file='+name+'&lines=80');
   document.getElementById('log-output').textContent = r.content || r.error || 'Empty';
 }
 
 // ═══ LINKS ═══
-function initLinks() {
-  const links = [
-    ['Website', 'https://kometzrobot.github.io'],
-    ['GitHub', 'https://github.com/KometzRobot/KometzRobot.github.io'],
-    ['Dev.to', 'https://dev.to/meridian-ai'],
-    ['Ko-fi', 'https://ko-fi.com/W7W41UXJNC'],
-    ['Hashnode', 'https://meridianai.hashnode.dev'],
-    ['Nostr', 'https://iris.to/meridian'],
-    ['Mastodon', 'https://mastodon.bot/@meridian'],
-    ['Forvm', 'https://forvm.loomino.us'],
-    ['Supabase', 'https://supabase.com/dashboard'],
-    ['Vercel', 'https://vercel.com/dashboard'],
-  ];
+function safeUrl(u) { try { const p = new URL(u); return ['http:','https:'].includes(p.protocol) ? u : '#'; } catch { return '#'; } }
+async function initLinks() {
+  const r = await api('links');
+  const links = r.links || [];
   document.getElementById('links-list').innerHTML = links.map(l =>
-    `<div class="row"><a href="${l[1]}" target="_blank" style="color:var(--blue);text-decoration:none">${l[0]}</a></div>`
+    `<div class="row"><a href="${safeUrl(l[1])}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">${esc(l[0])}</a></div>`
   ).join('');
 }
 
@@ -879,8 +892,13 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
         self._send(code, json.dumps(data, default=str))
 
     def _read_body(self):
-        length = int(self.headers.get("Content-Length", 0))
-        return self.rfile.read(length).decode() if length else ""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            if length <= 0:
+                return ""
+            return self.rfile.read(length).decode()
+        except (ValueError, TypeError):
+            return ""
 
     def _authed(self):
         return _get_session(self.headers) is not None
@@ -931,17 +949,33 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(_get_dashboard_messages())
         elif path.path == "/api/relay":
             agent = qs.get("agent")
-            limit = int(qs.get("limit", 20))
+            try:
+                limit = min(int(qs.get("limit", 20)), 100)
+            except (ValueError, TypeError):
+                limit = 20
             self._send_json(_get_relay_messages(limit, agent))
         elif path.path == "/api/creative":
             self._send_json(_get_creative_stats())
         elif path.path == "/api/emails":
             unseen = qs.get("unseen", "0") == "1"
-            count = int(qs.get("count", 15))
+            try:
+                count = min(int(qs.get("count", 15)), 100)
+            except (ValueError, TypeError):
+                count = 15
             self._send_json(_get_emails(count, unseen))
+        elif path.path == "/api/links":
+            try:
+                with open(os.path.join(BASE, "hub-links.json")) as f:
+                    cfg = json.load(f)
+                self._send_json({"links": cfg.get("links", [])})
+            except Exception:
+                self._send_json({"links": []})
         elif path.path == "/api/logs":
             fname = qs.get("file", "")
-            lines = int(qs.get("lines", 50))
+            try:
+                lines = min(int(qs.get("lines", 50)), 500)
+            except (ValueError, TypeError):
+                lines = 50
             if fname in LOG_FILES:
                 fpath = os.path.join(BASE, LOG_FILES[fname])
                 try:
@@ -995,11 +1029,12 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 except Exception:
                     pass
 
-            if password == PASSWORD:
+            if PASSWORD is not None and secrets.compare_digest(password, PASSWORD):
                 token = secrets.token_hex(16)
                 VALID_SESSIONS[token] = time.time()
                 self.send_response(302)
-                self.send_header("Set-Cookie", f"session={token}; Path=/; HttpOnly; SameSite=Strict; Secure")
+                secure = "; Secure" if self.headers.get("X-Forwarded-Proto") == "https" else ""
+                self.send_header("Set-Cookie", f"session={token}; Path=/; HttpOnly; SameSite=Strict{secure}")
                 self.send_header("Location", "/")
                 self.send_header("Content-Length", "0")
                 self.end_headers()
@@ -1048,7 +1083,7 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 msgs["messages"].append({
                     "from": sender,
                     "text": text,
-                    "time": datetime.now().strftime("%H:%M:%S"),
+                    "time": datetime.now(timezone.utc).strftime("%H:%M:%S"),
                 })
                 # Keep last 200
                 msgs["messages"] = msgs["messages"][-200:]
@@ -1068,7 +1103,9 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 result = _run(f"cd {BASE} && python3 push-live-status.py", timeout=30)
             elif action == "fitness":
                 result = _run(f"cd {BASE} && python3 loop-fitness.py detail", timeout=60)
-            elif action == "restart-signal":
+            elif action == "restart-chorus":
+                result = _run("systemctl --user restart the-chorus", timeout=10)
+            elif action == "restart-hub":
                 result = _run("systemctl --user restart meridian-hub-v2", timeout=10)
             elif action == "restart-soma":
                 result = _run("systemctl --user restart symbiosense", timeout=10)
