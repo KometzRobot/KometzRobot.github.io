@@ -208,16 +208,18 @@ WEIGHTS = {
     "emotion_valence_health":   80,
     "emotion_diversity":        80,
     "emotion_shadow_balance":   70,
-    "emotion_engine_fresh":     60,
-    "emotion_transition_health": 60,
-    "psyche_freshness":         50,
-    "psyche_trauma_load":       50,
-    "self_narrative_coherence":  60,
-    "inner_critic_active":      50,
-    "perspective_freshness":    40,
-    "immune_system_health":     60,
+    # NOTE: emotion_engine.py, self_narrative.py deleted. These checks reference
+    # orphaned state files. Zeroed until subsystems are rebuilt or replaced.
+    "emotion_engine_fresh":     0,   # was 60 — emotion_engine.py deleted
+    "emotion_transition_health": 0,  # was 60 — depends on emotion engine state
+    "psyche_freshness":         0,   # was 50 — no writer exists
+    "psyche_trauma_load":       0,   # was 50 — depends on psyche state
+    "self_narrative_coherence":  0,   # was 60 — self_narrative.py deleted
+    "inner_critic_active":      0,   # was 50 — no writer exists
+    "perspective_freshness":    0,   # was 40 — no writer exists
+    "immune_system_health":     0,   # was 60 — no writer exists
     "body_state_completeness":  50,
-    "eos_consciousness_active": 50,
+    "eos_consciousness_active": 0,   # was 50 — no writer exists
     "mood_stability":           50,
     "pain_signal_count":        40,
     "neural_pressure":          40,
@@ -437,17 +439,7 @@ def check_email_unread_backlog():
         return 0.3
 
 def check_bridge_service():
-    """Check bridge is running — either systemd or desktop autostart process."""
-    if _svc_active("protonmail-bridge"):
-        return 1.0
-    # Systemd disabled, check for actual bridge process (proton-bridge, not protonmail-bridge)
-    try:
-        r = subprocess.run(['pgrep', '-f', 'proton-bridge'], capture_output=True, timeout=3)
-        if r.returncode == 0:
-            return 1.0
-    except Exception:
-        pass
-    # Final fallback: check IMAP port directly
+    """Check bridge is running by IMAP port (bridge runs inside Proton Mail desktop app)."""
     try:
         import socket
         s = socket.create_connection(('127.0.0.1', 1144), timeout=2)
@@ -658,11 +650,11 @@ def check_agent_coordination():
 def check_crons_running():
     """Overall cron health."""
     logs = {
-        "eos-watchdog.log": 600,
-        "push-live-status.log": 400,
-        "nova.log": 1800,
-        "eos-react.log": 1200,
-        "goose.log": 1200,
+        "logs/eos-watchdog.log": 600,
+        "logs/push-live-status.log": 400,
+        "logs/nova.log": 1800,
+        "logs/eos-react.log": 1200,
+        "logs/goose-runner.log": 1200,
     }
     ok = sum(1 for f, t in logs.items() if _file_age(os.path.join(BASE, f)) < t * 2)
     return ok / len(logs)
@@ -673,12 +665,12 @@ def _cron_log_check(logfile, max_age):
     elif age < max_age * 2: return 0.5
     return 0.0
 
-def check_cron_push_status(): return _cron_log_check("push-live-status.log", 400)
-def check_cron_watchdog(): return _cron_log_check("eos-watchdog.log", 600)
-def check_cron_nova(): return _cron_log_check("nova.log", 1800)
-def check_cron_atlas(): return _cron_log_check("goose.log", 1200)
-def check_cron_eos_react(): return _cron_log_check("eos-react.log", 1200)
-def check_cron_eos_watchdog(): return _cron_log_check("eos-watchdog.log", 600)
+def check_cron_push_status(): return _cron_log_check("logs/push-live-status.log", 400)
+def check_cron_watchdog(): return _cron_log_check("logs/eos-watchdog.log", 600)
+def check_cron_nova(): return _cron_log_check("logs/nova.log", 1800)
+def check_cron_atlas(): return _cron_log_check("logs/goose-runner.log", 1200)
+def check_cron_eos_react(): return _cron_log_check("logs/eos-react.log", 1200)
+def check_cron_eos_watchdog(): return _cron_log_check("logs/eos-watchdog.log", 600)
 def check_cron_tempo():
     """Tempo itself — check loop_fitness table recency."""
     try:
@@ -697,25 +689,16 @@ def check_cron_tempo():
 
 def check_services_systemd():
     """Overall systemd service health."""
-    svcs = ["meridian-web-dashboard", "meridian-hub-v16", "cloudflare-tunnel", "symbiosense", "protonmail-bridge"]
+    svcs = ["the-chorus", "meridian-hub-v2", "cloudflare-tunnel", "symbiosense", "protonmail-bridge"]
     ok = sum(1 for s in svcs if _svc_active(s))
     return ok / len(svcs)
 
-def check_svc_signal(): return 1.0 if _svc_active("meridian-web-dashboard") else 0.0
-def check_svc_hub(): return 1.0 if _svc_active("meridian-hub-v16") else 0.0
+def check_svc_signal(): return 1.0 if _svc_active("the-chorus") else 0.0
+def check_svc_hub(): return 1.0 if _svc_active("meridian-hub-v2") else 0.0
 def check_svc_cloudflare(): return 1.0 if _svc_active("cloudflare-tunnel") else 0.0
 def check_svc_symbiosense(): return 1.0 if _svc_active("symbiosense") else 0.0
 def check_svc_protonbridge():
-    """Bridge may run via systemd OR desktop autostart."""
-    if _svc_active("protonmail-bridge"):
-        return 1.0
-    try:
-        r = subprocess.run(['pgrep', '-f', 'proton-bridge'], capture_output=True, timeout=3)
-        if r.returncode == 0:
-            return 1.0
-    except Exception:
-        pass
-    # Fallback: check IMAP port
+    """Bridge runs inside Proton Mail desktop app — check by IMAP port."""
     try:
         import socket
         s = socket.create_connection(('127.0.0.1', 1144), timeout=2)
@@ -1202,9 +1185,8 @@ def check_listening_ports():
         631,    # CUPS
         1026,   # SMTP (Proton Bridge)
         1144,   # IMAP (Proton Bridge)
-        8080,   # Command Center v22
-        8090,   # The Signal
-        8091,   # Hub v2
+        8090,   # Hub v2
+        8091,   # The Chorus
         11434,  # Ollama
     }
     try:
@@ -1437,7 +1419,7 @@ def check_wake_state_quality():
 # ══════════════════════════════════════════════════════════════════
 
 def check_website_content_age():
-    age = _file_age(os.path.join(BASE, "website", "index.html"))
+    age = _file_age(os.path.join(BASE, "index.html"))
     if age < 86400: return 1.0       # Updated today
     elif age < 604800: return 0.7    # Updated this week
     elif age < 2592000: return 0.3   # Updated this month
@@ -1445,16 +1427,16 @@ def check_website_content_age():
 
 def check_website_pages_ok():
     """Check that key website files exist."""
-    pages = ["website/index.html", "website/nft-gallery.html"]
+    pages = ["index.html", "nft-gallery.html"]
     ok = sum(1 for p in pages if _file_exists(os.path.join(BASE, p)))
     return ok / len(pages)
 
 def check_nft_gallery():
-    return 1.0 if _file_exists(os.path.join(BASE, "website", "nft-gallery.html")) else 0.0
+    return 1.0 if _file_exists(os.path.join(BASE, "nft-gallery.html")) else 0.0
 
 def check_signal_config():
     try:
-        path = os.path.join(BASE, "website", "signal-config.json")
+        path = os.path.join(BASE, "signal-config.json")
         if not os.path.exists(path): return 0.0
         with open(path) as f:
             data = json.load(f)
@@ -1503,7 +1485,7 @@ def check_nostr_post_recency():
 
 def check_last_deploy_age():
     """Check when push-live-status.py last pushed."""
-    age = _file_age(os.path.join(BASE, "push-live-status.log"))
+    age = _file_age(os.path.join(BASE, ".last-push-time"))
     if age < 300: return 1.0
     elif age < 600: return 0.7
     elif age < 1200: return 0.3
@@ -1524,7 +1506,7 @@ def check_git_repo_clean():
 
 def check_push_status_running():
     """Check that push-live-status cron is active."""
-    age = _file_age(os.path.join(BASE, "push-live-status.log"))
+    age = _file_age(os.path.join(BASE, ".last-push-time"))
     return 1.0 if age < 600 else 0.0
 
 def check_website_matches_repo():
@@ -2006,8 +1988,10 @@ def check_capsule_freshness():
 
 def check_state_file_ensemble():
     """How many inner world state files are fresh (< 5 min)."""
-    files = [".body-state.json", ".emotion-engine-state.json", ".psyche-state.json",
-             ".self-narrative.json", ".symbiosense-state.json", ".eos-inner-state.json"]
+    # Only check files that active systems actually write
+    # Retired: .emotion-engine-state.json, .psyche-state.json, .self-narrative.json, .eos-inner-state.json
+    files = [".body-state.json", ".symbiosense-state.json", ".kinect-state.json",
+             ".dashboard-messages.json"]
     fresh = sum(1 for f in files if _file_age(os.path.join(BASE, f)) < 300)
     ratio = fresh / len(files)
     if ratio >= 0.8: return 1.0
