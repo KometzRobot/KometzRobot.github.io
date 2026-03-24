@@ -846,6 +846,25 @@ def main():
 
     actions = []
 
+    # ── MESH MESSAGES — check for directed messages from other agents ──
+    try:
+        import mesh
+        mesh_msgs = mesh.receive("Nova")
+        for msg in mesh_msgs:
+            sender = msg["from_agent"]
+            topic = msg.get("topic", "direct")
+            text = msg["message"]
+            actions.append(f"Mesh [{sender}→Nova]: {text[:80]}")
+            # Act on disk alerts from Atlas
+            if topic in ("disk_alert", "disk_warn"):
+                cleaned = cleanup_temp_files()
+                if cleaned:
+                    actions.append(f"Mesh cleanup triggered by Atlas: {len(cleaned)} files")
+                    log_observation(f"Nova responded to Atlas disk alert: cleaned {', '.join(cleaned)}")
+            log_observation(f"Nova received mesh message from {sender}: {text[:100]}")
+    except Exception:
+        pass
+
     # ── LOG ROTATION (every run) ──
     rotated = rotate_logs()
     if rotated:

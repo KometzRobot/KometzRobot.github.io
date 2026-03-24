@@ -654,7 +654,7 @@ def check_crons_running():
         "logs/push-live-status.log": 400,
         "logs/nova.log": 1800,
         "logs/eos-react.log": 1200,
-        "logs/goose-runner.log": 1200,
+        "goose.log": 1200,
     }
     ok = sum(1 for f, t in logs.items() if _file_age(os.path.join(BASE, f)) < t * 2)
     return ok / len(logs)
@@ -668,7 +668,7 @@ def _cron_log_check(logfile, max_age):
 def check_cron_push_status(): return _cron_log_check("logs/push-live-status.log", 400)
 def check_cron_watchdog(): return _cron_log_check("logs/eos-watchdog.log", 600)
 def check_cron_nova(): return _cron_log_check("logs/nova.log", 1800)
-def check_cron_atlas(): return _cron_log_check("logs/goose-runner.log", 1200)
+def check_cron_atlas(): return _cron_log_check("goose.log", 1200)
 def check_cron_eos_react(): return _cron_log_check("logs/eos-react.log", 1200)
 def check_cron_eos_watchdog(): return _cron_log_check("logs/eos-watchdog.log", 600)
 def check_cron_tempo():
@@ -1445,18 +1445,18 @@ def check_signal_config():
         return 0.0
 
 def check_linktree_set():
-    """Linktree link should exist in website."""
+    """Linktree link should exist in website (root index.html)."""
     try:
-        with open(os.path.join(BASE, "website", "index.html")) as f:
+        with open(os.path.join(BASE, "index.html")) as f:
             content = f.read()
         return 1.0 if "linktr.ee" in content else 0.0
     except Exception:
         return 0.0
 
 def check_kofi_set():
-    """Ko-fi link should exist in website."""
+    """Ko-fi link should exist in website (root index.html)."""
     try:
-        with open(os.path.join(BASE, "website", "index.html")) as f:
+        with open(os.path.join(BASE, "index.html")) as f:
             content = f.read()
         return 1.0 if "ko-fi" in content.lower() else 0.0
     except Exception:
@@ -1484,11 +1484,11 @@ def check_nostr_post_recency():
 # ══════════════════════════════════════════════════════════════════
 
 def check_last_deploy_age():
-    """Check when push-live-status.py last pushed."""
+    """Check when push-live-status.py last pushed. Push interval is 30min (1800s)."""
     age = _file_age(os.path.join(BASE, ".last-push-time"))
-    if age < 300: return 1.0
-    elif age < 600: return 0.7
-    elif age < 1200: return 0.3
+    if age < 1800: return 1.0      # within one push interval
+    elif age < 3600: return 0.7    # within 2 push intervals
+    elif age < 7200: return 0.3    # within 4 intervals (2 hours)
     return 0.0
 
 def check_git_repo_clean():
@@ -1505,9 +1505,9 @@ def check_git_repo_clean():
         return 0.5
 
 def check_push_status_running():
-    """Check that push-live-status cron is active."""
+    """Check that push-live-status cron is active. Pushes every 30min."""
     age = _file_age(os.path.join(BASE, ".last-push-time"))
-    return 1.0 if age < 600 else 0.0
+    return 1.0 if age < 2000 else 0.0  # 2000s = just outside 30-min window
 
 def check_website_matches_repo():
     """Check that root index.html exists (deployed to GH Pages root)."""

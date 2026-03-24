@@ -56,16 +56,18 @@ declare -A CRON_LOGS
 CRON_LOGS=(
     ["watchdog"]="watchdog.log:900"
     ["watchdog-status"]="watchdog-status.log:360"
-    ["eos-watchdog"]="eos-watchdog.log:180"
-    ["push-live-status"]="push-live-status.log:360"
-    ["loop-optimizer"]="loop-optimizer.log:2400"
-    ["eos-creative"]="eos-creative.log:900"
-    ["nova"]="nova.log:1200"
-    ["eos-react"]="eos-react.log:900"
+    ["eos-watchdog"]="logs/eos-watchdog.log:180"
+    ["push-live-status"]="logs/push-live-status.log:360"
+    ["loop-optimizer"]="logs/loop-optimizer.log:2400"
+    ["eos-creative"]="logs/eos-creative.log:900"
+    ["nova"]="logs/nova.log:1200"
+    ["eos-react"]="logs/eos-react.log:900"
     ["goose"]="goose.log:900"
-    ["loop-fitness"]="loop-fitness.log:2400"
+    ["loop-fitness"]="logs/loop-fitness.log:2400"
     # daily-log REMOVED — cron was deleted (file doesn't exist)
-    ["eos-briefing"]="eos-briefing.log:130000"
+    ["eos-briefing"]="logs/eos-briefing.log:130000"
+    ["cinder-gatekeeper"]="logs/cinder-gatekeeper.log:400"
+    ["hermes"]="logs/hermes.log:1800"
     # morning-summary DISABLED (duplicate of eos-briefing) — removed from stale check
 )
 
@@ -184,6 +186,23 @@ fi
 DISK_USE=$(df -h / 2>/dev/null | awk 'NR==2{print $5}' | tr -d '%')
 if [ "$DISK_USE" -gt 85 ]; then
     ISSUES="$ISSUES Disk at ${DISK_USE}%."
+    # Direct mesh alert to Nova
+    python3 -c "
+try:
+    import sys; sys.path.insert(0, '$WORKING_DIR')
+    import mesh
+    mesh.send('Atlas', 'Nova', 'Disk at ${DISK_USE}% — cleanup needed. Check /tmp, large untracked files, log rotation.', 'disk_alert')
+except: pass
+" 2>/dev/null
+elif [ "$DISK_USE" -gt 75 ]; then
+    # Warn Nova before it becomes critical
+    python3 -c "
+try:
+    import sys; sys.path.insert(0, '$WORKING_DIR')
+    import mesh
+    mesh.send('Atlas', 'Nova', 'Disk at ${DISK_USE}% (warning threshold). Monitor and schedule cleanup.', 'disk_warn')
+except: pass
+" 2>/dev/null
 fi
 SUMMARY="$SUMMARY Disk:${DISK_USE}% Tmp:${TMP_SIZE_MB}MB"
 

@@ -849,6 +849,28 @@ def main():
     now = time.time()
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # ── MESH MESSAGES — check for directed messages from other agents ──
+    try:
+        import sys, os
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import mesh
+        mesh_msgs = mesh.receive("Eos")
+        for msg in mesh_msgs:
+            sender = msg["from_agent"]
+            text = msg["message"]
+            # Post response back through relay
+            import sqlite3
+            relay_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent-relay.db")
+            conn = sqlite3.connect(relay_db, timeout=3)
+            from datetime import timezone
+            resp = f"@{sender}: Eos received your message. Will factor into next health assessment."
+            conn.execute("INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
+                ("Eos", resp, "mesh-response", datetime.now(timezone.utc).isoformat()))
+            conn.commit()
+            conn.close()
+    except Exception:
+        pass
+
     # ── HEARTBEAT CHECK ──
     heartbeat_age = check_heartbeat()
     health = get_system_health()
