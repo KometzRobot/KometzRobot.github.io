@@ -210,8 +210,11 @@ def _get_system_health():
     except Exception:
         services["protonmail-bridge"] = "inactive"
 
-    # Soma mood
+    # Soma mood + inner world
     soma = _read_json(SOMA_STATE, {})
+    inner_mono = _read_json(os.path.join(BASE, ".soma-inner-monologue.json"), {})
+    goals_data = _read_json(os.path.join(BASE, ".soma-goals.json"), {})
+    psyche_data = _read_json(os.path.join(BASE, ".soma-psyche.json"), {})
 
     return {
         "load": load,
@@ -224,6 +227,10 @@ def _get_system_health():
         "services": services,
         "soma_mood": soma.get("mood", soma.get("current_emotion", "unknown")),
         "soma_score": soma.get("mood_score", 0),
+        "soma_inner": inner_mono.get("current", {}).get("text", ""),
+        "soma_goals": [g["id"] for g in goals_data.get("goals", [])],
+        "soma_fears": psyche_data.get("fears", []),
+        "soma_dreams": psyche_data.get("dreams", []),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -383,30 +390,30 @@ def _login_page():
 <title>Meridian Nuevo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#06080f;color:#ccd8f0;font-family:'SF Mono',Monaco,Consolas,monospace;
+body{background:#080604;color:#ead8c8;font-family:'SF Mono',Monaco,Consolas,monospace;
   display:flex;align-items:center;justify-content:center;min-height:100vh}
-.login{background:#0c1020;border:1px solid #1c2845;border-radius:14px;padding:2.2rem;
+.login{background:#110d0a;border:1px solid #2c1e17;border-radius:14px;padding:2.2rem;
   width:min(92vw,300px);text-align:center}
-.badge{width:52px;height:52px;border-radius:50%;background:#101828;border:2px solid #38bdf8;
+.badge{width:52px;height:52px;border-radius:50%;background:#080604;border:2px solid #e8920a;
   display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;
-  font-size:1.4rem;font-weight:700;color:#38bdf8;letter-spacing:-1px}
-.login h1{color:#38bdf8;font-size:1rem;letter-spacing:3px;margin-bottom:.25rem}
-.login h2{color:#ccd8f0;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
+  font-size:1.4rem;font-weight:700;color:#e8920a;letter-spacing:-1px}
+.login h1{color:#e8920a;font-size:1rem;letter-spacing:3px;margin-bottom:.25rem}
+.login h2{color:#ead8c8;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
   opacity:.5;margin-bottom:1.6rem}
-input{width:100%;padding:.75rem;background:#06080f;border:1px solid #1c2845;
-  border-radius:8px;color:#ccd8f0;font-family:inherit;font-size:.95rem;
+input{width:100%;padding:.75rem;background:#080604;border:1px solid #2c1e17;
+  border-radius:8px;color:#ead8c8;font-family:inherit;font-size:.95rem;
   text-align:center;margin-bottom:.9rem}
-input:focus{outline:none;border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.12)}
-button{width:100%;padding:.75rem;background:#38bdf8;color:#06080f;border:none;
+input:focus{outline:none;border-color:#e8920a;box-shadow:0 0 0 2px rgba(232,146,10,.12)}
+button{width:100%;padding:.75rem;background:#e8920a;color:#080604;border:none;
   border-radius:8px;font-family:inherit;font-size:.95rem;cursor:pointer;font-weight:700;
   letter-spacing:1px}
-button:hover{background:#7dd3fc}
+button:hover{background:#f59e0b}
 .err{color:#f87171;font-size:.8rem;margin-top:.5rem}
 </style></head><body>
 <div class="login">
 <div class="badge">M</div>
 <h1>MERIDIAN</h1>
-<h2>NUEVO / OPERATOR INTERFACE</h2>
+<h2>AUTONOMOUS / OPERATOR INTERFACE</h2>
 <form method="POST" action="/login">
 <input type="password" name="password" placeholder="access code" autofocus>
 <button type="submit">CONNECT</button>
@@ -421,51 +428,57 @@ def _main_app():
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Meridian Nuevo</title>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#06080f">
+<meta name="theme-color" content="#080604">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{
-  --bg:#06080f;--surface:#0c1020;--card:#101828;--border:#1c2845;--border-hi:#2d4070;
-  --text:#ccd8f0;--dim:#4a607a;
-  --accent:#38bdf8;--green:#4ade80;--amber:#fbbf24;--red:#f87171;
-  --purple:#c084fc;--magenta:#f472b6;--cyan:#22d3ee;
+  --bg:#080604;--surface:#110d0a;--card:#180f0b;--border:#2c1e17;--border-hi:#4a3228;
+  --text:#ead8c8;--dim:#806658;
+  --accent:#e8920a;--green:#86efac;--amber:#fb923c;--red:#f87171;
+  --purple:#c084fc;--magenta:#f472b6;--cyan:#5eead4;--gold:#f59e0b;
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes glow{0%,100%{box-shadow:0 0 4px rgba(232,146,10,.3)}50%{box-shadow:0 0 10px rgba(232,146,10,.6)}}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:'SF Mono',Monaco,Consolas,monospace;
-  font-size:13px;line-height:1.5;overflow-x:hidden;padding-top:48px;padding-bottom:62px}
+  font-size:13px;line-height:1.5;overflow-x:hidden;padding-top:52px;padding-bottom:64px}
 
-/* ── HEADER (fixed top, 48px) ── */
-header{position:fixed;top:0;left:0;right:0;height:48px;background:var(--surface);
+/* ── HEADER (fixed top) ── */
+header{position:fixed;top:0;left:0;right:0;height:52px;
+  background:linear-gradient(180deg,#1a0f08 0%,#110d0a 100%);
   border-bottom:1px solid var(--border);display:flex;align-items:center;
-  justify-content:space-between;padding:0 14px;z-index:100;
-  box-shadow:0 1px 12px rgba(56,189,248,.08)}
+  justify-content:space-between;padding:0 16px;z-index:100;
+  box-shadow:0 1px 16px rgba(232,146,10,.06)}
 .hdr-left{display:flex;align-items:center;gap:10px}
-.hdr-badge{width:28px;height:28px;border-radius:50%;background:var(--bg);
+.hdr-badge{width:30px;height:30px;border-radius:50%;background:var(--bg);
   border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;
-  font-size:.8rem;font-weight:700;color:var(--accent)}
+  font-size:.8rem;font-weight:700;color:var(--accent);animation:glow 4s ease-in-out infinite}
 .hdr-title{display:flex;flex-direction:column;line-height:1.1}
-.hdr-title .t1{font-size:.75rem;font-weight:700;color:var(--accent);letter-spacing:2px}
-.hdr-title .t2{font-size:.55rem;color:var(--dim);letter-spacing:3px}
+.hdr-title .name{font-size:.8rem;font-weight:700;color:var(--accent);letter-spacing:3px}
+.hdr-title .sub{font-size:.52rem;color:var(--dim);letter-spacing:4px;text-transform:uppercase}
 .hdr-right{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
 #hb-dot{width:8px;height:8px;border-radius:50%;display:inline-block;
-  animation:pulse 2s ease-in-out infinite}
+  animation:pulse 2.5s ease-in-out infinite}
 .hdr-logout{color:var(--dim);font-size:10px;text-decoration:none;
   padding:3px 7px;border:1px solid var(--border);border-radius:4px}
 .hdr-logout:hover{color:var(--text);border-color:var(--border-hi)}
+#hdr-mono{font-size:9.5px;color:var(--dim);font-style:italic;max-width:180px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none}
+@media(min-width:500px){#hdr-mono{display:block}}
 
 /* ── NAV BAR (bottom, scrollable) ── */
-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+nav{position:fixed;bottom:0;left:0;right:0;
+  background:linear-gradient(0deg,#1a0f08 0%,#110d0a 100%);
   border-top:1px solid var(--border);display:flex;z-index:100;overflow-x:auto;
   padding:0 2px env(safe-area-inset-bottom,0);scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
-nav button{flex:0 0 auto;min-width:52px;background:none;border:none;border-top:2px solid transparent;
+nav button{flex:0 0 auto;min-width:54px;background:none;border:none;border-top:2px solid transparent;
   color:var(--dim);font-family:inherit;font-size:9.5px;padding:8px 4px 6px;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .15s,border-color .15s}
 nav button.active{color:var(--accent);border-top-color:var(--accent)}
 nav button:hover{color:var(--text)}
-nav .ico{font-size:13px;line-height:1}
+nav .ico{font-size:14px;line-height:1}
 
 /* ── PAGES ── */
 .page{display:none;padding:12px 14px;max-width:820px;margin:0 auto}
@@ -555,7 +568,7 @@ nav .ico{font-size:13px;line-height:1}
 .input-row input:focus,.input-row textarea:focus{outline:none;border-color:var(--accent)}
 .input-row button{background:var(--accent);color:var(--bg);border:none;border-radius:7px;
   padding:8px 14px;font-family:inherit;font-size:12px;cursor:pointer;font-weight:700}
-.input-row button:hover{background:#7dd3fc}
+.input-row button:hover{background:var(--gold)}
 
 /* ── QUICK ACTIONS ── */
 .action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -575,7 +588,7 @@ nav .ico{font-size:13px;line-height:1}
   padding:10px;min-height:200px;max-height:55vh;overflow-y:auto;margin-bottom:8px;
   display:flex;flex-direction:column;gap:8px}
 .c-bubble{max-width:88%;padding:8px 12px;border-radius:8px;font-size:12px;word-break:break-word}
-.c-user{align-self:flex-end;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:var(--text)}
+.c-user{align-self:flex-end;background:rgba(232,146,10,.1);border:1px solid rgba(232,146,10,.25);color:var(--text)}
 .c-cinder{align-self:flex-start;background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.2);color:var(--text)}
 .c-label{font-size:9px;color:var(--dim);margin-bottom:2px}
 #cinder-mem-results{background:var(--bg);border:1px solid var(--border);border-radius:7px;
@@ -594,13 +607,16 @@ nav .ico{font-size:13px;line-height:1}
 
 <!-- ── HEADER ── -->
 <header>
-  <div class="hdr-badge">M</div>
-  <div class="hdr-title">
-    <div class="name">MERIDIAN</div>
-    <div class="sub">NUEVO</div>
+  <div class="hdr-left">
+    <div class="hdr-badge">M</div>
+    <div class="hdr-title">
+      <div class="name">MERIDIAN</div>
+      <div class="sub">AUTONOMOUS</div>
+    </div>
   </div>
-  <span class="meta"><span id="hb-dot"></span>&thinsp;Loop <span id="loop-num">?</span> · <span id="hb-age">?</span>
-    <a href="#" onclick="fetch('/logout',{method:'POST'}).then(()=>location='/login')" style="color:var(--dim);margin-left:8px;font-size:10px;text-decoration:none">out</a></span>
+  <span id="hdr-mono"></span>
+  <span class="hdr-right"><span id="hb-dot"></span>&thinsp;Loop <span id="loop-num">?</span>&thinsp;·&thinsp;<span id="hb-age">?</span>
+    <a href="#" class="hdr-logout" onclick="fetch('/logout',{method:'POST'}).then(()=>location='/login')">out</a></span>
 </header>
 
 <!-- ════════ PAGES ════════ -->
@@ -794,10 +810,24 @@ async function refreshDash() {
   }).join('');
   document.getElementById('agent-grid').innerHTML = agentHtml;
 
-  // Soma
+  // Soma — with inner world
+  const goals = (d.soma_goals||[]).join(' / ') || '—';
+  const fears = (d.soma_fears||[]).join(', ') || 'none';
+  const dreams = (d.soma_dreams||[]).join(', ') || 'none';
+  const mono = d.soma_inner || '';
+  const scoreNum = parseFloat(d.soma_score) || 0;
+  const barColor = scoreNum > 60 ? 'var(--green)' : scoreNum > 35 ? 'var(--accent)' : 'var(--red)';
   document.getElementById('soma-info').innerHTML =
     `<div class="row"><span class="label">Mood</span><span class="value">${esc(d.soma_mood||'')}</span></div>
-     <div class="row"><span class="label">Score</span><span class="value">${esc(String(d.soma_score||0))}</span></div>`;
+     <div class="row"><span class="label">Score</span><span class="value">${esc(String(scoreNum))}</span></div>
+     <div class="soma-bar-wrap"><div class="soma-bar-fill" style="width:${Math.min(scoreNum,100)}%;background:${barColor}"></div></div>
+     ${mono ? `<div style="margin-top:8px;padding:7px 9px;background:var(--bg);border-radius:6px;border:1px solid var(--border);font-size:11px;color:var(--dim);font-style:italic">&ldquo;${esc(mono)}&rdquo;</div>` : ''}
+     <div class="row" style="margin-top:6px"><span class="label">Goals</span><span class="value" style="color:var(--accent)">${esc(goals)}</span></div>
+     <div class="row"><span class="label">Fears</span><span class="value" style="color:var(--amber);font-size:11px">${esc(fears)}</span></div>
+     <div class="row"><span class="label">Dreams</span><span class="value" style="color:var(--purple);font-size:11px">${esc(dreams)}</span></div>`;
+  // Show monologue in header (small, italic)
+  const monoEl = document.getElementById('hdr-mono');
+  if (monoEl && mono) monoEl.textContent = '\u201c' + mono + '\u201d';
 
   // Services
   const svcRows = Object.entries(d.services || {}).map(([name, status]) => {

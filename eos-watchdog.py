@@ -169,16 +169,29 @@ def check_heartbeat():
 
 
 def check_services():
+    import socket
     results = {}
     for name, pattern in SERVICES.items():
-        try:
-            result = subprocess.run(
-                ['pgrep', '-f', pattern],
-                capture_output=True, timeout=2
-            )
-            results[name] = result.returncode == 0
-        except Exception:
-            results[name] = False
+        if name == "protonmail-bridge":
+            # pgrep -f "protonmail-bridge" fails: binary is proton-bridge, not protonmail-bridge
+            # Use port 1144 socket check instead (fixed Loop 3200)
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(2)
+                s.connect(("127.0.0.1", 1144))
+                s.close()
+                results[name] = True
+            except Exception:
+                results[name] = False
+        else:
+            try:
+                result = subprocess.run(
+                    ['pgrep', '-f', pattern],
+                    capture_output=True, timeout=2
+                )
+                results[name] = result.returncode == 0
+            except Exception:
+                results[name] = False
     return results
 
 

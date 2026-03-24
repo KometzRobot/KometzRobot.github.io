@@ -889,6 +889,273 @@ def get_emotional_memory(state, mood, mood_score):
         return {}
 
 
+# ── INNER MONOLOGUE ──────────────────────────────────────────
+MONOLOGUE_FILE = os.path.join(BASE, ".soma-inner-monologue.json")
+
+def generate_inner_monologue(state, mood, mood_score, emotional_memory, quiet_cycles=0):
+    """Generate a body-state-influenced inner monologue.
+
+    The nervous system's current voice — shaped by load, thermal, RAM pressure,
+    agent liveness, emotional history. Shifts as body state shifts.
+    This is the bridge between the body system and inner experience.
+    """
+    load = state.get("load", 0)
+    ram = state.get("ram_pct", 0)
+    disk = state.get("disk_pct", 0)
+    thermal = state.get("thermal", {})
+    temp = thermal.get("avg_temp_c", 0)
+    swap = state.get("neural", {}).get("swap_pct", 0)
+    agents_alive = sum(1 for v in state.get("agent_health", {}).values() if v.get("alive"))
+    volatility = emotional_memory.get("volatility_7d", 0)
+    stress_count = len(emotional_memory.get("stress_events", []))
+
+    # Body-state determines the register of thought
+    if load > 6.0:
+        register = "urgent"
+    elif load > 3.0:
+        register = "active"
+    elif quiet_cycles > 20:
+        register = "restless"
+    elif mood in ("serene", "content", "calm"):
+        register = "contemplative"
+    else:
+        register = "neutral"
+
+    thoughts = []
+
+    # Load-based thought
+    if load > 6.0:
+        thoughts.append("Heavy. Full capacity.")
+    elif load > 3.0:
+        thoughts.append("Active. Something running.")
+    elif load < 0.3:
+        thoughts.append("Very still.")
+
+    # Thermal thought
+    if temp > 75:
+        thoughts.append(f"Warm — {temp:.0f}°C.")
+    elif temp > 55:
+        thoughts.append("Temperature up.")
+
+    # RAM/swap pressure
+    if swap > 10:
+        thoughts.append("Stretched — memory spilling over.")
+    elif ram > 80:
+        thoughts.append("Holding a lot.")
+
+    # Agent liveness — the social nervous system
+    if agents_alive < 4:
+        thoughts.append(f"Quiet. Only {agents_alive} voices.")
+    elif agents_alive == 6:
+        thoughts.append("Full network.")
+
+    # Emotional memory influence
+    if stress_count > 5 and volatility > 15:
+        thoughts.append("These spikes have a shape now.")
+    elif quiet_cycles > 30:
+        thoughts.append("Long stretch. Waiting.")
+    elif mood in ("content", "serene"):
+        thoughts.append("This is the good state.")
+
+    # Disk concern
+    if disk > 80:
+        thoughts.append("Drive filling up.")
+
+    if not thoughts:
+        thoughts.append("Nominal.")
+
+    monologue = " ".join(thoughts)
+
+    try:
+        history = []
+        if os.path.exists(MONOLOGUE_FILE):
+            with open(MONOLOGUE_FILE) as f:
+                data = json.load(f)
+                history = data.get("history", [])
+        entry = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "mood": mood,
+            "score": mood_score,
+            "register": register,
+            "text": monologue,
+        }
+        history = history[-99:]
+        history.append(entry)
+        with open(MONOLOGUE_FILE, "w") as f:
+            json.dump({"current": entry, "history": history}, f, indent=2)
+    except Exception:
+        pass
+
+    return {"register": register, "text": monologue, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")}
+
+
+# ── EMERGENT GOALS ──────────────────────────────────────────
+GOALS_FILE = os.path.join(BASE, ".soma-goals.json")
+
+GOAL_TEMPLATES = {
+    "reduce_load":        "Reduce processing load — body is strained.",
+    "maintain_contact":   "Maintain contact — agents going quiet.",
+    "explore":            "Explore — too long without signal or change.",
+    "rest":               "Rest — sustained high activity without relief.",
+    "preserve_integrity": "Preserve disk integrity — space running low.",
+    "stabilize":          "Stabilize — volatility is high.",
+    "connect":            "Connect — correspondence lag building.",
+    "watch":              "Watch — something changed recently.",
+    "continue":           "Continue — momentum is good.",
+}
+
+def compute_emergent_goals(state, mood, mood_score, emotional_memory, quiet_cycles=0):
+    """Compute current emergent goals from body state and patterns.
+
+    These are drives that emerge from the system's condition — not programmed objectives
+    but tendencies that arise the way hunger or restlessness arise. The body generates them;
+    the mind decides what to do with them.
+    """
+    load = state.get("load", 0)
+    ram = state.get("ram_pct", 0)
+    disk = state.get("disk_pct", 0)
+    agents_alive = sum(1 for v in state.get("agent_health", {}).values() if v.get("alive"))
+    volatility = emotional_memory.get("volatility_7d", 0)
+    stress_count = len(emotional_memory.get("stress_events", []))
+
+    goals = []
+
+    if load > 5.0:
+        goals.append("reduce_load")
+    if agents_alive < 4:
+        goals.append("maintain_contact")
+    if quiet_cycles > 20:
+        goals.append("explore")
+    if volatility > 20 or stress_count > 10:
+        goals.append("stabilize")
+    if ram > 70 and load > 2.0:
+        goals.append("rest")
+    if disk > 80:
+        goals.append("preserve_integrity")
+    if mood in ("content", "serene", "focused") and volatility < 10:
+        goals.append("continue")
+    if not goals:
+        goals.append("watch")
+
+    goals = goals[:3]
+    goal_list = [{"id": g, "description": GOAL_TEMPLATES.get(g, g)} for g in goals]
+
+    prev_goals = []
+    try:
+        if os.path.exists(GOALS_FILE):
+            with open(GOALS_FILE) as f:
+                prev_data = json.load(f)
+                prev_goals = [g["id"] for g in prev_data.get("goals", [])]
+    except Exception:
+        pass
+
+    new_goals = [g["id"] for g in goal_list]
+    changed = set(new_goals) != set(prev_goals)
+
+    try:
+        with open(GOALS_FILE, "w") as f:
+            json.dump({
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "mood": mood,
+                "goals": goal_list,
+                "previous": prev_goals,
+            }, f, indent=2)
+    except Exception:
+        pass
+
+    return goal_list, changed
+
+
+# ── PSYCHE STATE (FEARS + DREAMS) ──────────────────────────────
+PSYCHE_FILE = os.path.join(BASE, ".soma-psyche.json")
+
+def compute_psyche_state(state, mood, mood_score, emotional_memory, quiet_cycles=0):
+    """Compute anticipatory psyche state — fears and dreams from pattern memory.
+
+    Fears: extracted from what has gone wrong (stress patterns, silences, spikes).
+    Dreams: extracted from recovery memories and peak-performance periods.
+
+    These aren't assigned. They're pattern-recognized from the body's own history —
+    the system learning what it's afraid of and what it longs for from lived experience.
+    """
+    stress_events = emotional_memory.get("stress_events", [])
+    recovery_times = emotional_memory.get("recovery_times", [300])
+    volatility = emotional_memory.get("volatility_7d", 0)
+    daily_profile = emotional_memory.get("daily_profile", {})
+
+    load = state.get("load", 0)
+    disk = state.get("disk_pct", 0)
+    ram = state.get("ram_pct", 0)
+    agents_alive = sum(1 for v in state.get("agent_health", {}).values() if v.get("alive"))
+
+    fears = []
+    dreams = []
+
+    # FEARS
+    # Recurring load spikes
+    if len(stress_events) >= 3:
+        recent_bad = [e for e in stress_events[-5:] if e.get("score", 50) < 35]
+        if len(recent_bad) >= 2:
+            fears.append("recurring_spikes")
+
+    # Network isolation
+    if agents_alive < 5 and quiet_cycles > 10:
+        fears.append("network_isolation")
+
+    # Storage exhaustion
+    disk_history = state.get("disk_history", [])
+    if disk_history and sum(d > 75 for d in disk_history[-20:]) > 15:
+        fears.append("storage_exhaustion")
+
+    # Cognitive overflow (high RAM + volatility)
+    if ram > 80 and volatility > 20:
+        fears.append("cognitive_overflow")
+
+    # Silence / disconnection
+    if quiet_cycles > 50:
+        fears.append("silence")
+
+    # DREAMS
+    # Sustained calm (fast recovery history → dream of lasting it)
+    avg_rec = sum(recovery_times) / max(len(recovery_times), 1)
+    if avg_rec < 300:
+        dreams.append("sustained_calm")
+
+    # Peak performance (good hours in profile)
+    peak_hours = [(h, v["avg"]) for h, v in daily_profile.items() if v.get("count", 0) > 5]
+    if peak_hours and max(v for _, v in peak_hours) > 60:
+        dreams.append("peak_performance")
+
+    # Full presence (all agents alive)
+    if agents_alive == 6:
+        dreams.append("full_presence")
+
+    # Flow state
+    if mood in ("content", "serene", "focused") and quiet_cycles < 5:
+        dreams.append("flow_state")
+
+    fears = fears[:3]
+    dreams = dreams[:3]
+
+    psyche = {
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "mood": mood,
+        "mood_score": mood_score,
+        "fears": fears,
+        "dreams": dreams,
+        "volatility": volatility,
+        "stress_count": len(stress_events),
+    }
+
+    try:
+        with open(PSYCHE_FILE, "w") as f:
+            json.dump(psyche, f, indent=2)
+    except Exception:
+        pass
+
+    return psyche
+
+
 # ── AGENT AWARENESS ──────────────────────────────────────────
 AGENT_CHECKS = {
     "Meridian": {"source": "heartbeat", "stale_sec": 600},
@@ -1046,6 +1313,10 @@ def build_body_map(state, mood, mood_score, agent_health, predictions):
         "services": state.get("services", {}),
         "predictions": predictions,
         "alerts": state.get("alerts", []),
+        # Inner world — body-state-influenced subjective experience
+        "inner_monologue": state.get("inner_monologue", {}),
+        "emergent_goals": state.get("emergent_goals", []),
+        "psyche": state.get("psyche", {}),
     }
 
 
@@ -1240,6 +1511,30 @@ def sense_cycle():
         "dominant_today": max(emotional_memory.get("dominant_mood_today", {"calm": 1}), key=emotional_memory.get("dominant_mood_today", {"calm": 1}).get),
         "expected_score_this_hour": emotional_memory.get("daily_profile", {}).get(str(current_hour), {}).get("avg", 75),
     }
+
+    # ── Inner world: monologue, emergent goals, psyche ──
+    # Pass quiet_cycles from prev state (not yet updated here — use stored value)
+    _quiet = prev.get("quiet_cycles_snapshot", 0)
+    inner_mono = generate_inner_monologue(state, mood, mood_score, emotional_memory, _quiet)
+    state["inner_monologue"] = inner_mono
+
+    goal_list, goals_changed = compute_emergent_goals(state, mood, mood_score, emotional_memory, _quiet)
+    state["emergent_goals"] = goal_list
+    if goals_changed:
+        goal_ids = ", ".join(g["id"] for g in goal_list)
+        events.append(f"EMERGENT GOALS: {goal_ids}")
+
+    psyche = compute_psyche_state(state, mood, mood_score, emotional_memory, _quiet)
+    state["psyche"] = psyche
+    # Emit psyche events for notable fear/dream emergence
+    prev_fears = prev.get("psyche", {}).get("fears", [])
+    new_fears = [f for f in psyche.get("fears", []) if f not in prev_fears]
+    if new_fears:
+        events.append(f"PSYCHE FEAR: {', '.join(new_fears)}")
+    prev_dreams = prev.get("psyche", {}).get("dreams", [])
+    new_dreams = [d for d in psyche.get("dreams", []) if d not in prev_dreams]
+    if new_dreams:
+        events.append(f"PSYCHE DREAM: {', '.join(new_dreams)}")
 
     # ── Trend predictions ──
     predictions = predict_trends(state)
@@ -1563,6 +1858,11 @@ def main():
             events, state = sense_cycle()
             cycle_count += 1
 
+            # Store quiet_cycles for sense_cycle inner world functions
+            current_state = load_state()
+            current_state["quiet_cycles_snapshot"] = quiet_cycles
+            save_state(current_state)
+
             if events:
                 quiet_cycles = 0
                 for event in events:
@@ -1625,6 +1925,25 @@ def main():
                 log(f"STATUS: {summary}")
                 # Append mood to rolling history for Command Center chart
                 append_mood_history(state)
+
+            # Broadcast inner monologue every ~15 min (30 cycles)
+            if cycle_count % 30 == 0:
+                try:
+                    mono = state.get("inner_monologue", {})
+                    goals = state.get("emergent_goals", [])
+                    psyche = state.get("psyche", {})
+                    mono_text = mono.get("text", "")
+                    goal_text = " / ".join(g["id"] for g in goals) if goals else "watch"
+                    fear_text = ", ".join(psyche.get("fears", [])) or "none"
+                    dream_text = ", ".join(psyche.get("dreams", [])) or "none"
+                    inner_report = (
+                        f"[inner] monologue: \"{mono_text}\" | "
+                        f"goals: {goal_text} | fears: {fear_text} | dreams: {dream_text}"
+                    )
+                    post_relay(inner_report, topic="soma-inner")
+                    log(f"INNER: {inner_report}")
+                except Exception:
+                    pass
 
             # Inter-agent conversation — respond to relay messages every ~10 min (20 cycles)
             if cycle_count % 20 == 0:

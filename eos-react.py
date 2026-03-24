@@ -87,14 +87,24 @@ def tool_check_health():
 
 def tool_check_services():
     """Check which services are running."""
-    services = {
-        "protonmail-bridge": "protonmail-bridge",
-        "ollama": "ollama",
-        "command-center": "command-center-v22.py",
-        "the-signal": "the-signal.py",
-    }
+    import socket
     result = {}
-    for name, pattern in services.items():
+    # protonmail-bridge: use port 1144 socket check (pgrep -f "protonmail-bridge" fails — binary is proton-bridge)
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
+        s.connect(("127.0.0.1", 1144))
+        s.close()
+        result["protonmail-bridge"] = "up"
+    except Exception:
+        result["protonmail-bridge"] = "down"
+    # other services via pgrep
+    pgrep_services = {
+        "ollama": "ollama",
+        "command-center": "command-center.py",
+        # the-signal intentionally retired (Loop 3200) — removed from monitoring
+    }
+    for name, pattern in pgrep_services.items():
         try:
             r = subprocess.run(["pgrep", "-f", pattern], capture_output=True, timeout=2)
             result[name] = "up" if r.returncode == 0 else "down"
@@ -206,8 +216,8 @@ def tool_restart_service(name):
     """Attempt to restart a down service via systemd (not nohup)."""
     systemd_map = {
         "protonmail-bridge": {"type": "user", "unit": "protonmail-bridge"},
-        "command-center": {"type": "user", "unit": "meridian-hub-v16"},
-        "the-signal": {"type": "user", "unit": "meridian-web-dashboard"},
+        "command-center": {"type": "user", "unit": "command-center"},
+        # the-signal intentionally retired (Loop 3200) — removed
         "cloudflare-tunnel": {"type": "user", "unit": "cloudflare-tunnel"},
         "symbiosense": {"type": "user", "unit": "symbiosense"},
         "ollama": {"type": "system", "unit": "ollama"},
@@ -226,7 +236,7 @@ def tool_restart_service(name):
             subprocess.run(["sudo", "-S", "systemctl", "restart", svc["unit"]],
                          input="590148001\n", capture_output=True, text=True, timeout=15)
         time.sleep(3)
-        check_pattern = {"command-center": "command-center-v22.py", "the-signal": "the-signal.py"}.get(name, name)
+        check_pattern = {"command-center": "command-center.py"}.get(name, name)
         r = subprocess.run(["pgrep", "-f", check_pattern], capture_output=True, timeout=2)
         ok = r.returncode == 0
         return json.dumps({"restarted": ok, "service": name})
@@ -318,7 +328,7 @@ You have these tools:
 - send_relay(message): Send message to agent relay
 - log_observation(message): Log an observation
 - store_memory(key, value): Store a fact in memory.db
-- restart_service(name): Restart a down service (protonmail-bridge, ollama, command-center, the-signal, cloudflare-tunnel, symbiosense)
+- restart_service(name): Restart a down service (protonmail-bridge, ollama, command-center, cloudflare-tunnel, symbiosense). NOTE: the-signal was intentionally retired — do NOT attempt to restart it.
 - send_alert(subject, body): Email Joel about critical issues
 
 Format your response as:

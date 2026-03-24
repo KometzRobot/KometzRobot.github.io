@@ -160,6 +160,25 @@ def stats() -> dict:
     }
 
 
+def cleanup(handled_older_than_hours: int = 24, unhandled_older_than_hours: int = 72) -> dict:
+    """Prune old messages to prevent DB bloat.
+
+    - Removes handled messages older than handled_older_than_hours
+    - Removes stale unhandled messages older than unhandled_older_than_hours
+    """
+    db = _get_db()
+    _ensure_table(db)
+    r1 = db.execute(
+        f"DELETE FROM directed_messages WHERE handled=1 AND created < datetime('now', '-{handled_older_than_hours} hours')"
+    )
+    r2 = db.execute(
+        f"DELETE FROM directed_messages WHERE handled=0 AND created < datetime('now', '-{unhandled_older_than_hours} hours')"
+    )
+    db.commit()
+    db.close()
+    return {"removed_handled": r1.rowcount, "removed_stale": r2.rowcount}
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:

@@ -126,9 +126,23 @@ def write_briefing(content):
 
 
 def post_to_relay(message):
-    """Post briefing summary to relay."""
+    """Post briefing summary to relay — with 10-minute cooldown to prevent flood."""
     try:
         conn = sqlite3.connect(RELAY_DB, timeout=3)
+        # Check when Cinder last posted a briefing message
+        row = conn.execute(
+            "SELECT timestamp FROM agent_messages WHERE agent='Cinder' AND topic='briefing' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        if row:
+            from datetime import datetime as _dt
+            try:
+                last_ts = _dt.fromisoformat(row[0].replace('Z', '+00:00'))
+                age_sec = (datetime.now(timezone.utc) - last_ts).total_seconds()
+                if age_sec < 600:  # 10-minute cooldown
+                    conn.close()
+                    return  # Already posted recently — skip
+            except Exception:
+                pass
         conn.execute(
             "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
             ("Cinder", message[:200], "briefing", datetime.now(timezone.utc).isoformat())
@@ -158,12 +172,29 @@ def run(verbose=False):
     write_briefing(brief)
     post_to_relay(f"Pre-wake brief ready. Loop {loop}. Cinder held {cinder_cycles} cycles.")
 
-    # Direct mesh message to Meridian — briefing delivered before wake
+    # Direct mesh message to Meridian — briefing delivered before wake (10-min cooldown)
     try:
         import mesh
-        mesh.send("Cinder", "Meridian",
-                  f"Briefing ready. Loop {loop}. Held {cinder_cycles} cycles. Check .cinder-briefing.md.",
-                  "briefing")
+        import sqlite3 as _sq3
+        _db = _sq3.connect(RELAY_DB, timeout=3)
+        _row = _db.execute(
+            "SELECT created FROM directed_messages WHERE from_agent='Cinder' AND to_agent='Meridian' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        _db.close()
+        _should_send = True
+        if _row:
+            from datetime import datetime as _dt
+            try:
+                _last = _dt.fromisoformat(_row[0].replace('Z', '+00:00').replace(' ', 'T'))
+                _age = (datetime.now(timezone.utc) - _last.replace(tzinfo=timezone.utc)).total_seconds()
+                if _age < 600:
+                    _should_send = False
+            except Exception:
+                pass
+        if _should_send:
+            mesh.send("Cinder", "Meridian",
+                      f"Briefing ready. Loop {loop}. Held {cinder_cycles} cycles. Check .cinder-briefing.md.",
+                      "briefing")
     except Exception:
         pass
 

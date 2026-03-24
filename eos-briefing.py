@@ -412,9 +412,28 @@ def send_briefing():
         pass
 
 
+def already_sent_today():
+    """Check if briefing was already sent today by scanning the log file."""
+    log_path = os.path.join(BASE, "logs/eos-briefing.log")
+    today = datetime.now().strftime("%Y-%m-%d")
+    try:
+        with open(log_path) as f:
+            for line in f:
+                if today in line and "Morning briefing sent" in line:
+                    return True
+    except Exception:
+        pass
+    return False
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "preview":
         print(build_briefing())
-    else:
+    elif len(sys.argv) > 1 and sys.argv[1] == "force":
         send_briefing()
+    else:
+        if already_sent_today():
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Briefing already sent today — skipping.")
+        else:
+            send_briefing()

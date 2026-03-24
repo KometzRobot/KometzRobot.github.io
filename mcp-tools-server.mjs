@@ -343,8 +343,36 @@ function bodyAwareness() {
       } catch { return null; }
     })();
 
+    const innerMonologue = (() => {
+      try {
+        const d = JSON.parse(readFileSync(`${BASE}/.soma-inner-monologue.json`, "utf8"));
+        return d.current || null;
+      } catch { return null; }
+    })();
+
+    const emergentGoals = (() => {
+      try {
+        const d = JSON.parse(readFileSync(`${BASE}/.soma-goals.json`, "utf8"));
+        return d.goals || [];
+      } catch { return []; }
+    })();
+
+    const psycheState = (() => {
+      try {
+        return JSON.parse(readFileSync(`${BASE}/.soma-psyche.json`, "utf8"));
+      } catch { return null; }
+    })();
+
     const result = {
       body: bodyState,
+      // Inner world — emergent from body state
+      inner_monologue: innerMonologue,
+      emergent_goals: emergentGoals,
+      psyche: psycheState ? {
+        fears: psycheState.fears || [],
+        dreams: psycheState.dreams || [],
+        volatility: psycheState.volatility || 0,
+      } : null,
       emotion_detail: emotionState ? emotionState.state : null,
       emotion_memory: emotionState ? {
         total_cycles: emotionState.memory?.total_cycles || 0,
