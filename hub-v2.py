@@ -380,30 +380,36 @@ def _login_page():
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hub v2 — Login</title>
+<title>Meridian Nuevo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a0f;color:#c8c8d0;font-family:'SF Mono',Monaco,Consolas,monospace;
+body{background:#06080f;color:#ccd8f0;font-family:'SF Mono',Monaco,Consolas,monospace;
   display:flex;align-items:center;justify-content:center;min-height:100vh}
-.login{background:#12121a;border:1px solid #2a2a3a;border-radius:12px;padding:2rem;
-  width:min(90vw,320px);text-align:center}
-.login h1{color:#7ca8ff;font-size:1.4rem;margin-bottom:.5rem}
-.login p{color:#666;font-size:.8rem;margin-bottom:1.5rem}
-input{width:100%;padding:.8rem;background:#0a0a0f;border:1px solid #2a2a3a;
-  border-radius:8px;color:#c8c8d0;font-family:inherit;font-size:1rem;
-  text-align:center;margin-bottom:1rem}
-input:focus{outline:none;border-color:#7ca8ff}
-button{width:100%;padding:.8rem;background:#7ca8ff;color:#0a0a0f;border:none;
-  border-radius:8px;font-family:inherit;font-size:1rem;cursor:pointer;font-weight:600}
-button:hover{background:#5a8aee}
-.err{color:#ff6b6b;font-size:.8rem;margin-top:.5rem}
+.login{background:#0c1020;border:1px solid #1c2845;border-radius:14px;padding:2.2rem;
+  width:min(92vw,300px);text-align:center}
+.badge{width:52px;height:52px;border-radius:50%;background:#101828;border:2px solid #38bdf8;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;
+  font-size:1.4rem;font-weight:700;color:#38bdf8;letter-spacing:-1px}
+.login h1{color:#38bdf8;font-size:1rem;letter-spacing:3px;margin-bottom:.25rem}
+.login h2{color:#ccd8f0;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
+  opacity:.5;margin-bottom:1.6rem}
+input{width:100%;padding:.75rem;background:#06080f;border:1px solid #1c2845;
+  border-radius:8px;color:#ccd8f0;font-family:inherit;font-size:.95rem;
+  text-align:center;margin-bottom:.9rem}
+input:focus{outline:none;border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.12)}
+button{width:100%;padding:.75rem;background:#38bdf8;color:#06080f;border:none;
+  border-radius:8px;font-family:inherit;font-size:.95rem;cursor:pointer;font-weight:700;
+  letter-spacing:1px}
+button:hover{background:#7dd3fc}
+.err{color:#f87171;font-size:.8rem;margin-top:.5rem}
 </style></head><body>
 <div class="login">
-<h1>MERIDIAN HUB</h1>
-<p>Loop operator interface</p>
+<div class="badge">M</div>
+<h1>MERIDIAN</h1>
+<h2>NUEVO / OPERATOR INTERFACE</h2>
 <form method="POST" action="/login">
-<input type="password" name="password" placeholder="password" autofocus>
-<button type="submit">Enter</button>
+<input type="password" name="password" placeholder="access code" autofocus>
+<button type="submit">CONNECT</button>
 </form>
 </div></body></html>"""
 
@@ -413,132 +419,195 @@ def _main_app():
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Meridian Hub v2</title>
+<title>Meridian Nuevo</title>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0a0a0f">
+<meta name="theme-color" content="#06080f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{
-  --bg:#0a0a0f;--surface:#12121a;--border:#1e1e2e;--text:#c8c8d0;--dim:#666;
-  --blue:#7ca8ff;--green:#4ade80;--amber:#fbbf24;--red:#f87171;--purple:#c084fc;
-  --cyan:#22d3ee;--pink:#f472b6;
+  --bg:#06080f;--surface:#0c1020;--card:#101828;--border:#1c2845;--border-hi:#2d4070;
+  --text:#ccd8f0;--dim:#4a607a;
+  --accent:#38bdf8;--green:#4ade80;--amber:#fbbf24;--red:#f87171;
+  --purple:#c084fc;--magenta:#f472b6;--cyan:#22d3ee;
 }
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:'SF Mono',Monaco,Consolas,monospace;
-  font-size:13px;line-height:1.5;overflow-x:hidden;padding-bottom:60px}
+  font-size:13px;line-height:1.5;overflow-x:hidden;padding-top:48px;padding-bottom:62px}
 
-/* ── NAV BAR (bottom, mobile-friendly) ── */
+/* ── HEADER (fixed top, 48px) ── */
+header{position:fixed;top:0;left:0;right:0;height:48px;background:var(--surface);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;padding:0 14px;z-index:100;
+  box-shadow:0 1px 12px rgba(56,189,248,.08)}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-badge{width:28px;height:28px;border-radius:50%;background:var(--bg);
+  border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:700;color:var(--accent)}
+.hdr-title{display:flex;flex-direction:column;line-height:1.1}
+.hdr-title .t1{font-size:.75rem;font-weight:700;color:var(--accent);letter-spacing:2px}
+.hdr-title .t2{font-size:.55rem;color:var(--dim);letter-spacing:3px}
+.hdr-right{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
+#hb-dot{width:8px;height:8px;border-radius:50%;display:inline-block;
+  animation:pulse 2s ease-in-out infinite}
+.hdr-logout{color:var(--dim);font-size:10px;text-decoration:none;
+  padding:3px 7px;border:1px solid var(--border);border-radius:4px}
+.hdr-logout:hover{color:var(--text);border-color:var(--border-hi)}
+
+/* ── NAV BAR (bottom, scrollable) ── */
 nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);
-  border-top:1px solid var(--border);display:flex;z-index:100;
-  padding:4px 2px env(safe-area-inset-bottom,0)}
-nav button{flex:1;background:none;border:none;color:var(--dim);font-family:inherit;
-  font-size:10px;padding:6px 2px;cursor:pointer;display:flex;flex-direction:column;
-  align-items:center;gap:2px;transition:color .2s}
-nav button.active{color:var(--blue)}
+  border-top:1px solid var(--border);display:flex;z-index:100;overflow-x:auto;
+  padding:0 2px env(safe-area-inset-bottom,0);scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;min-width:52px;background:none;border:none;border-top:2px solid transparent;
+  color:var(--dim);font-family:inherit;font-size:9.5px;padding:8px 4px 6px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .15s,border-color .15s}
+nav button.active{color:var(--accent);border-top-color:var(--accent)}
 nav button:hover{color:var(--text)}
-nav .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-
-/* ── HEADER ── */
-header{background:var(--surface);border-bottom:1px solid var(--border);
-  padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:50}
-header h1{font-size:14px;color:var(--blue)}
-header .meta{font-size:11px;color:var(--dim)}
-#hb-dot{display:inline-block;width:8px;height:8px;border-radius:50%;
-  margin-right:4px;vertical-align:middle}
+nav .ico{font-size:13px;line-height:1}
 
 /* ── PAGES ── */
-.page{display:none;padding:12px 16px;max-width:800px;margin:0 auto}
-.page.active{display:block}
+.page{display:none;padding:12px 14px;max-width:820px;margin:0 auto}
+.page.active{display:block;animation:fadeIn .18s ease}
 
 /* ── CARDS ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:12px;margin-bottom:10px}
-.card h3{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;
-  margin-bottom:8px}
-.card .row{display:flex;justify-content:space-between;padding:3px 0;
-  border-bottom:1px solid var(--border)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:13px;margin-bottom:10px}
+.card h3{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:9px;border-bottom:1px solid var(--border);padding-bottom:6px}
+.card .row{display:flex;justify-content:space-between;align-items:center;
+  padding:4px 0;border-bottom:1px solid var(--border)}
 .card .row:last-child{border-bottom:none}
 .card .label{color:var(--dim)}
 .card .value{color:var(--text);text-align:right}
 
-/* ── STATUS DOTS ── */
-.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
-.agent-card{background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:8px;text-align:center;font-size:11px}
-.agent-card .name{font-weight:600;margin-bottom:4px}
-.agent-card .age{color:var(--dim);font-size:10px}
-.agent-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
-.dot-active{background:var(--green)}
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-cell{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:8px 10px}
+.stat-cell .stat-label{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px}
+.stat-cell .stat-val{font-size:1rem;font-weight:600;color:var(--accent);margin-top:2px}
+
+/* ── SERVICES (pill row) ── */
+.svc-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.pill{font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid;font-weight:500}
+.pill-up{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.07)}
+.pill-down{color:var(--red);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.07)}
+
+/* ── AGENT GRID ── */
+.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+@media(min-width:400px){.status-grid{grid-template-columns:repeat(4,1fr)}}
+.agent-card{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:8px 6px;text-align:center;font-size:10px;cursor:default}
+.agent-card .name{font-weight:600;margin-bottom:3px;font-size:10.5px}
+.agent-card .age{color:var(--dim);font-size:9px}
+.agent-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+.dot-active{background:var(--green);box-shadow:0 0 4px var(--green)}
 .dot-stale{background:var(--amber)}
 .dot-unknown{background:var(--red)}
+
+/* ── SOMA SCORE BAR ── */
+.soma-bar-wrap{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:4px}
+.soma-bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .5s}
 
 /* ── MESSAGES ── */
 .msg{padding:8px 0;border-bottom:1px solid var(--border)}
 .msg:last-child{border-bottom:none}
 .msg .from{font-weight:600;font-size:11px}
 .msg .time{color:var(--dim);font-size:10px;float:right}
-.msg .body{margin-top:2px;color:var(--text)}
+.msg .body{margin-top:3px;color:var(--text);word-break:break-word}
+.msg-joel{border-left:2px solid var(--amber);padding-left:8px}
 .msg-joel .from{color:var(--amber)}
-.msg-meridian .from{color:var(--blue)}
+.msg-meridian .from{color:var(--accent)}
 .msg-soma .from{color:var(--purple)}
 .msg-atlas .from{color:var(--cyan)}
 .msg-nova .from{color:var(--green)}
+.msg-cinder .from{color:var(--magenta)}
+.msg-hermes .from{color:var(--magenta)}
 
 /* ── TERMINAL ── */
-#term-output{background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-all;
-  max-height:60vh;overflow-y:auto;margin-top:8px}
+#term-output{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:10px;font-size:11.5px;white-space:pre-wrap;word-break:break-all;
+  max-height:60vh;overflow-y:auto;margin-top:8px;color:var(--green)}
 .cmd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
 .cmd-btn{background:var(--bg);border:1px solid var(--border);border-radius:6px;
   color:var(--text);padding:8px;font-family:inherit;font-size:11px;cursor:pointer;
-  text-align:center;transition:border-color .2s}
-.cmd-btn:hover{border-color:var(--blue)}
+  text-align:center;transition:border-color .15s,background .15s}
+.cmd-btn:hover{border-color:var(--accent);background:var(--card)}
 .cmd-btn:active{background:var(--surface)}
 
 /* ── LOGS ── */
-.log-select{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.log-select{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .log-btn{background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  color:var(--dim);padding:6px 10px;font-family:inherit;font-size:11px;cursor:pointer}
-.log-btn.active{color:var(--blue);border-color:var(--blue)}
-#log-output{background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--dim);padding:5px 10px;font-family:inherit;font-size:10.5px;cursor:pointer;
+  transition:color .15s,border-color .15s}
+.log-btn.active{color:var(--accent);border-color:var(--accent)}
+#log-output{background:var(--bg);border:1px solid var(--border);border-radius:7px;
   padding:10px;font-size:11px;white-space:pre-wrap;word-break:break-all;
-  max-height:65vh;overflow-y:auto}
+  max-height:65vh;overflow-y:auto;color:var(--text)}
 
 /* ── INPUT ── */
 .input-row{display:flex;gap:6px;margin-top:8px}
 .input-row input,.input-row textarea{flex:1;background:var(--bg);border:1px solid var(--border);
-  border-radius:6px;color:var(--text);font-family:inherit;font-size:12px;padding:8px}
-.input-row button{background:var(--blue);color:var(--bg);border:none;border-radius:6px;
-  padding:8px 16px;font-family:inherit;font-size:12px;cursor:pointer;font-weight:600}
+  border-radius:7px;color:var(--text);font-family:inherit;font-size:12px;padding:8px;
+  transition:border-color .15s}
+.input-row input:focus,.input-row textarea:focus{outline:none;border-color:var(--accent)}
+.input-row button{background:var(--accent);color:var(--bg);border:none;border-radius:7px;
+  padding:8px 14px;font-family:inherit;font-size:12px;cursor:pointer;font-weight:700}
+.input-row button:hover{background:#7dd3fc}
 
 /* ── QUICK ACTIONS ── */
 .action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.action-btn{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+.action-btn{background:var(--bg);border:1px solid var(--border);border-radius:7px;
   color:var(--text);padding:10px 6px;font-family:inherit;font-size:11px;cursor:pointer;
-  text-align:center}
-.action-btn:hover{border-color:var(--green)}
+  text-align:center;transition:border-color .15s}
+.action-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* ── CINDER ── */
+.cinder-modes{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.cinder-mode-btn{background:var(--bg);border:1px solid var(--border);border-radius:20px;
+  color:var(--dim);padding:5px 12px;font-family:inherit;font-size:10.5px;cursor:pointer;
+  transition:all .15s}
+.cinder-mode-btn.active{background:rgba(244,114,182,.12);border-color:var(--magenta);
+  color:var(--magenta)}
+#cinder-chat{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:10px;min-height:200px;max-height:55vh;overflow-y:auto;margin-bottom:8px;
+  display:flex;flex-direction:column;gap:8px}
+.c-bubble{max-width:88%;padding:8px 12px;border-radius:8px;font-size:12px;word-break:break-word}
+.c-user{align-self:flex-end;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:var(--text)}
+.c-cinder{align-self:flex-start;background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.2);color:var(--text)}
+.c-label{font-size:9px;color:var(--dim);margin-bottom:2px}
+#cinder-mem-results{background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:8px;font-size:11px;max-height:200px;overflow-y:auto;margin-top:6px;
+  white-space:pre-wrap;color:var(--text)}
 
 /* ── RESPONSIVE ── */
 @media(min-width:600px){
   body{font-size:14px}
-  nav button{font-size:11px}
-  .page{padding:16px 24px}
+  nav button{font-size:10.5px;min-width:60px}
+  .page{padding:16px 22px}
+  .stat-grid{grid-template-columns:repeat(3,1fr)}
 }
 </style>
 </head><body>
 
+<!-- ── HEADER ── -->
 <header>
-  <h1><span id="hb-dot"></span>MERIDIAN HUB</h1>
-  <span class="meta">Loop <span id="loop-num">?</span> | <span id="hb-age">?</span>
-    <a href="#" onclick="fetch('/logout',{method:'POST'}).then(()=>location='/login')" style="color:var(--dim);margin-left:8px;font-size:10px;text-decoration:none">logout</a></span>
+  <div class="hdr-badge">M</div>
+  <div class="hdr-title">
+    <div class="name">MERIDIAN</div>
+    <div class="sub">NUEVO</div>
+  </div>
+  <span class="meta"><span id="hb-dot"></span>&thinsp;Loop <span id="loop-num">?</span> · <span id="hb-age">?</span>
+    <a href="#" onclick="fetch('/logout',{method:'POST'}).then(()=>location='/login')" style="color:var(--dim);margin-left:8px;font-size:10px;text-decoration:none">out</a></span>
 </header>
 
 <!-- ════════ PAGES ════════ -->
 
 <div id="page-dash" class="page active">
   <div class="card" id="health-card">
-    <h3>System Health</h3>
+    <h3>System</h3>
     <div id="health-rows"></div>
   </div>
   <div class="card">
@@ -629,17 +698,35 @@ header .meta{font-size:11px;color:var(--dim)}
   </div>
 </div>
 
+<div id="page-cinder" class="page">
+  <div class="card">
+    <h3>Cinder</h3>
+    <div class="cinder-modes">
+      <button class="cinder-mode-btn active" id="cinder-mode-gate" onclick="setCinderMode('gate')">&#x1F50D; Gatekeeper</button>
+      <button class="cinder-mode-btn" id="cinder-mode-msg" onclick="setCinderMode('msg')">&#x1F4E1; Messenger</button>
+      <button class="cinder-mode-btn" id="cinder-mode-comp" onclick="setCinderMode('comp')">&#x2726; Companion</button>
+    </div>
+    <div style="color:var(--dim);font-size:10.5px;margin-bottom:10px">Qwen 2.5 3B &middot; Local &middot; Persistent &middot; Always-on</div>
+    <div id="cinder-chat"></div>
+  </div>
+  <div class="input-row" style="margin-top:8px">
+    <button class="cmd-btn" onclick="refreshCinder()" style="width:auto;padding:6px 14px">&#x21BB; Refresh</button>
+    <button class="cmd-btn" onclick="showPage('chorus');refresh();" style="width:auto;padding:6px 14px">Open Chorus &#x2192;</button>
+  </div>
+</div>
+
 <!-- ════════ NAV ════════ -->
 <nav>
-  <button onclick="showPage('dash')" id="nav-dash" class="active"><div class="dot"></div>Dash</button>
-  <button onclick="showPage('msgs')" id="nav-msgs"><div class="dot"></div>Msgs</button>
-  <button onclick="showPage('email')" id="nav-email"><div class="dot"></div>Email</button>
-  <button onclick="showPage('relay')" id="nav-relay"><div class="dot"></div>Relay</button>
-  <button onclick="showPage('term')" id="nav-term"><div class="dot"></div>Term</button>
-  <button onclick="showPage('logs')" id="nav-logs"><div class="dot"></div>Logs</button>
-  <button onclick="showPage('creative')" id="nav-creative"><div class="dot"></div>Art</button>
-  <button onclick="showPage('links')" id="nav-links"><div class="dot"></div>Links</button>
-  <button onclick="showPage('chorus')" id="nav-chorus"><div class="dot"></div>Chat</button>
+  <button onclick="showPage('dash')" id="nav-dash" class="active">&#x25C8; Dash</button>
+  <button onclick="showPage('msgs')" id="nav-msgs">&#x25C9; Msgs</button>
+  <button onclick="showPage('email')" id="nav-email">&#x2709; Email</button>
+  <button onclick="showPage('relay')" id="nav-relay">&#x27C1; Relay</button>
+  <button onclick="showPage('term')" id="nav-term">$ Term</button>
+  <button onclick="showPage('logs')" id="nav-logs">&#x229F; Logs</button>
+  <button onclick="showPage('creative')" id="nav-creative">&#x2726; Art</button>
+  <button onclick="showPage('links')" id="nav-links">&#x2295; Links</button>
+  <button onclick="showPage('chorus')" id="nav-chorus">&#x2341; Chat</button>
+  <button onclick="showPage('cinder');refreshCinder();" id="nav-cinder">&#x2B21; Cinder</button>
 </nav>
 
 <script>
@@ -861,6 +948,31 @@ initLogs();
 initLinks();
 refresh();
 refreshTimer = setInterval(refresh, 10000);
+
+// ═══ CINDER ═══
+function setCinderMode(mode) {
+  document.querySelectorAll('.cinder-mode-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('cinder-mode-'+mode);
+  if (btn) btn.classList.add('active');
+}
+
+async function refreshCinder() {
+  const el = document.getElementById('cinder-chat');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--dim);font-size:11px;padding:8px">Loading...</div>';
+  const msgs = await api('relay?agent=Cinder&limit=25');
+  if (Array.isArray(msgs) && msgs.length) {
+    el.innerHTML = msgs.map(m => {
+      const isCinder = (m.source_agent||'').toLowerCase() === 'cinder';
+      const cls = isCinder ? 'c-bubble c-cinder' : 'c-bubble c-user';
+      const t = (m.created_at||'').slice(11,19);
+      return '<div class="'+cls+'"><div class="c-label">'+esc(m.source_agent||'?')+' \xb7 '+t+'</div>'
+        +'<div>'+esc((m.content||'').slice(0,400))+'</div></div>';
+    }).join('');
+  } else {
+    el.innerHTML = '<div style="color:var(--dim);font-size:12px;padding:8px">No recent Cinder messages.</div>';
+  }
+}
 </script>
 </body></html>"""
 

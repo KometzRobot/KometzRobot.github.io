@@ -187,9 +187,15 @@ with open('/proc/uptime') as f:
     secs = float(f.read().split()[0])
     stats['uptime'] = f"{int(secs/3600)}h {int((secs%3600)/60)}m"
 # Services
-for svc in ['protonmail-bridge', 'irc-bot', 'command-center', 'ollama']:
+for svc in ['irc-bot', 'command-center', 'ollama']:
     r = subprocess.run(['pgrep', '-f', svc], capture_output=True, timeout=2)
     stats[f'svc_{svc}'] = 'up' if r.returncode == 0 else 'down'
+# Bridge: check by IMAP port (process is /usr/lib/protonmail/bridge/bridge, not "protonmail-bridge")
+import socket as _sock
+try:
+    _s = _sock.create_connection(('127.0.0.1', 1144), timeout=2); _s.close(); stats['svc_protonmail-bridge'] = 'up'
+except Exception:
+    stats['svc_protonmail-bridge'] = 'down'
 # Loop count
 try:
     with open('${BASE}/.loop-count') as f:
