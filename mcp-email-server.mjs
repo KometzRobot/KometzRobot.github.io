@@ -106,6 +106,33 @@ print(json.dumps(results))
   return runPython(code);
 }
 
+function markEmailsRead(ids) {
+  // ids is a comma-separated string of IMAP sequence numbers e.g. "2251,2252"
+  const safeIds = String(ids).replace(/[^0-9,]/g, "");
+  const code = `
+import imaplib, json
+
+m = imaplib.IMAP4("${IMAP_HOST}", ${IMAP_PORT})
+m.login("${EMAIL_USER}", "${EMAIL_PASS}")
+m.select("INBOX")
+marked = []
+failed = []
+for eid in "${safeIds}".split(","):
+    eid = eid.strip()
+    if not eid:
+        continue
+    try:
+        m.store(eid, '+FLAGS', '\\\\Seen')
+        marked.append(eid)
+    except Exception as e:
+        failed.append({"id": eid, "error": str(e)})
+m.close()
+m.logout()
+print(json.dumps({"marked": marked, "failed": failed}))
+`;
+  return runPython(code);
+}
+
 function sendEmail(to, subject, body) {
   // Sanitize inputs for Python string
   const safeSubject = subject.replace(/'/g, "\\'").replace(/\n/g, " ");
@@ -312,6 +339,21 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "mark_emails_read",
+        description:
+          "Mark one or more emails as read (\\Seen) in the IMAP inbox. Pass comma-separated email IDs from read_emails output. Use after handling emails per Joel's directive.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            ids: {
+              type: "string",
+              description: "Comma-separated IMAP sequence IDs to mark as read (e.g. '2251,2252')",
+            },
+          },
+          required: ["ids"],
+        },
+      },
+      {
         name: "check_sent_emails",
         description:
           "Check recently sent emails to prevent duplicate replies across context resets. Query by recipient and time window.",
@@ -361,6 +403,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       case "email_stats":
         result = getEmailStats();
+        break;
+      case "mark_emails_read":
+        if (!args?.ids) {
+          throw new Error("Missing required field: ids");
+        }
+        result = markEmailsRead(args.ids);
         break;
       case "check_sent_emails":
         result = checkSentEmails(args?.recipient || "", args?.hours || 48);
