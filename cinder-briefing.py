@@ -94,14 +94,14 @@ def get_gatekeeper_stats():
 def ask_cinder_to_summarize(relay_items, loop, hb_age, cinder_cycles):
     """Ask Cinder to synthesize the relay digest into a brief."""
     relay_text = "\n".join(relay_items) if relay_items else "No significant relay activity."
+    loop_line = f"LOOP: {loop} | HB: {hb_age} | CINDER HELD: {cinder_cycles} cycles"
     prompt = (
-        f"You are Cinder. Meridian (Claude) is about to wake up. "
-        f"Write a 3-line briefing in this exact format:\n"
-        f"LOOP: {loop} | HB: {hb_age} | CINDER HELD: {cinder_cycles} cycles\n"
-        f"STATUS: [one sentence: what the system state is right now]\n"
-        f"ACTION: [one sentence: what Meridian should do first, or 'nothing urgent']\n\n"
-        f"Recent relay activity to base your brief on:\n{relay_text}\n\n"
-        f"Be direct. No preamble. Exact format above."
+        f"You are Cinder. Meridian is about to wake up. Based on the relay activity below, "
+        f"write exactly 2 lines and nothing else:\n\n"
+        f"STATUS: <one sentence describing current system state>\n"
+        f"ACTION: <one sentence for what Meridian should do first, or 'nothing urgent'>\n\n"
+        f"Relay activity:\n{relay_text}\n\n"
+        f"Output only the STATUS and ACTION lines. No preamble, no explanation."
     )
     try:
         result = subprocess.run(
@@ -111,7 +111,11 @@ def ask_cinder_to_summarize(relay_items, loop, hb_age, cinder_cycles):
             text=True,
             timeout=30
         )
-        return result.stdout.strip() if result.stdout.strip() else None
+        raw = result.stdout.strip() if result.stdout.strip() else None
+        if raw:
+            # Prepend the pre-filled loop line
+            return f"{loop_line}\n{raw}"
+        return None
     except Exception as e:
         return None
 
@@ -163,8 +167,9 @@ def run(verbose=False):
 
     if not brief:
         # Fallback if Cinder is unavailable
+        loop_line = f"LOOP: {loop} | HB: {hb_age} | CINDER HELD: {cinder_cycles} cycles"
         brief = (
-            f"LOOP: {loop} | HB: {hb_age} | CINDER HELD: {cinder_cycles} cycles\n"
+            f"{loop_line}\n"
             f"STATUS: System running. Cinder held the line.\n"
             f"ACTION: Check emails, touch heartbeat, proceed normally."
         )
