@@ -63,8 +63,8 @@ const baseAngle = rng() * Math.PI * 2;
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 
-// Render resolution — higher = more detail
-const CALC_SIZE = 512;
+// Render at smaller resolution, display larger
+const CALC_SIZE = 280;
 const DISPLAY_SIZE = Math.min(window.innerWidth, window.innerHeight) - 40;
 canvas.width = CALC_SIZE;
 canvas.height = CALC_SIZE;
@@ -133,7 +133,7 @@ let targetCenterY = 0;
 let clickWaveTime = -10;
 let clickWaveX = 0.5;
 let clickWaveY = 0.5;
-let maxIter = 150;
+let maxIter = 80;
 let paletteTime = 0;
 let frameCount = 0;
 
@@ -386,7 +386,7 @@ canvas.addEventListener('click', (e) => {
   targetZoom = zoomLevel * 1.5;
 
   // Increase iterations with zoom for detail
-  maxIter = Math.min(400, Math.floor(150 + Math.log2(targetZoom) * 30));
+  maxIter = Math.min(200, Math.floor(80 + Math.log2(targetZoom) * 20));
 
   // Advance palette
   paletteTime += 0.25;
@@ -398,7 +398,7 @@ canvas.addEventListener('dblclick', (e) => {
   targetZoom = 1;
   targetCenterX = 0;
   targetCenterY = 0;
-  maxIter = 150;
+  maxIter = 80;
 });
 
 // Handle window resize
