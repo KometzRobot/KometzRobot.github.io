@@ -367,8 +367,17 @@ def check_services():
             services[svc] = result.stdout.strip()
         except Exception:
             services[svc] = "unknown"
-    for name, pattern in [("protonmail-bridge", "protonmail-bridge"),
-                          ("ollama", "ollama"),
+    # Proton Bridge: detect via port 1144 (pgrep -f matches itself, unreliable)
+    try:
+        import socket as _socket
+        s = _socket.socket()
+        s.settimeout(2)
+        r = s.connect_ex(("127.0.0.1", 1144))
+        s.close()
+        services["protonmail-bridge"] = "active" if r == 0 else "dead"
+    except Exception:
+        services["protonmail-bridge"] = "unknown"
+    for name, pattern in [("ollama", "ollama"),
                           ("tailscaled", "tailscaled")]:
         try:
             result = subprocess.run(["pgrep", "-f", pattern],
@@ -1644,6 +1653,13 @@ def main():
                             "voice": emotion_data.get("voice", ""),
                         })
                         log(f"CASCADE TRIGGERED: mood_shift → Eos")
+                        # Also route to Cinder via mesh for pre-wake briefing context
+                        try:
+                            import mesh as mesh_module
+                            mesh_module.send("Soma", "Cinder", evt, "mood_shift")
+                            log(f"MESH: mood_shift → Cinder")
+                        except Exception as me:
+                            log(f"Mesh send error: {me}")
                     except Exception as ce:
                         log(f"Cascade trigger error: {ce}")
 
