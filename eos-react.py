@@ -489,6 +489,13 @@ What needs attention? Check the situation and take any necessary actions."""
     state["last_actions"] = actions_taken
     save_state(state)
 
+    # Always post run summary to relay so agent health monitoring can detect Eos activity
+    run_summary = state.get('last_summary', f"{len(actions_taken)} actions taken.")
+    tool_send_relay(
+        f"Eos run #{state['runs']}: {len(actions_taken)} actions. {run_summary[:120]}",
+        topic="status"
+    )
+
     print(f"[{now}] Eos ReAct run #{state['runs']}: {len(actions_taken)} actions. Summary: {state.get('last_summary', '?')[:100]}")
 
 

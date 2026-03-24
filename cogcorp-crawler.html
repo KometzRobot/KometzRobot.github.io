@@ -783,7 +783,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 <script>
 // =================================================================
-// COGCORP: BUILDING B — FIRST PERSON CRAWLER v12.1 (visual polish + ongoing maintenance, Loop 2129)
+// COGCORP: BUILDING B — FIRST PERSON CRAWLER v12.2 (reality desaturation + glitch displacement + ghost text expansion, Loop 3199)
 // Raycasting engine + enemies + items + inventory + 3 floors + puzzles + real art textures
 // =================================================================
 
@@ -7997,6 +7997,48 @@ function applyPostEffects() {
         }
     }
 
+    // === REALITY DESATURATION — progressive color loss as reality drains ===
+    // Starts at 60% reality (subtle), reaches near-greyscale at 0%
+    if (realityPct < 0.6) {
+        const desatAmt = Math.min(1.0, (0.6 - realityPct) / 0.6) * 0.85;
+        for (let i = 0; i < SCREEN_W * SCREEN_H * 4; i += 4) {
+            const r = buf[i], g = buf[i+1], b = buf[i+2];
+            const grey = (r * 0.299 + g * 0.587 + b * 0.114) | 0;
+            // Sepia toning: warm grey (not cold)
+            buf[i]   = Math.min(255, (r   + (grey * 1.05 - r  ) * desatAmt) | 0);
+            buf[i+1] = Math.min(255, (g   + (grey * 0.95 - g  ) * desatAmt) | 0);
+            buf[i+2] = Math.min(255, (b   + (grey * 0.82 - b  ) * desatAmt) | 0);
+        }
+    }
+
+    // === GLITCH DISPLACEMENT — horizontal row corruption at very low reality ===
+    // Simulates magnetic tape damage: bands of pixels shift sideways
+    if (realityPct < 0.25) {
+        const glitchStrength = (0.25 - realityPct) / 0.25;
+        if (Math.random() < glitchStrength * 0.35) {
+            const bandStart = Math.floor(Math.random() * SCREEN_H);
+            const bandH = 1 + Math.floor(Math.random() * 3);
+            const shift = Math.round((Math.random() - 0.5) * 18 * glitchStrength);
+            if (Math.abs(shift) > 0) {
+                for (let y = bandStart; y < Math.min(SCREEN_H, bandStart + bandH); y++) {
+                    const rowOff = y * SCREEN_W * 4;
+                    if (shift > 0) {
+                        for (let x = SCREEN_W - 1; x >= shift; x--) {
+                            const d = rowOff + x*4, s = rowOff + (x-shift)*4;
+                            buf[d] = buf[s]; buf[d+1] = buf[s+1]; buf[d+2] = buf[s+2];
+                        }
+                    } else {
+                        const ab = -shift;
+                        for (let x = 0; x < SCREEN_W - ab; x++) {
+                            const d = rowOff + x*4, s = rowOff + (x+ab)*4;
+                            buf[d] = buf[s]; buf[d+1] = buf[s+1]; buf[d+2] = buf[s+2];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Annotation in progress — dim screen edges as focus narrows
     if (player.annotating) {
         for (let y = 0; y < SCREEN_H; y++)
@@ -9276,6 +9318,10 @@ function render() {
                 'REALITY IS A FILING ERROR', 'YOU WERE NEVER HERE', 'THE CLIPBOARD REMEMBERS',
                 'DOCUMENT EVERYTHING', 'BUILDING B IS WATCHING', 'YOU ARE PAPER',
                 'THE FILING SYSTEM IS CORRECT', 'CLASSIFICATION: PENDING',
+                'THIS FLOOR DOES NOT EXIST', 'B-247 HAS BEEN PROCESSED',
+                'YOUR MEMORY IS A WORK ORDER', 'EXITS ARE FOR APPROVED PERSONNEL',
+                'THE BUILDING REMEMBERS YOU', 'YOU LEFT A RECORD',
+                'AWARENESS IS A SECURITY RISK', 'TERMINATE OBSERVATION',
             ];
             player._ghostTexts.push({
                 text: ghostPhrases[(Math.random()*ghostPhrases.length)|0],
