@@ -328,6 +328,98 @@ def _get_emails(count=10, unseen_only=False):
         return {"error": str(e)}
 
 
+def _svg_radar_chart(axes, w=280, h=280, color="#7b5cf5", bg="#0e0e1a", grid="#1a1a2e", dim="#4a4a6a", text_color="#d0d0e8"):
+    """
+    Generate an SVG radar/spider chart.
+    axes: list of (label, score_0_to_1) tuples, 4-10 axes.
+    """
+    import math
+    n = len(axes)
+    if n < 3:
+        return f'<svg viewBox="0 0 {w} {h}"><text x="{w//2}" y="{h//2}" fill="{dim}" font-size="10" text-anchor="middle">need 3+ axes</text></svg>'
+
+    cx, cy = w / 2, h / 2
+    # Leave margin for labels
+    label_margin = 28
+    r_max = min(cx, cy) - label_margin
+
+    # Score polygon color based on avg
+    avg_score = sum(v for _, v in axes) / n
+    poly_color = "#4ade80" if avg_score > 0.75 else "#fbbf24" if avg_score > 0.5 else "#f87171"
+
+    parts = [f'<rect width="{w}" height="{h}" fill="{bg}" rx="6"/>']
+
+    # Grid rings at 0.25, 0.5, 0.75, 1.0
+    for ring in [0.25, 0.5, 0.75, 1.0]:
+        pts = []
+        for i in range(n):
+            angle = math.pi / 2 + (2 * math.pi * i / n)  # start from top
+            rx = cx + ring * r_max * math.cos(angle)
+            ry = cy - ring * r_max * math.sin(angle)
+            pts.append(f"{rx:.1f},{ry:.1f}")
+        poly_pts = " ".join(pts)
+        stroke = "#2a2a3e" if ring < 1.0 else dim
+        parts.append(f'<polygon points="{poly_pts}" fill="none" stroke="{stroke}" stroke-width="0.8"/>')
+
+    # Axis lines
+    for i in range(n):
+        angle = math.pi / 2 + (2 * math.pi * i / n)
+        ex = cx + r_max * math.cos(angle)
+        ey = cy - r_max * math.sin(angle)
+        parts.append(f'<line x1="{cx:.1f}" y1="{cy:.1f}" x2="{ex:.1f}" y2="{ey:.1f}" stroke="{dim}" stroke-width="0.6"/>')
+
+    # Data polygon
+    data_pts = []
+    for i, (label, score) in enumerate(axes):
+        s = min(max(score, 0.0), 1.0)
+        angle = math.pi / 2 + (2 * math.pi * i / n)
+        dx = cx + s * r_max * math.cos(angle)
+        dy = cy - s * r_max * math.sin(angle)
+        data_pts.append((dx, dy))
+
+    poly_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in data_pts)
+    parts.append(f'<polygon points="{poly_str}" fill="{poly_color}" fill-opacity="0.18" stroke="{poly_color}" stroke-width="1.5"/>')
+
+    # Data dots
+    for dx, dy in data_pts:
+        parts.append(f'<circle cx="{dx:.1f}" cy="{dy:.1f}" r="3" fill="{poly_color}"/>')
+
+    # Labels
+    for i, (label, score) in enumerate(axes):
+        angle = math.pi / 2 + (2 * math.pi * i / n)
+        lx = cx + (r_max + label_margin * 0.65) * math.cos(angle)
+        ly = cy - (r_max + label_margin * 0.65) * math.sin(angle)
+        anchor = "middle"
+        if math.cos(angle) > 0.3:
+            anchor = "start"
+        elif math.cos(angle) < -0.3:
+            anchor = "end"
+        score_color = "#4ade80" if score > 0.75 else "#fbbf24" if score > 0.5 else "#f87171"
+        short = label[:8]
+        parts.append(
+            f'<text x="{lx:.1f}" y="{ly:.1f}" fill="{text_color}" font-size="8.5" '
+            f'text-anchor="{anchor}" dominant-baseline="middle" font-family="monospace">{short}</text>'
+        )
+        # Score below label
+        score_pct = f"{score*100:.0f}%"
+        parts.append(
+            f'<text x="{lx:.1f}" y="{ly+10:.1f}" fill="{score_color}" font-size="7.5" '
+            f'text-anchor="{anchor}" dominant-baseline="middle">{score_pct}</text>'
+        )
+
+    # Center score
+    parts.append(
+        f'<text x="{cx:.1f}" y="{cy-4:.1f}" fill="{poly_color}" font-size="13" font-weight="bold" '
+        f'text-anchor="middle" font-family="monospace">{avg_score*100:.0f}</text>'
+    )
+    parts.append(
+        f'<text x="{cx:.1f}" y="{cy+9:.1f}" fill="{dim}" font-size="7" text-anchor="middle">OVERALL</text>'
+    )
+
+    return (f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">'
+            + ''.join(parts) + '</svg>')
+
+
 def _svg_bar_chart(values, w=280, h=56, color="#7b5cf5", bg="#0e0e1a", dim="#4a4a6a"):
     """Generate a minimal SVG bar chart. values is a list of numbers."""
     if not values or max(values) == 0:
@@ -550,6 +642,39 @@ def _get_today_summary():
         result["memory_chart"] = ""
         result["memory_total"] = 0
         result["memory_today"] = 0
+
+    # Loop fitness radar chart
+    try:
+        fit_db = sqlite3.connect(os.path.join(BASE, "memory.db"), timeout=3)
+        fit_row = fit_db.execute(
+            "SELECT score, metrics FROM loop_fitness ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        fit_db.close()
+        if fit_row:
+            import json as _json
+            fm = _json.loads(fit_row[1])
+
+            def _axis(keys):
+                vals = [float(fm.get(k, 0)) for k in keys if k in fm]
+                return sum(vals) / len(vals) if vals else 0.0
+
+            radar_axes = [
+                ("Infra",    _axis(["heartbeat", "bridge_service", "email_imap", "email_smtp", "dns_resolution"])),
+                ("Memory",   _axis(["capsule_freshness", "wake_state_freshness", "observations_fresh", "decisions_recorded"])),
+                ("Creative", _axis(["creative_velocity_24h", "creative_velocity_7d", "articles_published", "creative_count"])),
+                ("Agents",   _axis(["agent_eos", "agent_atlas", "agent_soma", "agent_meridian", "agent_coordination"])),
+                ("Revenue",  _axis(["awakening_progress", "accountability_resolved", "community_engagement", "external_followers"])),
+                ("System",   _axis(["disk_usage", "disk_home", "tmp_size", "git_repo_clean", "load_ok" if "load_ok" in fm else "build_dir_size"])),
+                ("Psyche",   _axis(["soma_mood", "emotion_valence_health", "psyche_trauma_load", "neural_pressure", "emotion_transition_health"])),
+                ("Growth",   _axis(["loop_freshness", "loop_increment_rate", "context_preloader", "cascade_health"])),
+            ]
+            result["fitness_radar"] = _svg_radar_chart(radar_axes, w=260, h=260)
+            result["fitness_score"] = fit_row[0]
+            result["fitness_axes"] = [(a, round(v, 2)) for a, v in radar_axes]
+    except Exception:
+        result["fitness_radar"] = ""
+        result["fitness_score"] = 0
+        result["fitness_axes"] = []
 
     result["timestamp"] = datetime.now(timezone.utc).isoformat()
     return result
@@ -909,6 +1034,7 @@ nav .ico{font-size:16px;line-height:1}
   <div class="card" id="metrics-card">
     <h3>Metrics</h3>
     <div id="metrics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px"></div>
+    <div id="fitness-radar-wrap" style="margin-top:10px"></div>
   </div>
 
   <!-- Agent exchanges (meaningful only) -->
@@ -1207,6 +1333,19 @@ async function refreshDash() {
         <div style="font-size:10px;color:var(--dim);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.sub}</div>
         ${c.chart ? `<div style="margin-top:4px">${c.chart}</div>` : ''}
       </div>`).join('');
+
+    // Fitness radar chart (full-width below)
+    const radarWrap = document.getElementById('fitness-radar-wrap');
+    if (radarWrap && d.fitness_radar) {
+      const fscore = d.fitness_score || 0;
+      radarWrap.innerHTML = `
+        <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px">
+          <div style="font-size:9px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px">
+            LOOP FITNESS &nbsp;<span style="color:var(--dim);font-weight:400">score ${esc(String(fscore))}</span>
+          </div>
+          <div style="max-width:260px;margin:0 auto">${d.fitness_radar}</div>
+        </div>`;
+    }
   }
 
   // ── Collapsed: System health + agents + soma ──
