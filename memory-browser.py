@@ -10,10 +10,10 @@ Usage:
     python3 memory-browser.py /path/to/other/memory.db
 """
 
-__version__ = "1.1.0"
+__version__ = "2.0.0"
 
 import tkinter as tk
-from tkinter import ttk, font as tkfont
+from tkinter import ttk, font as tkfont, messagebox, simpledialog
 import sqlite3
 import os
 import sys
@@ -321,10 +321,28 @@ class MemoryBrowser(tk.Tk):
         clear_btn.bind("<Button-1>", lambda e: self._clear_search())
 
         # Refresh button
-        refresh_btn = tk.Label(toolbar, text=" \u21bb Refresh ", font=self.font_small,
+        refresh_btn = tk.Label(toolbar, text=" ↻ Refresh ", font=self.font_small,
                                fg=CYAN, bg=ACCENT, cursor="hand2", padx=8, pady=2)
         refresh_btn.pack(side="right", padx=6)
         refresh_btn.bind("<Button-1>", lambda e: self._refresh())
+
+        # Delete button
+        self.delete_btn = tk.Label(toolbar, text=" ✕ Delete ", font=self.font_small,
+                                    fg=RED, bg=ACCENT, cursor="hand2", padx=8, pady=2)
+        self.delete_btn.pack(side="right", padx=2)
+        self.delete_btn.bind("<Button-1>", lambda e: self._delete_selected())
+
+        # Edit button
+        self.edit_btn = tk.Label(toolbar, text=" ✎ Edit ", font=self.font_small,
+                                  fg=AMBER, bg=ACCENT, cursor="hand2", padx=8, pady=2)
+        self.edit_btn.pack(side="right", padx=2)
+        self.edit_btn.bind("<Button-1>", lambda e: self._edit_selected())
+
+        # Dedup button
+        self.dedup_btn = tk.Label(toolbar, text=" ⊕ Dupes ", font=self.font_small,
+                                   fg=PURPLE, bg=ACCENT, cursor="hand2", padx=8, pady=2)
+        self.dedup_btn.pack(side="right", padx=2)
+        self.dedup_btn.bind("<Button-1>", lambda e: self._find_duplicates())
 
         # Treeview area
         tree_frame = tk.Frame(content, bg=BG)
@@ -520,6 +538,196 @@ class MemoryBrowser(tk.Tk):
             self.detail_text.insert("end", f"{val}\n", "value")
 
         self.detail_text.configure(state="disabled")
+
+    # ── Get selected row id ───────────────────────────────────────
+
+    def _get_selected_row_id(self):
+        sel = self.tree.selection()
+        if not sel:
+            return None, None
+        values = self.tree.item(sel[0]).get("values", [])
+        cols = self.current_columns
+        if not cols or not values:
+            return None, None
+        # Most tables have 'id' as first column
+        row_dict = dict(zip(cols, values))
+        row_id = row_dict.get("id")
+        return row_id, row_dict
+
+    # ── Delete selected row ───────────────────────────────────────
+
+    def _delete_selected(self):
+        if not self.current_table:
+            return
+        row_id, row_dict = self._get_selected_row_id()
+        if row_id is None:
+            messagebox.showwarning("No selection", "Select a row first.")
+            return
+
+        # Build a preview for the confirm dialog
+        preview = ""
+        for k, v in list(row_dict.items())[:4]:
+            preview += f"{k}: {str(v)[:60]}\n"
+
+        if not messagebox.askyesno(
+            "Confirm Delete",
+            f"Delete this row from '{self.current_table}'?\n\n{preview}\nThis cannot be undone.",
+            icon="warning"
+        ):
+            return
+
+        try:
+            self.conn.execute(f'DELETE FROM "{self.current_table}" WHERE id = ?', (row_id,))
+            self.conn.commit()
+            # Update count
+            new_count = self.conn.execute(f'SELECT COUNT(*) FROM "{self.current_table}"').fetchone()[0]
+            self.table_counts[self.current_table] = new_count
+            # Refresh sidebar count label
+            if self.current_table in self.sidebar_buttons:
+                _, _, cnt_lbl, _ = self.sidebar_buttons[self.current_table]
+                cnt_lbl.configure(text=str(new_count))
+            self._refresh()
+        except Exception as e:
+            messagebox.showerror("Delete failed", str(e))
+
+    # ── Edit selected row ────────────────────────────────────────
+
+    def _edit_selected(self):
+        if not self.current_table:
+            return
+        row_id, row_dict = self._get_selected_row_id()
+        if row_id is None:
+            messagebox.showwarning("No selection", "Select a row first.")
+            return
+
+        cols = self.current_columns
+        editable_cols = [c for c in cols if c != "id"]
+
+        # Open edit dialog
+        win = tk.Toplevel(self)
+        win.title(f"Edit row {row_id} — {self.current_table}")
+        win.configure(bg=BG)
+        win.geometry("700x500")
+        win.grab_set()
+
+        tk.Label(win, text=f"Editing: {self.current_table} / id={row_id}",
+                 font=self.font_small, fg=CYAN, bg=BG).pack(anchor="w", padx=12, pady=8)
+
+        frame = tk.Frame(win, bg=BG)
+        frame.pack(fill="both", expand=True, padx=12)
+
+        entries = {}
+        for col in editable_cols:
+            val = row_dict.get(col, "")
+            row_frame = tk.Frame(frame, bg=BG)
+            row_frame.pack(fill="x", pady=3)
+            tk.Label(row_frame, text=col, font=self.font_small, fg=CYAN,
+                     bg=BG, width=18, anchor="e").pack(side="left", padx=(0, 8))
+            # Use Text widget for long values, Entry for short
+            if col in {"value", "content", "description", "body_snippet", "notes", "reasoning"}:
+                t = tk.Text(row_frame, font=self.font_small, bg=INPUT_BG, fg=FG,
+                            relief="flat", height=3, width=55,
+                            insertbackground=GREEN,
+                            highlightbackground=BORDER, highlightthickness=1)
+                t.insert("1.0", str(val) if val else "")
+                t.pack(side="left")
+                entries[col] = ("text", t)
+            else:
+                e = tk.Entry(row_frame, font=self.font_small, bg=INPUT_BG, fg=FG,
+                             relief="flat", width=55,
+                             insertbackground=GREEN,
+                             highlightbackground=BORDER, highlightthickness=1)
+                e.insert(0, str(val) if val else "")
+                e.pack(side="left")
+                entries[col] = ("entry", e)
+
+        def _save():
+            updates = {}
+            for col, (wtype, widget) in entries.items():
+                if wtype == "text":
+                    updates[col] = widget.get("1.0", "end").rstrip("\n")
+                else:
+                    updates[col] = widget.get()
+            set_clause = ", ".join(f'"{c}" = ?' for c in updates)
+            vals = list(updates.values()) + [row_id]
+            try:
+                self.conn.execute(
+                    f'UPDATE "{self.current_table}" SET {set_clause} WHERE id = ?', vals)
+                self.conn.commit()
+                win.destroy()
+                self._refresh()
+            except Exception as e:
+                messagebox.showerror("Save failed", str(e), parent=win)
+
+        btn_frame = tk.Frame(win, bg=BG)
+        btn_frame.pack(pady=10)
+        tk.Button(btn_frame, text="Save", font=self.font_small,
+                  bg=GREEN2, fg=BG, relief="flat",
+                  command=_save, padx=16, pady=4).pack(side="left", padx=8)
+        tk.Button(btn_frame, text="Cancel", font=self.font_small,
+                  bg=PANEL2, fg=FG, relief="flat",
+                  command=win.destroy, padx=12, pady=4).pack(side="left")
+
+    # ── Duplicate detection ───────────────────────────────────────
+
+    def _find_duplicates(self):
+        if not self.current_table:
+            return
+
+        table = self.current_table
+        cols = self._get_columns(table)
+
+        # For facts: check duplicate keys
+        # For other tables: check duplicate content/value in longest text col
+        dup_col = None
+        if "key" in cols:
+            dup_col = "key"
+        elif "content" in cols:
+            dup_col = "content"
+        elif "value" in cols:
+            dup_col = "value"
+        elif "description" in cols:
+            dup_col = "description"
+
+        if not dup_col:
+            messagebox.showinfo("Duplicates", f"No suitable column to check in '{table}'.")
+            return
+
+        rows = self.conn.execute(
+            f'SELECT "{dup_col}", COUNT(*) as cnt FROM "{table}" GROUP BY "{dup_col}" HAVING cnt > 1'
+        ).fetchall()
+
+        win = tk.Toplevel(self)
+        win.title(f"Duplicates in {table}.{dup_col}")
+        win.configure(bg=BG)
+        win.geometry("700x400")
+
+        tk.Label(win, text=f"Duplicate '{dup_col}' values in {table}",
+                 font=self.font_heading, fg=PURPLE, bg=BG).pack(pady=8)
+
+        if not rows:
+            tk.Label(win, text="✓ No duplicates found",
+                     font=self.font_main, fg=GREEN, bg=BG).pack(pady=30)
+            return
+
+        tk.Label(win, text=f"{len(rows)} duplicate(s) found — click a value to filter the table",
+                 font=self.font_small, fg=AMBER, bg=BG).pack(pady=(0, 6))
+
+        list_frame = tk.Frame(win, bg=PANEL)
+        list_frame.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+
+        for val, cnt in rows:
+            row_f = tk.Frame(list_frame, bg=PANEL, cursor="hand2")
+            row_f.pack(fill="x", padx=4, pady=2)
+            display = str(val)[:80] + ("..." if len(str(val)) > 80 else "")
+            tk.Label(row_f, text=f"×{cnt}  {display}",
+                     font=self.font_small, fg=AMBER, bg=PANEL,
+                     anchor="w").pack(side="left", padx=8, pady=4)
+            row_f.bind("<Button-1>", lambda e, v=val: self._filter_by_value(v))
+
+    def _filter_by_value(self, value):
+        self.search_var.set(str(value)[:50])
+        self._refresh()
 
     # ── Cleanup ───────────────────────────────────────────────────
 
