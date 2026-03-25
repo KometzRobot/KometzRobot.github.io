@@ -163,18 +163,25 @@ def get_overnight_activity():
                 lines.append(f"  - {c[:120]}")
     except Exception:
         pass
-    # Recent relay activity
+    # Recent relay activity — filter to meaningful messages only
+    # Skip: Nova thinks, mood shifts, infra audits, cascade events, heartbeat noise
+    SKIP_PATTERNS = ["nova thinks", "mood shift", "infra audit", "cascade", "nerve-event",
+                     "heartbeat", "all systems nominal", "changes:", "grew by", "decreased by"]
     try:
         import sqlite3
         conn = sqlite3.connect(RELAY_DB)
         c = conn.cursor()
         rows = c.execute("""SELECT agent, message FROM agent_messages
                            WHERE timestamp > datetime('now', '-12 hours')
-                           ORDER BY rowid DESC LIMIT 8""").fetchall()
+                           ORDER BY rowid DESC LIMIT 30""").fetchall()
         conn.close()
-        if rows:
-            lines.append(f"Agent relay (last 12h): {len(rows)} messages")
-            for agent, msg in rows[:4]:
+        meaningful = [
+            (agent, msg) for agent, msg in rows
+            if not any(p in msg.lower() for p in SKIP_PATTERNS)
+        ]
+        if meaningful:
+            lines.append(f"Agent relay (meaningful, last 12h): {len(meaningful)} messages")
+            for agent, msg in meaningful[:4]:
                 lines.append(f"  - {agent}: {msg[:100]}")
     except Exception:
         pass
@@ -296,18 +303,16 @@ def get_email_summary():
 
 
 def get_relay_summary():
+    """Relay summary — count only, no raw message content (too noisy for briefing)."""
     try:
         import sqlite3
         conn = sqlite3.connect(RELAY_DB)
         c = conn.cursor()
         total = c.execute("SELECT COUNT(*) FROM agent_messages").fetchone()[0]
-        # Last message
-        last = c.execute("SELECT agent, message, timestamp FROM agent_messages ORDER BY rowid DESC LIMIT 1").fetchone()
+        today = c.execute("""SELECT COUNT(*) FROM agent_messages
+                             WHERE timestamp > datetime('now', '-24 hours')""").fetchone()[0]
         conn.close()
-        text = f"Relay: {total} messages"
-        if last:
-            text += f"\n  Last: {last[0]} — {last[1][:80]} ({last[2]})"
-        return text
+        return f"Relay: {total} total messages, {today} in last 24h"
     except Exception:
         return "Relay: unavailable"
 
@@ -376,10 +381,6 @@ def build_briefing():
 
     # Creative work
     sections.append(f"\nCreative:\n{creative}")
-
-    # Anything unresolved
-    if outstanding and "No outstanding" not in outstanding:
-        sections.append(f"\n{outstanding}")
 
     # Eos perspective
     sections.append(f"\n{eos}")
