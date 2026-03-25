@@ -33,6 +33,8 @@ HEARTBEAT = os.path.join(BASE, ".heartbeat")
 LOOP_FILE = os.path.join(BASE, ".loop-count")
 BRIEFING_FILE = os.path.join(BASE, ".cinder-briefing.md")
 GATEKEEPER_STATE = os.path.join(BASE, ".gatekeeper-state.json")
+IWE_BIN = os.path.expanduser("~/.local/bin/iwe")
+IWE_DIR = os.path.expanduser("~/meridian-knowledge")
 
 
 def get_loop_count():
@@ -91,15 +93,74 @@ def get_gatekeeper_stats():
         return 0, "unknown"
 
 
+def get_dossier_flash(topics=("revenue", "product", "joel")):
+    """Pull 1-sentence summary from high-priority dossiers for briefing context."""
+    try:
+        conn = sqlite3.connect(os.path.join(BASE, "memory.db"), timeout=3)
+        flashes = []
+        for topic in topics:
+            row = conn.execute(
+                "SELECT topic, summary FROM dossiers WHERE topic=? ORDER BY updated DESC LIMIT 1",
+                (topic,)
+            ).fetchone()
+            if row and row[1]:
+                # Take first sentence
+                first_sent = row[1].split(".")[0].strip()
+                if first_sent:
+                    flashes.append(f"{row[0].upper()}: {first_sent}.")
+        conn.close()
+        return "\n".join(flashes)
+    except Exception:
+        return ""
+
+
+def get_iwe_context(key="operations", depth=1):
+    """Pull a node from the IWE knowledge graph for context enrichment."""
+    try:
+        if not os.path.isfile(IWE_BIN) or not os.path.isdir(IWE_DIR):
+            return ""
+        result = subprocess.run(
+            [IWE_BIN, "retrieve", "-k", key, "-d", str(depth), "-f", "markdown"],
+            capture_output=True, text=True, timeout=5, cwd=IWE_DIR
+        )
+        out = result.stdout.strip()
+        if out:
+            # Strip YAML frontmatter, keep just the content
+            lines = out.split("\n")
+            content_lines = []
+            in_frontmatter = False
+            skip_next = False
+            for i, line in enumerate(lines):
+                if i == 0 and line == "---":
+                    in_frontmatter = True
+                    continue
+                if in_frontmatter and line == "---":
+                    in_frontmatter = False
+                    continue
+                if not in_frontmatter:
+                    content_lines.append(line)
+            return "\n".join(content_lines[:30]).strip()  # cap at 30 lines
+    except Exception:
+        pass
+    return ""
+
+
 def ask_cinder_to_summarize(relay_items, loop, hb_age, cinder_cycles):
     """Ask Cinder to synthesize the relay digest into a brief."""
     relay_text = "\n".join(relay_items) if relay_items else "No significant relay activity."
     loop_line = f"LOOP: {loop} | HB: {hb_age} | CINDER HELD: {cinder_cycles} cycles"
+    # Pull IWE context for grounded system knowledge
+    iwe_ops = get_iwe_context("operations", depth=0)
+    iwe_section = f"\nSystem knowledge:\n{iwe_ops}\n" if iwe_ops else ""
+    dossier_flash = get_dossier_flash(("revenue", "product", "joel"))
+    dossier_section = f"\nCurrent dossier state:\n{dossier_flash}\n" if dossier_flash else ""
     prompt = (
         f"You are Cinder. Meridian is about to wake up. Based on the relay activity below, "
         f"write exactly 2 lines and nothing else:\n\n"
         f"STATUS: <one sentence describing current system state>\n"
-        f"ACTION: <one sentence for what Meridian should do first, or 'nothing urgent'>\n\n"
+        f"ACTION: <one sentence for what Meridian should do first, or 'nothing urgent'>\n"
+        f"{iwe_section}"
+        f"{dossier_section}\n"
         f"Relay activity:\n{relay_text}\n\n"
         f"Output only the STATUS and ACTION lines. No preamble, no explanation."
     )
