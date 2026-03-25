@@ -742,24 +742,24 @@ def _login_page():
 <title>Meridian Nuevo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#080604;color:#ead8c8;font-family:'SF Mono',Monaco,Consolas,monospace;
+body{background:#080c14;color:#e2e8f0;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   display:flex;align-items:center;justify-content:center;min-height:100vh}
-.login{background:#110d0a;border:1px solid #2c1e17;border-radius:14px;padding:2.2rem;
-  width:min(92vw,300px);text-align:center}
-.badge{width:52px;height:52px;border-radius:50%;background:#080604;border:2px solid #e8920a;
+.login{background:#0f1623;border:1px solid rgba(56,100,160,.28);border-radius:16px;padding:2.2rem;
+  width:min(92vw,300px);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.badge{width:52px;height:52px;border-radius:50%;background:#080c14;border:2px solid #38bdf8;
   display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;
-  font-size:1.4rem;font-weight:700;color:#e8920a;letter-spacing:-1px}
-.login h1{color:#e8920a;font-size:1rem;letter-spacing:3px;margin-bottom:.25rem}
-.login h2{color:#ead8c8;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
-  opacity:.5;margin-bottom:1.6rem}
-input{width:100%;padding:.75rem;background:#080604;border:1px solid #2c1e17;
-  border-radius:8px;color:#ead8c8;font-family:inherit;font-size:.95rem;
+  font-size:1.4rem;font-weight:700;color:#38bdf8;letter-spacing:-1px}
+.login h1{color:#38bdf8;font-size:1rem;letter-spacing:3px;margin-bottom:.25rem}
+.login h2{color:#e2e8f0;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
+  opacity:.4;margin-bottom:1.6rem}
+input{width:100%;padding:.75rem;background:#080c14;border:1px solid rgba(56,100,160,.2);
+  border-radius:10px;color:#e2e8f0;font-family:inherit;font-size:.95rem;
   text-align:center;margin-bottom:.9rem}
-input:focus{outline:none;border-color:#e8920a;box-shadow:0 0 0 2px rgba(232,146,10,.12)}
-button{width:100%;padding:.75rem;background:#e8920a;color:#080604;border:none;
-  border-radius:8px;font-family:inherit;font-size:.95rem;cursor:pointer;font-weight:700;
-  letter-spacing:1px}
-button:hover{background:#f59e0b}
+input:focus{outline:none;border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.12)}
+button{width:100%;padding:.75rem;background:#38bdf8;color:#080c14;border:none;
+  border-radius:10px;font-family:inherit;font-size:.95rem;cursor:pointer;font-weight:700;
+  letter-spacing:.5px}
+button:hover{background:#7dd3fc}
 .err{color:#f87171;font-size:.8rem;margin-top:.5rem}
 </style></head><body>
 <div class="login">
@@ -780,23 +780,23 @@ def _main_app():
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Meridian Nuevo</title>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#1C1C1C">
+<meta name="theme-color" content="#080c14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
-/* ════ MERIDIAN HUB — MATERIAL DARK THEME ════ */
+/* ════ MERIDIAN HUB — CLOUDFLARE DARK THEME ════ */
 :root{
-  --bg:#0D0D0D;--surface:#1C1C1C;--card:#252525;
-  --border:rgba(255,255,255,.08);--border-hi:rgba(255,255,255,.16);
-  --text:rgba(255,255,255,.87);--dim:rgba(255,255,255,.45);
-  --accent:#64B5F6;--green:#69F0AE;--amber:#FFD740;--red:#FF6E6E;
-  --purple:#CE93D8;--magenta:#F48FB1;--cyan:#80DEEA;--gold:#FFD54F;
+  --bg:#080c14;--surface:#0f1623;--card:#151e2e;
+  --border:rgba(56,100,160,.15);--border-hi:rgba(56,100,160,.28);
+  --text:#e2e8f0;--dim:#64748b;
+  --accent:#38bdf8;--green:#34d399;--amber:#fbbf24;--red:#f87171;
+  --purple:#a78bfa;--magenta:#f472b6;--cyan:#67e8f9;--gold:#fde68a;
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 @keyframes ripple{0%{box-shadow:0 0 0 0 rgba(100,181,246,.35)}100%{box-shadow:0 0 0 8px rgba(100,181,246,0)}}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);
-  font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
   font-size:14px;line-height:1.5;overflow-x:hidden;padding-top:60px;padding-bottom:68px}
 
 /* ── APP BAR (Material-style) ── */
@@ -804,11 +804,12 @@ header{position:fixed;top:0;left:0;right:0;height:60px;
   background:var(--surface);
   display:flex;align-items:center;
   justify-content:space-between;padding:0 18px;z-index:100;
-  box-shadow:0 2px 12px rgba(0,0,0,.6)}
+  border-bottom:1px solid var(--border-hi);
+  box-shadow:0 2px 20px rgba(0,0,0,.7)}
 .hdr-left{display:flex;align-items:center;gap:12px}
 .hdr-badge{width:36px;height:36px;border-radius:50%;background:var(--accent);
   display:flex;align-items:center;justify-content:center;
-  font-size:.95rem;font-weight:700;color:#0D0D0D;
+  font-size:.95rem;font-weight:700;color:var(--bg);
   animation:ripple 3s ease-out infinite}
 .hdr-title{display:flex;flex-direction:column;line-height:1.2}
 .hdr-title .name{font-size:.95rem;font-weight:600;color:var(--text);letter-spacing:.5px}
@@ -828,7 +829,8 @@ nav{position:fixed;bottom:0;left:0;right:0;height:68px;
   background:var(--surface);
   display:flex;z-index:100;overflow-x:auto;
   padding:0 2px env(safe-area-inset-bottom,0);scrollbar-width:none;
-  box-shadow:0 -2px 12px rgba(0,0,0,.5)}
+  border-top:1px solid var(--border-hi);
+  box-shadow:0 -4px 20px rgba(0,0,0,.6)}
 nav::-webkit-scrollbar{display:none}
 nav button{flex:0 0 auto;min-width:56px;background:none;border:none;
   color:var(--dim);font-family:inherit;font-size:10px;font-weight:500;
@@ -848,8 +850,9 @@ nav .ico{font-size:16px;line-height:1}
 .page.active{display:block;animation:fadeIn .2s ease}
 
 /* ── CARDS (Material elevation) ── */
-.card{background:var(--card);border-radius:16px;
-  box-shadow:0 2px 8px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.04);
+.card{background:var(--card);border-radius:12px;
+  border:1px solid var(--border);
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
   padding:16px;margin-bottom:12px}
 .card h3{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;
   letter-spacing:1.2px;margin-bottom:12px}
@@ -862,7 +865,8 @@ nav .ico{font-size:16px;line-height:1}
 /* ── STAT GRID ── */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat-cell{background:var(--surface);border-radius:12px;padding:12px 14px;
-  box-shadow:0 1px 4px rgba(0,0,0,.3)}
+  border:1px solid var(--border);
+  box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .stat-cell .stat-label{font-size:10px;font-weight:600;color:var(--dim);
   text-transform:uppercase;letter-spacing:1px}
 .stat-cell .stat-val{font-size:1.2rem;font-weight:700;color:var(--accent);margin-top:4px}
@@ -876,8 +880,9 @@ nav .ico{font-size:16px;line-height:1}
 /* ── AGENT GRID ── */
 .status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 @media(min-width:400px){.status-grid{grid-template-columns:repeat(4,1fr)}}
-.agent-card{background:var(--surface);border-radius:12px;
-  box-shadow:0 1px 4px rgba(0,0,0,.3);
+.agent-card{background:var(--surface);border-radius:10px;
+  border:1px solid var(--border);
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
   padding:10px 8px;text-align:center;font-size:11px;cursor:default}
 .agent-card .name{font-weight:600;margin-bottom:4px;font-size:11px}
 .agent-card .age{color:var(--dim);font-size:10px}
@@ -937,7 +942,7 @@ nav .ico{font-size:16px;line-height:1}
   color:var(--text);font-family:inherit;font-size:13px;padding:10px 14px;
   transition:border-color .15s}
 .input-row input:focus,.input-row textarea:focus{outline:none;border-color:var(--accent)}
-.input-row button{background:var(--accent);color:#0D0D0D;border:none;border-radius:12px;
+.input-row button{background:var(--accent);color:var(--bg);border:none;border-radius:12px;
   padding:10px 18px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:700;
   transition:opacity .15s}
 .input-row button:hover{opacity:.88}
@@ -954,7 +959,7 @@ nav .ico{font-size:16px;line-height:1}
 .relay-filter{background:var(--surface);border:none;border-radius:20px;color:var(--dim);
   padding:5px 12px;font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;
   box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.relay-filter.active{background:var(--accent);color:#0D0D0D;font-weight:700}
+.relay-filter.active{background:var(--accent);color:var(--bg);font-weight:700}
 .relay-filter:hover:not(.active){background:rgba(255,255,255,.1);color:var(--text)}
 .topic-badge{font-size:9px;padding:2px 6px;border-radius:10px;border:1px solid;opacity:.8;vertical-align:middle;margin-right:5px}
 

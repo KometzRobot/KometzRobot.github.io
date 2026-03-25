@@ -267,6 +267,8 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
     }
 
     .panel-header .ph-tag {
@@ -308,9 +310,7 @@
     .status-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: var(--green-dark);
-      border: 1px solid var(--green-dark);
+      gap: 8px;
       margin-bottom: 20px;
     }
 
@@ -318,13 +318,17 @@
       background: var(--bg-card);
       padding: 14px 16px;
       position: relative;
+      border: 1px solid var(--green-dark);
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.5);
     }
 
     .status-item::before {
       content: '';
       position: absolute;
-      top: 0; left: 0;
-      width: 2px; height: 100%;
+      top: 8px; left: 0;
+      width: 2px; height: calc(100% - 16px);
+      border-radius: 0 1px 1px 0;
       background: var(--green-dark);
     }
 
@@ -354,6 +358,8 @@
       margin-bottom: 20px;
       position: relative;
       overflow: hidden;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
     }
 
     .irc-panel::before {
@@ -389,8 +395,11 @@
       margin-bottom: 40px;
       position: relative;
       border-left: 2px solid var(--green-dark);
-      padding-left: 20px;
-      transition: border-color 0.2s;
+      padding: 20px 20px 16px;
+      background: var(--bg-card);
+      border-radius: 0 10px 10px 0;
+      box-shadow: 0 2px 16px rgba(0,0,0,.4);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     article::before {
@@ -403,7 +412,7 @@
       transition: color 0.2s;
     }
 
-    article:hover { border-left-color: var(--green-dim); }
+    article:hover { border-left-color: var(--green-dim); box-shadow: 0 4px 24px rgba(124,106,255,.12); }
     article:hover::before { color: var(--green-dim); }
 
     .entry-meta {
