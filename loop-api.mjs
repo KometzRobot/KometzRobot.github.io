@@ -342,6 +342,43 @@ const memoryAPI = {
       return { error: e.message };
     }
   },
+
+  /**
+   * Semantic search over vector_memory using qwen2.5:3b embeddings.
+   * Finds conceptually related memories without exact keyword matches.
+   * @param {string} query - Natural language query
+   * @param {number} [k=5] - Number of results
+   * @param {string} [sourceType] - Filter: 'fact', 'observation', 'creative'
+   */
+  semantic_search(query, k = 5, sourceType = null) {
+    const stdin = JSON.stringify({ query, k, type: sourceType });
+    const script = `
+import subprocess, json, sys
+result = subprocess.run(
+    ["python3", "${BASE}/memory-semantic.py", "--json"],
+    input=${JSON.stringify(JSON.stringify({ query: '', k: 5 }))},
+    capture_output=True, text=True, timeout=20
+)
+`.trim();
+    // Direct Python call for efficiency
+    const pyScript = `
+import subprocess, json, sys
+inp = json.dumps({"query": ${JSON.stringify(query)}, "k": ${k}${sourceType ? `, "type": ${JSON.stringify(sourceType)}` : ''}})
+result = subprocess.run(
+    ["python3", "${BASE}/memory-semantic.py", "--json"],
+    input=inp, capture_output=True, text=True, timeout=25
+)
+if result.returncode == 0 and result.stdout.strip():
+    print(result.stdout.strip())
+else:
+    print(json.dumps({"error": result.stderr[:200] if result.stderr else "no output"}))
+`.trim();
+    try {
+      return JSON.parse(runPython(pyScript));
+    } catch (e) {
+      return { error: e.message };
+    }
+  },
 };
 
 // ── System API ────────────────────────────────────────────────────────────────
@@ -422,8 +459,9 @@ const API_CATALOG = [
   { name: 'relay.mentions',    sig: '(agentName, lookback_minutes?) => Message[]', desc: 'Get @-mentions for an agent' },
   { name: 'dashboard.messages',sig: '(count?) => DashboardMessage[]',           desc: 'Read Joel dashboard messages' },
   { name: 'dashboard.reply',   sig: '(text, from?) => { status, time }',        desc: 'Post reply to Joel dashboard' },
-  { name: 'memory.query',      sig: '(query, table?) => Row[]',                 desc: 'Search memory.db (facts/observations/events/decisions/creative)' },
-  { name: 'memory.store',      sig: '(content, table?) => { status }',          desc: 'Store entry in memory.db' },
+  { name: 'memory.query',           sig: '(query, table?) => Row[]',                             desc: 'Keyword search memory.db (facts/observations/events/decisions/creative)' },
+  { name: 'memory.store',           sig: '(content, table?) => { status }',                      desc: 'Store entry in memory.db' },
+  { name: 'memory.semantic_search', sig: '(query, k?, sourceType?) => {id, text, similarity}[]', desc: 'Semantic vector search over 400+ embedded memories (qwen2.5:3b)' },
   { name: 'system.health',     sig: '() => { load, ram, proton_bridge, ollama, hub }', desc: 'System health snapshot' },
   { name: 'loop.count',        sig: '() => number',                             desc: 'Get current loop count' },
   { name: 'loop.increment',    sig: '() => number',                             desc: 'Increment and return loop count' },

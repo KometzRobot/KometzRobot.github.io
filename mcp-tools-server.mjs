@@ -264,6 +264,25 @@ print(json.dumps(results))
   return runPython(code);
 }
 
+function memorySemanticSearch(query, k = 5, sourceType = null) {
+  const args = ['--json'];
+  if (sourceType) args.push('--type', sourceType);
+  const stdin = JSON.stringify({ query, k: k || 5, type: sourceType || null });
+  const code = `
+import subprocess, json, sys
+result = subprocess.run(
+    ["python3", "${BASE}/memory-semantic.py"] + ${JSON.stringify(args)},
+    input=${JSON.stringify(stdin)},
+    capture_output=True, text=True, timeout=20
+)
+if result.returncode != 0:
+    print(json.dumps({"error": result.stderr[:200]}))
+else:
+    print(result.stdout.strip() or "[]")
+`.trim();
+  return runPython(code);
+}
+
 function memoryStore(table, data) {
   const dataObj = typeof data === 'string' ? JSON.parse(data) : data;
   const safeData = JSON.stringify(dataObj).replace(/'/g, "''");
@@ -557,6 +576,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "memory_semantic_search",
+      description: "Semantic (vector) search over Meridian's memory using qwen2.5:3b embeddings. Finds conceptually related memories even without exact keyword matches. Searches 400+ embedded facts, observations, and creative works.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Natural language query, e.g. 'agent coordination failures' or 'Joel revenue directive'" },
+          k: { type: "number", description: "Number of results to return (default 5, max 20)" },
+          source_type: { type: "string", description: "Optional: filter by type", enum: ["fact", "observation", "creative"] },
+        },
+        required: ["query"],
+      },
+    },
+    {
       name: "memory_stats",
       description: "Get statistics from the memory database: counts per table, creative breakdown, recent events.",
       inputSchema: { type: "object", properties: {} },
@@ -592,6 +624,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "read_project_file": result = readFile(args.path); break;
       case "memory_query": result = memoryQuery(args.query, args?.table || ""); break;
       case "memory_store": result = memoryStore(args.table, args.data); break;
+      case "memory_semantic_search": result = memorySemanticSearch(args.query, args?.k || 5, args?.source_type || null); break;
       case "memory_stats": result = memoryStats(); break;
       case "body_awareness": result = bodyAwareness(); break;
       default: throw new Error(`Unknown tool: ${name}`);
