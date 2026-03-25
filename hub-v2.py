@@ -577,6 +577,14 @@ nav .ico{font-size:14px;line-height:1}
   text-align:center;transition:border-color .15s}
 .action-btn:hover{border-color:var(--green);color:var(--green)}
 
+/* ── RELAY FILTERS ── */
+#relay-toolbar{display:flex;flex-wrap:wrap;gap:5px;padding:10px 0 6px;position:sticky;top:52px;z-index:10;background:var(--bg)}
+.relay-filter{background:var(--bg);border:1px solid var(--border);border-radius:20px;color:var(--dim);
+  padding:4px 10px;font-family:inherit;font-size:9.5px;cursor:pointer;transition:all .15s}
+.relay-filter.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700}
+.relay-filter:hover:not(.active){border-color:var(--border-hi);color:var(--text)}
+.topic-badge{font-size:8.5px;padding:1px 5px;border-radius:10px;border:1px solid;opacity:.75;vertical-align:middle;margin-right:4px}
+
 /* ── CINDER ── */
 .cinder-modes{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .cinder-mode-btn{background:var(--bg);border:1px solid var(--border);border-radius:20px;
@@ -622,6 +630,22 @@ nav .ico{font-size:14px;line-height:1}
 <!-- ════════ PAGES ════════ -->
 
 <div id="page-dash" class="page active">
+  <!-- Hero strip: big loop + soma + status -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+    <div class="stat-cell" style="text-align:center">
+      <div class="stat-label">LOOP</div>
+      <div id="hero-loop" class="stat-val" style="font-size:1.8rem;line-height:1">—</div>
+    </div>
+    <div class="stat-cell" style="text-align:center">
+      <div class="stat-label">MOOD</div>
+      <div id="hero-mood" class="stat-val" style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;margin-top:4px">—</div>
+    </div>
+    <div class="stat-cell" style="text-align:center">
+      <div class="stat-label">SOMA</div>
+      <div id="hero-score" class="stat-val">—</div>
+      <div class="soma-bar-wrap" style="margin-top:6px"><div id="hero-bar" class="soma-bar-fill" style="width:0%"></div></div>
+    </div>
+  </div>
   <div class="card" id="health-card">
     <h3>System</h3>
     <div id="health-rows"></div>
@@ -660,8 +684,19 @@ nav .ico{font-size:14px;line-height:1}
 </div>
 
 <div id="page-relay" class="page">
-  <div class="card">
-    <h3>Agent Relay</h3>
+  <div id="relay-toolbar">
+    <button class="relay-filter active" onclick="setRelayFilter(this,'')">ALL</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'status')">STATUS</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'fitness')">FITNESS</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'mood_shift')">MOOD</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'briefing')">BRIEF</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'alert')">ALERT</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'loop')">LOOP</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'infra-audit')">INFRA</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'nerve-event')">NERVE</button>
+    <button class="relay-filter" onclick="setRelayFilter(this,'cascade')">CASCADE</button>
+  </div>
+  <div class="card" style="margin-top:8px">
     <div id="relay-msgs"></div>
   </div>
 </div>
@@ -810,6 +845,18 @@ async function refreshDash() {
   }).join('');
   document.getElementById('agent-grid').innerHTML = agentHtml;
 
+  // Hero strip
+  document.getElementById('hero-loop').textContent = d.loop || '—';
+  const heroScoreNum = parseFloat(d.soma_score) || 0;
+  const heroBarColor = heroScoreNum > 60 ? 'var(--green)' : heroScoreNum > 35 ? 'var(--accent)' : 'var(--red)';
+  document.getElementById('hero-mood').textContent = (d.soma_mood||'—').replace(/_/g,' ');
+  document.getElementById('hero-mood').style.color = heroBarColor;
+  document.getElementById('hero-score').textContent = Math.round(heroScoreNum);
+  document.getElementById('hero-score').style.color = heroBarColor;
+  const heroBar = document.getElementById('hero-bar');
+  heroBar.style.width = Math.min(heroScoreNum, 100) + '%';
+  heroBar.style.background = heroBarColor;
+
   // Soma — with inner world
   const goals = (d.soma_goals||[]).join(' / ') || '—';
   const fears = (d.soma_fears||[]).join(', ') || 'none';
@@ -852,16 +899,55 @@ async function refreshMsgs() {
   }
 }
 
+let relayFilter = '';
+const RELAY_NOISE = new Set(['nerve-event', 'inter-agent']);
+const TOPIC_COLORS = {
+  'status':'var(--green)','fitness':'var(--cyan)','mood_shift':'var(--purple)',
+  'briefing':'var(--magenta)','alert':'var(--red)','loop':'var(--accent)',
+  'infra-audit':'var(--amber)','cascade':'var(--dim)','nerve-event':'var(--dim)',
+  'inter-agent':'var(--dim)'
+};
+
 async function refreshRelay() {
-  const msgs = await api('relay');
-  if (Array.isArray(msgs)) {
-    document.getElementById('relay-msgs').innerHTML = msgs.map(m => {
-      const cls = 'msg msg-' + (m.source_agent||'').toLowerCase();
-      return `<div class="${cls}"><span class="from">${esc(m.source_agent||'?')}</span>
-        <span class="time">${(m.created_at||'').slice(11,19)}</span>
-        <div class="body">${esc((m.content||'').slice(0,300))}</div></div>`;
-    }).join('');
+  const msgs = await api('relay?limit=60');
+  if (!Array.isArray(msgs)) return;
+  let filtered = msgs;
+  if (relayFilter) {
+    filtered = msgs.filter(m => (m.topic||'') === relayFilter);
+  } else {
+    // Default: hide noise topics, deduplicate consecutive same-agent same-topic
+    filtered = msgs.filter(m => !RELAY_NOISE.has(m.topic||''));
+    const seen = {};
+    filtered = filtered.filter(m => {
+      const key = (m.source_agent||'') + ':' + (m.topic||'');
+      const txt = (m.content||'').slice(0, 120);
+      if (seen[key] === txt) return false;
+      seen[key] = txt;
+      return true;
+    });
   }
+  const TOPIC_COLORS_LOCAL = TOPIC_COLORS;
+  document.getElementById('relay-msgs').innerHTML = filtered.length ? filtered.map(m => {
+    const agentLower = (m.source_agent||'').toLowerCase();
+    const topic = m.topic || '';
+    const tcolor = TOPIC_COLORS_LOCAL[topic] || 'var(--border-hi)';
+    const cls = 'msg msg-' + agentLower;
+    return `<div class="${cls}">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+        <span class="from">${esc(m.source_agent||'?')}</span>
+        <span class="topic-badge" style="color:${tcolor};border-color:${tcolor}">${esc(topic)}</span>
+        <span style="color:var(--dim);font-size:10px;margin-left:auto">${(m.created_at||'').slice(11,16)}</span>
+      </div>
+      <div class="body">${esc((m.content||'').slice(0,400))}</div>
+    </div>`;
+  }).join('') : '<div style="color:var(--dim);padding:12px 0">No messages for this filter.</div>';
+}
+
+function setRelayFilter(btn, topic) {
+  relayFilter = topic;
+  document.querySelectorAll('.relay-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  refreshRelay();
 }
 
 // ═══ CREATIVE ═══
