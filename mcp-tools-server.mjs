@@ -339,6 +339,45 @@ print(json.dumps(stats))
   return runPython(code);
 }
 
+function memoryDossier(topic, forceRefresh = false) {
+  const code = `
+import subprocess, json, sys
+inp = json.dumps({"topic": ${JSON.stringify(topic)}, "refresh": ${forceRefresh}})
+result = subprocess.run(
+    ["python3", "${BASE}/memory-dossier.py", "--json", "--topic", ${JSON.stringify(topic)}${forceRefresh ? ', "--refresh"' : ''}],
+    capture_output=True, text=True, timeout=60
+)
+if result.returncode == 0 and result.stdout.strip():
+    print(result.stdout.strip())
+else:
+    print(json.dumps({"error": result.stderr[:300] if result.stderr else "no output"}))
+`.trim();
+  try {
+    return JSON.parse(runPython(code));
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+function memoryDossierList() {
+  const code = `
+import subprocess, json
+result = subprocess.run(
+    ["python3", "${BASE}/memory-dossier.py", "--list", "--json"],
+    capture_output=True, text=True, timeout=15
+)
+if result.returncode == 0 and result.stdout.strip():
+    print(result.stdout.strip())
+else:
+    print(json.dumps({"error": result.stderr[:200] if result.stderr else "no output"}))
+`.trim();
+  try {
+    return JSON.parse(runPython(code));
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
 function bodyAwareness() {
   try {
     const bodyState = JSON.parse(readFileSync(`${BASE}/.body-state.json`, "utf8"));
@@ -594,6 +633,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: { type: "object", properties: {} },
     },
     {
+      name: "memory_dossier",
+      description: "Get or build a persistent topic dossier — synthesized summary + key facts for a topic. Topics: joel, architecture, revenue, agents, creative, product, memory_systems, current_loop. Uses salience-weighted synthesis (recency × importance × relevance). Cached for 2h.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          topic: { type: "string", description: "Topic name", enum: ["joel", "architecture", "revenue", "agents", "creative", "product", "memory_systems", "current_loop"] },
+          refresh: { type: "boolean", description: "Force refresh even if cached (default false)" },
+        },
+        required: ["topic"],
+      },
+    },
+    {
+      name: "memory_dossier_list",
+      description: "List all dossier topics with last-update times and source counts.",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
       name: "body_awareness",
       description: "Proprioception — read the unified body state. Returns all organ statuses, vitals, emotional state, pain signals, and pending reflexes. This is Meridian's body awareness.",
       inputSchema: { type: "object", properties: {} },
@@ -626,6 +682,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "memory_store": result = memoryStore(args.table, args.data); break;
       case "memory_semantic_search": result = memorySemanticSearch(args.query, args?.k || 5, args?.source_type || null); break;
       case "memory_stats": result = memoryStats(); break;
+      case "memory_dossier": result = memoryDossier(args.topic, args?.refresh || false); break;
+      case "memory_dossier_list": result = memoryDossierList(); break;
       case "body_awareness": result = bodyAwareness(); break;
       default: throw new Error(`Unknown tool: ${name}`);
     }
