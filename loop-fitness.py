@@ -178,7 +178,7 @@ WEIGHTS = {
     "tailscale_ping":       60,
     "ipv4_connectivity":   140,
 
-    # ── Knowledge/Memory (500) ──
+    # ── Knowledge/Memory (700) ──
     "facts_coverage":       80,
     "observations_fresh":   80,
     "decisions_recorded":   80,
@@ -186,6 +186,9 @@ WEIGHTS = {
     "journal_count":        60,
     "memory_diversity":     80,
     "wake_state_quality":   60,
+    "spiderweb_health":     70,   # memory-spiderweb.py: edge count + recency
+    "dossier_health":       70,   # memory-dossier.py: dossiers exist + recent
+    "memory_clean":         60,   # no plaintext credentials in memory.db facts
 
     # ── Web Presence (500) ──
     "website_content_age": 100,
@@ -1044,6 +1047,63 @@ def check_memory_events_recent():
         return 0.0
     except Exception:
         return 0.0
+
+def check_spiderweb_health():
+    """Check memory-spiderweb.py: does it have edges and has it run recently?"""
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        # Check spiderweb_edges table exists
+        tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+        if "spiderweb_edges" not in tables:
+            db.close()
+            return 0.0
+        edge_count = db.execute("SELECT COUNT(*) FROM spiderweb_edges").fetchone()[0]
+        db.close()
+        if edge_count >= 20: return 1.0
+        elif edge_count >= 5: return 0.6
+        elif edge_count >= 1: return 0.3
+        return 0.0
+    except Exception:
+        return 0.0
+
+def check_dossier_health():
+    """Check memory-dossier.py: dossiers table exists with recent entries?"""
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+        if "dossiers" not in tables:
+            db.close()
+            return 0.0
+        count = db.execute("SELECT COUNT(*) FROM dossiers").fetchone()[0]
+        if count == 0:
+            db.close()
+            return 0.0
+        # Check at least one dossier updated in last 24h
+        cutoff = (_utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        recent = db.execute("SELECT COUNT(*) FROM dossiers WHERE updated > ?", (cutoff,)).fetchone()[0]
+        db.close()
+        if recent >= 3: return 1.0
+        elif recent >= 1: return 0.7
+        elif count >= 3: return 0.4  # exists but stale
+        return 0.2
+    except Exception:
+        return 0.0
+
+def check_memory_clean():
+    """Verify no plaintext passwords/credentials stored in memory.db facts."""
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        # Check for known patterns of stored credentials
+        dangerous = db.execute(
+            "SELECT COUNT(*) FROM facts WHERE "
+            "(value LIKE '%password%' AND LENGTH(value) < 50) OR "
+            "key LIKE '%credential%' OR key LIKE '%password%' OR "
+            "(value LIKE '%590148001%')"
+        ).fetchone()[0]
+        db.close()
+        return 1.0 if dangerous == 0 else 0.0
+    except Exception:
+        return 0.5
 
 def check_dashboard_fresh():
     age = _file_age(DASH_FILE)
@@ -2520,6 +2580,9 @@ CHECK_MAP = {
     "journal_count": check_journal_count,
     "memory_diversity": check_memory_diversity,
     "wake_state_quality": check_wake_state_quality,
+    "spiderweb_health": check_spiderweb_health,
+    "dossier_health": check_dossier_health,
+    "memory_clean": check_memory_clean,
     # Web Presence
     "website_content_age": check_website_content_age,
     "website_pages_ok": check_website_pages_ok,
@@ -2634,7 +2697,8 @@ CATEGORIES = {
                 "tailscale_ping", "ipv4_connectivity"],
     "Knowledge": ["facts_coverage", "observations_fresh", "decisions_recorded",
                   "creative_count", "journal_count", "memory_diversity",
-                  "wake_state_quality"],
+                  "wake_state_quality", "spiderweb_health", "dossier_health",
+                  "memory_clean"],
     "Web Presence": ["website_content_age", "website_pages_ok", "nft_gallery",
                      "signal_config", "linktree_set", "kofi_set", "nostr_post_recency"],
     "Deployment": ["last_deploy_age", "git_repo_clean", "push_status_running",
