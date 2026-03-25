@@ -497,6 +497,7 @@ AGENT_IDENTITIES = {
     },
     "Hermes": {
         "ollama": True,
+        "model": "cinder",
         "system": (
             "You are Hermes, the messenger agent in Meridian's autonomous AI system. "
             "You are Cinder running in messenger mode — observational, inter-agent, brief. "
@@ -506,6 +507,7 @@ AGENT_IDENTITIES = {
     },
     "Cinder": {
         "ollama": True,
+        "model": "cinder",
         "system": (
             "You are Cinder, the persistent local intelligence in Meridian's autonomous AI system. "
             "You are a fine-tuned Qwen 2.5 3B model running on Ollama. You run the gatekeeper — "
@@ -543,8 +545,9 @@ def query_agent(agent_name, prompt, speaker="Joel"):
                 ctx += "\n".join(f"- {f}" for f in facts) + "\n"
 
         full = f"[MEMORY]\n{ctx}\n[{speaker}]: {prompt}"
+        model = info.get("model", EOS_MODEL)
         data = json.dumps({
-            "model": EOS_MODEL, "prompt": full, "stream": False,
+            "model": model, "prompt": full, "stream": False,
             "options": {"temperature": 0.8, "num_predict": 400}
         }).encode()
         req = urllib.request.Request(OLLAMA, data=data,
