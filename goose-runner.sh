@@ -68,6 +68,7 @@ CRON_LOGS=(
     ["eos-briefing"]="logs/eos-briefing.log:130000"
     ["cinder-gatekeeper"]="logs/cinder-gatekeeper.log:400"
     ["hermes"]="logs/hermes.log:1800"
+    ["memory-dossier"]="logs/memory-dossier.log:15000"
     # morning-summary DISABLED (duplicate of eos-briefing) — removed from stale check
 )
 
