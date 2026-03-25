@@ -114,6 +114,24 @@ def get_dossier_flash(topics=("revenue", "product", "joel")):
         return ""
 
 
+def get_capsule_drift():
+    """Get a one-line capsule drift summary from git history."""
+    try:
+        script = os.path.join(BASE, "capsule-longitudinal.py")
+        if not os.path.isfile(script):
+            return ""
+        result = subprocess.run(
+            ["python3", script, "--brief", "--n", "5"],
+            capture_output=True, text=True, timeout=10, cwd=BASE
+        )
+        line = result.stdout.strip()
+        if line and not line.startswith("Not enough") and not line.startswith("Insufficient"):
+            return f"DRIFT: {line}"
+    except Exception:
+        pass
+    return ""
+
+
 def get_iwe_context(key="operations", depth=1):
     """Pull a node from the IWE knowledge graph for context enrichment."""
     try:
@@ -225,6 +243,7 @@ def run(verbose=False):
     relay_items = get_relay_digest(since_minutes=60)
 
     brief = ask_cinder_to_summarize(relay_items, loop, hb_age, cinder_cycles)
+    drift = get_capsule_drift()
 
     if not brief:
         # Fallback if Cinder is unavailable
@@ -235,6 +254,8 @@ def run(verbose=False):
             f"ACTION: Check emails, touch heartbeat, proceed normally."
         )
 
+    if drift:
+        brief = f"{brief}\n{drift}"
     write_briefing(brief)
     post_to_relay(f"Pre-wake brief ready. Loop {loop}. Cinder held {cinder_cycles} cycles.")
 
