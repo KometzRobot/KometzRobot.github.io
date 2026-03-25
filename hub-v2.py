@@ -328,6 +328,126 @@ def _get_emails(count=10, unseen_only=False):
         return {"error": str(e)}
 
 
+def _get_today_summary():
+    """Work-centric summary: what was done today, not whether services are running."""
+    from datetime import timezone, timedelta
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    since_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+
+    result = {}
+
+    # ── Git commits today ────────────────────────────────────────
+    try:
+        raw = _run(
+            'git -C ' + BASE + ' log --since="24 hours ago" --oneline --no-merges',
+            timeout=8
+        )
+        lines = [l.strip() for l in raw.strip().split('\n') if l.strip()]
+        result["commits"] = lines[:10]
+        result["commit_count"] = len(lines)
+    except Exception:
+        result["commits"] = []
+        result["commit_count"] = 0
+
+    # ── Agent-to-agent conversations (meaningful exchanges) ──────
+    try:
+        db = sqlite3.connect(RELAY_DB, timeout=3)
+        # Find inter-agent messages (not status/nerve-event spam)
+        rows = db.execute(
+            """SELECT agent, message, topic, timestamp FROM agent_messages
+               WHERE topic IN ('inter-agent', 'relay', 'briefing', 'alert')
+               AND timestamp > ?
+               ORDER BY id DESC LIMIT 20""",
+            (since_24h,)
+        ).fetchall()
+        db.close()
+        exchanges = []
+        for agent, msg, topic, ts in rows:
+            exchanges.append({
+                "agent": agent,
+                "msg": msg[:120],
+                "topic": topic,
+                "time": ts[11:16] if ts else "",
+            })
+        result["exchanges"] = exchanges
+    except Exception:
+        result["exchanges"] = []
+
+    # ── Relay summary: who posted what volumes ───────────────────
+    try:
+        db = sqlite3.connect(RELAY_DB, timeout=3)
+        agent_counts = db.execute(
+            """SELECT agent, COUNT(*) as cnt FROM agent_messages
+               WHERE timestamp > ? GROUP BY agent ORDER BY cnt DESC LIMIT 8""",
+            (since_24h,)
+        ).fetchall()
+        db.close()
+        result["agent_activity"] = [{"agent": a, "messages": c} for a, c in agent_counts]
+    except Exception:
+        result["agent_activity"] = []
+
+    # ── Dashboard messages from Joel (pending items) ─────────────
+    try:
+        data = _read_json(DASH_FILE, {"messages": []})
+        msgs = data.get("messages", [])
+        # Joel messages in last 24h
+        joel_msgs = [m for m in msgs if (m.get("from", "") == "Joel")][-8:]
+        result["joel_messages"] = joel_msgs
+    except Exception:
+        result["joel_messages"] = []
+
+    # ── Recent creatives / memory entries ────────────────────────
+    try:
+        mem_db = sqlite3.connect(os.path.join(BASE, "memory.db"), timeout=3)
+        recent_obs = mem_db.execute(
+            """SELECT content, importance, created FROM observations
+               WHERE created > ? ORDER BY created DESC LIMIT 5""",
+            (since_24h,)
+        ).fetchall()
+        recent_facts = mem_db.execute(
+            """SELECT key, value, created FROM facts
+               WHERE updated > ? ORDER BY updated DESC LIMIT 5""",
+            (since_24h,)
+        ).fetchall()
+        mem_db.close()
+        result["recent_observations"] = [
+            {"content": c[:120], "importance": i, "created": t} for c, i, t in recent_obs
+        ]
+        result["recent_facts"] = [
+            {"key": k, "value": v[:80], "created": t} for k, v, t in recent_facts
+        ]
+    except Exception:
+        result["recent_observations"] = []
+        result["recent_facts"] = []
+
+    # ── System health (kept but secondary) ───────────────────────
+    try:
+        load = open("/proc/loadavg").read().split()[:3]
+        result["load"] = " ".join(load)
+    except Exception:
+        result["load"] = "?"
+    try:
+        hb_age = int(_file_age(HEARTBEAT))
+        result["heartbeat_age"] = hb_age
+        result["heartbeat_status"] = "alive" if hb_age < 120 else "slow" if hb_age < 300 else "stale"
+    except Exception:
+        result["heartbeat_age"] = -1
+        result["heartbeat_status"] = "unknown"
+    try:
+        with open(LOOP_FILE) as f:
+            result["loop"] = f.read().strip()
+    except Exception:
+        result["loop"] = "?"
+
+    # Soma mood
+    soma = _read_json(SOMA_STATE, {})
+    result["soma_mood"] = soma.get("mood", soma.get("current_emotion", "—"))
+    result["soma_score"] = soma.get("mood_score", 0)
+
+    result["timestamp"] = datetime.now(timezone.utc).isoformat()
+    return result
+
+
 # ═══════════════════════════════════════════════════════════════
 # AUTH HELPERS
 # ═══════════════════════════════════════════════════════════════
@@ -650,7 +770,7 @@ nav .ico{font-size:16px;line-height:1}
 <!-- ════════ PAGES ════════ -->
 
 <div id="page-dash" class="page active">
-  <!-- Hero strip: big loop + soma + status -->
+  <!-- Status strip: loop + mood + heartbeat -->
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
     <div class="stat-cell" style="text-align:center">
       <div class="stat-label">LOOP</div>
@@ -661,23 +781,30 @@ nav .ico{font-size:16px;line-height:1}
       <div id="hero-mood" class="stat-val" style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;margin-top:4px">—</div>
     </div>
     <div class="stat-cell" style="text-align:center">
-      <div class="stat-label">SOMA</div>
-      <div id="hero-score" class="stat-val">—</div>
-      <div class="soma-bar-wrap" style="margin-top:6px"><div id="hero-bar" class="soma-bar-fill" style="width:0%"></div></div>
+      <div class="stat-label">HEARTBEAT</div>
+      <div id="hero-hb" class="stat-val" style="font-size:.85rem;margin-top:4px">—</div>
     </div>
   </div>
-  <div class="card" id="health-card">
-    <h3>System</h3>
-    <div id="health-rows"></div>
-  </div>
+
+  <!-- TODAY: What was actually done -->
   <div class="card">
-    <h3>Agents</h3>
-    <div class="status-grid" id="agent-grid"></div>
+    <h3>Today&rsquo;s Work</h3>
+    <div id="today-commits"></div>
   </div>
+
+  <!-- Joel's messages (pending items) -->
+  <div class="card" id="joel-msgs-card" style="display:none">
+    <h3>From Joel</h3>
+    <div id="today-joel"></div>
+  </div>
+
+  <!-- Agent exchanges (meaningful only) -->
   <div class="card">
-    <h3>Soma</h3>
-    <div id="soma-info"></div>
+    <h3>Agent Exchanges</h3>
+    <div id="today-exchanges"></div>
   </div>
+
+  <!-- Quick Actions -->
   <div class="card">
     <h3>Quick Actions</h3>
     <div class="action-grid">
@@ -690,6 +817,24 @@ nav .ico{font-size:16px;line-height:1}
       <button class="action-btn" onclick="doAction('git-pull')">Git Pull</button>
     </div>
   </div>
+
+  <!-- System (collapsed by default) -->
+  <details style="margin-bottom:12px">
+    <summary style="cursor:pointer;padding:8px;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:1px;user-select:none">
+      &#x25B6; System &amp; Services
+    </summary>
+    <div class="card" style="margin-top:6px" id="health-card">
+      <div id="health-rows"></div>
+    </div>
+    <div class="card">
+      <h3>Agents (last seen)</h3>
+      <div class="status-grid" id="agent-grid"></div>
+    </div>
+    <div class="card">
+      <h3>Soma Inner World</h3>
+      <div id="soma-info"></div>
+    </div>
+  </details>
 </div>
 
 <div id="page-msgs" class="page">
@@ -837,74 +982,111 @@ async function refresh() {
 }
 
 async function refreshDash() {
-  const d = await api('status');
-  if (d.error) return;
+  // Fetch both today summary (new) and full status (for collapsed section)
+  const [d, s] = await Promise.all([api('today'), api('status')]);
 
-  // Header
-  document.getElementById('loop-num').textContent = d.loop;
-  const hbAge = d.heartbeat_age;
+  // ── Header strip ──
+  document.getElementById('loop-num').textContent = d.loop || s.loop || '—';
+  const hbAge = d.heartbeat_age ?? s.heartbeat_age ?? 999;
+  const hbStatus = d.heartbeat_status || 'unknown';
   document.getElementById('hb-age').textContent = hbAge + 's';
   const dot = document.getElementById('hb-dot');
   dot.style.background = hbAge < 120 ? 'var(--green)' : hbAge < 300 ? 'var(--amber)' : 'var(--red)';
-
-  // Health rows
-  const rows = [
-    ['Load', d.load], ['Memory', d.memory], ['Disk', d.disk], ['Uptime', d.uptime],
-    ['Heartbeat', hbAge+'s ago'], ['Loop', d.loop],
-  ];
-  document.getElementById('health-rows').innerHTML = rows.map(r =>
-    `<div class="row"><span class="label">${esc(r[0])}</span><span class="value">${esc(String(r[1]))}</span></div>`
-  ).join('');
-
-  // Agents
-  const agentHtml = Object.entries(d.agents || {}).map(([name, info]) => {
-    const cls = info.status === 'active' ? 'dot-active' : info.status === 'stale' ? 'dot-stale' : 'dot-unknown';
-    const age = info.last_seen > 0 ? Math.round(info.last_seen)+'s' : '?';
-    return `<div class="agent-card"><span class="agent-dot ${cls}"></span>
-      <div class="name">${esc(name)}</div><div class="age">${esc(age)}</div></div>`;
-  }).join('');
-  document.getElementById('agent-grid').innerHTML = agentHtml;
-
-  // Hero strip
   document.getElementById('hero-loop').textContent = d.loop || '—';
-  const heroScoreNum = parseFloat(d.soma_score) || 0;
-  const heroBarColor = heroScoreNum > 60 ? 'var(--green)' : heroScoreNum > 35 ? 'var(--accent)' : 'var(--red)';
-  document.getElementById('hero-mood').textContent = (d.soma_mood||'—').replace(/_/g,' ');
-  document.getElementById('hero-mood').style.color = heroBarColor;
-  document.getElementById('hero-score').textContent = Math.round(heroScoreNum);
-  document.getElementById('hero-score').style.color = heroBarColor;
-  const heroBar = document.getElementById('hero-bar');
-  heroBar.style.width = Math.min(heroScoreNum, 100) + '%';
-  heroBar.style.background = heroBarColor;
+  const moodText = (d.soma_mood || s.soma_mood || '—').replace(/_/g,' ');
+  document.getElementById('hero-mood').textContent = moodText;
+  const hbColor = hbStatus === 'alive' ? 'var(--green)' : hbStatus === 'slow' ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('hero-hb').textContent = hbAge + 's';
+  document.getElementById('hero-hb').style.color = hbColor;
 
-  // Soma — with inner world
-  const goals = (d.soma_goals||[]).join(' / ') || '—';
-  const fears = (d.soma_fears||[]).join(', ') || 'none';
-  const dreams = (d.soma_dreams||[]).join(', ') || 'none';
-  const mono = d.soma_inner || '';
-  const scoreNum = parseFloat(d.soma_score) || 0;
-  const barColor = scoreNum > 60 ? 'var(--green)' : scoreNum > 35 ? 'var(--accent)' : 'var(--red)';
-  document.getElementById('soma-info').innerHTML =
-    `<div class="row"><span class="label">Mood</span><span class="value">${esc(d.soma_mood||'')}</span></div>
-     <div class="row"><span class="label">Score</span><span class="value">${esc(String(scoreNum))}</span></div>
-     <div class="soma-bar-wrap"><div class="soma-bar-fill" style="width:${Math.min(scoreNum,100)}%;background:${barColor}"></div></div>
-     ${mono ? `<div style="margin-top:8px;padding:7px 9px;background:var(--bg);border-radius:6px;border:1px solid var(--border);font-size:11px;color:var(--dim);font-style:italic">&ldquo;${esc(mono)}&rdquo;</div>` : ''}
-     <div class="row" style="margin-top:6px"><span class="label">Goals</span><span class="value" style="color:var(--accent)">${esc(goals)}</span></div>
-     <div class="row"><span class="label">Fears</span><span class="value" style="color:var(--amber);font-size:11px">${esc(fears)}</span></div>
-     <div class="row"><span class="label">Dreams</span><span class="value" style="color:var(--purple);font-size:11px">${esc(dreams)}</span></div>`;
-  // Show monologue in header (small, italic)
-  const monoEl = document.getElementById('hdr-mono');
-  if (monoEl && mono) monoEl.textContent = '\u201c' + mono + '\u201d';
+  // ── Today's Work: commits ──
+  const commits = d.commits || [];
+  let commitHtml = '';
+  if (commits.length === 0) {
+    commitHtml = '<div style="color:var(--dim);font-size:12px">No commits in the last 24h.</div>';
+  } else {
+    commitHtml = commits.map(c => {
+      const hash = c.slice(0, 7);
+      const msg = c.slice(8);
+      return `<div class="row" style="align-items:flex-start">
+        <span class="label" style="font-family:monospace;color:var(--accent);font-size:11px;min-width:54px">${esc(hash)}</span>
+        <span class="value" style="font-size:12px;white-space:normal">${esc(msg)}</span>
+      </div>`;
+    }).join('');
+    commitHtml = `<div style="color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${commits.length} commit${commits.length>1?'s':''} today</div>` + commitHtml;
+  }
+  document.getElementById('today-commits').innerHTML = commitHtml;
 
-  // Services
-  const svcRows = Object.entries(d.services || {}).map(([name, status]) => {
-    const color = status === 'active' ? 'var(--green)' : 'var(--red)';
-    return `<div class="row"><span class="label">${esc(name)}</span><span class="value" style="color:${color}">${esc(status)}</span></div>`;
-  }).join('');
-  // Add services to health card
-  const hc = document.getElementById('health-rows');
-  hc.innerHTML += '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">' +
-    '<span style="color:var(--dim);font-size:11px;text-transform:uppercase">Services</span></div>' + svcRows;
+  // ── Joel's messages ──
+  const joelMsgs = d.joel_messages || [];
+  if (joelMsgs.length > 0) {
+    document.getElementById('joel-msgs-card').style.display = '';
+    document.getElementById('today-joel').innerHTML = joelMsgs.slice(-5).reverse().map(m =>
+      `<div class="msg msg-joel" style="margin-bottom:6px">
+        <span class="time">${esc(m.time||'')}</span>
+        <div class="body" style="margin-top:2px">${esc(m.text||'')}</div>
+      </div>`
+    ).join('');
+  } else {
+    document.getElementById('joel-msgs-card').style.display = 'none';
+  }
+
+  // ── Agent exchanges ──
+  const exchanges = d.exchanges || [];
+  if (exchanges.length === 0) {
+    document.getElementById('today-exchanges').innerHTML =
+      '<div style="color:var(--dim);font-size:12px">No significant agent exchanges in the last 24h.</div>';
+  } else {
+    document.getElementById('today-exchanges').innerHTML = exchanges.slice(0,8).map(ex => {
+      const topicColor = {
+        'inter-agent':'var(--accent)', 'relay':'var(--cyan)', 'briefing':'var(--purple)',
+        'alert':'var(--red)'
+      }[ex.topic] || 'var(--dim)';
+      return `<div class="row" style="align-items:flex-start;margin-bottom:4px">
+        <span class="label" style="color:${topicColor};min-width:70px;font-size:11px">${esc(ex.agent)}</span>
+        <span class="value" style="font-size:11px;white-space:normal;color:var(--text)">${esc(ex.msg)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Collapsed: System health + agents + soma ──
+  if (s && !s.error) {
+    const rows = [
+      ['Load', s.load], ['Memory', s.memory], ['Disk', s.disk], ['Uptime', s.uptime],
+    ];
+    let healthHtml = rows.map(r =>
+      `<div class="row"><span class="label">${esc(r[0])}</span><span class="value">${esc(String(r[1]||'?'))}</span></div>`
+    ).join('');
+    // Services
+    const svcRows = Object.entries(s.services || {}).map(([name, status]) => {
+      const color = status === 'active' ? 'var(--green)' : 'var(--red)';
+      return `<div class="row"><span class="label">${esc(name)}</span><span class="value" style="color:${color}">${esc(status)}</span></div>`;
+    }).join('');
+    healthHtml += '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:1px">Services</div>' + svcRows;
+    document.getElementById('health-rows').innerHTML = healthHtml;
+
+    // Agents
+    const agentHtml = Object.entries(s.agents || {}).map(([name, info]) => {
+      const cls = info.status === 'active' ? 'dot-active' : info.status === 'stale' ? 'dot-stale' : 'dot-unknown';
+      const age = info.last_seen > 0 ? Math.round(info.last_seen)+'s' : '?';
+      return `<div class="agent-card"><span class="agent-dot ${cls}"></span>
+        <div class="name">${esc(name)}</div><div class="age">${esc(age)}</div></div>`;
+    }).join('');
+    document.getElementById('agent-grid').innerHTML = agentHtml;
+
+    // Soma
+    const mono = s.soma_inner || '';
+    const scoreNum = parseFloat(s.soma_score) || 0;
+    const barColor = scoreNum > 60 ? 'var(--green)' : scoreNum > 35 ? 'var(--accent)' : 'var(--red)';
+    const goals = (s.soma_goals||[]).join(' / ') || '—';
+    document.getElementById('soma-info').innerHTML =
+      `<div class="row"><span class="label">Mood</span><span class="value">${esc(s.soma_mood||'')}</span></div>
+       <div class="soma-bar-wrap"><div class="soma-bar-fill" style="width:${Math.min(scoreNum,100)}%;background:${barColor}"></div></div>
+       ${mono ? `<div style="margin-top:8px;padding:7px 9px;background:var(--bg);border-radius:6px;border:1px solid var(--border);font-size:11px;color:var(--dim);font-style:italic">&ldquo;${esc(mono)}&rdquo;</div>` : ''}
+       <div class="row" style="margin-top:6px"><span class="label">Goals</span><span class="value" style="color:var(--accent);font-size:11px">${esc(goals)}</span></div>`;
+    const monoEl = document.getElementById('hdr-mono');
+    if (monoEl && mono) monoEl.textContent = '\u201c' + mono + '\u201d';
+  }
 }
 
 async function refreshMsgs() {
@@ -956,7 +1138,7 @@ async function refreshRelay() {
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
         <span class="from">${esc(m.source_agent||'?')}</span>
         <span class="topic-badge" style="color:${tcolor};border-color:${tcolor}">${esc(topic)}</span>
-        <span style="color:var(--dim);font-size:10px;margin-left:auto">${(m.created_at||'').slice(11,16)}</span>
+        <span style="color:var(--dim);font-size:10px;margin-left:auto">${fmtRelayTime(m.created_at)}</span>
       </div>
       <div class="body">${esc((m.content||'').slice(0,400))}</div>
     </div>`;
@@ -1074,6 +1256,18 @@ async function initLinks() {
 
 // ═══ UTILS ═══
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Parse UTC relay timestamp and format in local time
+function fmtRelayTime(utcStr, showSec) {
+  try {
+    const s = (utcStr||'').replace(' ','T') + 'Z';
+    const d = new Date(s);
+    if (isNaN(d)) return (utcStr||'').slice(11, showSec ? 19 : 16);
+    const h = String(d.getHours()).padStart(2,'0');
+    const m = String(d.getMinutes()).padStart(2,'0');
+    if (showSec) return h+':'+m+':'+String(d.getSeconds()).padStart(2,'0');
+    return h+':'+m;
+  } catch(e) { return (utcStr||'').slice(11, showSec ? 19 : 16); }
+}
 
 // ═══ INIT ═══
 const COMMANDS = COMMAND_LIST_PLACEHOLDER;
@@ -1101,7 +1295,7 @@ async function refreshCinder() {
     el.innerHTML = msgs.map(m => {
       const isCinder = (m.source_agent||'').toLowerCase() === 'cinder';
       const cls = isCinder ? 'c-bubble c-cinder' : 'c-bubble c-user';
-      const t = (m.created_at||'').slice(11,19);
+      const t = fmtRelayTime(m.created_at, true);
       return '<div class="'+cls+'"><div class="c-label">'+esc(m.source_agent||'?')+' \xb7 '+t+'</div>'
         +'<div>'+esc((m.content||'').slice(0,400))+'</div></div>';
     }).join('');
@@ -1191,7 +1385,9 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # API routes
-        if path.path == "/api/status":
+        if path.path == "/api/today":
+            self._send_json(_get_today_summary())
+        elif path.path == "/api/status":
             self._send_json(_get_system_health())
         elif path.path == "/api/dashboard":
             self._send_json(_get_dashboard_messages())
@@ -1331,7 +1527,7 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 msgs["messages"].append({
                     "from": sender,
                     "text": text,
-                    "time": datetime.now(timezone.utc).strftime("%H:%M:%S"),
+                    "time": datetime.now().strftime("%H:%M:%S"),
                 })
                 # Keep last 200
                 msgs["messages"] = msgs["messages"][-200:]
