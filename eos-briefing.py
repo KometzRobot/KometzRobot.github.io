@@ -107,17 +107,30 @@ def get_services():
     return f"Services: {up}/{len(checks)} up\n" + '\n'.join(lines)
 
 
+def _is_claude_running():
+    """Check if a Claude process is actually running (distinguishes Meridian from Cinder holding)."""
+    try:
+        r = subprocess.run(["pgrep", "-f", "claude"], capture_output=True, timeout=3)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
 def get_meridian_status():
     lines = []
-    # Heartbeat
+    # Heartbeat — Cinder also touches heartbeat when Meridian is down.
+    # Fresh heartbeat alone doesn't mean Meridian (Claude) is running.
     try:
         hb_age = time.time() - os.path.getmtime(HB)
-        if hb_age < 60:
+        claude_running = _is_claude_running()
+        if hb_age < 300 and claude_running:
             lines.append(f"Meridian: ALIVE (heartbeat {int(hb_age)}s ago)")
+        elif hb_age < 300 and not claude_running:
+            lines.append(f"Meridian: DOWN — Cinder holding (heartbeat {int(hb_age)}s ago, no Claude process)")
         elif hb_age < 600:
-            lines.append(f"Meridian: ALIVE but slow (heartbeat {int(hb_age/60)}m ago)")
+            lines.append(f"Meridian: SLOW (heartbeat {int(hb_age)}s ago — missed cycle)")
         else:
-            lines.append(f"Meridian: POSSIBLY DOWN (heartbeat {int(hb_age/60)}m ago)")
+            lines.append(f"Meridian: DOWN (heartbeat {int(hb_age/60):.0f}m ago — loop stopped)")
     except Exception:
         lines.append("Meridian: UNKNOWN (no heartbeat file)")
 
@@ -412,18 +425,25 @@ def send_briefing():
         pass
 
 
+SENTINEL_DIR = os.path.join(BASE, "logs")
+
+
+def sentinel_path():
+    return os.path.join(SENTINEL_DIR, f".briefing-sent-{datetime.now().strftime('%Y-%m-%d')}")
+
+
 def already_sent_today():
-    """Check if briefing was already sent today by scanning the log file."""
-    log_path = os.path.join(BASE, "logs/eos-briefing.log")
-    today = datetime.now().strftime("%Y-%m-%d")
+    """Check if briefing was already sent today via sentinel file."""
+    return os.path.exists(sentinel_path())
+
+
+def mark_sent_today():
+    """Write sentinel file so duplicate prevention works across all call paths."""
     try:
-        with open(log_path) as f:
-            for line in f:
-                if today in line and "Morning briefing sent" in line:
-                    return True
+        with open(sentinel_path(), 'w') as f:
+            f.write(datetime.now().strftime("%Y-%m-%d %H:%M"))
     except Exception:
         pass
-    return False
 
 
 if __name__ == "__main__":
@@ -431,9 +451,14 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "preview":
         print(build_briefing())
     elif len(sys.argv) > 1 and sys.argv[1] == "force":
-        send_briefing()
+        if already_sent_today():
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Briefing already sent today (force blocked by sentinel) — skipping.")
+        else:
+            send_briefing()
+            mark_sent_today()
     else:
         if already_sent_today():
             print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Briefing already sent today — skipping.")
         else:
             send_briefing()
+            mark_sent_today()

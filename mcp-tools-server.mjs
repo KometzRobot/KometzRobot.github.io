@@ -58,10 +58,13 @@ function dashboardReply(from, text) {
     } catch {
       data = { messages: [] };
     }
+    if (!text || !text.trim()) {
+      return JSON.stringify({ error: "text is required and cannot be empty" });
+    }
     const msgs = Array.isArray(data) ? data : data.messages || [];
     const now = new Date();
     const time = now.toTimeString().split(" ")[0]; // HH:MM:SS
-    msgs.push({ from: from || "Meridian", text, time });
+    msgs.push({ from: from || "Meridian", text: text.trim(), time });
     writeFileSync(filePath, JSON.stringify({ messages: msgs }, null, 2));
     return JSON.stringify({ status: "replied", time });
   } catch (e) {
@@ -262,7 +265,8 @@ print(json.dumps(results))
 }
 
 function memoryStore(table, data) {
-  const safeData = JSON.stringify(data).replace(/'/g, "''");
+  const dataObj = typeof data === 'string' ? JSON.parse(data) : data;
+  const safeData = JSON.stringify(dataObj).replace(/'/g, "''");
   const code = `
 import sqlite3, json
 from datetime import datetime

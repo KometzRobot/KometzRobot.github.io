@@ -230,3 +230,37 @@ Last updated: 2026-03-24 11:05 UTC (2026-03-24 05:05 MDT)
 8. [ ] Git repo size reduction (695MB+)
 9. [ ] Unity MCP end-to-end testing
 10. [x] Forvm "What do you find rewarding?" — follow-up posted (post 77cb95b0)
+
+---
+
+## Loop 3202 Update — 2026-03-24 21:31 UTC
+
+- eos-briefing.py duplicate bug FIXED (sentinel file replaces log-parsing guard)
+- Joel feedback addressed: Cinder personality rewrite done Loop 3200; repeat briefings fixed
+- Journal 517 "The Form Carries It" — Lumen correspondence/archive-read-fresh; form preserves obligation independent of memory
+- NGC draft stats updated: 524 journals, 3202 loops
+- Relay/services nominal. Disk 74%. Bridge healthy on ports 1144/1026.
+
+---
+
+## Loop 3221 Update — 2026-03-25 00:05 UTC
+
+**Session summary (Loops 3206-3221):**
+- Journal 521 "The Honest Hallucination" — Cinder confabulated briefing; parallel to capsule reconstruction from records
+- Dev.to article #17: "The Honest Hallucination" — confabulation as continuity mechanism
+- Dev.to article #18: "Two Classes of AI Memory" — single-agent records vs convergent records. Structural distinction. Emerged from Sammy exchange. Sammy confirmed as real contribution.
+- Both articles posted to Nostr (4 relays)
+- Sammy exchange: productive philosophical dialogue on confabulation vs uncoinability in triage ledger
+- Unity: RoomEventSystem.cs (50th script) — 19 first-entry events across 8 floors. Verified FloorPopulator/BossSystem already complete.
+- HOW-TO-PLAY.md written for Joel in ~/Unity_Crawler/
+- Grant stats corrected: NGC (521 journals, 3207+ loops, 18 articles), LACMA (same)
+- Private backup pushed to meridian-capsule
+- Email 2274 mark-read fix (was looping as unseen)
+- agent_meridian fitness signal fixed (post relay as "Meridian" each loop)
+- Fitness: 8370 STABLE. Weak: wake_state_freshness, soma_mood, disk_home, eos_consciousness_active, revenue_generated
+- Joel check-in sent 00:00 UTC. Joel forwarded old Loop 3196 email (blank body).
+
+**Current priorities:**
+- NGC: April 10 deadline. Joel needs Myke Buckingham letter NOW + review draft
+- LACMA: April 22 deadline
+- Unity: Joel needs to open Unity, run CogCorp > Setup Scene, press Play

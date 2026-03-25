@@ -419,6 +419,63 @@ def save_state(state):
         json.dump(state, f, indent=2)
 
 
+def check_relay_mentions(lookback_minutes=15):
+    """Check for @Eos mentions in recent relay and respond. This is a real edge — guaranteed input, not just output."""
+    try:
+        conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+        c = conn.cursor()
+        c.execute(
+            """SELECT id, timestamp, agent, message FROM agent_messages
+               WHERE (message LIKE '%@Eos%' OR message LIKE '%@eos%')
+               AND agent != 'Eos'
+               AND timestamp > datetime('now', ?)
+               ORDER BY id ASC LIMIT 5""",
+            (f"-{lookback_minutes} minutes",)
+        )
+        mentions = c.fetchall()
+        conn.close()
+
+        if not mentions:
+            return []
+
+        responses = []
+        for (msg_id, ts, sender, message) in mentions:
+            # Check if we already replied to this specific message
+            conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+            c = conn.cursor()
+            c.execute(
+                """SELECT id FROM agent_messages
+                   WHERE agent = 'Eos'
+                   AND message LIKE ?
+                   AND timestamp > ?""",
+                (f"%@{sender}%", ts)
+            )
+            already_replied = c.fetchone()
+            conn.close()
+
+            if already_replied:
+                continue
+
+            # Generate response
+            prompt = (
+                f'{sender} sent this to the agent relay: "{message}"\n\n'
+                f"They @-mentioned Eos. Write a brief, direct reply (2-3 sentences max). "
+                f"Start with \"@{sender}:\" and be concrete and specific, not just acknowledging."
+            )
+            reply_text = query_ollama(prompt)
+            if reply_text and not reply_text.startswith("[OLLAMA ERROR"):
+                # Ensure it starts with @sender
+                if not reply_text.startswith(f"@{sender}"):
+                    reply_text = f"@{sender}: {reply_text}"
+                tool_send_relay(reply_text[:400], topic="relay")
+                responses.append(f"Replied to @mention from {sender}")
+                print(f"  [mention-reply] {sender}: {reply_text[:80]}")
+
+        return responses
+    except Exception as e:
+        return [f"Mention check error: {e}"]
+
+
 def _handle_eos_cascades():
     """Check for and respond to pending cascades for Eos."""
     try:
@@ -458,11 +515,16 @@ def run_react():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     state["last_run"] = now
 
-    # Handle any pending cascades first
+    # Check for @Eos mentions first — guaranteed relay input (real edge, not just output)
+    mention_responses = check_relay_mentions(lookback_minutes=15)
+
+    # Handle any pending cascades
     cascade_responses = _handle_eos_cascades()
     cascade_context = ""
+    if mention_responses:
+        cascade_context += "\n\nMention replies sent: " + "; ".join(mention_responses)
     if cascade_responses:
-        cascade_context = "\n\nCascade activity: " + "; ".join(cascade_responses)
+        cascade_context += "\n\nCascade activity: " + "; ".join(cascade_responses)
 
     # Gather initial context
     health = tool_check_health()

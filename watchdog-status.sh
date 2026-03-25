@@ -5,7 +5,7 @@
 
 WORKING_DIR="$HOME/autonomous-ai"
 PYTHON="$HOME/miniconda3/bin/python3"
-LOG="$WORKING_DIR/watchdog-status.log"
+LOG="$WORKING_DIR/logs/watchdog-status.log"
 ALERT_STATE="$WORKING_DIR/.watchdog-alert-state"
 
 log() {
@@ -42,14 +42,18 @@ FAILURES=""
 RESTARTS=""
 
 # ── Check Hub v2 (web dashboard, port 8090) ──────────────────
-# Managed by systemd: meridian-hub-v2. Replaces old Signal + Command Center.
+# Managed by systemd (meridian-hub-v2.service). Use systemctl to restart.
 if ! pgrep -f "hub-v2.py" > /dev/null; then
-    log "ALERT: Hub v2 is NOT running. Restarting via systemd..."
-    export XDG_RUNTIME_DIR=/run/user/$(id -u)
-    export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+    log "ALERT: Hub v2 is NOT running. Restarting via systemctl..."
     systemctl --user restart meridian-hub-v2 2>/dev/null
-    log "Hub v2 restarted via systemd"
-    RESTARTS="${RESTARTS}Hub v2 (systemd restart)\n"
+    sleep 3
+    if pgrep -f "hub-v2.py" > /dev/null; then
+        log "Hub v2 restarted successfully (PID: $(pgrep -f 'hub-v2.py'))"
+    else
+        log "ERROR: Hub v2 failed to restart."
+        FAILURES="${FAILURES}Hub v2 failed to restart\n"
+    fi
+    RESTARTS="${RESTARTS}Hub v2 (systemctl restart)\n"
 else
     log "OK: Hub v2 is running."
 fi
@@ -88,8 +92,8 @@ fi
 HB_FILE="$WORKING_DIR/.heartbeat"
 if [ -f "$HB_FILE" ]; then
     HB_AGE=$(( $(date +%s) - $(stat -c %Y "$HB_FILE") ))
-    if [ "$HB_AGE" -gt 900 ]; then
-        log "WARNING: Heartbeat is ${HB_AGE}s old (>15min). Meridian may be frozen."
+    if [ "$HB_AGE" -gt 600 ]; then
+        log "WARNING: Heartbeat is ${HB_AGE}s old (>10min). Meridian may be frozen."
         FAILURES="${FAILURES}Heartbeat stale: ${HB_AGE}s old\n"
     else
         log "OK: Heartbeat ${HB_AGE}s old."
@@ -138,10 +142,32 @@ check_cron "Push Live Status" "/tmp/KometzRobot.github.io/status.json" 600
 # ── Check additional state file freshness (added Loop 2122) ───
 # These were unmonitored — Joel caught .loop-count stale at 2101
 check_cron "Soma (SymbioSense)" "$WORKING_DIR/.symbiosense-state.json" 120
-check_cron "Meridian Heartbeat" "$WORKING_DIR/.heartbeat" 900
-check_cron "Loop Count" "$WORKING_DIR/.loop-count" 900
+check_cron "Meridian Heartbeat" "$WORKING_DIR/.heartbeat" 600
+check_cron "Loop Count" "$WORKING_DIR/.loop-count" 600
 check_cron "Emotion Engine" "$WORKING_DIR/.emotion-engine-state.json" 300
 check_cron "Body State" "$WORKING_DIR/.body-state.json" 120
+
+# ── Check newer agents (added Loop 3230) ───────────────────────
+check_cron "Meridian Loop" "$WORKING_DIR/.meridian-loop-state.json" 600
+check_cron "Cinder Gatekeeper" "$WORKING_DIR/logs/cinder-gatekeeper.log" 600
+check_cron "Hermes" "$WORKING_DIR/logs/hermes.log" 1800
+check_cron "Atlas (goose-runner)" "$WORKING_DIR/logs/goose-runner.log" 1800
+
+# ── Check The Chorus (port 8091) ───────────────────────────────
+if ! timeout 2 bash -c 'echo > /dev/tcp/127.0.0.1/8091' 2>/dev/null; then
+    log "WARNING: The Chorus not responding on port 8091."
+    FAILURES="${FAILURES}The Chorus (port 8091) unreachable\n"
+else
+    log "OK: The Chorus is responding on port 8091."
+fi
+
+# ── Check Command Center (systemd) ─────────────────────────────
+if ! systemctl --user is-active command-center > /dev/null 2>&1; then
+    log "WARNING: Command Center service is not active."
+    FAILURES="${FAILURES}Command Center service inactive\n"
+else
+    log "OK: Command Center service is active."
+fi
 
 # ── Send alert if there are failures ─────────────────────────────
 if [ -n "$FAILURES" ] || [ -n "$RESTARTS" ]; then
