@@ -328,6 +328,47 @@ def _get_emails(count=10, unseen_only=False):
         return {"error": str(e)}
 
 
+def _svg_bar_chart(values, w=280, h=56, color="#7b5cf5", bg="#0e0e1a", dim="#4a4a6a"):
+    """Generate a minimal SVG bar chart. values is a list of numbers."""
+    if not values or max(values) == 0:
+        return f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg"><text x="{w//2}" y="{h//2+4}" fill="{dim}" font-size="10" text-anchor="middle">no data</text></svg>'
+    n = len(values)
+    max_v = max(values)
+    bar_w = max(1, (w - 4) / n - 1)
+    bars = []
+    for i, v in enumerate(values):
+        bh = max(2, int((v / max_v) * (h - 4))) if v > 0 else 0
+        x = 2 + i * ((w - 4) / n)
+        y = h - 2 - bh
+        bars.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh}" fill="{color}" rx="1"/>')
+    return (f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">'
+            f'<rect width="{w}" height="{h}" fill="{bg}" rx="4"/>'
+            + ''.join(bars) + '</svg>')
+
+
+def _svg_sparkline(points, w=280, h=50, color="#4ade80", bg="#0e0e1a", dot_r=2.5):
+    """Generate an SVG sparkline from list of (x_norm 0-1, y_norm 0-1) or just y values."""
+    if not points or len(points) < 2:
+        return f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg"><text x="{w//2}" y="{h//2+4}" fill="#4a4a6a" font-size="10" text-anchor="middle">insufficient data</text></svg>'
+    pad = 8
+    if isinstance(points[0], (int, float)):
+        mn, mx = min(points), max(points)
+        rng = mx - mn if mx != mn else 1
+        coords = [(pad + (i / (len(points)-1)) * (w - 2*pad),
+                   (h - pad) - ((v - mn) / rng) * (h - 2*pad))
+                  for i, v in enumerate(points)]
+    else:
+        coords = [(pad + p[0] * (w - 2*pad), (h - pad) - p[1] * (h - 2*pad)) for p in points]
+    path = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+    fill_path = path + f" L {coords[-1][0]:.1f},{h-pad} L {coords[0][0]:.1f},{h-pad} Z"
+    dots = ''.join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{dot_r}" fill="{color}"/>' for x, y in coords)
+    return (f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">'
+            f'<rect width="{w}" height="{h}" fill="{bg}" rx="4"/>'
+            f'<path d="{fill_path}" fill="{color}" fill-opacity="0.12"/>'
+            f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.5" stroke-linejoin="round"/>'
+            + dots + '</svg>')
+
+
 def _get_today_summary():
     """Work-centric summary: what was done today, not whether services are running."""
     from datetime import timezone, timedelta
@@ -443,6 +484,72 @@ def _get_today_summary():
     soma = _read_json(SOMA_STATE, {})
     result["soma_mood"] = soma.get("mood", soma.get("current_emotion", "—"))
     result["soma_score"] = soma.get("mood_score", 0)
+
+    # ── Charts: activity histogram, mood sparkline, memory growth ───
+    try:
+        db = sqlite3.connect(RELAY_DB, timeout=3)
+        # Activity by hour (last 24h) — 24 buckets
+        hour_rows = db.execute(
+            "SELECT CAST(strftime('%H', timestamp) AS INTEGER) as h, COUNT(*) as cnt "
+            "FROM agent_messages WHERE timestamp > ? GROUP BY h ORDER BY h",
+            (since_24h,)
+        ).fetchall()
+        hour_map = {r[0]: r[1] for r in hour_rows}
+        now_h = datetime.now(timezone.utc).hour
+        # Ordered from (now_h+1) % 24 to now_h so latest is rightmost
+        ordered_hours = [(now_h + 1 + i) % 24 for i in range(24)]
+        activity_vals = [hour_map.get(h, 0) for h in ordered_hours]
+        result["activity_chart"] = _svg_bar_chart(activity_vals, w=300, h=60, color="#7b5cf5")
+        result["activity_peak"] = max(activity_vals) if activity_vals else 0
+        result["activity_total"] = sum(activity_vals)
+
+        # Mood sparkline from mood_shift events (last 48h for more data)
+        since_48h = (datetime.now(timezone.utc) - __import__('datetime').timedelta(hours=48)).strftime("%Y-%m-%d %H:%M:%S")
+        mood_rows = db.execute(
+            "SELECT timestamp, message FROM agent_messages WHERE topic='mood_shift' AND timestamp > ? ORDER BY timestamp",
+            (since_48h,)
+        ).fetchall()
+        db.close()
+        mood_scores = []
+        mood_labels = []
+        for ts, msg in mood_rows:
+            import re
+            m = re.search(r'score:\s*([\d.]+)', msg)
+            if m:
+                mood_scores.append(float(m.group(1)))
+                mood_labels.append(ts[11:16] if ts else "")
+        # Append current score
+        curr_score = float(soma.get("mood_score", 50))
+        mood_scores.append(curr_score)
+        # Normalize 0-100 → 0-1 for sparkline
+        if len(mood_scores) >= 2:
+            score_color = "#4ade80" if curr_score > 60 else "#fbbf24" if curr_score > 35 else "#f87171"
+            result["mood_chart"] = _svg_sparkline(mood_scores, w=300, h=50, color=score_color)
+        else:
+            result["mood_chart"] = _svg_sparkline([50, curr_score], w=300, h=50)
+    except Exception:
+        result["activity_chart"] = ""
+        result["mood_chart"] = ""
+        result["activity_total"] = 0
+        result["activity_peak"] = 0
+
+    # Memory growth (last 7 days)
+    try:
+        mem_db = sqlite3.connect(os.path.join(BASE, "memory.db"), timeout=3)
+        growth = mem_db.execute(
+            "SELECT date(created) as d, COUNT(*) FROM vector_memory GROUP BY d ORDER BY d DESC LIMIT 7"
+        ).fetchall()
+        total_mem = mem_db.execute("SELECT COUNT(*) FROM vector_memory").fetchone()[0]
+        mem_db.close()
+        # Reverse to chronological
+        growth_vals = [r[1] for r in reversed(growth)]
+        result["memory_chart"] = _svg_bar_chart(growth_vals, w=300, h=40, color="#22d3ee")
+        result["memory_total"] = total_mem
+        result["memory_today"] = dict(growth).get(today, 0) if growth else 0
+    except Exception:
+        result["memory_chart"] = ""
+        result["memory_total"] = 0
+        result["memory_today"] = 0
 
     result["timestamp"] = datetime.now(timezone.utc).isoformat()
     return result
@@ -798,6 +905,12 @@ nav .ico{font-size:16px;line-height:1}
     <div id="today-joel"></div>
   </div>
 
+  <!-- Metrics: infographic cards with live charts -->
+  <div class="card" id="metrics-card">
+    <h3>Metrics</h3>
+    <div id="metrics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px"></div>
+  </div>
+
   <!-- Agent exchanges (meaningful only) -->
   <div class="card">
     <h3>Agent Exchanges</h3>
@@ -1047,6 +1160,53 @@ async function refreshDash() {
         <span class="value" style="font-size:11px;white-space:normal;color:var(--text)">${esc(ex.msg)}</span>
       </div>`;
     }).join('');
+  }
+
+  // ── Metrics: infographic cards with charts ──
+  const metricsEl = document.getElementById('metrics-grid');
+  if (metricsEl) {
+    const moodScore = parseFloat(d.soma_score || s.soma_score || 50);
+    const moodColor = moodScore > 60 ? '#4ade80' : moodScore > 35 ? '#fbbf24' : '#f87171';
+    const moodLabel = (d.soma_mood || '—').replace(/_/g, ' ').toUpperCase();
+
+    const cards = [
+      {
+        label: 'AGENT ACTIVITY',
+        value: (d.activity_total || 0) + ' msgs',
+        sub: 'peak ' + (d.activity_peak || 0) + '/hr · last 24h',
+        chart: d.activity_chart || '',
+        accent: '#7b5cf5'
+      },
+      {
+        label: 'MOOD',
+        value: moodLabel,
+        sub: 'score ' + moodScore.toFixed(0) + '/100',
+        chart: d.mood_chart || '',
+        accent: moodColor
+      },
+      {
+        label: 'MEMORY INDEX',
+        value: (d.memory_total || 0) + ' vectors',
+        sub: '+' + (d.memory_today || 0) + ' today',
+        chart: d.memory_chart || '',
+        accent: '#22d3ee'
+      },
+      {
+        label: "TODAY'S COMMITS",
+        value: (d.commit_count || 0) + ' commits',
+        sub: (d.commits && d.commits[0]) ? d.commits[0].slice(8, 40) : 'none today',
+        chart: '',
+        accent: '#fbbf24'
+      }
+    ];
+
+    metricsEl.innerHTML = cards.map(c => `
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;overflow:hidden">
+        <div style="font-size:9px;font-weight:700;color:${c.accent};text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px">${c.label}</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--text);line-height:1.1">${c.value}</div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.sub}</div>
+        ${c.chart ? `<div style="margin-top:4px">${c.chart}</div>` : ''}
+      </div>`).join('');
   }
 
   // ── Collapsed: System health + agents + soma ──
