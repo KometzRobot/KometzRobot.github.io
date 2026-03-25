@@ -6,6 +6,10 @@ Semantic versioning. No more version numbers in filenames.
 See __version__ below for current version.
 
 Changelog:
+  3.0.0 (Loop 3232) — Nuevo Meridian theme: deep space palette (#06060e bg, #0e0e1b
+    surface, #5b7cf6 primary accent), updated all agent colors to Nuevo spec.
+    Replaces Material Dark with the same visual language as hub-v3.0.0.
+
   2.0.0 (Loop 3227) — Full structural redesign: left sidebar navigation rail,
     redesigned Home dashboard (hero strip + agent grid + live relay + quick actions),
     consolidated to 6 tabs (Home/Email/Agents/Creative/Files/System),
@@ -30,7 +34,7 @@ Changelog:
   Pre-1.0: v26 (Loop 2104), v23 (Loop 2083), v22 original
 """
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
 
 import tkinter as tk
 from tkinter import scrolledtext, font as tkfont, filedialog
@@ -83,32 +87,33 @@ JOEL = "jkometz@hotmail.com"
 OLLAMA = "http://localhost:11434/api/generate"
 EOS_MODEL = "eos-7b"
 
-# ── COLORS (Material Dark) ────────────────────────────────────────
-BG = "#121212"          # Material dark surface
-HEADER_BG = "#1F1F1F"   # App bar (elevation 4dp)
-PANEL = "#1E1E1E"       # Card surface
-PANEL2 = "#252525"      # Card variant
-INPUT_BG = "#2C2C2C"    # Input / graph background
-BORDER = "#323232"      # Divider
-ACCENT = "#1F1F1F"      # Nav bar background
-ACTIVE_BG = "#2D2D2D"   # Selected/active state
-FG = "#E0E0E0"          # On-surface (high emphasis)
-DIM = "#9E9E9E"         # On-surface (medium emphasis)
-BRIGHT = "#FFFFFF"      # Pure white
-GREEN = "#69F0AE"       # Meridian — green A200
-GREEN2 = "#00E676"      # Green A400
-CYAN = "#40C4FF"        # Light Blue A200
-CYAN2 = "#00B0FF"       # Light Blue A400
-AMBER = "#FFD740"       # Soma — Amber A200 (nervous system)
-AMBER2 = "#FFAB40"      # Orange A200
-RED = "#FF5252"         # Red A200
-GOLD = "#FFD600"        # Eos — Yellow A700 (sensory warmth)
-WHITE = "#FFFFFF"
-PURPLE = "#EA80FC"      # Nova — Purple A200 (immune defense)
-PINK = "#FF80AB"        # Hermes — Pink A200 (messenger)
-TEAL = "#64FFDA"        # Atlas — Teal A400 (structural)
-BLUE = "#82B1FF"        # Tempo — Blue A200 (endocrine rhythm)
-ORANGE = "#FF9E80"      # Cinder — Deep Orange A200 (always-on)
+# ── COLORS (Nuevo Meridian v3.0.0) ───────────────────────────────
+BG = "#06060e"          # Deep space background
+HEADER_BG = "#0e0e1b"   # Surface — nav bar + app bar
+PANEL = "#121220"       # Card surface
+PANEL2 = "#1a1a2e"      # Card variant
+INPUT_BG = "#0e0e1b"    # Input / terminal background
+BORDER = "#1e1e35"      # Divider / subtle border
+ACCENT = "#0e0e1b"      # Nav bar background (same as surface)
+ACTIVE_BG = "#1e1e35"   # Selected/active state
+FG = "#e6e6f6"          # On-surface (high emphasis)
+DIM = "#5a5a7a"         # On-surface (medium emphasis)
+BRIGHT = "#f0f0ff"      # Near-white highlight
+GREEN = "#3dd68c"       # Meridian — emerald green
+GREEN2 = "#2bb872"      # Green deeper
+CYAN = "#22d3ee"        # Cyan
+CYAN2 = "#06b6d4"       # Cyan deeper
+AMBER = "#f59e0b"       # Soma — amber (nervous system)
+AMBER2 = "#d97706"      # Amber deeper
+RED = "#f87171"         # Red
+GOLD = "#fbbf24"        # Eos — warm gold (sensory warmth)
+WHITE = "#f8f8ff"
+PURPLE = "#a78bfa"      # Nova — violet (immune defense)
+PINK = "#f9a8d4"        # Hermes — rose (messenger)
+TEAL = "#2dd4bf"        # Atlas — teal (structural)
+BLUE = "#818cf8"        # Tempo — indigo (endocrine rhythm)
+ORANGE = "#fb923c"      # Cinder — orange (always-on)
+INDIGO = "#5b7cf6"      # Primary accent — periwinkle indigo
 
 
 # ── DATA FUNCTIONS ───────────────────────────────────────────────
@@ -833,7 +838,7 @@ class CommandCenter(tk.Tk):
         left.pack(side=tk.LEFT, padx=16, fill=tk.Y)
         self._pulse_dot = tk.Label(left, text="●", font=self.f_head, fg=GREEN, bg=HEADER_BG)
         self._pulse_dot.pack(side=tk.LEFT, padx=(0, 8))
-        tk.Label(left, text="MERIDIAN", font=self.f_title, fg=BRIGHT, bg=HEADER_BG).pack(side=tk.LEFT)
+        tk.Label(left, text="MERIDIAN", font=self.f_title, fg=INDIGO, bg=HEADER_BG).pack(side=tk.LEFT)
         tk.Label(left, text=f"  v{__version__}", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(
             side=tk.LEFT, pady=(4, 0))
 
