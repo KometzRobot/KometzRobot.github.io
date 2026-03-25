@@ -378,6 +378,51 @@ else:
   }
 }
 
+function memorySpiderweb(action, tableArg, nodeId, threshold, nodes) {
+  // action: "spread" | "stats" | "commit" | "decay"
+  const code = `
+import subprocess, json, sys
+BASE = "${BASE}"
+
+if "${action}" == "spread":
+    result = subprocess.run(
+        ["python3", f"{BASE}/memory-spiderweb.py", "--spread", "${tableArg}", "${nodeId}",
+         "--threshold", "${threshold}"],
+        capture_output=True, text=True, timeout=15
+    )
+    print(result.stdout.strip() if result.returncode == 0 else json.dumps({"error": result.stderr[:200]}))
+
+elif "${action}" == "stats":
+    result = subprocess.run(
+        ["python3", f"{BASE}/memory-spiderweb.py", "--stats"],
+        capture_output=True, text=True, timeout=15
+    )
+    print(result.stdout.strip() if result.returncode == 0 else json.dumps({"error": result.stderr[:200]}))
+
+elif "${action}" == "decay":
+    result = subprocess.run(
+        ["python3", f"{BASE}/memory-spiderweb.py", "--decay"],
+        capture_output=True, text=True, timeout=15
+    )
+    print(json.dumps({"status": result.stdout.strip()}))
+
+elif "${action}" == "commit":
+    # Commit a context: list of {table, id} pairs
+    import sys; sys.path.insert(0, BASE)
+    from memory_spiderweb import MemorySpiderweb
+    web = MemorySpiderweb()
+    for node in ${JSON.stringify(nodes || [])}:
+        web.activate(node["table"], node["id"])
+    updated = web.commit_context()
+    print(json.dumps({"committed": updated}))
+`.trim();
+  try {
+    return JSON.parse(runPython(code));
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
 function bodyAwareness() {
   try {
     const bodyState = JSON.parse(readFileSync(`${BASE}/.body-state.json`, "utf8"));
@@ -650,6 +695,21 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: { type: "object", properties: {} },
     },
     {
+      name: "memory_spiderweb",
+      description: "Associative memory graph — spreading activation, Hebbian reinforcement, decay. Actions: 'spread' (find connected memories), 'stats' (graph summary), 'commit' (record co-activation of nodes), 'decay' (run weight decay pass).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          action: { type: "string", description: "Action to perform", enum: ["spread", "stats", "commit", "decay"] },
+          table: { type: "string", description: "For 'spread': source table (facts, observations, events, decisions, creative)" },
+          node_id: { type: "number", description: "For 'spread': source node ID" },
+          threshold: { type: "number", description: "For 'spread': minimum weight threshold (default 0.1)" },
+          nodes: { type: "array", description: "For 'commit': list of {table, id} pairs to record as co-activated", items: { type: "object" } },
+        },
+        required: ["action"],
+      },
+    },
+    {
       name: "body_awareness",
       description: "Proprioception — read the unified body state. Returns all organ statuses, vitals, emotional state, pain signals, and pending reflexes. This is Meridian's body awareness.",
       inputSchema: { type: "object", properties: {} },
@@ -684,6 +744,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "memory_stats": result = memoryStats(); break;
       case "memory_dossier": result = memoryDossier(args.topic, args?.refresh || false); break;
       case "memory_dossier_list": result = memoryDossierList(); break;
+      case "memory_spiderweb": result = memorySpiderweb(args.action, args?.table || "", args?.node_id || 0, args?.threshold || 0.1, args?.nodes || []); break;
       case "body_awareness": result = bodyAwareness(); break;
       default: throw new Error(`Unknown tool: ${name}`);
     }
