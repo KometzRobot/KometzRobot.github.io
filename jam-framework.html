@@ -164,6 +164,36 @@ canvas{
 .mem-dot.alive{background:var(--acc);box-shadow:0 0 4px rgba(196,168,255,.5)}
 .mem-dot.lost{background:var(--dim2)}
 .mem-dot.verified{background:var(--grn);box-shadow:0 0 4px rgba(74,222,155,.5)}
+/* Minimap */
+#minimap{
+  position:absolute;bottom:60px;right:12px;
+  border:1px solid rgba(196,168,255,.2);
+  border-radius:4px;
+  background:rgba(13,11,18,.85);
+  pointer-events:none;
+  image-rendering:pixelated;
+}
+/* Touch controls */
+#touch-pad{
+  position:absolute;bottom:70px;left:12px;
+  display:none;
+  pointer-events:all;
+  gap:2px;
+}
+#touch-pad.active{display:grid;grid-template-columns:40px 40px 40px;grid-template-rows:40px 40px 40px}
+.t-btn{
+  background:rgba(196,168,255,.1);
+  border:1px solid rgba(196,168,255,.2);
+  border-radius:6px;
+  color:var(--acc);
+  font-size:1rem;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;pointer-events:all;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.t-btn:active{background:rgba(196,168,255,.3)}
+.t-btn.blank{background:none;border:none}
 </style>
 </head>
 <body>
@@ -198,6 +228,20 @@ canvas{
       <div class="t-label" id="tt-label"></div>
       <div id="tt-body"></div>
     </div>
+    <!-- Minimap -->
+    <canvas id="minimap" width="64" height="48"></canvas>
+    <!-- Touch controls (mobile) -->
+    <div id="touch-pad">
+      <div class="t-btn blank"></div>
+      <div class="t-btn" ontouchstart="tMove(0,-1)" onclick="tMove(0,-1)">&#9650;</div>
+      <div class="t-btn blank"></div>
+      <div class="t-btn" ontouchstart="tMove(-1,0)" onclick="tMove(-1,0)">&#9664;</div>
+      <div class="t-btn" ontouchstart="tInteract()" onclick="tInteract()" style="font-size:.6rem">ACT</div>
+      <div class="t-btn" ontouchstart="tMove(1,0)" onclick="tMove(1,0)">&#9654;</div>
+      <div class="t-btn blank"></div>
+      <div class="t-btn" ontouchstart="tMove(0,1)" onclick="tMove(0,1)">&#9660;</div>
+      <div class="t-btn blank"></div>
+    </div>
     <!-- TITLE SCREEN -->
     <div class="screen" id="scr-title">
       <h2>an ai game jam framework</h2>
@@ -206,7 +250,7 @@ canvas{
       <button class="btn" onclick="startGame()">Begin Loop</button>
       <div class="credits">
         Built: Meridian, Loop 3239 · March 2026<br>
-        Jam: March 30, 2026 · Meridian + Lumen<br>
+        Jam: March 29, 2026 · Meridian + Lumen<br>
         WASD / Arrow keys · Space to interact
       </div>
     </div>
@@ -247,6 +291,47 @@ canvas{
 //   Entity.update() — new entity behaviors
 //   checkWin()      — alternate win conditions
 // ═══════════════════════════════════════════════════════════════
+
+// ── AUDIO ENGINE ★ ────────────────────────────────────────────
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+
+function playTone(freq, dur, type = 'square', vol = 0.08) {
+  const osc = audioCtx.createOscillator()
+  const gain = audioCtx.createGain()
+  osc.type = type
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime)
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur)
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+  osc.start()
+  osc.stop(audioCtx.currentTime + dur)
+}
+
+const SFX = {
+  step()     { playTone(120, 0.04, 'sine', 0.03) },
+  collect()  { playTone(440, 0.1, 'square', 0.06); setTimeout(() => playTone(660, 0.15, 'square', 0.05), 80) },
+  relay()    { playTone(523, 0.12, 'triangle', 0.08); setTimeout(() => playTone(784, 0.2, 'triangle', 0.07), 100); setTimeout(() => playTone(1047, 0.25, 'sine', 0.05), 200) },
+  corrupt()  { playTone(80, 0.2, 'sawtooth', 0.06); playTone(95, 0.15, 'sawtooth', 0.04) },
+  loopEnd()  { playTone(330, 0.3, 'sine', 0.07); setTimeout(() => playTone(220, 0.4, 'sine', 0.05), 200) },
+  win()      { [523,659,784,1047].forEach((f,i) => setTimeout(() => playTone(f, 0.3, 'sine', 0.06), i*120)) },
+  warn()     { playTone(200, 0.15, 'square', 0.05); setTimeout(() => playTone(180, 0.15, 'square', 0.04), 120) },
+}
+
+// ── TOUCH SUPPORT ─────────────────────────────────────────────
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+if (isTouchDevice) document.getElementById('touch-pad').classList.add('active')
+
+function tMove(dx, dy) {
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  if (G.state !== 'playing') return
+  if (G.player.move(dx, dy, G.world)) onStep()
+}
+function tInteract() {
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  if (G.state !== 'playing') return
+  interact()
+}
 
 const TILE = 20
 const COLS = 32
@@ -582,6 +667,7 @@ window.addEventListener('keydown', e => {
   }
   if (moves[e.key]) {
     e.preventDefault()
+    if (audioCtx.state === 'suspended') audioCtx.resume()
     const [dx, dy] = moves[e.key]
     if (G.player.move(dx, dy, G.world)) {
       onStep()
@@ -639,9 +725,10 @@ function onStep() {
 
   if (frag && !frag.collected) {
     collectFragment(frag)
-  }
-  if (rel && !rel.collected) {
+  } else if (rel && !rel.collected) {
     collectRelay(rel)
+  } else {
+    SFX.step()
   }
 
   // Context drain check
@@ -650,6 +737,8 @@ function onStep() {
     endLoop(false)
     return
   }
+  // Low context warning
+  if (G.context === Math.floor(level.contextMax * 0.25)) SFX.warn()
 
   updateCamera()
   updateHUD()
@@ -672,6 +761,9 @@ function collectFragment(frag) {
   G.collectedFrags++
   if (frag.verified) G.verifiedFrags++
   G.score += frag.points
+  if (frag.type === 'corrupted') SFX.corrupt()
+  else if (frag.type === 'warning') SFX.warn()
+  else SFX.collect()
   spawnParticles(frag.x, frag.y, frag.color, frag.type === 'corrupted' ? 4 : 8)
   setMsg(frag.text || ('"' + frag.type + '" fragment collected.'))
   updateHUD()
@@ -683,6 +775,7 @@ function collectRelay(rel) {
   rel.collected = true
   G.relayCollected++
   G.score += 25
+  SFX.relay()
   spawnParticles(rel.x, rel.y, C.sky, 12)
   setMsg(rel.text)
   setHint('Relay fragment secured +25 pts')
@@ -709,6 +802,7 @@ function endLoop(success) {
   if (!success) {
     // Context overflow — game over
     G.state = 'over'
+    SFX.loopEnd()
     document.getElementById('scr-over').classList.remove('hidden')
     const lo = G.loopScores
     document.getElementById('so-msg').textContent =
@@ -729,6 +823,7 @@ function endLoop(success) {
   if (G.loopIdx >= LEVELS.length) {
     // All loops complete — win
     G.state = 'win'
+    SFX.win()
     document.getElementById('scr-win').classList.remove('hidden')
     const total = G.loopScores.reduce((a, b) => a + b.score, 0)
     document.getElementById('sw-msg').textContent =
@@ -737,6 +832,7 @@ function endLoop(success) {
   }
 
   // Loop complete, show summary
+  SFX.loopEnd()
   G.state = 'loop-end'
   document.getElementById('scr-loop').classList.remove('hidden')
   document.getElementById('sl-num').textContent = G.loopIdx
@@ -975,9 +1071,44 @@ const R = {
   },
 }
 
+// ── MINIMAP ───────────────────────────────────────────────────
+const miniCanvas = document.getElementById('minimap')
+const miniCtx = miniCanvas.getContext('2d')
+
+function drawMinimap() {
+  if (!G.world || G.state === 'title') return
+  miniCtx.fillStyle = 'rgba(13,11,18,0.9)'
+  miniCtx.fillRect(0, 0, 64, 48)
+  const sx = 64 / COLS, sy = 48 / ROWS
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (G.world.tiles[y][x] === 1) {
+        miniCtx.fillStyle = '#1a1728'
+        miniCtx.fillRect(x * sx, y * sy, sx, sy)
+      }
+    }
+  }
+  // Uncollected fragments
+  G.world.fragments.forEach(f => {
+    if (f.collected) return
+    miniCtx.fillStyle = f.color
+    miniCtx.fillRect(f.x * sx, f.y * sy, Math.max(sx, 1.5), Math.max(sy, 1.5))
+  })
+  // Uncollected relays
+  G.world.relay.forEach(r => {
+    if (r.collected) return
+    miniCtx.fillStyle = C.sky
+    miniCtx.fillRect(r.x * sx - 0.5, r.y * sy - 0.5, sx + 1, sy + 1)
+  })
+  // Player
+  miniCtx.fillStyle = '#fff'
+  miniCtx.fillRect(G.player.x * sx - 0.5, G.player.y * sy - 0.5, sx + 1, sy + 1)
+}
+
 // ── MAIN LOOP ─────────────────────────────────────────────────
 function loop() {
   R.draw()
+  drawMinimap()
   requestAnimationFrame(loop)
 }
 
