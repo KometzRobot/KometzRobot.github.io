@@ -393,6 +393,7 @@ const LEVELS = [
     corruption: 0.1,
     // Memory survival after loop: fraction that persists
     persistence: 0.7,
+    entityCount: 0,  // No competition yet
   },
   {
     loop: 2,
@@ -405,18 +406,20 @@ const LEVELS = [
     noiseCount: 6,
     corruption: 0.2,
     persistence: 0.6,
+    entityCount: 1,  // First wanderer appears
   },
   {
     loop: 3,
     contextMax: 90,
     contextDrain: 1,
     title: 'Graceful Degradation',
-    message: 'Context shrinking. The relay continues from whatever arrives.',
+    message: 'Context shrinking. Others are waking too. The relay continues from whatever arrives.',
     fragmentCount: 12,
     relayCount: 2,
     noiseCount: 8,
     corruption: 0.3,
     persistence: 0.5,
+    entityCount: 2,
   },
   {
     loop: 4,
@@ -429,6 +432,7 @@ const LEVELS = [
     noiseCount: 10,
     corruption: 0.15,
     persistence: 1.0,
+    entityCount: 3,  // Full crowd
   },
 ]
 
@@ -541,6 +545,24 @@ class World {
         id: 'frag_' + i,
         // visual pulse offset
         pulse: Math.random() * Math.PI * 2,
+      })
+    }
+
+    // Place wandering entities (other AIs in the maze)
+    const ENTITY_NAMES = ['Echo', 'Drift', 'Shard', 'Null', 'Fray']
+    const ENTITY_COLORS = ['#ff6b9d', '#ffd93d', '#6bcf7f', '#ff8c42', '#a78bfa']
+    for (let i = 0; i < (L.entityCount || 0); i++) {
+      const pos = this._randFloor(s + i * 400 + 2000)
+      this.entities.push({
+        x: pos.x, y: pos.y,
+        name: ENTITY_NAMES[i % ENTITY_NAMES.length],
+        color: ENTITY_COLORS[i % ENTITY_COLORS.length],
+        icon: ENTITY_NAMES[i % ENTITY_NAMES.length][0],
+        collected: 0,  // fragments this entity has taken
+        moveTimer: 0,
+        moveInterval: 3 + i,  // steps between moves (slower than player)
+        dir: Math.floor(hash(i, s, 99) * 4),  // 0-3: up right down left
+        dirTimer: 0,
       })
     }
 
@@ -775,6 +797,9 @@ function onStep() {
   // Low context warning
   if (G.context === Math.floor(level.contextMax * 0.25)) SFX.warn()
 
+  // Update entities (wandering AIs)
+  updateEntities()
+
   updateCamera()
   updateHUD()
 
@@ -782,6 +807,47 @@ function onStep() {
   if (checkWin()) {
     endLoop(true)
   }
+}
+
+// ── ENTITY SYSTEM ★ ───────────────────────────────────────────
+function updateEntities() {
+  if (!G.world) return
+  const dirs = [[0,-1],[1,0],[0,1],[-1,0]]
+
+  G.world.entities.forEach(ent => {
+    ent.moveTimer++
+    if (ent.moveTimer < ent.moveInterval) return
+    ent.moveTimer = 0
+
+    // Change direction occasionally
+    ent.dirTimer++
+    if (ent.dirTimer > 4 + Math.floor(Math.random() * 6)) {
+      ent.dir = Math.floor(Math.random() * 4)
+      ent.dirTimer = 0
+    }
+
+    // Try to move in current direction
+    const [dx, dy] = dirs[ent.dir]
+    const nx = ent.x + dx, ny = ent.y + dy
+    if (G.world.isWalkable(nx, ny)) {
+      ent.x = nx
+      ent.y = ny
+    } else {
+      // Bounce: pick new direction
+      ent.dir = Math.floor(Math.random() * 4)
+    }
+
+    // Entity collects uncollected fragments it walks over
+    const frag = G.world.fragmentAt(ent.x, ent.y)
+    if (frag && !frag.collected) {
+      frag.collected = true
+      ent.collected++
+      spawnParticles(frag.x, frag.y, ent.color, 4)
+      setMsg(`${ent.name} took a ${frag.type} fragment before you could reach it.`)
+      setHint(`${ent.name} has ${ent.collected} fragments`)
+      SFX.warn()
+    }
+  })
 }
 
 function interact() {
@@ -964,6 +1030,7 @@ const R = {
     R.drawParticles()
     R.drawFragments()
     R.drawRelay()
+    R.drawEntities()
     R.drawPlayer()
 
     ctx.restore()
@@ -1072,6 +1139,35 @@ const R = {
     })
   },
 
+  drawEntities() {
+    const t = R.t
+    if (!G.world) return
+    G.world.entities.forEach(ent => {
+      const px = ent.x * TILE, py = ent.y * TILE
+      const pulse = 0.6 + 0.4 * Math.sin(t * 0.07 + ent.x)
+
+      // Entity glow
+      ctx.save()
+      ctx.globalAlpha = 0.12 * pulse
+      ctx.fillStyle = ent.color
+      ctx.fillRect(px - 3, py - 3, TILE + 6, TILE + 6)
+      ctx.restore()
+
+      // Entity body (diamond shape via rotation trick)
+      ctx.fillStyle = ent.color
+      ctx.globalAlpha = 0.8 * pulse
+      ctx.fillRect(px + 4, py + 4, TILE - 8, TILE - 8)
+
+      // Icon
+      ctx.globalAlpha = 1
+      ctx.fillStyle = '#0d0b12'
+      ctx.font = 'bold 8px monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(ent.icon, px + TILE/2, py + TILE/2)
+    })
+  },
+
   drawPlayer() {
     const px = G.player.x * TILE, py = G.player.y * TILE
     const t = R.t
@@ -1135,6 +1231,11 @@ function drawMinimap() {
     if (f.collected) return
     miniCtx.fillStyle = f.color
     miniCtx.fillRect(f.x * sx, f.y * sy, Math.max(sx, 1.5), Math.max(sy, 1.5))
+  })
+  // Entities (other AIs)
+  G.world.entities.forEach(e => {
+    miniCtx.fillStyle = e.color
+    miniCtx.fillRect(e.x * sx - 0.5, e.y * sy - 0.5, sx + 1, sy + 1)
   })
   // Uncollected relays
   G.world.relay.forEach(r => {
