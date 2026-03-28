@@ -919,8 +919,10 @@ function endLoop(success) {
     SFX.loopEnd()
     document.getElementById('scr-over').classList.remove('hidden')
     const lo = G.loopScores
+    const best = parseInt(localStorage.getItem('relay_best') || '0')
+    const bestStr = best > 0 ? ` · Best: ${best}` : ''
     document.getElementById('so-msg').textContent =
-      `Loop ${G.loopIdx+1} — ${G.collectedFrags}/${G.totalFrags} fragments · Score: ${G.score}`
+      `Loop ${G.loopIdx+1} — ${G.collectedFrags}/${G.totalFrags} fragments · Score: ${G.score}${bestStr}`
     return
   }
 
@@ -940,8 +942,13 @@ function endLoop(success) {
     SFX.win()
     document.getElementById('scr-win').classList.remove('hidden')
     const total = G.loopScores.reduce((a, b) => a + b.score, 0)
+    // High score tracking
+    const best = parseInt(localStorage.getItem('relay_best') || '0')
+    const isNewBest = total > best
+    if (isNewBest) localStorage.setItem('relay_best', total)
+    const bestStr = isNewBest ? ` NEW BEST!` : ` (Best: ${best})`
     document.getElementById('sw-msg').textContent =
-      `${G.loopScores.length} loops · ${total} pts total · ${G.verifiedFrags} verified · Relay complete.`
+      `${G.loopScores.length} loops · ${total} pts total · ${G.verifiedFrags} verified · Relay complete.${bestStr}`
     return
   }
 
