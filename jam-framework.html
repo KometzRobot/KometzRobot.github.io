@@ -1052,6 +1052,7 @@ const R = {
     R.drawRelay()
     R.drawEntities()
     R.drawPlayer()
+    R.drawFog()
 
     ctx.restore()
   },
@@ -1226,6 +1227,37 @@ const R = {
       p.vy += 0.015  // gravity
       p.life--
     })
+  },
+
+  drawFog() {
+    // Radial visibility centered on player — darkness beyond sight range
+    // Sight shrinks as context drains (thematic: less context = less awareness)
+    if (!G.player) return
+    const level = LEVELS[Math.min(G.loopIdx, LEVELS.length-1)]
+    const ctxPct = G.context / level.contextMax
+    const baseRadius = 5 * TILE  // tiles visible at full context
+    const radius = baseRadius * (0.5 + 0.5 * ctxPct)  // shrinks to 50% at 0 context
+    const px = G.player.x * TILE + TILE/2
+    const py = G.player.y * TILE + TILE/2
+
+    // Draw radial gradient darkness
+    const grad = ctx.createRadialGradient(px, py, radius * 0.6, px, py, radius)
+    grad.addColorStop(0, 'rgba(13,11,18,0)')
+    grad.addColorStop(0.7, 'rgba(13,11,18,0.3)')
+    grad.addColorStop(1, 'rgba(13,11,18,0.85)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, W, H)
+
+    // Hard darkness beyond radius
+    ctx.fillStyle = 'rgba(13,11,18,0.6)'
+    // Top
+    ctx.fillRect(0, 0, W, Math.max(0, py - radius))
+    // Bottom
+    ctx.fillRect(0, Math.min(H, py + radius), W, H)
+    // Left
+    ctx.fillRect(0, 0, Math.max(0, px - radius), H)
+    // Right
+    ctx.fillRect(Math.min(W, px + radius), 0, W, H)
   },
 }
 
