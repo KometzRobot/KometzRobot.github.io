@@ -634,6 +634,39 @@ const G = {
   time: 0,
   particles: [],
   camera: { x: 0, y: 0 },
+  shake: 0,
+  ambientStarted: false,
+}
+
+// ── SCREEN SHAKE ──────────────────────────────────────────────
+function screenShake(intensity = 4, duration = 8) {
+  G.shake = Math.max(G.shake, duration)
+  G.shakeIntensity = intensity
+}
+
+// ── AMBIENT DRONE ★ ───────────────────────────────────────────
+let ambientOsc1, ambientOsc2, ambientGain
+function startAmbient() {
+  if (G.ambientStarted) return
+  G.ambientStarted = true
+  ambientGain = audioCtx.createGain()
+  ambientGain.gain.setValueAtTime(0.015, audioCtx.currentTime)
+  ambientGain.connect(audioCtx.destination)
+
+  ambientOsc1 = audioCtx.createOscillator()
+  ambientOsc1.type = 'sine'
+  ambientOsc1.frequency.setValueAtTime(55, audioCtx.currentTime) // low A
+  ambientOsc1.connect(ambientGain)
+  ambientOsc1.start()
+
+  ambientOsc2 = audioCtx.createOscillator()
+  ambientOsc2.type = 'sine'
+  ambientOsc2.frequency.setValueAtTime(82.4, audioCtx.currentTime) // low E
+  const gain2 = audioCtx.createGain()
+  gain2.gain.setValueAtTime(0.01, audioCtx.currentTime)
+  ambientOsc2.connect(gain2)
+  gain2.connect(audioCtx.destination)
+  ambientOsc2.start()
 }
 
 // ── PARTICLES ★ ───────────────────────────────────────────────
@@ -682,6 +715,8 @@ window.addEventListener('keydown', e => {
 
 // ── GAME LOGIC ────────────────────────────────────────────────
 function startGame() {
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  startAmbient()
   G.loopIdx = 0
   G.score = 0
   G.persistedFragments = []
@@ -761,7 +796,7 @@ function collectFragment(frag) {
   G.collectedFrags++
   if (frag.verified) G.verifiedFrags++
   G.score += frag.points
-  if (frag.type === 'corrupted') SFX.corrupt()
+  if (frag.type === 'corrupted') { SFX.corrupt(); screenShake(6, 12) }
   else if (frag.type === 'warning') SFX.warn()
   else SFX.collect()
   spawnParticles(frag.x, frag.y, frag.color, frag.type === 'corrupted' ? 4 : 8)
@@ -911,8 +946,15 @@ const R = {
 
     if (!G.world || G.state === 'title') return
 
-    const cx = Math.floor(G.camera.x)
-    const cy = Math.floor(G.camera.y)
+    let cx = Math.floor(G.camera.x)
+    let cy = Math.floor(G.camera.y)
+    // Screen shake offset
+    if (G.shake > 0) {
+      const i = G.shakeIntensity * (G.shake / 12)
+      cx += (Math.random() - 0.5) * i * 2
+      cy += (Math.random() - 0.5) * i * 2
+      G.shake--
+    }
 
     // Save/restore for camera offset
     ctx.save()
