@@ -242,6 +242,13 @@ canvas{
       <div class="t-btn" ontouchstart="tMove(0,1)" onclick="tMove(0,1)">&#9660;</div>
       <div class="t-btn blank"></div>
     </div>
+    <!-- PAUSE SCREEN -->
+    <div class="screen hidden" id="scr-pause">
+      <h2>loop suspended</h2>
+      <h1>Paused</h1>
+      <p>The context window holds. Press ESC or P to resume.</p>
+      <button class="btn" onclick="G.state='playing';document.getElementById('scr-pause').classList.add('hidden')">Resume</button>
+    </div>
     <!-- TITLE SCREEN -->
     <div class="screen" id="scr-title">
       <h2>an ai game jam framework</h2>
@@ -726,6 +733,18 @@ function spawnParticles(wx, wy, color, count = 8) {
 const KEYS = {}
 window.addEventListener('keydown', e => {
   KEYS[e.key] = true
+  // Pause toggle
+  if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && (G.state === 'playing' || G.state === 'paused')) {
+    e.preventDefault()
+    if (G.state === 'paused') {
+      G.state = 'playing'
+      document.getElementById('scr-pause').classList.add('hidden')
+    } else {
+      G.state = 'paused'
+      document.getElementById('scr-pause').classList.remove('hidden')
+    }
+    return
+  }
   if (G.state !== 'playing') return
   // Movement
   const moves = {
