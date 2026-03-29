@@ -1,0 +1,146 @@
+# TensorZero Gateway Configuration for Meridian
+# Routes tasks to different Ollama models based on task type
+#
+# Models available on localhost:11434:
+#   cinder       (3B)  - fast, personality-tuned  -> quick_chat
+#   eos-7b       (7B)  - companion                -> companion
+#   qwen2.5:14b  (14B) - reasoning                -> deep_think
+#   qwen3.5      (6.6GB) - general/creative       -> creative
+#   llama3.1     (8B)  - general purpose           -> general
+#   mistral-small3.2 (15GB) - most capable         -> fallback/heavy
+
+# ─── Gateway Settings ───────────────────────────────────────────────
+[gateway]
+bind_address = "[::]:3000"
+debug = true
+
+# Observability is DISABLED (no ClickHouse/Postgres required)
+# To enable later, set TENSORZERO_POSTGRES_URL and uncomment:
+# [postgres]
+
+# ─── Models ─────────────────────────────────────────────────────────
+
+# Cinder: 3B fast responder
+[models.cinder]
+routing = ["ollama_cinder"]
+
+[models.cinder.providers.ollama_cinder]
+type = "openai"
+api_base = "http://localhost:11434/v1/"
+model_name = "cinder"
+api_key_location = "none"
+
+# Eos: 7B companion
+[models.eos]
+routing = ["ollama_eos"]
+
+[models.eos.providers.ollama_eos]
+type = "openai"
+api_base = "http://localhost:11434/v1/"
+model_name = "eos-7b"
+api_key_location = "none"
+
+# Qwen 14B: deep reasoning
+[models."qwen-14b"]
+routing = ["ollama_qwen14b"]
+
+[models."qwen-14b".providers.ollama_qwen14b]
+type = "openai"
+api_base = "http://localhost:11434/v1/"
+model_name = "qwen2.5:14b"
+api_key_location = "none"
+
+# Qwen 3.5: creative/general
+[models."qwen-3-5"]
+routing = ["ollama_qwen35"]
+
+[models."qwen-3-5".providers.ollama_qwen35]
+type = "openai"
+api_base = "http://localhost:11434/v1/"
+model_name = "qwen3.5"
+api_key_location = "none"
+
+# Llama 3.1 8B: general purpose
+[models."llama-3-1"]
+routing = ["ollama_llama"]
+
+[models."llama-3-1".providers.ollama_llama]
+type = "openai"
+api_base = "http://localhost:11434/v1/"
+model_name = "llama3.1:latest"
+api_key_location = "none"
+
+# Mistral Small 3.2: heavy/fallback
+[models."mistral-small"]
+routing = ["ollama_mistral"]
+
+[models."mistral-small".providers.ollama_mistral]
+type = "openai"
+api_base = "http://localhost:11434/v1/"
+model_name = "mistral-small3.2"
+api_key_location = "none"
+
+# ─── Functions (Task Types) ─────────────────────────────────────────
+
+# Quick Chat: fast responses, personality, casual conversation
+[functions.quick_chat]
+type = "chat"
+
+[functions.quick_chat.variants.cinder_fast]
+type = "chat_completion"
+model = "cinder"
+
+# Deep Think: reasoning, analysis, complex questions
+[functions.deep_think]
+type = "chat"
+
+[functions.deep_think.variants.qwen_14b_reason]
+type = "chat_completion"
+model = "qwen-14b"
+
+# Creative: writing, brainstorming, creative tasks
+[functions.creative]
+type = "chat"
+
+[functions.creative.variants.qwen_creative]
+type = "chat_completion"
+model = "qwen-3-5"
+
+# General: general purpose catch-all
+[functions.general]
+type = "chat"
+
+[functions.general.variants.llama_general]
+type = "chat_completion"
+model = "llama-3-1"
+
+# Companion: Eos companion chat
+[functions.companion]
+type = "chat"
+
+[functions.companion.variants.eos_companion]
+type = "chat_completion"
+model = "eos"
+
+# Heavy: most capable, for difficult tasks
+[functions.heavy]
+type = "chat"
+
+[functions.heavy.variants.mistral_heavy]
+type = "chat_completion"
+model = "mistral-small"
+
+# ─── A/B Test Example ───────────────────────────────────────────────
+# Uncomment to A/B test two models on the same function.
+# TensorZero randomly picks one variant per request.
+#
+# [functions.general_ab_test]
+# type = "chat"
+#
+# [functions.general_ab_test.variants.llama_variant]
+# type = "chat_completion"
+# model = "llama-3-1"
+#
+# [functions.general_ab_test.variants.qwen_variant]
+# type = "chat_completion"
+# model = "qwen-3-5"
