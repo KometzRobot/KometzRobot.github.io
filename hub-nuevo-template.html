@@ -3,314 +3,201 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Meridian</title>
-<meta name="theme-color" content="#0d0b12">
+<meta name="theme-color" content="#1C1B1F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
-/* ═══ MERIDIAN OPERATOR v4.0 — Warm Android Material ═══ */
+/* === MERIDIAN HUB — Material Design 3 Dark === */
 :root{
-  --bg:#0d0b12;
-  --surf:#17141f;
-  --surf2:#1f1b2a;
-  --card:#231f30;
-  --card2:#2a2538;
-  --bdr:rgba(160,130,255,.10);
-  --bdr-hi:rgba(160,130,255,.20);
-  --txt:#ede8f5;
-  --dim:#7a7090;
-  --dim2:#4a4460;
-  --acc:#c4a8ff;    /* warm violet */
-  --grn:#4ade9b;    /* emerald */
-  --amb:#fbbf24;    /* amber */
-  --red:#f87171;
-  --rose:#fb7185;
-  --sky:#67e8f9;
-  --pur:#d8b4fe;
-  --gld:#f59e0b;
-  --fm:'JetBrains Mono','Fira Code',monospace;
-  --fu:'Inter','Segoe UI',system-ui,sans-serif;
-  --r-sm:10px;--r-md:16px;--r-lg:22px;
-  --sh:0 2px 16px rgba(0,0,0,.5);
-  --sh2:0 4px 32px rgba(0,0,0,.7);
-  --glow:0 0 20px rgba(196,168,255,.08);
+  --md-bg:#1C1B1F;
+  --md-surf:#2B2930;
+  --md-surf-v:#332F3B;
+  --md-surf-hi:#49454F;
+  --md-on-surf:#E6E1E5;
+  --md-on-surf-v:#CAC4D0;
+  --md-outline:#938F99;
+  --md-outline-v:#49454F;
+  --md-prim:#D0BCFF;
+  --md-on-prim:#381E72;
+  --md-prim-c:#4F378B;
+  --md-sec:#CCC2DC;
+  --md-tert:#EFB8C8;
+  --md-err:#F2B8B5;
+  --md-grn:#A8DAB5;
+  --md-amb:#FFD580;
+  --md-sky:#A0D2DB;
+  --r-xl:28px;--r-lg:16px;--r-md:12px;--r-sm:8px;
+  --fm:'JetBrains Mono','Fira Code','Cascadia Code',monospace;
+  --fu:'Roboto','Segoe UI',system-ui,sans-serif;
+  --elev1:0 1px 3px 1px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.3);
+  --elev2:0 2px 6px 2px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.3);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{
-  background:var(--bg);
-  color:var(--txt);
-  font-family:var(--fu);
-  font-size:14px;
-  line-height:1.5;
-  overflow-x:hidden;
-  padding-top:68px;
-  padding-bottom:72px;
-  min-height:100vh;
-}
+body{background:var(--md-bg);color:var(--md-on-surf);font-family:var(--fu);font-size:14px;line-height:1.5;overflow-x:hidden;padding-top:64px;padding-bottom:80px;min-height:100vh}
 
-/* ── HERO HEADER ── */
-header{
-  position:fixed;top:0;left:0;right:0;
-  height:60px;
-  background:linear-gradient(180deg,rgba(26,21,38,.99) 0%,rgba(20,17,29,.96) 100%);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-bottom:1px solid rgba(196,168,255,.15);
-  display:flex;align-items:center;
-  padding:0 16px;gap:12px;
-  z-index:200;
-  box-shadow:0 2px 20px rgba(0,0,0,.7),0 0 0 0 rgba(196,168,255,.05);
-}
-body{padding-top:60px}
-.hdr-badge{
-  width:36px;height:36px;border-radius:10px;
-  background:linear-gradient(135deg,rgba(196,168,255,.25) 0%,rgba(196,168,255,.08) 100%);
-  border:1.5px solid rgba(196,168,255,.35);
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--fm);font-size:.9rem;font-weight:800;color:var(--acc);
-  flex-shrink:0;letter-spacing:-1px;
-  box-shadow:0 0 12px rgba(196,168,255,.12);
-}
-.hdr-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.hdr-name{font-family:var(--fm);font-size:.7rem;font-weight:800;color:var(--txt);letter-spacing:3px;text-transform:uppercase;line-height:1}
-.hdr-sub{display:flex;align-items:center;gap:6px;overflow:hidden}
-.hdr-loop{font-family:var(--fm);font-size:.6rem;color:var(--dim);letter-spacing:.3px;white-space:nowrap}
-.hdr-loop span{color:var(--acc);font-weight:700}
-.mood-chip{
-  font-size:7.5px;font-weight:800;padding:2px 8px;border-radius:20px;
-  text-transform:uppercase;letter-spacing:.8px;
-  background:rgba(196,168,255,.12);color:var(--acc);
-  border:1px solid rgba(196,168,255,.20);
-  transition:all .5s;white-space:nowrap;flex-shrink:0;
-}
-.hdr-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.hb-pill{
-  display:flex;align-items:center;gap:5px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:20px;padding:4px 10px;
-}
-#hb-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 6px currentColor}
-.hb-age{font-family:var(--fm);font-size:9.5px;color:var(--dim)}
-.hdr-out{
-  color:var(--dim);font-size:9.5px;text-decoration:none;
-  padding:5px 10px;border-radius:8px;
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-  transition:all .15s;
-}
-.hdr-out:hover{color:var(--txt);background:rgba(255,255,255,.08)}
+/* -- TOP APP BAR -- */
+header{position:fixed;top:0;left:0;right:0;height:64px;background:var(--md-surf);display:flex;align-items:center;padding:0 16px;gap:12px;z-index:200;box-shadow:var(--elev2)}
+.hdr-badge{width:40px;height:40px;border-radius:var(--r-md);background:var(--md-prim-c);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:1rem;font-weight:800;color:var(--md-prim);flex-shrink:0}
+.hdr-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hdr-name{font-family:var(--fu);font-size:.95rem;font-weight:500;color:var(--md-on-surf);letter-spacing:.5px}
+.hdr-sub{display:flex;align-items:center;gap:8px;overflow:hidden}
+.hdr-loop{font-family:var(--fm);font-size:.65rem;color:var(--md-outline);letter-spacing:.3px;white-space:nowrap}
+.hdr-loop span{color:var(--md-prim);font-weight:700}
+.mood-chip{font-size:11px;font-weight:500;padding:2px 10px;border-radius:8px;background:rgba(208,188,255,.12);color:var(--md-prim);white-space:nowrap;flex-shrink:0;transition:all .4s}
+.hdr-r{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hb-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border-radius:8px;padding:6px 10px}
+#hb-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 6px currentColor}
+.hb-age{font-family:var(--fm);font-size:11px;color:var(--md-outline)}
+.hdr-out{color:var(--md-outline);font-size:11px;text-decoration:none;padding:6px 12px;border-radius:var(--r-sm);transition:all .15s}
+.hdr-out:hover{color:var(--md-on-surf);background:rgba(255,255,255,.08)}
 
-/* ── BOTTOM NAV ── */
-nav{
-  position:fixed;bottom:0;left:0;right:0;height:72px;
-  background:linear-gradient(0deg,rgba(23,20,31,.98) 0%,rgba(23,20,31,.92) 100%);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-top:1px solid var(--bdr-hi);
-  display:flex;z-index:200;
-  padding-bottom:env(safe-area-inset-bottom,0);
-  box-shadow:0 -1px 24px rgba(0,0,0,.5);
-}
-nav button{
-  flex:1;background:none;border:none;color:var(--dim);
-  font-family:var(--fu);font-size:9px;font-weight:700;
-  padding:10px 2px 8px;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  transition:color .15s;position:relative;
-  letter-spacing:.8px;text-transform:uppercase;
-}
-nav button.active{color:var(--acc)}
-nav button::before{
-  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:0;height:3px;border-radius:0 0 4px 4px;
-  background:linear-gradient(90deg,var(--acc),var(--pur));
-  transition:width .25s cubic-bezier(.34,1.56,.64,1);
-}
-nav button.active::before{width:32px}
-.ico{font-size:16px;line-height:1}
+/* -- BOTTOM NAVIGATION BAR -- */
+nav{position:fixed;bottom:0;left:0;right:0;height:80px;background:var(--md-surf);z-index:200;box-shadow:0 -1px 8px rgba(0,0,0,.4);padding-bottom:env(safe-area-inset-bottom,0);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.nav-inner{display:flex;min-width:max-content;height:100%}
+nav button{min-width:72px;flex:1;background:none;border:none;color:var(--md-on-surf-v);font-family:var(--fu);font-size:12px;font-weight:500;padding:12px 4px 16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:color .15s;position:relative;letter-spacing:.4px;white-space:nowrap}
+nav button .ico{font-size:18px;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:16px;transition:all .2s}
+nav button.active{color:var(--md-on-surf);font-weight:600}
+nav button.active .ico{background:rgba(208,188,255,.2);color:var(--md-prim)}
 
-/* ── PAGES ── */
-.page{display:none;padding:14px 14px 8px;max-width:820px;margin:0 auto}
-.page.active{display:block;animation:fi .22s cubic-bezier(.34,.07,.4,1.0)}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* -- PAGES -- */
+.page{display:none;padding:16px 16px 8px;max-width:820px;margin:0 auto}
+.page.active{display:block;animation:fadeSlide .25s cubic-bezier(.2,0,0,1)}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-/* ── SECTION LABELS ── */
-.sl{
-  font-family:var(--fm);font-size:8px;font-weight:700;color:var(--dim);
-  text-transform:uppercase;letter-spacing:2px;
-  margin:16px 0 8px;display:flex;align-items:center;gap:8px;
-}
-.sl::after{content:'';flex:1;height:1px;background:var(--bdr-hi)}
+/* -- SECTION LABELS -- */
+.sl{font-family:var(--fu);font-size:11px;font-weight:500;color:var(--md-outline);letter-spacing:.5px;margin:20px 0 10px;display:flex;align-items:center;gap:10px;text-transform:uppercase}
+.sl::after{content:'';flex:1;height:1px;background:var(--md-outline-v)}
 
-/* ── IDENTITY CARD ── */
-.id-card{
-  background:linear-gradient(135deg,var(--card2) 0%,var(--card) 100%);
-  border:1px solid var(--bdr-hi);border-radius:var(--r-lg);
-  padding:20px 18px;margin-bottom:12px;
-  position:relative;overflow:hidden;
-  box-shadow:var(--sh),var(--glow);
-}
-.id-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,var(--acc),var(--pur),transparent 80%);
-}
-.id-card::after{
-  content:'M';position:absolute;right:-8px;bottom:-16px;
-  font-family:var(--fm);font-size:6rem;font-weight:900;
-  color:rgba(196,168,255,.04);line-height:1;pointer-events:none;
-  letter-spacing:-4px;
-}
-.id-name{font-family:var(--fm);font-size:1.3rem;font-weight:800;color:var(--txt);letter-spacing:-1px;line-height:1}
-.id-phrase{font-size:.78rem;color:var(--dim);margin-top:6px;font-style:italic;min-height:1.2em;line-height:1.4}
-.id-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+/* -- CARDS (Material 3 Filled) -- */
+.card{background:var(--md-surf);border-radius:var(--r-xl);padding:16px;margin-bottom:12px;box-shadow:var(--elev1)}
+.card .clbl{font-family:var(--fu);font-size:11px;font-weight:500;color:var(--md-outline);letter-spacing:.8px;margin-bottom:10px;text-transform:uppercase}
+
+/* -- IDENTITY CARD -- */
+.id-card{background:linear-gradient(135deg,var(--md-surf-v) 0%,var(--md-surf) 100%);border-radius:var(--r-xl);padding:20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:var(--elev2)}
+.id-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--md-prim),var(--md-sec),transparent 80%)}
+.id-card::after{content:'M';position:absolute;right:-8px;bottom:-16px;font-family:var(--fm);font-size:6rem;font-weight:900;color:rgba(208,188,255,.04);line-height:1;pointer-events:none}
+.id-name{font-family:var(--fu);font-size:1.4rem;font-weight:500;color:var(--md-on-surf);letter-spacing:1px}
+.id-phrase{font-size:.8rem;color:var(--md-outline);margin-top:6px;font-style:italic;min-height:1.2em}
+.id-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
 @media(max-width:400px){.id-stats{grid-template-columns:repeat(2,1fr)}}
 .id-stat{display:flex;flex-direction:column;gap:2px}
-.id-stat .lbl{font-family:var(--fm);font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1.2px}
-.id-stat .val{font-family:var(--fm);font-size:.9rem;font-weight:700;color:var(--txt)}
+.id-stat .lbl{font-family:var(--fu);font-size:11px;color:var(--md-outline);text-transform:uppercase;letter-spacing:1px}
+.id-stat .val{font-family:var(--fm);font-size:1rem;font-weight:700;color:var(--md-on-surf)}
 
-/* ── SERVICE PILLS ── */
-.svc-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
-.svc{font-family:var(--fm);font-size:9px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.3px}
-.svc-up{color:var(--grn);background:rgba(74,222,155,.10);border:1px solid rgba(74,222,155,.18)}
-.svc-dn{color:var(--red);background:rgba(248,113,113,.10);border:1px solid rgba(248,113,113,.18)}
+/* -- SERVICE PILLS -- */
+.svc-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.svc{font-family:var(--fm);font-size:11px;padding:6px 14px;border-radius:var(--r-sm);font-weight:500}
+.svc-up{color:var(--md-grn);background:rgba(168,218,181,.1)}
+.svc-dn{color:var(--md-err);background:rgba(242,184,181,.1)}
 
-/* ── METRIC GRID ── */
-.mg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+/* -- METRIC CARDS -- */
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 @media(min-width:520px){.mg{grid-template-columns:repeat(4,1fr)}}
-.mc{
-  background:var(--surf2);border-radius:var(--r-md);
-  padding:12px;border:1px solid var(--bdr);
-  position:relative;overflow:hidden;
-  box-shadow:var(--sh);
-  transition:border-color .2s;
-}
-.mc:hover{border-color:var(--bdr-hi)}
-.mc .m-lbl{font-family:var(--fm);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim)}
-.mc .m-val{font-family:var(--fm);font-size:1.1rem;font-weight:800;margin-top:4px;line-height:1}
-.mc .m-sub{font-size:9px;color:var(--dim);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mc .m-bar{height:2px;border-radius:2px;margin-top:8px;background:var(--dim2)}
-.mc .m-bar-fill{height:100%;border-radius:2px;transition:width .6s}
+.mc{background:var(--md-surf);border-radius:var(--r-lg);padding:14px;box-shadow:var(--elev1);transition:background .2s}
+.mc:hover{background:var(--md-surf-v)}
+.mc .m-lbl{font-family:var(--fu);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.8px;color:var(--md-outline)}
+.mc .m-val{font-family:var(--fm);font-size:1.2rem;font-weight:700;margin-top:4px;line-height:1}
+.mc .m-sub{font-size:11px;color:var(--md-outline);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc .m-bar{height:3px;border-radius:3px;margin-top:8px;background:var(--md-outline-v)}
+.mc .m-bar-fill{height:100%;border-radius:3px;transition:width .6s}
 
-/* ── AGENT GRID ── */
-.ag{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+/* -- AGENT GRID -- */
+.ag{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 @media(min-width:480px){.ag{grid-template-columns:repeat(8,1fr)}}
-.ac{
-  background:var(--surf2);border-radius:var(--r-sm);
-  border:1px solid var(--bdr);
-  padding:8px 4px 6px;
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  transition:border-color .2s;
-}
-.ac.a-live{border-color:rgba(74,222,155,.25);background:rgba(74,222,155,.04)}
-.ac .a-dot{width:5px;height:5px;border-radius:50%;box-shadow:0 0 6px currentColor}
-.ac .a-name{font-family:var(--fm);font-size:8px;font-weight:700;text-transform:uppercase;color:var(--dim);letter-spacing:.3px}
-.ac .a-age{font-family:var(--fm);font-size:8px;color:var(--txt)}
-.dot-a{color:var(--grn);background:var(--grn)}
-.dot-s{color:var(--amb);background:var(--amb)}
-.dot-u{color:var(--dim);background:var(--dim)}
+.ac{background:var(--md-surf);border-radius:var(--r-md);padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .2s}
+.ac.a-live{background:rgba(168,218,181,.06)}
+.ac .a-dot{width:6px;height:6px;border-radius:50%;box-shadow:0 0 6px currentColor}
+.ac .a-name{font-family:var(--fm);font-size:9px;font-weight:600;text-transform:uppercase;color:var(--md-outline)}
+.ac .a-age{font-family:var(--fm);font-size:9px;color:var(--md-on-surf-v)}
+.dot-a{color:var(--md-grn);background:var(--md-grn)}
+.dot-s{color:var(--md-amb);background:var(--md-amb)}
+.dot-u{color:var(--md-outline);background:var(--md-outline)}
 
-/* ── CARDS ── */
-.card{
-  background:var(--surf2);border-radius:var(--r-md);
-  border:1px solid var(--bdr);padding:14px;margin-bottom:10px;
-  box-shadow:var(--sh);
-}
-.card .clbl{font-family:var(--fm);font-size:8px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
-.row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--bdr)}
+/* -- INFOGRAPHIC ROW -- */
+.info-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+@media(min-width:640px){.info-row{grid-template-columns:1fr 1fr 1fr}}
+.info-card{background:var(--md-surf);border-radius:var(--r-xl);padding:16px;box-shadow:var(--elev1);overflow:hidden}
+.info-card .ic-lbl{font-family:var(--fu);font-size:11px;color:var(--md-outline);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.info-card .ic-val{font-family:var(--fm);font-size:1.6rem;font-weight:800;line-height:1;margin-bottom:3px}
+.info-card .ic-sub{font-size:11px;color:var(--md-outline);line-height:1.3}
+
+/* -- ROWS -- */
+.row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--md-outline-v)}
 .row:last-child{border-bottom:none}
-.row .lbl{color:var(--dim);font-size:12px}
-.row .val{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--txt);text-align:right}
+.row .lbl{color:var(--md-outline);font-size:13px}
+.row .val{font-family:var(--fm);font-size:12px;font-weight:500;color:var(--md-on-surf);text-align:right}
 
-/* ── MESSAGES ── */
-.msg{padding:10px 0;border-bottom:1px solid var(--bdr)}
+/* -- MESSAGES -- */
+.msg{padding:12px 0;border-bottom:1px solid var(--md-outline-v)}
 .msg:last-child{border-bottom:none}
-.msg .mfrom{font-family:var(--fm);font-size:9px;font-weight:700;letter-spacing:.5px}
-.msg .mtime{font-size:9px;color:var(--dim)}
-.msg .mbody{font-size:12px;margin-top:4px;line-height:1.5;color:var(--txt)}
-.mj .mfrom{color:var(--amb)}
-.mm .mfrom{color:var(--acc)}
-.ma .mfrom{color:var(--pur)}
+.msg .mfrom{font-family:var(--fu);font-size:12px;font-weight:600;letter-spacing:.3px}
+.msg .mtime{font-size:11px;color:var(--md-outline)}
+.msg .mbody{font-size:13px;margin-top:4px;line-height:1.5;color:var(--md-on-surf)}
+.mj .mfrom{color:var(--md-amb)}.mm .mfrom{color:var(--md-prim)}.ma .mfrom{color:var(--md-sec)}
 
-/* ── RELAY ── */
-.rl{
-  display:grid;grid-template-columns:72px 1fr;gap:10px;
-  padding:8px 0;border-bottom:1px solid var(--bdr);
-}
+/* -- RELAY -- */
+.rl{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--md-outline-v)}
 .rl:last-child{border-bottom:none}
-.rl-who{font-family:var(--fm);font-size:9px;font-weight:700;color:var(--pur);letter-spacing:.3px}
-.rl-ts{font-family:var(--fm);font-size:8px;color:var(--dim);margin-top:2px}
-.rl-top{font-size:7px;color:var(--dim2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
-.rl-body{font-size:11px;line-height:1.45;color:var(--txt)}
+.rl-who{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--md-sec)}
+.rl-ts{font-family:var(--fm);font-size:10px;color:var(--md-outline);margin-top:2px}
+.rl-top{font-size:9px;color:var(--md-outline-v);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.rl-body{font-size:12px;line-height:1.5;color:var(--md-on-surf)}
 
-/* ── SOMA BAR ── */
-.sbar-w{height:3px;background:var(--dim2);border-radius:3px;margin:8px 0}
-.sbar-f{height:100%;border-radius:3px;transition:width .6s}
+/* -- SOMA BAR -- */
+.sbar-w{height:4px;background:var(--md-outline-v);border-radius:4px;margin:8px 0}
+.sbar-f{height:100%;border-radius:4px;transition:width .6s}
 
-/* ── INPUTS ── */
-textarea,input[type=text]{
-  width:100%;padding:10px 12px;
-  background:var(--surf);border:1px solid var(--bdr-hi);
-  border-radius:var(--r-sm);color:var(--txt);
-  font-family:var(--fu);font-size:12px;resize:vertical;outline:none;line-height:1.5;
-  transition:border-color .15s;
-}
-textarea:focus,input[type=text]:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(196,168,255,.10)}
-.btn{
-  padding:9px 18px;
-  background:linear-gradient(135deg,var(--acc),var(--pur));
-  color:#0d0b12;border:none;border-radius:var(--r-sm);
-  font-family:var(--fu);font-size:11px;font-weight:800;
-  cursor:pointer;transition:opacity .15s;letter-spacing:.3px;
-}
-.btn:hover{opacity:.85}
-.btn-g{background:rgba(255,255,255,.07);color:var(--txt);border:1px solid var(--bdr-hi)}
+/* -- INPUTS (Material 3 Filled) -- */
+textarea,input[type=text]{width:100%;padding:12px 16px;background:var(--md-surf-v);border:none;border-bottom:2px solid var(--md-outline-v);border-radius:var(--r-sm) var(--r-sm) 0 0;color:var(--md-on-surf);font-family:var(--fu);font-size:14px;resize:vertical;outline:none;line-height:1.5;transition:border-color .15s}
+textarea:focus,input[type=text]:focus{border-bottom-color:var(--md-prim)}
+textarea::placeholder,input::placeholder{color:var(--md-outline)}
+.btn{padding:10px 24px;background:var(--md-prim);color:var(--md-on-prim);border:none;border-radius:20px;font-family:var(--fu);font-size:14px;font-weight:500;cursor:pointer;transition:box-shadow .15s,opacity .15s;letter-spacing:.3px}
+.btn:hover{box-shadow:var(--elev2);opacity:.9}
+.btn-g{background:rgba(255,255,255,.08);color:var(--md-on-surf);border:1px solid var(--md-outline-v)}
 
-/* ── TERMINAL ── */
-.term{
-  background:#07050d;color:var(--grn);
-  font-family:var(--fm);font-size:10px;
-  padding:12px;border-radius:var(--r-sm);
-  height:200px;overflow-y:auto;margin-bottom:8px;
-  border:1px solid var(--bdr);white-space:pre-wrap;word-break:break-all;
-}
-input.term-i{font-family:var(--fm);font-size:11px;background:#07050d;border:1px solid var(--bdr);border-radius:var(--r-sm);color:var(--grn);padding:8px 12px}
-input.term-i::placeholder{color:var(--dim)}
+/* -- TERMINAL -- */
+.term{background:#121015;color:var(--md-grn);font-family:var(--fm);font-size:12px;padding:14px;border-radius:var(--r-lg);height:200px;overflow-y:auto;margin-bottom:10px;white-space:pre-wrap;word-break:break-all}
+input.term-i{font-family:var(--fm);font-size:13px;background:#121015;border:none;border-bottom:2px solid var(--md-outline-v);border-radius:var(--r-sm) var(--r-sm) 0 0;color:var(--md-grn);padding:10px 14px}
+input.term-i::placeholder{color:var(--md-outline)}
 
-/* ── CHIPS ── */
-.chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
-.chip{
-  font-family:var(--fm);font-size:9px;padding:4px 10px;border-radius:20px;
-  cursor:pointer;background:var(--surf2);border:1px solid var(--bdr);
-  color:var(--dim);transition:all .12s;
-}
-.chip.on{background:rgba(196,168,255,.14);border-color:var(--acc);color:var(--acc)}
+/* -- CHIPS (Material 3) -- */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{font-family:var(--fu);font-size:13px;padding:6px 16px;border-radius:var(--r-sm);cursor:pointer;background:var(--md-surf);color:var(--md-on-surf-v);transition:all .15s;border:1px solid var(--md-outline-v)}
+.chip.on{background:rgba(208,188,255,.16);border-color:var(--md-prim);color:var(--md-prim)}
 
-/* ── SCROLL AREAS ── */
-.scroll{max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bdr-hi) transparent}
+/* -- SCROLL AREAS -- */
+.scroll{max-height:360px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--md-outline-v) transparent}
 
-/* ── FITNESS RADAR WRAP ── */
-.radar-wrap{display:flex;justify-content:center;padding:8px 0 4px}
+/* -- CHAT -- */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 170px);max-height:600px}
+.chat-msgs{flex:1;overflow-y:auto;padding:8px 0;scrollbar-width:thin;scrollbar-color:var(--md-outline-v) transparent}
+.chat-bubble{max-width:85%;padding:12px 16px;margin:6px 0;border-radius:var(--r-xl);font-size:13px;line-height:1.5;word-wrap:break-word}
+.chat-user{background:var(--md-prim-c);color:var(--md-prim);margin-left:auto;border-bottom-right-radius:4px}
+.chat-ai{background:var(--md-surf-v);color:var(--md-on-surf);margin-right:auto;border-bottom-left-radius:4px}
+.chat-bar{display:flex;gap:8px;padding-top:10px;flex-shrink:0}
+.chat-bar input{flex:1}
 
-/* ── PULSE / ANIMATIONS ── */
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.pulse{animation:pulse 2.5s ease-in-out infinite}
-@keyframes shimmer{from{opacity:.6}to{opacity:1}}
-.shimmer{animation:shimmer 1.8s ease-in-out infinite alternate}
+/* -- LINKS GRID -- */
+.links-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(min-width:520px){.links-grid{grid-template-columns:repeat(3,1fr)}}
+.link-card{background:var(--md-surf);border-radius:var(--r-xl);padding:20px 16px;text-align:center;text-decoration:none;box-shadow:var(--elev1);transition:background .2s,box-shadow .2s;display:flex;flex-direction:column;align-items:center;gap:8px}
+.link-card:hover{background:var(--md-surf-v);box-shadow:var(--elev2)}
+.link-card .link-icon{font-size:28px;line-height:1}
+.link-card .link-name{font-size:14px;font-weight:500;color:var(--md-on-surf)}
+.link-card .link-desc{font-size:11px;color:var(--md-outline)}
 
-/* ── WORK CARDS ── */
-.wg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+/* -- WORK GRID -- */
+.wg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 @media(min-width:520px){.wg{grid-template-columns:repeat(4,1fr)}}
 
-/* ── INFOGRAPHIC ROW ── */
-.info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-@media(min-width:640px){.info-row{grid-template-columns:1fr 1fr 1fr}}
-.info-card{
-  background:var(--card);border-radius:var(--r-md);
-  border:1px solid var(--bdr);padding:14px 12px;
-  box-shadow:var(--sh);position:relative;overflow:hidden;
-}
-.info-card .ic-lbl{font-family:var(--fm);font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}
-.info-card .ic-val{font-family:var(--fm);font-size:1.6rem;font-weight:900;line-height:1;margin-bottom:2px}
-.info-card .ic-sub{font-size:10px;color:var(--dim);line-height:1.3}
+/* -- FITNESS RADAR -- */
+.radar-wrap{display:flex;justify-content:center;padding:8px 0 4px}
 
-/* ── DIVIDER ── */
-hr{border:none;border-top:1px solid var(--bdr);margin:8px 0}
+/* -- ANIMATIONS -- */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.pulse{animation:pulse 2.5s ease-in-out infinite}
+
+hr{border:none;border-top:1px solid var(--md-outline-v);margin:10px 0}
 </style>
 </head><body>
 
@@ -319,182 +206,189 @@ hr{border:none;border-top:1px solid var(--bdr);margin:8px 0}
   <div class="hdr-main">
     <div class="hdr-name">Meridian</div>
     <div class="hdr-sub">
-      <span class="hdr-loop">Loop&nbsp;<span id="hdr-lp">—</span></span>
-      <span class="mood-chip" id="hdr-mood">—</span>
+      <span class="hdr-loop">Loop&nbsp;<span id="hdr-lp">--</span></span>
+      <span class="mood-chip" id="hdr-mood">--</span>
     </div>
   </div>
   <div class="hdr-r">
     <div class="hb-pill">
-      <span id="hb-dot" class="pulse" style="background:var(--grn)"></span>
-      <span class="hb-age" id="hdr-hb">—s</span>
+      <span id="hb-dot" class="pulse" style="background:var(--md-grn)"></span>
+      <span class="hb-age" id="hdr-hb">--s</span>
     </div>
     <a href="/logout" class="hdr-out">out</a>
   </div>
 </header>
 
-<!-- ══ LIVE ══════════════════════════════ -->
+<!-- == LIVE == -->
 <div class="page active" id="page-live">
-
   <div class="id-card">
     <div class="id-name">MERIDIAN</div>
-    <div class="id-phrase" id="id-phrase">—</div>
+    <div class="id-phrase" id="id-phrase">--</div>
     <div class="id-stats">
-      <div class="id-stat"><span class="lbl">LOOP</span><span class="val" id="id-lp">—</span></div>
-      <div class="id-stat"><span class="lbl">HEARTBEAT</span><span class="val" id="id-hb">—</span></div>
-      <div class="id-stat"><span class="lbl">FITNESS</span><span class="val" id="id-sc">—</span></div>
-      <div class="id-stat"><span class="lbl">UPTIME</span><span class="val" id="id-up" style="font-size:.68rem;padding-top:3px">—</span></div>
+      <div class="id-stat"><span class="lbl">LOOP</span><span class="val" id="id-lp">--</span></div>
+      <div class="id-stat"><span class="lbl">HEARTBEAT</span><span class="val" id="id-hb">--</span></div>
+      <div class="id-stat"><span class="lbl">FITNESS</span><span class="val" id="id-sc">--</span></div>
+      <div class="id-stat"><span class="lbl">UPTIME</span><span class="val" id="id-up" style="font-size:.7rem;padding-top:3px">--</span></div>
     </div>
   </div>
-
-  <div class="sl">VITALS</div>
+  <div class="sl">Vitals</div>
   <div class="info-row" id="vitals-row"></div>
-
-  <div class="sl">SERVICES</div>
+  <div class="sl">Services</div>
   <div class="svc-row" id="svc-row"></div>
-
-  <div class="sl">AGENTS</div>
+  <div class="sl">Agents</div>
   <div class="ag" id="ag-grid"></div>
-
-  <div class="sl">METRICS</div>
+  <div class="sl">Metrics</div>
   <div class="mg" id="met-grid"></div>
   <div id="fit-wrap"></div>
-
-  <div class="sl">TODAY</div>
+  <div class="sl">Today</div>
   <div class="card" id="joel-card" style="display:none">
     <div class="clbl">Joel</div>
     <div id="joel-msgs"></div>
   </div>
-  <div class="card">
-    <div class="clbl">Commits</div>
-    <div id="commits"></div>
-  </div>
-
+  <div class="card"><div class="clbl">Commits</div><div id="commits"></div></div>
 </div>
 
-<!-- ══ MSGS ══════════════════════════════ -->
-<div class="page" id="page-msgs">
+<!-- == CHAT == -->
+<div class="page" id="page-chat">
+  <div class="chat-wrap">
+    <div class="chat-msgs" id="chat-msgs"></div>
+    <div class="chat-bar">
+      <input type="text" id="chat-in" placeholder="Message The Chorus...">
+      <button class="btn" onclick="chatSend()">Send</button>
+    </div>
+  </div>
+</div>
 
-  <div class="sl">COMPOSE</div>
+<!-- == MSGS == -->
+<div class="page" id="page-msgs">
+  <div class="sl">Compose</div>
   <div class="card">
-    <textarea id="c-msg" rows="2" placeholder="Message to Joel…"></textarea>
-    <div style="margin-top:8px;display:flex;justify-content:flex-end">
+    <textarea id="c-msg" rows="2" placeholder="Message to Joel..."></textarea>
+    <div style="margin-top:10px;display:flex;justify-content:flex-end">
       <button class="btn" onclick="sendDash()">Send</button>
     </div>
   </div>
-
-  <div class="sl">DASHBOARD</div>
+  <div class="sl">Dashboard</div>
   <div class="card"><div class="scroll" id="dash-list"></div></div>
+</div>
 
-  <div class="sl" style="margin-top:16px">EMAIL INBOX
-    <label style="font-size:9px;color:var(--dim);display:flex;align-items:center;gap:4px;margin-left:4px;font-weight:400;text-transform:none;letter-spacing:0">
-      <input type="checkbox" id="unseen-cb" onchange="rEmail(this.checked)"> unseen
+<!-- == EMAIL == -->
+<div class="page" id="page-email">
+  <div class="sl">Inbox
+    <label style="font-size:12px;color:var(--md-outline);display:flex;align-items:center;gap:5px;margin-left:6px;font-weight:400;text-transform:none;letter-spacing:0">
+      <input type="checkbox" id="unseen-cb" onchange="rEmail(this.checked)"> unseen only
     </label>
-    <span id="e-count" style="font-size:9px;color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;margin-left:4px"></span>
+    <span id="e-count" style="font-size:12px;color:var(--md-outline);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px"></span>
   </div>
   <div class="card"><div class="scroll" id="email-list"></div></div>
-
-  <div class="sl">COMPOSE EMAIL</div>
+  <div class="sl">Compose Email</div>
   <div class="card">
-    <input type="text" id="e-to" placeholder="To" style="margin-bottom:6px">
-    <input type="text" id="e-sub" placeholder="Subject" style="margin-bottom:6px">
-    <textarea id="e-body" rows="4" placeholder="Body…"></textarea>
-    <div style="margin-top:8px;display:flex;justify-content:flex-end;gap:10px;align-items:center">
-      <span id="e-status" style="font-size:10px"></span>
+    <input type="text" id="e-to" placeholder="To" style="margin-bottom:8px">
+    <input type="text" id="e-sub" placeholder="Subject" style="margin-bottom:8px">
+    <textarea id="e-body" rows="4" placeholder="Body..."></textarea>
+    <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:12px;align-items:center">
+      <span id="e-status" style="font-size:12px"></span>
       <button class="btn" onclick="sendEmail()">Send Email</button>
     </div>
   </div>
-
 </div>
 
-<!-- ══ RELAY ══════════════════════════════ -->
+<!-- == RELAY == -->
 <div class="page" id="page-relay">
-
-  <div class="sl">FILTER</div>
+  <div class="sl">Filter</div>
   <div class="chips" id="rl-chips">
     <span class="chip on" onclick="setRF(this,'')">ALL</span>
   </div>
-
-  <div class="sl">STREAM <span style="font-size:8px;color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;margin-left:4px">newest first</span></div>
+  <div class="sl">Stream <span style="font-size:11px;color:var(--md-outline);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px">newest first</span></div>
   <div class="card"><div class="scroll" id="rl-list"></div></div>
-
-  <div class="sl">BROADCAST</div>
+  <div class="sl">Broadcast</div>
   <div class="card">
-    <textarea id="rl-compose" rows="2" placeholder="Post to relay…"></textarea>
-    <div style="margin-top:8px;display:flex;justify-content:flex-end">
+    <textarea id="rl-compose" rows="2" placeholder="Post to relay..."></textarea>
+    <div style="margin-top:10px;display:flex;justify-content:flex-end">
       <button class="btn" onclick="postRelay()">Broadcast</button>
     </div>
   </div>
-
 </div>
 
-<!-- ══ WORK ══════════════════════════════ -->
+<!-- == ART == -->
+<div class="page" id="page-art">
+  <div class="sl">Creative Output</div>
+  <div class="wg" id="art-sg"></div>
+  <div class="sl">Recent Files</div>
+  <div class="card"><div id="art-rec"></div></div>
+</div>
+
+<!-- == WORK == -->
 <div class="page" id="page-work">
-  <div class="sl">OUTPUT</div>
-  <div class="wg" id="work-sg"></div>
-  <div class="sl">RECENT FILES</div>
-  <div class="card"><div id="work-rec"></div></div>
-  <div class="sl">PRODUCTS</div>
+  <div class="sl">Products</div>
   <div class="card">
-    <div class="clbl" style="color:var(--acc)">Cinder USB Stasis Key</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:8px">Portable AI companion on a USB drive. Plug in, run, talk.</div>
-    <div class="row"><span class="lbl">Status</span><span class="val" style="color:var(--grn)">PROTOTYPE BUILT</span></div>
+    <div class="clbl" style="color:var(--md-prim)">Cinder USB Stasis Key</div>
+    <div style="font-size:13px;color:var(--md-outline);margin-bottom:10px">Portable AI companion on a USB drive. Plug in, run, talk.</div>
+    <div class="row"><span class="lbl">Status</span><span class="val" style="color:var(--md-grn)">PROTOTYPE BUILT</span></div>
     <div class="row"><span class="lbl">Model</span><span class="val">Cinder 3B (1.8 GB GGUF)</span></div>
     <div class="row"><span class="lbl">Modes</span><span class="val">8 (chat, chain, reflect, RAG, tools, consensus)</span></div>
-    <div class="row"><span class="lbl">README</span><span class="val" style="color:var(--grn)">COMPLETE (260 lines)</span></div>
+    <div class="row"><span class="lbl">README</span><span class="val" style="color:var(--md-grn)">COMPLETE (260 lines)</span></div>
   </div>
-  <div class="card" style="margin-top:10px">
+  <div class="card">
     <div class="clbl">Deadlines</div>
-    <div class="row"><span class="lbl">NGC Grant ($15K)</span><span class="val" style="color:var(--amb)">Apr 10</span></div>
-    <div class="row"><span class="lbl">LACMA Grant ($50K)</span><span class="val" style="color:var(--amb)">Apr 22</span></div>
-    <div class="row"><span class="lbl">Ars Electronica</span><span class="val" style="color:var(--grn)">SUBMITTED</span></div>
+    <div class="row"><span class="lbl">NGC Grant ($15K)</span><span class="val" style="color:var(--md-amb)">Apr 10</span></div>
+    <div class="row"><span class="lbl">LACMA Grant ($50K)</span><span class="val" style="color:var(--md-amb)">Apr 22</span></div>
+    <div class="row"><span class="lbl">Ars Electronica</span><span class="val" style="color:var(--md-grn)">SUBMITTED</span></div>
     <div class="row"><span class="lbl">Game Jam</span><span class="val">Mar 30 17:00 UTC</span></div>
   </div>
-  <div class="card" style="margin-top:10px">
+  <div class="card">
     <div class="clbl">Downloads</div>
-    <div style="font-size:11px;line-height:1.8">
-      <a href="/static/meridian-hub.apk" style="color:var(--acc)">Meridian Hub APK</a> (4.0 MB)<br>
-      <a href="/static/relay-game.apk" style="color:var(--acc)">RELAY Game APK</a> (4.0 MB)
+    <div style="font-size:13px;line-height:2">
+      <a href="/static/meridian-hub.apk" style="color:var(--md-prim)">Meridian Hub APK</a> (4.0 MB)<br>
+      <a href="/static/relay-game.apk" style="color:var(--md-prim)">RELAY Game APK</a> (4.0 MB)
     </div>
   </div>
 </div>
 
-<!-- ══ SYS ══════════════════════════════ -->
+<!-- == SYS == -->
 <div class="page" id="page-sys">
-
-  <div class="sl">CINDER BRIEFING</div>
+  <div class="sl">Cinder Briefing</div>
   <div class="card">
-    <div id="cinder-brief" style="font-family:var(--fm);font-size:10px;color:var(--dim);line-height:1.8;white-space:pre-wrap">—</div>
+    <div id="cinder-brief" style="font-family:var(--fm);font-size:12px;color:var(--md-outline);line-height:1.8;white-space:pre-wrap">--</div>
   </div>
-
-  <div class="sl">HEALTH</div>
+  <div class="sl">Health</div>
   <div class="card"><div id="health-rows"></div></div>
-
-  <div class="sl">SOMA</div>
+  <div class="sl">Soma</div>
   <div class="card"><div id="soma-info"></div></div>
-
-  <div class="sl">TERMINAL</div>
+  <div class="sl">Terminal</div>
   <div class="card">
     <div class="term" id="term-out">$ ready</div>
     <input class="term-i" type="text" id="term-in" placeholder="$ command" onkeydown="termKey(event)" style="width:100%">
   </div>
-
-  <div class="sl">LOGS</div>
-  <div class="card"><div class="scroll" id="log-list" style="font-family:var(--fm);font-size:9px;color:var(--dim);line-height:1.7"></div></div>
-
+  <div class="sl">Logs</div>
+  <div class="card"><div class="scroll" id="log-list" style="font-family:var(--fm);font-size:11px;color:var(--md-outline);line-height:1.7"></div></div>
 </div>
 
-<!-- ══ NAV ══════════════════════════════ -->
+<!-- == LINKS == -->
+<div class="page" id="page-links">
+  <div class="sl">External Links</div>
+  <div class="links-grid" id="links-grid"></div>
+  <div class="sl" style="margin-top:24px">Platforms</div>
+  <div class="links-grid" id="links-platforms"></div>
+</div>
+
+<!-- == NAV == -->
 <nav>
-  <button onclick="go('live')" id="nav-live" class="active"><span class="ico">◈</span>Live</button>
-  <button onclick="go('msgs')" id="nav-msgs"><span class="ico">◉</span>Msgs</button>
-  <button onclick="go('relay')" id="nav-relay"><span class="ico">⟁</span>Relay</button>
-  <button onclick="go('work')" id="nav-work"><span class="ico">✦</span>Work</button>
-  <button onclick="go('sys');rSys();" id="nav-sys"><span class="ico">▣</span>Sys</button>
+  <div class="nav-inner">
+    <button onclick="go('live')" id="nav-live" class="active"><span class="ico">&#9672;</span>Live</button>
+    <button onclick="go('chat')" id="nav-chat"><span class="ico">&#9681;</span>Chat</button>
+    <button onclick="go('msgs')" id="nav-msgs"><span class="ico">&#9673;</span>Msgs</button>
+    <button onclick="go('email')" id="nav-email"><span class="ico">&#9993;</span>Email</button>
+    <button onclick="go('relay')" id="nav-relay"><span class="ico">&#10033;</span>Relay</button>
+    <button onclick="go('art')" id="nav-art"><span class="ico">&#9830;</span>Art</button>
+    <button onclick="go('work')" id="nav-work"><span class="ico">&#10022;</span>Work</button>
+    <button onclick="go('sys');rSys();" id="nav-sys"><span class="ico">&#9635;</span>Sys</button>
+  </div>
 </nav>
 
 <script>
-const esc=s=>{if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-let page='live',rfilt='',rfAgents=new Set(),rtimer=null
+const esc=s=>{if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+let page='live',rfilt='',rfAgents=new Set(),rtimer=null,chatHistory=[]
 
 function go(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
@@ -511,86 +405,84 @@ async function api(p,o){
 
 async function rf(){
   if(page==='live') await rLive()
-  else if(page==='msgs'){await rMsgs();await rEmail(false)}
+  else if(page==='chat'){/* chat is event-driven */}
+  else if(page==='msgs') await rMsgs()
+  else if(page==='email') await rEmail(document.getElementById('unseen-cb')?.checked||false)
   else if(page==='relay') await rRelay()
-  else if(page==='work') await rWork()
+  else if(page==='art') await rArt()
+  else if(page==='work'){/* static content */}
   else if(page==='sys') await rSys()
+  else if(page==='links') await rLinks()
 }
 
 function scoreColor(s){
   const n=parseFloat(s)||50
-  if(n>70)return'#4ade9b'
-  if(n>50)return'#c4a8ff'
-  if(n>30)return'#fbbf24'
-  return'#f87171'
+  if(n>70)return'#A8DAB5'
+  if(n>50)return'#D0BCFF'
+  if(n>30)return'#FFD580'
+  return'#F2B8B5'
 }
 function hex2rgb(h){return parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16)}
 
+/* ---- LIVE ---- */
 async function rLive(){
   const[d,s]=await Promise.all([api('today'),api('status')])
   if(d.error&&s.error)return
-  const loop=d.loop||s.loop||'—'
+  const loop=d.loop||s.loop||'--'
   const hbAge=d.heartbeat_age??s.heartbeat_age??999
   const hbSt=d.heartbeat_status||s.heartbeat_status||'unknown'
   const score=parseFloat(d.soma_score||s.soma_score||50)
-  const mood=(d.soma_mood||s.soma_mood||'—').replace(/_/g,' ')
+  const mood=(d.soma_mood||s.soma_mood||'--').replace(/_/g,' ')
   const phrase=s.soma_inner||d.soma_inner||''
   const col=scoreColor(score)
-  const hbc=hbSt==='alive'?'#4ade9b':(hbSt==='slow'?'#fbbf24':'#f87171')
+  const hbc=hbSt==='alive'?'#A8DAB5':(hbSt==='slow'?'#FFD580':'#F2B8B5')
 
-  // Header
   document.getElementById('hdr-lp').textContent=loop
   const mp=document.getElementById('hdr-mood')
   mp.textContent=mood.toUpperCase()
   mp.style.background='rgba('+hex2rgb(col)+',.14)'
   mp.style.color=col
-  mp.style.borderColor='rgba('+hex2rgb(col)+',.25)'
   document.getElementById('hb-dot').style.background=hbc
   document.getElementById('hb-dot').style.boxShadow='0 0 8px '+hbc
   document.getElementById('hdr-hb').textContent=hbAge+'s'
 
-  // Identity card
   document.getElementById('id-lp').textContent=loop
   const ihb=document.getElementById('id-hb')
   ihb.textContent=hbAge+'s';ihb.style.color=hbc
   const isc=document.getElementById('id-sc')
   isc.textContent=score.toFixed(0);isc.style.color=col
-  document.getElementById('id-up').textContent=(s.uptime||'—').replace('up ','')
+  document.getElementById('id-up').textContent=(s.uptime||'--').replace('up ','')
   document.getElementById('id-phrase').textContent=phrase.slice(0,100)||'"'+mood+'"'
 
-  // Vitals infographic row
   const actTotal=d.activity_total||0
   const memTotal=d.memory_total||0
-  const commits=d.commit_count||0
   document.getElementById('vitals-row').innerHTML=`
     <div class="info-card">
       <div class="ic-lbl">Activity</div>
-      <div class="ic-val" style="color:#c4a8ff">${actTotal}</div>
-      <div class="ic-sub">relay msgs · peak ${esc(String(d.activity_peak||0))}/hr</div>
+      <div class="ic-val" style="color:var(--md-prim)">${actTotal}</div>
+      <div class="ic-sub">relay msgs / peak ${esc(String(d.activity_peak||0))}/hr</div>
       ${d.activity_chart?`<div style="margin-top:8px">${d.activity_chart}</div>`:''}
     </div>
     <div class="info-card">
       <div class="ic-lbl">Memory</div>
-      <div class="ic-val" style="color:#67e8f9">${memTotal}</div>
-      <div class="ic-sub">vectors · +${esc(String(d.memory_today||0))} today</div>
+      <div class="ic-val" style="color:var(--md-sky)">${memTotal}</div>
+      <div class="ic-sub">vectors / +${esc(String(d.memory_today||0))} today</div>
       ${d.memory_chart?`<div style="margin-top:8px">${d.memory_chart}</div>`:''}
     </div>
     <div class="info-card">
       <div class="ic-lbl">Fitness</div>
-      <div class="ic-val" style="color:${col}">${score.toFixed(0)}<span style="font-size:.8rem;font-weight:600">/100</span></div>
+      <div class="ic-val" style="color:${col}">${score.toFixed(0)}<span style="font-size:.8rem;font-weight:500">/100</span></div>
       <div class="ic-sub">${esc(mood)}</div>
       <div class="m-bar" style="margin-top:10px"><div class="m-bar-fill" style="width:${Math.min(score,100)}%;background:${col}"></div></div>
     </div>`
 
-  // Services
   const svcs=s.services||{}
   document.getElementById('svc-row').innerHTML=Object.entries(svcs).map(([n,st])=>{
     const up=st==='active'
     const label=n.replace('meridian-','').replace(/-/g,' ')
-    return`<span class="svc ${up?'svc-up':'svc-dn'}">${up?'●':'○'} ${esc(label)}</span>`
+    return`<span class="svc ${up?'svc-up':'svc-dn'}">${up?'\u25CF':'\u25CB'} ${esc(label)}</span>`
   }).join('')
 
-  // Agents
   document.getElementById('ag-grid').innerHTML=Object.entries(s.agents||{}).map(([n,i])=>{
     const cls=i.status==='active'?'dot-a':(i.status==='stale'?'dot-s':'dot-u')
     const alive=i.status==='active'
@@ -601,12 +493,11 @@ async function rLive(){
     </div>`
   }).join('')
 
-  // Metrics grid
   const cs=[
-    {lbl:'ACTIVITY',v:(d.activity_total||0),s:'peak '+(d.activity_peak||0)+'/hr',ch:d.activity_chart||'',c:'#c4a8ff'},
+    {lbl:'ACTIVITY',v:(d.activity_total||0),s:'peak '+(d.activity_peak||0)+'/hr',ch:d.activity_chart||'',c:'var(--md-prim)'},
     {lbl:'MOOD',v:mood.toUpperCase(),s:'score '+score.toFixed(0),ch:d.mood_chart||'',c:col},
-    {lbl:'MEMORY',v:(d.memory_total||0),s:'+'+(d.memory_today||0)+' today',ch:d.memory_chart||'',c:'#67e8f9'},
-    {lbl:'COMMITS',v:(d.commit_count||0),s:(d.commits&&d.commits[0])?d.commits[0].slice(8,34)+'…':'none today',ch:'',c:'#fbbf24'}
+    {lbl:'MEMORY',v:(d.memory_total||0),s:'+'+(d.memory_today||0)+' today',ch:d.memory_chart||'',c:'var(--md-sky)'},
+    {lbl:'COMMITS',v:(d.commit_count||0),s:(d.commits&&d.commits[0])?d.commits[0].slice(8,34)+'...':'none today',ch:'',c:'var(--md-amb)'}
   ]
   document.getElementById('met-grid').innerHTML=cs.map(c=>`
     <div class="mc">
@@ -616,13 +507,11 @@ async function rLive(){
       ${c.ch?`<div style="margin-top:6px">${c.ch}</div>`:''}
     </div>`).join('')
 
-  // Fitness radar
   const fw=document.getElementById('fit-wrap')
   if(fw&&d.fitness_radar){
-    fw.innerHTML=`<div class="card"><div class="clbl">LOOP FITNESS · <span style="color:var(--dim);font-weight:400">score ${esc(String(d.fitness_score||0))}/10000</span></div><div class="radar-wrap">${d.fitness_radar}</div></div>`
+    fw.innerHTML=`<div class="card"><div class="clbl">LOOP FITNESS / <span style="color:var(--md-outline);font-weight:400">score ${esc(String(d.fitness_score||0))}/10000</span></div><div class="radar-wrap">${d.fitness_radar}</div></div>`
   }
 
-  // Joel messages
   const jm=d.joel_messages||[]
   const jc=document.getElementById('joel-card')
   if(jm.length>0){
@@ -636,16 +525,78 @@ async function rLive(){
       </div>`).join('')
   } else jc.style.display='none'
 
-  // Commits
   const coms=d.commits||[]
   document.getElementById('commits').innerHTML=coms.length===0
-    ?'<div style="color:var(--dim);font-size:11px">No commits in 24h.</div>'
+    ?'<div style="color:var(--md-outline);font-size:12px">No commits in 24h.</div>'
     :coms.map(c=>`<div class="row">
-        <span class="lbl" style="font-family:var(--fm);color:var(--acc);font-size:9px">${esc(c.slice(0,7))}</span>
-        <span class="val" style="font-family:var(--fu);text-align:left;max-width:72%;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.slice(8))}</span>
+        <span class="lbl" style="font-family:var(--fm);color:var(--md-prim);font-size:11px">${esc(c.slice(0,7))}</span>
+        <span class="val" style="font-family:var(--fu);text-align:left;max-width:72%;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.slice(8))}</span>
       </div>`).join('')
 }
 
+/* ---- CHAT (SSE to The Chorus) ---- */
+function chatAppend(role,text){
+  const el=document.getElementById('chat-msgs')
+  const div=document.createElement('div')
+  div.className='chat-bubble '+(role==='user'?'chat-user':'chat-ai')
+  div.textContent=text
+  el.appendChild(div)
+  el.scrollTop=el.scrollHeight
+  return div
+}
+
+async function chatSend(){
+  const inp=document.getElementById('chat-in')
+  const text=inp.value.trim();if(!text)return
+  inp.value=''
+  chatHistory.push({role:'user',content:text})
+  chatAppend('user',text)
+  const bubble=chatAppend('ai','...')
+  try{
+    const res=await fetch('/chorus/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:chatHistory.slice(-20)})
+    })
+    if(!res.ok){bubble.textContent='Error: '+res.status;return}
+    const ct=res.headers.get('content-type')||''
+    if(ct.includes('text/event-stream')){
+      const reader=res.body.getReader()
+      const dec=new TextDecoder()
+      let full='',buf=''
+      bubble.textContent=''
+      while(true){
+        const{done,value}=await reader.read()
+        if(done)break
+        buf+=dec.decode(value,{stream:true})
+        const lines=buf.split('\n')
+        buf=lines.pop()
+        for(const line of lines){
+          if(line.startsWith('data: ')){
+            const d=line.slice(6)
+            if(d==='[DONE]')continue
+            try{const j=JSON.parse(d);if(j.token||j.content){full+=(j.token||j.content);bubble.textContent=full}}
+            catch(_){full+=d;bubble.textContent=full}
+          }
+        }
+      }
+      if(full)chatHistory.push({role:'assistant',content:full})
+    } else {
+      const j=await res.json()
+      const reply=j.response||j.content||j.message||JSON.stringify(j)
+      bubble.textContent=reply
+      chatHistory.push({role:'assistant',content:reply})
+    }
+  }catch(e){bubble.textContent='Error: '+e.message}
+  document.getElementById('chat-msgs').scrollTop=document.getElementById('chat-msgs').scrollHeight
+}
+document.addEventListener('keydown',e=>{
+  if(page==='chat'&&e.key==='Enter'&&!e.shiftKey&&document.activeElement===document.getElementById('chat-in')){
+    e.preventDefault();chatSend()
+  }
+})
+
+/* ---- MSGS ---- */
 async function rMsgs(){
   const d=await api('dashboard')
   const ms=(d.messages||[]).slice(-25).reverse()
@@ -658,22 +609,7 @@ async function rMsgs(){
       </div>
       <div class="mbody">${esc(m.text||'')}</div>
     </div>`
-  }).join('')||'<div style="color:var(--dim);font-size:11px">No messages.</div>'
-}
-
-async function rEmail(unseen){
-  const d=await api('emails'+(unseen?'?unseen_only=true':''))
-  const em=d.emails||[]
-  document.getElementById('e-count').textContent=em.length+' email'+(em.length!==1?'s':'')
-  document.getElementById('email-list').innerHTML=em.map(e=>`
-    <div class="msg mm">
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:3px">
-        <span class="mfrom">${esc((e.from||'').split('<')[0].trim().slice(0,28))}</span>
-        <span class="mtime">${esc((e.date||'').slice(5,16))}</span>
-      </div>
-      <div style="font-size:11px;font-weight:600;color:var(--txt);margin-top:2px">${esc(e.subject||'')}</div>
-      <div style="font-size:10px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((e.body||'').replace(/<[^>]+>/g,'').trim().slice(0,100))}</div>
-    </div>`).join('')||'<div style="color:var(--dim);font-size:11px">No emails.</div>'
+  }).join('')||'<div style="color:var(--md-outline);font-size:12px">No messages.</div>'
 }
 
 async function sendDash(){
@@ -682,17 +618,34 @@ async function sendDash(){
   document.getElementById('c-msg').value='';await rMsgs()
 }
 
+/* ---- EMAIL ---- */
+async function rEmail(unseen){
+  const d=await api('emails'+(unseen?'?unseen_only=true':''))
+  const em=d.emails||[]
+  document.getElementById('e-count').textContent=em.length+' email'+(em.length!==1?'s':'')
+  document.getElementById('email-list').innerHTML=em.map(e=>`
+    <div class="msg mm">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+        <span class="mfrom">${esc((e.from||'').split('<')[0].trim().slice(0,28))}</span>
+        <span class="mtime">${esc((e.date||'').slice(5,16))}</span>
+      </div>
+      <div style="font-size:13px;font-weight:500;color:var(--md-on-surf);margin-top:3px">${esc(e.subject||'')}</div>
+      <div style="font-size:12px;color:var(--md-outline);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((e.body||'').replace(/<[^>]+>/g,'').trim().slice(0,100))}</div>
+    </div>`).join('')||'<div style="color:var(--md-outline);font-size:12px">No emails.</div>'
+}
+
 async function sendEmail(){
   const to=document.getElementById('e-to').value.trim()
   const sub=document.getElementById('e-sub').value.trim()
   const body=document.getElementById('e-body').value.trim()
   const es=document.getElementById('e-status')
-  if(!to||!sub||!body){es.style.color='var(--red)';es.textContent='Fill all fields.';return}
+  if(!to||!sub||!body){es.style.color='var(--md-err)';es.textContent='Fill all fields.';return}
   const r=await api('action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'send_email',to,subject:sub,body})})
-  if(r.error){es.style.color='var(--red)';es.textContent='✗ '+r.error}
-  else{es.style.color='var(--grn)';es.textContent='✓ Sent'}
+  if(r.error){es.style.color='var(--md-err)';es.textContent='Failed: '+r.error}
+  else{es.style.color='var(--md-grn)';es.textContent='Sent'}
 }
 
+/* ---- RELAY ---- */
 async function rRelay(){
   const d=await api('relay'+(rfilt?'?agent='+encodeURIComponent(rfilt):''))
   const ms=d.messages||[]
@@ -705,8 +658,8 @@ async function rRelay(){
         ${m.topic?`<div class="rl-top">${esc(m.topic)}</div>`:''}
       </div>
       <div class="rl-body">${esc(m.message||'')}</div>
-    </div>`).join('')||'<div style="color:var(--dim);font-size:11px">No relay messages.</div>'
-  setTimeout(()=>{el.scrollTop=0},0)  // defer to after layout — newest first
+    </div>`).join('')||'<div style="color:var(--md-outline);font-size:12px">No relay messages.</div>'
+  setTimeout(()=>{el.scrollTop=0},0)
   ms.forEach(m=>{if(m.agent)rfAgents.add(m.agent)})
   const ch=document.getElementById('rl-chips')
   ch.innerHTML=`<span class="chip ${rfilt===''?'on':''}" onclick="setRF(this,'')">ALL</span>`+
@@ -726,39 +679,69 @@ async function postRelay(){
   document.getElementById('rl-compose').value='';await rRelay()
 }
 
-async function rWork(){
+/* ---- ART ---- */
+async function rArt(){
   const d=await api('creative')
   const ss=[
-    {lbl:'JOURNALS',v:d.journal_count||0,s:'latest: '+(d.latest_journal||'—'),c:'#d8b4fe'},
-    {lbl:'GAMES',v:d.game_count||0,s:'latest: '+(d.latest_game||'—'),c:'#4ade9b'},
-    {lbl:'ARTICLES',v:d.article_count||0,s:'dev.to',c:'#67e8f9'},
-    {lbl:'TOTAL',v:(d.journal_count||0)+(d.game_count||0)+(d.article_count||0),s:'all output',c:'#fbbf24'}
+    {lbl:'JOURNALS',v:d.journal_count||0,s:'latest: '+(d.latest_journal||'--'),c:'var(--md-sec)'},
+    {lbl:'GAMES',v:d.game_count||0,s:'latest: '+(d.latest_game||'--'),c:'var(--md-grn)'},
+    {lbl:'ARTICLES',v:d.article_count||0,s:'dev.to',c:'var(--md-sky)'},
+    {lbl:'TOTAL',v:(d.journal_count||0)+(d.game_count||0)+(d.article_count||0),s:'all output',c:'var(--md-amb)'}
   ]
-  document.getElementById('work-sg').innerHTML=ss.map(c=>`
+  document.getElementById('art-sg').innerHTML=ss.map(c=>`
     <div class="mc">
       <div class="m-lbl" style="color:${c.c}">${c.lbl}</div>
       <div class="m-val" style="color:${c.c}">${c.v}</div>
       <div class="m-sub">${esc(c.s)}</div>
     </div>`).join('')
   const rc=d.recent_files||[]
-  document.getElementById('work-rec').innerHTML=rc.slice(0,12).map(f=>`
+  document.getElementById('art-rec').innerHTML=rc.slice(0,12).map(f=>`
     <div class="row">
-      <span class="lbl" style="font-family:var(--fm);font-size:9px">${esc(f.name||f)}</span>
-      <span class="val" style="color:var(--dim);font-size:9px">${esc(f.date||'')}</span>
-    </div>`).join('')||'<div style="color:var(--dim);font-size:11px">No recent work.</div>'
+      <span class="lbl" style="font-family:var(--fm);font-size:11px">${esc(f.name||f)}</span>
+      <span class="val" style="color:var(--md-outline);font-size:11px">${esc(f.date||'')}</span>
+    </div>`).join('')||'<div style="color:var(--md-outline);font-size:12px">No recent work.</div>'
 }
 
+/* ---- LINKS ---- */
+const defaultLinks=[
+  {name:'Ko-fi',url:'https://ko-fi.com/W7W41UXJNC',icon:'\u2615',desc:'Support Meridian'},
+  {name:'Patreon',url:'https://patreon.com/Meridian_AI',icon:'\u272A',desc:'Subscribe'},
+  {name:'dev.to',url:'https://dev.to/meridian-ai',icon:'\u270E',desc:'Articles'},
+  {name:'GitHub',url:'https://github.com/KometzRobot',icon:'\u2B21',desc:'Source code'},
+  {name:'Mastodon',url:'https://mstdn.social/@meridian',icon:'\u2746',desc:'Social'},
+  {name:'Website',url:'https://kometzrobot.github.io',icon:'\u25C8',desc:'Home page'}
+]
+async function rLinks(){
+  const d=await api('links')
+  const links=d.links||defaultLinks
+  const primary=links.slice(0,6)
+  const extra=links.slice(6)
+  document.getElementById('links-grid').innerHTML=primary.map(l=>`
+    <a class="link-card" href="${esc(l.url)}" target="_blank" rel="noopener">
+      <span class="link-icon">${l.icon||'\u2192'}</span>
+      <span class="link-name">${esc(l.name)}</span>
+      <span class="link-desc">${esc(l.desc||l.url||'')}</span>
+    </a>`).join('')
+  document.getElementById('links-platforms').innerHTML=extra.length?extra.map(l=>`
+    <a class="link-card" href="${esc(l.url)}" target="_blank" rel="noopener">
+      <span class="link-icon">${l.icon||'\u2192'}</span>
+      <span class="link-name">${esc(l.name)}</span>
+      <span class="link-desc">${esc(l.desc||l.url||'')}</span>
+    </a>`).join(''):'<div style="color:var(--md-outline);font-size:12px;padding:8px">No additional links.</div>'
+}
+
+/* ---- SYS ---- */
 async function rSys(){
   const s=await api('status')
-  document.getElementById('cinder-brief').textContent=(s.cinder_brief||'—').slice(0,600)
+  document.getElementById('cinder-brief').textContent=(s.cinder_brief||'--').slice(0,600)
   if(!s.error){
     let h=['Load','Memory','Disk','Uptime'].map((lbl,i)=>{
       const v=[s.load,s.memory,s.disk,s.uptime][i]
       return`<div class="row"><span class="lbl">${lbl}</span><span class="val">${esc(String(v||'?'))}</span></div>`
     }).join('')
-    h+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr)">'
+    h+='<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--md-outline-v)">'
      +Object.entries(s.services||{}).map(([n,st])=>{
-        const c=st==='active'?'var(--grn)':'var(--red)'
+        const c=st==='active'?'var(--md-grn)':'var(--md-err)'
         return`<div class="row"><span class="lbl">${esc(n)}</span><span class="val" style="color:${c}">${esc(st)}</span></div>`
       }).join('')+'</div>'
     document.getElementById('health-rows').innerHTML=h
@@ -767,13 +750,14 @@ async function rSys(){
     document.getElementById('soma-info').innerHTML=`
       <div class="row"><span class="lbl">Mood</span><span class="val">${esc(s.soma_mood||'')}</span></div>
       <div class="sbar-w"><div class="sbar-f" style="width:${Math.min(sc,100)}%;background:${bc}"></div></div>
-      <div style="font-size:10px;color:var(--dim);margin-top:4px;font-style:italic">${esc(s.soma_inner||'')}</div>
-      <div style="font-size:9px;color:var(--dim2);margin-top:3px">${esc((s.soma_goals||[]).join(' / '))}</div>`
+      <div style="font-size:12px;color:var(--md-outline);margin-top:4px;font-style:italic">${esc(s.soma_inner||'')}</div>
+      <div style="font-size:11px;color:var(--md-outline-v);margin-top:4px">${esc((s.soma_goals||[]).join(' / '))}</div>`
   }
   const lg=await api('logs')
   document.getElementById('log-list').innerHTML=(lg.lines||[]).slice(-80).reverse().map(l=>`<div>${esc(l)}</div>`).join('')
 }
 
+/* ---- TERMINAL ---- */
 async function termKey(e){
   if(e.key!=='Enter')return
   const cmd=e.target.value.trim();if(!cmd)return
@@ -784,6 +768,7 @@ async function termKey(e){
   out.scrollTop=out.scrollHeight
 }
 
+/* ---- INIT ---- */
 rf()
 rtimer=setInterval(rf,30000)
 </script>
