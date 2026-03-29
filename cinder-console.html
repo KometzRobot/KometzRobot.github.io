@@ -120,10 +120,12 @@ input[type=range]::-webkit-slider-thumb{
   padding:3px 0;
 }
 .toggle-box{
-  width:14px;height:14px;border:2px solid var(--border-dark);
-  border-radius:3px;display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;color:var(--ember);background:var(--card);
+  width:20px;height:20px;border:2px solid var(--border-dark);
+  border-radius:4px;display:flex;align-items:center;justify-content:center;
+  font-size:1px;color:transparent;background:var(--card);
+  transition:background .15s;flex-shrink:0;
 }
+.toggle-box.on{background:var(--ember)}
 /* Preset buttons */
 .preset-row{display:flex;flex-direction:column;gap:3px}
 .preset{
@@ -296,22 +298,31 @@ input[type=range]::-webkit-slider-thumb{
     <div>
       <div class="section-title">Options</div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box">x</div><span>Remember our chats</span>
+        <div class="toggle-box on"></div><span>Remember our chats</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box">x</div><span>Keep thinking while I'm away</span>
+        <div class="toggle-box on"></div><span>Keep thinking while I'm away</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box"></div><span>Ask before acting</span>
+        <div class="toggle-box off"></div><span>Ask before acting</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box">x</div><span>Show longer answers</span>
+        <div class="toggle-box on"></div><span>Show longer answers</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box"></div><span>Be more creative</span>
+        <div class="toggle-box off"></div><span>Be more creative</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box"></div><span>Speak plainly</span>
+        <div class="toggle-box off"></div><span>Speak plainly</span>
+      </div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box off"></div><span>Read my files</span>
+      </div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box off"></div><span>Suggest things to do</span>
+      </div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box on"></div><span>Sound effects</span>
       </div>
     </div>
   </div>
@@ -444,7 +455,7 @@ function loadPreset(el, name) {
 
 function toggleCheck(row) {
   const box = row.querySelector('.toggle-box')
-  box.textContent = box.textContent ? '' : 'x'
+  box.classList.toggle('on')
 }
 
 function doAction(action) {
@@ -503,12 +514,23 @@ function addTag() {
 
 function exportChat() {
   const resp = document.getElementById('response').textContent
-  const log = document.getElementById('chat-log').textContent
-  const text = '# Cinder Export\n\n## Response\n' + resp + '\n\n## Conversation\n' + log
+  const log = document.getElementById('chat-log')
+  const entries = log.querySelectorAll('div:not(.chat-empty)')
+  let chatText = ''
+  entries.forEach(e => {
+    const who = e.querySelector('.chat-you,.chat-cinder')
+    const time = e.querySelector('.chat-time')
+    const name = who ? who.textContent : 'Unknown'
+    const t = time ? time.textContent : ''
+    const msg = e.textContent.replace(name,'').replace(t,'').trim()
+    chatText += `**${name}** (${t}): ${msg}\n\n`
+  })
+  const date = new Date().toLocaleDateString()
+  const text = `# Cinder Session Export\n**Date:** ${date}\n\n---\n\n## Last Response\n\n${resp}\n\n---\n\n## Conversation Log\n\n${chatText || '_No messages yet_'}\n`
   const blob = new Blob([text],{type:'text/markdown'})
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = 'cinder-' + new Date().toISOString().slice(0,10) + '.md'
+  a.download = 'cinder-session-' + new Date().toISOString().slice(0,10) + '.md'
   a.click()
 }
 
