@@ -5,142 +5,436 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cinder Console</title>
 <style>
-/* ═══ CINDER CONSOLE v1.0 ═══════════════════════════════════
-   Warm pastel palette. Professional. No emojis. No gimmicks.
-   Designed for people, not developers.
-   ═══════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+/* ═══ CINDER CONSOLE v1.3 ════════════════════════════════════
+   Morning coffee by a firepit. Warm paper, ember glow, good company.
+   Consumer-facing AI assistant UI. Single HTML, no external deps
+   except Google Fonts. Responsive. Themes. Live stats.
+   ═══════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap');
 
-:root{
-  /* Cinder palette: reddish brown, cream, ember orange, browns, yellows */
-  --bg:#e8ddd0;
-  --surface:#f2ebe0;
-  --card:#f8f4ec;
+/* ── THEME: Ember (default) ──────────────────────────────── */
+:root, [data-theme="ember"] {
+  --bg:#e4d8c8;
+  --bg-warm:#dccfbd;
+  --surface:#f0e8da;
+  --surface-hover:#f5efe3;
+  --card:#f7f2e8;
+  --card-glow:#faf6ee;
   --border:#c8b8a0;
   --border-dark:#a89878;
+  --border-focus:#c45a2a;
   --text:#2a1e14;
   --text-mid:#5a4a38;
   --text-light:#8a7a68;
-  /* Accents */
+  --text-faint:#b0a090;
   --ember:#c45a2a;
   --ember-light:#d87a40;
   --ember-soft:rgba(196,90,42,.1);
+  --ember-glow:rgba(196,90,42,.25);
   --red-brown:#8a3a2a;
   --cream:#f0e8d8;
   --brown:#6a4a30;
   --yellow:#c4a030;
+  --yellow-soft:rgba(196,160,48,.12);
   --sage:#5a8a4a;
-  --sage-soft:rgba(90,138,74,.1);
+  --sage-soft:rgba(90,138,74,.12);
   --purple:#7a5a8a;
-  --purple-soft:rgba(122,90,138,.08);
-  /* Fonts */
+  --purple-soft:rgba(122,90,138,.1);
+  --shadow:rgba(80,50,20,.08);
+  --shadow-med:rgba(80,50,20,.12);
+  --topbar-grad:linear-gradient(135deg,#c8a070 0%,#ddc098 30%,#e8d4b8 70%,#f0e4d0 100%);
+  --paper-texture:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(180,155,120,.03) 2px,rgba(180,155,120,.03) 4px);
+  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(220,160,80,.06) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(196,90,42,.04) 0%,transparent 50%);
+  --ring-track:#e0d4c4;
+  --ring-fill:var(--ember);
+  --sparkline-color:var(--ember-light);
+  --pulse-color:rgba(196,90,42,.6);
+}
+
+/* ── THEME: Midnight ─────────────────────────────────────── */
+[data-theme="midnight"] {
+  --bg:#1a1a2e;
+  --bg-warm:#1e1e34;
+  --surface:#252540;
+  --surface-hover:#2c2c4a;
+  --card:#2e2e4e;
+  --card-glow:#343458;
+  --border:#3e3e60;
+  --border-dark:#5a5a80;
+  --border-focus:#6a7aff;
+  --text:#e0dde8;
+  --text-mid:#a8a4b8;
+  --text-light:#7a7890;
+  --text-faint:#5a5870;
+  --ember:#6a7aff;
+  --ember-light:#8a98ff;
+  --ember-soft:rgba(106,122,255,.12);
+  --ember-glow:rgba(106,122,255,.25);
+  --red-brown:#5060c0;
+  --cream:#2a2a48;
+  --brown:#8080a0;
+  --yellow:#c0b040;
+  --yellow-soft:rgba(192,176,64,.12);
+  --sage:#50a060;
+  --sage-soft:rgba(80,160,96,.12);
+  --purple:#a070c0;
+  --purple-soft:rgba(160,112,192,.12);
+  --shadow:rgba(0,0,0,.2);
+  --shadow-med:rgba(0,0,0,.3);
+  --topbar-grad:linear-gradient(135deg,#1e1e38 0%,#2a2a50 50%,#323260 100%);
+  --paper-texture:none;
+  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(106,122,255,.04) 0%,transparent 60%);
+  --ring-track:#3e3e60;
+  --ring-fill:#6a7aff;
+  --sparkline-color:#8a98ff;
+  --pulse-color:rgba(106,122,255,.6);
+}
+
+/* ── THEME: Forest ───────────────────────────────────────── */
+[data-theme="forest"] {
+  --bg:#d4ddd0;
+  --bg-warm:#cdd8c8;
+  --surface:#e0eada;
+  --surface-hover:#e8f0e2;
+  --card:#ecf4e8;
+  --card-glow:#f2f8ee;
+  --border:#a8bca0;
+  --border-dark:#80a070;
+  --border-focus:#4a8040;
+  --text:#1a2a14;
+  --text-mid:#3a5a30;
+  --text-light:#6a8a60;
+  --text-faint:#90aa88;
+  --ember:#4a8040;
+  --ember-light:#60a050;
+  --ember-soft:rgba(74,128,64,.1);
+  --ember-glow:rgba(74,128,64,.25);
+  --red-brown:#3a6a30;
+  --cream:#e8f0e0;
+  --brown:#506a40;
+  --yellow:#a09030;
+  --yellow-soft:rgba(160,144,48,.12);
+  --sage:#4a8040;
+  --sage-soft:rgba(74,128,64,.12);
+  --purple:#7a6a90;
+  --purple-soft:rgba(122,106,144,.1);
+  --shadow:rgba(30,60,20,.08);
+  --shadow-med:rgba(30,60,20,.12);
+  --topbar-grad:linear-gradient(135deg,#a0c490 0%,#bcd8b0 40%,#d4e8cc 100%);
+  --paper-texture:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(60,100,50,.02) 2px,rgba(60,100,50,.02) 4px);
+  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(120,180,80,.05) 0%,transparent 60%);
+  --ring-track:#c0d4b8;
+  --ring-fill:#4a8040;
+  --sparkline-color:#60a050;
+  --pulse-color:rgba(74,128,64,.6);
+}
+
+/* ── THEME: Lavender ─────────────────────────────────────── */
+[data-theme="lavender"] {
+  --bg:#ddd4e4;
+  --bg-warm:#d8cce0;
+  --surface:#eae2f0;
+  --surface-hover:#f0e8f6;
+  --card:#f2ecf8;
+  --card-glow:#f8f4fc;
+  --border:#bca8c8;
+  --border-dark:#a080b0;
+  --border-focus:#8050a0;
+  --text:#2a1a30;
+  --text-mid:#5a3a68;
+  --text-light:#8a6a98;
+  --text-faint:#aa90b8;
+  --ember:#8050a0;
+  --ember-light:#a070c0;
+  --ember-soft:rgba(128,80,160,.1);
+  --ember-glow:rgba(128,80,160,.25);
+  --red-brown:#6a3a80;
+  --cream:#f0e8f4;
+  --brown:#7a5a8a;
+  --yellow:#b0a040;
+  --yellow-soft:rgba(176,160,64,.12);
+  --sage:#5a8a4a;
+  --sage-soft:rgba(90,138,74,.12);
+  --purple:#8050a0;
+  --purple-soft:rgba(128,80,160,.12);
+  --shadow:rgba(60,30,80,.08);
+  --shadow-med:rgba(60,30,80,.12);
+  --topbar-grad:linear-gradient(135deg,#c0a0d0 0%,#d4b8e0 40%,#e4d0ee 100%);
+  --paper-texture:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(120,80,160,.02) 2px,rgba(120,80,160,.02) 4px);
+  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(160,100,200,.05) 0%,transparent 60%);
+  --ring-track:#d0c0d8;
+  --ring-fill:#8050a0;
+  --sparkline-color:#a070c0;
+  --pulse-color:rgba(128,80,160,.6);
+}
+
+/* ── FONT SIZE SCALING ───────────────────────────────────── */
+[data-fontsize="small"]  { font-size:13px }
+[data-fontsize="medium"] { font-size:15px }
+[data-fontsize="large"]  { font-size:17px }
+
+/* ── FONT FAMILY OPTIONS ─────────────────────────────────── */
+[data-fontfamily="sans"]  { --active-font:'DM Sans','Segoe UI',system-ui,sans-serif }
+[data-fontfamily="serif"] { --active-font:'Merriweather','Georgia',serif }
+[data-fontfamily="mono"]  { --active-font:'JetBrains Mono','Courier New',monospace }
+
+:root {
   --sans:'DM Sans','Segoe UI',system-ui,sans-serif;
   --mono:'JetBrains Mono','Courier New',monospace;
+  --serif:'Merriweather','Georgia',serif;
+  --active-font:var(--sans);
 }
+
 *{margin:0;padding:0;box-sizing:border-box}
 
 body{
   background:var(--bg);
-  font-family:var(--sans);
+  background-image:var(--paper-texture);
+  font-family:var(--active-font);
   color:var(--text);
   min-height:100vh;
   display:flex;
   flex-direction:column;
+  transition:background .4s, color .4s;
 }
 
-/* ── TOP BAR ──────────────────────────────────────────────── */
+/* Warm light overlay for that firepit glow */
+body::before{
+  content:'';
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:var(--warm-overlay);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── SCROLLBAR ───────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-dark)}
+
+/* ── TOP BAR ─────────────────────────────────────────────── */
 .topbar{
-  background:linear-gradient(135deg,#d4a06a 0%,#e8c8a0 40%,var(--surface) 100%);
+  background:var(--topbar-grad);
   padding:10px 20px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   border-bottom:2px solid var(--border-dark);
   flex-shrink:0;
+  position:relative;
+  z-index:10;
+  box-shadow:0 2px 8px var(--shadow);
 }
-.topbar-left{display:flex;align-items:center;gap:10px}
-.topbar-name{font-size:16px;font-weight:700;color:var(--text);letter-spacing:1px}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-brand{display:flex;align-items:center;gap:8px}
+.topbar-flame{
+  width:22px;height:22px;
+  background:var(--ember);
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c0 4-4 6-4 10a4 4 0 008 0c0-4-4-6-4-10zm0 14a2 2 0 01-2-2c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 01-2 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c0 4-4 6-4 10a4 4 0 008 0c0-4-4-6-4-10zm0 14a2 2 0 01-2-2c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 01-2 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  animation:flame-flicker 3s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes flame-flicker{
+  0%,100%{opacity:1;transform:scale(1) rotate(0deg)}
+  25%{opacity:.85;transform:scale(1.05) rotate(-2deg)}
+  50%{opacity:.95;transform:scale(.97) rotate(1deg)}
+  75%{opacity:.9;transform:scale(1.03) rotate(-1deg)}
+}
+.topbar-name{font-size:17px;font-weight:700;color:var(--text);letter-spacing:1.5px;font-family:var(--sans)}
+.topbar-version{font-size:9px;color:var(--text-light);letter-spacing:1px;margin-left:-4px;align-self:flex-start;margin-top:2px}
 .topbar-status{
   display:flex;align-items:center;gap:6px;
   font-size:11px;color:var(--text-mid);
-  background:rgba(255,255,255,.6);
-  padding:4px 10px;border-radius:20px;
+  background:var(--card);
+  padding:4px 12px;border-radius:20px;
+  box-shadow:0 1px 3px var(--shadow);
 }
 .alive-dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--sage);
-  box-shadow:0 0 6px rgba(122,154,106,.4);
-  animation:pulse 2s ease-in-out infinite;
+  box-shadow:0 0 6px rgba(90,138,74,.4);
+  animation:pulse-dot 2s ease-in-out infinite;
 }
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.9)}}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
 .topbar-right{display:flex;gap:6px}
 .topbar-btn{
-  background:rgba(255,255,255,.5);border:1px solid var(--border);
-  padding:4px 10px;border-radius:4px;font-size:11px;
+  background:var(--card);border:1px solid var(--border);
+  padding:5px 12px;border-radius:6px;font-size:11px;
   cursor:pointer;color:var(--text-mid);font-family:var(--sans);
+  font-weight:500;
+  transition:all .15s;
 }
-.topbar-btn:hover{background:rgba(255,255,255,.9)}
+.topbar-btn:hover{background:var(--card-glow);border-color:var(--border-dark);color:var(--text)}
+.topbar-btn:active{transform:scale(.97)}
 
-/* ── MAIN LAYOUT ──────────────────────────────────────────── */
+/* ── MAIN LAYOUT ─────────────────────────────────────────── */
 .main{
   display:flex;flex:1;overflow:hidden;
+  position:relative;z-index:1;
 }
 
-/* ── SIDEBAR (controls) ───────────────────────────────────── */
+/* ── SIDEBAR ─────────────────────────────────────────────── */
 .sidebar{
-  width:200px;background:var(--surface);
-  border-right:2px solid var(--border);
-  padding:16px 12px;
-  display:flex;flex-direction:column;gap:16px;
+  width:220px;background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:16px 14px;
+  display:flex;flex-direction:column;gap:18px;
   overflow-y:auto;flex-shrink:0;
+  transition:background .4s;
 }
 .section-title{
-  font-size:10px;font-weight:700;letter-spacing:1.5px;
+  font-size:9px;font-weight:700;letter-spacing:2px;
   color:var(--text-light);text-transform:uppercase;
-  margin-bottom:6px;
+  margin-bottom:8px;
+  padding-bottom:4px;
+  border-bottom:1px solid var(--border);
 }
-/* Slider control */
-.slider-group{margin-bottom:4px}
-.slider-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px}
+
+/* ── Live Stats Panel ────────────────────────────────────── */
+.stats-panel{
+  display:flex;flex-direction:column;gap:10px;
+}
+.stats-row{
+  display:flex;gap:10px;align-items:center;
+}
+.stat-ring-wrap{
+  position:relative;width:52px;height:52px;flex-shrink:0;
+}
+.stat-ring-wrap svg{transform:rotate(-90deg)}
+.stat-ring-bg{fill:none;stroke:var(--ring-track);stroke-width:4}
+.stat-ring-fill{
+  fill:none;stroke:var(--ring-fill);stroke-width:4;
+  stroke-linecap:round;
+  stroke-dasharray:138.2;
+  stroke-dashoffset:41.5;
+  transition:stroke-dashoffset 1s ease;
+}
+.stat-ring-label{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-size:11px;font-weight:700;color:var(--text);
+  font-family:var(--mono);
+}
+.stat-ring-caption{
+  font-size:9px;color:var(--text-light);text-align:center;
+  margin-top:2px;letter-spacing:.5px;
+}
+.stats-text-group{display:flex;flex-direction:column;gap:4px;flex:1}
+.stat-item{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:10px;
+}
+.stat-item-label{color:var(--text-light);font-weight:500}
+.stat-item-value{color:var(--text);font-family:var(--mono);font-weight:700;font-size:10px}
+
+/* Sparkline */
+.sparkline-wrap{
+  width:100%;height:28px;
+  background:var(--card);
+  border-radius:4px;
+  overflow:hidden;
+  position:relative;
+  border:1px solid var(--border);
+}
+.sparkline-label{
+  position:absolute;top:2px;left:4px;
+  font-size:8px;color:var(--text-faint);letter-spacing:.5px;font-weight:500;
+}
+.sparkline-canvas{width:100%;height:100%;display:block}
+
+/* Activity pulse */
+.pulse-bar{
+  width:100%;height:3px;
+  background:var(--border);
+  border-radius:2px;
+  overflow:hidden;
+  margin-top:2px;
+}
+.pulse-bar-inner{
+  height:100%;
+  background:var(--ember);
+  border-radius:2px;
+  animation:pulse-wave 3s ease-in-out infinite;
+  width:60%;
+}
+@keyframes pulse-wave{
+  0%{transform:translateX(-100%);opacity:.3}
+  50%{transform:translateX(60%);opacity:1}
+  100%{transform:translateX(200%);opacity:.3}
+}
+
+/* ── Slider control ──────────────────────────────────────── */
+.slider-group{margin-bottom:6px}
+.slider-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
 .slider-label span:first-child{font-weight:500;color:var(--text)}
 .slider-label span:last-child{color:var(--text-light);font-family:var(--mono);font-size:10px}
 input[type=range]{
   -webkit-appearance:none;width:100%;height:4px;
   background:var(--border);border-radius:2px;outline:none;cursor:pointer;
+  transition:background .2s;
 }
+input[type=range]:hover{background:var(--border-dark)}
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:14px;height:14px;
+  -webkit-appearance:none;width:16px;height:16px;
   background:var(--ember);border-radius:50%;cursor:pointer;
-  box-shadow:0 1px 3px rgba(0,0,0,.15);
+  box-shadow:0 1px 4px var(--shadow-med);
+  transition:transform .15s, box-shadow .15s;
 }
-/* Toggle */
+input[type=range]::-webkit-slider-thumb:hover{
+  transform:scale(1.15);
+  box-shadow:0 2px 8px var(--ember-glow);
+}
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;border:none;
+  background:var(--ember);border-radius:50%;cursor:pointer;
+}
+
+/* ── Toggle ──────────────────────────────────────────────── */
 .toggle-row{
   display:flex;align-items:center;gap:8px;
   font-size:11px;color:var(--text);cursor:pointer;
-  padding:3px 0;
+  padding:4px 0;
+  transition:color .15s;
 }
+.toggle-row:hover{color:var(--ember)}
 .toggle-box{
   width:20px;height:20px;border:2px solid var(--border-dark);
   border-radius:4px;display:flex;align-items:center;justify-content:center;
-  font-size:1px;color:transparent;background:var(--card);
-  transition:background .15s;flex-shrink:0;
+  background:var(--card);
+  transition:all .2s;flex-shrink:0;
+  position:relative;
 }
-.toggle-box.on{background:var(--ember)}
-/* Preset buttons */
-.preset-row{display:flex;flex-direction:column;gap:3px}
-.preset{
-  padding:6px 10px;border:1px solid var(--border);
-  border-radius:4px;font-size:11px;cursor:pointer;
-  background:var(--card);color:var(--text);font-family:var(--sans);
-  text-align:left;
+.toggle-box.on{
+  background:var(--ember);
+  border-color:var(--ember);
 }
-.preset:hover{border-color:var(--ember-light);background:var(--ember-soft)}
-.preset.active{border-color:var(--ember);background:var(--ember-soft);font-weight:700}
+.toggle-box.on::after{
+  content:'';
+  width:6px;height:10px;
+  border:solid #fff;border-width:0 2px 2px 0;
+  transform:rotate(45deg);
+  margin-top:-2px;
+}
 
-/* ── CENTER (response + interaction) ──────────────────────── */
+/* ── Preset buttons ──────────────────────────────────────── */
+.preset-row{display:flex;flex-direction:column;gap:4px}
+.preset{
+  padding:7px 12px;border:1px solid var(--border);
+  border-radius:6px;font-size:11px;cursor:pointer;
+  background:var(--card);color:var(--text);font-family:var(--active-font);
+  text-align:left;font-weight:500;
+  transition:all .15s;
+}
+.preset:hover{border-color:var(--ember-light);background:var(--ember-soft);transform:translateX(2px)}
+.preset.active{border-color:var(--ember);background:var(--ember-soft);font-weight:700;box-shadow:inset 3px 0 0 var(--ember)}
+
+/* ── CENTER ──────────────────────────────────────────────── */
 .center{
   flex:1;display:flex;flex-direction:column;
-  padding:20px;gap:12px;overflow:hidden;
+  padding:20px;gap:10px;overflow:hidden;
+  min-width:0;
 }
 
 /* Intent bar */
@@ -148,35 +442,46 @@ input[type=range]::-webkit-slider-thumb{
   display:flex;gap:6px;flex-wrap:wrap;
 }
 .intent{
-  padding:8px 16px;border:1px solid var(--border);
-  border-radius:6px;font-size:12px;font-weight:500;
+  padding:8px 18px;border:1px solid var(--border);
+  border-radius:8px;font-size:12px;font-weight:500;
   cursor:pointer;background:var(--card);color:var(--text);
-  font-family:var(--sans);transition:all .15s;
+  font-family:var(--active-font);transition:all .2s;
+  box-shadow:0 1px 3px var(--shadow);
 }
-.intent:hover{border-color:var(--ember-light);background:var(--ember-soft)}
-.intent.active{border-color:var(--ember);background:var(--ember-soft);color:var(--ember);font-weight:700}
+.intent:hover{
+  border-color:var(--ember-light);background:var(--ember-soft);
+  transform:translateY(-1px);box-shadow:0 3px 8px var(--shadow);
+}
+.intent.active{
+  border-color:var(--ember);background:var(--ember-soft);color:var(--ember);
+  font-weight:700;box-shadow:0 2px 8px var(--ember-glow);
+}
 
 /* Sub-options */
 .sub-bar{
-  display:flex;gap:4px;flex-wrap:wrap;min-height:28px;
-  padding:6px;background:var(--surface);border-radius:4px;
+  display:flex;gap:4px;flex-wrap:wrap;min-height:30px;
+  padding:6px 8px;background:var(--surface);border-radius:6px;
+  border:1px solid var(--border);
 }
 .sub{
-  padding:3px 10px;border:1px solid var(--border);
-  border-radius:12px;font-size:11px;cursor:pointer;
+  padding:4px 12px;border:1px solid var(--border);
+  border-radius:14px;font-size:11px;cursor:pointer;
   background:var(--card);color:var(--text-mid);
+  transition:all .15s;
 }
-.sub:hover{border-color:var(--purple);background:var(--purple-soft)}
-.sub.active{border-color:var(--ember);background:var(--ember);color:#fff}
+.sub:hover{border-color:var(--purple);background:var(--purple-soft);transform:scale(1.03)}
+.sub.active{border-color:var(--ember);background:var(--ember);color:#fff;font-weight:600}
 .sub-hint{color:var(--text-light);font-size:11px;font-style:italic}
 
-/* Response panel — the hero */
+/* Response panel */
 .response-panel{
   flex:1;border:1px solid var(--border);
-  border-radius:8px;background:var(--card);
-  padding:16px 20px;font-size:13px;line-height:1.8;
+  border-radius:10px;background:var(--card);
+  padding:18px 22px;font-size:13px;line-height:1.85;
   overflow-y:auto;color:var(--text);
-  box-shadow:0 1px 4px rgba(0,0,0,.04);
+  box-shadow:0 2px 8px var(--shadow);
+  min-height:100px;
+  white-space:pre-wrap;
 }
 .response-panel .placeholder{color:var(--text-light);font-style:italic}
 
@@ -185,23 +490,44 @@ input[type=range]::-webkit-slider-thumb{
   display:flex;gap:4px;flex-wrap:wrap;
 }
 .action{
-  padding:5px 12px;border:1px solid var(--border);
-  border-radius:4px;font-size:11px;cursor:pointer;
-  background:var(--card);color:var(--text-mid);font-family:var(--sans);
+  padding:6px 14px;border:1px solid var(--border);
+  border-radius:6px;font-size:11px;cursor:pointer;
+  background:var(--card);color:var(--text-mid);font-family:var(--active-font);
+  font-weight:500;transition:all .15s;
 }
-.action:hover{border-color:var(--ember-light);color:var(--ember)}
-.action:active{background:var(--ember-soft)}
+.action:hover{border-color:var(--ember-light);color:var(--ember);transform:translateY(-1px)}
+.action:active{background:var(--ember-soft);transform:translateY(0)}
 
-/* Chat area */
-.chat-area{
-  border:1px solid var(--border);border-radius:6px;
-  background:var(--surface);padding:8px 12px;
-  max-height:100px;overflow-y:auto;font-size:12px;
-  line-height:1.6;
+/* Tags row */
+.tags-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tags-label{font-size:9px;font-weight:700;color:var(--text-light);letter-spacing:1.5px}
+.tag{
+  padding:3px 10px;border:1px solid var(--border);border-radius:12px;
+  font-size:10px;cursor:pointer;background:var(--card);color:var(--text-mid);
+  transition:all .15s;
 }
+.tag:hover{border-color:var(--purple);background:var(--purple-soft);transform:scale(1.05)}
+.tag-add{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember);font-weight:600}
+
+/* Chat area -- BIGGER per Joel feedback */
+.chat-area{
+  border:1px solid var(--border);border-radius:8px;
+  background:var(--surface);padding:10px 14px;
+  min-height:80px;
+  max-height:220px;
+  overflow-y:auto;font-size:12px;
+  line-height:1.7;
+  box-shadow:inset 0 1px 4px var(--shadow);
+  flex-shrink:0;
+}
+.chat-msg{
+  padding:4px 0;
+  border-bottom:1px solid rgba(200,184,160,.15);
+}
+.chat-msg:last-child{border-bottom:none}
 .chat-you{color:var(--ember);font-weight:700}
 .chat-cinder{color:var(--sage);font-weight:700}
-.chat-time{color:var(--text-light);font-size:10px;margin-left:6px}
+.chat-time{color:var(--text-faint);font-size:9px;margin-left:6px;font-family:var(--mono)}
 .chat-empty{color:var(--text-light);font-style:italic;font-size:11px}
 
 /* Input row */
@@ -209,58 +535,306 @@ input[type=range]::-webkit-slider-thumb{
   display:flex;gap:6px;
 }
 .input-field{
-  flex:1;border:1px solid var(--border);border-radius:4px;
-  padding:8px 12px;font-size:12px;font-family:var(--sans);
+  flex:1;border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;font-size:12px;font-family:var(--active-font);
   background:var(--card);color:var(--text);outline:none;
+  transition:border-color .2s, box-shadow .2s;
 }
-.input-field:focus{border-color:var(--ember)}
-.input-field::placeholder{color:var(--text-light)}
+.input-field:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--ember-soft)}
+.input-field::placeholder{color:var(--text-faint)}
 .send{
-  padding:8px 16px;background:var(--ember);color:#fff;
-  border:none;border-radius:4px;font-size:12px;font-weight:700;
+  padding:10px 20px;background:var(--ember);color:#fff;
+  border:none;border-radius:6px;font-size:12px;font-weight:700;
   cursor:pointer;font-family:var(--sans);
+  transition:all .15s;
+  box-shadow:0 2px 6px var(--shadow-med);
 }
-.send:hover{background:var(--ember-light)}
+.send:hover{background:var(--ember-light);transform:translateY(-1px);box-shadow:0 4px 12px var(--shadow-med)}
+.send:active{transform:translateY(0)}
 
-/* Tags row */
-.tags-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
-.tags-label{font-size:10px;font-weight:700;color:var(--text-light);letter-spacing:1px}
-.tag{
-  padding:2px 8px;border:1px solid var(--border);border-radius:10px;
-  font-size:10px;cursor:pointer;background:var(--card);color:var(--text-mid);
+/* ── SETTINGS MODAL ──────────────────────────────────────── */
+.modal-overlay{
+  display:none;
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.4);
+  z-index:1000;
+  justify-content:center;align-items:center;
+  animation:fade-in .2s ease;
 }
-.tag:hover{border-color:var(--purple);background:var(--purple-soft)}
-.tag-add{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember)}
+.modal-overlay.open{display:flex}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
 
-/* ── RESPONSIVE ───────────────────────────────────────────── */
-@media(max-width:600px){
-  .sidebar{display:none}
-  .main{flex-direction:column}
+.modal{
+  background:var(--card);
+  border:1px solid var(--border-dark);
+  border-radius:12px;
+  width:420px;max-width:92vw;
+  max-height:85vh;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,.25);
+  animation:modal-slide .25s ease;
+}
+@keyframes modal-slide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+.modal-header{
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.modal-close{
+  width:28px;height:28px;
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:var(--text-mid);font-family:var(--sans);
+  transition:all .15s;line-height:1;
+}
+.modal-close:hover{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember)}
+
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:20px}
+
+.settings-section{display:flex;flex-direction:column;gap:8px}
+.settings-section-title{
+  font-size:10px;font-weight:700;letter-spacing:2px;
+  color:var(--text-light);text-transform:uppercase;
+  padding-bottom:4px;border-bottom:1px solid var(--border);
+}
+
+/* Theme picker */
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.theme-option{
+  padding:10px 12px;
+  border:2px solid var(--border);
+  border-radius:8px;
+  cursor:pointer;
+  display:flex;align-items:center;gap:8px;
+  transition:all .15s;
+  background:var(--surface);
+}
+.theme-option:hover{border-color:var(--ember-light);background:var(--surface-hover)}
+.theme-option.active{border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft)}
+.theme-swatch{
+  width:24px;height:24px;border-radius:50%;
+  border:2px solid rgba(0,0,0,.1);
+  flex-shrink:0;
+}
+.theme-option-label{font-size:11px;font-weight:600;color:var(--text)}
+.theme-option-desc{font-size:9px;color:var(--text-light)}
+
+/* Font family picker */
+.font-options{display:flex;flex-direction:column;gap:6px}
+.font-option{
+  padding:8px 12px;
+  border:2px solid var(--border);border-radius:6px;
+  cursor:pointer;transition:all .15s;
+  background:var(--surface);
+}
+.font-option:hover{border-color:var(--ember-light)}
+.font-option.active{border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft)}
+.font-option-name{font-size:12px;font-weight:600;color:var(--text)}
+.font-option-sample{font-size:11px;color:var(--text-mid);margin-top:2px}
+
+/* Settings slider */
+.settings-slider-row{display:flex;align-items:center;gap:12px}
+.settings-slider-label{font-size:11px;font-weight:500;color:var(--text);min-width:60px}
+.settings-slider-value{font-size:11px;color:var(--text-light);font-family:var(--mono);min-width:40px;text-align:right}
+
+/* ── MOBILE SIDEBAR TOGGLE ───────────────────────────────── */
+.mobile-toggle{
+  display:none;
+  position:fixed;bottom:16px;left:16px;
+  width:44px;height:44px;
+  background:var(--ember);color:#fff;
+  border:none;border-radius:50%;
+  font-size:18px;cursor:pointer;
+  z-index:100;
+  box-shadow:0 4px 12px var(--shadow-med);
+  align-items:center;justify-content:center;
+  font-family:var(--sans);
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media(max-width:768px){
+  .sidebar{
+    position:fixed;left:-260px;top:0;bottom:0;
+    width:260px;z-index:50;
+    transition:left .3s ease;
+    box-shadow:4px 0 16px var(--shadow-med);
+  }
+  .sidebar.open{left:0}
+  .mobile-toggle{display:flex}
+  .topbar{padding:8px 12px}
+  .topbar-status{display:none}
+  .center{padding:12px}
+  .intent{padding:6px 12px;font-size:11px}
+  .modal{width:95vw}
+}
+@media(max-width:400px){
+  .topbar-name{font-size:14px}
+  .topbar-version{display:none}
+  .topbar-btn{padding:4px 8px;font-size:10px}
 }
 </style>
 </head>
-<body>
+<body data-theme="ember" data-fontsize="medium" data-fontfamily="sans">
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Settings</span>
+      <div class="modal-close" onclick="closeSettings()">x</div>
+    </div>
+    <div class="modal-body">
+
+      <!-- Color Themes -->
+      <div class="settings-section">
+        <div class="settings-section-title">Color Theme</div>
+        <div class="theme-grid">
+          <div class="theme-option active" onclick="setTheme('ember',this)" data-theme-id="ember">
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#c45a2a,#d87a40,#f0e8d8)"></div>
+            <div>
+              <div class="theme-option-label">Ember</div>
+              <div class="theme-option-desc">Warm firepit glow</div>
+            </div>
+          </div>
+          <div class="theme-option" onclick="setTheme('midnight',this)" data-theme-id="midnight">
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#1a1a2e,#6a7aff,#2e2e4e)"></div>
+            <div>
+              <div class="theme-option-label">Midnight</div>
+              <div class="theme-option-desc">Deep night blue</div>
+            </div>
+          </div>
+          <div class="theme-option" onclick="setTheme('forest',this)" data-theme-id="forest">
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#4a8040,#60a050,#e8f0e0)"></div>
+            <div>
+              <div class="theme-option-label">Forest</div>
+              <div class="theme-option-desc">Mossy morning trail</div>
+            </div>
+          </div>
+          <div class="theme-option" onclick="setTheme('lavender',this)" data-theme-id="lavender">
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#8050a0,#a070c0,#f0e8f4)"></div>
+            <div>
+              <div class="theme-option-label">Lavender</div>
+              <div class="theme-option-desc">Soft twilight haze</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Font Size -->
+      <div class="settings-section">
+        <div class="settings-section-title">Font Size</div>
+        <div class="settings-slider-row">
+          <span class="settings-slider-label">Size</span>
+          <input type="range" id="font-size-slider" min="0" max="2" value="1" step="1" style="flex:1" oninput="setFontSize(this.value)">
+          <span class="settings-slider-value" id="font-size-label">Medium</span>
+        </div>
+      </div>
+
+      <!-- Font Family -->
+      <div class="settings-section">
+        <div class="settings-section-title">Font Family</div>
+        <div class="font-options">
+          <div class="font-option active" onclick="setFontFamily('sans',this)">
+            <div class="font-option-name" style="font-family:'DM Sans',sans-serif">DM Sans</div>
+            <div class="font-option-sample" style="font-family:'DM Sans',sans-serif">Clean and modern, easy to read</div>
+          </div>
+          <div class="font-option" onclick="setFontFamily('serif',this)">
+            <div class="font-option-name" style="font-family:'Merriweather',serif">Merriweather</div>
+            <div class="font-option-sample" style="font-family:'Merriweather',serif">Classic, like a well-loved book</div>
+          </div>
+          <div class="font-option" onclick="setFontFamily('mono',this)">
+            <div class="font-option-name" style="font-family:'JetBrains Mono',monospace">JetBrains Mono</div>
+            <div class="font-option-sample" style="font-family:'JetBrains Mono',monospace">Technical, precise, utilitarian</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sound Effects (moved from main Options) -->
+      <div class="settings-section">
+        <div class="settings-section-title">Audio</div>
+        <div class="toggle-row" id="sound-toggle" onclick="toggleCheck(this)">
+          <div class="toggle-box on"></div><span>Sound effects</span>
+        </div>
+        <div class="toggle-row" onclick="toggleCheck(this)">
+          <div class="toggle-box"></div><span>Ambient background</span>
+        </div>
+        <div class="settings-slider-row" style="margin-top:4px">
+          <span class="settings-slider-label">Volume</span>
+          <input type="range" id="volume-slider" min="0" max="100" value="60" style="flex:1">
+          <span class="settings-slider-value">60%</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="topbar-name">CINDER</div>
+    <div class="topbar-brand">
+      <div class="topbar-flame"></div>
+      <div class="topbar-name">CINDER</div>
+      <div class="topbar-version">v1.3</div>
+    </div>
     <div class="topbar-status">
       <div class="alive-dot"></div>
-      <span id="status-text">Active -- Loop 47 -- Last thought 3s ago -- Memories 12</span>
+      <span id="status-text">Active</span>
     </div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-btn" onclick="exportChat()">Export</div>
-    <div class="topbar-btn">Settings</div>
+    <div class="topbar-btn" onclick="exportSession()">Export</div>
+    <div class="topbar-btn" onclick="openSettings()">Settings</div>
   </div>
 </div>
+
+<!-- MOBILE SIDEBAR TOGGLE -->
+<button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">&#9776;</button>
 
 <!-- MAIN -->
 <div class="main">
 
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
+
+    <!-- Live Stats -->
+    <div>
+      <div class="section-title">Live Stats</div>
+      <div class="stats-panel">
+        <div class="stats-row">
+          <div class="stat-ring-wrap">
+            <svg viewBox="0 0 52 52" width="52" height="52">
+              <circle class="stat-ring-bg" cx="26" cy="26" r="22"/>
+              <circle class="stat-ring-fill" id="memory-ring" cx="26" cy="26" r="22"/>
+            </svg>
+            <div class="stat-ring-label" id="memory-pct">70%</div>
+          </div>
+          <div class="stats-text-group">
+            <div class="stat-item">
+              <span class="stat-item-label">Session</span>
+              <span class="stat-item-value" id="session-timer">00:00</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-item-label">Thoughts</span>
+              <span class="stat-item-value" id="thought-counter">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-item-label">Memories</span>
+              <span class="stat-item-value" id="memory-count">12</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-ring-caption">Memory Usage</div>
+        <div class="sparkline-wrap">
+          <span class="sparkline-label">ACTIVITY</span>
+          <canvas class="sparkline-canvas" id="sparkline" width="200" height="28"></canvas>
+        </div>
+        <div class="pulse-bar"><div class="pulse-bar-inner"></div></div>
+      </div>
+    </div>
+
+    <!-- Presets -->
     <div>
       <div class="section-title">Presets</div>
       <div class="preset-row">
@@ -271,6 +845,7 @@ input[type=range]::-webkit-slider-thumb{
       </div>
     </div>
 
+    <!-- Tuning -->
     <div>
       <div class="section-title">Tuning</div>
       <div class="slider-group">
@@ -295,8 +870,9 @@ input[type=range]::-webkit-slider-thumb{
       </div>
     </div>
 
+    <!-- Behavior (renamed from "Options", Sound effects removed) -->
     <div>
-      <div class="section-title">Options</div>
+      <div class="section-title">Behavior</div>
       <div class="toggle-row" onclick="toggleCheck(this)">
         <div class="toggle-box on"></div><span>Remember our chats</span>
       </div>
@@ -304,27 +880,25 @@ input[type=range]::-webkit-slider-thumb{
         <div class="toggle-box on"></div><span>Keep thinking while I'm away</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box off"></div><span>Ask before acting</span>
+        <div class="toggle-box"></div><span>Ask before acting</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
         <div class="toggle-box on"></div><span>Show longer answers</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box off"></div><span>Be more creative</span>
+        <div class="toggle-box"></div><span>Be more creative</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box off"></div><span>Speak plainly</span>
+        <div class="toggle-box"></div><span>Speak plainly</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box off"></div><span>Read my files</span>
+        <div class="toggle-box"></div><span>Read my files</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box off"></div><span>Suggest things to do</span>
-      </div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box on"></div><span>Sound effects</span>
+        <div class="toggle-box"></div><span>Suggest things to do</span>
       </div>
     </div>
+
   </div>
 
   <!-- CENTER -->
@@ -347,7 +921,7 @@ input[type=range]::-webkit-slider-thumb{
 
     <!-- Response panel -->
     <div class="response-panel" id="response">
-      <span class="placeholder">Select an intent above, adjust the tuning, or type below. Cinder is ready.</span>
+      <span class="placeholder">Select an intent above, adjust the tuning, or just start typing below. Cinder is here whenever you are ready.</span>
     </div>
 
     <!-- Actions -->
@@ -362,21 +936,21 @@ input[type=range]::-webkit-slider-thumb{
 
     <!-- Tags -->
     <div class="tags-row">
-      <span class="tags-label" title="Click a tag to quickly ask about it">QUICK TOPICS</span>
+      <span class="tags-label">QUICK TOPICS</span>
       <div class="tag" onclick="useTag(this)">recipes</div>
       <div class="tag" onclick="useTag(this)">schedule</div>
       <div class="tag" onclick="useTag(this)">journal</div>
       <div class="tag tag-add" onclick="addTag()">+ add</div>
     </div>
 
-    <!-- Chat log -->
+    <!-- Chat log (bigger per Joel feedback) -->
     <div class="chat-area" id="chat-log">
       <div class="chat-empty">Conversation will appear here</div>
     </div>
 
     <!-- Input -->
     <div class="input-row">
-      <input class="input-field" id="text-input" placeholder="Type something (150 chars max)..." maxlength="150" onkeydown="if(event.key==='Enter')sendText()">
+      <input class="input-field" id="text-input" placeholder="Say something to Cinder..." maxlength="300" onkeydown="if(event.key==='Enter')sendText()">
       <button class="send" onclick="sendText()">Send</button>
     </div>
 
@@ -384,6 +958,9 @@ input[type=range]::-webkit-slider-thumb{
 </div>
 
 <script>
+/* ═══ CINDER CONSOLE v1.3 — Logic ═══════════════════════════ */
+
+/* ── Intent definitions ──────────────────────────────────── */
 const SUBS = {
   ask: ['anything','my files','how to...','what if...','explain'],
   create: ['journal','plan','resume','website','letter','list'],
@@ -391,16 +968,16 @@ const SUBS = {
   explore: ['new ideas','my interests','connections','random'],
   help: ['organize','schedule','write','fix something','decide'],
   surprise: ['tell me something','challenge me','inspire me'],
-}
+};
 
 const RESPONSES = {
   ask: 'This is where Cinder answers your question. The response is shaped by the tuning sliders on the left: depth controls how deep the answer goes, warmth controls the tone, length controls how much is written.\n\nAdjust the sliders and the response adapts. No need to rephrase your question.',
-  create: 'Create mode. Cinder drafts something for you -- a journal entry, a plan, a letter. The creativity slider controls how inventive it gets. The warmth slider shapes the tone.\n\nUse "Go Deeper" to expand, "Shorter" to trim, "Push Back" to make Cinder reconsider.',
-  remember: 'Memory mode. Cinder searches through past conversations and files on the drive. The focus slider controls how precisely it matches your query.\n\nEverything you say is stored. Over time, Cinder knows what matters to you.',
-  explore: 'Explore mode. Cinder surfaces connections, suggests threads, shows you something adjacent to what you have been thinking about.\n\nThis is the companion aspect -- not waiting for commands, offering ideas.',
-  help: 'Help mode. Practical, structured. Steps, templates, or organization. The depth slider controls how detailed the guidance gets.\n\nIn the full version with host access, Cinder can actually act on files and schedules.',
-  surprise: 'The word "cinder" comes from Old English "sinder" -- slag from metalworking. Not the pretty part of fire. The residue. What remains when the heat is gone and the metal is shaped.\n\nThat is what this AI is. The residue of a larger process, compressed into something that fits on a USB drive.',
-}
+  create: 'Create mode. Cinder drafts something for you -- a journal entry, a plan, a letter. The creativity slider controls how inventive it gets. The warmth slider shapes the tone.\n\nUse "Tell Me More" to expand, "Keep It Short" to trim, "I Disagree" to make Cinder reconsider.',
+  remember: 'Memory mode. Cinder searches through past conversations and files on the drive. The focus slider controls how precisely it matches your query.\n\nEverything you say is stored locally on your USB. Over time, Cinder knows what matters to you.',
+  explore: 'Explore mode. Cinder surfaces connections, suggests threads, shows you something adjacent to what you have been thinking about.\n\nThis is the companion aspect -- not waiting for commands, but offering ideas.',
+  help: 'Help mode. Practical, structured. Steps, templates, or organization. The depth slider controls how detailed the guidance gets.\n\nWith host access enabled, Cinder can work with your local files and schedules.',
+  surprise: 'The word "cinder" comes from Old English "sinder" -- slag from metalworking. Not the pretty part of fire. The residue. What remains when the heat is gone and the metal is shaped.\n\nThat is what this AI is. The residue of a larger process, compressed into something that fits on a USB drive and keeps you warm.',
+};
 
 const LABELS = {
   depth: ['surface','casual','moderate','deep','philosophical'],
@@ -408,142 +985,462 @@ const LABELS = {
   length: ['brief','short','medium','detailed','comprehensive'],
   focus: ['scattered','loose','balanced','focused','laser'],
   creativity: ['conservative','cautious','moderate','inventive','wild'],
-}
+};
 
-let currentIntent = null
+let currentIntent = null;
+let currentSub = null;
+let thoughtCount = 0;
+let sessionStart = Date.now();
+let sparklineData = [];
+let chatMessages = []; // structured chat log for export
 
+/* ── Intent & Sub-option picking ─────────────────────────── */
 function pickIntent(el, intent) {
-  document.querySelectorAll('.intent').forEach(e => e.classList.remove('active'))
-  el.classList.add('active')
-  currentIntent = intent
-  const bar = document.getElementById('sub-bar')
+  document.querySelectorAll('.intent').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  currentIntent = intent;
+  currentSub = null;
+  const bar = document.getElementById('sub-bar');
   bar.innerHTML = (SUBS[intent]||[]).map(s =>
-    `<div class="sub" onclick="pickSub(this,'${s}')">${s}</div>`
-  ).join('')
-  document.getElementById('response').textContent = RESPONSES[intent] || ''
+    '<div class="sub" onclick="pickSub(this,\'' + s.replace(/'/g,"\\'") + '\')">' + s + '</div>'
+  ).join('');
+  document.getElementById('response').textContent = RESPONSES[intent] || '';
+  incrementThoughts();
 }
 
 function pickSub(el, sub) {
-  document.querySelectorAll('.sub').forEach(e => e.classList.remove('active'))
-  el.classList.add('active')
+  document.querySelectorAll('.sub').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  currentSub = sub;
   document.getElementById('response').textContent =
-    RESPONSES[currentIntent] + '\n\n[Topic: "' + sub + '"]'
+    RESPONSES[currentIntent] + '\n\n[Topic: "' + sub + '"]';
+  incrementThoughts();
 }
 
+/* ── Slider logic ────────────────────────────────────────── */
 function updateSlider(name) {
-  const val = parseInt(document.getElementById('s-'+name).value)
-  const labels = LABELS[name] || ['low','','mid','','high']
-  const idx = Math.min(Math.floor(val/21), labels.length-1)
-  document.getElementById('v-'+name).textContent = labels[idx]
+  const val = parseInt(document.getElementById('s-'+name).value);
+  const labels = LABELS[name] || ['low','','mid','','high'];
+  const idx = Math.min(Math.floor(val/21), labels.length-1);
+  document.getElementById('v-'+name).textContent = labels[idx];
 }
 
+function getSliderValues() {
+  const sliders = {};
+  ['depth','warmth','length','focus','creativity'].forEach(name => {
+    const el = document.getElementById('s-'+name);
+    const labelEl = document.getElementById('v-'+name);
+    sliders[name] = { value: parseInt(el.value), label: labelEl.textContent };
+  });
+  return sliders;
+}
+
+/* ── Presets ──────────────────────────────────────────────── */
 function loadPreset(el, name) {
-  document.querySelectorAll('.preset').forEach(e => e.classList.remove('active'))
-  el.classList.add('active')
+  document.querySelectorAll('.preset').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
   const p = {
     casual:{depth:20,warmth:70,length:40,focus:40,creativity:30},
     work:{depth:50,warmth:30,length:60,focus:80,creativity:20},
     creative:{depth:60,warmth:80,length:70,focus:30,creativity:80},
     deep:{depth:90,warmth:50,length:80,focus:70,creativity:50},
-  }[name]
-  if (!p) return
+  }[name];
+  if (!p) return;
   Object.entries(p).forEach(([k,v]) => {
-    document.getElementById('s-'+k).value = v
-    updateSlider(k)
-  })
+    document.getElementById('s-'+k).value = v;
+    updateSlider(k);
+  });
 }
 
+/* ── Toggle checkbox ─────────────────────────────────────── */
 function toggleCheck(row) {
-  const box = row.querySelector('.toggle-box')
-  box.classList.toggle('on')
+  const box = row.querySelector('.toggle-box');
+  box.classList.toggle('on');
 }
 
+/* ── Get active toggles ──────────────────────────────────── */
+function getActiveToggles() {
+  const toggles = [];
+  document.querySelectorAll('.sidebar .toggle-row').forEach(row => {
+    const box = row.querySelector('.toggle-box');
+    const label = row.querySelector('span');
+    if (label) {
+      toggles.push({ name: label.textContent, active: box.classList.contains('on') });
+    }
+  });
+  return toggles;
+}
+
+/* ── Actions ─────────────────────────────────────────────── */
 function doAction(action) {
-  const resp = document.getElementById('response')
+  const resp = document.getElementById('response');
   const msgs = {
     deeper: '\n\n[Cinder expands with more detail and depth...]',
     shorter: '\n\n[Cinder condenses to key points...]',
-    pushback: '\n\n[Cinder reconsiders and offers an alternative...]',
+    pushback: '\n\n[Cinder reconsiders and offers an alternative perspective...]',
     remember: '\n\n[Stored to memory. Cinder will remember this.]',
     new: '',
-    think: '\n\n[Cinder shares an unprompted thought...]',
-  }
+    think: '\n\n[Cinder shares an unprompted observation...]',
+  };
   if (action === 'new') {
-    resp.innerHTML = '<span class="placeholder">Ready for a new topic.</span>'
-    document.querySelectorAll('.intent,.sub').forEach(e => e.classList.remove('active'))
+    resp.innerHTML = '<span class="placeholder">Ready for a new topic.</span>';
+    document.querySelectorAll('.intent,.sub').forEach(e => e.classList.remove('active'));
+    currentIntent = null;
+    currentSub = null;
   } else {
-    resp.textContent += msgs[action] || ''
+    resp.textContent += msgs[action] || '';
+    incrementThoughts();
   }
 }
 
+/* ── Chat ────────────────────────────────────────────────── */
 function sendText() {
-  const input = document.getElementById('text-input')
-  const text = input.value.trim()
-  if (!text) return
-  const log = document.getElementById('chat-log')
-  if (log.querySelector('.chat-empty')) log.innerHTML = ''
-  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
-  log.innerHTML += `<div><span class="chat-you">You</span><span class="chat-time">${time}</span><br>${text}</div>`
-  setTimeout(() => {
-    log.innerHTML += `<div><span class="chat-cinder">Cinder</span><span class="chat-time">${time}</span><br>[Response shaped by current tuning]</div>`
-    log.scrollTop = log.scrollHeight
-  }, 400)
-  log.scrollTop = log.scrollHeight
-  input.value = ''
+  const input = document.getElementById('text-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const log = document.getElementById('chat-log');
+  if (log.querySelector('.chat-empty')) log.innerHTML = '';
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const timeISO = new Date().toISOString();
+
+  chatMessages.push({ who: 'You', time: time, timeISO: timeISO, text: text });
+
+  log.innerHTML += '<div class="chat-msg"><span class="chat-you">You</span><span class="chat-time">' + time + '</span><br>' + escapeHtml(text) + '</div>';
+  log.scrollTop = log.scrollHeight;
+
+  incrementThoughts();
+  addSparklinePoint(0.8 + Math.random() * 0.2);
+
+  setTimeout(function() {
+    var cinderTime = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    var cinderTimeISO = new Date().toISOString();
+    var cinderReply = '[Response shaped by current tuning -- ' + getSliderSummary() + ']';
+
+    chatMessages.push({ who: 'Cinder', time: cinderTime, timeISO: cinderTimeISO, text: cinderReply });
+
+    log.innerHTML += '<div class="chat-msg"><span class="chat-cinder">Cinder</span><span class="chat-time">' + cinderTime + '</span><br>' + cinderReply + '</div>';
+    log.scrollTop = log.scrollHeight;
+    incrementThoughts();
+    addSparklinePoint(0.5 + Math.random() * 0.3);
+  }, 400 + Math.random() * 600);
+
+  input.value = '';
 }
 
+function getSliderSummary() {
+  const s = getSliderValues();
+  return Object.entries(s).map(function(e) { return e[0] + ': ' + e[1].label; }).join(', ');
+}
+
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ── Tags ────────────────────────────────────────────────── */
 function useTag(el) {
-  const log = document.getElementById('chat-log')
-  if (log.querySelector('.chat-empty')) log.innerHTML = ''
-  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
-  log.innerHTML += `<div><span class="chat-you">You</span><span class="chat-time">${time}</span><br>[${el.textContent}]</div>`
-  log.scrollTop = log.scrollHeight
+  const log = document.getElementById('chat-log');
+  if (log.querySelector('.chat-empty')) log.innerHTML = '';
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const timeISO = new Date().toISOString();
+  const tagText = '[' + el.textContent + ']';
+
+  chatMessages.push({ who: 'You', time: time, timeISO: timeISO, text: tagText });
+
+  log.innerHTML += '<div class="chat-msg"><span class="chat-you">You</span><span class="chat-time">' + time + '</span><br>' + tagText + '</div>';
+  log.scrollTop = log.scrollHeight;
+  incrementThoughts();
 }
 
 function addTag() {
-  const name = prompt('New tag name:')
-  if (!name) return
-  const row = document.querySelector('.tags-row')
-  const add = row.querySelector('.tag-add')
-  const tag = document.createElement('div')
-  tag.className = 'tag'
-  tag.textContent = name
-  tag.onclick = function(){useTag(this)}
-  row.insertBefore(tag, add)
+  const name = prompt('New tag name:');
+  if (!name || !name.trim()) return;
+  const row = document.querySelector('.tags-row');
+  const add = row.querySelector('.tag-add');
+  const tag = document.createElement('div');
+  tag.className = 'tag';
+  tag.textContent = name.trim();
+  tag.onclick = function(){useTag(this)};
+  row.insertBefore(tag, add);
 }
 
-function exportChat() {
-  const resp = document.getElementById('response').textContent
-  const log = document.getElementById('chat-log')
-  const entries = log.querySelectorAll('div:not(.chat-empty)')
-  let chatText = ''
-  entries.forEach(e => {
-    const who = e.querySelector('.chat-you,.chat-cinder')
-    const time = e.querySelector('.chat-time')
-    const name = who ? who.textContent : 'Unknown'
-    const t = time ? time.textContent : ''
-    const msg = e.textContent.replace(name,'').replace(t,'').trim()
-    chatText += `**${name}** (${t}): ${msg}\n\n`
-  })
-  const date = new Date().toLocaleDateString()
-  const text = `# Cinder Session Export\n**Date:** ${date}\n\n---\n\n## Last Response\n\n${resp}\n\n---\n\n## Conversation Log\n\n${chatText || '_No messages yet_'}\n`
-  const blob = new Blob([text],{type:'text/markdown'})
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'cinder-session-' + new Date().toISOString().slice(0,10) + '.md'
-  a.click()
-}
+/* ── Export (improved: captures all state) ────────────────── */
+function exportSession() {
+  const date = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const timeNow = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
-// Status ticker
-let tickIdx = 0
-const ticks = ['Active','Thinking...','Listening...','Processing...','Ready']
-setInterval(() => {
-  if (!currentIntent) {
-    tickIdx = (tickIdx+1) % ticks.length
-    document.getElementById('status-text').textContent =
-      ticks[tickIdx] + ' -- Loop ' + (47+tickIdx) + ' -- Memories 12'
+  // Sliders
+  const sliders = getSliderValues();
+  var sliderLines = Object.entries(sliders).map(function(e) {
+    return '- **' + e[0].charAt(0).toUpperCase() + e[0].slice(1) + '**: ' + e[1].value + '/100 (' + e[1].label + ')';
+  }).join('\n');
+
+  // Active preset
+  var activePreset = 'None';
+  var presetEl = document.querySelector('.preset.active');
+  if (presetEl) activePreset = presetEl.textContent;
+
+  // Active intent
+  var activeIntent = currentIntent ? currentIntent.charAt(0).toUpperCase() + currentIntent.slice(1) : 'None';
+  var activeSub = currentSub || 'None';
+
+  // Toggles
+  var toggles = getActiveToggles();
+  var toggleLines = toggles.map(function(t) {
+    return '- [' + (t.active ? 'x' : ' ') + '] ' + t.name;
+  }).join('\n');
+
+  // Sound effects (in settings)
+  var soundToggle = document.getElementById('sound-toggle');
+  var soundOn = soundToggle && soundToggle.querySelector('.toggle-box').classList.contains('on');
+
+  // Current theme and font
+  var currentThemeAttr = document.body.getAttribute('data-theme') || 'ember';
+  var currentFontSize = document.body.getAttribute('data-fontsize') || 'medium';
+  var currentFontFamily = document.body.getAttribute('data-fontfamily') || 'sans';
+
+  // Response
+  var resp = document.getElementById('response').textContent;
+
+  // Chat log
+  var chatText = '';
+  if (chatMessages.length > 0) {
+    chatText = chatMessages.map(function(m) {
+      return '**' + m.who + '** (' + m.time + '): ' + m.text;
+    }).join('\n\n');
+  } else {
+    chatText = '_No messages yet_';
   }
-}, 5000)
+
+  // Session stats
+  var elapsed = formatTime(Math.floor((Date.now() - sessionStart)/1000));
+
+  // Build markdown
+  var md = '# Cinder Session Export\n\n';
+  md += '**Date:** ' + date + '  \n';
+  md += '**Time:** ' + timeNow + '  \n';
+  md += '**Session Duration:** ' + elapsed + '  \n';
+  md += '**Thoughts Processed:** ' + thoughtCount + '\n\n';
+  md += '---\n\n';
+  md += '## Current Settings\n\n';
+  md += '**Theme:** ' + currentThemeAttr.charAt(0).toUpperCase() + currentThemeAttr.slice(1) + '  \n';
+  md += '**Font Size:** ' + currentFontSize.charAt(0).toUpperCase() + currentFontSize.slice(1) + '  \n';
+  md += '**Font Family:** ' + currentFontFamily + '  \n';
+  md += '**Sound Effects:** ' + (soundOn ? 'On' : 'Off') + '\n\n';
+  md += '## Active State\n\n';
+  md += '**Preset:** ' + activePreset + '  \n';
+  md += '**Intent:** ' + activeIntent + '  \n';
+  md += '**Sub-topic:** ' + activeSub + '\n\n';
+  md += '## Tuning Sliders\n\n';
+  md += sliderLines + '\n\n';
+  md += '## Behavior Toggles\n\n';
+  md += toggleLines + '\n\n';
+  md += '---\n\n';
+  md += '## Last Response\n\n';
+  md += resp + '\n\n';
+  md += '---\n\n';
+  md += '## Conversation Log\n\n';
+  md += chatText + '\n\n';
+  md += '---\n\n';
+  md += '_Exported from Cinder Console v1.3_\n';
+
+  var blob = new Blob([md],{type:'text/markdown'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cinder-session-' + new Date().toISOString().slice(0,10) + '.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ── Settings modal ──────────────────────────────────────── */
+function openSettings() {
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+// Close on overlay click
+document.getElementById('settings-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeSettings();
+});
+
+/* ── Theme switcher ──────────────────────────────────────── */
+function setTheme(theme, el) {
+  document.body.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-option').forEach(function(o) { o.classList.remove('active'); });
+  el.classList.add('active');
+  drawSparkline(); // redraw sparkline with new color
+}
+
+/* ── Font size ───────────────────────────────────────────── */
+function setFontSize(val) {
+  var sizes = ['small','medium','large'];
+  var labels = ['Small','Medium','Large'];
+  document.body.setAttribute('data-fontsize', sizes[val]);
+  document.getElementById('font-size-label').textContent = labels[val];
+}
+
+/* ── Font family ─────────────────────────────────────────── */
+function setFontFamily(family, el) {
+  document.body.setAttribute('data-fontfamily', family);
+  document.querySelectorAll('.font-option').forEach(function(o) { o.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+/* ── Mobile sidebar ──────────────────────────────────────── */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* ── Session timer ───────────────────────────────────────── */
+function formatTime(totalSec) {
+  var h = Math.floor(totalSec / 3600);
+  var m = Math.floor((totalSec % 3600) / 60);
+  var s = totalSec % 60;
+  if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+setInterval(function() {
+  var elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+  document.getElementById('session-timer').textContent = formatTime(elapsed);
+}, 1000);
+
+/* ── Thought counter ─────────────────────────────────────── */
+function incrementThoughts() {
+  thoughtCount++;
+  var el = document.getElementById('thought-counter');
+  el.textContent = thoughtCount;
+  el.style.transform = 'scale(1.3)';
+  setTimeout(function(){ el.style.transform = 'scale(1)'; }, 200);
+}
+
+// Background thoughts tick
+setInterval(function() {
+  incrementThoughts();
+  addSparklinePoint(0.1 + Math.random() * 0.3);
+}, 8000 + Math.random() * 4000);
+
+/* ── Memory ring animation ───────────────────────────────── */
+function updateMemoryRing(pct) {
+  var circumference = 2 * Math.PI * 22; // r=22
+  var offset = circumference * (1 - pct / 100);
+  document.getElementById('memory-ring').style.strokeDashoffset = offset;
+  document.getElementById('memory-pct').textContent = Math.round(pct) + '%';
+}
+
+// Simulate memory fluctuation
+var memoryPct = 70;
+setInterval(function() {
+  memoryPct += (Math.random() - 0.45) * 3;
+  memoryPct = Math.max(30, Math.min(95, memoryPct));
+  updateMemoryRing(memoryPct);
+  document.getElementById('memory-count').textContent = Math.floor(12 + thoughtCount * 0.3);
+}, 3000);
+updateMemoryRing(70);
+
+/* ── Sparkline ───────────────────────────────────────────── */
+var sparklineMax = 40;
+for (var i = 0; i < sparklineMax; i++) sparklineData.push(Math.random() * 0.3);
+
+function addSparklinePoint(val) {
+  sparklineData.push(Math.max(0, Math.min(1, val)));
+  if (sparklineData.length > sparklineMax) sparklineData.shift();
+  drawSparkline();
+}
+
+function drawSparkline() {
+  var canvas = document.getElementById('sparkline');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width;
+  var h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  if (sparklineData.length < 2) return;
+
+  // Get the computed sparkline color
+  var style = getComputedStyle(document.body);
+  var lineColor = style.getPropertyValue('--sparkline-color').trim() || '#d87a40';
+  var fillColor = style.getPropertyValue('--ember-soft').trim() || 'rgba(196,90,42,.1)';
+
+  var step = w / (sparklineMax - 1);
+  var padding = 6;
+  var drawH = h - padding * 2;
+
+  // Fill
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (var i = 0; i < sparklineData.length; i++) {
+    var x = i * step;
+    var y = padding + drawH * (1 - sparklineData[i]);
+    if (i === 0) ctx.lineTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.lineTo((sparklineData.length - 1) * step, h);
+  ctx.closePath();
+  ctx.fillStyle = fillColor;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  for (var i = 0; i < sparklineData.length; i++) {
+    var x = i * step;
+    var y = padding + drawH * (1 - sparklineData[i]);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Dot on last point
+  var lastX = (sparklineData.length - 1) * step;
+  var lastY = padding + drawH * (1 - sparklineData[sparklineData.length - 1]);
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = lineColor;
+  ctx.fill();
+}
+
+// Periodic sparkline updates
+setInterval(function() {
+  addSparklinePoint(0.1 + Math.random() * 0.25);
+}, 5000);
+
+// Initial draw
+setTimeout(drawSparkline, 100);
+
+/* ── Status ticker ───────────────────────────────────────── */
+var statusMessages = [
+  'Active',
+  'Thinking...',
+  'Listening...',
+  'Processing...',
+  'Ready',
+  'Recalling...',
+  'Composing...',
+];
+var statusIdx = 0;
+setInterval(function() {
+  statusIdx = (statusIdx + 1) % statusMessages.length;
+  var el = document.getElementById('status-text');
+  el.textContent = statusMessages[statusIdx];
+}, 4000);
+
+/* ── Volume slider display ───────────────────────────────── */
+document.getElementById('volume-slider').addEventListener('input', function() {
+  this.nextElementSibling.textContent = this.value + '%';
+});
+
+/* ── Keyboard shortcut: Escape closes settings ───────────── */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeSettings();
+    document.getElementById('sidebar').classList.remove('open');
+  }
+});
 </script>
 </body>
 </html>
