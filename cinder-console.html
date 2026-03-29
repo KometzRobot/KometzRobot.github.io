@@ -161,31 +161,62 @@ input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset 
       </div>
     </div>
 
-    <!-- Dials -->
+    <!-- Tuning + Controls (merged) -->
     <div>
       <div class="label">Tuning</div>
-      <div class="dials">
-        <div class="dial-group">
-          <div class="dial-label">Depth</div>
-          <input type="range" id="dial-depth" min="0" max="100" value="40">
-          <div class="dial-val" id="val-depth">casual</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;justify-content:center">
+        <!-- Horizontal dials -->
+        <div class="dials" style="flex:1;min-width:200px">
+          <div class="dial-group">
+            <div class="dial-label">Depth</div>
+            <input type="range" id="dial-depth" min="0" max="100" value="40">
+            <div class="dial-val" id="val-depth">casual</div>
+          </div>
+          <div class="dial-group">
+            <div class="dial-label">Warmth</div>
+            <input type="range" id="dial-warmth" min="0" max="100" value="60">
+            <div class="dial-val" id="val-warmth">friendly</div>
+          </div>
+          <div class="dial-group">
+            <div class="dial-label">Length</div>
+            <input type="range" id="dial-length" min="0" max="100" value="50">
+            <div class="dial-val" id="val-length">medium</div>
+          </div>
+          <div class="dial-group">
+            <div class="dial-label">Memory</div>
+            <input type="range" id="dial-memory" min="0" max="100" value="30">
+            <div class="dial-val" id="val-memory">recent</div>
+          </div>
         </div>
-        <div class="dial-group">
-          <div class="dial-label">Warmth</div>
-          <input type="range" id="dial-warmth" min="0" max="100" value="60">
-          <div class="dial-val" id="val-warmth">friendly</div>
-        </div>
-        <div class="dial-group">
-          <div class="dial-label">Length</div>
-          <input type="range" id="dial-length" min="0" max="100" value="50">
-          <div class="dial-val" id="val-length">medium</div>
-        </div>
-        <div class="dial-group">
-          <div class="dial-label">Memory</div>
-          <input type="range" id="dial-memory" min="0" max="100" value="30">
-          <div class="dial-val" id="val-memory">recent</div>
+        <!-- Vertical + toggles -->
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div class="dial-label">FOCUS</div>
+            <input type="range" orient="vertical" min="0" max="100" value="50" style="writing-mode:vertical-lr;-webkit-appearance:slider-vertical;width:20px;height:50px">
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div class="dial-label">CREAT.</div>
+            <input type="range" orient="vertical" min="0" max="100" value="40" style="writing-mode:vertical-lr;-webkit-appearance:slider-vertical;width:20px;height:50px">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:10px">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+              <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'">X</div>Memory
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+              <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'"></div>Lock
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+              <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'">X</div>Auto
+            </label>
+          </div>
         </div>
       </div>
+    </div>
+
+    <!-- Activity Indicator (persistent loop / background work) -->
+    <div style="border:2px inset var(--shd);padding:4px 8px;background:#f5ede2;display:flex;align-items:center;gap:8px;font-size:10px">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--grn);animation:blink 2s infinite"></div>
+      <span style="color:var(--dim)">Cinder active &middot; Loop 47 &middot; Last thought: 3s ago &middot; Memories: 12 &middot; Tasks running: 2</span>
     </div>
 
     <!-- Response -->
@@ -193,36 +224,6 @@ input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset 
       <div class="label">Cinder</div>
       <div class="response" id="response">
         <span class="thinking">Waiting for input... select an intent or type below.</span>
-      </div>
-    </div>
-
-    <!-- Synth Controls -->
-    <div>
-      <div class="label">Controls</div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;justify-content:center">
-        <!-- Vertical sliders -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-          <div class="dial-label">FOCUS</div>
-          <input type="range" orient="vertical" id="vslider-focus" min="0" max="100" value="50" style="writing-mode:vertical-lr;-webkit-appearance:slider-vertical;width:20px;height:60px">
-          <div class="dial-val" id="val-focus">balanced</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-          <div class="dial-label">CREATIVITY</div>
-          <input type="range" orient="vertical" id="vslider-creative" min="0" max="100" value="40" style="writing-mode:vertical-lr;-webkit-appearance:slider-vertical;width:20px;height:60px">
-          <div class="dial-val" id="val-creative">moderate</div>
-        </div>
-        <!-- Toggle switches -->
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
-            <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'">X</div> Memory On
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
-            <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'"></div> Context Lock
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
-            <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'">X</div> Auto-Expand
-          </label>
-        </div>
       </div>
     </div>
 
@@ -237,18 +238,18 @@ input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset 
       <div class="act-btn" onclick="quickAction('think')">&#129504; What Do You Think?</div>
     </div>
 
-    <!-- User Tags -->
-    <div>
-      <div class="label">Your Tags <span style="font-weight:400;font-size:9px">(click + to add)</span></div>
-      <div id="user-tags" style="display:flex;flex-wrap:wrap;gap:4px">
-        <div class="sub-chip" onclick="sendTag(this)">recipes</div>
-        <div class="sub-chip" onclick="sendTag(this)">schedule</div>
-        <div class="sub-chip" onclick="sendTag(this)">journal</div>
-        <div class="sub-chip selected" onclick="addTag()" style="background:var(--acc);color:#fff;cursor:pointer">+</div>
+    <!-- Tags (condensed, inline) -->
+    <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+      <span style="font-size:9px;color:var(--dim);font-weight:700">TAGS:</span>
+      <div id="user-tags" style="display:flex;flex-wrap:wrap;gap:3px">
+        <div class="sub-chip" onclick="sendTag(this)" style="padding:2px 6px;font-size:10px">recipes</div>
+        <div class="sub-chip" onclick="sendTag(this)" style="padding:2px 6px;font-size:10px">schedule</div>
+        <div class="sub-chip" onclick="sendTag(this)" style="padding:2px 6px;font-size:10px">journal</div>
+        <div class="sub-chip" onclick="addTag()" style="padding:2px 6px;font-size:10px;background:var(--acc);color:#fff;cursor:pointer">+</div>
       </div>
     </div>
 
-    <!-- Chat Window (shows sent messages) -->
+    <!-- Chat Window -->
     <div>
       <div class="label">Conversation</div>
       <div id="chat-log" style="border:2px inset var(--shd);background:#fff;padding:6px;font-size:11px;
