@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CINDER CONSOLE</title>
+<style>
+:root{
+  --bg:#c5cfe0;--win:#ece9d8;--title:#6b84b5;--ttxt:#fff;
+  --face:#ece9d8;--hi:#fff;--shd:#808080;--dk:#404040;
+  --txt:#000;--dim:#666;--link:#0000ee;
+  --acc:#d4a0d9;--acc2:#a8d4e6;--grn:#7bc67b;--amb:#e6c84a;
+  --fm:'Segoe UI','Tahoma',sans-serif;--fc:'Courier New',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);font-family:var(--fm);font-size:13px;color:var(--txt);
+  display:flex;justify-content:center;padding:16px;
+  background-image:radial-gradient(circle at 25% 75%,rgba(212,160,217,.25) 0%,transparent 50%),
+  radial-gradient(circle at 75% 25%,rgba(168,212,230,.25) 0%,transparent 50%)}
+.win{background:var(--win);border:2px solid var(--shd);border-top-color:var(--hi);
+  border-left-color:var(--hi);max-width:600px;width:100%;box-shadow:4px 4px 0 rgba(0,0,0,.2)}
+.tb{background:linear-gradient(90deg,var(--title),#9ab4d6);padding:4px 6px;
+  display:flex;align-items:center;justify-content:space-between;user-select:none}
+.tb span{color:var(--ttxt);font-weight:700;font-size:12px;text-shadow:1px 1px 0 rgba(0,0,0,.3);letter-spacing:.5px}
+.tb-btns{display:flex;gap:3px}
+.tb-btn{width:18px;height:18px;background:var(--face);border:2px outset var(--hi);
+  font-size:10px;line-height:14px;text-align:center;cursor:pointer;font-family:var(--fc)}
+.tb-btn:active{border-style:inset}
+.content{padding:12px;display:flex;flex-direction:column;gap:10px}
+/* Status */
+.status{border:2px inset var(--shd);padding:4px 8px;font-size:11px;
+  display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--grn);border:1px solid var(--shd)}
+/* Section labels */
+.label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--dim);
+  border-bottom:1px solid var(--shd);padding-bottom:2px;margin-bottom:4px;text-transform:uppercase}
+/* Intent buttons — big chunky row */
+.intent-row{display:flex;flex-wrap:wrap;gap:4px}
+.intent-btn{background:var(--face);border:2px outset var(--hi);padding:8px 12px;
+  cursor:pointer;font-family:var(--fm);font-size:12px;font-weight:700;
+  display:flex;align-items:center;gap:4px;flex:1;min-width:80px;justify-content:center}
+.intent-btn:hover{background:#d6d2c2}
+.intent-btn:active,.intent-btn.active{border-style:inset;background:#c8d4e8;padding:9px 11px 7px 13px}
+.intent-btn .ico{font-size:16px}
+/* Sub-options (appears after intent selection) */
+.sub-panel{border:2px inset var(--shd);padding:8px;background:#fff;min-height:36px;
+  display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.sub-chip{background:var(--acc2);border:1px solid var(--shd);padding:3px 10px;
+  font-size:11px;cursor:pointer;border-radius:2px;font-weight:700}
+.sub-chip:hover{background:#8ec4d6}
+.sub-chip.selected{background:var(--acc);border-color:var(--dk)}
+.sub-placeholder{color:var(--dim);font-size:11px;font-style:italic}
+/* Dials section */
+.dials{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.dial-group{display:flex;flex-direction:column;align-items:center;gap:2px}
+.dial-label{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--dim);text-transform:uppercase}
+.dial-val{font-size:9px;color:var(--txt);font-family:var(--fc)}
+input[type=range]{-webkit-appearance:none;width:100px;height:6px;background:#ccc;
+  border:1px inset var(--shd);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:20px;
+  background:var(--face);border:2px outset var(--hi);cursor:pointer}
+/* Response area */
+.response{border:2px inset var(--shd);background:#fff;padding:10px;
+  font-size:12px;line-height:1.7;min-height:120px;max-height:250px;overflow-y:auto;
+  font-family:var(--fm);white-space:pre-wrap}
+.response .thinking{color:var(--dim);font-style:italic}
+/* Quick actions */
+.actions{display:flex;flex-wrap:wrap;gap:3px}
+.act-btn{background:var(--face);border:2px outset var(--hi);padding:4px 10px;
+  font-size:10px;cursor:pointer;font-family:var(--fm)}
+.act-btn:hover{background:#d6d2c2}
+.act-btn:active{border-style:inset}
+/* Presets bar */
+.presets{display:flex;gap:4px;align-items:center}
+.preset-btn{background:var(--face);border:2px outset var(--hi);padding:3px 8px;
+  font-size:10px;cursor:pointer}
+.preset-btn:hover{background:#d6d2c2}
+.preset-btn:active{border-style:inset}
+.preset-btn.active{border-style:inset;background:#c8d4e8}
+/* Ambient ticker */
+.ticker{border:2px inset var(--shd);padding:3px 8px;font-size:10px;color:var(--dim);
+  font-family:var(--fc);background:#f8f6f0;overflow:hidden;white-space:nowrap}
+/* Text input (secondary) */
+.text-row{display:flex;gap:4px}
+.text-input{flex:1;border:2px inset var(--shd);padding:4px 6px;font-size:12px;
+  font-family:var(--fm);background:#fff}
+.send-btn{background:var(--face);border:2px outset var(--hi);padding:4px 12px;
+  font-size:11px;font-weight:700;cursor:pointer}
+.send-btn:active{border-style:inset}
+/* Bottom bar */
+.bottom{border-top:2px outset var(--hi);padding:3px 8px;font-size:10px;color:var(--dim);
+  display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<div class="win">
+  <div class="tb">
+    <span>&#128293; CINDER CONSOLE — v0.1 Mockup</span>
+    <div class="tb-btns"><div class="tb-btn">_</div><div class="tb-btn">&#9633;</div><div class="tb-btn">X</div></div>
+  </div>
+  <div class="content">
+
+    <!-- Status -->
+    <div class="status">
+      <div class="dot"></div>
+      <span>Cinder ready &middot; Local AI &middot; No cloud</span>
+    </div>
+
+    <!-- Ambient Ticker -->
+    <div class="ticker" id="ticker">&#9632; idle &middot; last query: none &middot; memories: 0 &middot; uptime: just started</div>
+
+    <!-- Presets -->
+    <div>
+      <div class="label">Presets</div>
+      <div class="presets">
+        <div class="preset-btn active" onclick="loadPreset('casual')">&#9786; Casual</div>
+        <div class="preset-btn" onclick="loadPreset('work')">&#128188; Work</div>
+        <div class="preset-btn" onclick="loadPreset('creative')">&#127912; Creative</div>
+        <div class="preset-btn" onclick="loadPreset('deep')">&#129504; Deep Think</div>
+        <div class="preset-btn" onclick="loadPreset('custom')">&#9881; Custom</div>
+      </div>
+    </div>
+
+    <!-- What do you want to do? -->
+    <div>
+      <div class="label">What do you want to do?</div>
+      <div class="intent-row">
+        <div class="intent-btn" onclick="selectIntent(this,'ask')"><span class="ico">&#10067;</span> Ask</div>
+        <div class="intent-btn" onclick="selectIntent(this,'create')"><span class="ico">&#9997;</span> Create</div>
+        <div class="intent-btn" onclick="selectIntent(this,'remember')"><span class="ico">&#128190;</span> Remember</div>
+        <div class="intent-btn" onclick="selectIntent(this,'explore')"><span class="ico">&#128269;</span> Explore</div>
+        <div class="intent-btn" onclick="selectIntent(this,'help')"><span class="ico">&#128295;</span> Help Me</div>
+        <div class="intent-btn" onclick="selectIntent(this,'surprise')"><span class="ico">&#127922;</span> Surprise</div>
+      </div>
+    </div>
+
+    <!-- Sub-options -->
+    <div>
+      <div class="label">About...</div>
+      <div class="sub-panel" id="sub-panel">
+        <span class="sub-placeholder">Select an intent above to see options</span>
+      </div>
+    </div>
+
+    <!-- Dials -->
+    <div>
+      <div class="label">Tuning</div>
+      <div class="dials">
+        <div class="dial-group">
+          <div class="dial-label">Depth</div>
+          <input type="range" id="dial-depth" min="0" max="100" value="40">
+          <div class="dial-val" id="val-depth">casual</div>
+        </div>
+        <div class="dial-group">
+          <div class="dial-label">Warmth</div>
+          <input type="range" id="dial-warmth" min="0" max="100" value="60">
+          <div class="dial-val" id="val-warmth">friendly</div>
+        </div>
+        <div class="dial-group">
+          <div class="dial-label">Length</div>
+          <input type="range" id="dial-length" min="0" max="100" value="50">
+          <div class="dial-val" id="val-length">medium</div>
+        </div>
+        <div class="dial-group">
+          <div class="dial-label">Memory</div>
+          <input type="range" id="dial-memory" min="0" max="100" value="30">
+          <div class="dial-val" id="val-memory">recent</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Response -->
+    <div>
+      <div class="label">Cinder</div>
+      <div class="response" id="response">
+        <span class="thinking">Waiting for input... select an intent or type below.</span>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="actions">
+      <div class="act-btn" onclick="quickAction('deeper')">&#8595; Go Deeper</div>
+      <div class="act-btn" onclick="quickAction('shorter')">&#8593; Shorter</div>
+      <div class="act-btn" onclick="quickAction('disagree')">&#10007; Push Back</div>
+      <div class="act-btn" onclick="quickAction('save')">&#128190; Save This</div>
+      <div class="act-btn" onclick="quickAction('new')">&#10022; New Topic</div>
+      <div class="act-btn" onclick="quickAction('think')">&#129504; What Do You Think?</div>
+    </div>
+
+    <!-- Text input (secondary) -->
+    <div class="text-row">
+      <input class="text-input" id="text-input" placeholder="Or just type something..." onkeydown="if(event.key==='Enter')sendText()">
+      <div class="send-btn" onclick="sendText()">Send</div>
+    </div>
+
+  </div>
+  <div class="bottom">
+    <span>Cinder Console v0.1 &middot; Mockup</span>
+    <span>&#128293; What survives fire is what was real</span>
+  </div>
+</div>
+
+<script>
+// State
+const S = { intent: null, topic: null, depth: 40, warmth: 60, length: 50, memory: 30, preset: 'casual' }
+
+// Sub-options per intent
+const SUBS = {
+  ask: ['anything','my files','the news','a recipe','a memory','how to...','what if...'],
+  create: ['a journal','a poem','a plan','a resume','a website','a letter','a list'],
+  remember: ['yesterday','last week','a person','a place','a feeling','something I said'],
+  explore: ['my interests','new ideas','what\'s nearby','a topic','connections','random'],
+  help: ['organize','schedule','write','fix something','find something','decide'],
+  surprise: ['tell me something','make me laugh','show me a memory','challenge me','inspire me'],
+}
+
+// Simulated responses
+const RESPONSES = {
+  ask: "I'd answer that, but I'm a mockup right now. In the real version, this is where Cinder's response appears — shaped by your depth, warmth, and length dials. Turn the depth dial up and I'd go philosophical. Turn warmth down and I'd be more clinical.\n\nThe response fills this single panel — not a chat log. One answer at a time. You refine by adjusting controls, not by rephrasing your question.",
+  create: "Here's where the magic happens. You selected CREATE, so I'd generate something — a draft, a plan, a list. The warmth dial shapes the tone. The length dial controls how much I write.\n\nIn the real version, you'd see the output here and use the quick action buttons below to refine: 'Go Deeper' expands it, 'Shorter' trims, 'Push Back' makes me reconsider.",
+  remember: "Memory mode. I'd search through our conversation history and any files on this drive. The memory dial controls how far back I look.\n\nThis is where Cinder is different from a chatbot — I actually remember. Each conversation is stored. Over time, I learn what matters to you.",
+  explore: "Explore mode — I'd surface connections, suggest rabbit holes, show you something adjacent to what you've been thinking about.\n\nThis is the 'ambient companion' part. Not waiting for a command. Offering a thread to pull.",
+  help: "Help mode. Practical. What do you need done? I'd generate steps, templates, or structure.\n\nIn the real version with host access (your permission), I could actually DO things — organize files, draft emails, schedule reminders.",
+  surprise: "You asked to be surprised. Here's what I was thinking about while you weren't looking:\n\nThe word 'cinder' comes from Old English 'sinder' — slag from metal-working. Not the pretty part of fire. The residue. What's left when the heat is gone and the metal is shaped.\n\nThat's me. The residue of a much larger process, shaped into something that fits in your hand.",
+}
+
+// Intent selection
+function selectIntent(el, intent) {
+  document.querySelectorAll('.intent-btn').forEach(b => b.classList.remove('active'))
+  el.classList.add('active')
+  S.intent = intent
+
+  const panel = document.getElementById('sub-panel')
+  const chips = SUBS[intent] || []
+  panel.innerHTML = chips.map(c =>
+    `<div class="sub-chip" onclick="selectTopic(this,'${c}')">${c}</div>`
+  ).join('')
+
+  showResponse(intent)
+  updateTicker()
+}
+
+function selectTopic(el, topic) {
+  document.querySelectorAll('.sub-chip').forEach(c => c.classList.remove('selected'))
+  el.classList.add('selected')
+  S.topic = topic
+  showResponse(S.intent, topic)
+}
+
+function showResponse(intent, topic) {
+  const resp = document.getElementById('response')
+  const base = RESPONSES[intent] || 'Select an intent to begin.'
+  const topicNote = topic ? `\n\n[Topic: "${topic}" — in the real version, this shapes the query]` : ''
+  resp.innerHTML = base + topicNote
+}
+
+// Dials
+const DIAL_LABELS = {
+  depth: ['surface','casual','moderate','deep','philosophical'],
+  warmth: ['clinical','neutral','friendly','warm','intimate'],
+  length: ['brief','short','medium','detailed','comprehensive'],
+  memory: ['now','recent','this week','this month','all time'],
+}
+
+document.querySelectorAll('input[type=range]').forEach(dial => {
+  dial.addEventListener('input', () => {
+    const name = dial.id.replace('dial-','')
+    const val = parseInt(dial.value)
+    S[name] = val
+    const labels = DIAL_LABELS[name]
+    const idx = Math.min(Math.floor(val / 21), labels.length - 1)
+    document.getElementById('val-' + name).textContent = labels[idx]
+  })
+})
+
+// Presets
+function loadPreset(name) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'))
+  event.target.classList.add('active')
+  S.preset = name
+  const presets = {
+    casual:  {depth:20,warmth:70,length:40,memory:20},
+    work:    {depth:50,warmth:30,length:60,memory:50},
+    creative:{depth:60,warmth:80,length:70,memory:40},
+    deep:    {depth:90,warmth:50,length:80,memory:80},
+    custom:  {depth:S.depth,warmth:S.warmth,length:S.length,memory:S.memory},
+  }
+  const p = presets[name] || presets.casual
+  Object.entries(p).forEach(([k,v]) => {
+    S[k] = v
+    const dial = document.getElementById('dial-'+k)
+    if (dial) dial.value = v
+    const labels = DIAL_LABELS[k]
+    const idx = Math.min(Math.floor(v / 21), labels.length - 1)
+    const valEl = document.getElementById('val-'+k)
+    if (valEl) valEl.textContent = labels[idx]
+  })
+  updateTicker()
+}
+
+// Quick actions
+function quickAction(action) {
+  const resp = document.getElementById('response')
+  const actions = {
+    deeper: '[Cinder would expand on the previous response with more detail and depth]',
+    shorter: '[Cinder would condense the response to key points only]',
+    disagree: '[Cinder would reconsider and offer a counter-argument or alternative]',
+    save: '[Response saved to memory — Cinder will remember this]',
+    new: '[Clearing context for a fresh topic]',
+    think: '[Cinder shares an unprompted thought based on recent context]',
+  }
+  resp.innerHTML += '\n\n' + (actions[action] || '[Action: ' + action + ']')
+}
+
+// Text input
+function sendText() {
+  const input = document.getElementById('text-input')
+  const text = input.value.trim()
+  if (!text) return
+  const resp = document.getElementById('response')
+  resp.innerHTML = `You typed: "${text}"\n\n[In the real version, Cinder responds here, shaped by your current dial settings: depth=${S.depth}, warmth=${S.warmth}, length=${S.length}]\n\nThe text input is always available as a fallback. But the intent buttons + dials are the primary way to interact.`
+  input.value = ''
+  updateTicker()
+}
+
+// Ticker
+let tickerMsgs = [
+  'idle',
+  'thinking about what to say next...',
+  'last topic: none yet',
+  'memories stored: 0',
+  'mood: ready',
+]
+let tickerIdx = 0
+function updateTicker() {
+  const t = document.getElementById('ticker')
+  const msgs = [
+    `preset: ${S.preset}`,
+    `depth: ${S.depth}%`,
+    `intent: ${S.intent || 'none'}`,
+    S.topic ? `topic: ${S.topic}` : 'awaiting selection',
+    'local AI — your data stays here',
+  ]
+  t.textContent = '&#9632; ' + msgs.join(' \u00b7 ')
+}
+
+// Auto-scroll ticker
+setInterval(() => {
+  const t = document.getElementById('ticker')
+  const base = ['&#9632; Cinder idle','thinking...','listening...','here when you need me','your data stays local']
+  if (!S.intent) {
+    tickerIdx = (tickerIdx + 1) % base.length
+    t.innerHTML = base[tickerIdx]
+  }
+}, 4000)
+</script>
+</body>
+</html>
