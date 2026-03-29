@@ -12,25 +12,27 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
 :root{
-  /* Warm pastels with autumn tones */
-  --bg:#f4ede4;
-  --surface:#faf7f2;
-  --card:#fff;
-  --border:#e0d4c4;
-  --border-dark:#c4b4a0;
-  --text:#2a2218;
-  --text-mid:#6a5a48;
-  --text-light:#9a8a78;
+  /* Cinder palette: reddish brown, cream, ember orange, browns, yellows */
+  --bg:#e8ddd0;
+  --surface:#f2ebe0;
+  --card:#f8f4ec;
+  --border:#c8b8a0;
+  --border-dark:#a89878;
+  --text:#2a1e14;
+  --text-mid:#5a4a38;
+  --text-light:#8a7a68;
   /* Accents */
-  --ember:#c4703a;
-  --ember-light:#e89860;
-  --ember-soft:rgba(196,112,58,.08);
-  --sage:#7a9a6a;
-  --sage-soft:rgba(122,154,106,.08);
-  --sky:#6a8aaa;
-  --sky-soft:rgba(106,138,170,.08);
-  --rose:#b47070;
-  --rose-soft:rgba(180,112,112,.08);
+  --ember:#c45a2a;
+  --ember-light:#d87a40;
+  --ember-soft:rgba(196,90,42,.1);
+  --red-brown:#8a3a2a;
+  --cream:#f0e8d8;
+  --brown:#6a4a30;
+  --yellow:#c4a030;
+  --sage:#5a8a4a;
+  --sage-soft:rgba(90,138,74,.1);
+  --purple:#7a5a8a;
+  --purple-soft:rgba(122,90,138,.08);
   /* Fonts */
   --sans:'DM Sans','Segoe UI',system-ui,sans-serif;
   --mono:'JetBrains Mono','Courier New',monospace;
@@ -53,7 +55,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  border-bottom:1px solid var(--border);
+  border-bottom:2px solid var(--border-dark);
   flex-shrink:0;
 }
 .topbar-left{display:flex;align-items:center;gap:10px}
@@ -87,7 +89,7 @@ body{
 /* ── SIDEBAR (controls) ───────────────────────────────────── */
 .sidebar{
   width:200px;background:var(--surface);
-  border-right:1px solid var(--border);
+  border-right:2px solid var(--border);
   padding:16px 12px;
   display:flex;flex-direction:column;gap:16px;
   overflow-y:auto;flex-shrink:0;
@@ -162,7 +164,7 @@ input[type=range]::-webkit-slider-thumb{
   border-radius:12px;font-size:11px;cursor:pointer;
   background:var(--card);color:var(--text-mid);
 }
-.sub:hover{border-color:var(--sky);background:var(--sky-soft)}
+.sub:hover{border-color:var(--purple);background:var(--purple-soft)}
 .sub.active{border-color:var(--ember);background:var(--ember);color:#fff}
 .sub-hint{color:var(--text-light);font-size:11px;font-style:italic}
 
@@ -225,7 +227,7 @@ input[type=range]::-webkit-slider-thumb{
   padding:2px 8px;border:1px solid var(--border);border-radius:10px;
   font-size:10px;cursor:pointer;background:var(--card);color:var(--text-mid);
 }
-.tag:hover{border-color:var(--sky);background:var(--sky-soft)}
+.tag:hover{border-color:var(--purple);background:var(--purple-soft)}
 .tag-add{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember)}
 
 /* ── RESPONSIVE ───────────────────────────────────────────── */
@@ -294,13 +296,22 @@ input[type=range]::-webkit-slider-thumb{
     <div>
       <div class="section-title">Options</div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box">x</div><span>Persistent Memory</span>
+        <div class="toggle-box">x</div><span>Remember our chats</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box"></div><span>Context Lock</span>
+        <div class="toggle-box">x</div><span>Keep thinking while I'm away</span>
       </div>
       <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box">x</div><span>Auto-Expand</span>
+        <div class="toggle-box"></div><span>Ask before acting</span>
+      </div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box">x</div><span>Show longer answers</span>
+      </div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box"></div><span>Be more creative</span>
+      </div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box"></div><span>Speak plainly</span>
       </div>
     </div>
   </div>
@@ -330,17 +341,17 @@ input[type=range]::-webkit-slider-thumb{
 
     <!-- Actions -->
     <div class="actions-bar">
-      <div class="action" onclick="doAction('deeper')">Go Deeper</div>
-      <div class="action" onclick="doAction('shorter')">Shorter</div>
-      <div class="action" onclick="doAction('pushback')">Push Back</div>
+      <div class="action" onclick="doAction('new')">Start Over</div>
+      <div class="action" onclick="doAction('think')">Your Thoughts?</div>
+      <div class="action" onclick="doAction('deeper')">Tell Me More</div>
+      <div class="action" onclick="doAction('shorter')">Keep It Short</div>
+      <div class="action" onclick="doAction('pushback')">I Disagree</div>
       <div class="action" onclick="doAction('remember')">Remember This</div>
-      <div class="action" onclick="doAction('new')">New Topic</div>
-      <div class="action" onclick="doAction('think')">What Do You Think?</div>
     </div>
 
     <!-- Tags -->
     <div class="tags-row">
-      <span class="tags-label">TAGS</span>
+      <span class="tags-label" title="Click a tag to quickly ask about it">QUICK TOPICS</span>
       <div class="tag" onclick="useTag(this)">recipes</div>
       <div class="tag" onclick="useTag(this)">schedule</div>
       <div class="tag" onclick="useTag(this)">journal</div>
