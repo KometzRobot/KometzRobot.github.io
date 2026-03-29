@@ -954,6 +954,7 @@ input[type=range]::-moz-range-thumb{
       <div class="intent" onclick="pickIntent(this,'explore')">Explore</div>
       <div class="intent" onclick="pickIntent(this,'help')">Help Me</div>
       <div class="intent" onclick="pickIntent(this,'surprise')">Surprise</div>
+      <div class="intent" onclick="pickIntent(this,'resources')">Resources</div>
     </div>
 
     <div class="sub-bar" id="sub-bar">
@@ -1036,6 +1037,7 @@ const SUBS = {
   explore:  ['new ideas','connections','random thought','what if'],
   help:     ['organize','step-by-step','write something','fix','decide'],
   surprise: ['tell me something','challenge me','inspire me','random topic'],
+  resources: ['local inference','RAG & docs','fine-tuning','voice & speech','all tools'],
 };
 
 const INTENT_PREAMBLES = {
@@ -1045,6 +1047,7 @@ const INTENT_PREAMBLES = {
   explore: 'The user wants exploration. Offer unprompted thoughts, associations, lateral connections, and surprising ideas. Be a thinking companion, not just a responder.',
   help: 'The user needs practical help. Be structured, give clear steps, templates, or organized guidance. Focus on actionable advice.',
   surprise: 'Surprise the user. Pick an interesting topic, share an unusual fact, pose a thought experiment, or offer a creative prompt. Be unexpected and engaging.',
+  resources: 'The user is browsing open-source AI tools and resources. Help them understand what each tool does, how to install it, and how it could work with Cinder.',
 };
 
 const LABELS = {
@@ -1505,6 +1508,12 @@ function pickIntent(el, intent) {
     return;
   }
 
+  // Handle Resources mode — show curated tools
+  if (intent === 'resources') {
+    showResources('all tools');
+    return;
+  }
+
   // For other intents, just update the response panel with guidance
   if (!ollamaConnected) {
     var offlineHints = {
@@ -1537,6 +1546,9 @@ function pickSub(el, sub) {
     } else {
       filterMemories(sub);
     }
+  }
+  if (currentIntent === 'resources') {
+    showResources(sub);
   }
 }
 
@@ -2173,6 +2185,82 @@ document.addEventListener('keydown', function(e){
     document.getElementById('sidebar').classList.remove('open');
   }
 });
+
+/* ═══ RESOURCES DATABASE ═════════════════════════════════════ */
+const AI_RESOURCES = {
+  'local inference': [
+    {name:'Ollama', desc:'Dead-simple local LLM runner. Install, pull, chat. Powers Cinder.', url:'ollama.com'},
+    {name:'llama.cpp', desc:'The C++ engine behind most local AI. GGUF format, CPU or GPU.', url:'github.com/ggml-org/llama.cpp'},
+    {name:'GPT4All', desc:'Privacy-first desktop chatbot. No internet needed.', url:'gpt4all.io'},
+    {name:'Jan', desc:'Local-first AI app. Beautiful desktop, Ollama-compatible.', url:'jan.ai'},
+    {name:'KoboldCpp', desc:'llama.cpp fork with built-in UI. Great for creative/roleplay.', url:'github.com/LostRuins/koboldcpp'},
+    {name:'Open WebUI', desc:'Self-hosted ChatGPT-style interface. Works with Ollama.', url:'github.com/open-webui/open-webui'},
+    {name:'LM Studio', desc:'Desktop app for running local LLMs. Clean UI, model browser.', url:'lmstudio.ai'},
+    {name:'ExLlamaV2', desc:'Optimized CUDA kernels for fast 4-bit inference on NVIDIA.', url:'github.com/turboderp/exllamav2'},
+  ],
+  'RAG & docs': [
+    {name:'privateGPT', desc:'Ask questions about your documents without internet.', url:'github.com/zylon-ai/private-gpt'},
+    {name:'AnythingLLM', desc:'All-in-one RAG + agents. Self-hosted, works with Ollama.', url:'anythingllm.com'},
+    {name:'LlamaIndex', desc:'Framework for building RAG pipelines. Connect models to data.', url:'llamaindex.ai'},
+    {name:'ChromaDB', desc:'Lightweight embedding database. No server needed.', url:'trychroma.com'},
+    {name:'LanceDB', desc:'Serverless vector DB. No daemon — perfect for USB setups.', url:'lancedb.com'},
+    {name:'Faiss', desc:'Facebook similarity search. In-memory, blazing fast.', url:'github.com/facebookresearch/faiss'},
+    {name:'Docling', desc:'Process PDFs, images, and documents for AI ingestion.', url:'github.com/docling-project/docling'},
+    {name:'quivr', desc:'Dump files and chat with them. Local knowledge base.', url:'quivr.com'},
+  ],
+  'fine-tuning': [
+    {name:'Unsloth', desc:'2x faster fine-tuning, 70% less memory. Best for consumer HW.', url:'unsloth.ai'},
+    {name:'LLaMA-Factory', desc:'One-stop SFT/DPO/ORPO framework. YAML config.', url:'github.com/hiyouga/LLaMA-Factory'},
+    {name:'Axolotl', desc:'YAML-driven fine-tuning pipeline for small models.', url:'github.com/axolotl-ai-cloud/axolotl'},
+    {name:'PEFT', desc:'LoRA, QLoRA — small adapters, big personality impact.', url:'github.com/huggingface/peft'},
+    {name:'MergeKit', desc:'Merge model weights. Combine base + personality adapters.', url:'github.com/arcee-ai/mergekit'},
+    {name:'Kiln', desc:'Intuitive app for building custom AI models.', url:'getkiln.ai'},
+    {name:'TRL', desc:'Transformers Reinforcement Learning. RLHF/SFT/DPO.', url:'github.com/huggingface/trl'},
+  ],
+  'voice & speech': [
+    {name:'Whisper', desc:'Speech-to-text. Runs locally, 99 languages.', url:'github.com/openai/whisper'},
+    {name:'TorToiSe TTS', desc:'Multi-voice text-to-speech. High quality, local.', url:'github.com/neonbjb/tortoise-tts'},
+    {name:'Bark', desc:'Text-to-audio by Suno. Speech, music, sound effects.', url:'github.com/suno-ai/bark'},
+    {name:'Piper', desc:'Fast local TTS. Low resource, runs on Raspberry Pi.', url:'github.com/rhasspy/piper'},
+    {name:'Coqui TTS', desc:'Open-source generative AI voice engine.', url:'github.com/coqui-ai/TTS'},
+  ],
+  'all tools': [
+    {name:'Letta (MemGPT)', desc:'Stateful agents with structured long-term memory.', url:'letta.com'},
+    {name:'Mem0', desc:'Universal memory layer for AI agents.', url:'mem0.ai'},
+    {name:'fabric', desc:'Terminal-native AI patterns for everyday tasks.', url:'github.com/danielmiessler/fabric'},
+    {name:'MetaGPT', desc:'Multi-agent framework. Multiple AI personas collaborate.', url:'github.com/geekan/MetaGPT'},
+    {name:'NeMo Guardrails', desc:'Programmable safety rails for LLM apps.', url:'github.com/NVIDIA/NeMo-Guardrails'},
+    {name:'LlamaGuard', desc:'Safety classifier. Runs locally alongside your model.', url:'huggingface.co/meta-llama/LlamaGuard-7b'},
+    {name:'Continue', desc:'Open-source AI code assistant for VS Code / JetBrains.', url:'continue.dev'},
+    {name:'Tabby', desc:'Self-hosted AI coding assistant. Local Copilot.', url:'tabby.tabbyml.com'},
+    {name:'Aider', desc:'AI pair programming in your terminal.', url:'aider.chat'},
+    {name:'ComfyUI', desc:'Node-based Stable Diffusion workflows.', url:'github.com/comfyanonymous/ComfyUI'},
+    {name:'Harbor', desc:'Run LLM backends, APIs, frontends locally.', url:'github.com/av/harbor'},
+    {name:'LibreChat', desc:'Enhanced ChatGPT clone. Multi-model, self-hosted.', url:'librechat.ai'},
+    {name:'Khoj', desc:'Self-hosted AI assistant for search, chat, automation.', url:'khoj.dev'},
+    {name:'BrainSoup', desc:'Multi-agent, multi-LLM native client.', url:'nurgo-software.com/products/brainsoup'},
+  ],
+};
+
+function showResources(category) {
+  var cat = category || 'all tools';
+  var tools = AI_RESOURCES[cat] || AI_RESOURCES['all tools'];
+  var panel = document.getElementById('response');
+  var html = '<div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text-light);text-transform:uppercase;margin-bottom:10px">Open-Source AI Tools — ' + escapeHtml(cat) + '</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px">';
+  tools.forEach(function(t){
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:default;transition:border-color .2s" onmouseenter="this.style.borderColor=\'var(--ember)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+    html += '<strong style="color:var(--ember);font-size:13px">' + escapeHtml(t.name) + '</strong>';
+    html += '<span style="font-size:10px;color:var(--text-faint)">' + escapeHtml(t.url) + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--text-mid);margin-top:3px">' + escapeHtml(t.desc) + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="margin-top:12px;font-size:11px;color:var(--text-faint);font-style:italic">All tools are open-source. Ask Cinder about any of them for install instructions. Curated from awesome-opensource-ai &amp; awesome-ai-tools.</div>';
+  panel.innerHTML = html;
+}
 
 /* ═══ BOOT ═══════════════════════════════════════════════════ */
 runLauncherChecks();
