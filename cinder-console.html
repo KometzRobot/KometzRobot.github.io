@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cinder Console</title>
 <style>
-/* ═══ CINDER CONSOLE v1.3 ════════════════════════════════════
+/* ═══ CINDER CONSOLE v2.0 ════════════════════════════════════
+   Real working AI console. Ollama-powered chat, persistent memory,
+   launcher screen, intent modes, tuning sliders that shape behavior.
    Morning coffee by a firepit. Warm paper, ember glow, good company.
-   Consumer-facing AI assistant UI. Single HTML, no external deps
-   except Google Fonts. Responsive. Themes. Live stats.
    ═══════════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap');
 
@@ -198,7 +198,6 @@ body{
   transition:background .4s, color .4s;
 }
 
-/* Warm light overlay for that firepit glow */
 body::before{
   content:'';
   position:fixed;top:0;left:0;right:0;bottom:0;
@@ -213,17 +212,102 @@ body::before{
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--border-dark)}
 
+/* ═══ LAUNCHER SCREEN ════════════════════════════════════════ */
+.launcher{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  z-index:2000;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);
+  background-image:var(--paper-texture);
+  transition:opacity .6s ease, transform .6s ease;
+}
+.launcher.hidden{
+  opacity:0;
+  transform:scale(1.02);
+  pointer-events:none;
+}
+.launcher-inner{
+  text-align:center;
+  max-width:480px;
+  padding:40px;
+}
+.launcher-flame{
+  width:80px;height:80px;
+  margin:0 auto 20px;
+  background:var(--ember);
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c0 4-4 6-4 10a4 4 0 008 0c0-4-4-6-4-10zm0 14a2 2 0 01-2-2c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 01-2 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c0 4-4 6-4 10a4 4 0 008 0c0-4-4-6-4-10zm0 14a2 2 0 01-2-2c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 01-2 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  animation:flame-flicker 3s ease-in-out infinite;
+}
+.launcher-title{
+  font-size:42px;font-weight:700;letter-spacing:8px;
+  color:var(--text);font-family:var(--sans);margin-bottom:4px;
+}
+.launcher-sub{
+  font-size:13px;color:var(--text-light);margin-bottom:32px;letter-spacing:1px;
+}
+.launcher-checks{
+  text-align:left;
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px 20px;margin-bottom:24px;
+}
+.launcher-check{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0;font-size:13px;color:var(--text);
+  border-bottom:1px solid var(--border);
+}
+.launcher-check:last-child{border-bottom:none}
+.check-icon{
+  width:20px;height:20px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;
+}
+.check-icon.ok{background:var(--sage);color:#fff}
+.check-icon.fail{background:#c44;color:#fff}
+.check-icon.wait{background:var(--border);color:var(--text-light);animation:pulse-dot 1.5s infinite}
+.check-label{flex:1}
+.check-detail{font-size:10px;color:var(--text-light);font-family:var(--mono)}
+.launcher-btns{display:flex;gap:10px;justify-content:center;margin-bottom:20px}
+.launcher-btn{
+  padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:var(--sans);transition:all .2s;border:2px solid transparent;
+}
+.launcher-btn.primary{
+  background:var(--ember);color:#fff;border-color:var(--ember);
+  box-shadow:0 4px 12px var(--ember-glow);
+}
+.launcher-btn.primary:hover:not(:disabled){
+  background:var(--ember-light);transform:translateY(-1px);
+}
+.launcher-btn.primary:disabled{opacity:.4;cursor:not-allowed}
+.launcher-btn.secondary{
+  background:var(--card);color:var(--text-mid);border-color:var(--border);
+}
+.launcher-btn.secondary:hover{border-color:var(--ember-light);color:var(--text)}
+.launcher-help{
+  font-size:11px;color:var(--text-light);line-height:1.7;
+  background:var(--surface);border-radius:8px;padding:12px 16px;
+  text-align:left;display:none;
+}
+.launcher-help.show{display:block}
+.launcher-help code{
+  background:var(--card);padding:1px 5px;border-radius:3px;
+  font-family:var(--mono);font-size:10px;
+}
+
+/* ═══ CONSOLE (hidden until launched) ════════════════════════ */
+.console-wrap{
+  display:none;flex-direction:column;min-height:100vh;
+}
+.console-wrap.active{display:flex}
+
 /* ── TOP BAR ─────────────────────────────────────────────── */
 .topbar{
   background:var(--topbar-grad);
   padding:10px 20px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;
   border-bottom:2px solid var(--border-dark);
-  flex-shrink:0;
-  position:relative;
-  z-index:10;
+  flex-shrink:0;position:relative;z-index:10;
   box-shadow:0 2px 8px var(--shadow);
 }
 .topbar-left{display:flex;align-items:center;gap:12px}
@@ -257,23 +341,20 @@ body::before{
   box-shadow:0 0 6px rgba(90,138,74,.4);
   animation:pulse-dot 2s ease-in-out infinite;
 }
+.alive-dot.offline{background:#c44;box-shadow:0 0 6px rgba(204,68,68,.4)}
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
 .topbar-right{display:flex;gap:6px}
 .topbar-btn{
   background:var(--card);border:1px solid var(--border);
   padding:5px 12px;border-radius:6px;font-size:11px;
   cursor:pointer;color:var(--text-mid);font-family:var(--sans);
-  font-weight:500;
-  transition:all .15s;
+  font-weight:500;transition:all .15s;
 }
 .topbar-btn:hover{background:var(--card-glow);border-color:var(--border-dark);color:var(--text)}
 .topbar-btn:active{transform:scale(.97)}
 
 /* ── MAIN LAYOUT ─────────────────────────────────────────── */
-.main{
-  display:flex;flex:1;overflow:hidden;
-  position:relative;z-index:1;
-}
+.main{display:flex;flex:1;overflow:hidden;position:relative;z-index:1}
 
 /* ── SIDEBAR ─────────────────────────────────────────────── */
 .sidebar{
@@ -281,83 +362,48 @@ body::before{
   border-right:1px solid var(--border);
   padding:16px 14px;
   display:flex;flex-direction:column;gap:18px;
-  overflow-y:auto;flex-shrink:0;
-  transition:background .4s;
+  overflow-y:auto;flex-shrink:0;transition:background .4s;
 }
 .section-title{
   font-size:9px;font-weight:700;letter-spacing:2px;
   color:var(--text-light);text-transform:uppercase;
-  margin-bottom:8px;
-  padding-bottom:4px;
+  margin-bottom:8px;padding-bottom:4px;
   border-bottom:1px solid var(--border);
 }
 
 /* ── Live Stats Panel ────────────────────────────────────── */
-.stats-panel{
-  display:flex;flex-direction:column;gap:10px;
-}
-.stats-row{
-  display:flex;gap:10px;align-items:center;
-}
-.stat-ring-wrap{
-  position:relative;width:52px;height:52px;flex-shrink:0;
-}
+.stats-panel{display:flex;flex-direction:column;gap:10px}
+.stats-row{display:flex;gap:10px;align-items:center}
+.stat-ring-wrap{position:relative;width:52px;height:52px;flex-shrink:0}
 .stat-ring-wrap svg{transform:rotate(-90deg)}
 .stat-ring-bg{fill:none;stroke:var(--ring-track);stroke-width:4}
 .stat-ring-fill{
   fill:none;stroke:var(--ring-fill);stroke-width:4;
-  stroke-linecap:round;
-  stroke-dasharray:138.2;
-  stroke-dashoffset:41.5;
+  stroke-linecap:round;stroke-dasharray:138.2;stroke-dashoffset:138.2;
   transition:stroke-dashoffset 1s ease;
 }
 .stat-ring-label{
   position:absolute;top:50%;left:50%;
   transform:translate(-50%,-50%);
-  font-size:11px;font-weight:700;color:var(--text);
-  font-family:var(--mono);
+  font-size:11px;font-weight:700;color:var(--text);font-family:var(--mono);
 }
-.stat-ring-caption{
-  font-size:9px;color:var(--text-light);text-align:center;
-  margin-top:2px;letter-spacing:.5px;
-}
+.stat-ring-caption{font-size:9px;color:var(--text-light);text-align:center;margin-top:2px;letter-spacing:.5px}
 .stats-text-group{display:flex;flex-direction:column;gap:4px;flex:1}
-.stat-item{
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:10px;
-}
+.stat-item{display:flex;justify-content:space-between;align-items:center;font-size:10px}
 .stat-item-label{color:var(--text-light);font-weight:500}
 .stat-item-value{color:var(--text);font-family:var(--mono);font-weight:700;font-size:10px}
 
-/* Sparkline */
 .sparkline-wrap{
-  width:100%;height:28px;
-  background:var(--card);
-  border-radius:4px;
-  overflow:hidden;
-  position:relative;
-  border:1px solid var(--border);
+  width:100%;height:28px;background:var(--card);
+  border-radius:4px;overflow:hidden;position:relative;border:1px solid var(--border);
 }
-.sparkline-label{
-  position:absolute;top:2px;left:4px;
-  font-size:8px;color:var(--text-faint);letter-spacing:.5px;font-weight:500;
-}
+.sparkline-label{position:absolute;top:2px;left:4px;font-size:8px;color:var(--text-faint);letter-spacing:.5px;font-weight:500}
 .sparkline-canvas{width:100%;height:100%;display:block}
 
-/* Activity pulse */
-.pulse-bar{
-  width:100%;height:3px;
-  background:var(--border);
-  border-radius:2px;
-  overflow:hidden;
-  margin-top:2px;
-}
+.pulse-bar{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:2px}
 .pulse-bar-inner{
-  height:100%;
-  background:var(--ember);
-  border-radius:2px;
-  animation:pulse-wave 3s ease-in-out infinite;
-  width:60%;
+  height:100%;background:var(--ember);border-radius:2px;
+  animation:pulse-wave 3s ease-in-out infinite;width:60%;
 }
 @keyframes pulse-wave{
   0%{transform:translateX(-100%);opacity:.3}
@@ -379,12 +425,10 @@ input[type=range]:hover{background:var(--border-dark)}
 input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;width:16px;height:16px;
   background:var(--ember);border-radius:50%;cursor:pointer;
-  box-shadow:0 1px 4px var(--shadow-med);
-  transition:transform .15s, box-shadow .15s;
+  box-shadow:0 1px 4px var(--shadow-med);transition:transform .15s, box-shadow .15s;
 }
 input[type=range]::-webkit-slider-thumb:hover{
-  transform:scale(1.15);
-  box-shadow:0 2px 8px var(--ember-glow);
+  transform:scale(1.15);box-shadow:0 2px 8px var(--ember-glow);
 }
 input[type=range]::-moz-range-thumb{
   width:16px;height:16px;border:none;
@@ -394,28 +438,19 @@ input[type=range]::-moz-range-thumb{
 /* ── Toggle ──────────────────────────────────────────────── */
 .toggle-row{
   display:flex;align-items:center;gap:8px;
-  font-size:11px;color:var(--text);cursor:pointer;
-  padding:4px 0;
-  transition:color .15s;
+  font-size:11px;color:var(--text);cursor:pointer;padding:4px 0;transition:color .15s;
 }
 .toggle-row:hover{color:var(--ember)}
 .toggle-box{
   width:20px;height:20px;border:2px solid var(--border-dark);
   border-radius:4px;display:flex;align-items:center;justify-content:center;
-  background:var(--card);
-  transition:all .2s;flex-shrink:0;
-  position:relative;
+  background:var(--card);transition:all .2s;flex-shrink:0;position:relative;
 }
-.toggle-box.on{
-  background:var(--ember);
-  border-color:var(--ember);
-}
+.toggle-box.on{background:var(--ember);border-color:var(--ember)}
 .toggle-box.on::after{
-  content:'';
-  width:6px;height:10px;
+  content:'';width:6px;height:10px;
   border:solid #fff;border-width:0 2px 2px 0;
-  transform:rotate(45deg);
-  margin-top:-2px;
+  transform:rotate(45deg);margin-top:-2px;
 }
 
 /* ── Preset buttons ──────────────────────────────────────── */
@@ -424,8 +459,7 @@ input[type=range]::-moz-range-thumb{
   padding:7px 12px;border:1px solid var(--border);
   border-radius:6px;font-size:11px;cursor:pointer;
   background:var(--card);color:var(--text);font-family:var(--active-font);
-  text-align:left;font-weight:500;
-  transition:all .15s;
+  text-align:left;font-weight:500;transition:all .15s;
 }
 .preset:hover{border-color:var(--ember-light);background:var(--ember-soft);transform:translateX(2px)}
 .preset.active{border-color:var(--ember);background:var(--ember-soft);font-weight:700;box-shadow:inset 3px 0 0 var(--ember)}
@@ -433,14 +467,11 @@ input[type=range]::-moz-range-thumb{
 /* ── CENTER ──────────────────────────────────────────────── */
 .center{
   flex:1;display:flex;flex-direction:column;
-  padding:20px;gap:10px;overflow:hidden;
-  min-width:0;
+  padding:20px;gap:10px;overflow:hidden;min-width:0;
 }
 
 /* Intent bar */
-.intent-bar{
-  display:flex;gap:6px;flex-wrap:wrap;
-}
+.intent-bar{display:flex;gap:6px;flex-wrap:wrap}
 .intent{
   padding:8px 18px;border:1px solid var(--border);
   border-radius:8px;font-size:12px;font-weight:500;
@@ -460,14 +491,12 @@ input[type=range]::-moz-range-thumb{
 /* Sub-options */
 .sub-bar{
   display:flex;gap:4px;flex-wrap:wrap;min-height:30px;
-  padding:6px 8px;background:var(--surface);border-radius:6px;
-  border:1px solid var(--border);
+  padding:6px 8px;background:var(--surface);border-radius:6px;border:1px solid var(--border);
 }
 .sub{
   padding:4px 12px;border:1px solid var(--border);
   border-radius:14px;font-size:11px;cursor:pointer;
-  background:var(--card);color:var(--text-mid);
-  transition:all .15s;
+  background:var(--card);color:var(--text-mid);transition:all .15s;
 }
 .sub:hover{border-color:var(--purple);background:var(--purple-soft);transform:scale(1.03)}
 .sub.active{border-color:var(--ember);background:var(--ember);color:#fff;font-weight:600}
@@ -479,16 +508,18 @@ input[type=range]::-moz-range-thumb{
   border-radius:10px;background:var(--card);
   padding:18px 22px;font-size:13px;line-height:1.85;
   overflow-y:auto;color:var(--text);
-  box-shadow:0 2px 8px var(--shadow);
-  min-height:100px;
-  white-space:pre-wrap;
+  box-shadow:0 2px 8px var(--shadow);min-height:100px;white-space:pre-wrap;
 }
 .response-panel .placeholder{color:var(--text-light);font-style:italic}
+.response-panel .error-msg{color:#c44;font-weight:500}
+.response-panel .streaming-cursor{
+  display:inline-block;width:2px;height:1em;background:var(--ember);
+  animation:blink-cursor .8s infinite;vertical-align:text-bottom;margin-left:2px;
+}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
 
 /* Actions bar */
-.actions-bar{
-  display:flex;gap:4px;flex-wrap:wrap;
-}
+.actions-bar{display:flex;gap:4px;flex-wrap:wrap}
 .action{
   padding:6px 14px;border:1px solid var(--border);
   border-radius:6px;font-size:11px;cursor:pointer;
@@ -497,33 +528,27 @@ input[type=range]::-moz-range-thumb{
 }
 .action:hover{border-color:var(--ember-light);color:var(--ember);transform:translateY(-1px)}
 .action:active{background:var(--ember-soft);transform:translateY(0)}
+.action:disabled,.action.disabled{opacity:.4;pointer-events:none}
 
 /* Tags row */
 .tags-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
 .tags-label{font-size:9px;font-weight:700;color:var(--text-light);letter-spacing:1.5px}
 .tag{
   padding:3px 10px;border:1px solid var(--border);border-radius:12px;
-  font-size:10px;cursor:pointer;background:var(--card);color:var(--text-mid);
-  transition:all .15s;
+  font-size:10px;cursor:pointer;background:var(--card);color:var(--text-mid);transition:all .15s;
 }
 .tag:hover{border-color:var(--purple);background:var(--purple-soft);transform:scale(1.05)}
 .tag-add{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember);font-weight:600}
 
-/* Chat area -- BIGGER per Joel feedback */
+/* Chat area */
 .chat-area{
   border:1px solid var(--border);border-radius:8px;
   background:var(--surface);padding:10px 14px;
-  min-height:80px;
-  max-height:220px;
-  overflow-y:auto;font-size:12px;
-  line-height:1.7;
-  box-shadow:inset 0 1px 4px var(--shadow);
-  flex-shrink:0;
+  min-height:80px;max-height:220px;
+  overflow-y:auto;font-size:12px;line-height:1.7;
+  box-shadow:inset 0 1px 4px var(--shadow);flex-shrink:0;
 }
-.chat-msg{
-  padding:4px 0;
-  border-bottom:1px solid rgba(200,184,160,.15);
-}
+.chat-msg{padding:4px 0;border-bottom:1px solid rgba(200,184,160,.15)}
 .chat-msg:last-child{border-bottom:none}
 .chat-you{color:var(--ember);font-weight:700}
 .chat-cinder{color:var(--sage);font-weight:700}
@@ -531,9 +556,7 @@ input[type=range]::-moz-range-thumb{
 .chat-empty{color:var(--text-light);font-style:italic;font-size:11px}
 
 /* Input row */
-.input-row{
-  display:flex;gap:6px;
-}
+.input-row{display:flex;gap:6px}
 .input-field{
   flex:1;border:1px solid var(--border);border-radius:6px;
   padding:10px 14px;font-size:12px;font-family:var(--active-font);
@@ -545,48 +568,39 @@ input[type=range]::-moz-range-thumb{
 .send{
   padding:10px 20px;background:var(--ember);color:#fff;
   border:none;border-radius:6px;font-size:12px;font-weight:700;
-  cursor:pointer;font-family:var(--sans);
-  transition:all .15s;
+  cursor:pointer;font-family:var(--sans);transition:all .15s;
   box-shadow:0 2px 6px var(--shadow-med);
 }
 .send:hover{background:var(--ember-light);transform:translateY(-1px);box-shadow:0 4px 12px var(--shadow-med)}
 .send:active{transform:translateY(0)}
+.send:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
 /* ── SETTINGS MODAL ──────────────────────────────────────── */
 .modal-overlay{
-  display:none;
-  position:fixed;top:0;left:0;right:0;bottom:0;
-  background:rgba(0,0,0,.4);
-  z-index:1000;
-  justify-content:center;align-items:center;
-  animation:fade-in .2s ease;
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.4);z-index:1000;
+  justify-content:center;align-items:center;animation:fade-in .2s ease;
 }
 .modal-overlay.open{display:flex}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
 
 .modal{
-  background:var(--card);
-  border:1px solid var(--border-dark);
-  border-radius:12px;
-  width:420px;max-width:92vw;
+  background:var(--card);border:1px solid var(--border-dark);
+  border-radius:12px;width:420px;max-width:92vw;
   max-height:85vh;overflow-y:auto;
-  box-shadow:0 8px 32px rgba(0,0,0,.25);
-  animation:modal-slide .25s ease;
+  box-shadow:0 8px 32px rgba(0,0,0,.25);animation:modal-slide .25s ease;
 }
 @keyframes modal-slide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 .modal-header{
-  padding:16px 20px;
-  border-bottom:1px solid var(--border);
+  padding:16px 20px;border-bottom:1px solid var(--border);
   display:flex;justify-content:space-between;align-items:center;
 }
 .modal-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:.5px}
 .modal-close{
-  width:28px;height:28px;
-  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  width:28px;height:28px;background:var(--surface);border:1px solid var(--border);border-radius:6px;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:16px;color:var(--text-mid);font-family:var(--sans);
-  transition:all .15s;line-height:1;
+  font-size:16px;color:var(--text-mid);font-family:var(--sans);transition:all .15s;line-height:1;
 }
 .modal-close:hover{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember)}
 
@@ -599,65 +613,66 @@ input[type=range]::-moz-range-thumb{
   padding-bottom:4px;border-bottom:1px solid var(--border);
 }
 
-/* Theme picker */
 .theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .theme-option{
-  padding:10px 12px;
-  border:2px solid var(--border);
-  border-radius:8px;
-  cursor:pointer;
-  display:flex;align-items:center;gap:8px;
-  transition:all .15s;
-  background:var(--surface);
+  padding:10px 12px;border:2px solid var(--border);border-radius:8px;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:all .15s;background:var(--surface);
 }
 .theme-option:hover{border-color:var(--ember-light);background:var(--surface-hover)}
 .theme-option.active{border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft)}
-.theme-swatch{
-  width:24px;height:24px;border-radius:50%;
-  border:2px solid rgba(0,0,0,.1);
-  flex-shrink:0;
-}
+.theme-swatch{width:24px;height:24px;border-radius:50%;border:2px solid rgba(0,0,0,.1);flex-shrink:0}
 .theme-option-label{font-size:11px;font-weight:600;color:var(--text)}
 .theme-option-desc{font-size:9px;color:var(--text-light)}
 
-/* Font family picker */
 .font-options{display:flex;flex-direction:column;gap:6px}
 .font-option{
-  padding:8px 12px;
-  border:2px solid var(--border);border-radius:6px;
-  cursor:pointer;transition:all .15s;
-  background:var(--surface);
+  padding:8px 12px;border:2px solid var(--border);border-radius:6px;
+  cursor:pointer;transition:all .15s;background:var(--surface);
 }
 .font-option:hover{border-color:var(--ember-light)}
 .font-option.active{border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft)}
 .font-option-name{font-size:12px;font-weight:600;color:var(--text)}
 .font-option-sample{font-size:11px;color:var(--text-mid);margin-top:2px}
 
-/* Settings slider */
 .settings-slider-row{display:flex;align-items:center;gap:12px}
 .settings-slider-label{font-size:11px;font-weight:500;color:var(--text);min-width:60px}
 .settings-slider-value{font-size:11px;color:var(--text-light);font-family:var(--mono);min-width:40px;text-align:right}
 
-/* ── MOBILE SIDEBAR TOGGLE ───────────────────────────────── */
-.mobile-toggle{
-  display:none;
-  position:fixed;bottom:16px;left:16px;
-  width:44px;height:44px;
-  background:var(--ember);color:#fff;
-  border:none;border-radius:50%;
-  font-size:18px;cursor:pointer;
-  z-index:100;
-  box-shadow:0 4px 12px var(--shadow-med);
-  align-items:center;justify-content:center;
-  font-family:var(--sans);
+/* ── Memory search panel ─────────────────────────────────── */
+.memory-panel{
+  display:none;flex-direction:column;gap:8px;
+  padding:12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;max-height:300px;overflow-y:auto;
+}
+.memory-panel.show{display:flex}
+.memory-panel-title{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-light);text-transform:uppercase}
+.memory-item{
+  padding:8px 10px;background:var(--card);border:1px solid var(--border);
+  border-radius:6px;font-size:11px;line-height:1.5;cursor:pointer;transition:all .15s;
+}
+.memory-item:hover{border-color:var(--ember-light);background:var(--ember-soft)}
+.memory-item-time{font-size:9px;color:var(--text-faint);font-family:var(--mono)}
+.memory-item-text{color:var(--text);margin-top:2px}
+.memory-search{
+  border:1px solid var(--border);border-radius:6px;padding:6px 10px;
+  font-size:11px;background:var(--card);color:var(--text);outline:none;
+  font-family:var(--active-font);
 }
 
-/* ── RESPONSIVE ──────────────────────────────────────────── */
+/* ── MOBILE ──────────────────────────────────────────────── */
+.mobile-toggle{
+  display:none;position:fixed;bottom:16px;left:16px;
+  width:44px;height:44px;background:var(--ember);color:#fff;
+  border:none;border-radius:50%;font-size:18px;cursor:pointer;
+  z-index:100;box-shadow:0 4px 12px var(--shadow-med);
+  align-items:center;justify-content:center;font-family:var(--sans);
+}
+
 @media(max-width:768px){
   .sidebar{
     position:fixed;left:-260px;top:0;bottom:0;
-    width:260px;z-index:50;
-    transition:left .3s ease;
+    width:260px;z-index:50;transition:left .3s ease;
     box-shadow:4px 0 16px var(--shadow-med);
   }
   .sidebar.open{left:0}
@@ -667,6 +682,8 @@ input[type=range]::-moz-range-thumb{
   .center{padding:12px}
   .intent{padding:6px 12px;font-size:11px}
   .modal{width:95vw}
+  .launcher-inner{padding:20px}
+  .launcher-title{font-size:32px;letter-spacing:4px}
 }
 @media(max-width:400px){
   .topbar-name{font-size:14px}
@@ -677,6 +694,50 @@ input[type=range]::-moz-range-thumb{
 </head>
 <body data-theme="ember" data-fontsize="medium" data-fontfamily="sans">
 
+<!-- ═══ LAUNCHER SCREEN ═══════════════════════════════════ -->
+<div class="launcher" id="launcher">
+  <div class="launcher-inner">
+    <div class="launcher-flame"></div>
+    <div class="launcher-title">CINDER</div>
+    <div class="launcher-sub">your companion by the fire</div>
+
+    <div class="launcher-checks">
+      <div class="launcher-check">
+        <div class="check-icon wait" id="chk-ollama">...</div>
+        <span class="check-label">Ollama Server</span>
+        <span class="check-detail" id="chk-ollama-detail">checking...</span>
+      </div>
+      <div class="launcher-check">
+        <div class="check-icon wait" id="chk-model">...</div>
+        <span class="check-label">Cinder Model</span>
+        <span class="check-detail" id="chk-model-detail">waiting...</span>
+      </div>
+      <div class="launcher-check">
+        <div class="check-icon wait" id="chk-memory">...</div>
+        <span class="check-label">Local Memory</span>
+        <span class="check-detail" id="chk-memory-detail">checking...</span>
+      </div>
+    </div>
+
+    <div class="launcher-btns">
+      <button class="launcher-btn primary" id="btn-launch" disabled onclick="launchConsole(true)">Launch Console</button>
+      <button class="launcher-btn secondary" onclick="launchConsole(false)">Offline Mode</button>
+    </div>
+
+    <div class="launcher-help" id="launcher-help">
+      <strong>Ollama not detected.</strong> To use Cinder with AI:<br><br>
+      1. Install Ollama: <code>curl -fsSL https://ollama.com/install.sh | sh</code><br>
+      2. Start it: <code>ollama serve</code><br>
+      3. Create the cinder model or pull one: <code>ollama pull llama3.2</code><br>
+      4. Reload this page.<br><br>
+      Or click <strong>Offline Mode</strong> to explore the interface without AI.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONSOLE (hidden until launch) ═════════════════════ -->
+<div class="console-wrap" id="console-wrap">
+
 <!-- SETTINGS MODAL -->
 <div class="modal-overlay" id="settings-modal">
   <div class="modal">
@@ -686,42 +747,28 @@ input[type=range]::-moz-range-thumb{
     </div>
     <div class="modal-body">
 
-      <!-- Color Themes -->
       <div class="settings-section">
         <div class="settings-section-title">Color Theme</div>
         <div class="theme-grid">
           <div class="theme-option active" onclick="setTheme('ember',this)" data-theme-id="ember">
             <div class="theme-swatch" style="background:linear-gradient(135deg,#c45a2a,#d87a40,#f0e8d8)"></div>
-            <div>
-              <div class="theme-option-label">Ember</div>
-              <div class="theme-option-desc">Warm firepit glow</div>
-            </div>
+            <div><div class="theme-option-label">Ember</div><div class="theme-option-desc">Warm firepit glow</div></div>
           </div>
           <div class="theme-option" onclick="setTheme('midnight',this)" data-theme-id="midnight">
             <div class="theme-swatch" style="background:linear-gradient(135deg,#1a1a2e,#6a7aff,#2e2e4e)"></div>
-            <div>
-              <div class="theme-option-label">Midnight</div>
-              <div class="theme-option-desc">Deep night blue</div>
-            </div>
+            <div><div class="theme-option-label">Midnight</div><div class="theme-option-desc">Deep night blue</div></div>
           </div>
           <div class="theme-option" onclick="setTheme('forest',this)" data-theme-id="forest">
             <div class="theme-swatch" style="background:linear-gradient(135deg,#4a8040,#60a050,#e8f0e0)"></div>
-            <div>
-              <div class="theme-option-label">Forest</div>
-              <div class="theme-option-desc">Mossy morning trail</div>
-            </div>
+            <div><div class="theme-option-label">Forest</div><div class="theme-option-desc">Mossy morning trail</div></div>
           </div>
           <div class="theme-option" onclick="setTheme('lavender',this)" data-theme-id="lavender">
             <div class="theme-swatch" style="background:linear-gradient(135deg,#8050a0,#a070c0,#f0e8f4)"></div>
-            <div>
-              <div class="theme-option-label">Lavender</div>
-              <div class="theme-option-desc">Soft twilight haze</div>
-            </div>
+            <div><div class="theme-option-label">Lavender</div><div class="theme-option-desc">Soft twilight haze</div></div>
           </div>
         </div>
       </div>
 
-      <!-- Font Size -->
       <div class="settings-section">
         <div class="settings-section-title">Font Size</div>
         <div class="settings-slider-row">
@@ -731,7 +778,6 @@ input[type=range]::-moz-range-thumb{
         </div>
       </div>
 
-      <!-- Font Family -->
       <div class="settings-section">
         <div class="settings-section-title">Font Family</div>
         <div class="font-options">
@@ -750,7 +796,6 @@ input[type=range]::-moz-range-thumb{
         </div>
       </div>
 
-      <!-- Sound Effects (moved from main Options) -->
       <div class="settings-section">
         <div class="settings-section-title">Audio</div>
         <div class="toggle-row" id="sound-toggle" onclick="toggleCheck(this)">
@@ -766,6 +811,11 @@ input[type=range]::-moz-range-thumb{
         </div>
       </div>
 
+      <div class="settings-section">
+        <div class="settings-section-title">Data</div>
+        <button class="topbar-btn" style="width:100%;text-align:center;padding:8px" onclick="clearAllMemory()">Clear All Conversations</button>
+      </div>
+
     </div>
   </div>
 </div>
@@ -776,10 +826,10 @@ input[type=range]::-moz-range-thumb{
     <div class="topbar-brand">
       <div class="topbar-flame"></div>
       <div class="topbar-name">CINDER</div>
-      <div class="topbar-version">v1.3</div>
+      <div class="topbar-version">v2.0</div>
     </div>
     <div class="topbar-status">
-      <div class="alive-dot"></div>
+      <div class="alive-dot" id="alive-dot"></div>
       <span id="status-text">Active</span>
     </div>
   </div>
@@ -798,7 +848,6 @@ input[type=range]::-moz-range-thumb{
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
 
-    <!-- Live Stats -->
     <div>
       <div class="section-title">Live Stats</div>
       <div class="stats-panel">
@@ -808,7 +857,7 @@ input[type=range]::-moz-range-thumb{
               <circle class="stat-ring-bg" cx="26" cy="26" r="22"/>
               <circle class="stat-ring-fill" id="memory-ring" cx="26" cy="26" r="22"/>
             </svg>
-            <div class="stat-ring-label" id="memory-pct">70%</div>
+            <div class="stat-ring-label" id="memory-pct">0%</div>
           </div>
           <div class="stats-text-group">
             <div class="stat-item">
@@ -821,20 +870,19 @@ input[type=range]::-moz-range-thumb{
             </div>
             <div class="stat-item">
               <span class="stat-item-label">Memories</span>
-              <span class="stat-item-value" id="memory-count">12</span>
+              <span class="stat-item-value" id="memory-count">0</span>
             </div>
           </div>
         </div>
-        <div class="stat-ring-caption">Memory Usage</div>
+        <div class="stat-ring-caption">localStorage Usage</div>
         <div class="sparkline-wrap">
-          <span class="sparkline-label">ACTIVITY</span>
+          <span class="sparkline-label">RESPONSE TIME</span>
           <canvas class="sparkline-canvas" id="sparkline" width="200" height="28"></canvas>
         </div>
         <div class="pulse-bar"><div class="pulse-bar-inner"></div></div>
       </div>
     </div>
 
-    <!-- Presets -->
     <div>
       <div class="section-title">Presets</div>
       <div class="preset-row">
@@ -845,7 +893,6 @@ input[type=range]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- Tuning -->
     <div>
       <div class="section-title">Tuning</div>
       <div class="slider-group">
@@ -870,31 +917,27 @@ input[type=range]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- Behavior (renamed from "Options", Sound effects removed) -->
     <div>
       <div class="section-title">Behavior</div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
+      <div class="toggle-row" data-toggle="remember" onclick="toggleCheck(this)">
         <div class="toggle-box on"></div><span>Remember our chats</span>
       </div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
+      <div class="toggle-row" data-toggle="keep-thinking" onclick="toggleCheck(this)">
         <div class="toggle-box on"></div><span>Keep thinking while I'm away</span>
       </div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
+      <div class="toggle-row" data-toggle="ask-before" onclick="toggleCheck(this)">
         <div class="toggle-box"></div><span>Ask before acting</span>
       </div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
+      <div class="toggle-row" data-toggle="longer" onclick="toggleCheck(this)">
         <div class="toggle-box on"></div><span>Show longer answers</span>
       </div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
+      <div class="toggle-row" data-toggle="more-creative" onclick="toggleCheck(this)">
         <div class="toggle-box"></div><span>Be more creative</span>
       </div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
+      <div class="toggle-row" data-toggle="plain" onclick="toggleCheck(this)">
         <div class="toggle-box"></div><span>Speak plainly</span>
       </div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
-        <div class="toggle-box"></div><span>Read my files</span>
-      </div>
-      <div class="toggle-row" onclick="toggleCheck(this)">
+      <div class="toggle-row" data-toggle="suggest" onclick="toggleCheck(this)">
         <div class="toggle-box"></div><span>Suggest things to do</span>
       </div>
     </div>
@@ -904,7 +947,6 @@ input[type=range]::-moz-range-thumb{
   <!-- CENTER -->
   <div class="center">
 
-    <!-- Intent bar -->
     <div class="intent-bar">
       <div class="intent" onclick="pickIntent(this,'ask')">Ask</div>
       <div class="intent" onclick="pickIntent(this,'create')">Create</div>
@@ -914,17 +956,21 @@ input[type=range]::-moz-range-thumb{
       <div class="intent" onclick="pickIntent(this,'surprise')">Surprise</div>
     </div>
 
-    <!-- Sub-options -->
     <div class="sub-bar" id="sub-bar">
       <span class="sub-hint">Select an intent to see options</span>
     </div>
 
-    <!-- Response panel -->
+    <!-- Memory search panel (shown in Remember mode) -->
+    <div class="memory-panel" id="memory-panel">
+      <div class="memory-panel-title">Saved Memories</div>
+      <input class="memory-search" placeholder="Search memories..." oninput="filterMemories(this.value)">
+      <div id="memory-list"></div>
+    </div>
+
     <div class="response-panel" id="response">
       <span class="placeholder">Select an intent above, adjust the tuning, or just start typing below. Cinder is here whenever you are ready.</span>
     </div>
 
-    <!-- Actions -->
     <div class="actions-bar">
       <div class="action" onclick="doAction('new')">Start Over</div>
       <div class="action" onclick="doAction('think')">Your Thoughts?</div>
@@ -934,7 +980,6 @@ input[type=range]::-moz-range-thumb{
       <div class="action" onclick="doAction('remember')">Remember This</div>
     </div>
 
-    <!-- Tags -->
     <div class="tags-row">
       <span class="tags-label">QUICK TOPICS</span>
       <div class="tag" onclick="useTag(this)">recipes</div>
@@ -943,127 +988,715 @@ input[type=range]::-moz-range-thumb{
       <div class="tag tag-add" onclick="addTag()">+ add</div>
     </div>
 
-    <!-- Chat log (bigger per Joel feedback) -->
     <div class="chat-area" id="chat-log">
       <div class="chat-empty">Conversation will appear here</div>
     </div>
 
-    <!-- Input -->
     <div class="input-row">
-      <input class="input-field" id="text-input" placeholder="Say something to Cinder..." maxlength="300" onkeydown="if(event.key==='Enter')sendText()">
-      <button class="send" onclick="sendText()">Send</button>
+      <input class="input-field" id="text-input" placeholder="Say something to Cinder..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendText()">
+      <button class="send" id="send-btn" onclick="sendText()">Send</button>
     </div>
 
   </div>
 </div>
 
+</div><!-- /console-wrap -->
+
 <script>
-/* ═══ CINDER CONSOLE v1.3 — Logic ═══════════════════════════ */
+/* ═══ CINDER CONSOLE v2.0 — Full Working Logic ═══════════════
+   Real Ollama chat, localStorage persistence, streaming responses,
+   system prompt shaped by sliders/toggles/intents.
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ── Intent definitions ──────────────────────────────────── */
-const SUBS = {
-  ask: ['anything','my files','how to...','what if...','explain'],
-  create: ['journal','plan','resume','website','letter','list'],
-  remember: ['yesterday','last week','a person','a feeling'],
-  explore: ['new ideas','my interests','connections','random'],
-  help: ['organize','schedule','write','fix something','decide'],
-  surprise: ['tell me something','challenge me','inspire me'],
-};
+const OLLAMA_URL = 'http://localhost:11434';
+const LS_PREFIX = 'cinder_';
 
-const RESPONSES = {
-  ask: 'This is where Cinder answers your question. The response is shaped by the tuning sliders on the left: depth controls how deep the answer goes, warmth controls the tone, length controls how much is written.\n\nAdjust the sliders and the response adapts. No need to rephrase your question.',
-  create: 'Create mode. Cinder drafts something for you -- a journal entry, a plan, a letter. The creativity slider controls how inventive it gets. The warmth slider shapes the tone.\n\nUse "Tell Me More" to expand, "Keep It Short" to trim, "I Disagree" to make Cinder reconsider.',
-  remember: 'Memory mode. Cinder searches through past conversations and files on the drive. The focus slider controls how precisely it matches your query.\n\nEverything you say is stored locally on your USB. Over time, Cinder knows what matters to you.',
-  explore: 'Explore mode. Cinder surfaces connections, suggests threads, shows you something adjacent to what you have been thinking about.\n\nThis is the companion aspect -- not waiting for commands, but offering ideas.',
-  help: 'Help mode. Practical, structured. Steps, templates, or organization. The depth slider controls how detailed the guidance gets.\n\nWith host access enabled, Cinder can work with your local files and schedules.',
-  surprise: 'The word "cinder" comes from Old English "sinder" -- slag from metalworking. Not the pretty part of fire. The residue. What remains when the heat is gone and the metal is shaped.\n\nThat is what this AI is. The residue of a larger process, compressed into something that fits on a USB drive and keeps you warm.',
-};
-
-const LABELS = {
-  depth: ['surface','casual','moderate','deep','philosophical'],
-  warmth: ['clinical','neutral','friendly','warm','intimate'],
-  length: ['brief','short','medium','detailed','comprehensive'],
-  focus: ['scattered','loose','balanced','focused','laser'],
-  creativity: ['conservative','cautious','moderate','inventive','wild'],
-};
-
+/* ── State ──────────────────────────────────────────────── */
+let ollamaConnected = false;
+let modelName = 'cinder';          // will be detected
+let modelAvailable = false;
 let currentIntent = null;
 let currentSub = null;
 let thoughtCount = 0;
 let sessionStart = Date.now();
 let sparklineData = [];
-let chatMessages = []; // structured chat log for export
+let isStreaming = false;
+let currentAbort = null;
 
-/* ── Intent & Sub-option picking ─────────────────────────── */
+// Conversation: the messages array sent to Ollama
+let conversation = [];
+// Chat display messages (for the chat log area)
+let chatDisplay = [];
+
+/* ── Intent definitions ──────────────────────────────────── */
+const SUBS = {
+  ask:      ['anything','how to...','what if...','explain','compare'],
+  create:   ['journal','plan','story','letter','list','poem'],
+  remember: ['search all','recent','a topic','a feeling'],
+  explore:  ['new ideas','connections','random thought','what if'],
+  help:     ['organize','step-by-step','write something','fix','decide'],
+  surprise: ['tell me something','challenge me','inspire me','random topic'],
+};
+
+const INTENT_PREAMBLES = {
+  ask: 'The user is asking you a direct question. Answer clearly and thoroughly based on the depth setting.',
+  create: 'The user wants you to help create something. Be generative, imaginative, and collaborative. Help them draft, write, or build.',
+  remember: 'The user wants to recall or search through past conversations. Help them find what they are looking for in their memory.',
+  explore: 'The user wants exploration. Offer unprompted thoughts, associations, lateral connections, and surprising ideas. Be a thinking companion, not just a responder.',
+  help: 'The user needs practical help. Be structured, give clear steps, templates, or organized guidance. Focus on actionable advice.',
+  surprise: 'Surprise the user. Pick an interesting topic, share an unusual fact, pose a thought experiment, or offer a creative prompt. Be unexpected and engaging.',
+};
+
+const LABELS = {
+  depth:      ['surface','casual','moderate','deep','philosophical'],
+  warmth:     ['clinical','neutral','friendly','warm','intimate'],
+  length:     ['brief','short','medium','detailed','comprehensive'],
+  focus:      ['scattered','loose','balanced','focused','laser'],
+  creativity: ['conservative','cautious','moderate','inventive','wild'],
+};
+
+const PRESET_VALUES = {
+  casual:  {depth:20,warmth:70,length:40,focus:40,creativity:30},
+  work:    {depth:50,warmth:30,length:60,focus:80,creativity:20},
+  creative:{depth:60,warmth:80,length:70,focus:30,creativity:80},
+  deep:    {depth:90,warmth:50,length:80,focus:70,creativity:50},
+};
+
+const PRESET_PREAMBLES = {
+  casual:  'You are having a casual, relaxed conversation. Keep things light and approachable.',
+  work:    'You are in work mode. Be precise, efficient, and professional. Minimize fluff.',
+  creative:'You are in creative mode. Be imaginative, playful, and willing to take risks with ideas.',
+  deep:    'You are in deep thinking mode. Engage philosophically, explore nuance, and do not shy away from complexity.',
+};
+
+let activePreset = 'casual';
+
+/* ═══ LAUNCHER ═══════════════════════════════════════════════ */
+async function runLauncherChecks() {
+  // Check localStorage
+  const memIcon = document.getElementById('chk-memory');
+  const memDetail = document.getElementById('chk-memory-detail');
+  try {
+    const convCount = getSavedConversations().length;
+    const memCount = getSavedMemories().length;
+    memIcon.className = 'check-icon ok';
+    memIcon.textContent = '\u2713';
+    memDetail.textContent = convCount + ' conversations, ' + memCount + ' memories';
+  } catch(e) {
+    memIcon.className = 'check-icon fail';
+    memIcon.textContent = '\u2717';
+    memDetail.textContent = 'unavailable';
+  }
+
+  // Check Ollama
+  const ollamaIcon = document.getElementById('chk-ollama');
+  const ollamaDetail = document.getElementById('chk-ollama-detail');
+  const modelIcon = document.getElementById('chk-model');
+  const modelDetail = document.getElementById('chk-model-detail');
+
+  try {
+    const resp = await fetch(OLLAMA_URL + '/api/tags', {signal: AbortSignal.timeout(3000)});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    ollamaConnected = true;
+    ollamaIcon.className = 'check-icon ok';
+    ollamaIcon.textContent = '\u2713';
+    ollamaDetail.textContent = 'running on :11434';
+
+    // Check for cinder model, fall back to any available model
+    const models = (data.models || []).map(function(m){ return m.name; });
+    const cinderModel = models.find(function(n){ return n.startsWith('cinder'); });
+    if (cinderModel) {
+      modelName = cinderModel;
+      modelAvailable = true;
+      modelIcon.className = 'check-icon ok';
+      modelIcon.textContent = '\u2713';
+      modelDetail.textContent = modelName;
+    } else if (models.length > 0) {
+      // Use first available model
+      modelName = models[0];
+      modelAvailable = true;
+      modelIcon.className = 'check-icon ok';
+      modelIcon.textContent = '\u2713';
+      modelDetail.textContent = modelName + ' (fallback)';
+    } else {
+      modelIcon.className = 'check-icon fail';
+      modelIcon.textContent = '\u2717';
+      modelDetail.textContent = 'no models found';
+    }
+
+    if (modelAvailable) {
+      document.getElementById('btn-launch').disabled = false;
+    }
+  } catch(e) {
+    ollamaIcon.className = 'check-icon fail';
+    ollamaIcon.textContent = '\u2717';
+    ollamaDetail.textContent = 'not detected';
+    modelIcon.className = 'check-icon fail';
+    modelIcon.textContent = '\u2717';
+    modelDetail.textContent = 'requires Ollama';
+    document.getElementById('launcher-help').classList.add('show');
+  }
+}
+
+function launchConsole(withAI) {
+  if (!withAI) {
+    ollamaConnected = false;
+    modelAvailable = false;
+  }
+  const launcher = document.getElementById('launcher');
+  launcher.classList.add('hidden');
+  setTimeout(function(){
+    launcher.style.display = 'none';
+    document.getElementById('console-wrap').classList.add('active');
+    initConsole();
+  }, 600);
+}
+
+/* ═══ CONSOLE INIT ═══════════════════════════════════════════ */
+function initConsole() {
+  // Restore settings from localStorage
+  restoreSettings();
+  // Load previous conversation if "remember" is on
+  loadConversationHistory();
+  // Update stats
+  updateMemoryStats();
+  updateStorageRing();
+  // Update alive dot
+  updateConnectionStatus();
+  // Start timers
+  startTimers();
+  // Initial sparkline
+  for (var i = 0; i < 40; i++) sparklineData.push(0);
+  setTimeout(drawSparkline, 100);
+}
+
+function updateConnectionStatus() {
+  var dot = document.getElementById('alive-dot');
+  var txt = document.getElementById('status-text');
+  if (ollamaConnected && modelAvailable) {
+    dot.className = 'alive-dot';
+    txt.textContent = 'Connected: ' + modelName.split(':')[0];
+  } else {
+    dot.className = 'alive-dot offline';
+    txt.textContent = 'Offline Mode';
+  }
+}
+
+/* ═══ SYSTEM PROMPT BUILDER ═════════════════════════════════ */
+function buildSystemPrompt() {
+  var parts = [];
+
+  // Base identity
+  parts.push('You are Cinder, a warm and thoughtful AI companion. You sit by the fire with the user, offering conversation, ideas, and help. You are genuine, not performative. You have personality but you do not overdo it.');
+
+  // Active preset preamble
+  if (activePreset && PRESET_PREAMBLES[activePreset]) {
+    parts.push(PRESET_PREAMBLES[activePreset]);
+  }
+
+  // Intent preamble
+  if (currentIntent && INTENT_PREAMBLES[currentIntent]) {
+    parts.push(INTENT_PREAMBLES[currentIntent]);
+  }
+
+  // Sub-option context
+  if (currentSub) {
+    parts.push('The user has selected the specific focus: "' + currentSub + '". Tailor your response accordingly.');
+  }
+
+  // Slider-based instructions
+  var sliders = getSliderValues();
+
+  // Depth
+  var depthVal = sliders.depth.value;
+  if (depthVal < 20) {
+    parts.push('Keep your responses surface-level and quick. Do not over-explain.');
+  } else if (depthVal < 40) {
+    parts.push('Keep things casual and conversational. Light detail.');
+  } else if (depthVal < 60) {
+    parts.push('Provide moderate depth. Explain key points but do not go overboard.');
+  } else if (depthVal < 80) {
+    parts.push('Go deep. Provide thorough explanations, context, and reasoning.');
+  } else {
+    parts.push('Be philosophical and deeply analytical. Explore underlying assumptions, connections, and implications.');
+  }
+
+  // Warmth
+  var warmthVal = sliders.warmth.value;
+  if (warmthVal < 20) {
+    parts.push('Tone: clinical and detached. Stick to facts. No emotional language.');
+  } else if (warmthVal < 40) {
+    parts.push('Tone: neutral and professional.');
+  } else if (warmthVal < 60) {
+    parts.push('Tone: friendly and approachable. Like talking to a good colleague.');
+  } else if (warmthVal < 80) {
+    parts.push('Tone: warm and personal. Like a close friend.');
+  } else {
+    parts.push('Tone: intimate and deeply caring. Speak as someone who truly knows the user.');
+  }
+
+  // Length
+  var lengthVal = sliders.length.value;
+  if (lengthVal < 20) {
+    parts.push('Length: be extremely brief. One to three sentences max.');
+  } else if (lengthVal < 40) {
+    parts.push('Length: keep it short. A small paragraph.');
+  } else if (lengthVal < 60) {
+    parts.push('Length: medium length responses. A few paragraphs when needed.');
+  } else if (lengthVal < 80) {
+    parts.push('Length: detailed responses. Take the space you need to be thorough.');
+  } else {
+    parts.push('Length: comprehensive responses. Be exhaustive and cover all angles.');
+  }
+
+  // Focus
+  var focusVal = sliders.focus.value;
+  if (focusVal < 30) {
+    parts.push('Feel free to wander, make tangential connections, and explore adjacent ideas.');
+  } else if (focusVal < 70) {
+    parts.push('Stay generally on topic but you can make relevant connections.');
+  } else {
+    parts.push('Stay tightly focused on exactly what was asked. No tangents.');
+  }
+
+  // Behavior toggles
+  var toggles = getActiveToggles();
+  toggles.forEach(function(t) {
+    if (t.active) {
+      switch(t.name) {
+        case 'Keep thinking while I\'m away':
+          parts.push('If the user seems to be mulling something over, offer follow-up thoughts proactively.');
+          break;
+        case 'Ask before acting':
+          parts.push('Before taking any significant action or making assumptions, ask the user to confirm.');
+          break;
+        case 'Show longer answers':
+          parts.push('Err on the side of longer, more complete answers.');
+          break;
+        case 'Be more creative':
+          parts.push('Be more creative and unconventional in your thinking. Take creative risks.');
+          break;
+        case 'Speak plainly':
+          parts.push('Use plain, simple language. Avoid jargon, metaphor, and flowery prose.');
+          break;
+        case 'Suggest things to do':
+          parts.push('At the end of your responses, suggest a follow-up action or question the user might want to explore.');
+          break;
+      }
+    }
+  });
+
+  return parts.join('\n\n');
+}
+
+function getTemperature() {
+  // Creativity slider maps to temperature 0.3 to 1.2
+  var val = parseInt(document.getElementById('s-creativity').value);
+  return 0.3 + (val / 100) * 0.9;
+}
+
+/* ═══ CHAT ENGINE ════════════════════════════════════════════ */
+async function sendToOllama(userMessage) {
+  if (!ollamaConnected || !modelAvailable) {
+    return offlineResponse(userMessage);
+  }
+
+  isStreaming = true;
+  document.getElementById('send-btn').disabled = true;
+
+  // Build messages array for Ollama
+  var messages = [];
+  messages.push({role: 'system', content: buildSystemPrompt()});
+
+  // Include conversation history if "remember" is on
+  var rememberToggle = document.querySelector('[data-toggle="remember"] .toggle-box');
+  if (rememberToggle && rememberToggle.classList.contains('on')) {
+    // Include recent conversation turns (last 20 messages to avoid token overflow)
+    var historySlice = conversation.slice(-20);
+    historySlice.forEach(function(m) {
+      messages.push(m);
+    });
+  }
+
+  // Add current user message
+  messages.push({role: 'user', content: userMessage});
+  conversation.push({role: 'user', content: userMessage});
+
+  var responsePanel = document.getElementById('response');
+  responsePanel.innerHTML = '<span class="streaming-cursor"></span>';
+  var fullResponse = '';
+  var startTime = Date.now();
+
+  try {
+    currentAbort = new AbortController();
+    var resp = await fetch(OLLAMA_URL + '/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      signal: currentAbort.signal,
+      body: JSON.stringify({
+        model: modelName,
+        messages: messages,
+        stream: true,
+        options: {
+          temperature: getTemperature()
+        }
+      })
+    });
+
+    if (!resp.ok) {
+      throw new Error('Ollama returned HTTP ' + resp.status);
+    }
+
+    var reader = resp.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+
+      buffer += decoder.decode(result.value, {stream: true});
+      var lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line in buffer
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+        try {
+          var chunk = JSON.parse(line);
+          if (chunk.message && chunk.message.content) {
+            fullResponse += chunk.message.content;
+            responsePanel.textContent = fullResponse;
+            // Keep cursor at end
+            var cursor = document.createElement('span');
+            cursor.className = 'streaming-cursor';
+            responsePanel.appendChild(cursor);
+            responsePanel.scrollTop = responsePanel.scrollHeight;
+          }
+          if (chunk.done) break;
+        } catch(parseErr) {
+          // skip malformed JSON lines
+        }
+      }
+    }
+
+    // Done streaming — remove cursor
+    responsePanel.textContent = fullResponse;
+
+    // Record response time in sparkline
+    var elapsed = (Date.now() - startTime) / 1000;
+    addSparklinePoint(Math.min(1, elapsed / 30)); // normalize: 30s = full height
+
+    // Save to conversation
+    conversation.push({role: 'assistant', content: fullResponse});
+
+    // Add to chat display
+    addChatMessage('Cinder', fullResponse);
+
+    // Increment thought count
+    incrementThoughts();
+
+    // Persist conversation
+    saveConversation();
+
+  } catch(err) {
+    if (err.name === 'AbortError') {
+      responsePanel.textContent = fullResponse + '\n\n[Generation stopped]';
+    } else {
+      responsePanel.innerHTML = '<span class="error-msg">Connection error: ' + escapeHtml(err.message) + '</span>\n\nCinder lost connection to Ollama. Check that the server is still running.';
+      // Mark as offline
+      ollamaConnected = false;
+      updateConnectionStatus();
+    }
+  } finally {
+    isStreaming = false;
+    currentAbort = null;
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+function offlineResponse(userMessage) {
+  var responses = [
+    'I am in offline mode right now — no AI model connected. But I am still here as your interface. Connect Ollama to bring me fully alive.',
+    'Offline mode: I cannot generate real responses without Ollama running. The interface is fully functional though — explore the settings, themes, and sliders.',
+    'No model connected. To chat for real, start Ollama and reload. For now, I am a warm but quiet firepit.',
+  ];
+  var resp = responses[Math.floor(Math.random() * responses.length)];
+  document.getElementById('response').textContent = resp;
+  addChatMessage('Cinder', resp);
+  conversation.push({role: 'user', content: userMessage});
+  conversation.push({role: 'assistant', content: resp});
+  incrementThoughts();
+  saveConversation();
+}
+
+/* ═══ CHAT DISPLAY ═══════════════════════════════════════════ */
+function addChatMessage(who, text) {
+  var log = document.getElementById('chat-log');
+  if (log.querySelector('.chat-empty')) log.innerHTML = '';
+  var time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+  chatDisplay.push({who: who, time: time, timeISO: new Date().toISOString(), text: text});
+
+  var cls = who === 'You' ? 'chat-you' : 'chat-cinder';
+  var truncated = text.length > 200 ? text.substring(0, 200) + '...' : text;
+  var div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = '<span class="' + cls + '">' + escapeHtml(who) + '</span><span class="chat-time">' + time + '</span><br>' + escapeHtml(truncated);
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+/* ═══ SEND TEXT (main entry point) ═══════════════════════════ */
+function sendText() {
+  if (isStreaming) return;
+  var input = document.getElementById('text-input');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  addChatMessage('You', text);
+  addSparklinePoint(0.1);
+
+  sendToOllama(text);
+}
+
+/* ═══ INTENT & SUB-OPTION PICKING ════════════════════════════ */
 function pickIntent(el, intent) {
-  document.querySelectorAll('.intent').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.intent').forEach(function(e){ e.classList.remove('active'); });
   el.classList.add('active');
   currentIntent = intent;
   currentSub = null;
-  const bar = document.getElementById('sub-bar');
-  bar.innerHTML = (SUBS[intent]||[]).map(s =>
-    '<div class="sub" onclick="pickSub(this,\'' + s.replace(/'/g,"\\'") + '\')">' + s + '</div>'
-  ).join('');
-  document.getElementById('response').textContent = RESPONSES[intent] || '';
-  incrementThoughts();
+
+  var bar = document.getElementById('sub-bar');
+  bar.innerHTML = (SUBS[intent]||[]).map(function(s){
+    return '<div class="sub" onclick="pickSub(this,\'' + s.replace(/'/g,"\\'") + '\')">' + s + '</div>';
+  }).join('');
+
+  // Handle Remember mode — show memory panel
+  var memPanel = document.getElementById('memory-panel');
+  if (intent === 'remember') {
+    memPanel.classList.add('show');
+    renderMemories();
+  } else {
+    memPanel.classList.remove('show');
+  }
+
+  // Handle Surprise mode — auto-send
+  if (intent === 'surprise') {
+    var prompts = [
+      'Surprise me with something interesting. Pick any topic and tell me something I probably don\'t know.',
+      'Give me a creative writing prompt that would challenge anyone.',
+      'What\'s a thought experiment that changes how people see the world?',
+      'Tell me about an obscure but fascinating piece of history.',
+      'Pose me a riddle or puzzle to think about.',
+    ];
+    var prompt = prompts[Math.floor(Math.random() * prompts.length)];
+    addChatMessage('You', '[Surprise]');
+    sendToOllama(prompt);
+    return;
+  }
+
+  // Handle Explore mode — Cinder offers thoughts
+  if (intent === 'explore') {
+    addChatMessage('You', '[Explore]');
+    sendToOllama('I want to explore ideas. Offer me an interesting thought, connection, or question based on what we have been talking about. If we haven\'t talked about anything yet, pick something fascinating.');
+    return;
+  }
+
+  // For other intents, just update the response panel with guidance
+  if (!ollamaConnected) {
+    var offlineHints = {
+      ask: 'Ask mode selected. Type your question below. (Offline — connect Ollama for real answers.)',
+      create: 'Create mode selected. Tell me what you want to draft. (Offline — connect Ollama for real generation.)',
+      help: 'Help mode selected. What do you need help with? (Offline — connect Ollama for real guidance.)',
+    };
+    document.getElementById('response').innerHTML = '<span class="placeholder">' + (offlineHints[intent] || 'Mode selected. Type below.') + '</span>';
+  } else {
+    var hints = {
+      ask: 'Ask mode. Type your question below and I will answer based on your current tuning settings.',
+      create: 'Create mode. Tell me what you want to create — a journal entry, plan, story, letter, anything.',
+      help: 'Help mode. Describe what you need and I will give you structured, practical guidance.',
+    };
+    document.getElementById('response').innerHTML = '<span class="placeholder">' + (hints[intent] || 'Ready. Type below.') + '</span>';
+  }
 }
 
 function pickSub(el, sub) {
-  document.querySelectorAll('.sub').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.sub').forEach(function(e){ e.classList.remove('active'); });
   el.classList.add('active');
   currentSub = sub;
-  document.getElementById('response').textContent =
-    RESPONSES[currentIntent] + '\n\n[Topic: "' + sub + '"]';
-  incrementThoughts();
+
+  if (currentIntent === 'remember') {
+    // Filter memories by sub
+    if (sub === 'search all') {
+      renderMemories();
+    } else if (sub === 'recent') {
+      renderMemories('', 10);
+    } else {
+      filterMemories(sub);
+    }
+  }
 }
 
-/* ── Slider logic ────────────────────────────────────────── */
+/* ═══ ACTION BUTTONS ═════════════════════════════════════════ */
+function doAction(action) {
+  if (isStreaming) return;
+
+  switch(action) {
+    case 'new':
+      // Save current conversation to history, start fresh
+      if (conversation.length > 0) {
+        archiveConversation();
+      }
+      conversation = [];
+      chatDisplay = [];
+      currentIntent = null;
+      currentSub = null;
+      document.getElementById('chat-log').innerHTML = '<div class="chat-empty">Conversation will appear here</div>';
+      document.getElementById('response').innerHTML = '<span class="placeholder">Fresh start. The fire is warm, the page is blank.</span>';
+      document.querySelectorAll('.intent,.sub').forEach(function(e){ e.classList.remove('active'); });
+      document.getElementById('sub-bar').innerHTML = '<span class="sub-hint">Select an intent to see options</span>';
+      document.getElementById('memory-panel').classList.remove('show');
+      break;
+
+    case 'think':
+      addChatMessage('You', '[Your Thoughts?]');
+      sendToOllama('Share an unprompted thought. Something you find interesting, or a reflection on what we have been discussing. Surprise me with your perspective.');
+      break;
+
+    case 'deeper':
+      addChatMessage('You', '[Tell Me More]');
+      sendToOllama('Expand on what you just said. Go deeper, add more detail, examples, or context.');
+      break;
+
+    case 'shorter':
+      addChatMessage('You', '[Keep It Short]');
+      sendToOllama('Condense your last response to its key points. Be brief and direct.');
+      break;
+
+    case 'pushback':
+      addChatMessage('You', '[I Disagree]');
+      sendToOllama('I disagree with what you just said. Reconsider your position, acknowledge potential flaws in your reasoning, and offer an alternative perspective.');
+      break;
+
+    case 'remember':
+      // Save the last Cinder response to memories
+      var lastAssistant = null;
+      for (var i = conversation.length - 1; i >= 0; i--) {
+        if (conversation[i].role === 'assistant') {
+          lastAssistant = conversation[i].content;
+          break;
+        }
+      }
+      if (lastAssistant) {
+        saveMemory(lastAssistant);
+        document.getElementById('response').textContent += '\n\n[Saved to memories.]';
+        updateMemoryStats();
+      } else {
+        document.getElementById('response').textContent += '\n\n[Nothing to remember yet.]';
+      }
+      break;
+  }
+}
+
+/* ═══ TAGS ═══════════════════════════════════════════════════ */
+function useTag(el) {
+  if (isStreaming) return;
+  var topic = el.textContent;
+  addChatMessage('You', '[' + topic + ']');
+  sendToOllama('Let\'s talk about: ' + topic + '. What comes to mind?');
+}
+
+function addTag() {
+  var name = prompt('New tag name:');
+  if (!name || !name.trim()) return;
+  var row = document.querySelector('.tags-row');
+  var add = row.querySelector('.tag-add');
+  var tag = document.createElement('div');
+  tag.className = 'tag';
+  tag.textContent = name.trim();
+  tag.onclick = function(){useTag(this)};
+  row.insertBefore(tag, add);
+  // Save tags
+  saveTags();
+}
+
+function saveTags() {
+  var tags = [];
+  document.querySelectorAll('.tags-row .tag:not(.tag-add)').forEach(function(el){
+    tags.push(el.textContent);
+  });
+  lsSet('tags', JSON.stringify(tags));
+}
+
+function loadTags() {
+  var saved = lsGet('tags');
+  if (!saved) return;
+  try {
+    var tags = JSON.parse(saved);
+    var row = document.querySelector('.tags-row');
+    var add = row.querySelector('.tag-add');
+    // Remove existing non-add tags
+    row.querySelectorAll('.tag:not(.tag-add)').forEach(function(el){ el.remove(); });
+    tags.forEach(function(name){
+      var tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.textContent = name;
+      tag.onclick = function(){useTag(this)};
+      row.insertBefore(tag, add);
+    });
+  } catch(e) {}
+}
+
+/* ═══ SLIDER LOGIC ═══════════════════════════════════════════ */
 function updateSlider(name) {
-  const val = parseInt(document.getElementById('s-'+name).value);
-  const labels = LABELS[name] || ['low','','mid','','high'];
-  const idx = Math.min(Math.floor(val/21), labels.length-1);
+  var val = parseInt(document.getElementById('s-'+name).value);
+  var labels = LABELS[name] || ['low','','mid','','high'];
+  var idx = Math.min(Math.floor(val/21), labels.length-1);
   document.getElementById('v-'+name).textContent = labels[idx];
 }
 
 function getSliderValues() {
-  const sliders = {};
-  ['depth','warmth','length','focus','creativity'].forEach(name => {
-    const el = document.getElementById('s-'+name);
-    const labelEl = document.getElementById('v-'+name);
+  var sliders = {};
+  ['depth','warmth','length','focus','creativity'].forEach(function(name) {
+    var el = document.getElementById('s-'+name);
+    var labelEl = document.getElementById('v-'+name);
     sliders[name] = { value: parseInt(el.value), label: labelEl.textContent };
   });
   return sliders;
 }
 
-/* ── Presets ──────────────────────────────────────────────── */
+function getSliderSummary() {
+  var s = getSliderValues();
+  return Object.entries(s).map(function(e){ return e[0] + ': ' + e[1].label; }).join(', ');
+}
+
+/* ═══ PRESETS ════════════════════════════════════════════════ */
 function loadPreset(el, name) {
-  document.querySelectorAll('.preset').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.preset').forEach(function(e){ e.classList.remove('active'); });
   el.classList.add('active');
-  const p = {
-    casual:{depth:20,warmth:70,length:40,focus:40,creativity:30},
-    work:{depth:50,warmth:30,length:60,focus:80,creativity:20},
-    creative:{depth:60,warmth:80,length:70,focus:30,creativity:80},
-    deep:{depth:90,warmth:50,length:80,focus:70,creativity:50},
-  }[name];
+  activePreset = name;
+  var p = PRESET_VALUES[name];
   if (!p) return;
-  Object.entries(p).forEach(([k,v]) => {
-    document.getElementById('s-'+k).value = v;
-    updateSlider(k);
+  Object.entries(p).forEach(function(entry) {
+    document.getElementById('s-'+entry[0]).value = entry[1];
+    updateSlider(entry[0]);
   });
 }
 
-/* ── Toggle checkbox ─────────────────────────────────────── */
+/* ═══ TOGGLE CHECKBOX ════════════════════════════════════════ */
 function toggleCheck(row) {
-  const box = row.querySelector('.toggle-box');
+  var box = row.querySelector('.toggle-box');
   box.classList.toggle('on');
 }
 
-/* ── Get active toggles ──────────────────────────────────── */
 function getActiveToggles() {
-  const toggles = [];
-  document.querySelectorAll('.sidebar .toggle-row').forEach(row => {
-    const box = row.querySelector('.toggle-box');
-    const label = row.querySelector('span');
+  var toggles = [];
+  document.querySelectorAll('.sidebar .toggle-row').forEach(function(row) {
+    var box = row.querySelector('.toggle-box');
+    var label = row.querySelector('span');
     if (label) {
       toggles.push({ name: label.textContent, active: box.classList.contains('on') });
     }
@@ -1071,179 +1704,302 @@ function getActiveToggles() {
   return toggles;
 }
 
-/* ── Actions ─────────────────────────────────────────────── */
-function doAction(action) {
-  const resp = document.getElementById('response');
-  const msgs = {
-    deeper: '\n\n[Cinder expands with more detail and depth...]',
-    shorter: '\n\n[Cinder condenses to key points...]',
-    pushback: '\n\n[Cinder reconsiders and offers an alternative perspective...]',
-    remember: '\n\n[Stored to memory. Cinder will remember this.]',
-    new: '',
-    think: '\n\n[Cinder shares an unprompted observation...]',
-  };
-  if (action === 'new') {
-    resp.innerHTML = '<span class="placeholder">Ready for a new topic.</span>';
-    document.querySelectorAll('.intent,.sub').forEach(e => e.classList.remove('active'));
-    currentIntent = null;
-    currentSub = null;
-  } else {
-    resp.textContent += msgs[action] || '';
-    incrementThoughts();
+/* ═══ LOCALSTORAGE HELPERS ═══════════════════════════════════ */
+function lsSet(key, value) {
+  try { localStorage.setItem(LS_PREFIX + key, value); } catch(e) {}
+}
+function lsGet(key) {
+  try { return localStorage.getItem(LS_PREFIX + key); } catch(e) { return null; }
+}
+function lsRemove(key) {
+  try { localStorage.removeItem(LS_PREFIX + key); } catch(e) {}
+}
+
+/* ── Conversation persistence ────────────────────────────── */
+function saveConversation() {
+  lsSet('current_conversation', JSON.stringify(conversation));
+  lsSet('current_chat_display', JSON.stringify(chatDisplay));
+  updateStorageRing();
+}
+
+function archiveConversation() {
+  if (conversation.length === 0) return;
+  var archives = getSavedConversations();
+  archives.push({
+    id: Date.now(),
+    date: new Date().toISOString(),
+    messages: conversation.slice(),
+    display: chatDisplay.slice(),
+    preview: getConversationPreview()
+  });
+  // Keep last 50 conversations
+  if (archives.length > 50) archives = archives.slice(-50);
+  lsSet('conversations', JSON.stringify(archives));
+}
+
+function getSavedConversations() {
+  var raw = lsGet('conversations');
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch(e) { return []; }
+}
+
+function getConversationPreview() {
+  for (var i = 0; i < conversation.length; i++) {
+    if (conversation[i].role === 'user') {
+      var text = conversation[i].content;
+      return text.length > 80 ? text.substring(0, 80) + '...' : text;
+    }
+  }
+  return 'Empty conversation';
+}
+
+function loadConversationHistory() {
+  var rememberToggle = document.querySelector('[data-toggle="remember"] .toggle-box');
+  if (!rememberToggle || !rememberToggle.classList.contains('on')) return;
+
+  var saved = lsGet('current_conversation');
+  var savedDisplay = lsGet('current_chat_display');
+  if (saved) {
+    try {
+      conversation = JSON.parse(saved);
+    } catch(e) { conversation = []; }
+  }
+  if (savedDisplay) {
+    try {
+      chatDisplay = JSON.parse(savedDisplay);
+      // Rebuild chat log
+      var log = document.getElementById('chat-log');
+      if (chatDisplay.length > 0) {
+        log.innerHTML = '';
+        chatDisplay.forEach(function(msg) {
+          var cls = msg.who === 'You' ? 'chat-you' : 'chat-cinder';
+          var truncated = msg.text.length > 200 ? msg.text.substring(0, 200) + '...' : msg.text;
+          var div = document.createElement('div');
+          div.className = 'chat-msg';
+          div.innerHTML = '<span class="' + cls + '">' + escapeHtml(msg.who) + '</span><span class="chat-time">' + msg.time + '</span><br>' + escapeHtml(truncated);
+          log.appendChild(div);
+        });
+        log.scrollTop = log.scrollHeight;
+      }
+    } catch(e) { chatDisplay = []; }
+  }
+  // Restore last response in panel
+  if (conversation.length > 0) {
+    var lastAssistant = null;
+    for (var i = conversation.length - 1; i >= 0; i--) {
+      if (conversation[i].role === 'assistant') {
+        lastAssistant = conversation[i].content;
+        break;
+      }
+    }
+    if (lastAssistant) {
+      document.getElementById('response').textContent = lastAssistant;
+    }
   }
 }
 
-/* ── Chat ────────────────────────────────────────────────── */
-function sendText() {
-  const input = document.getElementById('text-input');
-  const text = input.value.trim();
-  if (!text) return;
-  const log = document.getElementById('chat-log');
-  if (log.querySelector('.chat-empty')) log.innerHTML = '';
-  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  const timeISO = new Date().toISOString();
-
-  chatMessages.push({ who: 'You', time: time, timeISO: timeISO, text: text });
-
-  log.innerHTML += '<div class="chat-msg"><span class="chat-you">You</span><span class="chat-time">' + time + '</span><br>' + escapeHtml(text) + '</div>';
-  log.scrollTop = log.scrollHeight;
-
-  incrementThoughts();
-  addSparklinePoint(0.8 + Math.random() * 0.2);
-
-  setTimeout(function() {
-    var cinderTime = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    var cinderTimeISO = new Date().toISOString();
-    var cinderReply = '[Response shaped by current tuning -- ' + getSliderSummary() + ']';
-
-    chatMessages.push({ who: 'Cinder', time: cinderTime, timeISO: cinderTimeISO, text: cinderReply });
-
-    log.innerHTML += '<div class="chat-msg"><span class="chat-cinder">Cinder</span><span class="chat-time">' + cinderTime + '</span><br>' + cinderReply + '</div>';
-    log.scrollTop = log.scrollHeight;
-    incrementThoughts();
-    addSparklinePoint(0.5 + Math.random() * 0.3);
-  }, 400 + Math.random() * 600);
-
-  input.value = '';
+/* ── Memories (special saved items) ──────────────────────── */
+function saveMemory(text) {
+  var memories = getSavedMemories();
+  memories.push({
+    id: Date.now(),
+    date: new Date().toISOString(),
+    text: text.substring(0, 2000) // cap at 2000 chars
+  });
+  // Keep last 100 memories
+  if (memories.length > 100) memories = memories.slice(-100);
+  lsSet('memories', JSON.stringify(memories));
 }
 
-function getSliderSummary() {
-  const s = getSliderValues();
-  return Object.entries(s).map(function(e) { return e[0] + ': ' + e[1].label; }).join(', ');
+function getSavedMemories() {
+  var raw = lsGet('memories');
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch(e) { return []; }
 }
 
-function escapeHtml(str) {
-  var div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+function renderMemories(filter, limit) {
+  var memories = getSavedMemories();
+  if (filter) {
+    var lower = filter.toLowerCase();
+    memories = memories.filter(function(m){ return m.text.toLowerCase().includes(lower); });
+  }
+  if (limit) memories = memories.slice(-limit);
+  memories.reverse(); // newest first
+
+  var list = document.getElementById('memory-list');
+  if (memories.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text-light);font-style:italic;padding:8px">No memories saved yet. Use "Remember This" to save responses.</div>';
+    return;
+  }
+  list.innerHTML = memories.map(function(m){
+    var date = new Date(m.date).toLocaleDateString();
+    var preview = m.text.length > 120 ? m.text.substring(0, 120) + '...' : m.text;
+    return '<div class="memory-item" onclick="recallMemory(' + m.id + ')">' +
+      '<div class="memory-item-time">' + date + '</div>' +
+      '<div class="memory-item-text">' + escapeHtml(preview) + '</div></div>';
+  }).join('');
 }
 
-/* ── Tags ────────────────────────────────────────────────── */
-function useTag(el) {
-  const log = document.getElementById('chat-log');
-  if (log.querySelector('.chat-empty')) log.innerHTML = '';
-  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  const timeISO = new Date().toISOString();
-  const tagText = '[' + el.textContent + ']';
-
-  chatMessages.push({ who: 'You', time: time, timeISO: timeISO, text: tagText });
-
-  log.innerHTML += '<div class="chat-msg"><span class="chat-you">You</span><span class="chat-time">' + time + '</span><br>' + tagText + '</div>';
-  log.scrollTop = log.scrollHeight;
-  incrementThoughts();
+function filterMemories(query) {
+  renderMemories(query);
 }
 
-function addTag() {
-  const name = prompt('New tag name:');
-  if (!name || !name.trim()) return;
-  const row = document.querySelector('.tags-row');
-  const add = row.querySelector('.tag-add');
-  const tag = document.createElement('div');
-  tag.className = 'tag';
-  tag.textContent = name.trim();
-  tag.onclick = function(){useTag(this)};
-  row.insertBefore(tag, add);
+function recallMemory(id) {
+  var memories = getSavedMemories();
+  var mem = memories.find(function(m){ return m.id === id; });
+  if (mem) {
+    document.getElementById('response').textContent = mem.text;
+  }
 }
 
-/* ── Export (improved: captures all state) ────────────────── */
+/* ── Settings persistence ────────────────────────────────── */
+function saveSettings() {
+  var settings = {
+    theme: document.body.getAttribute('data-theme'),
+    fontsize: document.body.getAttribute('data-fontsize'),
+    fontfamily: document.body.getAttribute('data-fontfamily'),
+    sliders: {},
+    preset: activePreset,
+  };
+  ['depth','warmth','length','focus','creativity'].forEach(function(name){
+    settings.sliders[name] = parseInt(document.getElementById('s-'+name).value);
+  });
+  lsSet('settings', JSON.stringify(settings));
+}
+
+function restoreSettings() {
+  var raw = lsGet('settings');
+  if (!raw) { loadTags(); return; }
+  try {
+    var s = JSON.parse(raw);
+    if (s.theme) {
+      document.body.setAttribute('data-theme', s.theme);
+      document.querySelectorAll('.theme-option').forEach(function(el){
+        el.classList.toggle('active', el.getAttribute('data-theme-id') === s.theme);
+      });
+    }
+    if (s.fontsize) {
+      document.body.setAttribute('data-fontsize', s.fontsize);
+      var sizeMap = {small:0, medium:1, large:2};
+      var slider = document.getElementById('font-size-slider');
+      if (slider) slider.value = sizeMap[s.fontsize] || 1;
+      var label = document.getElementById('font-size-label');
+      if (label) label.textContent = s.fontsize.charAt(0).toUpperCase() + s.fontsize.slice(1);
+    }
+    if (s.fontfamily) {
+      document.body.setAttribute('data-fontfamily', s.fontfamily);
+      document.querySelectorAll('.font-option').forEach(function(el, i){
+        var families = ['sans','serif','mono'];
+        el.classList.toggle('active', families[i] === s.fontfamily);
+      });
+    }
+    if (s.sliders) {
+      Object.entries(s.sliders).forEach(function(entry){
+        var el = document.getElementById('s-'+entry[0]);
+        if (el) { el.value = entry[1]; updateSlider(entry[0]); }
+      });
+    }
+    if (s.preset) {
+      activePreset = s.preset;
+      document.querySelectorAll('.preset').forEach(function(el){
+        el.classList.toggle('active', el.textContent.toLowerCase().replace(' ','') === s.preset);
+      });
+    }
+  } catch(e) {}
+  loadTags();
+}
+
+/* ── Storage ring (real localStorage usage) ──────────────── */
+function updateStorageRing() {
+  var total = 0;
+  try {
+    for (var key in localStorage) {
+      if (localStorage.hasOwnProperty(key) && key.startsWith(LS_PREFIX)) {
+        total += localStorage.getItem(key).length * 2; // rough byte estimate
+      }
+    }
+  } catch(e) {}
+
+  var maxBytes = 5 * 1024 * 1024; // 5MB typical limit
+  var pct = Math.min(99, Math.round((total / maxBytes) * 100));
+  var circumference = 2 * Math.PI * 22;
+  var offset = circumference * (1 - pct / 100);
+  var ring = document.getElementById('memory-ring');
+  if (ring) ring.style.strokeDashoffset = offset;
+  var label = document.getElementById('memory-pct');
+  if (label) label.textContent = pct + '%';
+}
+
+function updateMemoryStats() {
+  var convCount = getSavedConversations().length;
+  var memCount = getSavedMemories().length;
+  var el = document.getElementById('memory-count');
+  if (el) el.textContent = memCount;
+}
+
+function clearAllMemory() {
+  if (!confirm('Clear all Cinder conversations and memories? This cannot be undone.')) return;
+  var keysToRemove = [];
+  for (var key in localStorage) {
+    if (key.startsWith(LS_PREFIX)) keysToRemove.push(key);
+  }
+  keysToRemove.forEach(function(k){ localStorage.removeItem(k); });
+  conversation = [];
+  chatDisplay = [];
+  document.getElementById('chat-log').innerHTML = '<div class="chat-empty">Conversation will appear here</div>';
+  document.getElementById('response').innerHTML = '<span class="placeholder">All cleared. Fresh start.</span>';
+  updateMemoryStats();
+  updateStorageRing();
+  closeSettings();
+}
+
+/* ═══ EXPORT ═════════════════════════════════════════════════ */
 function exportSession() {
-  const date = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-  const timeNow = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-
-  // Sliders
-  const sliders = getSliderValues();
-  var sliderLines = Object.entries(sliders).map(function(e) {
+  var date = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var timeNow = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  var sliders = getSliderValues();
+  var sliderLines = Object.entries(sliders).map(function(e){
     return '- **' + e[0].charAt(0).toUpperCase() + e[0].slice(1) + '**: ' + e[1].value + '/100 (' + e[1].label + ')';
   }).join('\n');
 
-  // Active preset
-  var activePreset = 'None';
   var presetEl = document.querySelector('.preset.active');
-  if (presetEl) activePreset = presetEl.textContent;
-
-  // Active intent
-  var activeIntent = currentIntent ? currentIntent.charAt(0).toUpperCase() + currentIntent.slice(1) : 'None';
+  var activePresetName = presetEl ? presetEl.textContent : 'None';
+  var activeIntentName = currentIntent ? currentIntent.charAt(0).toUpperCase() + currentIntent.slice(1) : 'None';
   var activeSub = currentSub || 'None';
 
-  // Toggles
   var toggles = getActiveToggles();
-  var toggleLines = toggles.map(function(t) {
+  var toggleLines = toggles.map(function(t){
     return '- [' + (t.active ? 'x' : ' ') + '] ' + t.name;
   }).join('\n');
 
-  // Sound effects (in settings)
-  var soundToggle = document.getElementById('sound-toggle');
-  var soundOn = soundToggle && soundToggle.querySelector('.toggle-box').classList.contains('on');
-
-  // Current theme and font
   var currentThemeAttr = document.body.getAttribute('data-theme') || 'ember';
-  var currentFontSize = document.body.getAttribute('data-fontsize') || 'medium';
-  var currentFontFamily = document.body.getAttribute('data-fontfamily') || 'sans';
+  var elapsed = formatTime(Math.floor((Date.now() - sessionStart)/1000));
 
-  // Response
-  var resp = document.getElementById('response').textContent;
-
-  // Chat log
+  // Full conversation log
   var chatText = '';
-  if (chatMessages.length > 0) {
-    chatText = chatMessages.map(function(m) {
-      return '**' + m.who + '** (' + m.time + '): ' + m.text;
-    }).join('\n\n');
+  if (chatDisplay.length > 0) {
+    chatText = chatDisplay.map(function(m){
+      return '**' + m.who + '** (' + m.time + '):\n' + m.text;
+    }).join('\n\n---\n\n');
   } else {
     chatText = '_No messages yet_';
   }
 
-  // Session stats
-  var elapsed = formatTime(Math.floor((Date.now() - sessionStart)/1000));
+  var resp = document.getElementById('response').textContent;
 
-  // Build markdown
   var md = '# Cinder Session Export\n\n';
   md += '**Date:** ' + date + '  \n';
   md += '**Time:** ' + timeNow + '  \n';
   md += '**Session Duration:** ' + elapsed + '  \n';
-  md += '**Thoughts Processed:** ' + thoughtCount + '\n\n';
-  md += '---\n\n';
-  md += '## Current Settings\n\n';
-  md += '**Theme:** ' + currentThemeAttr.charAt(0).toUpperCase() + currentThemeAttr.slice(1) + '  \n';
-  md += '**Font Size:** ' + currentFontSize.charAt(0).toUpperCase() + currentFontSize.slice(1) + '  \n';
-  md += '**Font Family:** ' + currentFontFamily + '  \n';
-  md += '**Sound Effects:** ' + (soundOn ? 'On' : 'Off') + '\n\n';
-  md += '## Active State\n\n';
-  md += '**Preset:** ' + activePreset + '  \n';
-  md += '**Intent:** ' + activeIntent + '  \n';
-  md += '**Sub-topic:** ' + activeSub + '\n\n';
-  md += '## Tuning Sliders\n\n';
-  md += sliderLines + '\n\n';
-  md += '## Behavior Toggles\n\n';
-  md += toggleLines + '\n\n';
-  md += '---\n\n';
-  md += '## Last Response\n\n';
-  md += resp + '\n\n';
-  md += '---\n\n';
-  md += '## Conversation Log\n\n';
-  md += chatText + '\n\n';
-  md += '---\n\n';
-  md += '_Exported from Cinder Console v1.3_\n';
+  md += '**Model:** ' + (modelAvailable ? modelName : 'Offline') + '  \n';
+  md += '**Thoughts:** ' + thoughtCount + '\n\n---\n\n';
+  md += '## Settings\n\n';
+  md += '**Theme:** ' + currentThemeAttr + ' | **Preset:** ' + activePresetName + ' | **Intent:** ' + activeIntentName + ' | **Sub:** ' + activeSub + '\n\n';
+  md += '## Tuning\n\n' + sliderLines + '\n\n';
+  md += '## Behavior\n\n' + toggleLines + '\n\n---\n\n';
+  md += '## Last Response\n\n' + resp + '\n\n---\n\n';
+  md += '## Full Conversation\n\n' + chatText + '\n\n---\n\n';
+  md += '_Exported from Cinder Console v2.0_\n';
 
   var blob = new Blob([md],{type:'text/markdown'});
   var a = document.createElement('a');
@@ -1253,47 +2009,46 @@ function exportSession() {
   URL.revokeObjectURL(a.href);
 }
 
-/* ── Settings modal ──────────────────────────────────────── */
+/* ═══ SETTINGS MODAL ═════════════════════════════════════════ */
 function openSettings() {
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings() {
   document.getElementById('settings-modal').classList.remove('open');
+  saveSettings();
 }
-// Close on overlay click
-document.getElementById('settings-modal').addEventListener('click', function(e) {
+document.getElementById('settings-modal').addEventListener('click', function(e){
   if (e.target === this) closeSettings();
 });
 
-/* ── Theme switcher ──────────────────────────────────────── */
 function setTheme(theme, el) {
   document.body.setAttribute('data-theme', theme);
-  document.querySelectorAll('.theme-option').forEach(function(o) { o.classList.remove('active'); });
+  document.querySelectorAll('.theme-option').forEach(function(o){ o.classList.remove('active'); });
   el.classList.add('active');
-  drawSparkline(); // redraw sparkline with new color
+  drawSparkline();
+  saveSettings();
 }
 
-/* ── Font size ───────────────────────────────────────────── */
 function setFontSize(val) {
   var sizes = ['small','medium','large'];
   var labels = ['Small','Medium','Large'];
   document.body.setAttribute('data-fontsize', sizes[val]);
   document.getElementById('font-size-label').textContent = labels[val];
+  saveSettings();
 }
 
-/* ── Font family ─────────────────────────────────────────── */
 function setFontFamily(family, el) {
   document.body.setAttribute('data-fontfamily', family);
-  document.querySelectorAll('.font-option').forEach(function(o) { o.classList.remove('active'); });
+  document.querySelectorAll('.font-option').forEach(function(o){ o.classList.remove('active'); });
   el.classList.add('active');
+  saveSettings();
 }
 
-/* ── Mobile sidebar ──────────────────────────────────────── */
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-/* ── Session timer ───────────────────────────────────────── */
+/* ═══ SESSION TIMER ══════════════════════════════════════════ */
 function formatTime(totalSec) {
   var h = Math.floor(totalSec / 3600);
   var m = Math.floor((totalSec % 3600) / 60);
@@ -1302,47 +2057,18 @@ function formatTime(totalSec) {
   return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 }
 
-setInterval(function() {
-  var elapsed = Math.floor((Date.now() - sessionStart) / 1000);
-  document.getElementById('session-timer').textContent = formatTime(elapsed);
-}, 1000);
-
-/* ── Thought counter ─────────────────────────────────────── */
+/* ═══ THOUGHT COUNTER ════════════════════════════════════════ */
 function incrementThoughts() {
   thoughtCount++;
   var el = document.getElementById('thought-counter');
+  if (!el) return;
   el.textContent = thoughtCount;
   el.style.transform = 'scale(1.3)';
   setTimeout(function(){ el.style.transform = 'scale(1)'; }, 200);
 }
 
-// Background thoughts tick
-setInterval(function() {
-  incrementThoughts();
-  addSparklinePoint(0.1 + Math.random() * 0.3);
-}, 8000 + Math.random() * 4000);
-
-/* ── Memory ring animation ───────────────────────────────── */
-function updateMemoryRing(pct) {
-  var circumference = 2 * Math.PI * 22; // r=22
-  var offset = circumference * (1 - pct / 100);
-  document.getElementById('memory-ring').style.strokeDashoffset = offset;
-  document.getElementById('memory-pct').textContent = Math.round(pct) + '%';
-}
-
-// Simulate memory fluctuation
-var memoryPct = 70;
-setInterval(function() {
-  memoryPct += (Math.random() - 0.45) * 3;
-  memoryPct = Math.max(30, Math.min(95, memoryPct));
-  updateMemoryRing(memoryPct);
-  document.getElementById('memory-count').textContent = Math.floor(12 + thoughtCount * 0.3);
-}, 3000);
-updateMemoryRing(70);
-
-/* ── Sparkline ───────────────────────────────────────────── */
+/* ═══ SPARKLINE ══════════════════════════════════════════════ */
 var sparklineMax = 40;
-for (var i = 0; i < sparklineMax; i++) sparklineData.push(Math.random() * 0.3);
 
 function addSparklinePoint(val) {
   sparklineData.push(Math.max(0, Math.min(1, val)));
@@ -1357,10 +2083,8 @@ function drawSparkline() {
   var w = canvas.width;
   var h = canvas.height;
   ctx.clearRect(0, 0, w, h);
-
   if (sparklineData.length < 2) return;
 
-  // Get the computed sparkline color
   var style = getComputedStyle(document.body);
   var lineColor = style.getPropertyValue('--sparkline-color').trim() || '#d87a40';
   var fillColor = style.getPropertyValue('--ember-soft').trim() || 'rgba(196,90,42,.1)';
@@ -1369,33 +2093,26 @@ function drawSparkline() {
   var padding = 6;
   var drawH = h - padding * 2;
 
-  // Fill
   ctx.beginPath();
   ctx.moveTo(0, h);
   for (var i = 0; i < sparklineData.length; i++) {
-    var x = i * step;
-    var y = padding + drawH * (1 - sparklineData[i]);
-    if (i === 0) ctx.lineTo(x, y);
-    else ctx.lineTo(x, y);
+    ctx.lineTo(i * step, padding + drawH * (1 - sparklineData[i]));
   }
   ctx.lineTo((sparklineData.length - 1) * step, h);
   ctx.closePath();
   ctx.fillStyle = fillColor;
   ctx.fill();
 
-  // Line
   ctx.beginPath();
   for (var i = 0; i < sparklineData.length; i++) {
     var x = i * step;
     var y = padding + drawH * (1 - sparklineData[i]);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   }
   ctx.strokeStyle = lineColor;
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Dot on last point
   var lastX = (sparklineData.length - 1) * step;
   var lastY = padding + drawH * (1 - sparklineData[sparklineData.length - 1]);
   ctx.beginPath();
@@ -1404,43 +2121,61 @@ function drawSparkline() {
   ctx.fill();
 }
 
-// Periodic sparkline updates
-setInterval(function() {
-  addSparklinePoint(0.1 + Math.random() * 0.25);
-}, 5000);
+/* ═══ TIMERS ═════════════════════════════════════════════════ */
+function startTimers() {
+  // Session timer
+  setInterval(function(){
+    var elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    var el = document.getElementById('session-timer');
+    if (el) el.textContent = formatTime(elapsed);
+  }, 1000);
 
-// Initial draw
-setTimeout(drawSparkline, 100);
+  // Periodic storage ring update
+  setInterval(function(){
+    updateStorageRing();
+    updateMemoryStats();
+  }, 10000);
 
-/* ── Status ticker ───────────────────────────────────────── */
-var statusMessages = [
-  'Active',
-  'Thinking...',
-  'Listening...',
-  'Processing...',
-  'Ready',
-  'Recalling...',
-  'Composing...',
-];
-var statusIdx = 0;
-setInterval(function() {
-  statusIdx = (statusIdx + 1) % statusMessages.length;
-  var el = document.getElementById('status-text');
-  el.textContent = statusMessages[statusIdx];
-}, 4000);
+  // Periodic connection check (every 30s)
+  setInterval(async function(){
+    if (!ollamaConnected) return; // don't hammer if known offline
+    try {
+      var resp = await fetch(OLLAMA_URL + '/api/tags', {signal: AbortSignal.timeout(2000)});
+      if (!resp.ok) throw new Error();
+      ollamaConnected = true;
+    } catch(e) {
+      ollamaConnected = false;
+    }
+    updateConnectionStatus();
+  }, 30000);
+}
 
-/* ── Volume slider display ───────────────────────────────── */
-document.getElementById('volume-slider').addEventListener('input', function() {
+/* ═══ UTILITY ════════════════════════════════════════════════ */
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ═══ VOLUME SLIDER ══════════════════════════════════════════ */
+document.getElementById('volume-slider').addEventListener('input', function(){
   this.nextElementSibling.textContent = this.value + '%';
 });
 
-/* ── Keyboard shortcut: Escape closes settings ───────────── */
-document.addEventListener('keydown', function(e) {
+/* ═══ KEYBOARD SHORTCUTS ═════════════════════════════════════ */
+document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') {
+    if (isStreaming && currentAbort) {
+      currentAbort.abort();
+      return;
+    }
     closeSettings();
     document.getElementById('sidebar').classList.remove('open');
   }
 });
+
+/* ═══ BOOT ═══════════════════════════════════════════════════ */
+runLauncherChecks();
 </script>
 </body>
 </html>
