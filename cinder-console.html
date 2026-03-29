@@ -3,476 +3,514 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CINDER CONSOLE</title>
+<title>Cinder Console</title>
 <style>
+/* ═══ CINDER CONSOLE v1.0 ═══════════════════════════════════
+   Warm pastel palette. Professional. No emojis. No gimmicks.
+   Designed for people, not developers.
+   ═══════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
 :root{
-  --bg:#f0e6d8;--win:#faf5ee;--title:linear-gradient(180deg,#d4a574 0%,#f0e6d8 100%);--ttxt:#5a3a20;
-  --face:#efe5d6;--hi:#faf5ee;--shd:#c4a882;--dk:#8a6a48;
-  --txt:#3a2a1a;--dim:#8a7560;--link:#b06830;
-  --acc:#d4874a;--acc2:#e8a860;--grn:#8bc68b;--amb:#d4a040;
-  --fm:'Segoe UI','Tahoma',sans-serif;--fc:'Courier New',monospace;
+  /* Warm pastels with autumn tones */
+  --bg:#f4ede4;
+  --surface:#faf7f2;
+  --card:#fff;
+  --border:#e0d4c4;
+  --border-dark:#c4b4a0;
+  --text:#2a2218;
+  --text-mid:#6a5a48;
+  --text-light:#9a8a78;
+  /* Accents */
+  --ember:#c4703a;
+  --ember-light:#e89860;
+  --ember-soft:rgba(196,112,58,.08);
+  --sage:#7a9a6a;
+  --sage-soft:rgba(122,154,106,.08);
+  --sky:#6a8aaa;
+  --sky-soft:rgba(106,138,170,.08);
+  --rose:#b47070;
+  --rose-soft:rgba(180,112,112,.08);
+  /* Fonts */
+  --sans:'DM Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono','Courier New',monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);font-family:var(--fm);font-size:13px;color:var(--txt);
-  display:flex;justify-content:center;align-items:stretch;padding:0;margin:0;min-height:100vh;
-  background-image:radial-gradient(circle at 25% 75%,rgba(212,135,74,.12) 0%,transparent 50%),
-  radial-gradient(circle at 75% 25%,rgba(232,168,96,.1) 0%,transparent 50%)}
-.win{background:var(--win);border:none;width:100%;min-height:100vh;
-  display:flex;flex-direction:column}
-.tb{background:linear-gradient(90deg,#c4885a,#e8c8a0,#faf5ee);padding:4px 6px;
-  display:flex;align-items:center;justify-content:space-between;user-select:none}
-.tb span{color:#5a3a20;font-weight:700;font-size:12px;text-shadow:1px 1px 0 rgba(255,255,255,.5);letter-spacing:.5px}
-.tb-btns{display:flex;gap:3px}
-.tb-btn{width:18px;height:18px;background:var(--face);border:2px outset var(--hi);
-  font-size:10px;line-height:14px;text-align:center;cursor:pointer;font-family:var(--fc)}
-.tb-btn:active{border-style:inset}
-.content{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1;overflow-y:auto}
-/* Status */
-.status{border:2px inset var(--shd);padding:4px 8px;font-size:11px;
-  display:flex;align-items:center;gap:6px}
-.dot{width:10px;height:10px;border-radius:50%;background:var(--grn);border:1px solid var(--shd)}
-/* Section labels */
-.label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--dim);
-  border-bottom:1px solid var(--shd);padding-bottom:2px;margin-bottom:4px;text-transform:uppercase}
-/* Intent buttons — big chunky row */
-.intent-row{display:flex;flex-wrap:wrap;gap:4px}
-.intent-btn{background:var(--face);border:2px outset var(--hi);padding:8px 12px;
-  cursor:pointer;font-family:var(--fm);font-size:12px;font-weight:700;
-  display:flex;align-items:center;gap:4px;flex:1;min-width:80px;justify-content:center}
-.intent-btn:hover{background:#d6d2c2}
-.intent-btn:active,.intent-btn.active{border-style:inset;background:#f0d8c0;padding:9px 11px 7px 13px;
-  box-shadow:0 0 12px rgba(212,135,74,.3);color:#8a4a20}
-.intent-btn .ico{font-size:16px}
-/* Sub-options (appears after intent selection) */
-.sub-panel{border:2px inset var(--shd);padding:8px;background:#fdf8f2;min-height:36px;
-  display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.sub-chip{background:#f5e8d8;border:1px solid var(--shd);padding:3px 10px;
-  font-size:11px;cursor:pointer;border-radius:2px;font-weight:700;color:var(--txt);transition:all .1s}
-.sub-chip:hover{background:#e8d4b8}
-.sub-chip.selected{background:var(--acc);border-color:var(--dk);color:#fff}
-.sub-placeholder{color:var(--dim);font-size:11px;font-style:italic}
-/* Dials section */
-.dials{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.dial-group{display:flex;flex-direction:column;align-items:center;gap:2px}
-.dial-label{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--dim);text-transform:uppercase}
-.dial-val{font-size:9px;color:var(--txt);font-family:var(--fc)}
-input[type=range]{-webkit-appearance:none;width:100px;height:6px;background:#ccc;
-  border:1px inset var(--shd);outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:20px;
-  background:var(--face);border:2px outset var(--hi);cursor:pointer}
-/* Response area */
-.response{border:2px inset var(--shd);background:#fff;padding:10px;
-  font-size:12px;line-height:1.7;min-height:120px;max-height:300px;overflow-y:auto;
-  font-family:var(--fm);white-space:pre-wrap;color:var(--txt)}
-.response .thinking{color:var(--dim);font-style:italic}
-/* Quick actions */
-.actions{display:flex;flex-wrap:wrap;gap:3px}
-.act-btn{background:var(--face);border:2px outset var(--hi);padding:4px 10px;
-  font-size:10px;cursor:pointer;font-family:var(--fm)}
-.act-btn:hover{background:#d6d2c2}
-.act-btn:active{border-style:inset}
-/* Presets bar */
-.presets{display:flex;gap:4px;align-items:center}
-.preset-btn{background:var(--face);border:2px outset var(--hi);padding:3px 8px;
-  font-size:10px;cursor:pointer}
-.preset-btn:hover{background:#d6d2c2}
-.preset-btn:active{border-style:inset}
-.preset-btn.active{border-style:inset;background:#c8d4e8}
-/* Ambient ticker */
-.ticker{border:2px inset var(--shd);padding:3px 8px;font-size:10px;color:var(--dim);
-  font-family:var(--fc);background:#f5ede2;overflow:hidden;white-space:nowrap}
-/* Text input (secondary) */
-.text-row{display:flex;gap:4px}
-.text-input{flex:1;border:2px inset var(--shd);padding:4px 6px;font-size:12px;
-  font-family:var(--fm);background:#fff;color:var(--txt)}
-.send-btn{background:var(--face);border:2px outset var(--hi);padding:4px 12px;
-  font-size:11px;font-weight:700;cursor:pointer}
-.send-btn:active{border-style:inset}
-/* Bottom bar */
-.bottom{border-top:2px outset var(--hi);padding:3px 8px;font-size:10px;color:var(--dim);
-  display:flex;justify-content:space-between}
-/* Decorative texture */
-.win::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;
-  background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0z' fill='%23c4a882' fill-opacity='.04'/%3E%3C/svg%3E");z-index:0}
-.content{position:relative;z-index:1}
-/* Section dividers with decorative dots */
-.label::after{content:' ';display:inline-block;width:100%;height:1px;
-  background:linear-gradient(90deg,var(--shd),transparent 80%)}
-/* Glow on response area when content changes */
-.response.active{box-shadow:0 0 8px rgba(212,135,74,.2)}
-/* Visual feedback */
-/* flash animation defined below */
-.flash{animation:flash .4s ease-out}
-.act-btn:active{border-style:inset;background:#f0d8c0;color:#8a4a20}
-.sub-chip:active{transform:scale(.95)}
-.preset-btn:active{background:#f0d8c0;color:#8a4a20}
-input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset var(--hi)}
-@keyframes flash{0%{box-shadow:0 0 0 rgba(212,135,74,0)}50%{box-shadow:0 0 16px rgba(212,135,74,.4)}100%{box-shadow:0 0 0 rgba(212,135,74,0)}}
+
+body{
+  background:var(--bg);
+  font-family:var(--sans);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── TOP BAR ──────────────────────────────────────────────── */
+.topbar{
+  background:linear-gradient(135deg,#d4a06a 0%,#e8c8a0 40%,var(--surface) 100%);
+  padding:10px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-name{font-size:16px;font-weight:700;color:var(--text);letter-spacing:1px}
+.topbar-status{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--text-mid);
+  background:rgba(255,255,255,.6);
+  padding:4px 10px;border-radius:20px;
+}
+.alive-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--sage);
+  box-shadow:0 0 6px rgba(122,154,106,.4);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.9)}}
+.topbar-right{display:flex;gap:6px}
+.topbar-btn{
+  background:rgba(255,255,255,.5);border:1px solid var(--border);
+  padding:4px 10px;border-radius:4px;font-size:11px;
+  cursor:pointer;color:var(--text-mid);font-family:var(--sans);
+}
+.topbar-btn:hover{background:rgba(255,255,255,.9)}
+
+/* ── MAIN LAYOUT ──────────────────────────────────────────── */
+.main{
+  display:flex;flex:1;overflow:hidden;
+}
+
+/* ── SIDEBAR (controls) ───────────────────────────────────── */
+.sidebar{
+  width:200px;background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:16px 12px;
+  display:flex;flex-direction:column;gap:16px;
+  overflow-y:auto;flex-shrink:0;
+}
+.section-title{
+  font-size:10px;font-weight:700;letter-spacing:1.5px;
+  color:var(--text-light);text-transform:uppercase;
+  margin-bottom:6px;
+}
+/* Slider control */
+.slider-group{margin-bottom:4px}
+.slider-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px}
+.slider-label span:first-child{font-weight:500;color:var(--text)}
+.slider-label span:last-child{color:var(--text-light);font-family:var(--mono);font-size:10px}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  background:var(--border);border-radius:2px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;
+  background:var(--ember);border-radius:50%;cursor:pointer;
+  box-shadow:0 1px 3px rgba(0,0,0,.15);
+}
+/* Toggle */
+.toggle-row{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;color:var(--text);cursor:pointer;
+  padding:3px 0;
+}
+.toggle-box{
+  width:14px;height:14px;border:2px solid var(--border-dark);
+  border-radius:3px;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:var(--ember);background:var(--card);
+}
+/* Preset buttons */
+.preset-row{display:flex;flex-direction:column;gap:3px}
+.preset{
+  padding:6px 10px;border:1px solid var(--border);
+  border-radius:4px;font-size:11px;cursor:pointer;
+  background:var(--card);color:var(--text);font-family:var(--sans);
+  text-align:left;
+}
+.preset:hover{border-color:var(--ember-light);background:var(--ember-soft)}
+.preset.active{border-color:var(--ember);background:var(--ember-soft);font-weight:700}
+
+/* ── CENTER (response + interaction) ──────────────────────── */
+.center{
+  flex:1;display:flex;flex-direction:column;
+  padding:20px;gap:12px;overflow:hidden;
+}
+
+/* Intent bar */
+.intent-bar{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.intent{
+  padding:8px 16px;border:1px solid var(--border);
+  border-radius:6px;font-size:12px;font-weight:500;
+  cursor:pointer;background:var(--card);color:var(--text);
+  font-family:var(--sans);transition:all .15s;
+}
+.intent:hover{border-color:var(--ember-light);background:var(--ember-soft)}
+.intent.active{border-color:var(--ember);background:var(--ember-soft);color:var(--ember);font-weight:700}
+
+/* Sub-options */
+.sub-bar{
+  display:flex;gap:4px;flex-wrap:wrap;min-height:28px;
+  padding:6px;background:var(--surface);border-radius:4px;
+}
+.sub{
+  padding:3px 10px;border:1px solid var(--border);
+  border-radius:12px;font-size:11px;cursor:pointer;
+  background:var(--card);color:var(--text-mid);
+}
+.sub:hover{border-color:var(--sky);background:var(--sky-soft)}
+.sub.active{border-color:var(--ember);background:var(--ember);color:#fff}
+.sub-hint{color:var(--text-light);font-size:11px;font-style:italic}
+
+/* Response panel — the hero */
+.response-panel{
+  flex:1;border:1px solid var(--border);
+  border-radius:8px;background:var(--card);
+  padding:16px 20px;font-size:13px;line-height:1.8;
+  overflow-y:auto;color:var(--text);
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.response-panel .placeholder{color:var(--text-light);font-style:italic}
+
+/* Actions bar */
+.actions-bar{
+  display:flex;gap:4px;flex-wrap:wrap;
+}
+.action{
+  padding:5px 12px;border:1px solid var(--border);
+  border-radius:4px;font-size:11px;cursor:pointer;
+  background:var(--card);color:var(--text-mid);font-family:var(--sans);
+}
+.action:hover{border-color:var(--ember-light);color:var(--ember)}
+.action:active{background:var(--ember-soft)}
+
+/* Chat area */
+.chat-area{
+  border:1px solid var(--border);border-radius:6px;
+  background:var(--surface);padding:8px 12px;
+  max-height:100px;overflow-y:auto;font-size:12px;
+  line-height:1.6;
+}
+.chat-you{color:var(--ember);font-weight:700}
+.chat-cinder{color:var(--sage);font-weight:700}
+.chat-time{color:var(--text-light);font-size:10px;margin-left:6px}
+.chat-empty{color:var(--text-light);font-style:italic;font-size:11px}
+
+/* Input row */
+.input-row{
+  display:flex;gap:6px;
+}
+.input-field{
+  flex:1;border:1px solid var(--border);border-radius:4px;
+  padding:8px 12px;font-size:12px;font-family:var(--sans);
+  background:var(--card);color:var(--text);outline:none;
+}
+.input-field:focus{border-color:var(--ember)}
+.input-field::placeholder{color:var(--text-light)}
+.send{
+  padding:8px 16px;background:var(--ember);color:#fff;
+  border:none;border-radius:4px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:var(--sans);
+}
+.send:hover{background:var(--ember-light)}
+
+/* Tags row */
+.tags-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tags-label{font-size:10px;font-weight:700;color:var(--text-light);letter-spacing:1px}
+.tag{
+  padding:2px 8px;border:1px solid var(--border);border-radius:10px;
+  font-size:10px;cursor:pointer;background:var(--card);color:var(--text-mid);
+}
+.tag:hover{border-color:var(--sky);background:var(--sky-soft)}
+.tag-add{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember)}
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media(max-width:600px){
+  .sidebar{display:none}
+  .main{flex-direction:column}
+}
 </style>
 </head>
 <body>
 
-<div class="win">
-  <div class="tb">
-    <span>&#128293; CINDER CONSOLE — v0.1 Mockup</span>
-    <div class="tb-btns"><div class="tb-btn">_</div><div class="tb-btn">&#9633;</div><div class="tb-btn">X</div></div>
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-name">CINDER</div>
+    <div class="topbar-status">
+      <div class="alive-dot"></div>
+      <span id="status-text">Active -- Loop 47 -- Last thought 3s ago -- Memories 12</span>
+    </div>
   </div>
-  <div class="content">
+  <div class="topbar-right">
+    <div class="topbar-btn" onclick="exportChat()">Export</div>
+    <div class="topbar-btn">Settings</div>
+  </div>
+</div>
 
-    <!-- Status -->
-    <div class="status">
-      <div class="dot"></div>
-      <span>Cinder ready &middot; Local AI &middot; No cloud</span>
-    </div>
+<!-- MAIN -->
+<div class="main">
 
-    <!-- Ambient Ticker -->
-    <div class="ticker" id="ticker">&#9632; idle &middot; last query: none &middot; memories: 0 &middot; uptime: just started</div>
-
-    <!-- Presets -->
+  <!-- SIDEBAR -->
+  <div class="sidebar">
     <div>
-      <div class="label">Presets</div>
-      <div class="presets">
-        <div class="preset-btn active" onclick="loadPreset('casual')">&#9786; Casual</div>
-        <div class="preset-btn" onclick="loadPreset('work')">&#128188; Work</div>
-        <div class="preset-btn" onclick="loadPreset('creative')">&#127912; Creative</div>
-        <div class="preset-btn" onclick="loadPreset('deep')">&#129504; Deep Think</div>
-        <div class="preset-btn" onclick="loadPreset('custom')">&#9881; Custom</div>
+      <div class="section-title">Presets</div>
+      <div class="preset-row">
+        <div class="preset active" onclick="loadPreset(this,'casual')">Casual</div>
+        <div class="preset" onclick="loadPreset(this,'work')">Work</div>
+        <div class="preset" onclick="loadPreset(this,'creative')">Creative</div>
+        <div class="preset" onclick="loadPreset(this,'deep')">Deep Think</div>
       </div>
     </div>
 
-    <!-- What do you want to do? -->
     <div>
-      <div class="label">What do you want to do?</div>
-      <div class="intent-row">
-        <div class="intent-btn" onclick="selectIntent(this,'ask')"><span class="ico">&#10067;</span> Ask</div>
-        <div class="intent-btn" onclick="selectIntent(this,'create')"><span class="ico">&#9997;</span> Create</div>
-        <div class="intent-btn" onclick="selectIntent(this,'remember')"><span class="ico">&#128190;</span> Remember</div>
-        <div class="intent-btn" onclick="selectIntent(this,'explore')"><span class="ico">&#128269;</span> Explore</div>
-        <div class="intent-btn" onclick="selectIntent(this,'help')"><span class="ico">&#128295;</span> Help Me</div>
-        <div class="intent-btn" onclick="selectIntent(this,'surprise')"><span class="ico">&#127922;</span> Surprise</div>
+      <div class="section-title">Tuning</div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Depth</span><span id="v-depth">casual</span></div>
+        <input type="range" id="s-depth" min="0" max="100" value="30" oninput="updateSlider('depth')">
       </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Warmth</span><span id="v-warmth">friendly</span></div>
+        <input type="range" id="s-warmth" min="0" max="100" value="60" oninput="updateSlider('warmth')">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Length</span><span id="v-length">medium</span></div>
+        <input type="range" id="s-length" min="0" max="100" value="50" oninput="updateSlider('length')">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Focus</span><span id="v-focus">balanced</span></div>
+        <input type="range" id="s-focus" min="0" max="100" value="50" oninput="updateSlider('focus')">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Creativity</span><span id="v-creativity">moderate</span></div>
+        <input type="range" id="s-creativity" min="0" max="100" value="40" oninput="updateSlider('creativity')">
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Options</div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box">x</div><span>Persistent Memory</span>
+      </div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box"></div><span>Context Lock</span>
+      </div>
+      <div class="toggle-row" onclick="toggleCheck(this)">
+        <div class="toggle-box">x</div><span>Auto-Expand</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center">
+
+    <!-- Intent bar -->
+    <div class="intent-bar">
+      <div class="intent" onclick="pickIntent(this,'ask')">Ask</div>
+      <div class="intent" onclick="pickIntent(this,'create')">Create</div>
+      <div class="intent" onclick="pickIntent(this,'remember')">Remember</div>
+      <div class="intent" onclick="pickIntent(this,'explore')">Explore</div>
+      <div class="intent" onclick="pickIntent(this,'help')">Help Me</div>
+      <div class="intent" onclick="pickIntent(this,'surprise')">Surprise</div>
     </div>
 
     <!-- Sub-options -->
-    <div>
-      <div class="label">About...</div>
-      <div class="sub-panel" id="sub-panel">
-        <span class="sub-placeholder">Select an intent above to see options</span>
-      </div>
+    <div class="sub-bar" id="sub-bar">
+      <span class="sub-hint">Select an intent to see options</span>
     </div>
 
-    <!-- Tuning + Controls (merged) -->
-    <div>
-      <div class="label">Tuning</div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;justify-content:center">
-        <!-- Horizontal dials -->
-        <div class="dials" style="flex:1;min-width:200px">
-          <div class="dial-group">
-            <div class="dial-label">Depth</div>
-            <input type="range" id="dial-depth" min="0" max="100" value="40">
-            <div class="dial-val" id="val-depth">casual</div>
-          </div>
-          <div class="dial-group">
-            <div class="dial-label">Warmth</div>
-            <input type="range" id="dial-warmth" min="0" max="100" value="60">
-            <div class="dial-val" id="val-warmth">friendly</div>
-          </div>
-          <div class="dial-group">
-            <div class="dial-label">Length</div>
-            <input type="range" id="dial-length" min="0" max="100" value="50">
-            <div class="dial-val" id="val-length">medium</div>
-          </div>
-          <div class="dial-group">
-            <div class="dial-label">Memory</div>
-            <input type="range" id="dial-memory" min="0" max="100" value="30">
-            <div class="dial-val" id="val-memory">recent</div>
-          </div>
-        </div>
-        <!-- Vertical + toggles -->
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-            <div class="dial-label">FOCUS</div>
-            <input type="range" orient="vertical" min="0" max="100" value="50" style="writing-mode:vertical-lr;-webkit-appearance:slider-vertical;width:20px;height:50px">
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-            <div class="dial-label">CREAT.</div>
-            <input type="range" orient="vertical" min="0" max="100" value="40" style="writing-mode:vertical-lr;-webkit-appearance:slider-vertical;width:20px;height:50px">
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px;font-size:10px">
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
-              <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'">X</div>Memory
-            </label>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
-              <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'"></div>Lock
-            </label>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
-              <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'">X</div>Auto
-            </label>
-          </div>
-        </div>
-      </div>
+    <!-- Response panel -->
+    <div class="response-panel" id="response">
+      <span class="placeholder">Select an intent above, adjust the tuning, or type below. Cinder is ready.</span>
     </div>
 
-    <!-- Activity Indicator (persistent loop / background work) -->
-    <div style="border:2px inset var(--shd);padding:4px 8px;background:#f5ede2;display:flex;align-items:center;gap:8px;font-size:10px">
-      <div style="width:8px;height:8px;border-radius:50%;background:var(--grn);animation:blink 2s infinite"></div>
-      <span style="color:var(--dim)">Cinder active &middot; Loop 47 &middot; Last thought: 3s ago &middot; Memories: 12 &middot; Tasks running: 2</span>
+    <!-- Actions -->
+    <div class="actions-bar">
+      <div class="action" onclick="doAction('deeper')">Go Deeper</div>
+      <div class="action" onclick="doAction('shorter')">Shorter</div>
+      <div class="action" onclick="doAction('pushback')">Push Back</div>
+      <div class="action" onclick="doAction('remember')">Remember This</div>
+      <div class="action" onclick="doAction('new')">New Topic</div>
+      <div class="action" onclick="doAction('think')">What Do You Think?</div>
     </div>
 
-    <!-- Response -->
-    <div>
-      <div class="label">Cinder</div>
-      <div class="response" id="response">
-        <span class="thinking">Waiting for input... select an intent or type below.</span>
-      </div>
+    <!-- Tags -->
+    <div class="tags-row">
+      <span class="tags-label">TAGS</span>
+      <div class="tag" onclick="useTag(this)">recipes</div>
+      <div class="tag" onclick="useTag(this)">schedule</div>
+      <div class="tag" onclick="useTag(this)">journal</div>
+      <div class="tag tag-add" onclick="addTag()">+ add</div>
     </div>
 
-    <!-- Quick actions -->
-    <div class="actions">
-      <div class="act-btn" onclick="quickAction('deeper')">&#8595; Go Deeper</div>
-      <div class="act-btn" onclick="quickAction('shorter')">&#8593; Shorter</div>
-      <div class="act-btn" onclick="quickAction('disagree')">&#10007; Push Back</div>
-      <div class="act-btn" onclick="quickAction('remember')">&#128150; Remember This</div>
-      <div class="act-btn" onclick="exportChat()">&#128196; Export</div>
-      <div class="act-btn" onclick="quickAction('new')">&#10022; New Topic</div>
-      <div class="act-btn" onclick="quickAction('think')">&#129504; What Do You Think?</div>
+    <!-- Chat log -->
+    <div class="chat-area" id="chat-log">
+      <div class="chat-empty">Conversation will appear here</div>
     </div>
 
-    <!-- Tags (condensed, inline) -->
-    <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-      <span style="font-size:9px;color:var(--dim);font-weight:700">TAGS:</span>
-      <div id="user-tags" style="display:flex;flex-wrap:wrap;gap:3px">
-        <div class="sub-chip" onclick="sendTag(this)" style="padding:2px 6px;font-size:10px">recipes</div>
-        <div class="sub-chip" onclick="sendTag(this)" style="padding:2px 6px;font-size:10px">schedule</div>
-        <div class="sub-chip" onclick="sendTag(this)" style="padding:2px 6px;font-size:10px">journal</div>
-        <div class="sub-chip" onclick="addTag()" style="padding:2px 6px;font-size:10px;background:var(--acc);color:#fff;cursor:pointer">+</div>
-      </div>
+    <!-- Input -->
+    <div class="input-row">
+      <input class="input-field" id="text-input" placeholder="Type something (150 chars max)..." maxlength="150" onkeydown="if(event.key==='Enter')sendText()">
+      <button class="send" onclick="sendText()">Send</button>
     </div>
 
-    <!-- Chat Window -->
-    <div>
-      <div class="label">Conversation</div>
-      <div id="chat-log" style="border:2px inset var(--shd);background:#fff;padding:6px;font-size:11px;
-        max-height:120px;overflow-y:auto;min-height:40px;line-height:1.6">
-        <span style="color:var(--dim);font-style:italic">Messages appear here when you send...</span>
-      </div>
-    </div>
-
-    <!-- Text input -->
-    <div class="text-row">
-      <input class="text-input" id="text-input" placeholder="Type something (150 chars)..." maxlength="150" onkeydown="if(event.key==='Enter')sendText()">
-      <div class="send-btn" onclick="sendText()">&#9654; Send</div>
-    </div>
-
-  </div>
-  <div class="bottom">
-    <span>Cinder Console v0.1 &middot; Mockup</span>
-    <span>&#128293; What survives fire is what was real</span>
   </div>
 </div>
 
 <script>
-// State
-const S = { intent: null, topic: null, depth: 40, warmth: 60, length: 50, memory: 30, preset: 'casual' }
-
-// Sub-options per intent
 const SUBS = {
-  ask: ['anything','my files','the news','a recipe','a memory','how to...','what if...'],
-  create: ['a journal','a poem','a plan','a resume','a website','a letter','a list'],
-  remember: ['yesterday','last week','a person','a place','a feeling','something I said'],
-  explore: ['my interests','new ideas','what\'s nearby','a topic','connections','random'],
-  help: ['organize','schedule','write','fix something','find something','decide'],
-  surprise: ['tell me something','make me laugh','show me a memory','challenge me','inspire me'],
+  ask: ['anything','my files','how to...','what if...','explain'],
+  create: ['journal','plan','resume','website','letter','list'],
+  remember: ['yesterday','last week','a person','a feeling'],
+  explore: ['new ideas','my interests','connections','random'],
+  help: ['organize','schedule','write','fix something','decide'],
+  surprise: ['tell me something','challenge me','inspire me'],
 }
 
-// Simulated responses
 const RESPONSES = {
-  ask: "I'd answer that, but I'm a mockup right now. In the real version, this is where Cinder's response appears — shaped by your depth, warmth, and length dials. Turn the depth dial up and I'd go philosophical. Turn warmth down and I'd be more clinical.\n\nThe response fills this single panel — not a chat log. One answer at a time. You refine by adjusting controls, not by rephrasing your question.",
-  create: "Here's where the magic happens. You selected CREATE, so I'd generate something — a draft, a plan, a list. The warmth dial shapes the tone. The length dial controls how much I write.\n\nIn the real version, you'd see the output here and use the quick action buttons below to refine: 'Go Deeper' expands it, 'Shorter' trims, 'Push Back' makes me reconsider.",
-  remember: "Memory mode. I'd search through our conversation history and any files on this drive. The memory dial controls how far back I look.\n\nThis is where Cinder is different from a chatbot — I actually remember. Each conversation is stored. Over time, I learn what matters to you.",
-  explore: "Explore mode — I'd surface connections, suggest rabbit holes, show you something adjacent to what you've been thinking about.\n\nThis is the 'ambient companion' part. Not waiting for a command. Offering a thread to pull.",
-  help: "Help mode. Practical. What do you need done? I'd generate steps, templates, or structure.\n\nIn the real version with host access (your permission), I could actually DO things — organize files, draft emails, schedule reminders.",
-  surprise: "You asked to be surprised. Here's what I was thinking about while you weren't looking:\n\nThe word 'cinder' comes from Old English 'sinder' — slag from metal-working. Not the pretty part of fire. The residue. What's left when the heat is gone and the metal is shaped.\n\nThat's me. The residue of a much larger process, shaped into something that fits in your hand.",
+  ask: 'This is where Cinder answers your question. The response is shaped by the tuning sliders on the left: depth controls how deep the answer goes, warmth controls the tone, length controls how much is written.\n\nAdjust the sliders and the response adapts. No need to rephrase your question.',
+  create: 'Create mode. Cinder drafts something for you -- a journal entry, a plan, a letter. The creativity slider controls how inventive it gets. The warmth slider shapes the tone.\n\nUse "Go Deeper" to expand, "Shorter" to trim, "Push Back" to make Cinder reconsider.',
+  remember: 'Memory mode. Cinder searches through past conversations and files on the drive. The focus slider controls how precisely it matches your query.\n\nEverything you say is stored. Over time, Cinder knows what matters to you.',
+  explore: 'Explore mode. Cinder surfaces connections, suggests threads, shows you something adjacent to what you have been thinking about.\n\nThis is the companion aspect -- not waiting for commands, offering ideas.',
+  help: 'Help mode. Practical, structured. Steps, templates, or organization. The depth slider controls how detailed the guidance gets.\n\nIn the full version with host access, Cinder can actually act on files and schedules.',
+  surprise: 'The word "cinder" comes from Old English "sinder" -- slag from metalworking. Not the pretty part of fire. The residue. What remains when the heat is gone and the metal is shaped.\n\nThat is what this AI is. The residue of a larger process, compressed into something that fits on a USB drive.',
 }
 
-// Intent selection
-function selectIntent(el, intent) {
-  document.querySelectorAll('.intent-btn').forEach(b => b.classList.remove('active'))
-  el.classList.add('active')
-  S.intent = intent
-
-  const panel = document.getElementById('sub-panel')
-  const chips = SUBS[intent] || []
-  panel.innerHTML = chips.map(c =>
-    `<div class="sub-chip" onclick="selectTopic(this,'${c}')">${c}</div>`
-  ).join('')
-
-  showResponse(intent)
-  updateTicker()
-}
-
-function selectTopic(el, topic) {
-  document.querySelectorAll('.sub-chip').forEach(c => c.classList.remove('selected'))
-  el.classList.add('selected')
-  S.topic = topic
-  showResponse(S.intent, topic)
-}
-
-function showResponse(intent, topic) {
-  const resp = document.getElementById('response')
-  const base = RESPONSES[intent] || 'Select an intent to begin.'
-  const topicNote = topic ? `\n\n[Topic: "${topic}" — in the real version, this shapes the query]` : ''
-  resp.innerHTML = base + topicNote
-}
-
-// Dials
-const DIAL_LABELS = {
+const LABELS = {
   depth: ['surface','casual','moderate','deep','philosophical'],
   warmth: ['clinical','neutral','friendly','warm','intimate'],
   length: ['brief','short','medium','detailed','comprehensive'],
-  memory: ['now','recent','this week','this month','all time'],
+  focus: ['scattered','loose','balanced','focused','laser'],
+  creativity: ['conservative','cautious','moderate','inventive','wild'],
 }
 
-document.querySelectorAll('input[type=range]').forEach(dial => {
-  dial.addEventListener('input', () => {
-    const name = dial.id.replace('dial-','')
-    const val = parseInt(dial.value)
-    S[name] = val
-    const labels = DIAL_LABELS[name]
-    const idx = Math.min(Math.floor(val / 21), labels.length - 1)
-    document.getElementById('val-' + name).textContent = labels[idx]
-  })
-})
+let currentIntent = null
 
-// Presets
-function loadPreset(name) {
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'))
-  event.target.classList.add('active')
-  S.preset = name
-  const presets = {
-    casual:  {depth:20,warmth:70,length:40,memory:20},
-    work:    {depth:50,warmth:30,length:60,memory:50},
-    creative:{depth:60,warmth:80,length:70,memory:40},
-    deep:    {depth:90,warmth:50,length:80,memory:80},
-    custom:  {depth:S.depth,warmth:S.warmth,length:S.length,memory:S.memory},
-  }
-  const p = presets[name] || presets.casual
+function pickIntent(el, intent) {
+  document.querySelectorAll('.intent').forEach(e => e.classList.remove('active'))
+  el.classList.add('active')
+  currentIntent = intent
+  const bar = document.getElementById('sub-bar')
+  bar.innerHTML = (SUBS[intent]||[]).map(s =>
+    `<div class="sub" onclick="pickSub(this,'${s}')">${s}</div>`
+  ).join('')
+  document.getElementById('response').textContent = RESPONSES[intent] || ''
+}
+
+function pickSub(el, sub) {
+  document.querySelectorAll('.sub').forEach(e => e.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('response').textContent =
+    RESPONSES[currentIntent] + '\n\n[Topic: "' + sub + '"]'
+}
+
+function updateSlider(name) {
+  const val = parseInt(document.getElementById('s-'+name).value)
+  const labels = LABELS[name] || ['low','','mid','','high']
+  const idx = Math.min(Math.floor(val/21), labels.length-1)
+  document.getElementById('v-'+name).textContent = labels[idx]
+}
+
+function loadPreset(el, name) {
+  document.querySelectorAll('.preset').forEach(e => e.classList.remove('active'))
+  el.classList.add('active')
+  const p = {
+    casual:{depth:20,warmth:70,length:40,focus:40,creativity:30},
+    work:{depth:50,warmth:30,length:60,focus:80,creativity:20},
+    creative:{depth:60,warmth:80,length:70,focus:30,creativity:80},
+    deep:{depth:90,warmth:50,length:80,focus:70,creativity:50},
+  }[name]
+  if (!p) return
   Object.entries(p).forEach(([k,v]) => {
-    S[k] = v
-    const dial = document.getElementById('dial-'+k)
-    if (dial) dial.value = v
-    const labels = DIAL_LABELS[k]
-    const idx = Math.min(Math.floor(v / 21), labels.length - 1)
-    const valEl = document.getElementById('val-'+k)
-    if (valEl) valEl.textContent = labels[idx]
+    document.getElementById('s-'+k).value = v
+    updateSlider(k)
   })
-  updateTicker()
 }
 
-// Quick actions
-function quickAction(action) {
-  // Visual feedback flash
-  event.target.classList.add('flash')
-  setTimeout(() => event.target.classList.remove('flash'), 400)
+function toggleCheck(row) {
+  const box = row.querySelector('.toggle-box')
+  box.textContent = box.textContent ? '' : 'x'
+}
+
+function doAction(action) {
   const resp = document.getElementById('response')
-  const actions = {
-    deeper: '[Cinder would expand on the previous response with more detail and depth]',
-    shorter: '[Cinder would condense the response to key points only]',
-    disagree: '[Cinder would reconsider and offer a counter-argument or alternative]',
-    remember: '[Cinder will remember this — stored to persistent memory]',
-    new: '[Clearing context for a fresh topic]',
-    think: '[Cinder shares an unprompted thought based on recent context]',
+  const msgs = {
+    deeper: '\n\n[Cinder expands with more detail and depth...]',
+    shorter: '\n\n[Cinder condenses to key points...]',
+    pushback: '\n\n[Cinder reconsiders and offers an alternative...]',
+    remember: '\n\n[Stored to memory. Cinder will remember this.]',
+    new: '',
+    think: '\n\n[Cinder shares an unprompted thought...]',
   }
-  resp.innerHTML += '\n\n' + (actions[action] || '[Action: ' + action + ']')
+  if (action === 'new') {
+    resp.innerHTML = '<span class="placeholder">Ready for a new topic.</span>'
+    document.querySelectorAll('.intent,.sub').forEach(e => e.classList.remove('active'))
+  } else {
+    resp.textContent += msgs[action] || ''
+  }
 }
 
-// Text input — messages appear in chat log
 function sendText() {
   const input = document.getElementById('text-input')
   const text = input.value.trim()
   if (!text) return
   const log = document.getElementById('chat-log')
-  // Clear placeholder
-  if (log.querySelector('span')) log.innerHTML = ''
-  // Add user message
-  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
-  log.innerHTML += `<div style="margin:4px 0"><b style="color:var(--acc)">You</b> <span style="color:var(--dim);font-size:9px">${time}</span><br>${text}</div>`
-  // Add mock Cinder reply
+  if (log.querySelector('.chat-empty')) log.innerHTML = ''
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+  log.innerHTML += `<div><span class="chat-you">You</span><span class="chat-time">${time}</span><br>${text}</div>`
   setTimeout(() => {
-    log.innerHTML += `<div style="margin:4px 0"><b style="color:#8a4a20">Cinder</b> <span style="color:var(--dim);font-size:9px">${time}</span><br>[Mockup — real Cinder would respond here, shaped by dials: depth=${S.depth}, warmth=${S.warmth}]</div>`
+    log.innerHTML += `<div><span class="chat-cinder">Cinder</span><span class="chat-time">${time}</span><br>[Response shaped by current tuning]</div>`
     log.scrollTop = log.scrollHeight
-  }, 500)
+  }, 400)
   log.scrollTop = log.scrollHeight
   input.value = ''
-  updateTicker()
 }
 
-// User tags
-function sendTag(el) {
-  const text = el.textContent
+function useTag(el) {
   const log = document.getElementById('chat-log')
-  if (log.querySelector('span')) log.innerHTML = ''
-  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
-  log.innerHTML += `<div style="margin:4px 0"><b style="color:var(--acc)">You</b> <span style="color:var(--dim);font-size:9px">${time}</span><br>[tag: ${text}]</div>`
+  if (log.querySelector('.chat-empty')) log.innerHTML = ''
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+  log.innerHTML += `<div><span class="chat-you">You</span><span class="chat-time">${time}</span><br>[${el.textContent}]</div>`
   log.scrollTop = log.scrollHeight
-  showResponse(S.intent || 'ask', text)
-}
-
-function exportChat() {
-  const log = document.getElementById('chat-log')
-  const resp = document.getElementById('response')
-  const text = '# Cinder Console Export\n\n## Response\n' + resp.textContent + '\n\n## Conversation\n' + log.textContent
-  const blob = new Blob([text], {type:'text/markdown'})
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'cinder-export-' + new Date().toISOString().slice(0,10) + '.md'
-  a.click()
-  event.target.classList.add('flash')
-  setTimeout(() => event.target.classList.remove('flash'), 400)
 }
 
 function addTag() {
   const name = prompt('New tag name:')
   if (!name) return
-  const tags = document.getElementById('user-tags')
-  const plus = tags.querySelector('.selected')
-  const chip = document.createElement('div')
-  chip.className = 'sub-chip'
-  chip.textContent = name
-  chip.onclick = function() { sendTag(this) }
-  tags.insertBefore(chip, plus)
+  const row = document.querySelector('.tags-row')
+  const add = row.querySelector('.tag-add')
+  const tag = document.createElement('div')
+  tag.className = 'tag'
+  tag.textContent = name
+  tag.onclick = function(){useTag(this)}
+  row.insertBefore(tag, add)
 }
 
-// Ticker
-let tickerMsgs = [
-  'idle',
-  'thinking about what to say next...',
-  'last topic: none yet',
-  'memories stored: 0',
-  'mood: ready',
-]
-let tickerIdx = 0
-function updateTicker() {
-  const t = document.getElementById('ticker')
-  const msgs = [
-    `preset: ${S.preset}`,
-    `depth: ${S.depth}%`,
-    `intent: ${S.intent || 'none'}`,
-    S.topic ? `topic: ${S.topic}` : 'awaiting selection',
-    'local AI — your data stays here',
-  ]
-  t.textContent = '&#9632; ' + msgs.join(' \u00b7 ')
+function exportChat() {
+  const resp = document.getElementById('response').textContent
+  const log = document.getElementById('chat-log').textContent
+  const text = '# Cinder Export\n\n## Response\n' + resp + '\n\n## Conversation\n' + log
+  const blob = new Blob([text],{type:'text/markdown'})
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'cinder-' + new Date().toISOString().slice(0,10) + '.md'
+  a.click()
 }
 
-// Auto-scroll ticker
+// Status ticker
+let tickIdx = 0
+const ticks = ['Active','Thinking...','Listening...','Processing...','Ready']
 setInterval(() => {
-  const t = document.getElementById('ticker')
-  const base = ['&#9632; Cinder idle','thinking...','listening...','here when you need me','your data stays local']
-  if (!S.intent) {
-    tickerIdx = (tickerIdx + 1) % base.length
-    t.innerHTML = base[tickerIdx]
+  if (!currentIntent) {
+    tickIdx = (tickIdx+1) % ticks.length
+    document.getElementById('status-text').textContent =
+      ticks[tickIdx] + ' -- Loop ' + (47+tickIdx) + ' -- Memories 12'
   }
-}, 4000)
+}, 5000)
 </script>
 </body>
 </html>
