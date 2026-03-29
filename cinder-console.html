@@ -6,22 +6,22 @@
 <title>CINDER CONSOLE</title>
 <style>
 :root{
-  --bg:#1a1210;--win:#2a2018;--title:#8b3a1a;--ttxt:#ffd4a0;
-  --face:#3a2a1e;--hi:#5a3a28;--shd:#1a0e08;--dk:#0a0604;
-  --txt:#f0d8c0;--dim:#a08060;--link:#ffaa55;
-  --acc:#ff6b2b;--acc2:#ff9944;--grn:#7bc67b;--amb:#ffa030;
+  --bg:#f0e6d8;--win:#faf5ee;--title:linear-gradient(180deg,#d4a574 0%,#f0e6d8 100%);--ttxt:#5a3a20;
+  --face:#efe5d6;--hi:#faf5ee;--shd:#c4a882;--dk:#8a6a48;
+  --txt:#3a2a1a;--dim:#8a7560;--link:#b06830;
+  --acc:#d4874a;--acc2:#e8a860;--grn:#8bc68b;--amb:#d4a040;
   --fm:'Segoe UI','Tahoma',sans-serif;--fc:'Courier New',monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);font-family:var(--fm);font-size:13px;color:var(--txt);
   display:flex;justify-content:center;align-items:stretch;padding:0;margin:0;min-height:100vh;
-  background-image:radial-gradient(circle at 25% 75%,rgba(255,107,43,.08) 0%,transparent 50%),
-  radial-gradient(circle at 75% 25%,rgba(255,153,68,.06) 0%,transparent 50%)}
+  background-image:radial-gradient(circle at 25% 75%,rgba(212,135,74,.12) 0%,transparent 50%),
+  radial-gradient(circle at 75% 25%,rgba(232,168,96,.1) 0%,transparent 50%)}
 .win{background:var(--win);border:none;width:100%;min-height:100vh;
   display:flex;flex-direction:column}
-.tb{background:linear-gradient(90deg,var(--title),#9ab4d6);padding:4px 6px;
+.tb{background:linear-gradient(90deg,#c4885a,#e8c8a0,#faf5ee);padding:4px 6px;
   display:flex;align-items:center;justify-content:space-between;user-select:none}
-.tb span{color:var(--ttxt);font-weight:700;font-size:12px;text-shadow:1px 1px 0 rgba(0,0,0,.3);letter-spacing:.5px}
+.tb span{color:#5a3a20;font-weight:700;font-size:12px;text-shadow:1px 1px 0 rgba(255,255,255,.5);letter-spacing:.5px}
 .tb-btns{display:flex;gap:3px}
 .tb-btn{width:18px;height:18px;background:var(--face);border:2px outset var(--hi);
   font-size:10px;line-height:14px;text-align:center;cursor:pointer;font-family:var(--fc)}
@@ -40,16 +40,16 @@ body{background:var(--bg);font-family:var(--fm);font-size:13px;color:var(--txt);
   cursor:pointer;font-family:var(--fm);font-size:12px;font-weight:700;
   display:flex;align-items:center;gap:4px;flex:1;min-width:80px;justify-content:center}
 .intent-btn:hover{background:#d6d2c2}
-.intent-btn:active,.intent-btn.active{border-style:inset;background:#4a2a18;padding:9px 11px 7px 13px;
-  box-shadow:0 0 12px rgba(255,107,43,.4);color:var(--acc)}
+.intent-btn:active,.intent-btn.active{border-style:inset;background:#f0d8c0;padding:9px 11px 7px 13px;
+  box-shadow:0 0 12px rgba(212,135,74,.3);color:#8a4a20}
 .intent-btn .ico{font-size:16px}
 /* Sub-options (appears after intent selection) */
-.sub-panel{border:2px inset var(--shd);padding:8px;background:rgba(0,0,0,.2);min-height:36px;
+.sub-panel{border:2px inset var(--shd);padding:8px;background:#fdf8f2;min-height:36px;
   display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.sub-chip{background:rgba(255,107,43,.15);border:1px solid var(--acc);padding:3px 10px;
+.sub-chip{background:#f5e8d8;border:1px solid var(--shd);padding:3px 10px;
   font-size:11px;cursor:pointer;border-radius:2px;font-weight:700;color:var(--txt);transition:all .1s}
-.sub-chip:hover{background:rgba(255,107,43,.3)}
-.sub-chip.selected{background:var(--acc);border-color:var(--acc);color:#1a1210}
+.sub-chip:hover{background:#e8d4b8}
+.sub-chip.selected{background:var(--acc);border-color:var(--dk);color:#fff}
 .sub-placeholder{color:var(--dim);font-size:11px;font-style:italic}
 /* Dials section */
 .dials{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -61,7 +61,7 @@ input[type=range]{-webkit-appearance:none;width:100px;height:6px;background:#ccc
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:20px;
   background:var(--face);border:2px outset var(--hi);cursor:pointer}
 /* Response area */
-.response{border:2px inset var(--shd);background:rgba(0,0,0,.3);padding:10px;
+.response{border:2px inset var(--shd);background:#fff;padding:10px;
   font-size:12px;line-height:1.7;min-height:120px;max-height:300px;overflow-y:auto;
   font-family:var(--fm);white-space:pre-wrap;color:var(--txt)}
 .response .thinking{color:var(--dim);font-style:italic}
@@ -79,12 +79,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .preset-btn:active{border-style:inset}
 .preset-btn.active{border-style:inset;background:#c8d4e8}
 /* Ambient ticker */
-.ticker{border:2px inset var(--shd);padding:3px 8px;font-size:10px;color:var(--amb);
-  font-family:var(--fc);background:rgba(0,0,0,.4);overflow:hidden;white-space:nowrap}
+.ticker{border:2px inset var(--shd);padding:3px 8px;font-size:10px;color:var(--dim);
+  font-family:var(--fc);background:#f5ede2;overflow:hidden;white-space:nowrap}
 /* Text input (secondary) */
 .text-row{display:flex;gap:4px}
 .text-input{flex:1;border:2px inset var(--shd);padding:4px 6px;font-size:12px;
-  font-family:var(--fm);background:rgba(0,0,0,.3);color:var(--txt)}
+  font-family:var(--fm);background:#fff;color:var(--txt)}
 .send-btn{background:var(--face);border:2px outset var(--hi);padding:4px 12px;
   font-size:11px;font-weight:700;cursor:pointer}
 .send-btn:active{border-style:inset}
@@ -92,12 +92,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .bottom{border-top:2px outset var(--hi);padding:3px 8px;font-size:10px;color:var(--dim);
   display:flex;justify-content:space-between}
 /* Visual feedback */
-@keyframes flash{0%{box-shadow:0 0 0 rgba(255,107,43,0)}50%{box-shadow:0 0 16px rgba(255,107,43,.5)}100%{box-shadow:0 0 0 rgba(255,107,43,0)}}
+/* flash animation defined below */
 .flash{animation:flash .4s ease-out}
-.act-btn:active{border-style:inset;background:#4a2a18;color:var(--acc)}
+.act-btn:active{border-style:inset;background:#f0d8c0;color:#8a4a20}
 .sub-chip:active{transform:scale(.95)}
-.preset-btn:active{background:#4a2a18;color:var(--acc)}
+.preset-btn:active{background:#f0d8c0;color:#8a4a20}
 input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset var(--hi)}
+@keyframes flash{0%{box-shadow:0 0 0 rgba(212,135,74,0)}50%{box-shadow:0 0 16px rgba(212,135,74,.4)}100%{box-shadow:0 0 0 rgba(212,135,74,0)}}
 </style>
 </head>
 <body>
@@ -198,7 +199,7 @@ input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset 
 
     <!-- Text input (secondary) -->
     <div class="text-row">
-      <input class="text-input" id="text-input" placeholder="Or just type something..." onkeydown="if(event.key==='Enter')sendText()">
+      <input class="text-input" id="text-input" placeholder="Or just type something (150 chars)..." maxlength="150" onkeydown="if(event.key==='Enter')sendText()">
       <div class="send-btn" onclick="sendText()">Send</div>
     </div>
 
