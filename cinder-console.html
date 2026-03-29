@@ -91,6 +91,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 /* Bottom bar */
 .bottom{border-top:2px outset var(--hi);padding:3px 8px;font-size:10px;color:var(--dim);
   display:flex;justify-content:space-between}
+/* Decorative texture */
+.win::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0z' fill='%23c4a882' fill-opacity='.04'/%3E%3C/svg%3E");z-index:0}
+.content{position:relative;z-index:1}
+/* Section dividers with decorative dots */
+.label::after{content:' ';display:inline-block;width:100%;height:1px;
+  background:linear-gradient(90deg,var(--shd),transparent 80%)}
+/* Glow on response area when content changes */
+.response.active{box-shadow:0 0 8px rgba(212,135,74,.2)}
 /* Visual feedback */
 /* flash animation defined below */
 .flash{animation:flash .4s ease-out}
@@ -222,7 +231,8 @@ input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset 
       <div class="act-btn" onclick="quickAction('deeper')">&#8595; Go Deeper</div>
       <div class="act-btn" onclick="quickAction('shorter')">&#8593; Shorter</div>
       <div class="act-btn" onclick="quickAction('disagree')">&#10007; Push Back</div>
-      <div class="act-btn" onclick="quickAction('save')">&#128190; Save This</div>
+      <div class="act-btn" onclick="quickAction('remember')">&#128150; Remember This</div>
+      <div class="act-btn" onclick="exportChat()">&#128196; Export</div>
       <div class="act-btn" onclick="quickAction('new')">&#10022; New Topic</div>
       <div class="act-btn" onclick="quickAction('think')">&#129504; What Do You Think?</div>
     </div>
@@ -368,7 +378,7 @@ function quickAction(action) {
     deeper: '[Cinder would expand on the previous response with more detail and depth]',
     shorter: '[Cinder would condense the response to key points only]',
     disagree: '[Cinder would reconsider and offer a counter-argument or alternative]',
-    save: '[Response saved to memory — Cinder will remember this]',
+    remember: '[Cinder will remember this — stored to persistent memory]',
     new: '[Clearing context for a fresh topic]',
     think: '[Cinder shares an unprompted thought based on recent context]',
   }
@@ -405,6 +415,19 @@ function sendTag(el) {
   log.innerHTML += `<div style="margin:4px 0"><b style="color:var(--acc)">You</b> <span style="color:var(--dim);font-size:9px">${time}</span><br>[tag: ${text}]</div>`
   log.scrollTop = log.scrollHeight
   showResponse(S.intent || 'ask', text)
+}
+
+function exportChat() {
+  const log = document.getElementById('chat-log')
+  const resp = document.getElementById('response')
+  const text = '# Cinder Console Export\n\n## Response\n' + resp.textContent + '\n\n## Conversation\n' + log.textContent
+  const blob = new Blob([text], {type:'text/markdown'})
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'cinder-export-' + new Date().toISOString().slice(0,10) + '.md'
+  a.click()
+  event.target.classList.add('flash')
+  setTimeout(() => event.target.classList.remove('flash'), 400)
 }
 
 function addTag() {
