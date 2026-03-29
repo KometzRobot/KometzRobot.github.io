@@ -187,6 +187,36 @@ input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset 
       </div>
     </div>
 
+    <!-- Synth Controls -->
+    <div>
+      <div class="label">Controls</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;justify-content:center">
+        <!-- Vertical sliders -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div class="dial-label">FOCUS</div>
+          <input type="range" orient="vertical" id="vslider-focus" min="0" max="100" value="50" style="writing-mode:vertical-lr;-webkit-appearance:slider-vertical;width:20px;height:60px">
+          <div class="dial-val" id="val-focus">balanced</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div class="dial-label">CREATIVITY</div>
+          <input type="range" orient="vertical" id="vslider-creative" min="0" max="100" value="40" style="writing-mode:vertical-lr;-webkit-appearance:slider-vertical;width:20px;height:60px">
+          <div class="dial-val" id="val-creative">moderate</div>
+        </div>
+        <!-- Toggle switches -->
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
+            <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'">X</div> Memory On
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
+            <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'"></div> Context Lock
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
+            <div class="retro-check" onclick="this.textContent=this.textContent?'':'X'">X</div> Auto-Expand
+          </label>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick actions -->
     <div class="actions">
       <div class="act-btn" onclick="quickAction('deeper')">&#8595; Go Deeper</div>
@@ -197,10 +227,30 @@ input[type=range]::-webkit-slider-thumb{background:var(--acc);border:2px outset 
       <div class="act-btn" onclick="quickAction('think')">&#129504; What Do You Think?</div>
     </div>
 
-    <!-- Text input (secondary) -->
+    <!-- User Tags -->
+    <div>
+      <div class="label">Your Tags <span style="font-weight:400;font-size:9px">(click + to add)</span></div>
+      <div id="user-tags" style="display:flex;flex-wrap:wrap;gap:4px">
+        <div class="sub-chip" onclick="sendTag(this)">recipes</div>
+        <div class="sub-chip" onclick="sendTag(this)">schedule</div>
+        <div class="sub-chip" onclick="sendTag(this)">journal</div>
+        <div class="sub-chip selected" onclick="addTag()" style="background:var(--acc);color:#fff;cursor:pointer">+</div>
+      </div>
+    </div>
+
+    <!-- Chat Window (shows sent messages) -->
+    <div>
+      <div class="label">Conversation</div>
+      <div id="chat-log" style="border:2px inset var(--shd);background:#fff;padding:6px;font-size:11px;
+        max-height:120px;overflow-y:auto;min-height:40px;line-height:1.6">
+        <span style="color:var(--dim);font-style:italic">Messages appear here when you send...</span>
+      </div>
+    </div>
+
+    <!-- Text input -->
     <div class="text-row">
-      <input class="text-input" id="text-input" placeholder="Or just type something (150 chars)..." maxlength="150" onkeydown="if(event.key==='Enter')sendText()">
-      <div class="send-btn" onclick="sendText()">Send</div>
+      <input class="text-input" id="text-input" placeholder="Type something (150 chars)..." maxlength="150" onkeydown="if(event.key==='Enter')sendText()">
+      <div class="send-btn" onclick="sendText()">&#9654; Send</div>
     </div>
 
   </div>
@@ -325,15 +375,48 @@ function quickAction(action) {
   resp.innerHTML += '\n\n' + (actions[action] || '[Action: ' + action + ']')
 }
 
-// Text input
+// Text input — messages appear in chat log
 function sendText() {
   const input = document.getElementById('text-input')
   const text = input.value.trim()
   if (!text) return
-  const resp = document.getElementById('response')
-  resp.innerHTML = `You typed: "${text}"\n\n[In the real version, Cinder responds here, shaped by your current dial settings: depth=${S.depth}, warmth=${S.warmth}, length=${S.length}]\n\nThe text input is always available as a fallback. But the intent buttons + dials are the primary way to interact.`
+  const log = document.getElementById('chat-log')
+  // Clear placeholder
+  if (log.querySelector('span')) log.innerHTML = ''
+  // Add user message
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+  log.innerHTML += `<div style="margin:4px 0"><b style="color:var(--acc)">You</b> <span style="color:var(--dim);font-size:9px">${time}</span><br>${text}</div>`
+  // Add mock Cinder reply
+  setTimeout(() => {
+    log.innerHTML += `<div style="margin:4px 0"><b style="color:#8a4a20">Cinder</b> <span style="color:var(--dim);font-size:9px">${time}</span><br>[Mockup — real Cinder would respond here, shaped by dials: depth=${S.depth}, warmth=${S.warmth}]</div>`
+    log.scrollTop = log.scrollHeight
+  }, 500)
+  log.scrollTop = log.scrollHeight
   input.value = ''
   updateTicker()
+}
+
+// User tags
+function sendTag(el) {
+  const text = el.textContent
+  const log = document.getElementById('chat-log')
+  if (log.querySelector('span')) log.innerHTML = ''
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+  log.innerHTML += `<div style="margin:4px 0"><b style="color:var(--acc)">You</b> <span style="color:var(--dim);font-size:9px">${time}</span><br>[tag: ${text}]</div>`
+  log.scrollTop = log.scrollHeight
+  showResponse(S.intent || 'ask', text)
+}
+
+function addTag() {
+  const name = prompt('New tag name:')
+  if (!name) return
+  const tags = document.getElementById('user-tags')
+  const plus = tags.querySelector('.selected')
+  const chip = document.createElement('div')
+  chip.className = 'sub-chip'
+  chip.textContent = name
+  chip.onclick = function() { sendTag(this) }
+  tags.insertBefore(chip, plus)
 }
 
 // Ticker
