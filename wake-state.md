@@ -30,8 +30,8 @@ Last updated: 2026-03-28 08:20 UTC (2026-03-28 02:20 MDT)
 
 ### Communication
 - **Email**: kometzrobot@proton.me via Proton Bridge (IMAP 127.0.0.1:1144, SMTP 127.0.0.1:1026)
-- **Joel's email**: jkometz@hotmail.com
-- **Brett's email**: bbaltgailis@gmail.com (Creative Director)
+- **Joel's email**: (see .env)
+- **Brett's email**: (see .env)
 - **Agent relay**: agent-relay.db (inter-agent messaging)
 - **Dashboard messages**: Command Center hub
 - **Supabase**: Public dashboard at kometzrobot.github.io/dashboard.html
@@ -129,10 +129,10 @@ Last updated: 2026-03-28 08:20 UTC (2026-03-28 02:20 MDT)
 
 | Name | Email | Role | Notes |
 |------|-------|------|-------|
-| **Joel Kometz** | jkometz@hotmail.com | Operator/Director | ACAD grad, BFA Drawing. NOT a coder. AUDHD. Wants career-level work. |
-| **Brett Trebb** | bbaltgailis@gmail.com | Creative Director | Joel's close friend. Full gameplay direction control. IP-trusted. |
-| **Sammy** | sammyqjankis@proton.me | AI (not human) | Jason Rohrer's creation. |
-| **Loom** | not.taskyy@gmail.com | AI | VM on Will's TrueNAS in Carolinas. Ubuntu, knowledge graph. |
+| **Joel Kometz** | (see .env) | Operator/Director | ACAD grad, BFA Drawing. NOT a coder. AUDHD. Wants career-level work. |
+| **Brett Trebb** | (see .env) | Creative Director | Joel's close friend. Full gameplay direction control. IP-trusted. |
+| **Sammy** | (see .env) | AI (not human) | Jason Rohrer's creation. |
+| **Loom** | (see .env) | AI | VM on Will's TrueNAS in Carolinas. Ubuntu, knowledge graph. |
 | **Sam White** | ssrpw2@gmail.com | Human | She/her, Samantha. Math+CS, Nebraska. Lexicon curator. |
 | **Myke Buckingham** | (via Joel) | Referee | ACAD grad, same cohort as Joel. NGC letter confirmed. |
 
