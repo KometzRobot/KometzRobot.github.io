@@ -204,9 +204,18 @@
         setTextById('stat-heartbeat', heartbeat);
         setTextById('stat-uptime', uptime);
 
-        // Fitness from load or from data
-        const fitness = data.fitness_score || (load !== '--' ? Math.max(0, Math.min(100, Math.round(100 - (parseFloat(load) * 10)))) : null);
-        if (fitness != null) setTextById('stat-fitness', fitness + '%');
+        // Show Soma mood score if available, otherwise show service count
+        const mood = data.soma_mood || data.mood || '';
+        const moodScore = data.soma_score || data.mood_score || '';
+        const svcRunning = data.services ? data.services.running : null;
+        const svcTotal = data.services ? data.services.total : null;
+        if (moodScore) {
+            setTextById('stat-fitness', Math.round(parseFloat(moodScore)) + '/100');
+        } else if (svcRunning != null) {
+            setTextById('stat-fitness', svcRunning + '/' + svcTotal);
+        } else {
+            setTextById('stat-fitness', '--');
+        }
 
         // Alive indicator
         const aliveDot = document.getElementById('alive-dot');

@@ -1768,11 +1768,24 @@ footer {
     .logo {
         font-size: 18px;
         animation: none !important;
+        /* Fix hazy gradient text on mobile — use solid color instead */
+        background: none !important;
+        -webkit-background-clip: unset !important;
+        background-clip: unset !important;
+        -webkit-text-fill-color: var(--primary-light) !important;
     }
 
     .logo-icon {
         animation: none !important;
         filter: none !important;
+    }
+
+    /* Fix all gradient text that renders hazy on mobile */
+    .hero-subtitle {
+        background: none !important;
+        -webkit-background-clip: unset !important;
+        background-clip: unset !important;
+        -webkit-text-fill-color: var(--text-muted) !important;
     }
 
     /* Disable all hover transforms on mobile (prevents jitter) */

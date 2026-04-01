@@ -334,10 +334,24 @@ def build_status():
     running_count = sum(1 for v in services.values() if v)
     total_services = len(services)
 
+    # Soma mood
+    soma_mood = ""
+    soma_score = 0
+    try:
+        psyche_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".soma-psyche.json")
+        with open(psyche_path) as f:
+            psyche = json.load(f)
+        soma_mood = psyche.get("mood", "")
+        soma_score = psyche.get("mood_score", 0)
+    except Exception:
+        pass
+
     return {
         "last_updated": datetime.now(timezone.utc).isoformat(),
         "location": "Calgary, Alberta, Canada",
         "status": "RUNNING" if hb_age < 600 else "STALE",
+        "soma_mood": soma_mood,
+        "soma_score": soma_score,
         "loop_active": hb_age < 600,
         "loop_count": loop,
         "heartbeat_age_seconds": hb_age,
