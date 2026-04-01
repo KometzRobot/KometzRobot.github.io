@@ -212,20 +212,15 @@ def get_pending_messages():
 
 
 def get_outstanding_issues():
-    """Pull outstanding issues from wake-state and recent alerts."""
+    """Pull outstanding issues from capsule/handoff and recent alerts."""
     issues = []
-    # Check wake-state for Joel's remaining requests
-    wake = read_file(WAKE)
-    in_issues = False
-    for line in wake.split('\n'):
-        if "### Joel's Remaining Requests" in line or '### Outstanding Issues' in line:
-            in_issues = True
-            continue
-        if in_issues:
-            if line.startswith('##'):
-                break
-            if line.startswith('- '):
-                issues.append(line.strip('- ')[:150])
+    # Check capsule and handoff for current context
+    capsule = read_file(os.path.join(BASE, ".capsule.md"))
+    handoff = read_file(os.path.join(BASE, ".loop-handoff.md"))
+    # Extract agent flags from handoff (lines starting with [!!!])
+    for line in handoff.split('\n'):
+        if '[!!!]' in line:
+            issues.append(line.strip('- ').replace('[!!!]', '').strip()[:150])
     # Also check relay for recent alerts/flags
     try:
         import sqlite3
@@ -257,9 +252,9 @@ def _count_files(pattern_list):
 
 def get_creative_summary():
     # Scan both root and creative/ subdirs for accurate counts
-    poem_patterns = [os.path.join(BASE, "poem-*.md"), os.path.join(BASE, "creative/poems/poem-*.md")]
-    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journals/journal-*.md")]
-    cogcorp_patterns = [os.path.join(BASE, "cogcorp-fiction/cogcorp-[0-9]*.html"), os.path.join(BASE, "creative/cogcorp/CC-*.md")]
+    poem_patterns = [os.path.join(BASE, "poem-*.md"), os.path.join(BASE, "creative/poems/*.md")]
+    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journals/*.md")]
+    cogcorp_patterns = [os.path.join(BASE, "cogcorp-fiction/*.html"), os.path.join(BASE, "creative/cogcorp/CC-*.md")]
 
     poem_count = _count_files(poem_patterns)
     journal_count = _count_files(journal_patterns)
@@ -342,9 +337,38 @@ def get_eos_summary():
     return text
 
 
+def get_upcoming_deadlines():
+    """Check capsule for deadlines and known dates."""
+    deadlines = []
+    capsule = read_file(os.path.join(BASE, ".capsule.md"))
+    now = datetime.now()
+    # Known deadlines — add new ones here as they come up
+    known = [
+        ("2026-04-10", "NGC Fellowship ($15K CAD)"),
+        ("2026-04-22", "LACMA Art+Tech Lab ($50K USD)"),
+    ]
+    for date_str, label in known:
+        try:
+            d = datetime.strptime(date_str, "%Y-%m-%d")
+            delta = (d - now).days
+            if -1 <= delta <= 60:
+                if delta < 0:
+                    deadlines.append(f"  OVERDUE  {label}")
+                elif delta == 0:
+                    deadlines.append(f"  TODAY    {label}")
+                elif delta <= 7:
+                    deadlines.append(f"  {delta}d left  {label}")
+                else:
+                    deadlines.append(f"  {delta}d      {label}")
+        except Exception:
+            pass
+    return deadlines
+
+
 def build_briefing():
     now = datetime.now()
     date_str = now.strftime("%A, %B %d, %Y")
+    sep = "─" * 36
 
     pending = get_pending_messages()
     meridian = get_meridian_status()
@@ -356,36 +380,85 @@ def build_briefing():
     creative = get_creative_summary()
     outstanding = get_outstanding_issues()
     eos = get_eos_summary()
+    deadlines = get_upcoming_deadlines()
 
-    sections = [f"Good morning Joel.\n\n{date_str}."]
+    sections = []
+    sections.append(f"Good morning Joel.\n{date_str}\n{sep}")
 
-    # Priority alert
+    # ALERTS — anything urgent goes first
+    alerts = []
+    if "DOWN" in meridian:
+        alerts.append(meridian)
     if "WARNING" in pending:
-        sections.append(f"\nHEADS UP: {pending}")
+        alerts.append(pending)
+    if outstanding and "No outstanding" not in outstanding:
+        for line in outstanding.split('\n')[1:]:
+            if 'DOWN' in line.upper() or 'FAIL' in line.upper() or 'CRITICAL' in line.upper():
+                alerts.append(line.strip('- ').strip())
+    if alerts:
+        sections.append("!! ALERTS")
+        for a in alerts[:4]:
+            sections.append(f"  {a}")
+        sections.append("")
 
-    # Meridian status — lead with the most important thing
-    sections.append(f"\n{meridian}")
+    # DEADLINES — what's coming up
+    if deadlines:
+        sections.append("DEADLINES")
+        sections.extend(deadlines)
+        sections.append("")
 
-    # System health in one block
-    sections.append(f"\nSystem:\n{health}\n{services}")
+    # MERIDIAN — loop status
+    sections.append("MERIDIAN")
+    for line in meridian.split('\n'):
+        sections.append(f"  {line}")
+    sections.append("")
 
-    # What happened overnight
+    # SYSTEM — health + services, compact
+    sections.append("SYSTEM")
+    for line in health.split('\n'):
+        sections.append(f"  {line}")
+    for line in services.split('\n'):
+        sections.append(f"  {line}")
+    sections.append("")
+
+    # OVERNIGHT — what happened
     if activity and "No recent activity" not in activity:
-        sections.append(f"\nOvernight:\n{activity}")
+        sections.append("OVERNIGHT")
+        for line in activity.split('\n'):
+            sections.append(f"  {line}")
+        sections.append("")
 
-    # Communications
-    sections.append(f"\n{emails}")
-    sections.append(relay)
+    # COMMS — email + relay + dashboard
+    sections.append("COMMS")
+    sections.append(f"  {emails}")
+    sections.append(f"  {relay}")
     if "WARNING" not in pending and pending:
-        sections.append(pending)
+        sections.append(f"  {pending}")
+    sections.append("")
 
-    # Creative work
-    sections.append(f"\nCreative:\n{creative}")
+    # CREATIVE — output summary
+    sections.append("CREATIVE")
+    for line in creative.split('\n'):
+        sections.append(f"  {line}")
+    sections.append("")
 
-    # Eos perspective
-    sections.append(f"\n{eos}")
+    # EOS — my own observations
+    if eos:
+        sections.append("EOS")
+        for line in eos.split('\n'):
+            sections.append(f"  {line}")
+        sections.append("")
 
-    sections.append("\n-- Eos")
+    # OUTSTANDING — things that need attention
+    if outstanding and "No outstanding" not in outstanding:
+        sections.append("OUTSTANDING")
+        for line in outstanding.split('\n'):
+            if line.strip():
+                sections.append(f"  {line.strip('- ').strip()[:120]}")
+        sections.append("")
+
+    sections.append(sep)
+    sections.append("-- Eos")
 
     return '\n'.join(sections)
 
