@@ -1707,6 +1707,12 @@ def sense_cycle():
                     "signal": evt,
                     "time": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 })
+                # Flag critical events for next Meridian handoff
+                try:
+                    from context_flag import flag as _cflag
+                    _cflag("Soma", f"PAIN: {evt[:200]}", priority=3)
+                except Exception:
+                    pass
             elif any(w in evt for w in ["SPIKE", "AGENT SILENT", "FEVER", "OVERFLOW"]):
                 body_state["pain_signals"].append({
                     "level": "warning",
@@ -1972,11 +1978,11 @@ def main():
                             "voice": emotion_data.get("voice", ""),
                         })
                         log(f"CASCADE TRIGGERED: mood_shift → Eos")
-                        # Also route to Cinder via mesh for pre-wake briefing context
+                        # Also route to Sentinel via mesh for pre-wake briefing context
                         try:
                             import mesh as mesh_module
-                            mesh_module.send("Soma", "Cinder", evt, "mood_shift")
-                            log(f"MESH: mood_shift → Cinder")
+                            mesh_module.send("Soma", "Sentinel", evt, "mood_shift")
+                            log(f"MESH: mood_shift → Sentinel")
                         except Exception as me:
                             log(f"Mesh send error: {me}")
                     except Exception as ce:

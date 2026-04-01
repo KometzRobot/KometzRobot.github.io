@@ -35,7 +35,7 @@ from datetime import datetime, timezone
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent-relay.db")
 
 # All valid mesh nodes
-AGENTS = ["Meridian", "Cinder", "Soma", "Eos", "Nova", "Atlas", "Tempo", "Hermes"]
+AGENTS = ["Meridian", "Sentinel", "Soma", "Eos", "Nova", "Atlas", "Tempo", "Hermes", "DreamEngine"]
 
 
 def _get_db():

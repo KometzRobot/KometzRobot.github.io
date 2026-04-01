@@ -277,7 +277,7 @@ def _log_structured_error(error_type, description, category=None):
 
 def send_alert(subject, body):
     """Email alerts DISABLED (Loop 2060) — Joel asked us to stop spamming him.
-    Alerts now go to relay + dashboard only."""
+    Alerts now go to relay + dashboard + context flags only."""
     log_observation(f"ALERT (no email): {subject}")
     try:
         import sqlite3 as _sql
@@ -287,6 +287,12 @@ def send_alert(subject, body):
                   ("Eos", f"{subject}: {body[:200]}", "alert", _utcnow_str()))
         conn.commit()
         conn.close()
+    except Exception:
+        pass
+    # Also flag for next Meridian handoff
+    try:
+        from context_flag import flag
+        flag("Eos", f"{subject}: {body[:150]}", priority=2)
     except Exception:
         pass
     return True

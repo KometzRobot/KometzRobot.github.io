@@ -329,6 +329,17 @@ def run_once():
     if fitness_result:
         results.append(f"fitness:{fitness_result[:80]}")
 
+    # 6b. Capsule refresh (every 50 runs = ~4 hours)
+    if run_num % 50 == 0:
+        try:
+            subprocess.run(
+                [sys.executable, os.path.join(BASE, "capsule-refresh.py")],
+                capture_output=True, text=True, timeout=15, cwd=BASE
+            )
+            results.append("capsule:refreshed")
+        except Exception:
+            pass
+
     # 7. Post summary to relay
     summary = f"Loop auto-cycle #{run_num}: {' | '.join(results)}"
     if errors:

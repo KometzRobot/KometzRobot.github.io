@@ -149,7 +149,7 @@ check_cron "Body State" "$WORKING_DIR/.body-state.json" 120
 
 # ── Check newer agents (added Loop 3230) ───────────────────────
 check_cron "Meridian Loop" "$WORKING_DIR/.meridian-loop-state.json" 600
-check_cron "Cinder Gatekeeper" "$WORKING_DIR/logs/cinder-gatekeeper.log" 600
+check_cron "Sentinel Gatekeeper" "$WORKING_DIR/logs/sentinel-gatekeeper.log" 600
 check_cron "Hermes" "$WORKING_DIR/logs/hermes.log" 1800
 check_cron "Atlas (goose-runner)" "$WORKING_DIR/logs/goose-runner.log" 1800
 

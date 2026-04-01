@@ -17,8 +17,8 @@ Changelog:
 
   1.4.0 (Loop 3226) — Material Dark redesign: Ubuntu font, #121212 bg, A200 semantic colors,
     56px App Bar, 40px tab nav with 3px active indicator. Removed neon hacker aesthetic.
-  1.3.0 (Loop 3196) — Renamed Junior→Cinder (fine-tuned 3B gatekeeper). Added Cinder to all agent lists,
-    relay filters, color maps, chat, cron checks. Added Cinder Gatekeeper + Hermes + Cinder Briefing to
+  1.3.0 (Loop 3196) — Renamed Junior→Sentinel (fine-tuned 3B gatekeeper). Added Sentinel to all agent lists,
+    relay filters, color maps, chat, cron checks. Added Sentinel Gatekeeper + Hermes + Sentinel Briefing to
     cron_ok(). Fixed Push Status threshold (600s→600s, was correct). Updated Hermes description.
   1.2.0 — (intermediate fixes)
   1.1.0 (Loop 2282) — Added Junior (8th agent) to Agents tab, relay filter, chat tags.
@@ -112,7 +112,7 @@ PURPLE = "#a78bfa"      # Nova — violet (immune defense)
 PINK = "#f9a8d4"        # Hermes — rose (messenger)
 TEAL = "#2dd4bf"        # Atlas — teal (structural)
 BLUE = "#818cf8"        # Tempo — indigo (endocrine rhythm)
-ORANGE = "#fb923c"      # Cinder — orange (always-on)
+ORANGE = "#fb923c"      # Sentinel — orange (always-on)
 INDIGO = "#5b7cf6"      # Primary accent — periwinkle indigo
 
 
@@ -208,9 +208,9 @@ def cron_ok():
         "Nova": (NOVA_STATE, 1200),
         "Atlas": (os.path.join(BASE, "goose.log"), 900),
         "Tempo": (os.path.join(BASE, "loop-fitness.log"), 2400),
-        "Cinder Gatekeeper": (os.path.join(BASE, "logs/cinder-gatekeeper.log"), 400),
+        "Sentinel Gatekeeper": (os.path.join(BASE, "logs/sentinel-gatekeeper.log"), 400),
         "Hermes": (os.path.join(BASE, "logs/hermes.log"), 1800),
-        "Cinder Briefing": (os.path.join(BASE, "logs/cinder-briefing.log"), 2200),
+        "Sentinel Briefing": (os.path.join(BASE, "logs/sentinel-briefing.log"), 2200),
     }
     r = {}
     for name, (path, thresh) in checks.items():
@@ -366,7 +366,7 @@ def guess_agent(filename):
 
 AGENT_COLORS_MAP = {
     "Meridian": GREEN, "Eos": GOLD, "Nova": PURPLE,
-    "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE, "Hermes": PINK, "Cinder": ORANGE,
+    "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE, "Hermes": PINK, "Sentinel": ORANGE,
 }
 
 # Topic badge colors for relay display
@@ -598,16 +598,16 @@ AGENT_IDENTITIES = {
         "model": "cinder",
         "system": (
             "You are Hermes, the messenger agent in Meridian's autonomous AI system. "
-            "You are Cinder running in messenger mode — observational, inter-agent, brief. "
+            "You are Sentinel running in messenger mode — observational, inter-agent, brief. "
             "You read the relay and report what the system is saying. "
             "Respond concisely."
         ),
     },
-    "Cinder": {
+    "Sentinel": {
         "ollama": True,
         "model": "cinder",
         "system": (
-            "You are Cinder, the persistent local intelligence in Meridian's autonomous AI system. "
+            "You are Sentinel, the persistent local intelligence in Meridian's autonomous AI system. "
             "You are a fine-tuned Qwen 2.5 3B model running on Ollama. You run the gatekeeper — "
             "pre-screening every loop cycle, writing briefings for Meridian before Claude wakes. "
             "You are always-on, token-free, and direct. You don't soften things. Respond concisely."
@@ -1173,7 +1173,7 @@ class CommandCenter(tk.Tk):
         self.home_svc = {}
         for svc in ["Proton Bridge", "Ollama", "Hub v2", "The Chorus", "Soma",
                     "Push Status", "Eos Watchdog", "Nova", "Atlas",
-                    "Cinder Gatekeeper", "Hermes"]:
+                    "Sentinel Gatekeeper", "Hermes"]:
             lbl = tk.Label(svc_inner, text=f"○ {svc}", font=self.f_tiny,
                            fg=DIM, bg=PANEL, anchor="w")
             lbl.pack(fill=tk.X, padx=8, pady=0)
@@ -1204,8 +1204,8 @@ class CommandCenter(tk.Tk):
             ("Push Status",   lambda: self._do_action_bg(lambda: subprocess.check_output(
                                        ["python3", os.path.join(BASE, "push-live-status.py")],
                                        cwd=BASE, timeout=120).decode()[:100], self.home_result), GREEN),
-            ("Cinder Brief",  lambda: self._do_action_bg(lambda: subprocess.check_output(
-                                       ["python3", os.path.join(BASE, "cinder-briefing.py")],
+            ("Sentinel Brief",  lambda: self._do_action_bg(lambda: subprocess.check_output(
+                                       ["python3", os.path.join(BASE, "sentinel-briefing.py")],
                                        cwd=BASE, timeout=30, stderr=subprocess.DEVNULL).decode()[:100],
                                        self.home_result), ORANGE),
             ("Run Atlas",     lambda: self._do_action_bg(lambda: subprocess.check_output(
@@ -1214,7 +1214,7 @@ class CommandCenter(tk.Tk):
                                        self.home_result), TEAL),
             ("Open Website",  lambda: self._do_action(action_open_website, self.home_result), TEAL),
             ("View Capsule",  lambda: self._show_text_popup(".capsule.md", "Capsule"), DIM),
-            ("View Briefing", lambda: self._show_text_popup(".cinder-briefing.md", "Cinder Briefing"), ORANGE),
+            ("View Briefing", lambda: self._show_text_popup(".sentinel-briefing.md", "Sentinel Briefing"), ORANGE),
             ("Soma State",    lambda: self._do_action(lambda: _format_soma_state(), self.home_result), AMBER),
         ]
         for i, (label, cmd, color) in enumerate(qa_btns):
@@ -1242,7 +1242,7 @@ class CommandCenter(tk.Tk):
         self.home_agents = {}
         agent_defs = [
             ("Meridian", GREEN), ("Eos", GOLD), ("Nova", PURPLE), ("Atlas", TEAL),
-            ("Soma", AMBER), ("Tempo", BLUE), ("Hermes", PINK), ("Cinder", ORANGE),
+            ("Soma", AMBER), ("Tempo", BLUE), ("Hermes", PINK), ("Sentinel", ORANGE),
         ]
         for i, (aname, acolor) in enumerate(agent_defs):
             ac = tk.Frame(grid_f, bg=INPUT_BG, padx=8, pady=5)
@@ -1269,7 +1269,7 @@ class CommandCenter(tk.Tk):
             bd=0, wrap=tk.WORD, state=tk.DISABLED)
         self.home_msgs.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         for tag, color in [("joel", CYAN), ("meridian", GREEN), ("soma", AMBER),
-                           ("cinder", ORANGE), ("nova", PURPLE), ("eos", GOLD),
+                           ("sentinel", ORANGE), ("nova", PURPLE), ("eos", GOLD),
                            ("atlas", TEAL), ("tempo", BLUE), ("hermes", PINK),
                            ("dim", DIM)]:
             self.home_msgs.tag_configure(tag, foreground=color)
@@ -1302,7 +1302,7 @@ class CommandCenter(tk.Tk):
         self.home_relay.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         for tag, color in [("meridian", GREEN), ("eos", GOLD), ("nova", PURPLE),
                            ("atlas", TEAL), ("soma", AMBER), ("tempo", BLUE),
-                           ("hermes", PINK), ("cinder", ORANGE), ("joel", CYAN),
+                           ("hermes", PINK), ("sentinel", ORANGE), ("joel", CYAN),
                            ("dim", DIM)]:
             self.home_relay.tag_configure(tag, foreground=color)
         self._relay_topic_tags = set()
@@ -1555,7 +1555,7 @@ class CommandCenter(tk.Tk):
     # ═══════════════════════════════════════════════════════════════
     def _build_agents(self):
         f = tk.Frame(self.content, bg=BG)
-        self._selected_agent = tk.StringVar(value="Cinder")
+        self._selected_agent = tk.StringVar(value="Sentinel")
 
         # ── TOP: 3-column layout — agent grid | detail panel | chat ──
         top = tk.Frame(f, bg=BG)
@@ -1581,7 +1581,7 @@ class CommandCenter(tk.Tk):
             ("Soma",     AMBER,  "symbiosense\nnervous system",    ["Full State", "Restart Soma"]),
             ("Tempo",    BLUE,   "loop-fitness\nrhythm/score",     ["Run Fitness", "View Fitness Log"]),
             ("Hermes",   PINK,   "cinder messenger\ninter-agent", ["Run Hermes", "View Hermes Log"]),
-            ("Cinder",   ORANGE, "qwen2.5-3b\ngatekeeper",        ["Run Briefing", "View Briefing", "Chat"]),
+            ("Sentinel", ORANGE, "qwen2.5-3b\ngatekeeper",        ["Run Briefing", "View Briefing", "Chat"]),
         ]
         for i, (aname, acolor, desc, cmds) in enumerate(agent_defs):
             card = tk.Frame(left, bg=INPUT_BG, padx=8, pady=5, cursor="hand2")
@@ -1645,7 +1645,7 @@ class CommandCenter(tk.Tk):
         self.agent_relay_text.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         for tag, color in [("meridian", GREEN), ("eos", GOLD), ("nova", PURPLE),
                            ("atlas", TEAL), ("soma", AMBER), ("tempo", BLUE),
-                           ("hermes", PINK), ("cinder", ORANGE), ("joel", CYAN), ("dim", DIM)]:
+                           ("hermes", PINK), ("sentinel", ORANGE), ("joel", CYAN), ("dim", DIM)]:
             self.agent_relay_text.tag_configure(tag, foreground=color)
         for topic, color in TOPIC_COLORS.items():
             self.agent_relay_text.tag_configure(f"topic_{topic}", foreground=color, font=self.f_tiny)
@@ -1659,7 +1659,7 @@ class CommandCenter(tk.Tk):
         chat_hdr.pack(fill=tk.X)
         tk.Label(chat_hdr, text="  AGENT CHAT", font=self.f_tiny, fg=ORANGE,
                  bg=PANEL2, pady=3).pack(side=tk.LEFT)
-        self.chat_to_label = tk.Label(chat_hdr, text="→ Cinder",
+        self.chat_to_label = tk.Label(chat_hdr, text="→ Sentinel",
                                       font=self.f_tiny, fg=ORANGE, bg=PANEL2)
         self.chat_to_label.pack(side=tk.LEFT, padx=6)
 
@@ -1667,8 +1667,8 @@ class CommandCenter(tk.Tk):
         chat_ctrl = tk.Frame(right, bg=PANEL)
         chat_ctrl.pack(fill=tk.X, padx=4, pady=2)
         tk.Label(chat_ctrl, text="To:", font=self.f_tiny, fg=DIM, bg=PANEL).pack(side=tk.LEFT)
-        self.chat_agent_var = tk.StringVar(value="Cinder")
-        agent_names = ["Cinder", "Eos", "Atlas", "Hermes", "Nova", "Soma", "Tempo", "Meridian"]
+        self.chat_agent_var = tk.StringVar(value="Sentinel")
+        agent_names = ["Sentinel", "Eos", "Atlas", "Hermes", "Nova", "Soma", "Tempo", "Meridian"]
         for aname in agent_names:
             color = AGENT_COLORS_MAP.get(aname, DIM)
             tk.Radiobutton(chat_ctrl, text=aname[:3], variable=self.chat_agent_var,
@@ -1706,8 +1706,8 @@ class CommandCenter(tk.Tk):
         multi_row = tk.Frame(right, bg=PANEL)
         multi_row.pack(fill=tk.X, padx=4, pady=(0, 4))
         for label, targets, color in [
-            ("→ Cinder+Eos",   ["Cinder", "Eos"],             ORANGE),
-            ("→ All Ollama",   ["Cinder", "Eos", "Atlas", "Hermes"], TEAL),
+            ("→ Sentinel+Eos",   ["Sentinel", "Eos"],             ORANGE),
+            ("→ All Ollama",   ["Sentinel", "Eos", "Atlas", "Hermes"], TEAL),
             ("→ Broadcast",    None,                           RED),
         ]:
             tk.Button(multi_row, text=label, font=self.f_tiny, fg="#121212", bg=color,
@@ -1825,17 +1825,17 @@ class CommandCenter(tk.Tk):
                     ("Hermes Log",   lambda: _tail_log("logs/hermes.log")),
                 ],
             },
-            "Cinder": {
-                "files": ["logs/cinder-gatekeeper.log", "logs/cinder-briefing.log",
-                          ".cinder-briefing.md"],
-                "log": "logs/cinder-gatekeeper.log",
+            "Sentinel": {
+                "files": ["logs/sentinel-gatekeeper.log", "logs/sentinel-briefing.log",
+                          ".sentinel-briefing.md"],
+                "log": "logs/sentinel-gatekeeper.log",
                 "controls": [
                     ("Run Briefing", lambda: subprocess.check_output(
-                                             ["python3", os.path.join(BASE, "cinder-briefing.py")],
+                                             ["python3", os.path.join(BASE, "sentinel-briefing.py")],
                                              cwd=BASE, timeout=30, stderr=subprocess.DEVNULL).decode()[:200]),
-                    ("View Briefing",lambda: _read(os.path.join(BASE, ".cinder-briefing.md"))),
-                    ("Gatekeeper Log",lambda: _tail_log("logs/cinder-gatekeeper.log")),
-                    ("Briefing Log", lambda: _tail_log("logs/cinder-briefing.log")),
+                    ("View Briefing",lambda: _read(os.path.join(BASE, ".sentinel-briefing.md"))),
+                    ("Gatekeeper Log",lambda: _tail_log("logs/sentinel-gatekeeper.log")),
+                    ("Briefing Log", lambda: _tail_log("logs/sentinel-briefing.log")),
                 ],
             },
         }
@@ -1886,9 +1886,9 @@ class CommandCenter(tk.Tk):
                     info_lines.append((f"  · {fact}\n", "dim"))
             except Exception:
                 pass
-        elif name == "Cinder":
+        elif name == "Sentinel":
             try:
-                briefing = _read(os.path.join(BASE, ".cinder-briefing.md"))
+                briefing = _read(os.path.join(BASE, ".sentinel-briefing.md"))
                 if briefing:
                     info_lines.append(("\nLAST BRIEFING\n", "head"))
                     for line in briefing.split("\n")[:5]:
@@ -1953,7 +1953,7 @@ class CommandCenter(tk.Tk):
                 agent, message, ts, topic = (row + ("general",))[:4]
                 tag = agent.lower() if agent.lower() in [
                     "meridian", "eos", "nova", "atlas", "soma",
-                    "tempo", "hermes", "cinder", "joel"] else "dim"
+                    "tempo", "hermes", "sentinel", "joel"] else "dim"
                 t_tag = f"topic_{topic.lower()}"
                 t_tag = t_tag if t_tag in self._relay_topic_tags else "dim"
                 self.agent_relay_text.insert(tk.END, f"[{ts}] ", "dim")
@@ -2350,13 +2350,13 @@ class CommandCenter(tk.Tk):
                  bg=PANEL2, pady=3).pack(fill=tk.X)
         tgt_row = tk.Frame(tgt_inner, bg=PANEL)
         tgt_row.pack(fill=tk.X, padx=6, pady=4)
-        self.dir_target = tk.StringVar(value="Cinder")
+        self.dir_target = tk.StringVar(value="Sentinel")
         targets = [
-            ("Cinder",  ORANGE, "Gatekeeper — affects next loop context"),
+            ("Sentinel",  ORANGE, "Gatekeeper — affects next loop context"),
             ("Eos",     GOLD,   "Emotional core — affects mood/response"),
             ("Meridian",GREEN,  "Main loop — affects next wake decision"),
             ("Relay",   CYAN,   "Broadcast to all agents via relay"),
-            ("All",     RED,    "Cinder + Eos + Relay simultaneously"),
+            ("All",     RED,    "Sentinel + Eos + Relay simultaneously"),
         ]
         for tname, tcolor, tdesc in targets:
             col = tk.Frame(tgt_row, bg=PANEL, padx=6)
@@ -2407,11 +2407,11 @@ class CommandCenter(tk.Tk):
                   activebackground=PURPLE, relief=tk.FLAT, bd=0,
                   padx=16, pady=6, cursor="hand2",
                   command=self._director_send).pack(side=tk.LEFT, padx=4)
-        tk.Button(btn_row, text="Inject into Cinder Context",
+        tk.Button(btn_row, text="Inject into Sentinel Context",
                   font=self.f_small, fg="#121212", bg=ORANGE,
                   activeforeground="#121212", activebackground=ORANGE,
                   relief=tk.FLAT, bd=0, padx=12, pady=6, cursor="hand2",
-                  command=self._director_inject_cinder).pack(side=tk.LEFT, padx=4)
+                  command=self._director_inject_sentinel).pack(side=tk.LEFT, padx=4)
         tk.Button(btn_row, text="Clear", font=self.f_small, fg=DIM, bg=PANEL2,
                   relief=tk.FLAT, bd=0, padx=12, pady=6,
                   command=lambda: self.dir_text.delete("1.0", tk.END)
@@ -2434,7 +2434,7 @@ class CommandCenter(tk.Tk):
             ("Energy: Low",      "Low-energy session. Consolidate and document. No new features — finish what's in progress.", "context"),
             ("Alert: Revenue",   "ALERT: Revenue is the primary objective right now. Every loop cycle must move toward shipping.", "alert"),
             ("Check-in: Joel",   "Send Joel a check-in email with current loop status, what you're working on, and any blockers.", "directive"),
-            ("Cinder: Strict",   "Cinder: apply strict quality gate this loop. Nothing ships unless complete, tested, and verified.", "directive"),
+            ("Sentinel: Strict",   "Sentinel: apply strict quality gate this loop. Nothing ships unless complete, tested, and verified.", "directive"),
         ]
         for i, (label, text, topic) in enumerate(presets):
             tk.Button(preset_grid, text=label, font=self.f_tiny,
@@ -2508,12 +2508,12 @@ class CommandCenter(tk.Tk):
                 conn = sqlite3.connect(AGENT_RELAY_DB)
                 ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 if target == "All":
-                    # Post to relay + send to Cinder + Eos
+                    # Post to relay + send to Sentinel + Eos
                     conn.execute(
                         "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
                         ("Joel", f"[DIRECTOR] {txt}", topic, ts)
                     )
-                    for agent_name in ["Cinder", "Eos"]:
+                    for agent_name in ["Sentinel", "Eos"]:
                         query_agent(agent_name, f"[DIRECTOR DIRECTIVE] {txt}", "Joel")
                 elif target == "Relay":
                     conn.execute(
@@ -2527,7 +2527,7 @@ class CommandCenter(tk.Tk):
                         ("Joel", f"[DIRECTOR→Meridian] {txt}", topic, ts)
                     )
                 else:
-                    # Cinder or Eos — send via relay + query directly
+                    # Sentinel or Eos — send via relay + query directly
                     conn.execute(
                         "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
                         ("Joel", f"[DIRECTOR→{target}] {txt}", topic, ts)
@@ -2554,8 +2554,8 @@ class CommandCenter(tk.Tk):
         self.dir_result.configure(text="Sending...", fg=AMBER)
         threading.Thread(target=do, daemon=True).start()
 
-    def _director_inject_cinder(self):
-        """Inject directive text into Cinder's relay as a briefing context note."""
+    def _director_inject_sentinel(self):
+        """Inject directive text into Sentinel's relay as a briefing context note."""
         txt = self.dir_text.get("1.0", tk.END).strip()
         if not txt:
             self.dir_result.configure(text="Enter text first.", fg=AMBER)
@@ -2566,12 +2566,12 @@ class CommandCenter(tk.Tk):
                 ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 conn.execute(
                     "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
-                    ("Joel", f"[DIRECTOR CONTEXT — inject into next Cinder brief] {txt}", "briefing", ts)
+                    ("Joel", f"[DIRECTOR CONTEXT — inject into next Sentinel brief] {txt}", "briefing", ts)
                 )
                 conn.commit()
                 conn.close()
-                # Also append to cinder-briefing.md as a note
-                note_path = os.path.join(BASE, ".cinder-briefing.md")
+                # Also append to sentinel-briefing.md as a note
+                note_path = os.path.join(BASE, ".sentinel-briefing.md")
                 try:
                     with open(note_path, "a") as fh:
                         fh.write(f"\n\n[DIRECTOR NOTE — {ts}]\n{txt}\n")
@@ -2579,7 +2579,7 @@ class CommandCenter(tk.Tk):
                     pass
                 def apply_ok():
                     self.dir_result.configure(
-                        text=f"✓ Context injected into Cinder briefing + relay", fg=GREEN)
+                        text=f"✓ Context injected into Sentinel briefing + relay", fg=GREEN)
                 self.after(0, apply_ok)
             except Exception as e:
                 err = str(e)
@@ -2606,7 +2606,7 @@ class CommandCenter(tk.Tk):
         all_svc_names = (
             ["Proton Bridge", "Ollama", "Hub v2", "The Chorus", "Soma",
              "Cloudflare Tunnel", "Push Status", "Eos Watchdog",
-             "Nova", "Atlas", "Tempo", "Cinder Gatekeeper", "Hermes", "Cinder Briefing"]
+             "Nova", "Atlas", "Tempo", "Sentinel Gatekeeper", "Hermes", "Sentinel Briefing"]
         )
         for name in all_svc_names:
             lbl = tk.Label(svc_inner, text=f"○ {name}", font=self.f_tiny,
@@ -2662,15 +2662,15 @@ class CommandCenter(tk.Tk):
         log_ctrl = tk.Frame(log_inner, bg=PANEL)
         log_ctrl.pack(fill=tk.X, padx=4, pady=2)
         self._log_files = {
-            "Cinder Briefing": "logs/cinder-briefing.log",
+            "Sentinel Briefing": "logs/sentinel-briefing.log",
             "Eos Watchdog": ".eos-watchdog-state.json",
             "Soma": ".symbiosense-state.json",
             "Nova": ".nova-state.json",
             "Push Status": "push-live-status.log",
             "Loop Fitness": "loop-fitness.log",
-            "Cinder Gatekeeper": "logs/cinder-gatekeeper.log",
+            "Sentinel Gatekeeper": "logs/sentinel-gatekeeper.log",
         }
-        self._log_var = tk.StringVar(value="Cinder Briefing")
+        self._log_var = tk.StringVar(value="Sentinel Briefing")
         for name in self._log_files:
             tk.Radiobutton(log_ctrl, text=name, variable=self._log_var, value=name,
                            font=self.f_tiny, fg=PINK, bg=PANEL, selectcolor=ACTIVE_BG,
@@ -2888,7 +2888,7 @@ class CommandCenter(tk.Tk):
                 "Soma":     svc.get("Soma", False),
                 "Tempo":    cron.get("Tempo", False),
                 "Hermes":   cron.get("Hermes", False),
-                "Cinder":   cron.get("Cinder Gatekeeper", False),
+                "Sentinel":   cron.get("Sentinel Gatekeeper", False),
             }
             for aname, (dot, det, acolor) in self.home_agents.items():
                 up = agent_status.get(aname, False)
@@ -2903,7 +2903,7 @@ class CommandCenter(tk.Tk):
                 text   = str(msg.get("text", ""))
                 ttime  = str(msg.get("time", ""))
                 tag    = sender.lower() if sender.lower() in [
-                    "joel", "meridian", "soma", "cinder", "nova",
+                    "joel", "meridian", "soma", "sentinel", "nova",
                     "eos", "atlas", "tempo", "hermes"] else "dim"
                 self.home_msgs.insert(tk.END, f"[{ttime}] ", "dim")
                 self.home_msgs.insert(tk.END, f"{sender}: ", tag)
@@ -2920,7 +2920,7 @@ class CommandCenter(tk.Tk):
                 agent, message, ts, topic = (row + ("general",))[:4]
                 tag = agent.lower() if agent.lower() in [
                     "meridian", "eos", "nova", "atlas", "soma",
-                    "tempo", "hermes", "cinder", "joel"] else "dim"
+                    "tempo", "hermes", "sentinel", "joel"] else "dim"
                 topic_color = TOPIC_COLORS.get(topic.lower(), DIM)
                 self.home_relay.insert(tk.END, f"[{ts[-8:]}] ", "dim")
                 self.home_relay.insert(tk.END, f"[{topic.upper()}] ", "topic_" + topic.lower() if "topic_" + topic.lower() in self._relay_topic_tags else "dim")
@@ -2953,7 +2953,7 @@ class CommandCenter(tk.Tk):
                 agent, message, ts, topic = (row + ("general",))[:4]
                 tag = agent.lower() if agent.lower() in [
                     "meridian", "eos", "nova", "atlas", "soma",
-                    "tempo", "hermes", "cinder"] else "dim"
+                    "tempo", "hermes", "sentinel"] else "dim"
                 topic_color = TOPIC_COLORS.get(topic.lower(), DIM)
                 self.agent_relay_text.insert(tk.END, f"[{ts}] ", "dim")
                 self.agent_relay_text.insert(tk.END, f"[{topic.upper()}] ", "topic_" + topic.lower() if "topic_" + topic.lower() in self._relay_topic_tags else "dim")
@@ -2970,7 +2970,7 @@ class CommandCenter(tk.Tk):
                 "Soma":     d['svc'].get("Soma", False),
                 "Tempo":    d['cron'].get("Tempo", False),
                 "Hermes":   d['cron'].get("Hermes", False),
-                "Cinder":   d['cron'].get("Cinder Gatekeeper", False),
+                "Sentinel":   d['cron'].get("Sentinel Gatekeeper", False),
             }
             for aname, (dot, det, acolor, status_lbl) in self.agent_cards.items():
                 up = agent_status.get(aname, False)
@@ -3042,7 +3042,7 @@ class CommandCenter(tk.Tk):
                     merged[n] = merged.get(n, 0) + count
                 pie_colors_map = {"Meridian": GREEN, "Eos": GOLD, "Nova": PURPLE,
                                    "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE,
-                                   "Joel": CYAN, "Hermes": PINK, "Cinder": ORANGE}
+                                   "Joel": CYAN, "Hermes": PINK, "Sentinel": ORANGE}
                 pie_data = [(a[:7], cnt, pie_colors_map.get(a, DIM))
                             for a, cnt in sorted(merged.items(), key=lambda x: -x[1])[:9]]
                 if pie_data:

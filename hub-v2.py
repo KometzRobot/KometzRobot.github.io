@@ -216,11 +216,11 @@ def _get_system_health():
     goals_data = _read_json(os.path.join(BASE, ".soma-goals.json"), {})
     psyche_data = _read_json(os.path.join(BASE, ".soma-psyche.json"), {})
 
-    cinder_brief = "—"
+    sentinel_brief = "—"
     try:
-        brief_path = os.path.join(BASE, ".cinder-briefing.md")
+        brief_path = os.path.join(BASE, ".sentinel-briefing.md")
         if os.path.exists(brief_path):
-            cinder_brief = open(brief_path).read().strip()
+            sentinel_brief = open(brief_path).read().strip()
     except Exception:
         pass
 
@@ -240,7 +240,7 @@ def _get_system_health():
         "soma_goals": [g["id"] for g in goals_data.get("goals", [])],
         "soma_fears": psyche_data.get("fears", []),
         "soma_dreams": psyche_data.get("dreams", []),
-        "cinder_brief": cinder_brief,
+        "sentinel_brief": sentinel_brief,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
