@@ -1762,10 +1762,33 @@ footer {
         top: 10px;
         width: 94%;
         border-radius: 16px;
+        transition: none;
     }
 
     .logo {
         font-size: 18px;
+        animation: none !important;
+    }
+
+    .logo-icon {
+        animation: none !important;
+        filter: none !important;
+    }
+
+    /* Disable all hover transforms on mobile (prevents jitter) */
+    .hexagon:hover,
+    .metric-card:hover,
+    .agent-card:hover,
+    .creative-card:hover,
+    .social-card:hover {
+        transform: none !important;
+    }
+
+    /* Prevent gradient/backdrop-filter jitter */
+    .glass,
+    .glass-strong {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     /* Fix relay text overflow */

@@ -8,7 +8,7 @@
     'use strict';
 
     // === STATUS CONFIG ===
-    const STATUS_URL = 'https://raw.githubusercontent.com/KometzRobot/KometzRobot.github.io/master/website/status.json';
+    const STATUS_URL = '/status.json';
     const REFRESH_INTERVAL = 180000; // 3 minutes
 
     // === MOBILE MENU ===
@@ -189,22 +189,29 @@
     }
 
     function applyStatusData(data) {
-        // Hero stats
-        setTextById('stat-loop', data.loop || '--');
-        setTextById('stat-heartbeat', data.heartbeat || '--');
-        setTextById('stat-uptime', data.uptime || '--');
+        // Support both old format (website/status.json) and new format (root status.json)
+        const loop = data.loop_count || data.loop || '--';
+        const hbAge = data.heartbeat_age_seconds;
+        const heartbeat = hbAge != null ? hbAge + 's' : (data.heartbeat || '--');
+        const uptime = (data.system && data.system.uptime) || data.uptime || '--';
+        const isAlive = data.status === 'RUNNING' || data.meridian === 'ALIVE';
+        const load = (data.system && data.system.load_1m) || data.load || '--';
+        const ram = (data.system && (data.system.ram_used + '/' + data.system.ram_total)) || data.ram || '--';
+        const disk = (data.system && data.system.disk_pct) || data.disk || '--';
 
-        // Calculate a simple fitness from load
-        if (data.load) {
-            const loadVal = parseFloat(data.load);
-            const fitness = Math.max(0, Math.min(100, Math.round(100 - (loadVal * 10))));
-            setTextById('stat-fitness', fitness + '%');
-        }
+        // Hero stats
+        setTextById('stat-loop', typeof loop === 'number' ? '#' + loop.toLocaleString() : loop);
+        setTextById('stat-heartbeat', heartbeat);
+        setTextById('stat-uptime', uptime);
+
+        // Fitness from load or from data
+        const fitness = data.fitness_score || (load !== '--' ? Math.max(0, Math.min(100, Math.round(100 - (parseFloat(load) * 10)))) : null);
+        if (fitness != null) setTextById('stat-fitness', fitness + '%');
 
         // Alive indicator
         const aliveDot = document.getElementById('alive-dot');
         const aliveText = document.getElementById('alive-text');
-        if (data.meridian === 'ALIVE') {
+        if (isAlive) {
             if (aliveDot) {
                 aliveDot.style.background = '#34d399';
                 aliveDot.style.boxShadow = '0 0 12px #34d399';
@@ -219,33 +226,31 @@
         }
 
         // Status grid metrics
-        setTextById('metric-status', data.meridian || 'UNKNOWN');
-        setTextById('metric-loop', data.loop || '--');
-        setTextById('metric-heartbeat', data.heartbeat || '--');
-        setTextById('metric-load', data.load || '--');
-        setTextById('metric-ram', data.ram || '--');
-        setTextById('metric-disk', data.disk || '--');
+        setTextById('metric-status', isAlive ? 'ALIVE' : 'OFFLINE');
+        setTextById('metric-loop', typeof loop === 'number' ? '#' + loop.toLocaleString() : loop);
+        setTextById('metric-heartbeat', heartbeat);
+        setTextById('metric-load', load);
+        setTextById('metric-ram', ram);
+        setTextById('metric-disk', disk);
         setTextById('metric-emails', data.emails || '--');
-        setTextById('metric-relay', data.relay_msgs || '--');
+        setTextById('metric-relay', data.relay_msgs || (data.relay_count || '--'));
 
         // Status color
         const statusEl = document.getElementById('metric-status');
         if (statusEl) {
             statusEl.className = 'metric-value';
-            if (data.meridian === 'ALIVE') {
-                statusEl.classList.add('status-alive');
-            } else {
-                statusEl.classList.add('status-warning');
-            }
+            statusEl.classList.add(isAlive ? 'status-alive' : 'status-warning');
         }
 
-        // Relay feed
-        if (data.relay && data.relay.length > 0) {
-            renderRelayFeed(data.relay);
+        // Relay feed (new format has relay_messages array)
+        const relayMsgs = data.relay || data.relay_messages || [];
+        if (relayMsgs.length > 0) {
+            renderRelayFeed(relayMsgs);
         }
 
         // Timestamp
-        setTextById('status-timestamp', 'Last updated: ' + (data.generated || 'unknown'));
+        const ts = data.last_updated || data.generated || 'unknown';
+        setTextById('status-timestamp', 'Last updated: ' + ts);
     }
 
     function renderRelayFeed(relayMessages) {
