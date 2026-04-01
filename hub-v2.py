@@ -784,9 +784,9 @@ button:hover{background:#7dd3fc}
 
 
 def _main_app():
-    """NUEVO MERIDIAN v3.0.0 — reads from hub-nuevo-template.html"""
+    """Loop Control Center v4.0.0 — reads from lcc-template.html"""
     try:
-        tmpl = os.path.join(BASE, "hub-nuevo-template.html")
+        tmpl = os.path.join(BASE, "lcc-template.html")
         with open(tmpl) as f:
             return f.read()
     except Exception as e:
