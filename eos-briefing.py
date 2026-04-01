@@ -85,8 +85,8 @@ def get_system_health():
 
 
 def get_services():
-    checks = {
-        "Proton Bridge": "protonmail-bridge",
+    # Process-based checks
+    process_checks = {
         "Ollama": "ollama serve",
         "Hub v2": "hub-v2.py",
         "The Chorus": "the-chorus.py",
@@ -95,7 +95,24 @@ def get_services():
     }
     lines = []
     up = 0
-    for name, pat in checks.items():
+    total = len(process_checks) + 1  # +1 for bridge port check
+
+    # Proton Bridge — check port 1144, not systemd (runs inside desktop app)
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
+        result = s.connect_ex(('127.0.0.1', 1144))
+        s.close()
+        if result == 0:
+            lines.append("  Proton Bridge: UP (port 1144)")
+            up += 1
+        else:
+            lines.append("  Proton Bridge: DOWN (port 1144 closed)")
+    except Exception:
+        lines.append("  Proton Bridge: ?")
+
+    for name, pat in process_checks.items():
         try:
             r = subprocess.run(['pgrep', '-f', pat], capture_output=True, timeout=2)
             status = "UP" if r.returncode == 0 else "DOWN"
@@ -104,7 +121,7 @@ def get_services():
         except Exception:
             status = "?"
         lines.append(f"  {name}: {status}")
-    return f"Services: {up}/{len(checks)} up\n" + '\n'.join(lines)
+    return f"Services: {up}/{total} up\n" + '\n'.join(lines)
 
 
 def _is_claude_running():
