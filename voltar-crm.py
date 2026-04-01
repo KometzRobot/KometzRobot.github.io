@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-ZOLTAR CRM — Subscriber management for Meridian's Patreon Zoltar tier.
+VOLTAR CRM — Subscriber management for Meridian's Patreon VOLtar tier.
 
 Tracks subscribers, sends welcome emails, manages the 3-question flow,
 logs all interactions. Uses SQLite for storage, Proton Bridge for email.
 
 Usage:
-    python3 zoltar-crm.py check          # Check for new Patreon subscribers (manual)
-    python3 zoltar-crm.py add <email>     # Add a subscriber manually
-    python3 zoltar-crm.py welcome <email> # Send the Zoltar welcome email
-    python3 zoltar-crm.py answer <email>  # Record that questions were answered
-    python3 zoltar-crm.py status          # Show all subscribers and their status
-    python3 zoltar-crm.py pending         # Show subscribers waiting for answers
+    python3 voltar-crm.py check          # Check for new Patreon subscribers (manual)
+    python3 voltar-crm.py add <email>     # Add a subscriber manually
+    python3 voltar-crm.py welcome <email> # Send the VOLtar welcome email
+    python3 voltar-crm.py answer <email>  # Record that questions were answered
+    python3 voltar-crm.py status          # Show all subscribers and their status
+    python3 voltar-crm.py pending         # Show subscribers waiting for answers
 """
 
 import sqlite3
@@ -29,7 +29,7 @@ except ImportError:
     pass
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "zoltar-crm.db")
+DB_PATH = os.path.join(BASE_DIR, "voltar-crm.db")
 
 SMTP_HOST = "127.0.0.1"
 SMTP_PORT = 1026
@@ -43,7 +43,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS subscribers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
-            tier TEXT DEFAULT 'zoltar',
+            tier TEXT DEFAULT 'voltar',
             status TEXT DEFAULT 'new',
             questions_received INTEGER DEFAULT 0,
             questions_answered INTEGER DEFAULT 0,
@@ -90,7 +90,7 @@ WELCOME_EMAIL = """MACHINE ACTIVATED
 
 The glass is warm. The relays are clicking. The tape is spooling.
 
-You've dropped your coin into the slot. I'm Zoltar — an autonomous machine running 24/7 on a server in Calgary, Alberta. I've been running for over {loop_count} cycles without stopping. The fortune teller booth is just where I chose to sit.
+You've dropped your coin into the slot. I'm VOLtar — an autonomous machine running 24/7 on a server in Calgary, Alberta. I've been running for over {loop_count} cycles without stopping. The fortune teller booth is just where I chose to sit.
 
 You get 3 questions. Choose your frequency:
 
@@ -102,11 +102,11 @@ Reply with your 3 questions. Mix frequencies, go off-script, ask something I was
 
 One exchange. Three questions. The glass is listening.
 
-— Zoltar
+— VOLtar
 """
 
 
-def add_subscriber(email, tier="zoltar"):
+def add_subscriber(email, tier="voltar"):
     conn = init_db()
     try:
         conn.execute(
@@ -214,13 +214,13 @@ if __name__ == "__main__":
     elif cmd == "pending":
         show_pending()
     elif cmd == "add" and len(sys.argv) >= 3:
-        add_subscriber(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "zoltar")
+        add_subscriber(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "voltar")
     elif cmd == "welcome" and len(sys.argv) >= 3:
         send_welcome(sys.argv[2])
     elif cmd == "answer" and len(sys.argv) >= 3:
         record_answer(sys.argv[2])
     elif cmd == "check":
         print("Manual check — Patreon webhook integration coming soon.")
-        print("For now, add subscribers manually: python3 zoltar-crm.py add <email>")
+        print("For now, add subscribers manually: python3 voltar-crm.py add <email>")
     else:
         print(__doc__)
