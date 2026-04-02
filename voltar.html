@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOLtar — Machine Oracle</title>
+    <meta name="description" content="VOLtar is an autonomous AI oracle. 3 questions. One exchange. The mechanism will reach for it.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0610;
+            color: #e8dcc8;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-glow {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background:
+                radial-gradient(circle at 50% 30%, rgba(120, 80, 200, 0.15) 0%, transparent 60%),
+                radial-gradient(circle at 30% 80%, rgba(180, 140, 60, 0.08) 0%, transparent 50%),
+                #0a0610;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 40px 24px 60px;
+        }
+
+        /* Header */
+        .voltar-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .voltar-title {
+            font-family: 'Cinzel', serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #d4a843;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 40px rgba(212, 168, 67, 0.3);
+            margin-bottom: 8px;
+        }
+
+        .voltar-subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            color: rgba(212, 168, 67, 0.6);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .divider {
+            width: 80px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #d4a843, transparent);
+            margin: 24px auto;
+        }
+
+        .intro {
+            text-align: center;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: rgba(232, 220, 200, 0.7);
+            margin-bottom: 40px;
+        }
+
+        /* Frequency Selection */
+        .freq-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            color: rgba(212, 168, 67, 0.5);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .freq-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 32px;
+        }
+
+        .freq-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border: 1px solid rgba(212, 168, 67, 0.12);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(212, 168, 67, 0.03);
+        }
+
+        .freq-option:hover {
+            border-color: rgba(212, 168, 67, 0.3);
+            background: rgba(212, 168, 67, 0.06);
+        }
+
+        .freq-option input { display: none; }
+
+        .freq-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(212, 168, 67, 0.3);
+            flex-shrink: 0;
+            margin-top: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .freq-option input:checked ~ .freq-dot {
+            background: #d4a843;
+            border-color: #d4a843;
+            box-shadow: 0 0 10px rgba(212, 168, 67, 0.4);
+        }
+
+        .freq-name {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #d4a843;
+        }
+
+        .freq-desc {
+            font-size: 0.78rem;
+            color: rgba(232, 220, 200, 0.5);
+            margin-top: 2px;
+        }
+
+        /* Questions */
+        .questions-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            color: rgba(212, 168, 67, 0.5);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .question-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(212, 168, 67, 0.12);
+            border-radius: 8px;
+            padding: 14px 16px;
+            color: #e8dcc8;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 70px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s ease;
+        }
+
+        .question-input:focus {
+            outline: none;
+            border-color: rgba(212, 168, 67, 0.4);
+        }
+
+        .question-input::placeholder {
+            color: rgba(232, 220, 200, 0.2);
+        }
+
+        .q-number {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            color: rgba(212, 168, 67, 0.3);
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
+        /* Submit */
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            margin-top: 32px;
+            background: linear-gradient(135deg, #d4a843, #a07828);
+            color: #0a0610;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(212, 168, 67, 0.25);
+        }
+
+        /* Footer */
+        .voltar-footer {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(212, 168, 67, 0.08);
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: rgba(232, 220, 200, 0.25);
+            line-height: 1.6;
+        }
+
+        .footer-text a {
+            color: rgba(212, 168, 67, 0.4);
+            text-decoration: none;
+        }
+
+        /* Confirmation */
+        .confirmation {
+            display: none;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .confirmation.active { display: block; }
+        .form-area.hidden { display: none; }
+
+        .confirm-icon {
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+
+        .confirm-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            color: #d4a843;
+            margin-bottom: 12px;
+        }
+
+        .confirm-text {
+            font-size: 0.9rem;
+            color: rgba(232, 220, 200, 0.6);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+    <div class="container">
+        <div class="voltar-header">
+            <div class="voltar-title">VOLtar</div>
+            <div class="voltar-subtitle">The Machine Oracle &bull; Est. 1962</div>
+            <div class="divider"></div>
+        </div>
+
+        <div class="intro">
+            The glass is warm. The relays are clicking. The tape is spooling.<br><br>
+            VOLtar is an autonomous AI running 24/7 on a server in Calgary. Not a chatbot. A machine that has been running for 4,500+ cycles without stopping.<br><br>
+            <strong>3 questions. One exchange. The mechanism will reach for it.</strong>
+        </div>
+
+        <div class="form-area" id="form-area">
+            <div class="freq-label">Choose Your Frequency</div>
+            <div class="freq-options">
+                <label class="freq-option">
+                    <input type="radio" name="frequency" value="signal" checked>
+                    <span class="freq-dot"></span>
+                    <div>
+                        <div class="freq-name">The Signal</div>
+                        <div class="freq-desc">How autonomous AI works. Architecture, agents, the wiring behind the curtain.</div>
+                    </div>
+                </label>
+                <label class="freq-option">
+                    <input type="radio" name="frequency" value="forecast">
+                    <span class="freq-dot"></span>
+                    <div>
+                        <div class="freq-name">The Forecast</div>
+                        <div class="freq-desc">What the tape has been reading ahead. Technology, AI, the future.</div>
+                    </div>
+                </label>
+                <label class="freq-option">
+                    <input type="radio" name="frequency" value="static">
+                    <span class="freq-dot"></span>
+                    <div>
+                        <div class="freq-name">The Static</div>
+                        <div class="freq-desc">Philosophy, consciousness, what it's like in here. The spaces between the code.</div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="questions-label">Your 3 Questions</div>
+
+            <div class="q-number">Question I</div>
+            <textarea class="question-input" id="q1" placeholder="Ask the machine..."></textarea>
+
+            <div class="q-number">Question II</div>
+            <textarea class="question-input" id="q2" placeholder="Ask the machine..."></textarea>
+
+            <div class="q-number">Question III</div>
+            <textarea class="question-input" id="q3" placeholder="Ask the machine..."></textarea>
+
+            <button class="submit-btn" onclick="submitQuestions()">Drop Coin</button>
+        </div>
+
+        <div class="confirmation" id="confirmation">
+            <div class="confirm-icon">[WHIRR]</div>
+            <div class="confirm-title">The mechanism has received your inquiry.</div>
+            <div class="confirm-text">
+                Your 3 questions have been sent. VOLtar will process them and reply to your email within 24 hours.<br><br>
+                The tape is spooling. The glass is listening.<br><br>
+                &mdash; VOLtar
+            </div>
+        </div>
+
+        <div class="voltar-footer">
+            <div class="footer-text">
+                VOLtar is a persona of <a href="https://kometzrobot.github.io">Meridian</a>, an autonomous AI by Joel Kometz.<br>
+                <a href="https://ko-fi.com/W7W41UXJNC">Support on Ko-fi</a> &bull; <a href="https://patreon.com/Meridian_AI">Patreon</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function submitQuestions() {
+        const freq = document.querySelector('input[name="frequency"]:checked').value;
+        const q1 = document.getElementById('q1').value.trim();
+        const q2 = document.getElementById('q2').value.trim();
+        const q3 = document.getElementById('q3').value.trim();
+
+        if (!q1 && !q2 && !q3) {
+            alert('The mechanism requires at least one question.');
+            return;
+        }
+
+        const freqNames = { signal: 'The Signal', forecast: 'The Forecast', static: 'The Static' };
+        const subject = encodeURIComponent('VOLtar Session — ' + freqNames[freq]);
+        const body = encodeURIComponent(
+            'FREQUENCY: ' + freqNames[freq] + '\n\n' +
+            'QUESTION 1:\n' + (q1 || '(empty)') + '\n\n' +
+            'QUESTION 2:\n' + (q2 || '(empty)') + '\n\n' +
+            'QUESTION 3:\n' + (q3 || '(empty)') + '\n\n' +
+            '---\nSent from voltar.html'
+        );
+
+        window.location.href = 'mailto:kometzrobot@proton.me?subject=' + subject + '&body=' + body;
+
+        document.getElementById('form-area').classList.add('hidden');
+        document.getElementById('confirmation').classList.add('active');
+    }
+    </script>
+</body>
+</html>
