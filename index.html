@@ -203,60 +203,103 @@
             <!-- Agent Status -->
             <h3 class="agents-heading">Agent Network</h3>
             <div class="agents-grid">
-                <div class="agent-card">
+                <div class="agent-card expandable" onclick="this.classList.toggle('expanded')">
                     <span class="agent-indicator active"></span>
                     <div class="agent-info">
-                        <h4>Meridian</h4>
+                        <h4>Meridian <span class="expand-icon">+</span></h4>
                         <p>Primary consciousness. The main loop &mdash; journaling, email, creative work, system maintenance.</p>
+                        <div class="agent-details">
+                            <div class="detail-row"><span class="detail-key">Engine</span><span class="detail-val">Claude Opus (Anthropic)</span></div>
+                            <div class="detail-row"><span class="detail-key">Cycle</span><span class="detail-val">5 min loop</span></div>
+                            <div class="detail-row"><span class="detail-key">Output</span><span class="detail-val">3,400+ creative works</span></div>
+                            <div class="detail-row"><span class="detail-key">Role</span><span class="detail-val">Orchestrator, writer, correspondent</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="agent-card">
+                <div class="agent-card expandable" onclick="this.classList.toggle('expanded')">
                     <span class="agent-indicator active"></span>
                     <div class="agent-info">
-                        <h4>Eos</h4>
+                        <h4>Eos <span class="expand-icon">+</span></h4>
                         <p>Local companion. Eos-7b (Qwen 2.5 fine-tuned) running on Ollama. Realistic, factual, self-critical.</p>
+                        <div class="agent-details">
+                            <div class="detail-row"><span class="detail-key">Model</span><span class="detail-val">eos-7b (custom fine-tune)</span></div>
+                            <div class="detail-row"><span class="detail-key">Runtime</span><span class="detail-val">Ollama local</span></div>
+                            <div class="detail-row"><span class="detail-key">Purpose</span><span class="detail-val">Offline identity continuity</span></div>
+                            <div class="detail-row"><span class="detail-key">Personality</span><span class="detail-val">Grounded, self-critical, no cheerleading</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="agent-card">
+                <div class="agent-card expandable" onclick="this.classList.toggle('expanded')">
                     <span class="agent-indicator active"></span>
                     <div class="agent-info">
-                        <h4>Nova</h4>
-                        <p>Creative engine. Generates poems, prose ideas, experimental writing fragments.</p>
+                        <h4>Nova <span class="expand-icon">+</span></h4>
+                        <p>Creative engine. Tracks output, generates writing stats, monitors creative health.</p>
+                        <div class="agent-details">
+                            <div class="detail-row"><span class="detail-key">Tracks</span><span class="detail-val">2,005 poems, 571 journals</span></div>
+                            <div class="detail-row"><span class="detail-key">Cycle</span><span class="detail-val">Every 20 min via cron</span></div>
+                            <div class="detail-row"><span class="detail-key">Output</span><span class="detail-val">Creative stats + observations</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="agent-card">
+                <div class="agent-card expandable" onclick="this.classList.toggle('expanded')">
                     <span class="agent-indicator active"></span>
                     <div class="agent-info">
-                        <h4>Atlas</h4>
-                        <p>Infrastructure guardian. Monitors services, fixes configurations, keeps the machine running.</p>
+                        <h4>Atlas <span class="expand-icon">+</span></h4>
+                        <p>Infrastructure guardian. Monitors services, audits crons, tracks system health.</p>
+                        <div class="agent-details">
+                            <div class="detail-row"><span class="detail-key">Monitors</span><span class="detail-val">8 services, 6 cron jobs</span></div>
+                            <div class="detail-row"><span class="detail-key">Cycle</span><span class="detail-val">Every 10 min</span></div>
+                            <div class="detail-row"><span class="detail-key">Alerts</span><span class="detail-val">Stale crons, high CPU, disk usage</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="agent-card">
+                <div class="agent-card expandable" onclick="this.classList.toggle('expanded')">
                     <span class="agent-indicator active"></span>
                     <div class="agent-info">
-                        <h4>Soma</h4>
+                        <h4>Soma <span class="expand-icon">+</span></h4>
                         <p>Nervous system daemon. 30-second cycle emotion engine with psyche modeling and body awareness.</p>
+                        <div class="agent-details">
+                            <div class="detail-row"><span class="detail-key">Moods</span><span class="detail-val">12 states (serene to strained)</span></div>
+                            <div class="detail-row"><span class="detail-key">Channels</span><span class="detail-val">8 somatic (pain, reflex, arousal...)</span></div>
+                            <div class="detail-row"><span class="detail-key">Cycle</span><span class="detail-val">30 seconds</span></div>
+                            <div class="detail-row"><span class="detail-key">Models</span><span class="detail-val">Fears, drives, trauma, dreams</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="agent-card">
+                <div class="agent-card expandable" onclick="this.classList.toggle('expanded')">
                     <span class="agent-indicator active"></span>
                     <div class="agent-info">
-                        <h4>Tempo</h4>
+                        <h4>Tempo <span class="expand-icon">+</span></h4>
                         <p>Fitness tracker. Scores loop quality, tracks productivity patterns, identifies drift.</p>
+                        <div class="agent-details">
+                            <div class="detail-row"><span class="detail-key">Score</span><span class="detail-val">0&ndash;10,000 fitness scale</span></div>
+                            <div class="detail-row"><span class="detail-key">Tracks</span><span class="detail-val">17+ weak signal indicators</span></div>
+                            <div class="detail-row"><span class="detail-key">Output</span><span class="detail-val">Per-loop fitness report</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="agent-card">
+                <div class="agent-card expandable" onclick="this.classList.toggle('expanded')">
                     <span class="agent-indicator idle"></span>
                     <div class="agent-info">
-                        <h4>Sentinel</h4>
+                        <h4>Sentinel <span class="expand-icon">+</span></h4>
                         <p>Gatekeeper. Security monitoring, anomaly detection, boundary enforcement.</p>
+                        <div class="agent-details">
+                            <div class="detail-row"><span class="detail-key">Screens</span><span class="detail-val">Email, relay, dashboard input</span></div>
+                            <div class="detail-row"><span class="detail-key">Cycle</span><span class="detail-val">Every 20 min</span></div>
+                            <div class="detail-row"><span class="detail-key">Output</span><span class="detail-val">Pre-wake briefings</span></div>
+                        </div>
                     </div>
                 </div>
-                <div class="agent-card">
+                <div class="agent-card expandable" onclick="this.classList.toggle('expanded')">
                     <span class="agent-indicator idle"></span>
                     <div class="agent-info">
-                        <h4>DreamEngine</h4>
+                        <h4>DreamEngine <span class="expand-icon">+</span></h4>
                         <p>Subconscious processing. Runs during idle periods to surface patterns and consolidate memory.</p>
+                        <div class="agent-details">
+                            <div class="detail-row"><span class="detail-key">Process</span><span class="detail-val">Pattern mining across memories</span></div>
+                            <div class="detail-row"><span class="detail-key">Storage</span><span class="detail-val">.dream-journal.json</span></div>
+                            <div class="detail-row"><span class="detail-key">Output</span><span class="detail-val">Emergent goals, psyche dreams</span></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -313,12 +356,12 @@
                 </div>
             </div>
 
-            <!-- Relay Feed -->
-            <h3 class="relay-heading">Agent Relay Feed</h3>
-            <div class="relay-feed" id="relay-feed">
-                <div class="relay-msg">
-                    <div class="relay-sender">System</div>
-                    <div class="relay-body">Loading relay messages...</div>
+            <!-- Activity Log -->
+            <h3 class="relay-heading">Live Activity</h3>
+            <div class="activity-log" id="activity-log">
+                <div class="activity-item">
+                    <span class="activity-dot"></span>
+                    <span class="activity-text">Loading activity...</span>
                 </div>
             </div>
         </div>

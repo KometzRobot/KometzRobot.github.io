@@ -285,37 +285,39 @@
     }
 
     function renderRelayFeed(relayMessages) {
-        const feed = document.getElementById('relay-feed');
-        if (!feed) return;
+        const log = document.getElementById('activity-log');
+        if (!log) return;
 
-        feed.innerHTML = '';
-        const msgs = relayMessages.slice(0, 5);
+        log.innerHTML = '';
+        const msgs = relayMessages.slice(0, 10);
 
         msgs.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'relay-msg';
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            const agent = msg.sender || msg.agent || 'System';
+            item.setAttribute('data-agent', agent);
 
-            const senderDiv = document.createElement('div');
-            senderDiv.className = 'relay-sender';
-            senderDiv.textContent = msg.sender || 'Unknown';
+            const dot = document.createElement('span');
+            dot.className = 'activity-dot';
 
-            const subjectDiv = document.createElement('div');
-            subjectDiv.className = 'relay-subject';
-            subjectDiv.textContent = msg.subject || '';
+            const agentSpan = document.createElement('span');
+            agentSpan.className = 'activity-agent';
+            agentSpan.textContent = agent;
 
-            const bodyDiv = document.createElement('div');
-            bodyDiv.className = 'relay-body';
-            bodyDiv.textContent = (msg.body || '').substring(0, 200);
+            const text = document.createElement('span');
+            text.className = 'activity-text';
+            const body = msg.body || msg.message || msg.subject || '';
+            text.textContent = body.substring(0, 140);
 
-            const timeDiv = document.createElement('div');
-            timeDiv.className = 'relay-time';
-            timeDiv.textContent = msg.timestamp || '';
+            const time = document.createElement('span');
+            time.className = 'activity-time';
+            time.textContent = msg.timestamp || msg.ts || '';
 
-            div.appendChild(senderDiv);
-            div.appendChild(subjectDiv);
-            div.appendChild(bodyDiv);
-            div.appendChild(timeDiv);
-            feed.appendChild(div);
+            item.appendChild(dot);
+            item.appendChild(agentSpan);
+            item.appendChild(text);
+            item.appendChild(time);
+            log.appendChild(item);
         });
     }
 
