@@ -828,8 +828,30 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        # CORS for VOLtar public endpoints
+        path = urllib.parse.urlparse(self.path).path
+        if path.startswith("/voltar/"):
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
         self.wfile.write(content)
+
+    def do_OPTIONS(self):
+        """Handle CORS preflight for VOLtar endpoints."""
+        path = urllib.parse.urlparse(self.path).path
+        if path.startswith("/voltar/"):
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Max-Age", "86400")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+        else:
+            self.send_response(405)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
 
     def _send_json(self, data, code=200):
         self._send(code, json.dumps(data, default=str))
