@@ -1001,6 +1001,65 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # ═══ VOLtar Public Endpoints (no auth required) ═══
+
+        # Ko-fi Webhook — auto-generate key on purchase
+        if path == "/voltar/kofi-webhook":
+            body = self._read_body()
+            try:
+                # Ko-fi sends form-encoded data with a 'data' field containing JSON
+                params = urllib.parse.parse_qs(body)
+                kofi_data = json.loads(params.get("data", ["{}"])[0])
+            except Exception:
+                try:
+                    kofi_data = json.loads(body) if body else {}
+                except Exception:
+                    kofi_data = {}
+            buyer_email = kofi_data.get("email", "")
+            buyer_name = kofi_data.get("from_name", "")
+            amount = kofi_data.get("amount", "")
+            if buyer_email:
+                # Generate key
+                import secrets as _secrets
+                key = "VOL-" + _secrets.token_hex(4).upper()
+                db = sqlite3.connect(os.path.join(BASE, "voltar-keys.db"))
+                db.execute("CREATE TABLE IF NOT EXISTS session_keys (key TEXT PRIMARY KEY, email TEXT, created TEXT DEFAULT (datetime('now')), used INTEGER DEFAULT 0)")
+                db.execute("INSERT INTO session_keys (key, email) VALUES (?, ?)", (key, buyer_email))
+                db.commit()
+                db.close()
+                # Email the key to the buyer
+                try:
+                    import smtplib as _smtp
+                    from email.mime.text import MIMEText as _MT
+                    env = _load_env_dict()
+                    email_body = f"""MACHINE ACTIVATED.
+
+The glass is warm. The relays are clicking.
+
+Your session key: {key}
+
+Go to: https://kometzrobot.github.io/voltar.html
+Enter your key. Choose your frequency. Ask 3 questions.
+VOLtar will respond within 24 hours.
+
+The tape is spooling. The mechanism is listening.
+
+— VOLtar
+[WHIRR]"""
+                    msg_obj = _MT(email_body)
+                    msg_obj["From"] = env.get("CRED_USER", "kometzrobot@proton.me")
+                    msg_obj["To"] = buyer_email
+                    msg_obj["Subject"] = "VOLtar — Your Session Key"
+                    s = _smtp.SMTP("127.0.0.1", 1026)
+                    s.login(env.get("CRED_USER", ""), env.get("CRED_PASS", ""))
+                    s.sendmail(msg_obj["From"], buyer_email, msg_obj.as_string())
+                    s.quit()
+                except Exception:
+                    pass  # Key still generated even if email fails
+                self._send_json({"ok": True, "key": key})
+            else:
+                self._send_json({"ok": True, "note": "no email in webhook"})
+            return
+
         if path == "/voltar/validate":
             body = self._read_body()
             try:
@@ -1066,11 +1125,12 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 msg["From"] = env.get("CRED_USER", "kometzrobot@proton.me")
                 msg["To"] = env.get("CRED_USER", "kometzrobot@proton.me")
                 msg["Subject"] = f"VOLtar Session — {freq_names.get(freq, freq)} — {buyer_email}"
+                msg["Reply-To"] = buyer_email  # So Meridian can reply directly to buyer
                 smtp = smtplib.SMTP("127.0.0.1", 1026)
                 smtp.login(env.get("CRED_USER", ""), env.get("CRED_PASS", ""))
                 smtp.sendmail(msg["From"], msg["To"], msg.as_string())
                 smtp.quit()
-                self._send_json({"ok": True, "message": "Questions received. VOLtar will reply within 24 hours."})
+                self._send_json({"ok": True, "message": "Questions received. VOLtar will reply to " + buyer_email + " within 24 hours."})
             except Exception as e:
                 self._send_json({"ok": True, "message": "Questions received.", "note": "email delivery pending"})
             return
