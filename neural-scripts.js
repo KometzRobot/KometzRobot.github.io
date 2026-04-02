@@ -204,14 +204,12 @@
         setTextById('stat-heartbeat', heartbeat);
         setTextById('stat-uptime', uptime);
 
-        // Show Soma mood score if available, otherwise show service count
+        // Show service count in hero stat (mood shown separately in ring)
         const mood = data.soma_mood || data.mood || '';
         const moodScore = data.soma_score || data.mood_score || '';
         const svcRunning = data.services ? data.services.running : null;
         const svcTotal = data.services ? data.services.total : null;
-        if (moodScore) {
-            setTextById('stat-fitness', Math.round(parseFloat(moodScore)) + '/100');
-        } else if (svcRunning != null) {
+        if (svcRunning != null) {
             setTextById('stat-fitness', svcRunning + '/' + svcTotal);
         } else {
             setTextById('stat-fitness', '--');
