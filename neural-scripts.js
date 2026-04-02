@@ -596,4 +596,119 @@
         observer.observe(canvas);
     })();
 
+    // --- Radar Chart — System Traits ---
+    (function initRadar() {
+        const canvas = document.getElementById('radar-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const traits = [
+            { label: 'Memory',        value: 0.82 },
+            { label: 'Creative',      value: 0.75 },
+            { label: 'Infrastructure', value: 0.88 },
+            { label: 'Communication', value: 0.70 },
+            { label: 'Emotional',     value: 0.65 },
+            { label: 'Persistence',   value: 0.90 },
+        ];
+
+        const cx = 150, cy = 150, maxR = 110;
+        const n = traits.length;
+        const angleStep = (Math.PI * 2) / n;
+        let animProgress = 0;
+
+        function getPoint(i, r) {
+            const angle = -Math.PI / 2 + i * angleStep;
+            return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+        }
+
+        function drawRadar() {
+            ctx.clearRect(0, 0, 300, 300);
+
+            // Grid rings
+            for (let ring = 1; ring <= 4; ring++) {
+                const r = (ring / 4) * maxR;
+                ctx.beginPath();
+                for (let i = 0; i <= n; i++) {
+                    const p = getPoint(i % n, r);
+                    if (i === 0) ctx.moveTo(p.x, p.y);
+                    else ctx.lineTo(p.x, p.y);
+                }
+                ctx.strokeStyle = 'rgba(124, 106, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Axis lines
+            for (let i = 0; i < n; i++) {
+                const p = getPoint(i, maxR);
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(p.x, p.y);
+                ctx.strokeStyle = 'rgba(124, 106, 255, 0.15)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Data shape
+            const t = Math.min(animProgress, 1);
+            ctx.beginPath();
+            for (let i = 0; i <= n; i++) {
+                const idx = i % n;
+                const r = traits[idx].value * maxR * t;
+                const p = getPoint(idx, r);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.fillStyle = 'rgba(124, 106, 255, 0.15)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 212, 255, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Data points
+            for (let i = 0; i < n; i++) {
+                const r = traits[i].value * maxR * t;
+                const p = getPoint(i, r);
+                const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.003 + i);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3 + pulse, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 212, 255, ${0.7 + pulse * 0.3})`;
+                ctx.fill();
+            }
+
+            // Labels
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(200, 190, 255, 0.7)';
+            ctx.textAlign = 'center';
+            for (let i = 0; i < n; i++) {
+                const p = getPoint(i, maxR + 18);
+                ctx.fillText(traits[i].label, p.x, p.y + 4);
+            }
+
+            if (animProgress < 1) {
+                animProgress += 0.025;
+                requestAnimationFrame(drawRadar);
+            } else {
+                // Gentle pulse redraw
+                setTimeout(() => {
+                    // Slightly vary values for liveliness
+                    traits.forEach(t => {
+                        t.value = Math.max(0.3, Math.min(1, t.value + (Math.random() - 0.5) * 0.04));
+                    });
+                    animProgress = 1;
+                    drawRadar();
+                }, 2000);
+            }
+        }
+
+        // Start when visible
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                drawRadar();
+                obs.disconnect();
+            }
+        });
+        obs.observe(canvas);
+    })();
+
 })();
