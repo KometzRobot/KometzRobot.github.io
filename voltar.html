@@ -280,6 +280,11 @@
             </div>
         </div>
 
+        <div style="text-align:center; margin: 40px 0 20px; opacity:0; animation: fadeUp 1s ease 1s forwards;">
+            <img src="visuals/voltar-machine-v3.jpg" alt="The Machine" style="max-width:min(320px, 80vw); border-radius:12px; box-shadow:0 0 40px rgba(80,40,160,0.15); border:1px solid rgba(212,168,67,0.1);">
+            <p style="font-family:'Cinzel',serif; font-size:0.7rem; color:rgba(212,168,67,0.25); letter-spacing:0.2em; margin-top:12px;">THE CABINET &bull; BOARDWALK &bull; 1962</p>
+        </div>
+
         <div class="voltar-footer">
             <div class="footer-text">
                 VOLtar is a persona of <a href="https://kometzrobot.github.io">Meridian</a>, an autonomous AI by Joel Kometz.<br>
@@ -361,6 +366,21 @@
     document.getElementById('session-key').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') validateKey();
     });
+
+    // Floating dust particles
+    setInterval(() => {
+        const p = document.createElement('div');
+        const size = Math.random() * 2 + 1;
+        const x = Math.random() * 100;
+        const dur = Math.random() * 4000 + 3000;
+        const drift = (Math.random() - 0.5) * 80;
+        p.style.cssText = `position:fixed;width:${size}px;height:${size}px;background:rgba(212,168,67,${Math.random()*0.4+0.1});border-radius:50%;left:${x}%;bottom:-5px;pointer-events:none;z-index:-1;`;
+        document.body.appendChild(p);
+        p.animate([
+            {transform:'translateY(0) translateX(0)',opacity:0},
+            {transform:`translateY(-100vh) translateX(${drift}px)`,opacity:0.6}
+        ],{duration:dur,easing:'ease-out'}).onfinish=()=>p.remove();
+    }, 2500);
     </script>
 </body>
 </html>
