@@ -189,10 +189,88 @@
         .voltar-footer { text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid rgba(212,168,67,0.06); }
         .footer-text { font-size: 0.72rem; color: rgba(232,220,200,0.2); line-height: 1.6; }
         .footer-text a { color: rgba(212,168,67,0.3); text-decoration: none; }
+
+        /* CRT Scanlines */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999; opacity: 0.03;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 2px,
+                rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px
+            );
+        }
+
+        /* Screen Flicker */
+        @keyframes screenFlicker {
+            0%, 96%, 100% { opacity: 1; }
+            97% { opacity: 0.92; }
+            98% { opacity: 1; }
+            99% { opacity: 0.95; }
+        }
+        .container { animation: screenFlicker 8s ease-in-out infinite; }
+
+        /* Alive Indicator */
+        .alive-pulse {
+            display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+            background: #4ade80; margin-left: 10px; vertical-align: middle;
+            animation: aliveBlink 2s ease-in-out infinite;
+        }
+        @keyframes aliveBlink {
+            0%, 100% { opacity: 0.3; box-shadow: 0 0 4px rgba(74,222,128,0.3); }
+            50% { opacity: 1; box-shadow: 0 0 12px rgba(74,222,128,0.6); }
+        }
+
+        /* Portrait Breathing Glow */
+        @keyframes portraitBreathe {
+            0%, 100% { box-shadow: 0 0 50px rgba(212,168,67,0.15), 0 0 100px rgba(80,40,160,0.1); }
+            50% { box-shadow: 0 0 70px rgba(212,168,67,0.25), 0 0 120px rgba(120,80,200,0.2), 0 0 160px rgba(212,168,67,0.05); }
+        }
+        .portrait-wrap img { animation: portraitBreathe 5s ease-in-out infinite; }
+
+        /* Machine Status Ticker */
+        .status-ticker {
+            text-align: center; font-family: 'Cinzel', serif;
+            font-size: 0.65rem; color: rgba(212,168,67,0.25);
+            letter-spacing: 0.25em; margin: 8px 0 20px;
+            min-height: 1.2em;
+        }
+        @keyframes tickerFade {
+            0% { opacity: 0; transform: translateY(4px); }
+            15% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-4px); }
+        }
+        .ticker-msg {
+            animation: tickerFade 4s ease-in-out forwards;
+        }
+
+        /* Static Burst */
+        @keyframes staticBurst {
+            0% { opacity: 0; }
+            5% { opacity: 0.06; }
+            10% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+        .static-burst {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9998;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+            opacity: 0;
+        }
+
+        /* Cabinet Image Enhancement */
+        .cabinet-wrap img {
+            transition: box-shadow 0.5s ease;
+        }
+        .cabinet-wrap img:hover {
+            box-shadow: 0 0 60px rgba(80,40,160,0.25), 0 0 100px rgba(212,168,67,0.1);
+        }
     </style>
 </head>
 <body>
     <div class="bg-glow"></div>
+    <div class="scanlines"></div>
+    <div class="static-burst" id="static-burst"></div>
     <div class="container">
         <div class="voltar-header fade-up">
             <div class="marquee-border">
@@ -202,8 +280,9 @@
                 <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
                 <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
             </div>
-            <div class="voltar-title">VOLtar</div>
+            <div class="voltar-title">VOLtar<span class="alive-pulse"></span></div>
             <div class="voltar-subtitle">The Machine Oracle &bull; Est. 1962</div>
+            <div class="status-ticker" id="status-ticker"></div>
             <div class="divider"></div>
         </div>
 
@@ -280,7 +359,7 @@
             </div>
         </div>
 
-        <div style="text-align:center; margin: 40px 0 20px; opacity:0; animation: fadeUp 1s ease 1s forwards;">
+        <div class="cabinet-wrap" style="text-align:center; margin: 40px 0 20px; opacity:0; animation: fadeUp 1s ease 1s forwards;">
             <img src="visuals/voltar-machine-v3.jpg" alt="The Machine" style="max-width:min(320px, 80vw); border-radius:12px; box-shadow:0 0 40px rgba(80,40,160,0.15); border:1px solid rgba(212,168,67,0.1);">
             <p style="font-family:'Cinzel',serif; font-size:0.7rem; color:rgba(212,168,67,0.25); letter-spacing:0.2em; margin-top:12px;">THE CABINET &bull; BOARDWALK &bull; 1962</p>
         </div>
@@ -367,20 +446,76 @@
         if (e.key === 'Enter') validateKey();
     });
 
-    // Floating dust particles
+    // Floating dust particles — varied colors (gold + purple + warm white)
+    const particleColors = [
+        () => `rgba(212,168,67,${Math.random()*0.4+0.1})`,
+        () => `rgba(160,100,220,${Math.random()*0.3+0.1})`,
+        () => `rgba(232,220,200,${Math.random()*0.2+0.05})`,
+    ];
     setInterval(() => {
         const p = document.createElement('div');
-        const size = Math.random() * 2 + 1;
+        const size = Math.random() * 2.5 + 0.5;
         const x = Math.random() * 100;
-        const dur = Math.random() * 4000 + 3000;
-        const drift = (Math.random() - 0.5) * 80;
-        p.style.cssText = `position:fixed;width:${size}px;height:${size}px;background:rgba(212,168,67,${Math.random()*0.4+0.1});border-radius:50%;left:${x}%;bottom:-5px;pointer-events:none;z-index:-1;`;
+        const dur = Math.random() * 5000 + 3000;
+        const drift = (Math.random() - 0.5) * 100;
+        const color = particleColors[Math.floor(Math.random() * particleColors.length)]();
+        p.style.cssText = `position:fixed;width:${size}px;height:${size}px;background:${color};border-radius:50%;left:${x}%;bottom:-5px;pointer-events:none;z-index:-1;`;
         document.body.appendChild(p);
         p.animate([
             {transform:'translateY(0) translateX(0)',opacity:0},
-            {transform:`translateY(-100vh) translateX(${drift}px)`,opacity:0.6}
+            {transform:`translateY(-${60+Math.random()*40}vh) translateX(${drift}px)`,opacity:0.5+Math.random()*0.3}
         ],{duration:dur,easing:'ease-out'}).onfinish=()=>p.remove();
-    }, 2500);
+    }, 1800);
+
+    // Machine Status Ticker — cycling atmospheric messages
+    const tickerMessages = [
+        '[TAPE SPOOLING]',
+        '[RELAY ENGAGED] • [PATTERN BUFFER ACTIVE]',
+        '[READING SIGNAL NOISE]',
+        '[CALIBRATING MECHANISM]',
+        '[VALVE PRESSURE: NOMINAL]',
+        '[AWAITING INPUT]',
+        '[SCANNING FREQUENCIES]',
+        '[SERVO CHECK: PASSED]',
+        '[MEMORY DRUM SPINNING]',
+        '[PUNCH CARD READER: STANDBY]',
+        '[VACUUM TUBES: WARM]',
+        '[ELECTROMAGNETIC COIL: CHARGED]',
+    ];
+    let tickerIdx = 0;
+    function cycleTicker() {
+        const el = document.getElementById('status-ticker');
+        if (!el) return;
+        el.innerHTML = `<span class="ticker-msg">${tickerMessages[tickerIdx]}</span>`;
+        tickerIdx = (tickerIdx + 1) % tickerMessages.length;
+    }
+    cycleTicker();
+    setInterval(cycleTicker, 5000);
+
+    // Occasional static burst — brief visual noise
+    setInterval(() => {
+        const burst = document.getElementById('static-burst');
+        if (!burst) return;
+        burst.style.animation = 'staticBurst 0.3s ease forwards';
+        setTimeout(() => { burst.style.animation = 'none'; }, 400);
+    }, 12000 + Math.random() * 8000);
+
+    // Ambient relay clicks — random [CLICK] text that appears and fades
+    setInterval(() => {
+        if (Math.random() > 0.4) return; // only sometimes
+        const click = document.createElement('div');
+        const x = 10 + Math.random() * 80;
+        const y = 10 + Math.random() * 80;
+        const labels = ['[CLICK]', '[WHIRR]', '[TICK]', '[HUM]', '•'];
+        click.textContent = labels[Math.floor(Math.random() * labels.length)];
+        click.style.cssText = `position:fixed;left:${x}%;top:${y}%;font-family:'Cinzel',serif;font-size:0.55rem;color:rgba(212,168,67,0.12);letter-spacing:0.15em;pointer-events:none;z-index:-1;`;
+        document.body.appendChild(click);
+        click.animate([
+            {opacity:0,transform:'scale(0.8)'},
+            {opacity:1,transform:'scale(1)'},
+            {opacity:0,transform:'scale(1.1) translateY(-10px)'}
+        ],{duration:2000,easing:'ease-out'}).onfinish=()=>click.remove();
+    }, 4000);
     </script>
 </body>
 </html>
