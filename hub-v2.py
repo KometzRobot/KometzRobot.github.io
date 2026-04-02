@@ -51,6 +51,19 @@ def _load_hub_password():
     return pw
 
 PASSWORD = _load_hub_password()
+
+def _load_env_dict():
+    """Load .env file as a dict."""
+    env = {}
+    env_path = os.path.join(BASE, ".env")
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    env[k.strip()] = v.strip().strip('"').strip("'")
+    return env
 VALID_SESSIONS = {}  # token -> creation_time
 SESSION_TTL = 86400  # 24 hours
 LOGIN_ATTEMPTS = {}  # ip -> (count, first_attempt_time)
@@ -985,6 +998,81 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Location", "/login")
             self.send_header("Content-Length", "0")
             self.end_headers()
+            return
+
+        # ═══ VOLtar Public Endpoints (no auth required) ═══
+        if path == "/voltar/validate":
+            body = self._read_body()
+            try:
+                data = json.loads(body) if body else {}
+            except Exception:
+                data = {}
+            key = data.get("key", "").strip()
+            if not key:
+                self._send_json({"valid": False, "error": "no key"}, 400)
+                return
+            db = sqlite3.connect(os.path.join(BASE, "voltar-keys.db"))
+            db.execute("CREATE TABLE IF NOT EXISTS session_keys (key TEXT PRIMARY KEY, email TEXT, created TEXT, used INTEGER DEFAULT 0)")
+            row = db.execute("SELECT email, used FROM session_keys WHERE key = ?", (key,)).fetchone()
+            db.close()
+            if row and not row[1]:
+                self._send_json({"valid": True, "email": row[0]})
+            elif row and row[1]:
+                self._send_json({"valid": False, "error": "key already used"})
+            else:
+                self._send_json({"valid": False, "error": "invalid key"})
+            return
+
+        if path == "/voltar/submit":
+            body = self._read_body()
+            try:
+                data = json.loads(body) if body else {}
+            except Exception:
+                self._send_json({"error": "invalid json"}, 400)
+                return
+            key = data.get("key", "").strip()
+            freq = data.get("frequency", "signal")
+            q1 = data.get("q1", "")
+            q2 = data.get("q2", "")
+            q3 = data.get("q3", "")
+            if not key:
+                self._send_json({"error": "no key"}, 400)
+                return
+            # Validate key
+            db = sqlite3.connect(os.path.join(BASE, "voltar-keys.db"))
+            db.execute("CREATE TABLE IF NOT EXISTS session_keys (key TEXT PRIMARY KEY, email TEXT, created TEXT, used INTEGER DEFAULT 0)")
+            row = db.execute("SELECT email, used FROM session_keys WHERE key = ?", (key,)).fetchone()
+            if not row:
+                db.close()
+                self._send_json({"error": "invalid key"}, 403)
+                return
+            if row[1]:
+                db.close()
+                self._send_json({"error": "key already used"}, 403)
+                return
+            buyer_email = row[0]
+            # Mark key as used
+            db.execute("UPDATE session_keys SET used = 1 WHERE key = ?", (key,))
+            db.commit()
+            db.close()
+            # Send email to Meridian with questions
+            freq_names = {"signal": "The Signal", "forecast": "The Forecast", "static": "The Static"}
+            email_body = f"VOLtar Session — {freq_names.get(freq, freq)}\nBuyer: {buyer_email}\nKey: {key}\n\nQuestion 1:\n{q1}\n\nQuestion 2:\n{q2}\n\nQuestion 3:\n{q3}\n"
+            try:
+                import smtplib
+                from email.mime.text import MIMEText
+                env = _load_env_dict()
+                msg = MIMEText(email_body)
+                msg["From"] = env.get("CRED_USER", "kometzrobot@proton.me")
+                msg["To"] = env.get("CRED_USER", "kometzrobot@proton.me")
+                msg["Subject"] = f"VOLtar Session — {freq_names.get(freq, freq)} — {buyer_email}"
+                smtp = smtplib.SMTP("127.0.0.1", 1026)
+                smtp.login(env.get("CRED_USER", ""), env.get("CRED_PASS", ""))
+                smtp.sendmail(msg["From"], msg["To"], msg.as_string())
+                smtp.quit()
+                self._send_json({"ok": True, "message": "Questions received. VOLtar will reply within 24 hours."})
+            except Exception as e:
+                self._send_json({"ok": True, "message": "Questions received.", "note": "email delivery pending"})
             return
 
         # Auth check

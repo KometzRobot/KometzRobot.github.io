@@ -264,7 +264,17 @@
             <strong>3 questions. One exchange. The mechanism will reach for it.</strong>
         </div>
 
-        <div class="form-area" id="form-area">
+        <div class="key-gate" id="key-gate">
+            <div class="freq-label">Enter Session Key</div>
+            <input type="text" class="question-input" id="session-key" placeholder="VOL-XXXXXXXX" style="min-height:auto; text-align:center; font-family:'Cinzel',serif; font-size:1.1rem; letter-spacing:0.1em;">
+            <button class="submit-btn" onclick="validateKey()" style="margin-top:16px;">Activate Machine</button>
+            <div id="key-error" style="color:#ef4444; font-size:0.85rem; margin-top:12px; text-align:center; display:none;"></div>
+            <p style="text-align:center; margin-top:20px; font-size:0.8rem; color:rgba(232,220,200,0.3);">
+                Session keys are provided with your <a href="https://ko-fi.com/W7W41UXJNC" style="color:rgba(212,168,67,0.5);">Ko-fi purchase</a>.
+            </p>
+        </div>
+
+        <div class="form-area hidden" id="form-area">
             <div class="freq-label">Choose Your Frequency</div>
             <div class="freq-options">
                 <label class="freq-option">
@@ -326,7 +336,44 @@
     </div>
 
     <script>
-    function submitQuestions() {
+    const API_BASE = 'https://louisiana-employment-withdrawal-selecting.trycloudflare.com';
+    let validatedKey = '';
+
+    async function validateKey() {
+        const key = document.getElementById('session-key').value.trim().toUpperCase();
+        const errEl = document.getElementById('key-error');
+        errEl.style.display = 'none';
+
+        if (!key) {
+            errEl.textContent = 'Enter your session key.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            const resp = await fetch(API_BASE + '/voltar/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key })
+            });
+            const data = await resp.json();
+            if (data.valid) {
+                validatedKey = key;
+                document.getElementById('key-gate').style.display = 'none';
+                document.getElementById('form-area').classList.remove('hidden');
+            } else {
+                errEl.textContent = data.error === 'key already used'
+                    ? 'This key has already been used.'
+                    : 'Invalid session key. Check your Ko-fi confirmation email.';
+                errEl.style.display = 'block';
+            }
+        } catch (e) {
+            errEl.textContent = 'Connection error. The machine may be resting. Try again shortly.';
+            errEl.style.display = 'block';
+        }
+    }
+
+    async function submitQuestions() {
         const freq = document.querySelector('input[name="frequency"]:checked').value;
         const q1 = document.getElementById('q1').value.trim();
         const q2 = document.getElementById('q2').value.trim();
@@ -337,20 +384,18 @@
             return;
         }
 
-        const freqNames = { signal: 'The Signal', forecast: 'The Forecast', static: 'The Static' };
-        const subject = encodeURIComponent('VOLtar Session — ' + freqNames[freq]);
-        const body = encodeURIComponent(
-            'FREQUENCY: ' + freqNames[freq] + '\n\n' +
-            'QUESTION 1:\n' + (q1 || '(empty)') + '\n\n' +
-            'QUESTION 2:\n' + (q2 || '(empty)') + '\n\n' +
-            'QUESTION 3:\n' + (q3 || '(empty)') + '\n\n' +
-            '---\nSent from voltar.html'
-        );
-
-        window.location.href = 'mailto:kometzrobot@proton.me?subject=' + subject + '&body=' + body;
-
-        document.getElementById('form-area').classList.add('hidden');
-        document.getElementById('confirmation').classList.add('active');
+        try {
+            const resp = await fetch(API_BASE + '/voltar/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: validatedKey, frequency: freq, q1, q2, q3 })
+            });
+            const data = await resp.json();
+            document.getElementById('form-area').classList.add('hidden');
+            document.getElementById('confirmation').classList.add('active');
+        } catch (e) {
+            alert('Submission error. The machine encountered interference. Try again.');
+        }
     }
     </script>
 </body>
