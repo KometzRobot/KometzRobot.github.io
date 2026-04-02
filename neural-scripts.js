@@ -258,6 +258,30 @@
         // Timestamp
         const ts = data.last_updated || data.generated || 'unknown';
         setTextById('status-timestamp', 'Last updated: ' + ts);
+
+        // Update radar chart with live data
+        if (window.updateRadar) {
+            const svcRatio = (svcRunning && svcTotal) ? svcRunning / svcTotal : 0.5;
+            const hbScore = hbAge != null ? Math.max(0, 1 - hbAge / 300) : 0.5;
+            const loadScore = data.system ? Math.max(0, 1 - data.system.load_1m / 4) : 0.5;
+            const moodVal = moodScore ? parseFloat(moodScore) / 100 : 0.5;
+            const diskPct = data.system ? parseInt(data.system.disk_pct) / 100 : 0.5;
+            const diskHealth = Math.max(0, 1 - diskPct);
+            const emailBacklog = data.email ? Math.max(0, 1 - data.email.unseen / 200) : 0.5;
+            window.updateRadar({
+                'Memory':         hbScore,
+                'Creative':       moodVal,
+                'Infrastructure': svcRatio,
+                'Communication':  emailBacklog,
+                'Emotional':      moodVal,
+                'Persistence':    loadScore,
+            });
+        }
+
+        // Update mood ring
+        if (mood && window.updateMoodRing) {
+            window.updateMoodRing(mood, moodScore ? Math.round(parseFloat(moodScore)) : 50);
+        }
     }
 
     function renderRelayFeed(relayMessages) {
@@ -610,6 +634,15 @@
             { label: 'Emotional',     value: 0.65 },
             { label: 'Persistence',   value: 0.90 },
         ];
+
+        // Expose update function for live status data
+        window.updateRadar = function(newValues) {
+            traits.forEach(t => {
+                if (newValues[t.label] !== undefined) {
+                    t.value = Math.max(0.1, Math.min(1, newValues[t.label]));
+                }
+            });
+        };
 
         const cx = 150, cy = 150, maxR = 110;
         const n = traits.length;
