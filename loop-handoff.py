@@ -55,6 +55,7 @@ EOS_REACT_STATE = os.path.join(BASE, ".eos-react-state.json")
 DASHBOARD_MSG = os.path.join(BASE, ".dashboard-messages.json")
 CONTEXT_FLAGS = os.path.join(BASE, ".context-flags.json")
 
+VOLTAR_DB = os.path.join(BASE, "voltar-keys.db")
 IMAP_HOST, IMAP_PORT = "127.0.0.1", 1144
 CRED_USER = os.environ.get("CRED_USER", os.environ.get("PROTON_USER", "kometzrobot@proton.me"))
 CRED_PASS = os.environ.get("CRED_PASS", "")
@@ -524,6 +525,23 @@ def write_handoff():
     if email_status.get("error"):
         lines.append(f"- Error: {email_status['error']}")
     lines.append("")
+
+    # VOLtar pending sessions
+    try:
+        if os.path.exists(VOLTAR_DB):
+            vconn = sqlite3.connect(VOLTAR_DB, timeout=3)
+            voltar_pending = vconn.execute(
+                "SELECT key, email, submitted FROM voltar_sessions WHERE responded=0"
+            ).fetchall()
+            vconn.close()
+            if voltar_pending:
+                lines.append("## PENDING VOLtar Sessions (HANDLE THESE)")
+                for key, vemail, submitted in voltar_pending:
+                    lines.append(f"- Key: {key[:8]}... | {vemail} | submitted {submitted}")
+                lines.append("- YOU write the reading personally. The quality IS the product.")
+                lines.append("")
+    except Exception:
+        pass
 
     # Joel dashboard messages
     if joel_dash:

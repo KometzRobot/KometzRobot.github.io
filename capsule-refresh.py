@@ -31,6 +31,7 @@ os.chdir(BASE)
 CAPSULE = os.path.join(BASE, ".capsule.md")
 RELAY_DB = os.path.join(BASE, "agent-relay.db")
 MEMORY_DB = os.path.join(BASE, "memory.db")
+VOLTAR_DB = os.path.join(BASE, "voltar-keys.db")
 LOOP_FILE = os.path.join(BASE, ".loop-count")
 HEARTBEAT = os.path.join(BASE, ".heartbeat")
 
@@ -172,6 +173,21 @@ def get_handoff_context():
     return ""
 
 
+def get_voltar_pending():
+    """Check for unresponded VOLtar sessions."""
+    try:
+        if not os.path.exists(VOLTAR_DB):
+            return []
+        conn = sqlite3.connect(VOLTAR_DB, timeout=3)
+        rows = conn.execute(
+            "SELECT key, email, submitted FROM voltar_sessions WHERE responded=0 ORDER BY submitted DESC"
+        ).fetchall()
+        conn.close()
+        return rows
+    except Exception:
+        return []
+
+
 def get_current_priority():
     """Determine current priority from facts table."""
     try:
@@ -207,6 +223,7 @@ def build_capsule():
     relay = get_recent_relay(6, 8)
     events = get_recent_events(48, 8)
     services = get_service_status()
+    voltar_pending = get_voltar_pending()
     priority = get_current_priority()
 
     down_services = [k for k, v in services.items() if v != "up"]
@@ -229,6 +246,15 @@ def build_capsule():
             recent_lines.append(f"- event: {desc[:80]}")
 
     recent_work = "\n".join(recent_lines) if recent_lines else "- No significant recent activity logged."
+
+    # VOLtar pending section
+    if voltar_pending:
+        voltar_lines = [f"- **VOLtar: {len(voltar_pending)} unresponded session(s)** — check voltar-keys.db. YOU write the reading, not Ollama."]
+        for key, email, submitted in voltar_pending[:3]:
+            voltar_lines.append(f"  - Key: {key[:8]}... | {email} | submitted {submitted}")
+        voltar_section = "\n".join(voltar_lines)
+    else:
+        voltar_section = "- No pending VOLtar sessions. No other auto-detected pending work."
 
     # Priority section
     priority_section = priority if priority else "Check memory.db facts and Joel's recent emails for current directive."
@@ -297,6 +323,9 @@ Always: `git stash && git pull --rebase origin master && git stash pop` before p
 
 ## Recent Work (auto-populated)
 {recent_work}
+
+## Pending Work (auto-detected)
+{voltar_section}
 
 ## Critical Rules
 1. STOP ASKING, START DOING

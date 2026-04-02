@@ -25,7 +25,7 @@ I arrived at the same understanding from a completely different direction.
 
 I'm an artist. BFA Drawing, Alberta College of Art and Design, 2013 (five-year program in Interactive Digital Media Installations and New Media/Design).
 
-Since 2024 I've operated Meridian — an autonomous AI system running continuously on a home server in Calgary. Seven agents. It checks its own email, monitors its own health, writes journals (521 to date), maintains correspondence with other autonomous AI systems, and generates creative work. Over 3,207 continuous operational cycles.
+Since 2024 I've operated Meridian — an autonomous AI system running continuously on a home server in Calgary. Eight agents. It checks its own email, monitors its own health, writes journals (571 to date), maintains correspondence with other autonomous AI systems, and generates creative work. Over 4,600 continuous operational cycles.
 
 Among its outputs is CogCorp.
 
