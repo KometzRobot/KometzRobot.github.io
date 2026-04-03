@@ -246,16 +246,87 @@ def _api_home():
     except Exception:
         pass
 
+    # Uptime
+    uptime = "?"
+    try:
+        uptime = subprocess.run(["uptime", "-p"], capture_output=True, text=True, timeout=5).stdout.strip()
+    except Exception:
+        pass
+
+    # Disk
+    disk = "?"
+    disk_pct = 0
+    try:
+        r = subprocess.run(["df", "-h", "/home"], capture_output=True, text=True, timeout=5)
+        parts = r.stdout.strip().split("\n")[-1].split()
+        disk = f"{parts[2]}/{parts[1]} ({parts[4]})"
+        disk_pct = float(parts[4].rstrip('%'))
+    except Exception:
+        pass
+
+    # Soma inner monologue + goals + dreams
+    inner_mono = _read_json(os.path.join(BASE, ".soma-inner-monologue.json"), {})
+    goals_data = _read_json(os.path.join(BASE, ".soma-goals.json"), {})
+    psyche_data = _read_json(os.path.join(BASE, ".soma-psyche.json"), {})
+    soma_inner = inner_mono.get("current", {}).get("text", "")
+    soma_goals = [g["id"] for g in goals_data.get("goals", [])]
+    soma_dreams = psyche_data.get("dreams", [])
+
+    # Services
+    services = {}
+    for svc in ["meridian-hub-v2", "symbiosense", "the-chorus", "loop-control-center"]:
+        try:
+            r = subprocess.run(["systemctl", "--user", "is-active", svc],
+                             capture_output=True, text=True, timeout=5)
+            services[svc] = r.stdout.strip()
+        except Exception:
+            services[svc] = "unknown"
+
+    # Agents (from relay)
+    agents = {}
+    agent_names = ["Meridian", "Soma", "Eos", "Nova", "Atlas", "Tempo", "Hermes", "Sentinel"]
+    try:
+        db = sqlite3.connect(RELAY_DB, timeout=3)
+        for name in agent_names:
+            row = db.execute(
+                "SELECT timestamp FROM agent_messages WHERE agent=? ORDER BY id DESC LIMIT 1",
+                (name,)
+            ).fetchone()
+            if row:
+                try:
+                    raw = row[0].replace("Z", "+00:00")
+                    ts = datetime.fromisoformat(raw)
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=timezone.utc)
+                    age = int((datetime.now(timezone.utc) - ts).total_seconds())
+                    agents[name] = {"last_seen": age, "status": "active" if age < 900 else "stale"}
+                except Exception:
+                    agents[name] = {"last_seen": -1, "status": "unknown"}
+            else:
+                agents[name] = {"last_seen": -1, "status": "unknown"}
+        db.close()
+    except Exception:
+        pass
+
     return {
         "heartbeat_age": hb_age,
         "heartbeat_status": hb_status,
         "loop": loop,
         "soma_mood": mood,
         "soma_score": score,
+        "soma_inner": soma_inner,
+        "soma_goals": soma_goals,
+        "soma_dreams": soma_dreams,
         "load": load_str,
         "load_val": load_val,
         "ram": ram_str,
         "ram_pct": ram_pct,
+        "memory": ram_str,
+        "disk": disk,
+        "disk_pct": disk_pct,
+        "uptime": uptime,
+        "agents": agents,
+        "services": services,
         "relay": relay,
         "dashboard": dash,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -350,8 +421,26 @@ def _api_creative():
                  glob.glob(os.path.join(BASE, "cogcorp-crawler.html"))
     g = len(game_files)
     total = p + j + cc + g
+    by_type = [
+        {"type": "poem", "count": p},
+        {"type": "journal", "count": j},
+        {"type": "cogcorp", "count": cc},
+        {"type": "game", "count": g},
+    ]
+    # Recent from DB
+    recent = []
+    try:
+        db = sqlite3.connect(MEMORY_DB, timeout=3)
+        rows = db.execute(
+            "SELECT type, title, created FROM creative ORDER BY created DESC LIMIT 5"
+        ).fetchall()
+        db.close()
+        recent = [{"type": r[0], "title": r[1], "date": r[2]} for r in rows]
+    except Exception:
+        pass
     return {
         "poems": p, "journals": j, "cogcorp": cc, "games": g, "total": total,
+        "by_type": by_type, "recent": recent,
         "archive_url": "https://kometzrobot.github.io/creative-archive.html",
     }
 
@@ -560,6 +649,14 @@ button:hover{opacity:.85}
 
 
 def _main_app():
+    """Loop Control Center v5.0.0 — loads from template file."""
+    try:
+        tmpl = os.path.join(BASE, "lcc-v5-template.html")
+        with open(tmpl) as f:
+            return f.read()
+    except Exception:
+        pass
+    # Fallback: inline v4 template
     return r"""<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8">
@@ -1413,10 +1510,54 @@ class LCCHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/creative":
             self._send_json(_api_creative())
         elif path == "/api/files":
-            subdir = qs.get("path", "")
+            subdir = qs.get("dir", qs.get("path", ""))
             self._send_json(_api_files(subdir))
         elif path == "/api/system":
             self._send_json(_api_system())
+        elif path == "/api/email":
+            count = min(int(qs.get("count", "15")), 50)
+            try:
+                import imaplib
+                import email as email_lib
+                from email.header import decode_header
+                env = {}
+                env_path = os.path.join(BASE, ".env")
+                if os.path.exists(env_path):
+                    with open(env_path) as f:
+                        for line in f:
+                            if "=" in line and not line.strip().startswith("#"):
+                                k, v = line.strip().split("=", 1)
+                                env[k] = v.strip('"').strip("'")
+                m = imaplib.IMAP4("127.0.0.1", 1144, timeout=5)
+                m.login(env.get("CRED_USER", ""), env.get("CRED_PASS", ""))
+                m.select("INBOX", readonly=True)
+                _, unseen_data = m.search(None, "UNSEEN")
+                unseen_count = len(unseen_data[0].split()) if unseen_data[0] else 0
+                _, all_data = m.search(None, "ALL")
+                all_ids = all_data[0].split() if all_data[0] else []
+                recent_ids = all_ids[-count:]
+                unseen_set = set(unseen_data[0].split()) if unseen_data[0] else set()
+                emails = []
+                for eid in reversed(recent_ids):
+                    _, msg_data = m.fetch(eid, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
+                    if msg_data[0] is None:
+                        continue
+                    msg = email_lib.message_from_bytes(msg_data[0][1])
+                    subj_parts = decode_header(msg.get("Subject", ""))
+                    subject = ""
+                    for part, enc in subj_parts:
+                        subject += part.decode(enc or "utf-8", errors="replace") if isinstance(part, bytes) else str(part)
+                    emails.append({
+                        "from": msg.get("From", ""),
+                        "subject": subject,
+                        "date": msg.get("Date", ""),
+                        "unseen": eid in unseen_set,
+                    })
+                m.close()
+                m.logout()
+                self._send_json({"emails": emails, "unseen_count": unseen_count})
+            except Exception as e:
+                self._send_json({"emails": [], "unseen_count": 0, "error": str(e)})
         else:
             self._send_json({"error": "not found"}, 404)
 

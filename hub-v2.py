@@ -1024,6 +1024,50 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                     self._send_json({"error": str(e)})
             else:
                 self._send_json({"error": "unknown log"}, 400)
+        elif path.path == "/lcc" or path.path == "/lcc/":
+            # Serve LCC template directly (uses hub auth, proxies API to LCC)
+            try:
+                tmpl = os.path.join(BASE, "lcc-v5-template.html")
+                with open(tmpl) as f:
+                    html = f.read()
+                # Rewrite API base to proxy through hub
+                html = html.replace("fetch('/api/", "fetch('/lcc-api/")
+                self._send(200, html, "text/html")
+            except Exception as e:
+                self._send(500, f"LCC template error: {e}", "text/plain")
+        elif path.path.startswith("/lcc-api/"):
+            # Proxy LCC API calls to port 8092
+            try:
+                api_path = "/api/" + path.path[9:]  # strip /lcc-api/ -> /api/
+                if path.query:
+                    api_path += "?" + path.query
+                # Auto-login to LCC using same password
+                import http.client
+                conn = http.client.HTTPConnection("127.0.0.1", 8092)
+                conn.request("POST", "/login",
+                    urllib.parse.urlencode({"password": PASSWORD or ""}),
+                    {"Content-Type": "application/x-www-form-urlencoded"})
+                login_resp = conn.getresponse()
+                lcc_cookie = ""
+                sc = login_resp.getheader("Set-Cookie", "")
+                if sc:
+                    lcc_cookie = sc.split(";")[0]
+                login_resp.read()
+                conn.close()
+                # Now fetch the API with the LCC cookie
+                conn2 = http.client.HTTPConnection("127.0.0.1", 8092)
+                conn2.request("GET", api_path, headers={"Cookie": lcc_cookie})
+                resp = conn2.getresponse()
+                data = resp.read()
+                ct = resp.getheader("Content-Type", "application/json")
+                conn2.close()
+                self.send_response(200)
+                self.send_header("Content-Type", ct)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                self._send_json({"error": f"LCC API: {e}"}, 502)
         elif path.path.startswith("/chorus"):
             # Proxy to The Chorus on port 8091
             try:
@@ -1302,6 +1346,87 @@ The tape is spooling. The mechanism is listening.
             else:
                 result = f"Unknown action: {action}"
             self._send_json({"result": result})
+
+        elif path.startswith("/lcc-api/"):
+            # Proxy LCC API POST calls
+            try:
+                api_path = "/api/" + path[9:]
+                import http.client
+                conn = http.client.HTTPConnection("127.0.0.1", 8092)
+                conn.request("POST", "/login",
+                    urllib.parse.urlencode({"password": PASSWORD or ""}),
+                    {"Content-Type": "application/x-www-form-urlencoded"})
+                login_resp = conn.getresponse()
+                lcc_cookie = ""
+                sc = login_resp.getheader("Set-Cookie", "")
+                if sc:
+                    lcc_cookie = sc.split(";")[0]
+                login_resp.read()
+                conn.close()
+                conn2 = http.client.HTTPConnection("127.0.0.1", 8092)
+                ct = self.headers.get("Content-Type", "application/json")
+                conn2.request("POST", api_path, body.encode() if body else b"",
+                    {"Cookie": lcc_cookie, "Content-Type": ct})
+                resp = conn2.getresponse()
+                data = resp.read()
+                rct = resp.getheader("Content-Type", "application/json")
+                conn2.close()
+                self.send_response(200)
+                self.send_header("Content-Type", rct)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                self._send_json({"error": f"LCC API: {e}"}, 502)
+            return
+
+        elif path.startswith("/lcc"):
+            # Legacy LCC proxy (unused)
+            try:
+                lcc_path = path[4:] or "/"
+                headers = {"Content-Type": "application/x-www-form-urlencoded"}
+                cookie = self.headers.get("Cookie", "")
+                if cookie:
+                    headers["Cookie"] = cookie
+                ct = self.headers.get("Content-Type", "")
+                if ct:
+                    headers["Content-Type"] = ct
+                req = urllib.request.Request(
+                    f"http://127.0.0.1:8092{lcc_path}",
+                    data=body.encode() if body else None,
+                    headers=headers,
+                    method="POST"
+                )
+                resp = urllib.request.urlopen(req, timeout=30)
+                rct = resp.headers.get("Content-Type", "application/json")
+                data = resp.read()
+                self.send_response(200)
+                self.send_header("Content-Type", rct)
+                self.send_header("Content-Length", str(len(data)))
+                set_cookie = resp.headers.get("Set-Cookie")
+                if set_cookie:
+                    self.send_header("Set-Cookie", set_cookie)
+                self.end_headers()
+                self.wfile.write(data)
+            except urllib.error.HTTPError as e:
+                # Forward redirects (302 from login)
+                if e.code == 302:
+                    self.send_response(302)
+                    loc = e.headers.get("Location", "/lcc/")
+                    if loc.startswith("/"):
+                        loc = "/lcc" + loc
+                    self.send_header("Location", loc)
+                    set_cookie = e.headers.get("Set-Cookie")
+                    if set_cookie:
+                        self.send_header("Set-Cookie", set_cookie)
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                else:
+                    err_msg = f"LCC error: {e}"
+                    self._send_json({"error": err_msg}, e.code)
+            except Exception as e:
+                err_msg = f"LCC unavailable: {e}"
+                self._send_json({"error": err_msg}, 502)
 
         elif path.startswith("/chorus"):
             # Proxy POST to The Chorus on port 8091

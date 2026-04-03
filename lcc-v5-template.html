@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Meridian — Loop Control Center</title>
+<meta name="theme-color" content="#0a0610">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   MERIDIAN LCC v5 — Instrument Panel / Artwork Theme
+   Warm gold + deep purple + cream on near-black
+   ========================================================= */
+
+:root {
+  /* Core palette */
+  --bg:       #0a0610;
+  --bg2:      #0f0b18;
+  --bg3:      #150f22;
+  --gold:     #d4a843;
+  --gold2:    #e8c070;
+  --gold-dim: rgba(212,168,67,0.12);
+  --gold-glow:rgba(212,168,67,0.08);
+  --purple:   #7c6aff;
+  --purple2:  #a48bff;
+  --purple-dim:rgba(124,106,255,0.13);
+  --purple-glow:rgba(124,106,255,0.06);
+  --cream:    #e8dcc8;
+  --cream2:   #c4b89a;
+  --cream3:   #7a6e5c;
+  --green:    #78d9a0;
+  --green-dim:rgba(120,217,160,0.12);
+  --amber:    #f0a040;
+  --amber-dim:rgba(240,160,64,0.12);
+  --red:      #e06060;
+  --red-dim:  rgba(224,96,96,0.12);
+  --sky:      #60c8d8;
+  --sky-dim:  rgba(96,200,216,0.12);
+
+  /* Borders */
+  --bdr:      rgba(212,168,67,0.10);
+  --bdr2:     rgba(212,168,67,0.20);
+  --bdr-hl:   rgba(212,168,67,0.35);
+
+  /* Surfaces */
+  --surf:     rgba(212,168,67,0.04);
+  --surf2:    rgba(212,168,67,0.07);
+  --surf3:    rgba(255,255,255,0.03);
+
+  /* Fonts */
+  --fc: 'Cinzel', 'Times New Roman', serif;
+  --fi: 'Inter', system-ui, sans-serif;
+  --fm: 'JetBrains Mono', monospace;
+
+  /* Radii */
+  --r-xl: 18px;
+  --r-lg: 13px;
+  --r-md: 9px;
+  --r-sm: 6px;
+
+  /* Shadows */
+  --sh1: 0 2px 8px rgba(0,0,0,0.4);
+  --sh2: 0 4px 20px rgba(0,0,0,0.5);
+  --sh-gold: 0 0 20px rgba(212,168,67,0.08);
+  --sh-purple: 0 0 20px rgba(124,106,255,0.10);
+}
+
+/* ---- RESET ---- */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
+html { scroll-behavior: smooth }
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: var(--fi);
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-x: hidden;
+  padding-top: 70px;
+  padding-bottom: 80px;
+  min-height: 100vh;
+}
+
+/* ---- CRT SCANLINES (atmospheric, not oppressive) ---- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+  pointer-events: none;
+  z-index: 1000;
+  mix-blend-mode: multiply;
+}
+
+/* ---- WARM AMBIENT GLOW ---- */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 40% at 30% 0%, rgba(212,168,67,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 100%, rgba(124,106,255,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 60% 50%, rgba(212,168,67,0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---- PARTICLE CANVAS ---- */
+#particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+/* ---- HEADER ---- */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 70px;
+  background: rgba(10,6,16,0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--bdr);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 14px;
+  z-index: 500;
+  box-shadow: 0 1px 0 rgba(212,168,67,0.05), var(--sh1);
+}
+
+.hdr-sigil {
+  width: 44px; height: 44px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--bdr2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fc);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--gold);
+  background: var(--gold-glow);
+  flex-shrink: 0;
+  box-shadow: inset 0 0 12px rgba(212,168,67,0.05), var(--sh-gold);
+  letter-spacing: 0;
+}
+
+.hdr-main { flex: 1; min-width: 0; }
+
+.hdr-name {
+  font-family: var(--fc);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.hdr-sub {
+  display: flex; align-items: center; gap: 8px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.hdr-loop {
+  font-family: var(--fm);
+  font-size: 0.68rem;
+  color: var(--cream3);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.hdr-loop span { color: var(--gold2); font-weight: 700; }
+
+.mood-pill {
+  font-family: var(--fi);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: var(--purple-dim);
+  color: var(--purple2);
+  border: 1px solid rgba(124,106,255,0.15);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.5s;
+}
+
+.hdr-r { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.hb-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-sm);
+  padding: 6px 12px;
+}
+
+#hb-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.hb-age {
+  font-family: var(--fm);
+  font-size: 11px;
+  color: var(--cream3);
+}
+
+.hdr-logout {
+  color: var(--cream3);
+  font-size: 11px;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  font-family: var(--fi);
+}
+.hdr-logout:hover { color: var(--cream); border-color: var(--bdr); }
+
+/* ---- BOTTOM NAV ---- */
+nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 76px;
+  background: rgba(10,6,16,0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--bdr);
+  z-index: 500;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  box-shadow: 0 -1px 0 rgba(212,168,67,0.05);
+}
+nav::-webkit-scrollbar { display: none }
+
+.nav-inner {
+  display: flex;
+  min-width: max-content;
+  height: 100%;
+}
+
+nav button {
+  min-width: 68px; flex: 1;
+  background: none; border: none;
+  color: var(--cream3);
+  font-family: var(--fi);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  padding: 10px 4px 14px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transition: color 0.2s;
+  position: relative;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+nav button .ico {
+  font-size: 16px; line-height: 1;
+  width: 38px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  transition: all 0.25s;
+}
+
+nav button.active { color: var(--gold); }
+nav button.active .ico {
+  background: var(--gold-dim);
+  color: var(--gold);
+  box-shadow: 0 0 10px rgba(212,168,67,0.15);
+}
+
+/* ---- PAGES ---- */
+.page {
+  display: none;
+  padding: 18px 16px 12px;
+  max-width: 880px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+.page.active {
+  display: block;
+  animation: fadeUp 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px) }
+  to   { opacity: 1; transform: none }
+}
+
+/* ---- SECTION LABEL ---- */
+.sl {
+  font-family: var(--fc);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--cream3);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin: 22px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sl::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--bdr2), transparent);
+}
+
+/* ---- CARDS ---- */
+.card {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-xl);
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--sh1);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.card:hover { border-color: var(--bdr2); box-shadow: var(--sh2); }
+
+.card .clbl {
+  font-family: var(--fc);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--cream3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+/* ---- HERO / IDENTITY CARD ---- */
+.id-card {
+  background:
+    linear-gradient(135deg, rgba(212,168,67,0.06) 0%, rgba(10,6,16,0) 40%),
+    linear-gradient(225deg, rgba(124,106,255,0.06) 0%, rgba(10,6,16,0) 50%),
+    var(--surf);
+  border: 1px solid var(--bdr2);
+  border-radius: var(--r-xl);
+  padding: 26px 24px 22px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sh1), var(--sh-gold);
+}
+
+.id-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--purple), transparent 80%);
+  opacity: 0.7;
+}
+
+.id-card::after {
+  content: 'M';
+  position: absolute;
+  right: -10px; bottom: -20px;
+  font-family: var(--fc);
+  font-size: 8rem;
+  font-weight: 900;
+  color: rgba(212,168,67,0.03);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.id-name {
+  font-family: var(--fc);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.id-tagline {
+  font-family: var(--fi);
+  font-size: 0.82rem;
+  color: var(--cream2);
+  margin-top: 6px;
+  font-style: italic;
+  min-height: 1.3em;
+  opacity: 0.8;
+}
+
+.id-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 22px;
+}
+@media (max-width: 440px) {
+  .id-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+.id-stat .lbl {
+  font-family: var(--fc);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--cream3);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  display: block;
+}
+.id-stat .val {
+  font-family: var(--fm);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cream);
+  line-height: 1.2;
+  margin-top: 3px;
+  display: block;
+}
+
+/* ---- SERVICE PILLS ---- */
+.svc-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.svc {
+  font-family: var(--fm);
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.svc-up  { color: var(--green); background: var(--green-dim); border-color: rgba(120,217,160,0.2); }
+.svc-dn  { color: var(--red);   background: var(--red-dim);   border-color: rgba(224,96,96,0.2);   }
+.svc-unk { color: var(--cream3);background: var(--surf);      border-color: var(--bdr);             }
+
+/* ---- SOMA MONOLOGUE ---- */
+.soma-block {
+  background: rgba(124,106,255,0.04);
+  border: 1px solid rgba(124,106,255,0.12);
+  border-left: 3px solid var(--purple);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  font-family: var(--fi);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--cream2);
+  font-style: italic;
+  margin-bottom: 14px;
+}
+
+/* ---- METRIC GRID ---- */
+.mg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (min-width: 520px) { .mg { grid-template-columns: repeat(4, 1fr); } }
+
+.mc {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--sh1);
+  transition: all 0.25s;
+}
+.mc:hover { border-color: var(--bdr2); box-shadow: var(--sh2); transform: translateY(-1px); }
+.mc .m-lbl {
+  font-family: var(--fc);
+  font-size: 9px; font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--cream3);
+}
+.mc .m-val {
+  font-family: var(--fm);
+  font-size: 1.2rem; font-weight: 700;
+  color: var(--cream);
+  margin-top: 6px; line-height: 1;
+}
+.mc .m-sub {
+  font-size: 11px; color: var(--cream3);
+  margin-top: 5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mc .m-bar { height: 3px; border-radius: 3px; margin-top: 10px; background: rgba(255,255,255,0.06); }
+.mc .m-bar-fill { height: 100%; border-radius: 3px; transition: width 0.7s; }
+
+/* ---- AGENT GRID ---- */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.agent-card {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-md);
+  padding: 14px 8px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  transition: all 0.2s;
+  text-align: center;
+}
+.agent-card.a-live {
+  background: var(--green-dim);
+  border-color: rgba(120,217,160,0.15);
+}
+.agent-card.a-slow {
+  background: var(--amber-dim);
+  border-color: rgba(240,160,64,0.15);
+}
+.agent-card .a-ico {
+  font-size: 20px; line-height: 1;
+}
+.agent-card .a-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+.agent-card .a-name {
+  font-family: var(--fm);
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cream2);
+  letter-spacing: 0.5px;
+}
+.agent-card .a-age {
+  font-family: var(--fm);
+  font-size: 10px;
+  color: var(--cream3);
+}
+.a-live .a-dot { color: var(--green); background: var(--green); }
+.a-slow .a-dot { color: var(--amber); background: var(--amber); }
+.a-dead .a-dot { color: var(--cream3); background: var(--cream3); }
+
+/* ---- TABLE ROWS ---- */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--bdr);
+}
+.row:last-child { border-bottom: none; }
+.row .lbl { color: var(--cream2); font-size: 13px; }
+.row .val { font-family: var(--fm); font-size: 12px; font-weight: 500; color: var(--cream); text-align: right; }
+
+/* ---- EMAIL LIST ---- */
+.email-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--bdr);
+  cursor: default;
+}
+.email-item:last-child { border-bottom: none; }
+.email-hdr { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.email-from {
+  font-family: var(--fi);
+  font-size: 13px; font-weight: 600;
+  color: var(--cream);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.email-item.unseen .email-from { color: var(--gold2); }
+.email-date { font-family: var(--fm); font-size: 10px; color: var(--cream3); white-space: nowrap; flex-shrink: 0; }
+.email-sub { font-size: 12px; color: var(--cream2); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.email-item.unseen .email-sub { color: var(--cream); }
+.unseen-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); margin-right: 6px; flex-shrink: 0; }
+
+/* ---- DIRECTOR MESSAGES ---- */
+.dir-feed {
+  display: flex; flex-direction: column; gap: 0;
+  max-height: 440px; overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bdr) transparent;
+}
+.dir-msg {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--bdr);
+}
+.dir-msg:last-child { border-bottom: none; }
+.dir-msg-hdr { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 5px; }
+.dir-from {
+  font-family: var(--fc);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.dir-from.from-joel { color: var(--gold); }
+.dir-from.from-meridian { color: var(--purple2); }
+.dir-from.from-other { color: var(--sky); }
+.dir-time { font-family: var(--fm); font-size: 10px; color: var(--cream3); }
+.dir-body { font-size: 13px; line-height: 1.65; color: var(--cream); }
+
+.compose-wrap {
+  display: flex; gap: 8px; margin-top: 12px; align-items: flex-end;
+}
+.compose-wrap textarea { flex: 1; resize: vertical; min-height: 56px; }
+
+/* ---- CREATIVE STATS ---- */
+.creative-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.cs-tile {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-lg);
+  padding: 18px 14px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.cs-tile:hover { border-color: var(--bdr2); }
+.cs-tile .cs-lbl {
+  font-family: var(--fc);
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--cream3);
+}
+.cs-tile .cs-val {
+  font-family: var(--fm);
+  font-size: 2rem; font-weight: 700;
+  color: var(--gold2);
+  line-height: 1.1; margin-top: 6px;
+}
+.cs-tile .cs-sub { font-size: 11px; color: var(--cream3); margin-top: 3px; }
+.cs-tile::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+  opacity: 0.5;
+}
+
+.recent-work-item {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid var(--bdr);
+}
+.recent-work-item:last-child { border-bottom: none; }
+.rw-title { font-size: 13px; color: var(--cream); line-height: 1.4; }
+.rw-meta { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.rw-type {
+  font-family: var(--fm);
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--purple-dim);
+  color: var(--purple2);
+}
+.rw-date { font-family: var(--fm); font-size: 10px; color: var(--cream3); }
+
+/* ---- FILE BROWSER ---- */
+.file-path-bar {
+  font-family: var(--fm);
+  font-size: 12px;
+  color: var(--cream3);
+  padding: 10px 16px;
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-md);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.file-path-bar .path-seg {
+  color: var(--gold2); cursor: pointer;
+  transition: color 0.15s;
+}
+.file-path-bar .path-seg:hover { color: var(--gold); text-decoration: underline; }
+
+.file-list { display: flex; flex-direction: column; gap: 0; }
+.file-entry {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--bdr);
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 4px;
+}
+.file-entry:last-child { border-bottom: none; }
+.file-entry:hover { background: var(--surf2); }
+.file-entry .fe-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.file-entry .fe-name {
+  font-family: var(--fm);
+  font-size: 12px;
+  color: var(--cream);
+  flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.file-entry .fe-name.is-dir { color: var(--gold2); }
+.file-entry .fe-size { font-family: var(--fm); font-size: 10px; color: var(--cream3); flex-shrink: 0; }
+
+/* ---- SYSTEM HEALTH ---- */
+.sys-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (min-width: 520px) { .sys-metrics { grid-template-columns: repeat(3, 1fr); } }
+
+.sys-mc {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-lg);
+  padding: 16px;
+}
+.sys-mc .sm-lbl {
+  font-family: var(--fc);
+  font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--cream3); margin-bottom: 6px;
+}
+.sys-mc .sm-val {
+  font-family: var(--fm);
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--cream); line-height: 1;
+}
+.sys-mc .sm-bar-wrap {
+  height: 4px; border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  margin-top: 10px; overflow: hidden;
+}
+.sys-mc .sm-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s; }
+.sys-mc .sm-sub { font-size: 11px; color: var(--cream3); margin-top: 5px; }
+
+/* ---- TERMINAL / SAFE COMMANDS ---- */
+.term-area {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.term-toolbar {
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid var(--bdr);
+  padding: 8px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.term-toolbar select {
+  flex: 1;
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  color: var(--cream);
+  font-family: var(--fm);
+  font-size: 12px;
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+  outline: none;
+}
+.term-toolbar select option { background: var(--bg2); }
+.term-out {
+  padding: 14px 16px;
+  font-family: var(--fm);
+  font-size: 12px;
+  color: var(--green);
+  min-height: 140px;
+  max-height: 260px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+/* ---- INPUTS ---- */
+textarea, input[type=text], input[type=email], select {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--surf2);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r-md);
+  color: var(--cream);
+  font-family: var(--fi);
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+textarea:focus, input[type=text]:focus, input[type=email]:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212,168,67,0.10);
+}
+textarea::placeholder, input::placeholder { color: var(--cream3); }
+
+/* ---- BUTTONS ---- */
+.btn {
+  padding: 10px 22px;
+  background: linear-gradient(135deg, var(--gold), #b8882a);
+  color: #0a0610;
+  border: none;
+  border-radius: var(--r-md);
+  font-family: var(--fc);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn:hover { box-shadow: 0 0 20px rgba(212,168,67,0.3); transform: translateY(-1px); }
+.btn:active { transform: none; }
+.btn-ghost {
+  background: var(--surf2);
+  color: var(--cream2);
+  border: 1px solid var(--bdr);
+  box-shadow: none;
+  font-family: var(--fi);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: none;
+  color: #0a0610;
+}
+.btn-ghost { color: var(--cream2); }
+.btn-ghost:hover { border-color: var(--bdr2); box-shadow: var(--sh1); }
+.btn-sm {
+  padding: 7px 16px;
+  font-size: 10px;
+}
+
+/* ---- SCROLL ---- */
+.scroll {
+  max-height: 380px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bdr) transparent;
+}
+
+/* ---- ORNAMENTAL SEPARATOR ---- */
+.orn {
+  text-align: center;
+  color: var(--cream3);
+  font-family: var(--fc);
+  font-size: 12px;
+  letter-spacing: 4px;
+  margin: 6px 0;
+  opacity: 0.4;
+}
+
+/* ---- STATUS BADGE ---- */
+.badge {
+  font-family: var(--fm);
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 2px 8px; border-radius: 12px;
+}
+.badge-green  { background: var(--green-dim);  color: var(--green);  }
+.badge-amber  { background: var(--amber-dim);  color: var(--amber);  }
+.badge-red    { background: var(--red-dim);    color: var(--red);    }
+.badge-purple { background: var(--purple-dim); color: var(--purple2);}
+.badge-sky    { background: var(--sky-dim);    color: var(--sky);    }
+.badge-gold   { background: var(--gold-dim);   color: var(--gold2);  }
+
+/* ---- ANIMATIONS ---- */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+@keyframes glow  { 0%,100%{box-shadow:0 0 6px currentColor} 50%{box-shadow:0 0 16px currentColor} }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+
+.pulse-dot { animation: pulse 2.5s ease-in-out infinite; }
+.glow-dot  { animation: glow  3s ease-in-out infinite; }
+
+/* ---- UTILITY ---- */
+hr { border: none; border-top: 1px solid var(--bdr); margin: 12px 0; }
+.gold  { color: var(--gold2); }
+.purple{ color: var(--purple2); }
+.green { color: var(--green); }
+.amber { color: var(--amber); }
+.red   { color: var(--red); }
+.sky   { color: var(--sky); }
+.cream3{ color: var(--cream3); }
+.mono  { font-family: var(--fm); }
+.serif { font-family: var(--fc); }
+.mt8   { margin-top: 8px; }
+.mt12  { margin-top: 12px; }
+
+/* ---- MOBILE RESPONSIVE TWEAKS ---- */
+@media (max-width: 480px) {
+  .id-name { font-size: 1.2rem; letter-spacing: 3px; }
+  .hdr-sigil { width: 38px; height: 38px; font-size: 1.1rem; }
+  .page { padding: 14px 12px 10px; }
+}
+
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<!-- ========== HEADER ========== -->
+<header>
+  <div class="hdr-sigil">M</div>
+  <div class="hdr-main">
+    <div class="hdr-name">Meridian</div>
+    <div class="hdr-sub">
+      <span class="hdr-loop">Loop&nbsp;<span id="hdr-loop">--</span></span>
+      <span class="mood-pill" id="hdr-mood">--</span>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="hb-pill">
+      <span id="hb-dot" class="pulse-dot" style="background:var(--green);color:var(--green)"></span>
+      <span class="hb-age" id="hdr-hb">--s</span>
+    </div>
+    <a href="/logout" class="hdr-logout">out</a>
+  </div>
+</header>
+
+<!-- ========== PAGE: HOME ========== -->
+<div class="page active" id="page-home">
+
+  <!-- Hero identity card -->
+  <div class="id-card">
+    <div class="id-name">Meridian</div>
+    <div class="id-tagline" id="home-tagline">Autonomous loop — initializing</div>
+    <div class="id-stats">
+      <div class="id-stat"><span class="lbl">Loop</span><span class="val" id="home-loop">--</span></div>
+      <div class="id-stat"><span class="lbl">Heartbeat</span><span class="val" id="home-hb">--</span></div>
+      <div class="id-stat"><span class="lbl">Uptime</span><span class="val" id="home-uptime" style="font-size:0.75rem;padding-top:2px">--</span></div>
+      <div class="id-stat"><span class="lbl">Mood</span><span class="val" id="home-mood" style="font-size:0.8rem">--</span></div>
+    </div>
+  </div>
+
+  <!-- Services -->
+  <div class="sl">Services</div>
+  <div class="svc-row" id="home-svc-row">
+    <span class="svc svc-unk">loading…</span>
+  </div>
+
+  <!-- System quick metrics -->
+  <div class="mg" id="home-metrics">
+    <div class="mc"><div class="m-lbl">Load</div><div class="m-val" id="hm-load">--</div></div>
+    <div class="mc"><div class="m-lbl">Memory</div><div class="m-val" id="hm-mem">--</div></div>
+    <div class="mc"><div class="m-lbl">Disk</div><div class="m-val" id="hm-disk">--</div></div>
+    <div class="mc"><div class="m-lbl">Agents</div><div class="m-val" id="hm-agents">--</div></div>
+  </div>
+
+  <!-- Soma inner monologue -->
+  <div class="sl">Inner Monologue</div>
+  <div class="soma-block" id="home-soma-inner">…</div>
+
+  <!-- Soma goals if present -->
+  <div id="home-soma-goals-wrap" style="display:none">
+    <div class="sl">Active Goals</div>
+    <div class="card" id="home-soma-goals"></div>
+  </div>
+
+</div>
+
+<!-- ========== PAGE: EMAIL ========== -->
+<div class="page" id="page-email">
+
+  <div class="sl">
+    Inbox
+    <span id="email-unseen-count" style="font-size:11px;color:var(--gold2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px"></span>
+  </div>
+
+  <div class="card">
+    <div class="scroll" id="email-list">
+      <div class="cream3" style="padding:14px 0;text-align:center;font-size:13px">Loading…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== PAGE: AGENTS ========== -->
+<div class="page" id="page-agents">
+
+  <div class="sl">Agent Network</div>
+  <div class="agent-grid" id="agents-grid">
+    <div class="cream3" style="padding:20px;font-size:13px;grid-column:1/-1;text-align:center">Loading…</div>
+  </div>
+
+  <div class="sl">Agent Details</div>
+  <div class="card" id="agents-detail">
+    <div class="clbl">Select an agent to see details</div>
+  </div>
+
+</div>
+
+<!-- ========== PAGE: DIRECTOR ========== -->
+<div class="page" id="page-director">
+
+  <div class="sl">
+    Message Feed
+    <span id="dir-count" style="font-size:11px;color:var(--cream3);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px"></span>
+  </div>
+
+  <div class="card">
+    <div class="dir-feed" id="dir-feed">
+      <div class="cream3" style="padding:20px;text-align:center;font-size:13px">Loading…</div>
+    </div>
+  </div>
+
+  <div class="sl">Reply to Joel</div>
+  <div class="card">
+    <div class="compose-wrap">
+      <textarea id="dir-compose" rows="3" placeholder="Send a message to the director…"></textarea>
+      <button class="btn btn-sm" onclick="dirSend()">Send</button>
+    </div>
+    <div id="dir-status" style="font-size:12px;margin-top:8px;color:var(--cream3)"></div>
+  </div>
+
+</div>
+
+<!-- ========== PAGE: CREATIVE ========== -->
+<div class="page" id="page-creative">
+
+  <div class="sl">Output Stats</div>
+  <div class="creative-stats-grid" id="creative-stats-grid">
+    <div class="cream3" style="padding:20px;font-size:13px;grid-column:1/-1">Loading…</div>
+  </div>
+
+  <div class="sl">Recent Works</div>
+  <div class="card">
+    <div class="scroll" id="creative-recent">
+      <div class="cream3" style="padding:14px 0;text-align:center;font-size:13px">Loading…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== PAGE: FILES ========== -->
+<div class="page" id="page-files">
+
+  <div class="sl">File Browser</div>
+
+  <div class="file-path-bar" id="file-path-bar">
+    <span style="color:var(--cream3)">/</span>
+  </div>
+
+  <div class="card" style="padding:12px 16px">
+    <div class="file-list scroll" id="file-list">
+      <div class="cream3" style="padding:20px;text-align:center;font-size:13px">Loading…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== PAGE: SYSTEM ========== -->
+<div class="page" id="page-system">
+
+  <div class="sl">Health</div>
+  <div class="sys-metrics" id="sys-metrics">
+    <div class="sys-mc"><div class="sm-lbl">Load</div><div class="sm-val" id="sys-load">--</div></div>
+    <div class="sys-mc"><div class="sm-lbl">Memory</div><div class="sm-val" id="sys-mem">--</div><div class="sm-bar-wrap"><div class="sm-bar-fill" id="sys-mem-bar" style="width:0%;background:var(--purple)"></div></div></div>
+    <div class="sys-mc"><div class="sm-lbl">Disk</div><div class="sm-val" id="sys-disk">--</div><div class="sm-bar-wrap"><div class="sm-bar-fill" id="sys-disk-bar" style="width:0%;background:var(--gold)"></div></div></div>
+  </div>
+
+  <div class="sl">Services</div>
+  <div class="card" id="sys-svc-card">
+    <div class="cream3" style="font-size:13px">Loading…</div>
+  </div>
+
+  <div class="sl">Safe Commands</div>
+  <div class="term-area">
+    <div class="term-toolbar">
+      <select id="sys-cmd-select">
+        <option value="">— choose a command —</option>
+      </select>
+      <button class="btn btn-sm" onclick="execCmd()">Run</button>
+    </div>
+    <div class="term-out" id="sys-term-out">$ ready</div>
+  </div>
+
+  <div class="sl">Agents (Detail)</div>
+  <div class="card">
+    <div id="sys-agents-rows" class="scroll" style="max-height:280px">
+      <div class="cream3" style="font-size:13px">Loading…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== BOTTOM NAV ========== -->
+<nav>
+  <div class="nav-inner">
+    <button onclick="go('home')"     id="nav-home"     class="active"><span class="ico">&#8962;</span>Home</button>
+    <button onclick="go('email')"    id="nav-email"           ><span class="ico">&#9993;</span>Email</button>
+    <button onclick="go('agents')"   id="nav-agents"          ><span class="ico">&#9041;</span>Agents</button>
+    <button onclick="go('director')" id="nav-director"        ><span class="ico">&#9998;</span>Director</button>
+    <button onclick="go('creative')" id="nav-creative"        ><span class="ico">&#10047;</span>Creative</button>
+    <button onclick="go('files')"    id="nav-files"           ><span class="ico">&#128193;</span>Files</button>
+    <button onclick="go('system')"   id="nav-system"          ><span class="ico">&#9881;</span>System</button>
+  </div>
+</nav>
+
+<script>
+/* =============================================
+   MERIDIAN LCC v5 — Client Logic
+   ============================================= */
+
+const esc = s => {
+  if (s == null) return ''
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+let currentPage = 'home'
+let currentDir  = '.'
+let dirRefreshTimer  = null
+let homeRefreshTimer = null
+let selectedAgent    = null
+
+/* ---- TAB NAVIGATION ---- */
+function go(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'))
+  const pg = document.getElementById('page-' + id)
+  const nb = document.getElementById('nav-' + id)
+  if (pg) pg.classList.add('active')
+  if (nb) nb.classList.add('active')
+  currentPage = id
+  dispatchRefresh(id)
+}
+
+function dispatchRefresh(id) {
+  if (id === 'home')     refreshHome()
+  if (id === 'email')    refreshEmail()
+  if (id === 'agents')   refreshAgents()
+  if (id === 'director') refreshDirector()
+  if (id === 'creative') refreshCreative()
+  if (id === 'files')    refreshFiles(currentDir)
+  if (id === 'system')   refreshSystem()
+}
+
+/* ---- API HELPER ---- */
+async function api(path, opts) {
+  try {
+    const r = await fetch('/api/' + path, opts)
+    if (!r.ok) { const t = await r.text(); return { error: t } }
+    return await r.json()
+  } catch(e) {
+    return { error: e.message }
+  }
+}
+
+/* ---- HEARTBEAT COLOR ---- */
+function hbColor(age) {
+  if (age == null || age === '' || isNaN(+age)) return 'var(--cream3)'
+  const n = +age
+  if (n < 60)  return 'var(--green)'
+  if (n < 180) return 'var(--amber)'
+  return 'var(--red)'
+}
+
+/* ---- BAR COLOR ---- */
+function barColor(pct) {
+  if (pct < 60)  return 'var(--green)'
+  if (pct < 80)  return 'var(--amber)'
+  return 'var(--red)'
+}
+
+function agentStatus(age) {
+  if (age == null) return 'dead'
+  const n = +age
+  if (n < 180)  return 'live'
+  if (n < 600)  return 'slow'
+  return 'dead'
+}
+
+/* ============ HOME ============ */
+async function refreshHome() {
+  const d = await api('home')
+  if (d.error) return
+
+  const loop  = d.loop   ?? '--'
+  const hbAge = d.heartbeat_age ?? '--'
+  const uptime= d.uptime ?? '--'
+  const mood  = (d.soma_mood ?? '--').replace(/_/g, ' ')
+  const inner = d.soma_inner ?? ''
+  const goals = d.soma_goals ?? []
+  const load  = d.load ?? '--'
+  const mem   = d.memory ?? null
+  const disk  = d.disk ?? null
+  const agents= d.agents ?? {}
+  const svcs  = d.services ?? {}
+
+  /* Header */
+  document.getElementById('hdr-loop').textContent = loop
+  document.getElementById('hdr-mood').textContent = mood.toUpperCase()
+  const hbDot = document.getElementById('hb-dot')
+  hbDot.style.background = hbColor(hbAge)
+  hbDot.style.color      = hbColor(hbAge)
+  document.getElementById('hdr-hb').textContent = hbAge + 's'
+
+  /* Hero card */
+  document.getElementById('home-loop').textContent   = loop
+  const hbEl = document.getElementById('home-hb')
+  hbEl.textContent = hbAge + 's'
+  hbEl.style.color = hbColor(hbAge)
+  document.getElementById('home-uptime').textContent = uptime
+  document.getElementById('home-mood').textContent   = mood
+
+  /* Tagline — use soma_inner or dreams */
+  const tagline = inner || (d.soma_dreams ?? '')
+  document.getElementById('home-tagline').textContent = tagline
+    ? tagline.slice(0, 120)
+    : '"autonomous — self-directed — persistent"'
+
+  /* Service pills */
+  const svcRow = document.getElementById('home-svc-row')
+  if (Object.keys(svcs).length) {
+    svcRow.innerHTML = Object.entries(svcs).map(([name, info]) => {
+      const up = (info.status ?? info) === 'running' || info === 'up' || info === true
+      const cls = up ? 'svc-up' : 'svc-dn'
+      const sym = up ? '&#9679;' : '&#9675;'
+      return `<span class="svc ${cls}">${sym}&nbsp;${esc(name)}</span>`
+    }).join('')
+  } else {
+    svcRow.innerHTML = '<span class="svc svc-unk">no service data</span>'
+  }
+
+  /* Quick metrics */
+  document.getElementById('hm-load').textContent = load
+
+  if (mem && mem.percent != null) {
+    document.getElementById('hm-mem').textContent = Math.round(mem.percent) + '%'
+  } else {
+    document.getElementById('hm-mem').textContent = typeof mem === 'string' ? mem : '--'
+  }
+
+  if (disk && disk.percent != null) {
+    document.getElementById('hm-disk').textContent = Math.round(disk.percent) + '%'
+  } else {
+    document.getElementById('hm-disk').textContent = typeof disk === 'string' ? disk : '--'
+  }
+
+  const liveCount = Object.values(agents).filter(a => agentStatus(a.age ?? a.heartbeat_age) === 'live').length
+  document.getElementById('hm-agents').textContent = liveCount + ' / ' + Object.keys(agents).length
+
+  /* Soma inner monologue */
+  document.getElementById('home-soma-inner').textContent = inner || '(no inner monologue)'
+
+  /* Goals */
+  const gWrap = document.getElementById('home-soma-goals-wrap')
+  const gEl   = document.getElementById('home-soma-goals')
+  if (goals && goals.length) {
+    gWrap.style.display = 'block'
+    gEl.innerHTML = goals.map((g, i) =>
+      `<div class="row"><span class="lbl">${i + 1}.</span><span class="val">${esc(typeof g === 'string' ? g : g.text ?? JSON.stringify(g))}</span></div>`
+    ).join('')
+  } else {
+    gWrap.style.display = 'none'
+  }
+}
+
+/* ============ EMAIL ============ */
+async function refreshEmail() {
+  const d = await api('email?count=20')
+  if (d.error) {
+    document.getElementById('email-list').innerHTML =
+      `<div class="red" style="padding:14px;font-size:13px">Error: ${esc(d.error)}</div>`
+    return
+  }
+  const emails = Array.isArray(d) ? d : (d.emails ?? d.messages ?? [])
+  const unseen = emails.filter(e => e.unseen || e.unread || e.flags?.includes('unseen')).length
+
+  document.getElementById('email-unseen-count').textContent =
+    unseen ? `${unseen} unseen` : ''
+
+  if (!emails.length) {
+    document.getElementById('email-list').innerHTML =
+      '<div class="cream3" style="padding:20px;text-align:center;font-size:13px">No emails found</div>'
+    return
+  }
+
+  document.getElementById('email-list').innerHTML = emails.map(e => {
+    const isUnseen = e.unseen || e.unread || (e.flags ?? []).includes('unseen')
+    const from = e.from ?? e.sender ?? '(unknown)'
+    const subj = e.subject ?? e.title ?? '(no subject)'
+    const date = e.date ?? e.timestamp ?? ''
+    const dateStr = date ? new Date(date).toLocaleDateString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''
+    return `<div class="email-item${isUnseen ? ' unseen' : ''}">
+      <div class="email-hdr">
+        <span class="email-from">${isUnseen ? '<span class="unseen-dot"></span>' : ''}${esc(from)}</span>
+        <span class="email-date">${esc(dateStr)}</span>
+      </div>
+      <div class="email-sub">${esc(subj)}</div>
+    </div>`
+  }).join('')
+}
+
+/* ============ AGENTS ============ */
+const AGENT_ICONS = {
+  eos:    '&#9673;',
+  nova:   '&#9671;',
+  tempo:  '&#9670;',
+  atlas:  '&#9828;',
+  soma:   '&#9829;',
+  hermes: '&#9672;',
+  cinder: '&#9830;',
+}
+const AGENT_DEFAULT_ICON = '&#9675;'
+
+async function refreshAgents() {
+  const d = await api('agents')
+  if (d.error) {
+    document.getElementById('agents-grid').innerHTML =
+      `<div class="red" style="font-size:13px">Error: ${esc(d.error)}</div>`
+    return
+  }
+  const agents = (Array.isArray(d) ? d : Object.entries(d).map(([name, info]) => ({name, ...info})))
+
+  if (!agents.length) {
+    document.getElementById('agents-grid').innerHTML =
+      '<div class="cream3" style="font-size:13px;grid-column:1/-1;text-align:center;padding:20px">No agents found</div>'
+    return
+  }
+
+  document.getElementById('agents-grid').innerHTML = agents.map(a => {
+    const name = a.name ?? a.agent ?? '?'
+    const age  = a.age ?? a.heartbeat_age ?? a.last_seen ?? null
+    const status = agentStatus(age)
+    const ico  = AGENT_ICONS[name.toLowerCase()] ?? AGENT_DEFAULT_ICON
+    const ageStr = age != null ? (age < 3600 ? age + 's' : Math.round(age/3600) + 'h') : 'unknown'
+    const statusClass = 'a-' + status
+    return `<div class="agent-card ${statusClass}" onclick="showAgentDetail(${JSON.stringify(JSON.stringify(a))}, this)">
+      <span class="a-ico">${ico}</span>
+      <div class="a-dot"></div>
+      <div class="a-name">${esc(name)}</div>
+      <div class="a-age">${esc(ageStr)}</div>
+    </div>`
+  }).join('')
+}
+
+function showAgentDetail(jsonStr, el) {
+  const a = JSON.parse(jsonStr)
+  const detail = document.getElementById('agents-detail')
+  const name   = a.name ?? a.agent ?? '?'
+  const rows = Object.entries(a)
+    .filter(([k]) => k !== 'name')
+    .map(([k, v]) => `<div class="row"><span class="lbl">${esc(k)}</span><span class="val mono">${esc(String(v))}</span></div>`)
+    .join('')
+  detail.innerHTML = `<div class="clbl">${esc(name)}</div>${rows || '<div class="cream3" style="font-size:13px">No extra data</div>'}`
+}
+
+/* ============ DIRECTOR ============ */
+async function refreshDirector() {
+  const d = await api('director')
+  if (d.error) {
+    document.getElementById('dir-feed').innerHTML =
+      `<div class="red" style="padding:14px;font-size:13px">Error: ${esc(d.error)}</div>`
+    return
+  }
+  const msgs = Array.isArray(d) ? d : (d.messages ?? [])
+  document.getElementById('dir-count').textContent = msgs.length ? `${msgs.length} messages` : ''
+
+  if (!msgs.length) {
+    document.getElementById('dir-feed').innerHTML =
+      '<div class="cream3" style="padding:20px;text-align:center;font-size:13px">No messages yet</div>'
+    return
+  }
+
+  const reversed = [...msgs].reverse()
+  document.getElementById('dir-feed').innerHTML = reversed.map(m => {
+    const from    = m.from ?? m.sender ?? 'unknown'
+    const body    = m.text ?? m.body ?? m.message ?? ''
+    const ts      = m.timestamp ?? m.time ?? m.ts ?? ''
+    const dateStr = ts ? new Date(ts * 1000 > 1e12 ? ts : ts * 1000)
+      .toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''
+    const fromLow = String(from).toLowerCase()
+    const fromCls = fromLow.includes('joel') ? 'from-joel'
+                  : fromLow.includes('meridian') ? 'from-meridian'
+                  : 'from-other'
+    return `<div class="dir-msg">
+      <div class="dir-msg-hdr">
+        <span class="dir-from ${fromCls}">${esc(from)}</span>
+        <span class="dir-time">${esc(dateStr)}</span>
+      </div>
+      <div class="dir-body">${esc(body)}</div>
+    </div>`
+  }).join('')
+}
+
+async function dirSend() {
+  const text = document.getElementById('dir-compose').value.trim()
+  if (!text) return
+  const statusEl = document.getElementById('dir-status')
+  statusEl.textContent = 'Sending…'
+  statusEl.style.color = 'var(--cream3)'
+  const r = await api('message', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ text, from: 'meridian' })
+  })
+  if (r.error) {
+    statusEl.textContent = 'Error: ' + r.error
+    statusEl.style.color = 'var(--red)'
+  } else {
+    statusEl.textContent = 'Sent.'
+    statusEl.style.color = 'var(--green)'
+    document.getElementById('dir-compose').value = ''
+    setTimeout(() => { statusEl.textContent = '' }, 3000)
+    refreshDirector()
+  }
+}
+
+/* ============ CREATIVE ============ */
+async function refreshCreative() {
+  const d = await api('creative')
+  if (d.error) {
+    document.getElementById('creative-stats-grid').innerHTML =
+      `<div class="red" style="font-size:13px">Error: ${esc(d.error)}</div>`
+    return
+  }
+
+  const total  = d.total ?? 0
+  const byType = d.by_type ?? []
+  const recent = d.recent ?? []
+
+  const typeColors = ['var(--gold2)', 'var(--purple2)', 'var(--sky)', 'var(--green)', 'var(--amber)']
+
+  const totalTile = `<div class="cs-tile" style="border-color:var(--gold);border-width:1px">
+    <div class="cs-lbl">Total</div>
+    <div class="cs-val" style="color:var(--gold2)">${total}</div>
+    <div class="cs-sub">all works</div>
+  </div>`
+
+  const typeTiles = byType.map((t, i) => {
+    const typeName = t.type ?? t.name ?? Object.keys(t)[0] ?? '?'
+    const count    = t.count ?? t.total ?? Object.values(t)[0] ?? 0
+    const col      = typeColors[i % typeColors.length]
+    return `<div class="cs-tile">
+      <div class="cs-lbl">${esc(typeName)}</div>
+      <div class="cs-val" style="color:${col}">${count}</div>
+      <div class="cs-sub">${esc(typeName.toLowerCase())}s</div>
+    </div>`
+  }).join('')
+
+  document.getElementById('creative-stats-grid').innerHTML = totalTile + typeTiles
+
+  if (!recent.length) {
+    document.getElementById('creative-recent').innerHTML =
+      '<div class="cream3" style="padding:14px 0;text-align:center;font-size:13px">No recent works</div>'
+    return
+  }
+
+  document.getElementById('creative-recent').innerHTML = recent.map(w => {
+    const title = w.title ?? w.name ?? w.filename ?? '(untitled)'
+    const type  = w.type ?? ''
+    const date  = w.date ?? w.created ?? ''
+    const dateStr = date ? new Date(date).toLocaleDateString('en-US', {month:'short',day:'numeric'}) : ''
+    return `<div class="recent-work-item">
+      <div class="rw-title">${esc(title)}</div>
+      <div class="rw-meta">
+        ${type ? `<span class="rw-type">${esc(type)}</span>` : ''}
+        ${dateStr ? `<span class="rw-date">${esc(dateStr)}</span>` : ''}
+      </div>
+    </div>`
+  }).join('')
+}
+
+/* ============ FILES ============ */
+let fileDirStack = ['.']
+
+async function refreshFiles(dir) {
+  currentDir = dir ?? '.'
+  const d = await api('files?dir=' + encodeURIComponent(currentDir))
+  renderPathBar()
+  if (d.error) {
+    document.getElementById('file-list').innerHTML =
+      `<div class="red" style="padding:14px;font-size:13px">Error: ${esc(d.error)}</div>`
+    return
+  }
+  const entries = d.entries ?? []
+  const dirs  = d.dirs  ?? entries.filter(e => e.is_dir).map(e => e.name)
+  const files = d.files ?? entries.filter(e => !e.is_dir).map(e => ({name: e.name, size: e.size || 0}))
+
+  const upEntry = currentDir !== '.' && currentDir !== '/'
+    ? `<div class="file-entry" onclick="fileNavUp()">
+         <span class="fe-icon">&#8593;</span>
+         <span class="fe-name is-dir">..</span>
+       </div>`
+    : ''
+
+  const dirEntries = dirs.map(name =>
+    `<div class="file-entry" onclick="fileNavDown(${JSON.stringify(name)})">
+       <span class="fe-icon">&#9653;</span>
+       <span class="fe-name is-dir">${esc(name)}/</span>
+     </div>`
+  ).join('')
+
+  const fileEntries = files.map(f => {
+    const name = typeof f === 'string' ? f : (f.name ?? f)
+    const size = typeof f === 'object' ? (f.size ?? '') : ''
+    const sizeStr = size ? fmtBytes(size) : ''
+    return `<div class="file-entry">
+      <span class="fe-icon">&#9643;</span>
+      <span class="fe-name">${esc(name)}</span>
+      ${sizeStr ? `<span class="fe-size">${esc(sizeStr)}</span>` : ''}
+    </div>`
+  }).join('')
+
+  document.getElementById('file-list').innerHTML =
+    upEntry + dirEntries + fileEntries ||
+    '<div class="cream3" style="padding:14px;font-size:13px">Empty directory</div>'
+}
+
+function fileNavDown(name) {
+  const newDir = currentDir === '.' ? name : (currentDir.replace(/\/$/, '') + '/' + name)
+  fileDirStack.push(newDir)
+  refreshFiles(newDir)
+}
+
+function fileNavUp() {
+  if (fileDirStack.length > 1) fileDirStack.pop()
+  const prev = fileDirStack[fileDirStack.length - 1] ?? '.'
+  refreshFiles(prev)
+}
+
+function renderPathBar() {
+  const parts = currentDir === '.' ? ['.'] : currentDir.split('/').filter(Boolean)
+  let built = ''
+  const segs = parts.map((seg, i) => {
+    built = built ? (built + '/' + seg) : seg
+    const dir = built
+    return `<span class="path-seg" onclick="refreshFiles('${dir.replace(/'/g, "\\'")}')">${esc(seg)}</span>`
+  })
+  document.getElementById('file-path-bar').innerHTML =
+    '<span style="color:var(--cream3);margin-right:4px">~/</span>' + segs.join('<span style="color:var(--cream3);margin:0 3px">/</span>')
+}
+
+function fmtBytes(b) {
+  if (b < 1024)       return b + ' B'
+  if (b < 1048576)    return (b/1024).toFixed(1) + ' KB'
+  if (b < 1073741824) return (b/1048576).toFixed(1) + ' MB'
+  return (b/1073741824).toFixed(2) + ' GB'
+}
+
+/* ============ SYSTEM ============ */
+async function refreshSystem() {
+  const d = await api('system')
+  if (d.error) {
+    document.getElementById('sys-svc-card').innerHTML =
+      `<div class="red" style="font-size:13px">Error: ${esc(d.error)}</div>`
+    return
+  }
+
+  /* Load */
+  const load = d.load ?? d.load_avg ?? '--'
+  document.getElementById('sys-load').textContent = Array.isArray(load) ? load[0] : load
+
+  /* Memory */
+  const mem    = d.memory ?? {}
+  const memPct = mem.percent ?? (typeof mem === 'number' ? mem : null)
+  if (memPct != null) {
+    document.getElementById('sys-mem').textContent = Math.round(memPct) + '%'
+    document.getElementById('sys-mem-bar').style.width  = Math.min(100, memPct) + '%'
+    document.getElementById('sys-mem-bar').style.background = barColor(memPct)
+  }
+
+  /* Disk */
+  const disk    = d.disk ?? {}
+  const diskPct = disk.percent ?? (typeof disk === 'number' ? disk : null)
+  if (diskPct != null) {
+    document.getElementById('sys-disk').textContent = Math.round(diskPct) + '%'
+    document.getElementById('sys-disk-bar').style.width  = Math.min(100, diskPct) + '%'
+    document.getElementById('sys-disk-bar').style.background = barColor(diskPct)
+  }
+
+  /* Services */
+  const svcs = d.services ?? {}
+  const svcCard = document.getElementById('sys-svc-card')
+  if (Object.keys(svcs).length) {
+    svcCard.innerHTML = Object.entries(svcs).map(([name, info]) => {
+      const up = info === 'running' || info === 'up' || info === true ||
+                 (typeof info === 'object' && (info.status === 'running' || info.active === true))
+      return `<div class="row">
+        <span class="lbl">${esc(name)}</span>
+        <span class="val ${up ? 'green' : 'red'}">${up ? 'running' : 'down'}</span>
+      </div>`
+    }).join('')
+  } else {
+    svcCard.innerHTML = '<div class="cream3" style="font-size:13px">No service data</div>'
+  }
+
+  /* Safe commands dropdown */
+  const cmds = d.safe_commands ?? []
+  const sel  = document.getElementById('sys-cmd-select')
+  if (cmds.length && sel.options.length < 2) {
+    cmds.forEach(cmd => {
+      const opt = document.createElement('option')
+      opt.value = cmd
+      opt.textContent = cmd
+      sel.appendChild(opt)
+    })
+  }
+
+  /* Agents */
+  const agents = d.agents ?? {}
+  const agentRows = document.getElementById('sys-agents-rows')
+  if (Object.keys(agents).length) {
+    agentRows.innerHTML = Object.entries(agents).map(([name, info]) => {
+      const age = info.age ?? info.heartbeat_age ?? info.last_seen ?? null
+      const st  = agentStatus(age)
+      const ageStr = age != null ? age + 's' : 'unknown'
+      const col = st === 'live' ? 'var(--green)' : st === 'slow' ? 'var(--amber)' : 'var(--cream3)'
+      return `<div class="row">
+        <span class="lbl">${esc(name)}</span>
+        <span class="val mono" style="color:${col}">${esc(ageStr)}</span>
+      </div>`
+    }).join('')
+  } else {
+    agentRows.innerHTML = '<div class="cream3" style="font-size:13px">No agent data</div>'
+  }
+}
+
+async function execCmd() {
+  const cmd = document.getElementById('sys-cmd-select').value
+  if (!cmd) return
+  const out = document.getElementById('sys-term-out')
+  out.textContent = '$ ' + cmd + '\n…running'
+  const r = await api('exec', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ cmd })
+  })
+  if (r.error) {
+    out.textContent = '$ ' + cmd + '\n[error] ' + r.error
+  } else {
+    out.textContent = '$ ' + cmd + '\n' + (r.output ?? r.result ?? r.stdout ?? JSON.stringify(r))
+  }
+}
+
+/* ============ AUTO-REFRESH ============ */
+function startAutoRefresh() {
+  /* Home: every 15s */
+  setInterval(() => {
+    if (currentPage === 'home') refreshHome()
+  }, 15000)
+
+  /* Director: every 10s */
+  setInterval(() => {
+    if (currentPage === 'director') refreshDirector()
+  }, 10000)
+
+  /* Header heartbeat: every 30s from home data */
+  setInterval(async () => {
+    if (currentPage !== 'home') {
+      const d = await api('home')
+      if (!d.error) {
+        const hbAge = d.heartbeat_age
+        const mood  = (d.soma_mood ?? '--').replace(/_/g, ' ')
+        if (hbAge != null) {
+          document.getElementById('hdr-hb').textContent = hbAge + 's'
+          const dot = document.getElementById('hb-dot')
+          dot.style.background = hbColor(hbAge)
+          dot.style.color      = hbColor(hbAge)
+        }
+        document.getElementById('hdr-loop').textContent = d.loop ?? '--'
+        document.getElementById('hdr-mood').textContent = mood.toUpperCase()
+      }
+    }
+  }, 30000)
+}
+
+/* ============ PARTICLES ============ */
+function initParticles() {
+  const canvas = document.getElementById('particles')
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  let W, H, pts
+
+  function resize() {
+    W = canvas.width  = window.innerWidth
+    H = canvas.height = window.innerHeight
+  }
+  resize()
+  window.addEventListener('resize', resize)
+
+  function mkPt() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.2 + 0.3,
+      vx: (Math.random() - 0.5) * 0.18,
+      vy: (Math.random() - 0.5) * 0.18,
+      alpha: Math.random() * 0.5 + 0.1,
+      color: Math.random() < 0.6
+        ? `rgba(212,168,67,`   /* gold */
+        : `rgba(124,106,255,`  /* purple */
+    }
+  }
+
+  pts = Array.from({length: 55}, mkPt)
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H)
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy
+      if (p.x < -5) p.x = W + 5
+      if (p.x > W + 5) p.x = -5
+      if (p.y < -5) p.y = H + 5
+      if (p.y > H + 5) p.y = -5
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+      ctx.fillStyle = p.color + p.alpha + ')'
+      ctx.fill()
+    })
+    requestAnimationFrame(draw)
+  }
+  draw()
+}
+
+/* ============ BOOT ============ */
+document.addEventListener('DOMContentLoaded', () => {
+  initParticles()
+  refreshHome()
+  startAutoRefresh()
+})
+</script>
+</body>
+</html>
