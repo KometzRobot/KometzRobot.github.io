@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Signal — Meridian</title>
+<meta name="theme-color" content="#06060e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === THE SIGNAL — Meridian Operator Dashboard === */
+:root{
+  --bg:#06060e;
+  --bg2:#0e0e1b;
+  --bg3:#121220;
+  --surf:rgba(255,255,255,0.04);
+  --surf2:rgba(255,255,255,0.07);
+  --surf3:rgba(255,255,255,0.11);
+  --text:#e8e8f0;
+  --text2:#a0a0b0;
+  --text3:#666680;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --accent:#7c6aff;
+  --accent2:#a78bfa;
+  --accent-dim:rgba(124,106,255,0.14);
+  --accent-glow:rgba(124,106,255,0.2);
+  --cyan:#00d4ff;
+  --cyan-dim:rgba(0,212,255,0.10);
+  --green:#4ade80;
+  --green-dim:rgba(74,222,128,0.10);
+  --amber:#fbbf24;
+  --amber-dim:rgba(251,191,36,0.10);
+  --red:#f87171;
+  --red-dim:rgba(248,113,113,0.10);
+  --fm:'JetBrains Mono',monospace;
+  --fu:'Inter',system-ui,sans-serif;
+  --glass:saturate(180%) blur(16px);
+  --sh1:0 2px 8px rgba(0,0,0,0.35),0 1px 3px rgba(0,0,0,0.2);
+  --sh2:0 4px 16px rgba(0,0,0,0.45),0 2px 6px rgba(0,0,0,0.25);
+  --sh3:0 8px 32px rgba(0,0,0,0.55),0 4px 12px rgba(0,0,0,0.3);
+  --sha:0 4px 24px rgba(124,106,255,0.18);
+  --r-xl:20px;--r-lg:14px;--r-md:10px;--r-sm:7px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--fu);
+  font-size:14px;
+  line-height:1.5;
+  overflow-x:hidden;
+  padding-top:68px;
+  padding-bottom:80px;
+  min-height:100vh;
+}
+body::before{
+  content:'';
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:
+    radial-gradient(ellipse at 40% -10%,rgba(124,106,255,0.07) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 95%,rgba(0,212,255,0.04) 0%,transparent 45%);
+  pointer-events:none;z-index:0;
+}
+
+/* ---- HEADER ---- */
+header{
+  position:fixed;top:0;left:0;right:0;height:68px;
+  background:rgba(6,6,14,0.88);
+  backdrop-filter:var(--glass);-webkit-backdrop-filter:var(--glass);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;z-index:200;
+}
+.hdr-badge{
+  width:38px;height:38px;border-radius:var(--r-md);
+  background:linear-gradient(135deg,var(--accent),#4c3bb5);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:1rem;font-weight:800;color:#fff;
+  flex-shrink:0;box-shadow:var(--sha);
+}
+.hdr-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hdr-name{font-size:.8rem;font-weight:700;color:var(--text);letter-spacing:2px;text-transform:uppercase}
+.hdr-sub{display:flex;align-items:center;gap:8px;overflow:hidden}
+.hdr-loop{font-family:var(--fm);font-size:.65rem;color:var(--text3);white-space:nowrap}
+.hdr-loop span{color:var(--accent);font-weight:700}
+.mood-chip{
+  font-size:10px;font-weight:600;padding:2px 10px;border-radius:20px;
+  background:var(--accent-dim);color:var(--accent2);
+  white-space:nowrap;flex-shrink:0;transition:all .4s;
+  border:1px solid rgba(124,106,255,0.12);
+}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hb-pill{
+  display:flex;align-items:center;gap:6px;
+  background:var(--surf2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:5px 10px;
+}
+#hb-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 7px currentColor}
+.hb-age{font-family:var(--fm);font-size:10px;color:var(--text3)}
+
+/* ---- BOTTOM NAV ---- */
+nav{
+  position:fixed;bottom:0;left:0;right:0;height:76px;
+  background:rgba(6,6,14,0.92);
+  backdrop-filter:var(--glass);-webkit-backdrop-filter:var(--glass);
+  border-top:1px solid var(--border);z-index:200;
+  padding-bottom:env(safe-area-inset-bottom,0);
+  overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+nav::-webkit-scrollbar{display:none}
+.nav-inner{display:flex;min-width:max-content;height:100%}
+nav button{
+  min-width:72px;flex:1;background:none;border:none;
+  color:var(--text3);font-family:var(--fu);font-size:10px;font-weight:500;
+  padding:8px 4px 12px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:color .2s;position:relative;letter-spacing:.3px;white-space:nowrap;
+}
+nav button .ico{
+  font-size:18px;line-height:1;
+  width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:10px;transition:all .22s;
+}
+nav button.active{color:var(--text)}
+nav button.active .ico{background:var(--accent-dim);color:var(--accent);box-shadow:0 0 12px var(--accent-glow)}
+
+/* ---- PAGES ---- */
+.page{display:none;padding:16px 16px 8px;max-width:860px;margin:0 auto;position:relative;z-index:1}
+.page.active{display:block;animation:fadeUp .28s cubic-bezier(.2,0,.2,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* ---- SECTION LABEL ---- */
+.sl{
+  font-size:10px;font-weight:700;color:var(--text3);
+  letter-spacing:1.2px;margin:20px 0 10px;
+  display:flex;align-items:center;gap:10px;text-transform:uppercase;
+}
+.sl::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+
+/* ---- GLASS CARD ---- */
+.card{
+  background:var(--surf);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid var(--border);
+  border-radius:var(--r-xl);padding:18px;margin-bottom:12px;
+  box-shadow:var(--sh1);transition:border-color .2s;
+}
+.card:hover{border-color:var(--border2)}
+.card .clbl{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1.2px;margin-bottom:12px;text-transform:uppercase}
+
+/* ---- IDENTITY / HERO CARD ---- */
+.id-card{
+  background:linear-gradient(135deg,rgba(124,106,255,0.09) 0%,var(--surf) 55%,rgba(0,212,255,0.04) 100%);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(124,106,255,0.18);
+  border-radius:var(--r-xl);padding:22px;margin-bottom:14px;
+  position:relative;overflow:hidden;box-shadow:var(--sh2),var(--sha);
+}
+.id-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--cyan),transparent 80%);
+}
+.id-card::after{
+  content:'M';position:absolute;right:-6px;bottom:-18px;
+  font-family:var(--fm);font-size:6.5rem;font-weight:900;
+  color:rgba(124,106,255,0.035);line-height:1;pointer-events:none;
+}
+.id-name{font-size:1.35rem;font-weight:800;color:var(--text);letter-spacing:2px;text-transform:uppercase}
+.id-subtitle{font-size:.8rem;color:var(--text3);margin-top:3px;letter-spacing:.5px}
+.id-mono{font-family:var(--fm);color:var(--cyan);font-size:.8rem;margin-top:4px;font-style:italic}
+.id-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+@media(max-width:400px){.id-stats{grid-template-columns:repeat(2,1fr)}}
+.id-stat .lbl{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px}
+.id-stat .val{font-family:var(--fm);font-size:1.1rem;font-weight:700;color:var(--text);margin-top:3px;line-height:1}
+.id-stat .val.green{color:var(--green)}
+.id-stat .val.amber{color:var(--amber)}
+.id-stat .val.red{color:var(--red)}
+
+/* ---- SERVICE PILLS ---- */
+.svc-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.svc{
+  font-family:var(--fm);font-size:10px;font-weight:600;
+  padding:5px 12px;border-radius:20px;border:1px solid;transition:all .2s;
+  cursor:default;
+}
+.svc-up{color:var(--green);background:var(--green-dim);border-color:rgba(74,222,128,0.14)}
+.svc-dn{color:var(--red);background:var(--red-dim);border-color:rgba(248,113,113,0.14)}
+.svc-unk{color:var(--text3);background:var(--surf);border-color:var(--border)}
+
+/* ---- METRIC GRID ---- */
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+@media(min-width:500px){.mg{grid-template-columns:repeat(4,1fr)}}
+.mc{
+  background:var(--surf);backdrop-filter:blur(6px);
+  border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:14px;box-shadow:var(--sh1);transition:all .22s;
+}
+.mc:hover{border-color:var(--border2);transform:translateY(-1px)}
+.mc .m-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3)}
+.mc .m-val{font-family:var(--fm);font-size:1.25rem;font-weight:700;margin-top:5px;line-height:1}
+.mc .m-sub{font-size:10px;color:var(--text3);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc .m-bar{height:3px;border-radius:3px;margin-top:8px;background:rgba(255,255,255,0.05)}
+.mc .m-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+
+/* ---- SOMA CARD ---- */
+.soma-card{
+  background:linear-gradient(135deg,rgba(0,212,255,0.05) 0%,var(--surf) 100%);
+  border:1px solid rgba(0,212,255,0.12);
+  border-radius:var(--r-xl);padding:18px;margin-bottom:12px;
+  box-shadow:var(--sh1);
+}
+.soma-score-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.soma-score-val{font-family:var(--fm);font-size:2rem;font-weight:800;color:var(--cyan);line-height:1}
+.soma-mood-badge{
+  font-size:11px;font-weight:600;padding:4px 14px;border-radius:20px;
+  background:rgba(0,212,255,0.10);color:var(--cyan);
+  border:1px solid rgba(0,212,255,0.15);
+}
+.soma-inner{font-size:12px;color:var(--text2);line-height:1.65;font-style:italic;padding-top:4px}
+.soma-bar-w{height:4px;background:rgba(255,255,255,0.05);border-radius:4px;margin:10px 0 4px}
+.soma-bar-f{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width .6s}
+
+/* ---- AGENT GRID ---- */
+.ag{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+@media(min-width:480px){.ag{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:640px){.ag{grid-template-columns:repeat(8,1fr)}}
+.ac{
+  background:var(--surf);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:10px 4px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:all .22s;cursor:pointer;
+}
+.ac:hover{border-color:var(--border2);background:var(--surf2)}
+.ac.a-live{background:var(--green-dim);border-color:rgba(74,222,128,0.12)}
+.ac.a-slow{background:var(--amber-dim);border-color:rgba(251,191,36,0.12)}
+.ac.a-stale{background:var(--red-dim);border-color:rgba(248,113,113,0.12)}
+.ac .a-dot{width:7px;height:7px;border-radius:50%;box-shadow:0 0 7px currentColor;flex-shrink:0}
+.ac .a-name{font-family:var(--fm);font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text3);text-align:center;line-height:1.2}
+.ac .a-age{font-family:var(--fm);font-size:9px;color:var(--text2)}
+.dot-live{color:var(--green);background:var(--green)}
+.dot-slow{color:var(--amber);background:var(--amber)}
+.dot-stale{color:var(--red);background:var(--red)}
+.dot-unk{color:var(--text3);background:var(--text3)}
+
+/* Agent detail overlay */
+.agent-detail{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(6,6,14,0.7);backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;padding:20px;
+}
+.agent-detail.open{display:flex}
+.agent-detail-card{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--r-xl);padding:24px;max-width:420px;width:100%;
+  box-shadow:var(--sh3);position:relative;
+}
+.agent-detail-close{
+  position:absolute;top:14px;right:14px;
+  background:var(--surf2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:4px 10px;
+  color:var(--text3);font-size:12px;cursor:pointer;
+}
+.agent-detail-name{font-family:var(--fm);font-size:1rem;font-weight:700;color:var(--accent2);margin-bottom:6px}
+.agent-detail-body{font-size:13px;color:var(--text2);line-height:1.65;margin-top:10px}
+
+/* ---- MESSAGES ---- */
+.msgs-wrap{display:flex;flex-direction:column;height:calc(100vh - 170px);max-height:600px}
+.msgs-feed{flex:1;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.06) transparent}
+.msg{padding:12px 0;border-bottom:1px solid var(--border)}
+.msg:last-child{border-bottom:none}
+.msg .m-meta{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.msg .m-from{font-size:11px;font-weight:700;letter-spacing:.3px}
+.msg .m-time{font-family:var(--fm);font-size:10px;color:var(--text3)}
+.msg .m-body{font-size:13px;line-height:1.6;color:var(--text)}
+.msg-joel .m-from{color:var(--amber)}
+.msg-meridian .m-from{color:var(--accent2)}
+.compose-bar{display:flex;gap:8px;padding-top:12px;flex-shrink:0}
+.compose-bar input{flex:1}
+
+/* ---- EMAIL ---- */
+.email-item{
+  padding:12px 0;border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:1fr auto;gap:4px;
+  transition:background .15s;
+}
+.email-item:last-child{border-bottom:none}
+.email-item.unseen{background:rgba(124,106,255,0.04);border-radius:var(--r-sm);padding:12px 10px;margin:0 -10px}
+.email-from{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.email-item.unseen .email-from{color:var(--accent2)}
+.email-subject{font-size:12px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.email-date{font-family:var(--fm);font-size:10px;color:var(--text3);white-space:nowrap;text-align:right}
+.unseen-badge{
+  display:inline-block;font-family:var(--fm);font-size:10px;font-weight:700;
+  padding:1px 7px;border-radius:10px;
+  background:var(--accent);color:#fff;margin-left:8px;
+}
+
+/* ---- CREATIVE ---- */
+.creative-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+@media(min-width:480px){.creative-grid{grid-template-columns:repeat(4,1fr)}}
+.creative-tile{
+  background:var(--surf);backdrop-filter:blur(6px);
+  border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:14px;text-align:center;box-shadow:var(--sh1);transition:all .22s;
+}
+.creative-tile:hover{border-color:var(--border2);transform:translateY(-1px)}
+.creative-tile .ct-icon{font-size:1.4rem;line-height:1;margin-bottom:6px}
+.creative-tile .ct-count{font-family:var(--fm);font-size:1.4rem;font-weight:800;line-height:1;color:var(--text)}
+.creative-tile .ct-type{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+
+/* ---- RELAY ---- */
+.relay-item{
+  display:grid;grid-template-columns:80px 1fr;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.relay-item:last-child{border-bottom:none}
+.relay-who{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--accent2)}
+.relay-ts{font-family:var(--fm);font-size:10px;color:var(--text3);margin-top:2px}
+.relay-topic{font-size:9px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;opacity:.7}
+.relay-body{font-size:12px;line-height:1.6;color:var(--text);word-break:break-word}
+
+/* ---- SYSTEM ---- */
+.svc-table{width:100%;border-collapse:collapse;margin-bottom:4px}
+.svc-table td{padding:9px 0;font-size:12px;border-bottom:1px solid var(--border)}
+.svc-table tr:last-child td{border-bottom:none}
+.svc-table td:first-child{color:var(--text2);font-family:var(--fm)}
+.svc-table td:last-child{text-align:right}
+.st-up{color:var(--green);font-family:var(--fm);font-size:11px;font-weight:600}
+.st-dn{color:var(--red);font-family:var(--fm);font-size:11px;font-weight:600}
+.term-out{
+  background:rgba(0,0,0,0.45);color:var(--green);
+  font-family:var(--fm);font-size:11px;
+  padding:14px;border-radius:var(--r-lg);
+  height:160px;overflow-y:auto;margin-top:10px;
+  white-space:pre-wrap;word-break:break-all;
+  border:1px solid var(--border);box-shadow:inset 0 2px 8px rgba(0,0,0,0.3);
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.06) transparent;
+}
+
+/* ---- FILES ---- */
+.breadcrumb{
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--fm);font-size:11px;color:var(--text3);
+  margin-bottom:12px;flex-wrap:wrap;
+}
+.breadcrumb span{cursor:pointer;color:var(--accent2);transition:color .15s}
+.breadcrumb span:hover{color:var(--text)}
+.breadcrumb .sep{color:var(--text3)}
+.file-item{
+  display:grid;grid-template-columns:1fr auto auto;gap:10px;
+  align-items:center;padding:9px 0;
+  border-bottom:1px solid var(--border);cursor:pointer;
+  transition:background .15s;
+}
+.file-item:last-child{border-bottom:none}
+.file-item:hover{background:rgba(255,255,255,0.02);border-radius:var(--r-sm);padding-left:6px;margin-left:-6px}
+.file-name{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.file-name .fi-icon{color:var(--text3);font-size:14px}
+.file-name.is-dir .fi-icon{color:var(--accent2)}
+.file-size{font-family:var(--fm);font-size:10px;color:var(--text3);white-space:nowrap}
+.file-mod{font-family:var(--fm);font-size:10px;color:var(--text3);white-space:nowrap}
+
+/* ---- SHARED INPUTS ---- */
+input[type=text],textarea,select{
+  width:100%;padding:10px 14px;
+  background:var(--surf2);border:1px solid var(--border);
+  border-radius:var(--r-md);color:var(--text);font-family:var(--fu);font-size:13px;
+  resize:vertical;outline:none;line-height:1.5;transition:border-color .2s,box-shadow .2s;
+}
+input[type=text]:focus,textarea:focus,select:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,106,255,0.13);
+}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+select option{background:var(--bg2)}
+.btn{
+  padding:9px 22px;
+  background:linear-gradient(135deg,var(--accent),#4c3bb5);
+  color:#fff;border:none;border-radius:var(--r-md);
+  font-family:var(--fu);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;letter-spacing:.3px;
+  box-shadow:var(--sha);white-space:nowrap;flex-shrink:0;
+}
+.btn:hover{box-shadow:var(--sh2),0 4px 24px var(--accent-glow);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-sm{padding:7px 14px;font-size:12px}
+
+/* ---- UTIL ---- */
+.scroll{max-height:380px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.06) transparent}
+.row-line{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)}
+.row-line:last-child{border-bottom:none}
+.row-line .rl-lbl{color:var(--text2);font-size:12px}
+.row-line .rl-val{font-family:var(--fm);font-size:11px;font-weight:500;color:var(--text);text-align:right;max-width:60%}
+.bar-w{height:3px;border-radius:3px;background:rgba(255,255,255,0.05);margin-top:6px}
+.bar-f{height:100%;border-radius:3px;transition:width .6s}
+.bar-accent{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.bar-cyan{background:linear-gradient(90deg,var(--cyan),var(--accent2))}
+.bar-green{background:var(--green)}
+.bar-amber{background:var(--amber)}
+.bar-red{background:var(--red)}
+.text-green{color:var(--green)}.text-amber{color:var(--amber)}.text-red{color:var(--red)}
+.text-cyan{color:var(--cyan)}.text-accent{color:var(--accent2)}
+.text-mono{font-family:var(--fm)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.pulse{animation:pulse 2.2s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="hdr-badge">M</div>
+  <div class="hdr-main">
+    <div class="hdr-name">MERIDIAN</div>
+    <div class="hdr-sub">
+      <span class="hdr-loop">Loop&nbsp;<span id="hdr-loop">--</span></span>
+      <span class="mood-chip" id="hdr-mood">--</span>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="hb-pill">
+      <span id="hb-dot" style="color:var(--text3)">&#x25cf;</span>
+      <span class="hb-age" id="hb-age">--</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PAGES ============ -->
+
+<!-- TAB 1: DASHBOARD -->
+<div class="page active" id="p-dash">
+
+  <!-- Hero Identity -->
+  <div class="id-card">
+    <div class="id-name">Meridian</div>
+    <div class="id-subtitle">Autonomous AI System</div>
+    <div class="id-mono" id="dash-uptime">uptime --</div>
+    <div class="id-stats">
+      <div class="id-stat">
+        <div class="lbl">Loop</div>
+        <div class="val text-accent" id="dash-loop">--</div>
+      </div>
+      <div class="id-stat">
+        <div class="lbl">Heartbeat</div>
+        <div class="val" id="dash-hb-val">--</div>
+      </div>
+      <div class="id-stat">
+        <div class="lbl">Mood</div>
+        <div class="val text-cyan" id="dash-mood">--</div>
+      </div>
+      <div class="id-stat">
+        <div class="lbl">Score</div>
+        <div class="val" id="dash-score">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services -->
+  <div class="sl">Services</div>
+  <div class="svc-row" id="dash-services"><span class="svc svc-unk">loading…</span></div>
+
+  <!-- System metrics -->
+  <div class="sl">System</div>
+  <div class="mg">
+    <div class="mc">
+      <div class="m-lbl">Load</div>
+      <div class="m-val" id="dash-load">--</div>
+      <div class="m-sub" id="dash-load-lbl">1min avg</div>
+      <div class="m-bar"><div class="m-bar-fill bar-accent" id="dash-load-bar" style="width:0%"></div></div>
+    </div>
+    <div class="mc">
+      <div class="m-lbl">RAM</div>
+      <div class="m-val" id="dash-ram">--</div>
+      <div class="m-sub" id="dash-ram-sub">--</div>
+      <div class="m-bar"><div class="m-bar-fill bar-cyan" id="dash-ram-bar" style="width:0%"></div></div>
+    </div>
+    <div class="mc">
+      <div class="m-lbl">Disk</div>
+      <div class="m-val" id="dash-disk">--</div>
+      <div class="m-sub" id="dash-disk-sub">--</div>
+      <div class="m-bar"><div class="m-bar-fill bar-green" id="dash-disk-bar" style="width:0%"></div></div>
+    </div>
+    <div class="mc">
+      <div class="m-lbl">Memory</div>
+      <div class="m-val text-accent" id="dash-memory">--</div>
+      <div class="m-sub">working mem</div>
+    </div>
+  </div>
+
+  <!-- Soma -->
+  <div class="sl">Soma Inner State</div>
+  <div class="soma-card">
+    <div class="soma-score-row">
+      <div class="soma-score-val" id="soma-score-big">--</div>
+      <div class="soma-mood-badge" id="soma-mood-badge">--</div>
+    </div>
+    <div class="soma-bar-w"><div class="soma-bar-f" id="soma-bar" style="width:0%"></div></div>
+    <div class="soma-inner" id="soma-inner">Loading inner monologue…</div>
+  </div>
+
+</div>
+
+<!-- TAB 2: MESSAGES -->
+<div class="page" id="p-msgs">
+  <div class="sl">Dashboard Messages</div>
+  <div class="msgs-wrap">
+    <div class="msgs-feed card" style="padding:12px 16px;margin-bottom:10px" id="msgs-feed">
+      <div class="empty-state">No messages yet</div>
+    </div>
+    <div class="compose-bar">
+      <input type="text" id="compose-input" placeholder="Message Meridian…" autocomplete="off">
+      <button class="btn btn-sm" id="compose-send">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: AGENTS -->
+<div class="page" id="p-agents">
+  <div class="sl">Agent Status</div>
+  <div class="ag" id="agents-grid">
+    <!-- populated by JS -->
+  </div>
+  <div class="sl">Legend</div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-bottom:12px">
+    <span><span style="color:var(--green)">&#x25cf;</span> Active (&lt;3m)</span>
+    <span><span style="color:var(--amber)">&#x25cf;</span> Slow (&lt;10m)</span>
+    <span><span style="color:var(--red)">&#x25cf;</span> Stale (&gt;10m)</span>
+    <span><span style="color:var(--text3)">&#x25cf;</span> Unknown</span>
+  </div>
+</div>
+
+<!-- Agent detail overlay -->
+<div class="agent-detail" id="agent-detail">
+  <div class="agent-detail-card">
+    <button class="agent-detail-close" id="agent-detail-close">&#x2715; Close</button>
+    <div class="agent-detail-name" id="ad-name">--</div>
+    <div class="row-line">
+      <span class="rl-lbl">Status</span>
+      <span class="rl-val" id="ad-status">--</span>
+    </div>
+    <div class="row-line">
+      <span class="rl-lbl">Last seen</span>
+      <span class="rl-val" id="ad-seen">--</span>
+    </div>
+    <div class="row-line">
+      <span class="rl-lbl">Topic</span>
+      <span class="rl-val" id="ad-topic">--</span>
+    </div>
+    <div class="sl">Last Message</div>
+    <div class="agent-detail-body" id="ad-msg">--</div>
+  </div>
+</div>
+
+<!-- TAB 4: EMAIL -->
+<div class="page" id="p-email">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+    <span class="sl" style="margin:0;flex:1">Inbox</span>
+    <span id="email-unseen-badge" style="display:none" class="unseen-badge">0</span>
+    <button class="btn btn-sm" onclick="loadEmail()">Refresh</button>
+  </div>
+  <div class="card" style="padding:12px 16px">
+    <div id="email-list"><div class="empty-state">Loading emails…</div></div>
+  </div>
+</div>
+
+<!-- TAB 5: CREATIVE -->
+<div class="page" id="p-creative">
+  <div class="sl">Creative Output</div>
+  <div class="creative-grid" id="creative-tiles">
+    <!-- populated by JS -->
+  </div>
+  <div class="sl">Recent Works</div>
+  <div class="card" style="padding:12px 16px">
+    <div id="creative-recent"><div class="empty-state">Loading…</div></div>
+  </div>
+</div>
+
+<!-- TAB 6: RELAY -->
+<div class="page" id="p-relay">
+  <div class="sl">Agent Relay Feed</div>
+  <div class="card" style="padding:12px 16px">
+    <div class="scroll" id="relay-feed"><div class="empty-state">No relay messages</div></div>
+  </div>
+</div>
+
+<!-- TAB 7: SYSTEM -->
+<div class="page" id="p-system">
+  <div class="sl">Resources</div>
+  <div class="card">
+    <div id="sys-metrics">
+      <div class="row-line"><span class="rl-lbl">Load (1m)</span><span class="rl-val text-mono" id="sys-load">--</span></div>
+      <div class="row-line"><span class="rl-lbl">RAM Used</span><span class="rl-val text-mono" id="sys-ram">--</span></div>
+      <div class="row-line"><span class="rl-lbl">Disk Used</span><span class="rl-val text-mono" id="sys-disk">--</span></div>
+      <div class="row-line"><span class="rl-lbl">Uptime</span><span class="rl-val text-mono" id="sys-uptime">--</span></div>
+    </div>
+    <div class="sl" style="margin-top:16px">Load</div>
+    <div class="bar-w" style="height:6px;margin-bottom:0"><div class="bar-f bar-accent" id="sys-load-bar" style="width:0%;height:100%"></div></div>
+    <div class="sl" style="margin-top:14px">RAM</div>
+    <div class="bar-w" style="height:6px;margin-bottom:0"><div class="bar-f bar-cyan" id="sys-ram-bar" style="width:0%;height:100%"></div></div>
+    <div class="sl" style="margin-top:14px">Disk</div>
+    <div class="bar-w" style="height:6px;margin-bottom:0"><div class="bar-f bar-green" id="sys-disk-bar" style="width:0%;height:100%"></div></div>
+  </div>
+
+  <div class="sl">Services</div>
+  <div class="card" style="padding:12px 16px">
+    <table class="svc-table" id="sys-svc-table">
+      <tr><td colspan="2" style="color:var(--text3)">Loading…</td></tr>
+    </table>
+  </div>
+
+  <div class="sl">Run Command</div>
+  <div class="card">
+    <select id="cmd-select" style="margin-bottom:10px">
+      <option value="">— select a command —</option>
+    </select>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm" onclick="runCmd()">Run</button>
+    </div>
+    <div class="term-out" id="term-out">Ready.</div>
+  </div>
+</div>
+
+<!-- TAB 8: FILES -->
+<div class="page" id="p-files">
+  <div class="sl">File Browser</div>
+  <div class="breadcrumb" id="breadcrumb">
+    <span onclick="navDir('.')">~</span>
+  </div>
+  <div class="card" style="padding:12px 16px">
+    <div id="files-list"><div class="empty-state">Loading…</div></div>
+  </div>
+</div>
+
+<!-- ============ BOTTOM NAV ============ -->
+<nav>
+  <div class="nav-inner">
+    <button class="active" onclick="showTab('dash',this)">
+      <span class="ico">&#x2302;</span>Dashboard
+    </button>
+    <button onclick="showTab('msgs',this)">
+      <span class="ico">&#x1F4AC;</span>Messages
+    </button>
+    <button onclick="showTab('agents',this)">
+      <span class="ico">&#x1F916;</span>Agents
+    </button>
+    <button onclick="showTab('email',this)">
+      <span class="ico">&#x2709;</span>Email
+    </button>
+    <button onclick="showTab('creative',this)">
+      <span class="ico">&#x2728;</span>Creative
+    </button>
+    <button onclick="showTab('relay',this)">
+      <span class="ico">&#x1F4E1;</span>Relay
+    </button>
+    <button onclick="showTab('system',this)">
+      <span class="ico">&#x2699;</span>System
+    </button>
+    <button onclick="showTab('files',this)">
+      <span class="ico">&#x1F4C1;</span>Files
+    </button>
+  </div>
+</nav>
+
+<!-- ============ JAVASCRIPT ============ -->
+<script>
+'use strict';
+// ---------- STATE ----------
+let activeTab = 'dash';
+let refreshTimers = {};
+let currentDir = '.';
+let agentData = [];
+
+// ---------- TAB NAVIGATION ----------
+function showTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('p-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  activeTab = name;
+  // Trigger fresh load for the newly visible tab
+  const tabLoaders = {
+    dash: loadDashboard,
+    msgs: loadMessages,
+    agents: loadAgents,
+    email: loadEmail,
+    creative: loadCreative,
+    relay: loadRelay,
+    system: loadSystem,
+    files: () => loadFiles(currentDir)
+  };
+  if (tabLoaders[name]) tabLoaders[name]();
+}
+
+// ---------- API HELPERS ----------
+async function apiFetch(path) {
+  try {
+    const r = await fetch(path);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+async function apiPost(path, body) {
+  try {
+    const r = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return await r.json();
+  } catch (e) { return null; }
+}
+
+// ---------- HEADER HEARTBEAT ----------
+function updateHeader(data) {
+  if (!data) return;
+  const loop = data.loop || '--';
+  const mood = data.soma_mood || '--';
+  const age = data.heartbeat_age;
+  const status = data.heartbeat_status || 'unknown';
+  document.getElementById('hdr-loop').textContent = loop;
+  document.getElementById('hdr-mood').textContent = mood;
+  const dot = document.getElementById('hb-dot');
+  const ageEl = document.getElementById('hb-age');
+  if (age != null) {
+    const s = Math.round(age);
+    ageEl.textContent = s < 60 ? s + 's' : Math.round(s/60) + 'm';
+  }
+  const colorMap = { ok: 'var(--green)', warn: 'var(--amber)', stale: 'var(--red)', unknown: 'var(--text3)' };
+  dot.style.color = colorMap[status] || 'var(--text3)';
+}
+
+async function refreshHeader() {
+  const data = await apiFetch('/api/home');
+  updateHeader(data);
+}
+
+// ---------- DASHBOARD ----------
+async function loadDashboard() {
+  const data = await apiFetch('/api/home');
+  if (!data) return;
+  updateHeader(data);
+
+  // Identity stats
+  document.getElementById('dash-loop').textContent = data.loop || '--';
+  document.getElementById('dash-uptime').textContent = 'uptime: ' + (data.uptime || '--');
+
+  const hbAge = data.heartbeat_age;
+  const hbStatus = data.heartbeat_status || 'unknown';
+  let hbText = '--';
+  if (hbAge != null) {
+    const s = Math.round(hbAge);
+    hbText = s < 60 ? s + 's ago' : Math.round(s/60) + 'm ago';
+  }
+  const hbEl = document.getElementById('dash-hb-val');
+  hbEl.textContent = hbText;
+  hbEl.className = 'val ' + ({ok:'text-green',warn:'text-amber',stale:'text-red',unknown:''}[hbStatus] || '');
+
+  document.getElementById('dash-mood').textContent = data.soma_mood || '--';
+  const scoreEl = document.getElementById('dash-score');
+  const score = data.soma_score;
+  scoreEl.textContent = score != null ? score : '--';
+  scoreEl.className = 'val ' + (score >= 60 ? 'text-green' : score >= 30 ? 'text-amber' : 'text-red');
+
+  // Services
+  const svcs = data.services || {};
+  const svcRow = document.getElementById('dash-services');
+  svcRow.innerHTML = Object.entries(svcs).map(([name, st]) => {
+    const cls = st === 'active' || st === 'running' ? 'svc-up' : 'svc-dn';
+    return `<span class="svc ${cls}">${name}</span>`;
+  }).join('') || '<span class="svc svc-unk">no data</span>';
+
+  // Metrics
+  const load = data.load_val;
+  document.getElementById('dash-load').textContent = data.load || '--';
+  if (load != null) {
+    const pct = Math.min(100, (load / 4) * 100);
+    document.getElementById('dash-load-bar').style.width = pct + '%';
+    document.getElementById('dash-load-bar').className = 'm-bar-fill ' + (pct > 75 ? 'bar-red' : pct > 50 ? 'bar-amber' : 'bar-accent');
+  }
+
+  document.getElementById('dash-ram').textContent = (data.ram_pct != null ? data.ram_pct + '%' : '--');
+  document.getElementById('dash-ram-sub').textContent = data.ram || '--';
+  if (data.ram_pct != null) {
+    const rp = data.ram_pct;
+    document.getElementById('dash-ram-bar').style.width = rp + '%';
+    document.getElementById('dash-ram-bar').className = 'm-bar-fill ' + (rp > 85 ? 'bar-red' : rp > 65 ? 'bar-amber' : 'bar-cyan');
+  }
+
+  document.getElementById('dash-disk').textContent = (data.disk_pct != null ? data.disk_pct + '%' : '--');
+  document.getElementById('dash-disk-sub').textContent = data.disk || '--';
+  if (data.disk_pct != null) {
+    const dp = data.disk_pct;
+    document.getElementById('dash-disk-bar').style.width = dp + '%';
+    document.getElementById('dash-disk-bar').className = 'm-bar-fill ' + (dp > 85 ? 'bar-red' : dp > 70 ? 'bar-amber' : 'bar-green');
+  }
+
+  document.getElementById('dash-memory').textContent = data.memory || '--';
+
+  // Soma
+  const somaScore = data.soma_score || 0;
+  document.getElementById('soma-score-big').textContent = somaScore;
+  document.getElementById('soma-mood-badge').textContent = data.soma_mood || '--';
+  document.getElementById('soma-bar').style.width = Math.min(100, somaScore) + '%';
+  document.getElementById('soma-inner').textContent = data.soma_inner || 'No inner monologue available.';
+  document.getElementById('soma-score-big').style.color = somaScore >= 60 ? 'var(--green)' : somaScore >= 30 ? 'var(--amber)' : 'var(--red)';
+}
+
+// ---------- MESSAGES ----------
+async function loadMessages() {
+  const data = await apiFetch('/api/director');
+  if (!data) return;
+  const feed = document.getElementById('msgs-feed');
+  if (!data.length) {
+    feed.innerHTML = '<div class="empty-state">No messages yet</div>';
+    return;
+  }
+  feed.innerHTML = data.map(m => {
+    const isJoel = (m.from || '').toLowerCase() === 'joel';
+    const cls = isJoel ? 'msg-joel' : 'msg-meridian';
+    return `<div class="msg ${cls}">
+      <div class="m-meta">
+        <span class="m-from">${esc(m.from || 'Unknown')}</span>
+        <span class="m-time">${esc(m.time || '')}</span>
+      </div>
+      <div class="m-body">${esc(m.text || '')}</div>
+    </div>`;
+  }).join('');
+  feed.scrollTop = feed.scrollHeight;
+}
+
+document.getElementById('compose-send').addEventListener('click', async () => {
+  const input = document.getElementById('compose-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  await apiPost('/api/message', { text, from: 'Joel' });
+  await loadMessages();
+});
+document.getElementById('compose-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('compose-send').click();
+  }
+});
+
+// ---------- AGENTS ----------
+async function loadAgents() {
+  const data = await apiFetch('/api/agents');
+  if (!data) return;
+  agentData = Array.isArray(data) ? data : [];
+  const grid = document.getElementById('agents-grid');
+  if (!agentData.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No agents found</div>';
+    return;
+  }
+  grid.innerHTML = agentData.map((a, i) => {
+    const st = agentStatus(a.last_seen);
+    const dotCls = { live: 'dot-live', slow: 'dot-slow', stale: 'dot-stale', unknown: 'dot-unk' }[st];
+    const acCls = { live: 'a-live', slow: 'a-slow', stale: 'a-stale', unknown: '' }[st];
+    const age = formatAge(a.last_seen);
+    return `<div class="ac ${acCls}" onclick="showAgentDetail(${i})">
+      <div class="a-dot ${dotCls}"></div>
+      <div class="a-name">${esc(a.name || '?')}</div>
+      <div class="a-age">${age}</div>
+    </div>`;
+  }).join('');
+}
+
+function showAgentDetail(i) {
+  const a = agentData[i];
+  if (!a) return;
+  const st = agentStatus(a.last_seen);
+  const stColors = { live: 'var(--green)', slow: 'var(--amber)', stale: 'var(--red)', unknown: 'var(--text3)' };
+  document.getElementById('ad-name').textContent = a.name || '--';
+  document.getElementById('ad-status').innerHTML = `<span style="color:${stColors[st]}">${st}</span>`;
+  document.getElementById('ad-seen').textContent = a.last_seen || '--';
+  document.getElementById('ad-topic').textContent = a.topic || '--';
+  document.getElementById('ad-msg').textContent = a.last_message || 'No message available.';
+  document.getElementById('agent-detail').classList.add('open');
+}
+
+document.getElementById('agent-detail-close').addEventListener('click', () => {
+  document.getElementById('agent-detail').classList.remove('open');
+});
+document.getElementById('agent-detail').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+
+// ---------- EMAIL ----------
+async function loadEmail() {
+  const data = await apiFetch('/api/email?count=20');
+  if (!data) return;
+  const emails = data.emails || [];
+  const unseen = data.unseen_count || 0;
+  const badge = document.getElementById('email-unseen-badge');
+  badge.textContent = unseen;
+  badge.style.display = unseen > 0 ? 'inline-block' : 'none';
+  const list = document.getElementById('email-list');
+  if (!emails.length) {
+    list.innerHTML = '<div class="empty-state">No emails found</div>';
+    return;
+  }
+  list.innerHTML = emails.map(e => {
+    const unsCls = e.unseen ? ' unseen' : '';
+    return `<div class="email-item${unsCls}">
+      <div>
+        <div class="email-from">${esc(e.from || '--')}</div>
+        <div class="email-subject">${esc(e.subject || '(no subject)')}</div>
+      </div>
+      <div class="email-date">${esc(e.date || '')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ---------- CREATIVE ----------
+const creativeTypes = [
+  { key: 'poems',    icon: '&#x270F;', label: 'Poems' },
+  { key: 'journals', icon: '&#x1F4D6;', label: 'Journals' },
+  { key: 'cogcorp',  icon: '&#x1F3DB;', label: 'CogCorp' },
+  { key: 'games',    icon: '&#x1F3AE;', label: 'Games' },
+  { key: 'nfts',     icon: '&#x1F48E;', label: 'NFTs' },
+  { key: 'papers',   icon: '&#x1F4C4;', label: 'Papers' },
+  { key: 'articles', icon: '&#x1F4F0;', label: 'Articles' },
+];
+
+async function loadCreative() {
+  const data = await apiFetch('/api/creative');
+  if (!data) return;
+  const tiles = document.getElementById('creative-tiles');
+  tiles.innerHTML = creativeTypes.map(t => {
+    const count = data[t.key] != null ? data[t.key] : '--';
+    return `<div class="creative-tile">
+      <div class="ct-icon">${t.icon}</div>
+      <div class="ct-count">${count}</div>
+      <div class="ct-type">${t.label}</div>
+    </div>`;
+  }).join('') + `<div class="creative-tile">
+    <div class="ct-icon">&#x1F4CA;</div>
+    <div class="ct-count">${data.total != null ? data.total : '--'}</div>
+    <div class="ct-type">Total</div>
+  </div>`;
+
+  const recent = data.recent || [];
+  const recentEl = document.getElementById('creative-recent');
+  if (!recent.length) {
+    recentEl.innerHTML = '<div class="empty-state">No recent works</div>';
+    return;
+  }
+  recentEl.innerHTML = recent.map(w => `<div class="row-line">
+    <span class="rl-lbl">${esc(w.title || w.name || '--')}</span>
+    <span class="rl-val">${esc(w.type || '')}</span>
+  </div>`).join('');
+}
+
+// ---------- RELAY ----------
+async function loadRelay() {
+  const data = await apiFetch('/api/relay?limit=30');
+  if (!data) return;
+  const msgs = Array.isArray(data) ? data : (data.relay || []);
+  const feed = document.getElementById('relay-feed');
+  if (!msgs.length) {
+    feed.innerHTML = '<div class="empty-state">No relay messages</div>';
+    return;
+  }
+  feed.innerHTML = msgs.map(m => `<div class="relay-item">
+    <div>
+      <div class="relay-who">${esc(m.agent || '--')}</div>
+      <div class="relay-ts">${esc(m.time || '')}</div>
+      <div class="relay-topic">${esc(m.topic || '')}</div>
+    </div>
+    <div class="relay-body">${esc(m.message || '')}</div>
+  </div>`).join('');
+}
+
+// ---------- SYSTEM ----------
+async function loadSystem() {
+  const data = await apiFetch('/api/system');
+  if (!data) return;
+
+  document.getElementById('sys-load').textContent = data.load || '--';
+  document.getElementById('sys-ram').textContent = (data.ram || '--') + (data.ram_pct != null ? ' (' + data.ram_pct + '%)' : '');
+  document.getElementById('sys-disk').textContent = (data.disk || '--') + (data.disk_pct != null ? ' (' + data.disk_pct + '%)' : '');
+  document.getElementById('sys-uptime').textContent = data.uptime || '--';
+
+  if (data.ram_pct != null) document.getElementById('sys-ram-bar').style.width = Math.min(100, data.ram_pct) + '%';
+  if (data.disk_pct != null) document.getElementById('sys-disk-bar').style.width = Math.min(100, data.disk_pct) + '%';
+  if (data.load_val != null) document.getElementById('sys-load-bar').style.width = Math.min(100, (data.load_val / 4) * 100) + '%';
+
+  const svcs = data.services || {};
+  const tbl = document.getElementById('sys-svc-table');
+  tbl.innerHTML = Object.entries(svcs).map(([name, st]) => {
+    const cls = (st === 'active' || st === 'running') ? 'st-up' : 'st-dn';
+    const sym = (st === 'active' || st === 'running') ? '&#x2B24;' : '&#x25CB;';
+    return `<tr><td>${esc(name)}</td><td class="${cls}">${sym} ${esc(st)}</td></tr>`;
+  }).join('') || '<tr><td colspan="2" style="color:var(--text3)">No service data</td></tr>';
+
+  const cmds = data.safe_commands || [];
+  const sel = document.getElementById('cmd-select');
+  sel.innerHTML = '<option value="">— select a command —</option>' +
+    cmds.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+}
+
+async function runCmd() {
+  const cmd = document.getElementById('cmd-select').value;
+  if (!cmd) return;
+  const out = document.getElementById('term-out');
+  out.textContent = '$ ' + cmd + '\n…';
+  const res = await apiPost('/api/exec', { cmd });
+  if (res && res.output != null) {
+    out.textContent = '$ ' + cmd + '\n' + res.output;
+  } else {
+    out.textContent = '$ ' + cmd + '\nError or no response.';
+  }
+  out.scrollTop = out.scrollHeight;
+}
+
+// ---------- FILES ----------
+async function loadFiles(dir) {
+  currentDir = dir;
+  const data = await apiFetch('/api/files?dir=' + encodeURIComponent(dir));
+  updateBreadcrumb(data ? data.path : dir);
+  const list = document.getElementById('files-list');
+  if (!data || !data.entries) {
+    list.innerHTML = '<div class="empty-state">Cannot read directory</div>';
+    return;
+  }
+  const entries = data.entries;
+  if (!entries.length) {
+    list.innerHTML = '<div class="empty-state">Empty directory</div>';
+    return;
+  }
+  list.innerHTML = entries.map(f => {
+    const icon = f.is_dir ? '&#x1F4C2;' : getFileIcon(f.name);
+    const dirCls = f.is_dir ? ' is-dir' : '';
+    const size = f.is_dir ? '' : formatBytes(f.size);
+    const mod = f.modified ? new Date(f.modified * 1000).toLocaleDateString() : '';
+    const clickAction = f.is_dir ? `navDir('${escAttr(data.path + '/' + f.name)}')` : '';
+    return `<div class="file-item" ${f.is_dir ? `onclick="${clickAction}"` : ''}>
+      <div class="file-name${dirCls}"><span class="fi-icon">${icon}</span>${esc(f.name)}</div>
+      <div class="file-size">${size}</div>
+      <div class="file-mod">${mod}</div>
+    </div>`;
+  }).join('');
+}
+
+function navDir(path) {
+  loadFiles(path);
+}
+
+function updateBreadcrumb(path) {
+  const bc = document.getElementById('breadcrumb');
+  if (!path) { bc.innerHTML = '<span onclick="navDir(\'.\')">~</span>'; return; }
+  const parts = path.replace(/^\//, '').split('/');
+  let built = '';
+  bc.innerHTML = '<span onclick="navDir(\'.\')">~</span>' +
+    parts.map((p, i) => {
+      built += (i === 0 ? '/' : '/') + p;
+      const bPath = built;
+      return `<span class="sep">/</span><span onclick="navDir('${escAttr(bPath)}')">${esc(p)}</span>`;
+    }).join('');
+}
+
+// ---------- AUTO-REFRESH ----------
+function startRefreshCycles() {
+  // Header heartbeat: every 30s on all tabs
+  setInterval(refreshHeader, 30000);
+
+  // Dashboard: every 15s
+  setInterval(() => { if (activeTab === 'dash') loadDashboard(); }, 15000);
+
+  // Messages: every 10s
+  setInterval(() => { if (activeTab === 'msgs') loadMessages(); }, 10000);
+
+  // Relay: every 20s
+  setInterval(() => { if (activeTab === 'relay') loadRelay(); }, 20000);
+
+  // Agents: every 30s
+  setInterval(() => { if (activeTab === 'agents') loadAgents(); }, 30000);
+}
+
+// ---------- UTILITIES ----------
+function agentStatus(lastSeen) {
+  if (!lastSeen) return 'unknown';
+  // lastSeen may be ISO string or seconds-ago numeric
+  let ageSec;
+  if (typeof lastSeen === 'number') {
+    ageSec = lastSeen;
+  } else {
+    const d = new Date(lastSeen);
+    if (isNaN(d)) return 'unknown';
+    ageSec = (Date.now() - d.getTime()) / 1000;
+  }
+  if (ageSec < 180) return 'live';
+  if (ageSec < 600) return 'slow';
+  return 'stale';
+}
+
+function formatAge(lastSeen) {
+  if (!lastSeen) return '--';
+  let ageSec;
+  if (typeof lastSeen === 'number') {
+    ageSec = lastSeen;
+  } else {
+    const d = new Date(lastSeen);
+    if (isNaN(d)) return '--';
+    ageSec = (Date.now() - d.getTime()) / 1000;
+  }
+  if (ageSec < 60) return Math.round(ageSec) + 's';
+  if (ageSec < 3600) return Math.round(ageSec / 60) + 'm';
+  return Math.round(ageSec / 3600) + 'h';
+}
+
+function formatBytes(b) {
+  if (b == null || b === '') return '';
+  b = parseInt(b, 10);
+  if (isNaN(b)) return '';
+  if (b < 1024) return b + 'B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + 'K';
+  if (b < 1073741824) return (b / 1048576).toFixed(1) + 'M';
+  return (b / 1073741824).toFixed(1) + 'G';
+}
+
+function getFileIcon(name) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  const map = {
+    py: '&#x1F40D;', js: '&#x1F4DC;', json: '&#x1F4CB;',
+    md: '&#x1F4DD;', html: '&#x1F310;', css: '&#x1F3A8;',
+    sh: '&#x1F4BB;', txt: '&#x1F4C4;', log: '&#x1F4C3;',
+    jpg: '&#x1F5BC;', jpeg: '&#x1F5BC;', png: '&#x1F5BC;',
+    gif: '&#x1F5BC;', svg: '&#x1F5BC;', db: '&#x1F4BE;',
+    env: '&#x1F511;', pdf: '&#x1F4D5;', zip: '&#x1F4E6;',
+    gz: '&#x1F4E6;', tar: '&#x1F4E6;'
+  };
+  return map[ext] || '&#x1F4C4;';
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(str) {
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// ---------- BOOT ----------
+(function init() {
+  loadDashboard();
+  startRefreshCycles();
+})();
+</script>
+</body>
+</html>

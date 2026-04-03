@@ -829,17 +829,17 @@ def _public_landing():
 
 
 def _main_app():
-    """The Signal v5.0 — serves lcc-v5-template.html, proxies API to LCC"""
+    """The Signal v6.0 — serves the-signal-template.html"""
     try:
-        tmpl = os.path.join(BASE, "lcc-v5-template.html")
+        tmpl = os.path.join(BASE, "the-signal-template.html")
         with open(tmpl) as f:
             html = f.read()
         # Serve template as-is — hub now has all required /api/ endpoints
         return html
     except Exception:
-        # Fallback to old template
+        # Fallback to v5, then old template
         try:
-            with open(os.path.join(BASE, "lcc-template.html")) as f:
+            with open(os.path.join(BASE, "lcc-v5-template.html")) as f:
                 return f.read()
         except Exception as e:
             return f"<html><body style='background:#06060e;color:#e6e6f6;font-family:monospace;padding:20px'><h1>Template error</h1><pre>{e}</pre></body></html>"
