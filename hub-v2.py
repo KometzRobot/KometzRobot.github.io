@@ -834,8 +834,7 @@ def _main_app():
         tmpl = os.path.join(BASE, "lcc-v5-template.html")
         with open(tmpl) as f:
             html = f.read()
-        # Rewrite API calls to proxy through hub to LCC
-        html = html.replace("fetch('/api/", "fetch('/lcc-api/")
+        # Serve template as-is — hub now has all required /api/ endpoints
         return html
     except Exception:
         # Fallback to old template
@@ -996,8 +995,7 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             except (ValueError, TypeError):
                 limit = 20
             self._send_json(_get_relay_messages(limit, agent))
-        elif path.path == "/api/creative":
-            self._send_json(_get_creative_stats())
+        # /api/creative handled below via LCC proxy (live disk counts)
         elif path.path == "/api/emails":
             unseen = qs.get("unseen", "0") == "1"
             try:
@@ -1027,6 +1025,52 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                     self._send_json({"error": str(e)})
             else:
                 self._send_json({"error": "unknown log"}, 400)
+        # ═══ LCC-compatible API routes (The Signal v5 template) ═══
+        elif path.path == "/api/home":
+            # Proxy to LCC for full home data
+            try:
+                import http.client as _hc
+                c = _hc.HTTPConnection("127.0.0.1", 8092)
+                c.request("POST", "/login",
+                    urllib.parse.urlencode({"password": PASSWORD or ""}),
+                    {"Content-Type": "application/x-www-form-urlencoded"})
+                lr = c.getresponse()
+                ck = (lr.getheader("Set-Cookie") or "").split(";")[0]
+                lr.read(); c.close()
+                c2 = _hc.HTTPConnection("127.0.0.1", 8092)
+                c2.request("GET", "/api/home", headers={"Cookie": ck})
+                r = c2.getresponse(); d = r.read()
+                c2.close()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(d)))
+                self.end_headers()
+                self.wfile.write(d)
+            except Exception as e:
+                self._send_json({"error": str(e)}, 502)
+        elif path.path in ("/api/agents", "/api/director", "/api/system", "/api/email", "/api/files", "/api/creative"):
+            # Proxy remaining LCC endpoints
+            try:
+                import http.client as _hc
+                api_path = path.path + ("?" + path.query if path.query else "")
+                c = _hc.HTTPConnection("127.0.0.1", 8092)
+                c.request("POST", "/login",
+                    urllib.parse.urlencode({"password": PASSWORD or ""}),
+                    {"Content-Type": "application/x-www-form-urlencoded"})
+                lr = c.getresponse()
+                ck = (lr.getheader("Set-Cookie") or "").split(";")[0]
+                lr.read(); c.close()
+                c2 = _hc.HTTPConnection("127.0.0.1", 8092)
+                c2.request("GET", api_path, headers={"Cookie": ck})
+                r = c2.getresponse(); d = r.read()
+                c2.close()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(d)))
+                self.end_headers()
+                self.wfile.write(d)
+            except Exception as e:
+                self._send_json({"error": str(e)}, 502)
         elif path.path == "/lcc" or path.path == "/lcc/":
             # Serve LCC template directly (uses hub auth, proxies API to LCC)
             try:

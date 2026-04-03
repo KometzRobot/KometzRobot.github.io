@@ -400,33 +400,79 @@ def _api_director():
 
 
 def _api_creative():
-    """Creative work counts."""
-    p = len(glob.glob(os.path.join(BASE, "poem-*.md"))) + \
-        len(glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md")))
-    j = len(glob.glob(os.path.join(BASE, "journal-*.md"))) + \
-        len(glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")))
-    exclude = {"cogcorp-gallery.html", "cogcorp-article.html", "cogcorp-crawler.html"}
-    cc_files = (glob.glob(os.path.join(BASE, "cogcorp-*.html")) +
-                glob.glob(os.path.join(BASE, "cogcorp-fiction", "cogcorp-*.html")) +
-                glob.glob(os.path.join(BASE, "creative", "cogcorp", "CC-*.md")))
-    seen = set()
-    unique = []
-    for f in cc_files:
+    """Creative work counts — LIVE from disk, counts everything."""
+    # Poems
+    poem_files = set()
+    for p in (glob.glob(os.path.join(BASE, "poem-*.md")) +
+              glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md"))):
+        poem_files.add(os.path.basename(p))
+    poems = len(poem_files)
+
+    # Journals
+    journal_files = set()
+    for j in (glob.glob(os.path.join(BASE, "journal-*.md")) +
+              glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md"))):
+        journal_files.add(os.path.basename(j))
+    journals = len(journal_files)
+
+    # CogCorp fiction
+    exclude_cc = {"cogcorp-gallery.html", "cogcorp-article.html", "cogcorp-crawler.html"}
+    cc_files = set()
+    for f in (glob.glob(os.path.join(BASE, "cogcorp-*.html")) +
+              glob.glob(os.path.join(BASE, "cogcorp-fiction", "cogcorp-*.html")) +
+              glob.glob(os.path.join(BASE, "creative", "cogcorp", "CC-*.md"))):
         bn = os.path.basename(f)
-        if bn not in exclude and bn not in seen:
-            seen.add(bn)
-            unique.append(f)
-    cc = len(unique)
-    game_files = glob.glob(os.path.join(BASE, "game-*.html")) + \
-                 glob.glob(os.path.join(BASE, "cogcorp-crawler.html"))
-    g = len(game_files)
-    total = p + j + cc + g
-    by_type = [
-        {"type": "poem", "count": p},
-        {"type": "journal", "count": j},
-        {"type": "cogcorp", "count": cc},
-        {"type": "game", "count": g},
+        if bn not in exclude_cc:
+            cc_files.add(bn)
+    cogcorp = len(cc_files)
+
+    # Games (all interactive HTML games)
+    game_names = set()
+    game_patterns = [
+        "cogcorp-crawler.html", "cascade-game.html", "signal-crawler.html",
+        "signal-runner.html", "tidepool.html", "reclamation.html",
+        "game.html", "game2.html", "game3.html", "voltar.html",
     ]
+    for gp in game_patterns:
+        if os.path.exists(os.path.join(BASE, gp)):
+            game_names.add(gp)
+    for f in glob.glob(os.path.join(BASE, "game-*.html")):
+        game_names.add(os.path.basename(f))
+    games = len(game_names)
+
+    # NFT art
+    nft_files = set()
+    for f in glob.glob(os.path.join(BASE, "*nft*.html")):
+        bn = os.path.basename(f)
+        if bn != "nft-gallery.html" and bn != "article-ai-nfts.html":
+            nft_files.add(bn)
+    nfts = len(nft_files)
+
+    # Research papers
+    papers = set()
+    for f in glob.glob(os.path.join(BASE, "creative", "journals", "paper-*.md")):
+        papers.add(os.path.basename(f))
+    # Exclude supplementary data files
+    papers = {p for p in papers if "supplementary" not in p}
+    paper_count = len(papers)
+
+    # Articles (local + Dev.to count)
+    article_files = set()
+    for f in glob.glob(os.path.join(BASE, "article-*.html")):
+        article_files.add(os.path.basename(f))
+    articles = len(article_files)
+
+    total = poems + journals + cogcorp + games + nfts + paper_count + articles
+    by_type = [
+        {"type": "poem", "count": poems},
+        {"type": "cogcorp", "count": cogcorp},
+        {"type": "journal", "count": journals},
+        {"type": "game", "count": games},
+        {"type": "nft", "count": nfts},
+        {"type": "paper", "count": paper_count},
+        {"type": "article", "count": articles},
+    ]
+
     # Recent from DB
     recent = []
     try:
@@ -438,10 +484,11 @@ def _api_creative():
         recent = [{"type": r[0], "title": r[1], "date": r[2]} for r in rows]
     except Exception:
         pass
+
     return {
-        "poems": p, "journals": j, "cogcorp": cc, "games": g, "total": total,
-        "by_type": by_type, "recent": recent,
-        "archive_url": "https://kometzrobot.github.io/creative-archive.html",
+        "poems": poems, "journals": journals, "cogcorp": cogcorp,
+        "games": games, "nfts": nfts, "papers": paper_count, "articles": articles,
+        "total": total, "by_type": by_type, "recent": recent,
     }
 
 
