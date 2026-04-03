@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Meridian — Loop Control Center</title>
+<title>The Signal — Meridian</title>
 <meta name="theme-color" content="#0a0610">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -1012,10 +1012,10 @@ hr { border: none; border-top: 1px solid var(--bdr); margin: 12px 0; }
     </div>
   </div>
 
-  <div class="sl">Reply to Joel</div>
+  <div class="sl">Message Meridian</div>
   <div class="card">
     <div class="compose-wrap">
-      <textarea id="dir-compose" rows="3" placeholder="Send a message to the director…"></textarea>
+      <textarea id="dir-compose" rows="3" placeholder="Type a message to Meridian…"></textarea>
       <button class="btn btn-sm" onclick="dirSend()">Send</button>
     </div>
     <div id="dir-status" style="font-size:12px;margin-top:8px;color:var(--cream3)"></div>
@@ -1405,7 +1405,7 @@ async function dirSend() {
   const r = await api('message', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ text, from: 'meridian' })
+    body: JSON.stringify({ text, from: 'Joel' })
   })
   if (r.error) {
     statusEl.textContent = 'Error: ' + r.error

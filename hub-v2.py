@@ -829,13 +829,21 @@ def _public_landing():
 
 
 def _main_app():
-    """Loop Control Center v4.0.0 — reads from lcc-template.html"""
+    """The Signal v5.0 — serves lcc-v5-template.html, proxies API to LCC"""
     try:
-        tmpl = os.path.join(BASE, "lcc-template.html")
+        tmpl = os.path.join(BASE, "lcc-v5-template.html")
         with open(tmpl) as f:
-            return f.read()
-    except Exception as e:
-        return f"<html><body style='background:#06060e;color:#e6e6f6;font-family:monospace;padding:20px'><h1>Template error</h1><pre>{e}</pre></body></html>"
+            html = f.read()
+        # Rewrite API calls to proxy through hub to LCC
+        html = html.replace("fetch('/api/", "fetch('/lcc-api/")
+        return html
+    except Exception:
+        # Fallback to old template
+        try:
+            with open(os.path.join(BASE, "lcc-template.html")) as f:
+                return f.read()
+        except Exception as e:
+            return f"<html><body style='background:#06060e;color:#e6e6f6;font-family:monospace;padding:20px'><h1>Template error</h1><pre>{e}</pre></body></html>"
 
 
 
@@ -904,13 +912,8 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path)
         qs = dict(urllib.parse.parse_qsl(path.query))
 
-        # Public-facing landing page for unauthenticated visitors
-        if path.path == "/" and not self._authed():
-            self._send(200, _public_landing(), "text/html")
-            return
-
-        # Login page
-        if path.path == "/login":
+        # Login page — unauthenticated visitors go here
+        if path.path == "/login" or (path.path == "/" and not self._authed()):
             if self._authed():
                 self.send_response(302)
                 self.send_header("Location", "/")
