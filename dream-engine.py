@@ -85,7 +85,7 @@ NOISE_RATIO = 0.4       # 40% of seeds are pure noise (truly random, distant)
 SPREAD_THRESHOLD = 0.05 # Low threshold for dreaming (wide association)
 SPREAD_DEPTH = 2        # How far activation spreads
 MAX_FRAGMENTS = 12      # Max memory fragments fed to the dreaming mind
-DREAM_COOLDOWN = 1200   # Min seconds between dreams (20 min)
+DREAM_COOLDOWN = 300    # Min seconds between dreams (5 min — Joel: "every loop")
 DECAY_RATE = 0.97       # Slightly slower than nightly decay (dreams are gentler)
 HEBBIAN_STRENGTH = 0.5  # Dream connections are weaker than waking ones
 

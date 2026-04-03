@@ -1,1 +1,1 @@
-sentinel-briefing.py
+/home/joel/autonomous-ai/tools/beacon-briefing.py

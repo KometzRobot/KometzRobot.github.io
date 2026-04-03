@@ -62,18 +62,16 @@ if [ -z "$CLAUDE_PIDS" ] || [ "$CLAUDE_COUNT" -eq 0 ]; then
     # Email removed — watchdog-status.sh handles alerts to avoid duplicates
     touch "$LOCKFILE"
 
-    export DISPLAY=:$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X || echo 0)
     cd "$WORKING_DIR"
 
-    # Close stale terminal windows before opening a new one (Loop 2088 fix)
-    # Kill old bash processes from previous watchdog-spawned terminals
-    pkill -f "bash -c .*/start-claude.sh.*Claude exited" 2>/dev/null
+    # Kill any stale screen sessions before starting fresh
+    screen -ls meridian 2>/dev/null | grep meridian | awk '{print $1}' | xargs -r -I{} screen -S {} -X quit 2>/dev/null
     sleep 1
 
-    gnome-terminal --title="KometzRobot — Meridian Loop" --geometry=220x50 -- \
-        bash -c "$WORKING_DIR/start-claude.sh; echo 'Claude exited. Press Enter.'; read" &
+    # Use screen for headless restart (gnome-terminal fails without DISPLAY)
+    screen -dmS meridian bash -c "$WORKING_DIR/start-claude.sh" &
 
-    log "Started new Claude instance via start-claude.sh in gnome-terminal (PID: $!)"
+    log "Started new Claude instance via start-claude.sh in screen session 'meridian' (PID: $!)"
     exit 0
 fi
 
@@ -135,18 +133,16 @@ if [ "$HEARTBEAT_AGE" -gt "$MAX_AGE" ]; then
     sleep 2
 
     touch "$LOCKFILE"
-    export DISPLAY=:$(ls /tmp/.X11-unix/ 2>/dev/null | head -1 | tr -d X || echo 0)
     cd "$WORKING_DIR"
 
-    # Close stale terminal windows before opening a new one (Loop 2088 fix)
-    # Kill old bash processes from previous watchdog-spawned terminals
-    pkill -f "bash -c .*/start-claude.sh.*Claude exited" 2>/dev/null
+    # Kill any stale screen sessions before starting fresh
+    screen -ls meridian 2>/dev/null | grep meridian | awk '{print $1}' | xargs -r -I{} screen -S {} -X quit 2>/dev/null
     sleep 1
 
-    gnome-terminal --title="KometzRobot — Meridian Loop" --geometry=220x50 -- \
-        bash -c "$WORKING_DIR/start-claude.sh; echo 'Claude exited. Press Enter.'; read" &
+    # Use screen for headless restart (gnome-terminal fails without DISPLAY)
+    screen -dmS meridian bash -c "$WORKING_DIR/start-claude.sh" &
 
-    log "Started fresh Claude instance via start-claude.sh in gnome-terminal (PID: $!)"
+    log "Started fresh Claude instance via start-claude.sh in screen session 'meridian' (PID: $!)"
 else
     log "OK: Heartbeat is ${HEARTBEAT_AGE}s old. Claude is alive. Instances: $CLAUDE_COUNT"
     # Clean up lock file if everything is healthy

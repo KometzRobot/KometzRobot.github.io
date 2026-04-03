@@ -1,0 +1,58 @@
+name: Deploy Website
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'website/**'
+      - 'games/**'
+      - 'nfts/**'
+      - 'articles/**'
+      - 'cogcorp-fiction/**'
+      - 'assets/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build site structure
+        run: |
+          mkdir -p _site
+          # Copy website root files
+          cp -r website/* _site/ 2>/dev/null || true
+          # Copy content subdirectories
+          cp -r games _site/games 2>/dev/null || true
+          cp -r nfts _site/nfts 2>/dev/null || true
+          cp -r articles _site/articles 2>/dev/null || true
+          cp -r cogcorp-fiction _site/cogcorp-fiction 2>/dev/null || true
+          cp -r assets _site/assets 2>/dev/null || true
+          cp -r visuals _site/visuals 2>/dev/null || true
+          cp -r creative _site/creative 2>/dev/null || true
+          # Copy status.json if it exists
+          cp status.json _site/ 2>/dev/null || true
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

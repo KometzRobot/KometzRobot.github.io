@@ -180,6 +180,114 @@ def verify_deployment():
     return issues
 
 
+def check_port_conflicts():
+    """Detect duplicate services on same purpose ports — the Two Doors problem."""
+    import socket
+    issues = []
+    # Expected port map: port -> (expected_script, description)
+    expected_ports = {
+        8090: ("hub-v2.py", "The Signal"),
+        8091: ("the-chorus.py", "The Chorus"),
+        1144: ("bridge", "IMAP"),
+        1026: ("bridge", "SMTP"),
+    }
+    # Ports that should NOT be occupied
+    forbidden_ports = {
+        8092: "loop-control-center (killed, should stay dead)",
+    }
+
+    for port, (expected, desc) in expected_ports.items():
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            s.connect(("127.0.0.1", port))
+            s.close()
+            # Port is open — verify the right process holds it via /proc
+            result = subprocess.run(
+                f"ss -tlnp | grep ':{port} '",
+                shell=True, capture_output=True, text=True, timeout=5
+            )
+            # Extract PID and check cmdline
+            import re
+            pid_match = re.search(r'pid=(\d+)', result.stdout)
+            if pid_match:
+                pid = pid_match.group(1)
+                try:
+                    cmdline = open(f"/proc/{pid}/cmdline").read().replace("\x00", " ")
+                    if expected not in cmdline:
+                        issues.append(f"Port {port} ({desc}) held by wrong process: {cmdline.strip()[-60:]}")
+                except Exception:
+                    pass
+        except socket.error:
+            issues.append(f"Port {port} ({desc}) not responding")
+        except Exception:
+            pass
+
+    for port, reason in forbidden_ports.items():
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            s.connect(("127.0.0.1", port))
+            s.close()
+            issues.append(f"ZOMBIE: Port {port} is alive — {reason}")
+        except socket.error:
+            pass  # Good — should be dead
+
+    return issues
+
+
+def check_stale_python_processes():
+    """Find python processes that shouldn't be running."""
+    issues = []
+    # Known good scripts
+    known_good = {
+        "hub-v2.py", "symbiosense.py", "the-chorus.py",
+        "nova.py", "eos-watchdog.py", "loop-fitness.py",
+        "push-live-status.py", "meridian-loop.py", "cascade.py",
+        "goose-runner.py", "sentinel-gatekeeper.py",
+    }
+    try:
+        result = subprocess.run(
+            "ps aux | grep '/usr/bin/python3 /home/joel/autonomous-ai/' | grep -v grep",
+            shell=True, capture_output=True, text=True, timeout=5
+        )
+        for line in result.stdout.strip().split("\n"):
+            if not line.strip():
+                continue
+            # Extract script name
+            parts = line.split("/home/joel/autonomous-ai/")
+            if len(parts) > 1:
+                script = parts[1].split()[0]
+                if script not in known_good:
+                    pid = line.split()[1]
+                    issues.append(f"Unknown process: {script} (pid {pid})")
+    except Exception:
+        pass
+    return issues
+
+
+def run_verification():
+    """Run the full system verification tool and return summary."""
+    try:
+        result = subprocess.run(
+            ["python3", os.path.join(BASE, "verify-system.py"), "--json"],
+            capture_output=True, text=True, timeout=30, cwd=BASE
+        )
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            return {
+                "pass": data.get("pass", 0),
+                "fail": data.get("fail", 0),
+                "warn": data.get("warn", 0),
+                "total": data.get("total", 0),
+                "failed_checks": [c["name"] for c in data.get("checks", [])
+                                  if c["status"] == "FAIL"],
+            }
+    except Exception:
+        pass
+    return None
+
+
 def get_creative_stats():
     """Analyze creative output quality and trends."""
     stats = {}
@@ -1038,6 +1146,35 @@ def main():
     except Exception as e:
         log_observation(f"Cascade error: {e}")
 
+    # ── PORT CONFLICT DETECTION (every run) ──
+    port_issues = check_port_conflicts()
+    if port_issues:
+        for pi in port_issues:
+            actions.append(f"PORT: {pi}")
+            log_observation(f"Port conflict: {pi}")
+            post_to_dashboard(f"[Nova ALERT] {pi}")
+
+    # ── STALE PROCESS CHECK (every 4 runs = ~1 hour) ──
+    if state["runs"] % 4 == 0:
+        stale_procs = check_stale_python_processes()
+        if stale_procs:
+            for sp in stale_procs:
+                actions.append(sp)
+                log_observation(f"Stale process: {sp}")
+
+    # ── FULL SYSTEM VERIFICATION (every 12 runs = ~4 hours) ──
+    if state["runs"] % 12 == 0:
+        verify = run_verification()
+        if verify:
+            state["last_verification"] = verify
+            if verify["fail"] > 0:
+                failures = ", ".join(verify["failed_checks"][:5])
+                actions.append(f"VERIFICATION: {verify['fail']} failures: {failures}")
+                log_observation(f"System verification: {verify['pass']}/{verify['total']} passed, FAILURES: {failures}")
+                post_to_dashboard(f"[Nova] System check: {verify['fail']} failures — {failures}")
+            else:
+                log_observation(f"System verification: {verify['pass']}/{verify['total']} passed, {verify['warn']} warnings")
+
     # ── AGENT RELAY + DASHBOARD POST (every 2 runs = ~30 min) ──
     if state["runs"] % 2 == 0:
         # Build meaningful summary — skip routine noise
@@ -1159,6 +1296,21 @@ if __name__ == "__main__":
         elif cmd == "think":
             thought = nova_think("Reflecting on the current state of the ecosystem.")
             print(f"Nova thinks: {thought}")
+        elif cmd == "verify":
+            verify = run_verification()
+            if verify:
+                print(f"Verification: {verify['pass']}/{verify['total']} passed, {verify['fail']} failed, {verify['warn']} warnings")
+                if verify['failed_checks']:
+                    print(f"Failed: {', '.join(verify['failed_checks'])}")
+            else:
+                print("Verification failed to run")
+        elif cmd == "ports":
+            issues = check_port_conflicts()
+            if issues:
+                for i in issues:
+                    print(f"  ⚠ {i}")
+            else:
+                print("All ports nominal")
         elif cmd == "relay":
             state = load_state()
             creative = state.get("creative", {})

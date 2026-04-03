@@ -77,7 +77,10 @@ header{
   display:flex;align-items:center;justify-content:center;
   font-family:var(--fm);font-size:1rem;font-weight:800;color:#fff;
   flex-shrink:0;box-shadow:var(--sha);
+  animation:breathe 4s ease-in-out infinite;
+  transition:all .3s;
 }
+.hdr-badge:hover{transform:scale(1.08)}
 .hdr-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .hdr-name{font-size:.8rem;font-weight:700;color:var(--text);letter-spacing:2px;text-transform:uppercase}
 .hdr-sub{display:flex;align-items:center;gap:8px;overflow:hidden}
@@ -123,13 +126,20 @@ nav button .ico{
   display:flex;align-items:center;justify-content:center;
   border-radius:10px;transition:all .22s;
 }
+nav button:active{transform:scale(0.95)}
 nav button.active{color:var(--text)}
 nav button.active .ico{background:var(--accent-dim);color:var(--accent);box-shadow:0 0 12px var(--accent-glow)}
+nav button.active::after{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:24px;height:2px;background:var(--accent);border-radius:2px;
+}
 
 /* ---- PAGES ---- */
 .page{display:none;padding:16px 16px 8px;max-width:860px;margin:0 auto;position:relative;z-index:1}
 .page.active{display:block;animation:fadeUp .28s cubic-bezier(.2,0,.2,1)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes breathe{0%,100%{box-shadow:0 0 8px rgba(124,106,255,0.15)}50%{box-shadow:0 0 20px rgba(124,106,255,0.3)}}
 
 /* ---- SECTION LABEL ---- */
 .sl{
@@ -209,7 +219,12 @@ nav button.active .ico{background:var(--accent-dim);color:var(--accent);box-shad
   background:linear-gradient(135deg,rgba(0,212,255,0.05) 0%,var(--surf) 100%);
   border:1px solid rgba(0,212,255,0.12);
   border-radius:var(--r-xl);padding:18px;margin-bottom:12px;
-  box-shadow:var(--sh1);
+  box-shadow:var(--sh1);position:relative;overflow:hidden;
+}
+.soma-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--accent),transparent);
+  background-size:200% 100%;animation:shimmer 6s ease-in-out infinite;
 }
 .soma-score-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .soma-score-val{font-family:var(--fm);font-size:2rem;font-weight:800;color:var(--cyan);line-height:1}
@@ -405,6 +420,108 @@ select option{background:var(--bg2)}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .pulse{animation:pulse 2.2s ease-in-out infinite}
+
+/* ---- MODAL OVERLAY ---- */
+.modal-overlay{
+  display:none;position:fixed;inset:0;z-index:400;
+  background:rgba(6,6,14,0.82);backdrop-filter:blur(10px);
+  align-items:flex-start;justify-content:center;padding:20px;
+  overflow-y:auto;
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--r-xl);padding:0;max-width:640px;width:100%;
+  box-shadow:var(--sh3);position:relative;margin-top:40px;margin-bottom:40px;
+  max-height:calc(100vh - 80px);display:flex;flex-direction:column;
+}
+.modal-hdr{
+  display:flex;align-items:center;gap:12px;padding:18px 20px 14px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.modal-hdr .modal-title{flex:1;font-family:var(--fm);font-size:12px;font-weight:700;color:var(--accent2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal-close{
+  background:var(--surf2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:5px 12px;
+  color:var(--text3);font-size:12px;cursor:pointer;flex-shrink:0;
+}
+.modal-close:hover{background:var(--surf3);color:var(--text)}
+.modal-body{padding:16px 20px 20px;overflow-y:auto;flex:1}
+.modal-meta{font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.8}
+.modal-meta span{color:var(--text2)}
+.modal-content{
+  font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-wrap:break-word;
+  font-family:var(--fu);
+}
+.modal-content.code{
+  font-family:var(--fm);font-size:11px;line-height:1.5;
+  background:rgba(0,0,0,0.35);padding:14px;border-radius:var(--r-lg);
+  border:1px solid var(--border);overflow-x:auto;
+  tab-size:4;white-space:pre;
+}
+.modal-content .line-num{
+  display:inline-block;min-width:3.5em;color:var(--text3);
+  user-select:none;text-align:right;padding-right:1em;opacity:.5;
+}
+
+/* ---- ALERT BANNER ---- */
+.alert-banner{
+  display:none;background:var(--red-dim);border:1px solid rgba(248,113,113,0.18);
+  border-radius:var(--r-lg);padding:10px 16px;margin-bottom:12px;
+  font-size:12px;color:var(--red);line-height:1.5;
+}
+.alert-banner.show{display:block;animation:fadeUp .3s ease}
+.alert-banner .ab-title{font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.alert-banner .ab-items{font-size:12px;color:var(--text2)}
+
+/* ---- LOG VIEWER ---- */
+.log-viewer{margin-top:12px}
+.log-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.log-tab{
+  font-family:var(--fm);font-size:10px;font-weight:600;
+  padding:5px 12px;border-radius:20px;cursor:pointer;
+  background:var(--surf);border:1px solid var(--border);
+  color:var(--text3);transition:all .2s;
+}
+.log-tab:hover{background:var(--surf2);color:var(--text2)}
+.log-tab.active{background:var(--accent-dim);color:var(--accent2);border-color:rgba(124,106,255,0.18)}
+.log-out{
+  background:rgba(0,0,0,0.45);color:var(--green);
+  font-family:var(--fm);font-size:10.5px;
+  padding:14px;border-radius:var(--r-lg);
+  height:240px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;
+  border:1px solid var(--border);box-shadow:inset 0 2px 8px rgba(0,0,0,0.3);
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.06) transparent;
+}
+
+/* ---- AGENT HISTORY in detail overlay ---- */
+.agent-history{margin-top:12px;max-height:200px;overflow-y:auto;scrollbar-width:thin}
+.agent-history-item{
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:11px;
+}
+.agent-history-item:last-child{border-bottom:none}
+.ah-time{font-family:var(--fm);font-size:10px;color:var(--text3)}
+.ah-topic{font-size:9px;color:var(--accent2);text-transform:uppercase;letter-spacing:.5px}
+.ah-msg{color:var(--text2);line-height:1.5;margin-top:2px}
+
+/* ---- QUICK ACTIONS ---- */
+.quick-actions{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.qa-btn{
+  font-family:var(--fm);font-size:10px;font-weight:600;
+  padding:6px 14px;border-radius:20px;cursor:pointer;
+  background:var(--surf2);border:1px solid var(--border);
+  color:var(--text2);transition:all .2s;
+}
+.qa-btn:hover{background:var(--accent-dim);color:var(--accent2);border-color:rgba(124,106,255,0.15)}
+.qa-btn:active{transform:scale(0.97)}
+.qa-btn.danger:hover{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.15)}
+
+/* ---- SEARCH ---- */
+.search-bar{
+  display:flex;gap:8px;margin-bottom:12px;
+}
+.search-bar input{flex:1;padding:8px 12px;font-size:12px}
 </style>
 </head>
 <body>
@@ -431,6 +548,12 @@ select option{background:var(--bg2)}
 
 <!-- TAB 1: DASHBOARD -->
 <div class="page active" id="p-dash">
+
+  <!-- Alert Banner -->
+  <div class="alert-banner" id="alert-banner">
+    <div class="ab-title">Alerts</div>
+    <div class="ab-items" id="alert-items"></div>
+  </div>
 
   <!-- Hero Identity -->
   <div class="id-card">
@@ -460,6 +583,17 @@ select option{background:var(--bg2)}
   <!-- Services -->
   <div class="sl">Services</div>
   <div class="svc-row" id="dash-services"><span class="svc svc-unk">loading…</span></div>
+
+  <!-- Quick Actions -->
+  <div class="sl">Quick Actions</div>
+  <div class="quick-actions">
+    <button class="qa-btn" onclick="quickAction('heartbeat')">Touch Heartbeat</button>
+    <button class="qa-btn" onclick="quickAction('deploy')">Push Status</button>
+    <button class="qa-btn" onclick="quickAction('fitness')">Run Fitness</button>
+    <button class="qa-btn" onclick="quickAction('git-pull')">Git Pull</button>
+    <button class="qa-btn danger" onclick="quickAction('restart-soma')">Restart Soma</button>
+    <button class="qa-btn danger" onclick="quickAction('restart-chorus')">Restart Chorus</button>
+  </div>
 
   <!-- System metrics -->
   <div class="sl">System</div>
@@ -500,11 +634,89 @@ select option{background:var(--bg2)}
     <div class="soma-inner" id="soma-inner">Loading inner monologue…</div>
   </div>
 
+  <!-- Today's Work -->
+  <div class="sl">Today's Work</div>
+  <div class="card">
+    <div style="display:flex;gap:20px;align-items:baseline;margin-bottom:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span class="text-mono text-accent" style="font-size:1.6rem;font-weight:800" id="dash-commit-count">0</span>
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">commits</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span class="text-mono text-cyan" style="font-size:1.6rem;font-weight:800" id="dash-relay-count">0</span>
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">relay msgs</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span class="text-mono text-green" style="font-size:1.6rem;font-weight:800" id="dash-mem-today">0</span>
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">memories</span>
+      </div>
+    </div>
+    <div id="dash-commits" class="scroll" style="max-height:180px;font-size:12px"></div>
+  </div>
+
+  <!-- Agent Exchanges -->
+  <div id="dash-exchanges-wrap" style="display:none">
+    <div class="sl">Agent Conversations</div>
+    <div class="card">
+      <div id="dash-exchanges" class="scroll" style="max-height:200px;font-size:12px"></div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+    <div>
+      <div class="sl">Activity 24h</div>
+      <div class="card" style="padding:12px 10px 8px">
+        <div id="dash-activity-chart" style="min-height:60px"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-size:9px;color:var(--text3)">Total: <span id="dash-act-total" class="text-mono">--</span></span>
+          <span style="font-size:9px;color:var(--text3)">Peak: <span id="dash-act-peak" class="text-mono">--</span></span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sl">Mood Track</div>
+      <div class="card" style="padding:12px 10px 8px">
+        <div id="dash-mood-chart" style="min-height:60px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div>
+      <div class="sl">Memory Growth</div>
+      <div class="card" style="padding:12px 10px 8px">
+        <div id="dash-memory-chart" style="min-height:40px"></div>
+        <div style="font-size:9px;color:var(--text3);margin-top:4px">
+          Total: <span id="dash-mem-total" class="text-mono">--</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sl">Fitness Score</div>
+      <div class="card" style="padding:14px;text-align:center">
+        <div id="dash-fitness-score" style="font-family:var(--fm);font-size:2.2rem;font-weight:800;color:var(--accent2);line-height:1">--</div>
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px">/ 10000</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fitness Radar -->
+  <div id="dash-radar-wrap" style="display:none">
+    <div class="sl">Loop Fitness Radar</div>
+    <div class="card" style="text-align:center;padding:14px">
+      <div id="dash-fitness-radar"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- TAB 2: MESSAGES -->
 <div class="page" id="p-msgs">
   <div class="sl">Dashboard Messages</div>
+  <div class="search-bar">
+    <input type="text" id="msg-search" placeholder="Filter messages…" oninput="filterMessages()">
+  </div>
   <div class="msgs-wrap">
     <div class="msgs-feed card" style="padding:12px 16px;margin-bottom:10px" id="msgs-feed">
       <div class="empty-state">No messages yet</div>
@@ -550,6 +762,10 @@ select option{background:var(--bg2)}
     </div>
     <div class="sl">Last Message</div>
     <div class="agent-detail-body" id="ad-msg">--</div>
+    <div class="sl" style="margin-top:14px">Recent History</div>
+    <div class="agent-history" id="ad-history">
+      <div style="color:var(--text3);font-size:11px;padding:8px 0">Loading…</div>
+    </div>
   </div>
 </div>
 
@@ -610,6 +826,12 @@ select option{background:var(--bg2)}
     </table>
   </div>
 
+  <div class="sl">Log Viewer</div>
+  <div class="card log-viewer">
+    <div class="log-tabs" id="log-tabs"></div>
+    <div class="log-out" id="log-out">Select a log file above.</div>
+  </div>
+
   <div class="sl">Run Command</div>
   <div class="card">
     <select id="cmd-select" style="margin-bottom:10px">
@@ -632,6 +854,41 @@ select option{background:var(--bg2)}
     <div id="files-list"><div class="empty-state">Loading…</div></div>
   </div>
 </div>
+
+<!-- ============ EMAIL VIEWER MODAL ============ -->
+<div class="modal-overlay" id="email-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title" id="em-subject">Loading…</div>
+      <button class="modal-close" onclick="closeModal('email-modal')">&#x2715; Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta" id="em-meta"></div>
+      <div class="modal-content" id="em-body">Loading email…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FILE VIEWER MODAL ============ -->
+<div class="modal-overlay" id="file-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title" id="fm-name">Loading…</div>
+      <button class="modal-close" onclick="closeModal('file-modal')">&#x2715; Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta" id="fm-meta"></div>
+      <div class="modal-content code" id="fm-content">Loading file…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ QUICK ACTION RESULT TOAST ============ -->
+<div id="toast" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:var(--bg2);border:1px solid var(--accent);border-radius:var(--r-lg);
+  padding:10px 20px;font-size:12px;color:var(--text);z-index:500;
+  box-shadow:var(--sh2);max-width:90vw;text-align:center;
+  animation:fadeUp .3s ease"></div>
 
 <!-- ============ BOTTOM NAV ============ -->
 <nav>
@@ -766,6 +1023,9 @@ async function loadDashboard() {
   scoreEl.textContent = score != null ? score : '--';
   scoreEl.className = 'val ' + (score >= 60 ? 'text-green' : score >= 30 ? 'text-amber' : 'text-red');
 
+  // Alerts
+  updateAlerts(data);
+
   // Services
   const svcs = data.services || {};
   const svcRow = document.getElementById('dash-services');
@@ -808,6 +1068,71 @@ async function loadDashboard() {
   document.getElementById('soma-bar').style.width = Math.min(100, somaScore) + '%';
   document.getElementById('soma-inner').textContent = data.soma_inner || 'No inner monologue available.';
   document.getElementById('soma-score-big').style.color = somaScore >= 60 ? 'var(--green)' : somaScore >= 30 ? 'var(--amber)' : 'var(--red)';
+
+  // Today's Work
+  const commitCount = data.commit_count || 0;
+  const commits = data.commits || [];
+  const actTotal = data.activity_total || 0;
+  const memToday = data.memory_today || 0;
+  document.getElementById('dash-commit-count').textContent = commitCount;
+  document.getElementById('dash-relay-count').textContent = actTotal;
+  document.getElementById('dash-mem-today').textContent = memToday;
+
+  const commitsEl = document.getElementById('dash-commits');
+  if (commits.length) {
+    commitsEl.innerHTML = commits.map(c => {
+      const hash = c.substring(0, 8);
+      const msg = c.substring(9) || c;
+      return `<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px">
+        <span class="text-mono text-accent" style="font-size:11px;flex-shrink:0">${esc(hash)}</span>
+        <span style="color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(msg)}</span>
+      </div>`;
+    }).join('');
+  } else {
+    commitsEl.innerHTML = '<div style="color:var(--text3);text-align:center;padding:12px">No commits today</div>';
+  }
+
+  // Agent Exchanges
+  const exchanges = data.exchanges || [];
+  const exWrap = document.getElementById('dash-exchanges-wrap');
+  if (exchanges.length) {
+    exWrap.style.display = 'block';
+    document.getElementById('dash-exchanges').innerHTML = exchanges.map(ex =>
+      `<div style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:baseline">
+        <span class="text-mono" style="font-size:10px;color:var(--accent2);min-width:55px;flex-shrink:0">${esc(ex.agent)}</span>
+        <span style="font-size:10px;color:var(--text3);flex-shrink:0">${esc(ex.time)}</span>
+        <span style="color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ex.msg)}</span>
+      </div>`
+    ).join('');
+  } else {
+    exWrap.style.display = 'none';
+  }
+
+  // Charts
+  if (data.activity_chart) {
+    document.getElementById('dash-activity-chart').innerHTML = data.activity_chart;
+    document.getElementById('dash-act-total').textContent = actTotal;
+    document.getElementById('dash-act-peak').textContent = data.activity_peak || 0;
+  }
+  if (data.mood_chart) {
+    document.getElementById('dash-mood-chart').innerHTML = data.mood_chart;
+  }
+  if (data.memory_chart) {
+    document.getElementById('dash-memory-chart').innerHTML = data.memory_chart;
+    document.getElementById('dash-mem-total').textContent = data.memory || '--';
+  }
+
+  // Fitness
+  const fitScore = data.fitness_score;
+  if (fitScore) {
+    document.getElementById('dash-fitness-score').textContent = fitScore;
+    const fitColor = fitScore >= 8000 ? 'var(--green)' : fitScore >= 5000 ? 'var(--amber)' : 'var(--red)';
+    document.getElementById('dash-fitness-score').style.color = fitColor;
+  }
+  if (data.fitness_radar) {
+    document.getElementById('dash-radar-wrap').style.display = 'block';
+    document.getElementById('dash-fitness-radar').innerHTML = data.fitness_radar;
+  }
 }
 
 // ---------- MESSAGES ----------
@@ -831,6 +1156,14 @@ async function loadMessages() {
     </div>`;
   }).join('');
   feed.scrollTop = feed.scrollHeight;
+}
+
+function filterMessages() {
+  const q = (document.getElementById('msg-search').value || '').toLowerCase();
+  document.querySelectorAll('#msgs-feed .msg').forEach(m => {
+    const text = (m.textContent || '').toLowerCase();
+    m.style.display = text.includes(q) ? '' : 'none';
+  });
 }
 
 document.getElementById('compose-send').addEventListener('click', async () => {
@@ -867,21 +1200,38 @@ async function loadAgents() {
       <div class="a-dot ${dotCls}"></div>
       <div class="a-name">${esc(a.name || '?')}</div>
       <div class="a-age">${age}</div>
+      <div style="font-size:8px;color:var(--text3);text-align:center;line-height:1.2;margin-top:2px">${esc((a.role || '').split(' ')[0])}</div>
     </div>`;
   }).join('');
 }
 
-function showAgentDetail(i) {
+async function showAgentDetail(i) {
   const a = agentData[i];
   if (!a) return;
   const st = agentStatus(a.last_seen);
   const stColors = { live: 'var(--green)', slow: 'var(--amber)', stale: 'var(--red)', unknown: 'var(--text3)' };
   document.getElementById('ad-name').textContent = a.name || '--';
+  document.getElementById('ad-name').style.color = a.color || 'var(--accent2)';
   document.getElementById('ad-status').innerHTML = `<span style="color:${stColors[st]}">${st}</span>`;
-  document.getElementById('ad-seen').textContent = a.last_seen || '--';
-  document.getElementById('ad-topic').textContent = a.topic || '--';
+  document.getElementById('ad-seen').textContent = formatAge(a.last_seen) + ' ago';
+  document.getElementById('ad-topic').textContent = (a.role || '') + (a.topic ? ' / ' + a.topic : '');
   document.getElementById('ad-msg').textContent = a.last_message || 'No message available.';
+  document.getElementById('ad-history').innerHTML = '<div style="color:var(--text3);font-size:11px;padding:8px 0">Loading history…</div>';
   document.getElementById('agent-detail').classList.add('open');
+  // Load agent history
+  const history = await apiFetch('/api/agent-history?agent=' + encodeURIComponent(a.name) + '&limit=15');
+  const hEl = document.getElementById('ad-history');
+  if (Array.isArray(history) && history.length) {
+    hEl.innerHTML = history.map(h => `<div class="agent-history-item">
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span class="ah-time">${esc((h.time || '').substring(11, 16))}</span>
+        <span class="ah-topic">${esc(h.topic || '')}</span>
+      </div>
+      <div class="ah-msg">${esc((h.message || '').substring(0, 200))}</div>
+    </div>`).join('');
+  } else {
+    hEl.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:8px 0">No recent messages</div>';
+  }
 }
 
 document.getElementById('agent-detail-close').addEventListener('click', () => {
@@ -907,7 +1257,8 @@ async function loadEmail() {
   }
   list.innerHTML = emails.map(e => {
     const unsCls = e.unseen ? ' unseen' : '';
-    return `<div class="email-item${unsCls}">
+    const eid = e.id || '';
+    return `<div class="email-item${unsCls}" style="cursor:pointer" onclick="openEmail('${escAttr(eid)}')">
       <div>
         <div class="email-from">${esc(e.from || '--')}</div>
         <div class="email-subject">${esc(e.subject || '(no subject)')}</div>
@@ -1039,8 +1390,11 @@ async function loadFiles(dir) {
     const dirCls = f.is_dir ? ' is-dir' : '';
     const size = f.is_dir ? '' : formatBytes(f.size);
     const mod = f.modified ? new Date(f.modified * 1000).toLocaleDateString() : '';
-    const clickAction = f.is_dir ? `navDir('${escAttr(data.path + '/' + f.name)}')` : '';
-    return `<div class="file-item" ${f.is_dir ? `onclick="${clickAction}"` : ''}>
+    const fullPath = (data.path === '.' ? '' : data.path + '/') + f.name;
+    const clickAction = f.is_dir
+      ? `navDir('${escAttr(fullPath)}')`
+      : `openFile('${escAttr(fullPath)}')`;
+    return `<div class="file-item" onclick="${clickAction}" style="cursor:pointer">
       <div class="file-name${dirCls}"><span class="fi-icon">${icon}</span>${esc(f.name)}</div>
       <div class="file-size">${size}</div>
       <div class="file-mod">${mod}</div>
@@ -1147,9 +1501,158 @@ function escAttr(str) {
   return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
+// ---------- MODALS ----------
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+// Close modals on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    document.getElementById('agent-detail').classList.remove('open');
+  }
+});
+// Close modal on background click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ---------- EMAIL BODY READER ----------
+async function openEmail(emailId) {
+  const modal = document.getElementById('email-modal');
+  document.getElementById('em-subject').textContent = 'Loading…';
+  document.getElementById('em-meta').innerHTML = '';
+  document.getElementById('em-body').textContent = 'Loading email…';
+  modal.classList.add('open');
+  const data = await apiFetch('/api/email-body?id=' + encodeURIComponent(emailId));
+  if (!data || data.error) {
+    document.getElementById('em-subject').textContent = 'Error';
+    document.getElementById('em-body').textContent = data ? data.error : 'Failed to load email.';
+    return;
+  }
+  document.getElementById('em-subject').textContent = data.subject || '(no subject)';
+  document.getElementById('em-meta').innerHTML =
+    '<div>From: <span>' + esc(data.from || '') + '</span></div>' +
+    '<div>To: <span>' + esc(data.to || '') + '</span></div>' +
+    '<div>Date: <span>' + esc(data.date || '') + '</span></div>';
+  document.getElementById('em-body').textContent = data.body || '(empty)';
+}
+
+// ---------- FILE CONTENT VIEWER ----------
+async function openFile(filePath) {
+  const modal = document.getElementById('file-modal');
+  document.getElementById('fm-name').textContent = 'Loading…';
+  document.getElementById('fm-meta').innerHTML = '';
+  document.getElementById('fm-content').textContent = 'Loading file…';
+  modal.classList.add('open');
+  const data = await apiFetch('/api/file-content?path=' + encodeURIComponent(filePath));
+  if (!data || data.error) {
+    document.getElementById('fm-name').textContent = 'Error';
+    document.getElementById('fm-content').textContent = data ? data.error : 'Failed to load.';
+    return;
+  }
+  document.getElementById('fm-name').textContent = data.name || filePath;
+  document.getElementById('fm-meta').innerHTML =
+    '<span>' + esc(data.path || '') + '</span> — ' +
+    data.lines + ' lines, ' + formatBytes(data.size);
+  // Add line numbers
+  const lines = (data.content || '').split('\n');
+  const numbered = lines.map((line, i) =>
+    '<span class="line-num">' + (i + 1) + '</span>' + esc(line)
+  ).join('\n');
+  document.getElementById('fm-content').innerHTML = numbered;
+}
+
+// ---------- QUICK ACTIONS ----------
+async function quickAction(action) {
+  const toast = document.getElementById('toast');
+  toast.textContent = 'Running ' + action + '…';
+  toast.style.display = 'block';
+  const res = await apiPost('/api/action', { action });
+  if (res && res.result) {
+    toast.textContent = res.result.substring(0, 120);
+  } else {
+    toast.textContent = action + ' done.';
+  }
+  setTimeout(() => { toast.style.display = 'none'; }, 4000);
+  // Refresh dashboard
+  if (activeTab === 'dash') loadDashboard();
+}
+
+// ---------- LOG VIEWER ----------
+let logFiles = {};
+try { logFiles = LOG_FILES_PLACEHOLDER; } catch(e) {}
+let activeLog = '';
+
+function initLogTabs() {
+  const container = document.getElementById('log-tabs');
+  if (!container) return;
+  const names = Object.keys(logFiles);
+  if (!names.length) {
+    container.innerHTML = '<span style="font-size:11px;color:var(--text3)">No log files configured</span>';
+    return;
+  }
+  container.innerHTML = names.map(name =>
+    '<button class="log-tab" data-log="' + escAttr(name) + '" onclick="loadLog(\'' + escAttr(name) + '\')">' +
+    esc(name) + '</button>'
+  ).join('');
+}
+
+async function loadLog(name) {
+  activeLog = name;
+  // Update active tab
+  document.querySelectorAll('.log-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.log === name);
+  });
+  const out = document.getElementById('log-out');
+  out.textContent = 'Loading ' + name + '…';
+  const data = await apiFetch('/api/logs?file=' + encodeURIComponent(name) + '&lines=100');
+  if (data && data.content) {
+    out.textContent = data.content;
+    out.scrollTop = out.scrollHeight;
+  } else {
+    out.textContent = data ? (data.error || 'Empty') : 'Failed to load.';
+  }
+}
+
+// ---------- ALERT BANNER ----------
+function updateAlerts(data) {
+  if (!data) return;
+  const alerts = [];
+  // Check services
+  const svcs = data.services || {};
+  Object.entries(svcs).forEach(([name, st]) => {
+    if (st !== 'active' && st !== 'running') {
+      alerts.push('Service DOWN: ' + name);
+    }
+  });
+  // Check heartbeat
+  if (data.heartbeat_age > 300) {
+    alerts.push('Heartbeat stale (' + Math.round(data.heartbeat_age) + 's)');
+  }
+  // Check load
+  if (data.load_val > 6) {
+    alerts.push('High load: ' + data.load);
+  }
+  // Check disk
+  if (data.disk_pct > 85) {
+    alerts.push('Disk usage high: ' + data.disk_pct + '%');
+  }
+
+  const banner = document.getElementById('alert-banner');
+  const items = document.getElementById('alert-items');
+  if (alerts.length) {
+    items.innerHTML = alerts.map(a => '&#x26A0; ' + esc(a)).join('<br>');
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
 // ---------- BOOT ----------
 (function init() {
   loadDashboard();
+  initLogTabs();
   startRefreshCycles();
 })();
 </script>

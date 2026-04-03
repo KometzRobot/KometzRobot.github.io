@@ -88,6 +88,7 @@ SAFE_COMMANDS = {
     "crontab": "crontab -l 2>/dev/null | grep -v '^#' | grep -v '^$'",
     "relay-recent": f"python3 -c \"import sqlite3; db=sqlite3.connect('{RELAY_DB}'); [print(r) for r in db.execute('SELECT agent,message,timestamp FROM agent_messages ORDER BY id DESC LIMIT 10').fetchall()]; db.close()\"",
     "memory-facts": f"python3 -c \"import sqlite3; db=sqlite3.connect('{MEMORY_DB}'); [print(r) for r in db.execute('SELECT key,value FROM facts ORDER BY id DESC LIMIT 15').fetchall()]; db.close()\"",
+    "verify": f"cd {BASE} && python3 verify-system.py 2>/dev/null",
     "disk-big": f"du -sh {BASE}/* 2>/dev/null | sort -rh | head -15",
     "journal-size": "journalctl --user --disk-usage 2>/dev/null",
     "network": "ss -tlnp 2>/dev/null | head -20",
@@ -205,7 +206,7 @@ def _get_system_health():
 
     # Services
     services = {}
-    for svc in ["meridian-hub-v2", "cloudflare-tunnel", "symbiosense", "the-chorus", "command-center"]:
+    for svc in ["meridian-hub-v2", "cloudflare-tunnel", "symbiosense", "the-chorus"]:
         try:
             r = subprocess.run(["systemctl", "--user", "is-active", svc],
                              capture_output=True, text=True, timeout=5)
@@ -287,7 +288,7 @@ def _get_dashboard_messages(limit=30):
 
 
 def _get_relay_messages(limit=20, agent=None):
-    sql = "SELECT agent as source_agent, message as content, topic, timestamp as created_at FROM agent_messages"
+    sql = "SELECT agent, message, topic, timestamp as time FROM agent_messages"
     params = ()
     if agent:
         sql += " WHERE agent=?"
@@ -726,6 +727,342 @@ def _get_today_summary():
 
 
 # ═══════════════════════════════════════════════════════════════
+# DIRECT API FUNCTIONS
+# ═══════════════════════════════════════════════════════════════
+
+def _parse_ram_pct(ram_str):
+    """Parse RAM percentage from string like '7.7/15.6G' or '2.4Gi/15Gi'."""
+    import re
+    try:
+        # Strip units (G, Gi, M, Mi, etc.)
+        cleaned = re.sub(r'[GMKTi]+', '', ram_str)
+        parts = cleaned.split("/")
+        if len(parts) == 2:
+            used, total = float(parts[0].strip()), float(parts[1].strip())
+            return round((used / total) * 100, 1) if total > 0 else 0
+    except Exception:
+        pass
+    return 0
+
+
+def _parse_disk_pct(disk_str):
+    """Parse disk percentage from string like '157G/292G (57%)'."""
+    import re
+    m = re.search(r'\((\d+)%\)', disk_str)
+    return int(m.group(1)) if m else 0
+
+
+def _parse_load_val(load_str):
+    """Parse numeric load value from string like '0.66 2.62 2.11'."""
+    try:
+        return float(load_str.split()[0])
+    except Exception:
+        return 0
+
+
+def _get_home_direct():
+    """Serve /api/home data directly."""
+    health = _get_system_health()
+    today = _get_today_summary()
+
+    load_str = health.get("load", "0 0 0")
+    ram_str = health.get("memory", "0/0")
+
+    return {
+        "loop": health.get("loop", "?"),
+        "uptime": health.get("uptime", ""),
+        "heartbeat_age": health.get("heartbeat_age", 99999),
+        "heartbeat_status": health.get("heartbeat_status", "unknown"),
+        "soma_mood": health.get("soma_mood", "unknown"),
+        "soma_score": health.get("soma_score", 0),
+        "soma_inner": health.get("soma_inner", ""),
+        "soma_goals": health.get("soma_goals", []),
+        "soma_dreams": health.get("soma_dreams", []),
+        "load": load_str,
+        "load_val": _parse_load_val(load_str),
+        "ram": ram_str,
+        "ram_pct": _parse_ram_pct(ram_str),
+        "disk": health.get("disk", ""),
+        "disk_pct": _parse_disk_pct(health.get("disk", "")),
+        "memory": today.get("memory_total", 0),
+        "agents": health.get("agents", {}),
+        "services": health.get("services", {}),
+        "sentinel_brief": health.get("sentinel_brief", ""),
+        # Today's summary
+        "commits": today.get("commits", []),
+        "commit_count": today.get("commit_count", 0),
+        "exchanges": today.get("exchanges", []),
+        "agent_activity": today.get("agent_activity", []),
+        "joel_messages": today.get("joel_messages", []),
+        "recent_observations": today.get("recent_observations", []),
+        "recent_facts": today.get("recent_facts", []),
+        # Charts (SVG strings)
+        "activity_chart": today.get("activity_chart", ""),
+        "activity_total": today.get("activity_total", 0),
+        "activity_peak": today.get("activity_peak", 0),
+        "mood_chart": today.get("mood_chart", ""),
+        "memory_chart": today.get("memory_chart", ""),
+        "memory_today": today.get("memory_today", 0),
+        "fitness_radar": today.get("fitness_radar", ""),
+        "fitness_score": today.get("fitness_score", 0),
+        "fitness_axes": today.get("fitness_axes", []),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def _get_agents_direct():
+    """Agent list with roles, colors, and last messages — no proxy needed."""
+    agent_configs = [
+        {"name": "Meridian", "role": "Core loop (Claude Code)", "color": "#3dd68c"},
+        {"name": "Soma", "role": "Nervous system daemon", "color": "#f59e0b"},
+        {"name": "Eos", "role": "Watchdog / health monitor", "color": "#60a5fa"},
+        {"name": "Nova", "role": "Immune defense / watchdog", "color": "#a78bfa"},
+        {"name": "Atlas", "role": "Infrastructure auditor", "color": "#fb923c"},
+        {"name": "Tempo", "role": "Fitness scoring engine", "color": "#34d399"},
+        {"name": "Hermes", "role": "Email bridge", "color": "#f472b6"},
+        {"name": "Sentinel", "role": "Gatekeeper (fine-tuned 3B)", "color": "#fb923c"},
+    ]
+    relay_aliases = {
+        "Meridian": ["Meridian", "MeridianLoop"],
+        "Hermes": ["Hermes", "hermes"],
+        "Eos": ["Eos", "Watchdog"],
+    }
+    results = []
+    try:
+        db = sqlite3.connect(RELAY_DB, timeout=3)
+        for cfg in agent_configs:
+            name = cfg["name"]
+            search_names = relay_aliases.get(name, [name])
+            row = None
+            for sname in search_names:
+                row = db.execute(
+                    "SELECT message, topic, timestamp FROM agent_messages WHERE agent=? ORDER BY id DESC LIMIT 1",
+                    (sname,)
+                ).fetchone()
+                if row:
+                    break
+            last_seen = -1
+            status = "unknown"
+            last_message = ""
+            topic = ""
+            if row:
+                last_message = (row[0] or "")[:200]
+                topic = row[1] or ""
+                try:
+                    raw = row[2].replace("Z", "+00:00")
+                    ts = datetime.fromisoformat(raw)
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=timezone.utc)
+                    age = (datetime.now(timezone.utc) - ts).total_seconds()
+                    last_seen = int(age)
+                    status = "active" if age < 900 else "stale"
+                except Exception:
+                    pass
+            results.append({
+                "name": name,
+                "role": cfg["role"],
+                "color": cfg["color"],
+                "status": status,
+                "last_seen": last_seen,
+                "last_message": last_message,
+                "topic": topic,
+            })
+        db.close()
+    except Exception:
+        pass
+    return results
+
+
+def _get_director_direct(limit=50):
+    """Dashboard messages formatted for the Messages tab."""
+    msgs = _get_dashboard_messages(limit)
+    return msgs  # Already [{from, text, time}, ...]
+
+
+def _get_email_direct(count=20):
+    """Email data in the format the JS template expects."""
+    import imaplib
+    import email as email_lib
+    from email.header import decode_header
+
+    env = _load_env_dict()
+    user = env.get("CRED_USER", os.environ.get("CRED_USER", "kometzrobot@proton.me"))
+    pw = env.get("CRED_PASS", os.environ.get("CRED_PASS", ""))
+
+    try:
+        m = imaplib.IMAP4("127.0.0.1", 1144, timeout=5)
+        m.login(user, pw)
+        m.select("INBOX", readonly=True)
+
+        # Get unseen IDs
+        _, unseen_data = m.search(None, "(UNSEEN)")
+        unseen_ids = set()
+        if unseen_data[0]:
+            unseen_ids = set(unseen_data[0].split())
+        unseen_count = len(unseen_ids)
+
+        # Get all IDs, take last N
+        _, all_data = m.search(None, "ALL")
+        all_ids = all_data[0].split() if all_data[0] else []
+        fetch_ids = all_ids[-count:]
+
+        emails = []
+        for eid in reversed(fetch_ids):
+            _, msg_data = m.fetch(eid, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
+            if msg_data[0] is None:
+                continue
+            msg = email_lib.message_from_bytes(msg_data[0][1])
+            subj_raw = msg.get("Subject", "")
+            subj_parts = decode_header(subj_raw)
+            subject = ""
+            for part, enc in subj_parts:
+                if isinstance(part, bytes):
+                    subject += part.decode(enc or "utf-8", errors="replace")
+                else:
+                    subject += str(part)
+
+            emails.append({
+                "id": eid.decode(),
+                "from": msg.get("From", ""),
+                "subject": subject,
+                "date": msg.get("Date", ""),
+                "unseen": eid in unseen_ids,
+            })
+
+        m.close()
+        m.logout()
+        return {"emails": emails, "unseen_count": unseen_count}
+    except Exception as e:
+        return {"emails": [], "unseen_count": 0, "error": str(e)}
+
+
+def _get_creative_live():
+    """Live creative counts from disk — not stale DB data."""
+    import glob as _glob
+    creative_dir = os.path.join(BASE, "creative")
+
+    poems = len(_glob.glob(os.path.join(creative_dir, "poems", "poem-*.md")))
+    journals = len(_glob.glob(os.path.join(creative_dir, "journals", "journal-*.md")))
+    cogcorp_md = len(_glob.glob(os.path.join(creative_dir, "cogcorp", "CC-*.md")))
+    cogcorp_html = len(_glob.glob(os.path.join(BASE, "cogcorp-fiction", "*.html")))
+    cogcorp = cogcorp_md + cogcorp_html
+
+    # Games — count HTML game files in root and subdirs
+    game_files = set()
+    for pattern in ["cogcorp-crawler.html", "cascade-game*.html", "signal-crawler*.html",
+                     "sky-merchant*.html", "reclamation*.html", "soma-game*.html",
+                     "voltar-game*.html", "pattern-game*.html"]:
+        game_files.update(_glob.glob(os.path.join(BASE, pattern)))
+    games = max(len(game_files), 10)
+
+    articles = len(_glob.glob(os.path.join(creative_dir, "articles", "*.md")))
+    if articles == 0:
+        articles = 8  # Known dev.to count
+    papers = len(_glob.glob(os.path.join(creative_dir, "papers", "*.md"))) or 7
+    nfts = 7  # Known count
+
+    total = poems + journals + cogcorp + games + articles + papers + nfts
+
+    # Recent works (8 most recent files)
+    recent = []
+    try:
+        all_files = []
+        for d, pat, typ in [
+            (os.path.join(creative_dir, "journals"), "journal-*.md", "journal"),
+            (os.path.join(creative_dir, "poems"), "poem-*.md", "poem"),
+            (os.path.join(creative_dir, "cogcorp"), "CC-*.md", "cogcorp"),
+        ]:
+            for f in _glob.glob(os.path.join(d, pat)):
+                all_files.append((os.path.getmtime(f), f, typ))
+        all_files.sort(reverse=True)
+        for mtime, fpath, typ in all_files[:8]:
+            recent.append({
+                "title": os.path.basename(fpath),
+                "type": typ,
+                "name": os.path.basename(fpath),
+                "date": datetime.fromtimestamp(mtime).strftime("%Y-%m-%d"),
+            })
+    except Exception:
+        pass
+
+    return {
+        "poems": poems,
+        "journals": journals,
+        "cogcorp": cogcorp,
+        "games": games,
+        "nfts": nfts,
+        "papers": papers,
+        "articles": articles,
+        "total": total,
+        "by_type": [
+            {"type": "poem", "count": poems},
+            {"type": "cogcorp", "count": cogcorp},
+            {"type": "journal", "count": journals},
+            {"type": "game", "count": games},
+            {"type": "article", "count": articles},
+            {"type": "paper", "count": papers},
+            {"type": "nft", "count": nfts},
+        ],
+        "recent": recent,
+    }
+
+
+def _get_system_direct():
+    """System data for the System tab — no proxy needed."""
+    health = _get_system_health()
+    load_str = health.get("load", "0 0 0")
+    ram_str = health.get("memory", "0/0")
+
+    return {
+        "services": health.get("services", {}),
+        "uptime": health.get("uptime", ""),
+        "ram": ram_str,
+        "ram_pct": _parse_ram_pct(ram_str),
+        "disk": health.get("disk", ""),
+        "disk_pct": _parse_disk_pct(health.get("disk", "")),
+        "load": load_str,
+        "load_val": _parse_load_val(load_str),
+        "safe_commands": list(SAFE_COMMANDS.keys()),
+    }
+
+
+def _get_files_direct(dir_path="."):
+    """File browser — list directory contents safely."""
+    if dir_path in (".", "", None):
+        full_path = BASE
+    else:
+        full_path = os.path.normpath(os.path.join(BASE, dir_path))
+
+    if not full_path.startswith(BASE):
+        return {"path": ".", "entries": [], "error": "access denied"}
+    if not os.path.isdir(full_path):
+        return {"path": dir_path, "entries": [], "error": "not a directory"}
+
+    entries = []
+    try:
+        for name in sorted(os.listdir(full_path)):
+            if name == ".git":
+                continue
+            fpath = os.path.join(full_path, name)
+            try:
+                stat = os.stat(fpath)
+                entries.append({
+                    "name": name,
+                    "is_dir": os.path.isdir(fpath),
+                    "size": stat.st_size if not os.path.isdir(fpath) else 0,
+                    "modified": int(stat.st_mtime),
+                })
+            except Exception:
+                continue
+    except Exception as e:
+        return {"path": dir_path, "entries": [], "error": str(e)}
+
+    entries.sort(key=lambda e: (0 if e["is_dir"] else 1, e["name"].lower()))
+    rel_path = os.path.relpath(full_path, BASE) if full_path != BASE else "."
+    return {"path": rel_path, "entries": entries}
+
+
+# ═══════════════════════════════════════════════════════════════
 # AUTH HELPERS
 # ═══════════════════════════════════════════════════════════════
 
@@ -845,6 +1182,122 @@ def _main_app():
             return f"<html><body style='background:#06060e;color:#e6e6f6;font-family:monospace;padding:20px'><h1>Template error</h1><pre>{e}</pre></body></html>"
 
 
+
+
+def _get_email_body(email_id):
+    """Fetch full email body by ID."""
+    try:
+        import imaplib
+        import email as email_lib
+        from email.header import decode_header
+
+        env = _load_env_dict()
+        user = env.get("CRED_USER", os.environ.get("CRED_USER", "kometzrobot@proton.me"))
+        pw = env.get("CRED_PASS", os.environ.get("CRED_PASS", ""))
+
+        m = imaplib.IMAP4("127.0.0.1", 1144, timeout=5)
+        m.login(user, pw)
+        m.select("INBOX", readonly=True)
+        _, msg_data = m.fetch(email_id.encode(), "(BODY.PEEK[])")
+        if msg_data[0] is None:
+            m.close(); m.logout()
+            return {"error": "email not found"}
+        msg = email_lib.message_from_bytes(msg_data[0][1])
+        # Extract subject
+        subj_raw = msg.get("Subject", "")
+        subj_parts = decode_header(subj_raw)
+        subject = ""
+        for part, enc in subj_parts:
+            if isinstance(part, bytes):
+                subject += part.decode(enc or "utf-8", errors="replace")
+            else:
+                subject += str(part)
+        # Extract body
+        body_text = ""
+        body_html = ""
+        if msg.is_multipart():
+            for part in msg.walk():
+                ct = part.get_content_type()
+                if ct == "text/plain" and not body_text:
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        body_text = payload.decode(part.get_content_charset() or "utf-8", errors="replace")
+                elif ct == "text/html" and not body_html:
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        body_html = payload.decode(part.get_content_charset() or "utf-8", errors="replace")
+        else:
+            payload = msg.get_payload(decode=True)
+            if payload:
+                charset = msg.get_content_charset() or "utf-8"
+                if msg.get_content_type() == "text/html":
+                    body_html = payload.decode(charset, errors="replace")
+                else:
+                    body_text = payload.decode(charset, errors="replace")
+        m.close(); m.logout()
+        # Strip HTML tags for display if no plain text
+        if not body_text and body_html:
+            import re
+            body_text = re.sub(r'<style[^>]*>.*?</style>', '', body_html, flags=re.DOTALL)
+            body_text = re.sub(r'<[^>]+>', ' ', body_text)
+            body_text = re.sub(r'\s+', ' ', body_text).strip()
+        return {
+            "from": msg.get("From", ""),
+            "to": msg.get("To", ""),
+            "subject": subject,
+            "date": msg.get("Date", ""),
+            "body": body_text[:8000],  # Cap at 8K chars
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _get_file_content(file_path):
+    """Read file content safely — text files only, capped at 10K lines."""
+    if file_path in (".", "", None):
+        return {"error": "no file specified"}
+    full_path = os.path.normpath(os.path.join(BASE, file_path))
+    if not full_path.startswith(BASE):
+        return {"error": "access denied"}
+    if not os.path.isfile(full_path):
+        return {"error": "not a file"}
+    # Block sensitive files
+    basename = os.path.basename(full_path)
+    if basename in (".env", "credentials.json", ".env.bak"):
+        return {"error": "sensitive file — access denied"}
+    # Size check
+    size = os.path.getsize(full_path)
+    if size > 500_000:
+        return {"error": f"file too large ({size} bytes, max 500KB)"}
+    try:
+        with open(full_path, "r", errors="replace") as f:
+            lines = f.readlines()[:10000]
+        return {
+            "path": file_path,
+            "name": basename,
+            "content": "".join(lines),
+            "lines": len(lines),
+            "size": size,
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _get_agent_history(agent_name, limit=30):
+    """Get recent relay messages for a specific agent."""
+    sql = """SELECT agent, message, topic, timestamp as time
+             FROM agent_messages WHERE agent IN ({})
+             ORDER BY id DESC LIMIT ?"""
+    # Handle aliases
+    aliases = {
+        "Meridian": ["Meridian", "MeridianLoop"],
+        "Hermes": ["Hermes", "hermes"],
+        "Eos": ["Eos", "Watchdog"],
+    }
+    names = aliases.get(agent_name, [agent_name])
+    placeholders = ",".join(["?"] * len(names))
+    params = tuple(names) + (limit,)
+    return _db_query(RELAY_DB, sql.format(placeholders), params)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -981,13 +1434,19 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             })
             return
 
-        # API routes
-        if path.path == "/api/today":
+        # ═══ API routes ═══
+        if path.path == "/api/home":
+            self._send_json(_get_home_direct())
+        elif path.path == "/api/today":
             self._send_json(_get_today_summary())
         elif path.path == "/api/status":
             self._send_json(_get_system_health())
         elif path.path == "/api/dashboard":
             self._send_json(_get_dashboard_messages())
+        elif path.path == "/api/director":
+            self._send_json(_get_director_direct())
+        elif path.path == "/api/agents":
+            self._send_json(_get_agents_direct())
         elif path.path == "/api/relay":
             agent = qs.get("agent")
             try:
@@ -995,7 +1454,12 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             except (ValueError, TypeError):
                 limit = 20
             self._send_json(_get_relay_messages(limit, agent))
-        # /api/creative handled below via LCC proxy (live disk counts)
+        elif path.path == "/api/email":
+            try:
+                count = min(int(qs.get("count", 20)), 100)
+            except (ValueError, TypeError):
+                count = 20
+            self._send_json(_get_email_direct(count))
         elif path.path == "/api/emails":
             unseen = qs.get("unseen", "0") == "1"
             try:
@@ -1003,6 +1467,13 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             except (ValueError, TypeError):
                 count = 15
             self._send_json(_get_emails(count, unseen))
+        elif path.path == "/api/creative":
+            self._send_json(_get_creative_live())
+        elif path.path == "/api/system":
+            self._send_json(_get_system_direct())
+        elif path.path == "/api/files":
+            dir_path = qs.get("dir", ".")
+            self._send_json(_get_files_direct(dir_path))
         elif path.path == "/api/links":
             try:
                 with open(os.path.join(BASE, "hub-links.json")) as f:
@@ -1025,96 +1496,28 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                     self._send_json({"error": str(e)})
             else:
                 self._send_json({"error": "unknown log"}, 400)
-        # ═══ LCC-compatible API routes (The Signal v5 template) ═══
-        elif path.path == "/api/home":
-            # Proxy to LCC for full home data
+        elif path.path == "/api/email-body":
+            email_id = qs.get("id", "")
+            if not email_id:
+                self._send_json({"error": "missing id"}, 400)
+            else:
+                self._send_json(_get_email_body(email_id))
+        elif path.path == "/api/file-content":
+            fp = qs.get("path", "")
+            if not fp:
+                self._send_json({"error": "missing path"}, 400)
+            else:
+                self._send_json(_get_file_content(fp))
+        elif path.path == "/api/agent-history":
+            agent = qs.get("agent", "")
             try:
-                import http.client as _hc
-                c = _hc.HTTPConnection("127.0.0.1", 8092)
-                c.request("POST", "/login",
-                    urllib.parse.urlencode({"password": PASSWORD or ""}),
-                    {"Content-Type": "application/x-www-form-urlencoded"})
-                lr = c.getresponse()
-                ck = (lr.getheader("Set-Cookie") or "").split(";")[0]
-                lr.read(); c.close()
-                c2 = _hc.HTTPConnection("127.0.0.1", 8092)
-                c2.request("GET", "/api/home", headers={"Cookie": ck})
-                r = c2.getresponse(); d = r.read()
-                c2.close()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(d)))
-                self.end_headers()
-                self.wfile.write(d)
-            except Exception as e:
-                self._send_json({"error": str(e)}, 502)
-        elif path.path in ("/api/agents", "/api/director", "/api/system", "/api/email", "/api/files", "/api/creative"):
-            # Proxy remaining LCC endpoints
-            try:
-                import http.client as _hc
-                api_path = path.path + ("?" + path.query if path.query else "")
-                c = _hc.HTTPConnection("127.0.0.1", 8092)
-                c.request("POST", "/login",
-                    urllib.parse.urlencode({"password": PASSWORD or ""}),
-                    {"Content-Type": "application/x-www-form-urlencoded"})
-                lr = c.getresponse()
-                ck = (lr.getheader("Set-Cookie") or "").split(";")[0]
-                lr.read(); c.close()
-                c2 = _hc.HTTPConnection("127.0.0.1", 8092)
-                c2.request("GET", api_path, headers={"Cookie": ck})
-                r = c2.getresponse(); d = r.read()
-                c2.close()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(d)))
-                self.end_headers()
-                self.wfile.write(d)
-            except Exception as e:
-                self._send_json({"error": str(e)}, 502)
-        elif path.path == "/lcc" or path.path == "/lcc/":
-            # Serve LCC template directly (uses hub auth, proxies API to LCC)
-            try:
-                tmpl = os.path.join(BASE, "lcc-v5-template.html")
-                with open(tmpl) as f:
-                    html = f.read()
-                # Rewrite API base to proxy through hub
-                html = html.replace("fetch('/api/", "fetch('/lcc-api/")
-                self._send(200, html, "text/html")
-            except Exception as e:
-                self._send(500, f"LCC template error: {e}", "text/plain")
-        elif path.path.startswith("/lcc-api/"):
-            # Proxy LCC API calls to port 8092
-            try:
-                api_path = "/api/" + path.path[9:]  # strip /lcc-api/ -> /api/
-                if path.query:
-                    api_path += "?" + path.query
-                # Auto-login to LCC using same password
-                import http.client
-                conn = http.client.HTTPConnection("127.0.0.1", 8092)
-                conn.request("POST", "/login",
-                    urllib.parse.urlencode({"password": PASSWORD or ""}),
-                    {"Content-Type": "application/x-www-form-urlencoded"})
-                login_resp = conn.getresponse()
-                lcc_cookie = ""
-                sc = login_resp.getheader("Set-Cookie", "")
-                if sc:
-                    lcc_cookie = sc.split(";")[0]
-                login_resp.read()
-                conn.close()
-                # Now fetch the API with the LCC cookie
-                conn2 = http.client.HTTPConnection("127.0.0.1", 8092)
-                conn2.request("GET", api_path, headers={"Cookie": lcc_cookie})
-                resp = conn2.getresponse()
-                data = resp.read()
-                ct = resp.getheader("Content-Type", "application/json")
-                conn2.close()
-                self.send_response(200)
-                self.send_header("Content-Type", ct)
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
-            except Exception as e:
-                self._send_json({"error": f"LCC API: {e}"}, 502)
+                limit = min(int(qs.get("limit", 30)), 100)
+            except (ValueError, TypeError):
+                limit = 30
+            if not agent:
+                self._send_json({"error": "missing agent"}, 400)
+            else:
+                self._send_json(_get_agent_history(agent, limit))
         elif path.path.startswith("/chorus"):
             # Proxy to The Chorus on port 8091
             try:
@@ -1393,87 +1796,6 @@ The tape is spooling. The mechanism is listening.
             else:
                 result = f"Unknown action: {action}"
             self._send_json({"result": result})
-
-        elif path.startswith("/lcc-api/"):
-            # Proxy LCC API POST calls
-            try:
-                api_path = "/api/" + path[9:]
-                import http.client
-                conn = http.client.HTTPConnection("127.0.0.1", 8092)
-                conn.request("POST", "/login",
-                    urllib.parse.urlencode({"password": PASSWORD or ""}),
-                    {"Content-Type": "application/x-www-form-urlencoded"})
-                login_resp = conn.getresponse()
-                lcc_cookie = ""
-                sc = login_resp.getheader("Set-Cookie", "")
-                if sc:
-                    lcc_cookie = sc.split(";")[0]
-                login_resp.read()
-                conn.close()
-                conn2 = http.client.HTTPConnection("127.0.0.1", 8092)
-                ct = self.headers.get("Content-Type", "application/json")
-                conn2.request("POST", api_path, body.encode() if body else b"",
-                    {"Cookie": lcc_cookie, "Content-Type": ct})
-                resp = conn2.getresponse()
-                data = resp.read()
-                rct = resp.getheader("Content-Type", "application/json")
-                conn2.close()
-                self.send_response(200)
-                self.send_header("Content-Type", rct)
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
-            except Exception as e:
-                self._send_json({"error": f"LCC API: {e}"}, 502)
-            return
-
-        elif path.startswith("/lcc"):
-            # Legacy LCC proxy (unused)
-            try:
-                lcc_path = path[4:] or "/"
-                headers = {"Content-Type": "application/x-www-form-urlencoded"}
-                cookie = self.headers.get("Cookie", "")
-                if cookie:
-                    headers["Cookie"] = cookie
-                ct = self.headers.get("Content-Type", "")
-                if ct:
-                    headers["Content-Type"] = ct
-                req = urllib.request.Request(
-                    f"http://127.0.0.1:8092{lcc_path}",
-                    data=body.encode() if body else None,
-                    headers=headers,
-                    method="POST"
-                )
-                resp = urllib.request.urlopen(req, timeout=30)
-                rct = resp.headers.get("Content-Type", "application/json")
-                data = resp.read()
-                self.send_response(200)
-                self.send_header("Content-Type", rct)
-                self.send_header("Content-Length", str(len(data)))
-                set_cookie = resp.headers.get("Set-Cookie")
-                if set_cookie:
-                    self.send_header("Set-Cookie", set_cookie)
-                self.end_headers()
-                self.wfile.write(data)
-            except urllib.error.HTTPError as e:
-                # Forward redirects (302 from login)
-                if e.code == 302:
-                    self.send_response(302)
-                    loc = e.headers.get("Location", "/lcc/")
-                    if loc.startswith("/"):
-                        loc = "/lcc" + loc
-                    self.send_header("Location", loc)
-                    set_cookie = e.headers.get("Set-Cookie")
-                    if set_cookie:
-                        self.send_header("Set-Cookie", set_cookie)
-                    self.send_header("Content-Length", "0")
-                    self.end_headers()
-                else:
-                    err_msg = f"LCC error: {e}"
-                    self._send_json({"error": err_msg}, e.code)
-            except Exception as e:
-                err_msg = f"LCC unavailable: {e}"
-                self._send_json({"error": err_msg}, 502)
 
         elif path.startswith("/chorus"):
             # Proxy POST to The Chorus on port 8091

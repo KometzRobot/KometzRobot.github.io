@@ -8,6 +8,7 @@ import subprocess
 import time
 import re
 import glob
+import urllib.request
 from datetime import datetime, timezone
 
 BASE_DIR = "/home/joel/autonomous-ai"
@@ -408,6 +409,62 @@ def _mark_pushed():
         f.write(str(time.time()))
 
 
+def sync_tunnel_url(repo_dir):
+    """Check current cloudflared tunnel URL and update signal-config.json if changed."""
+    try:
+        # Find cloudflared metrics port dynamically, then query for hostname
+        port_result = subprocess.run(
+            ['ss', '-tlnp'], capture_output=True, text=True, timeout=3
+        )
+        metrics_port = None
+        for line in port_result.stdout.split('\n'):
+            if 'cloudflared' in line and '127.0.0.1' in line:
+                m = re.search(r':(\d+)\s', line)
+                if m:
+                    metrics_port = int(m.group(1))
+                    break
+        if not metrics_port:
+            return False
+
+        req = urllib.request.Request(f"http://127.0.0.1:{metrics_port}/quicktunnel", method='GET')
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read())
+        current_host = data.get("hostname", "")
+        if not current_host:
+            return False
+
+        current_url = f"https://{current_host}"
+
+        # Read existing signal-config.json from the repo
+        cfg_path = os.path.join(repo_dir, "signal-config.json")
+        existing_url = ""
+        try:
+            with open(cfg_path) as f:
+                cfg = json.load(f)
+            existing_url = cfg.get("url", "")
+        except:
+            cfg = {}
+
+        if current_url != existing_url:
+            cfg["url"] = current_url
+            cfg["fallback_urls"] = cfg.get("fallback_urls", [])
+            cfg["version"] = cfg.get("version", "2.2")
+            cfg["updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            with open(cfg_path, 'w') as f:
+                json.dump(cfg, f, indent=2)
+            # Also update the local copy so other scripts see it
+            local_cfg = os.path.join(BASE_DIR, "signal-config.json")
+            with open(local_cfg, 'w') as f:
+                json.dump(cfg, f, indent=2)
+            subprocess.run(['git', 'add', 'signal-config.json'], cwd=repo_dir, capture_output=True)
+            print(f"Tunnel URL updated: {existing_url} -> {current_url}")
+            return True
+        return False
+    except Exception as e:
+        # Cloudflared might not be running or metrics port different — not fatal
+        return False
+
+
 def push_status():
     # Ensure repo exists
     if not os.path.isdir(REPO_DIR):
@@ -441,6 +498,9 @@ def push_status():
     with open(status_path, 'w') as f:
         json.dump(status, f, indent=2)
 
+    # Sync tunnel URL if it changed
+    sync_tunnel_url(REPO_DIR)
+
     # Check if anything changed
     result = subprocess.run(['git', 'diff', '--stat'], cwd=REPO_DIR, capture_output=True, text=True)
     if not result.stdout.strip():
@@ -455,7 +515,7 @@ def push_status():
     # Commit and push
     subprocess.run(['git', 'config', 'user.email', 'kometzrobot@proton.me'], cwd=REPO_DIR, capture_output=True)
     subprocess.run(['git', 'config', 'user.name', 'KometzRobot'], cwd=REPO_DIR, capture_output=True)
-    subprocess.run(['git', 'add', 'status.json'], cwd=REPO_DIR, capture_output=True)
+    subprocess.run(['git', 'add', 'status.json', 'signal-config.json'], cwd=REPO_DIR, capture_output=True)
     subprocess.run(['git', 'commit', '-m', 'Update live status'], cwd=REPO_DIR,
                    capture_output=True, timeout=10,
                    env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
