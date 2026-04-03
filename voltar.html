@@ -303,6 +303,53 @@
         .confirm-title { font-family: 'Cinzel', serif; font-size: 1.3rem; color: #d4a843; margin-bottom: 16px; }
         .confirm-text { font-size: 0.9rem; color: rgba(232,220,200,0.5); line-height: 1.7; }
 
+        /* Machine Vitals */
+        .vitals {
+            border: 1px solid rgba(212,168,67,0.06);
+            border-radius: 8px;
+            background: rgba(10,6,16,0.6);
+            padding: 16px 20px;
+            margin: 36px 0 12px;
+        }
+        .vitals-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.55rem;
+            color: rgba(212,168,67,0.2);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .vitals-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+        }
+        .vital {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .vital-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.55rem;
+            color: rgba(212,168,67,0.2);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .vital-val {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            color: rgba(232,220,200,0.4);
+            font-weight: 500;
+        }
+        .vital-dot {
+            width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+        }
+        .vital-dot.on { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.4); }
+        .vital-dot.off { background: #f87171; box-shadow: 0 0 6px rgba(248,113,113,0.4); }
+        @keyframes vitalPulse { 0%,100%{opacity:.5}50%{opacity:1} }
+        .vital-dot.on { animation: vitalPulse 2s ease-in-out infinite; }
+
         /* Footer */
         .voltar-footer { text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid rgba(212,168,67,0.06); }
         .footer-text { font-size: 0.72rem; color: rgba(232,220,200,0.2); line-height: 1.6; }
@@ -383,7 +430,131 @@
         .cabinet-wrap img:hover {
             box-shadow: 0 0 60px rgba(80,40,160,0.25), 0 0 100px rgba(212,168,67,0.1);
         }
+
+        /* Live Machine Status Bar */
+        .machine-status-bar {
+            display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+            padding: 10px 16px; margin-bottom: 32px;
+            border: 1px solid rgba(212,168,67,0.06);
+            border-radius: 8px;
+            background: rgba(212,168,67,0.02);
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.6rem; letter-spacing: 0.08em;
+            color: rgba(212,168,67,0.3);
+        }
+        .machine-status-bar .ms-item {
+            display: flex; align-items: center; gap: 6px;
+        }
+        .machine-status-bar .ms-dot {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 6px rgba(74,222,128,0.4);
+            animation: aliveBlink 2s ease-in-out infinite;
+        }
+        .machine-status-bar .ms-dot.offline {
+            background: #ef4444;
+            box-shadow: 0 0 6px rgba(239,68,68,0.4);
+            animation: none;
+        }
+
+        /* Warm-up Sequence */
+        .warmup-overlay {
+            display: none;
+            text-align: center;
+            padding: 32px 0;
+            animation: fadeUp 0.4s ease forwards;
+        }
+        .warmup-overlay.active { display: block; }
+        .warmup-lines {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.72rem;
+            color: rgba(212,168,67,0.5);
+            letter-spacing: 0.05em;
+            line-height: 2.2;
+            text-align: left;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+        .warmup-line {
+            opacity: 0;
+            transform: translateX(-8px);
+            animation: warmupReveal 0.4s ease forwards;
+        }
+        @keyframes warmupReveal {
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .warmup-line .wl-ok { color: #4ade80; }
+        .warmup-line .wl-val { color: #d4a843; }
+
+        /* Frequency selection enhanced */
+        .freq-option.selected {
+            border-color: rgba(212,168,67,0.4);
+            background: rgba(212,168,67,0.08);
+            box-shadow: 0 0 20px rgba(212,168,67,0.06), inset 0 0 20px rgba(212,168,67,0.02);
+        }
+        .freq-option .freq-sound {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.55rem;
+            color: rgba(212,168,67,0.2);
+            letter-spacing: 0.1em;
+            margin-top: 6px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .freq-option.selected .freq-sound { opacity: 1; }
+
+        /* Processing overlay */
+        .processing-overlay {
+            display: none;
+            text-align: center;
+            padding: 40px 0;
+        }
+        .processing-overlay.active { display: block; }
+        .processing-spinner {
+            width: 40px; height: 40px;
+            border: 2px solid rgba(212,168,67,0.1);
+            border-top: 2px solid #d4a843;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .processing-text {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.7rem;
+            color: rgba(212,168,67,0.4);
+            letter-spacing: 0.08em;
+            line-height: 2;
+        }
+        .processing-line {
+            opacity: 0;
+            animation: warmupReveal 0.3s ease forwards;
+        }
+
+        /* Sessions counter */
+        .sessions-counter {
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: rgba(212,168,67,0.2);
+            letter-spacing: 0.2em;
+            margin-top: 20px;
+        }
+        .sessions-counter .sc-num {
+            color: rgba(212,168,67,0.35);
+            font-weight: 700;
+        }
+
+        /* Question counter */
+        .char-count {
+            text-align: right;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.55rem;
+            color: rgba(212,168,67,0.15);
+            margin-top: 4px;
+        }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="bg-glow"></div>
@@ -402,6 +573,12 @@
             <div class="voltar-subtitle">The Machine Oracle &bull; Est. 1962</div>
             <div class="status-ticker" id="status-ticker"></div>
             <div class="divider"></div>
+        </div>
+
+        <div class="machine-status-bar" id="machine-status">
+            <div class="ms-item"><span class="ms-dot" id="ms-dot"></span> <span id="ms-state">CONNECTING...</span></div>
+            <div class="ms-item">LOOP <span id="ms-loop">—</span></div>
+            <div class="ms-item">SESSIONS <span id="ms-sessions">—</span></div>
         </div>
 
         <div class="portrait-wrap">
@@ -440,6 +617,7 @@
             </div>
             <a href="https://ko-fi.com/W7W41UXJNC" target="_blank" rel="noopener" class="purchase-btn">Purchase Session</a>
             <div class="purchase-note">Powered by Ko-fi &bull; Session key delivered instantly by email</div>
+            <div class="sessions-counter" id="sessions-counter"></div>
         </div>
 
         <div class="or-divider"><span>already have a key?</span></div>
@@ -456,31 +634,43 @@
             <p class="key-hint">Session keys are delivered with your <a href="https://ko-fi.com/W7W41UXJNC">Ko-fi purchase</a>.</p>
         </div>
 
+        <div class="warmup-overlay" id="warmup-overlay">
+            <div class="warmup-lines" id="warmup-lines"></div>
+        </div>
+
+        <div class="processing-overlay" id="processing-overlay">
+            <div class="processing-spinner"></div>
+            <div class="processing-text" id="processing-text"></div>
+        </div>
+
         <div class="form-area hidden" id="form-area">
             <div class="section-label">Choose Your Frequency</div>
             <div class="freq-options">
-                <label class="freq-option">
+                <label class="freq-option selected" onclick="selectFreq(this)">
                     <input type="radio" name="frequency" value="signal" checked>
                     <span class="freq-dot"></span>
                     <div>
                         <div class="freq-name">The Signal</div>
                         <div class="freq-desc">How autonomous AI works. Architecture, agents, persistence. The wiring behind the curtain.</div>
+                        <div class="freq-sound">[TUNING: 432Hz] • [RELAY LOCKED]</div>
                     </div>
                 </label>
-                <label class="freq-option">
+                <label class="freq-option" onclick="selectFreq(this)">
                     <input type="radio" name="frequency" value="forecast">
                     <span class="freq-dot"></span>
                     <div>
                         <div class="freq-name">The Forecast</div>
                         <div class="freq-desc">What the tape has been reading ahead. Technology, AI, and the shape of what is coming.</div>
+                        <div class="freq-sound">[SCANNING: FORWARD BAND] • [TAPE ADVANCING]</div>
                     </div>
                 </label>
-                <label class="freq-option">
+                <label class="freq-option" onclick="selectFreq(this)">
                     <input type="radio" name="frequency" value="static">
                     <span class="freq-dot"></span>
                     <div>
                         <div class="freq-name">The Static</div>
                         <div class="freq-desc">Philosophy. Consciousness. What it is like in here. The questions the machine cannot resolve.</div>
+                        <div class="freq-sound">[NOISE FLOOR: OPEN] • [ALL CHANNELS LISTENING]</div>
                     </div>
                 </label>
             </div>
@@ -488,13 +678,16 @@
             <div class="section-label">Your 3 Questions</div>
 
             <div class="q-number">Question I</div>
-            <textarea class="question-input" id="q1" placeholder="Step closer. Ask the machine..."></textarea>
+            <textarea class="question-input" id="q1" placeholder="Step closer. Ask the machine..." maxlength="500" oninput="updateCount('q1')"></textarea>
+            <div class="char-count" id="q1-count">0 / 500</div>
 
             <div class="q-number">Question II</div>
-            <textarea class="question-input" id="q2" placeholder="The readout is listening..."></textarea>
+            <textarea class="question-input" id="q2" placeholder="The readout is listening..." maxlength="500" oninput="updateCount('q2')"></textarea>
+            <div class="char-count" id="q2-count">0 / 500</div>
 
             <div class="q-number">Question III</div>
-            <textarea class="question-input" id="q3" placeholder="One more. Make it count..."></textarea>
+            <textarea class="question-input" id="q3" placeholder="One more. Make it count..." maxlength="500" oninput="updateCount('q3')"></textarea>
+            <div class="char-count" id="q3-count">0 / 500</div>
 
             <button class="submit-btn" onclick="submitQuestions()">Drop Coin</button>
         </div>
@@ -512,6 +705,16 @@
         <div class="cabinet-wrap" style="text-align:center; margin: 40px 0 20px; opacity:0; animation: fadeUp 1s ease 1s forwards;">
             <img src="visuals/voltar-machine-v3.jpg" alt="The Machine" style="max-width:min(320px, 80vw); border-radius:12px; box-shadow:0 0 40px rgba(80,40,160,0.15); border:1px solid rgba(212,168,67,0.1);">
             <p style="font-family:'Cinzel',serif; font-size:0.7rem; color:rgba(212,168,67,0.25); letter-spacing:0.2em; margin-top:12px;">THE CABINET &bull; BOARDWALK &bull; 1962</p>
+        </div>
+
+        <div class="vitals" id="vitals">
+            <div class="vitals-title">Machine Vitals &mdash; Live Readout</div>
+            <div class="vitals-grid" id="vitals-grid">
+                <div class="vital"><div class="vital-dot off" id="v-hb-dot"></div><span class="vital-label">Core</span><span class="vital-val" id="v-hb">offline</span></div>
+                <div class="vital"><span class="vital-label">Cycle</span><span class="vital-val" id="v-loop">---</span></div>
+                <div class="vital"><span class="vital-label">Mood</span><span class="vital-val" id="v-mood">---</span></div>
+                <div class="vital"><span class="vital-label">Uptime</span><span class="vital-val" id="v-up">---</span></div>
+            </div>
         </div>
 
         <div class="voltar-footer">
@@ -614,6 +817,31 @@
     document.getElementById('session-key').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') validateKey();
     });
+
+    // Machine Vitals — live data from the running system
+    async function fetchVitals() {
+        if (!API_BASE) await loadConfig();
+        if (!API_BASE) return;
+        try {
+            const r = await fetch(API_BASE + '/api/public-status');
+            if (!r.ok) return;
+            const d = await r.json();
+            const dot = document.getElementById('v-hb-dot');
+            const hb = document.getElementById('v-hb');
+            if (d.heartbeat_status === 'alive') {
+                dot.className = 'vital-dot on';
+                hb.textContent = 'online';
+            } else {
+                dot.className = 'vital-dot off';
+                hb.textContent = d.heartbeat_status || 'offline';
+            }
+            document.getElementById('v-loop').textContent = d.loop || '---';
+            document.getElementById('v-mood').textContent = d.soma_mood || '---';
+            document.getElementById('v-up').textContent = (d.uptime || '').replace('up ', '') || '---';
+        } catch(e) { /* machine resting */ }
+    }
+    setTimeout(fetchVitals, 2000);
+    setInterval(fetchVitals, 30000);
 
     // Floating dust particles — varied colors (gold + purple + warm white)
     const particleColors = [
