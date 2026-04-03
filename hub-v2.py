@@ -1089,15 +1089,20 @@ The tape is spooling. The mechanism is listening.
             except Exception:
                 data = {}
             key = data.get("key", "").strip()
+            promo_email = data.get("email", "").strip()
             if not key:
                 self._send_json({"valid": False, "error": "no key"}, 400)
                 return
             db = sqlite3.connect(os.path.join(BASE, "voltar-keys.db"))
             db.execute("CREATE TABLE IF NOT EXISTS session_keys (key TEXT PRIMARY KEY, email TEXT, created TEXT, used INTEGER DEFAULT 0)")
             row = db.execute("SELECT email, used FROM session_keys WHERE key = ?", (key,)).fetchone()
-            db.close()
             if row and not row[1]:
-                self._send_json({"valid": True, "email": row[0]})
+                # If promo key with email provided, update the email from 'promo' to actual
+                if promo_email and row[0] == "promo":
+                    db.execute("UPDATE session_keys SET email = ? WHERE key = ?", (promo_email, key))
+                    db.commit()
+                db.close()
+                self._send_json({"valid": True, "email": promo_email or row[0]})
             elif row and row[1]:
                 self._send_json({"valid": False, "error": "key already used"})
             else:
@@ -1134,6 +1139,9 @@ The tape is spooling. The mechanism is listening.
             buyer_email = row[0]
             # Mark key as used
             db.execute("UPDATE session_keys SET used = 1 WHERE key = ?", (key,))
+            # Store session for auto-response
+            db.execute("CREATE TABLE IF NOT EXISTS voltar_sessions (key TEXT PRIMARY KEY, email TEXT, frequency TEXT, q1 TEXT, q2 TEXT, q3 TEXT, submitted TEXT DEFAULT (datetime('now')), responded INTEGER DEFAULT 0, response TEXT, responded_at TEXT)")
+            db.execute("INSERT OR IGNORE INTO voltar_sessions (key, email, frequency, q1, q2, q3) VALUES (?, ?, ?, ?, ?, ?)", (key, buyer_email, freq, q1, q2, q3))
             db.commit()
             db.close()
             # Send email to Meridian with questions

@@ -300,7 +300,11 @@
 
         <div class="key-gate fade-up delay-3" id="key-gate">
             <div class="section-label">Insert Coin</div>
-            <input type="text" class="key-input" id="session-key" placeholder="VOL-XXXXXXXX">
+            <input type="text" class="key-input" id="session-key" placeholder="VOL-XXXXXXXX" oninput="checkPromoKey()">
+            <div id="promo-email-gate" style="display:none; margin-top:12px;">
+                <input type="email" class="key-input" id="promo-email" placeholder="your@email.com" style="font-size:0.95rem; letter-spacing:0.05em;">
+                <p style="font-size:0.7rem; color:rgba(232,220,200,0.25); margin-top:8px;">Promotional session &mdash; enter your email to activate</p>
+            </div>
             <button class="submit-btn" onclick="validateKey()" style="max-width:320px; margin:16px auto 0;">Activate Machine</button>
             <div id="key-error"></div>
             <p class="key-hint">Session keys are delivered with your <a href="https://ko-fi.com/W7W41UXJNC">Ko-fi purchase</a>.</p>
@@ -389,6 +393,12 @@
     }
     loadConfig();
 
+    function checkPromoKey() {
+        const key = document.getElementById('session-key').value.trim().toUpperCase();
+        const emailGate = document.getElementById('promo-email-gate');
+        emailGate.style.display = key.startsWith('PROMO-') ? 'block' : 'none';
+    }
+
     async function validateKey() {
         if (!API_BASE) await loadConfig();
         const key = document.getElementById('session-key').value.trim().toUpperCase();
@@ -398,10 +408,23 @@
         if (!key) { errEl.textContent = 'The machine requires a key.'; errEl.style.display = 'block'; return; }
         if (!API_BASE) { errEl.textContent = 'The machine is warming up. Try again in a moment.'; errEl.style.display = 'block'; return; }
 
+        // Promo keys require email
+        let promoEmail = '';
+        if (key.startsWith('PROMO-')) {
+            promoEmail = (document.getElementById('promo-email').value || '').trim();
+            if (!promoEmail || !promoEmail.includes('@')) {
+                errEl.textContent = 'The mechanism requires your email for promotional sessions.';
+                errEl.style.display = 'block';
+                return;
+            }
+        }
+
         try {
+            const body = { key };
+            if (promoEmail) body.email = promoEmail;
             const resp = await fetch(API_BASE + '/voltar/validate', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key })
+                body: JSON.stringify(body)
             });
             const data = await resp.json();
             if (data.valid) {
