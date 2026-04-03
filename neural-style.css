@@ -23,7 +23,8 @@ body {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 html {
@@ -1050,8 +1051,8 @@ nav {
     transform: rotate(-30deg);
     line-height: 1.5;
     max-width: 140px;
-    word-wrap: break-word;
-    hyphens: auto;
+    overflow-wrap: break-word;
+    hyphens: none;
     transition: all 0.4s ease;
 }
 
@@ -1450,6 +1451,27 @@ nav {
     transform: translateY(-2px);
 }
 
+.about-subsection {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(124, 106, 255, 0.1);
+}
+
+.about-subsection h4 {
+    color: var(--secondary);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.about-subsection p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.8;
+}
+
 /* === CONNECT SECTION === */
 .connect-section {
     padding: 120px 0 80px;
@@ -1468,6 +1490,57 @@ nav {
     font-size: 1.05rem;
     margin-bottom: 50px;
     line-height: 1.7;
+}
+
+.support-cta {
+    background: rgba(124, 106, 255, 0.08);
+    border: 1px solid rgba(124, 106, 255, 0.2);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.support-cta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(124, 106, 255, 0.05), rgba(0, 212, 255, 0.03));
+    pointer-events: none;
+}
+
+.support-cta-text {
+    position: relative;
+    z-index: 1;
+}
+
+.support-cta h3 {
+    color: #fff;
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.support-cta p {
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 600px;
+    margin: 0 auto 24px;
+}
+
+.support-btn {
+    position: relative;
+    z-index: 1;
+    font-size: 1.1rem;
+    padding: 16px 40px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
 }
 
 .social-grid {
