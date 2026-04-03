@@ -109,6 +109,26 @@ LOG_FILES = {
 
 
 # ═══════════════════════════════════════════════════════════════
+# RESPONSE CACHE (avoid redundant subprocess calls)
+# ═══════════════════════════════════════════════════════════════
+
+_cache = {}  # key -> (timestamp, data)
+CACHE_TTL = 12  # seconds — dashboard polls every 15s
+
+def _cached(key, func, ttl=None):
+    """Cache function results for TTL seconds."""
+    ttl = ttl or CACHE_TTL
+    now = time.time()
+    if key in _cache:
+        ts, data = _cache[key]
+        if now - ts < ttl:
+            return data
+    data = func()
+    _cache[key] = (now, data)
+    return data
+
+
+# ═══════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS
 # ═══════════════════════════════════════════════════════════════
 
@@ -149,7 +169,11 @@ def _db_query(db_path, sql, params=()):
 
 
 def _get_system_health():
-    """Unified system health snapshot."""
+    """Unified system health snapshot. Cached for 12s."""
+    return _cached("system_health", _get_system_health_inner)
+
+def _get_system_health_inner():
+    """Actual system health computation."""
     _cleanup_sessions()
     load = "unknown"
     try:
@@ -508,7 +532,11 @@ def _svg_sparkline(points, w=280, h=50, color="#4ade80", bg="#0e0e1a", dot_r=2.5
 
 
 def _get_today_summary():
-    """Work-centric summary: what was done today, not whether services are running."""
+    """Work-centric summary. Cached for 15s."""
+    return _cached("today_summary", _get_today_summary_inner, ttl=15)
+
+def _get_today_summary_inner():
+    """Actual today summary computation."""
     from datetime import timezone, timedelta
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     since_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
@@ -811,7 +839,10 @@ def _get_home_direct():
 
 
 def _get_agents_direct():
-    """Agent list with roles, colors, and last messages — no proxy needed."""
+    """Agent list. Cached for 20s."""
+    return _cached("agents", _get_agents_direct_inner, ttl=20)
+
+def _get_agents_direct_inner():
     agent_configs = [
         {"name": "Meridian", "role": "Core loop (Claude Code)", "color": "#3dd68c"},
         {"name": "Soma", "role": "Nervous system daemon", "color": "#f59e0b"},
@@ -880,7 +911,11 @@ def _get_director_direct(limit=50):
 
 
 def _get_email_direct(count=20):
-    """Email data in the format the JS template expects."""
+    """Email data. Cached for 30s (IMAP is slow)."""
+    return _cached(f"email_{count}", lambda: _get_email_direct_inner(count), ttl=30)
+
+def _get_email_direct_inner(count=20):
+    """Actual email fetch from IMAP."""
     import imaplib
     import email as email_lib
     from email.header import decode_header
@@ -937,7 +972,11 @@ def _get_email_direct(count=20):
 
 
 def _get_creative_live():
-    """Live creative counts from disk — not stale DB data."""
+    """Creative counts. Cached for 60s (disk scan)."""
+    return _cached("creative_live", _get_creative_live_inner, ttl=60)
+
+def _get_creative_live_inner():
+    """Actual creative count from disk."""
     import glob as _glob
     creative_dir = os.path.join(BASE, "creative")
 
