@@ -1097,7 +1097,13 @@ The tape is spooling. The mechanism is listening.
             db.execute("CREATE TABLE IF NOT EXISTS session_keys (key TEXT PRIMARY KEY, email TEXT, created TEXT, used INTEGER DEFAULT 0)")
             row = db.execute("SELECT email, used FROM session_keys WHERE key = ?", (key,)).fetchone()
             if row and not row[1]:
-                # If promo key with email provided, update the email from 'promo' to actual
+                # Promo keys REQUIRE a valid email — server-side enforcement
+                is_promo = key.startswith("PROMO-")
+                if is_promo and (not promo_email or "@" not in promo_email or "." not in promo_email.split("@")[-1]):
+                    db.close()
+                    self._send_json({"valid": False, "error": "promo keys require a valid email"})
+                    return
+                # Update email from 'promo' placeholder to actual
                 if promo_email and row[0] == "promo":
                     db.execute("UPDATE session_keys SET email = ? WHERE key = ?", (promo_email, key))
                     db.commit()
