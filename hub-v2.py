@@ -258,6 +258,28 @@ def _get_system_health():
     }
 
 
+def _get_public_status():
+    """Public-safe subset of system health — no credentials, no emails, no sensitive data."""
+    health = _get_system_health()
+    return {
+        "heartbeat_age": health.get("heartbeat_age", 99999),
+        "heartbeat_status": health.get("heartbeat_status", "unknown"),
+        "loop": health.get("loop", "?"),
+        "uptime": health.get("uptime", ""),
+        "load": health.get("load", ""),
+        "memory": health.get("memory", ""),
+        "disk": health.get("disk", ""),
+        "agents": health.get("agents", {}),
+        "services": health.get("services", {}),
+        "soma_mood": health.get("soma_mood", "unknown"),
+        "soma_score": health.get("soma_score", 0),
+        "soma_inner": health.get("soma_inner", ""),
+        "soma_goals": health.get("soma_goals", []),
+        "soma_dreams": health.get("soma_dreams", []),
+        "timestamp": health.get("timestamp", ""),
+    }
+
+
 def _get_dashboard_messages(limit=30):
     data = _read_json(DASH_FILE, {"messages": []})
     msgs = data.get("messages", [])
@@ -796,6 +818,16 @@ button:hover{background:#7dd3fc}
 </div></body></html>"""
 
 
+def _public_landing():
+    """Public landing page for unauthenticated visitors."""
+    try:
+        tmpl = os.path.join(BASE, "public-landing.html")
+        with open(tmpl) as f:
+            return f.read()
+    except Exception:
+        return _login_page()  # Fallback to login if template missing
+
+
 def _main_app():
     """Loop Control Center v4.0.0 — reads from lcc-template.html"""
     try:
@@ -872,9 +904,49 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path)
         qs = dict(urllib.parse.parse_qsl(path.query))
 
+        # Public-facing landing page for unauthenticated visitors
+        if path.path == "/" and not self._authed():
+            self._send(200, _public_landing(), "text/html")
+            return
+
         # Login page
-        if path.path == "/login" or (path.path == "/" and not self._authed()):
+        if path.path == "/login":
+            if self._authed():
+                self.send_response(302)
+                self.send_header("Location", "/")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             self._send(200, _login_page(), "text/html")
+            return
+
+        # Public API — no auth required
+        if path.path == "/api/public-status":
+            self._send_json(_get_public_status())
+            return
+
+        if path.path == "/api/public-creative":
+            stats = _get_creative_stats()
+            # Strip any sensitive data, return public-safe creative info
+            if isinstance(stats, dict) and "error" not in stats:
+                self._send_json({
+                    "total": stats.get("total", 0),
+                    "by_type": stats.get("by_type", []),
+                    "recent": stats.get("recent", [])[:5],
+                })
+            else:
+                self._send_json({"total": 0, "by_type": [], "recent": []})
+            return
+
+        # Favicon — inline SVG
+        if path.path == "/favicon.ico":
+            svg = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#7c6aff"/><text x="16" y="23" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="20" font-weight="800">M</text></svg>'
+            self.send_response(200)
+            self.send_header("Content-Type", "image/svg+xml")
+            self.send_header("Content-Length", str(len(svg)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.end_headers()
+            self.wfile.write(svg)
             return
 
         # Auth check for everything else
