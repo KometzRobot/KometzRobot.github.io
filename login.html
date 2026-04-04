@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redirecting...</title>
+<style>
+body { background: #0a0a0a; color: #00ff88; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+.loader { text-align: center; }
+.dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+a { color: #00ff88; }
+</style>
+</head>
+<body>
+<div class="loader" id="msg">Connecting<span class="dots"></span></div>
+<script>
+fetch('/signal-config.json?' + Date.now())
+  .then(r => r.json())
+  .then(cfg => {
+    if (cfg.url) {
+      window.location.href = cfg.url;
+    } else {
+      document.getElementById('msg').innerHTML = 'Hub URL not configured. <a href="/">Return home</a>';
+    }
+  })
+  .catch(() => {
+    document.getElementById('msg').innerHTML = 'Could not reach hub. <a href="/">Return home</a>';
+  });
+</script>
+</body>
+</html>
