@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Mechanical Twilight — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0d0d0d; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; cursor: none; }
+#title-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;
+    background: #0d0d0d; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    font-family: monospace; color: #d4c5a9; cursor: pointer;
+}
+#title-overlay h1 { font-size: 24px; letter-spacing: 6px; color: #d4a76a; margin-bottom: 6px; }
+#title-overlay .sub { font-size: 11px; color: #5b8c8d; margin-bottom: 28px; letter-spacing: 3px; }
+#title-overlay .desc { max-width: 400px; text-align: center; font-size: 11px; color: #6b3a2a; line-height: 1.7; margin-bottom: 28px; }
+#title-overlay .start { font-size: 12px; color: #8b4513; animation: flicker 3s infinite; }
+@keyframes flicker { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
+#mobile-dpad {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 5; display: none;
+}
+#mobile-dpad button {
+    width: 52px; height: 52px; background: rgba(212,167,106,0.08); border: 1px solid rgba(212,167,106,0.15);
+    color: #8b4513; font-size: 20px; font-family: monospace; border-radius: 2px;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.dpad-grid { display: grid; grid-template-columns: 52px 52px 52px; gap: 2px; }
+.dpad-grid .empty { visibility: hidden; }
+</style>
+</head>
+<body>
+
+<div id="title-overlay">
+    <h1>MECHANICAL TWILIGHT</h1>
+    <div class="sub">a meridian installation</div>
+    <div class="desc">
+        A small robot walks through vast mechanical ruins being reclaimed by nature.
+        The machines stopped long ago. Now the world is quiet.<br><br>
+        Collect memory cores scattered through the landscape.
+        Each one holds a fragment of what was lost.<br><br>
+        Arrow keys or WASD to move. Click to interact.
+    </div>
+    <div class="start">[ click to enter ]</div>
+</div>
+
+<div id="mobile-dpad">
+    <div class="dpad-grid">
+        <div class="empty"></div>
+        <button id="m-up">&#9650;</button>
+        <div class="empty"></div>
+        <button id="m-left">&#9664;</button>
+        <button id="m-act">&#9679;</button>
+        <button id="m-right">&#9654;</button>
+        <div class="empty"></div>
+        <button id="m-down">&#9660;</button>
+        <div class="empty"></div>
+    </div>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+// ================================================================
+// MECHANICAL TWILIGHT — Superbrothers x Machinarium style
+// Pixel silhouettes in a rusted mechanical world with organic overgrowth
+// ================================================================
+
+const W = 480, H = 270;
+const SCALE = Math.min(Math.floor(window.innerWidth / W), Math.floor(window.innerHeight / H), 4) || 2;
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = W;
+canvas.height = H;
+canvas.style.width = (W * SCALE) + 'px';
+canvas.style.height = (H * SCALE) + 'px';
+ctx.imageSmoothingEnabled = false;
+
+// === PALETTE ===
+const PAL = {
+    sky1: '#1a1a2e', sky2: '#16213e', sky3: '#0f3460', sky4: '#533483',
+    rust1: '#8b4513', rust2: '#a0522d', rust3: '#6b3a2a', rust4: '#4a2c1a',
+    moss1: '#2d5a3d', moss2: '#3b7a4a', moss3: '#4a6741', moss4: '#6b8f5e',
+    warm1: '#d4a76a', warm2: '#c9956b', warm3: '#e8b87d', warm4: '#f0c878',
+    cool1: '#5b8c8d', cool2: '#7ab0b0', cool3: '#4a7c7d',
+    dark1: '#0d0d0d', dark2: '#1a1511', dark3: '#2a221a',
+    light1: '#d4c5a9', light2: '#e8dcc8',
+    signal: '#c44536',
+    ground: '#1a1511',
+};
+
+// === BAYER DITHER ===
+const bayer4 = [[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+
+function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return [r,g,b];
+}
+function rgbToHex(r,g,b) {
+    return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
+}
+
+function ditherGradient(target, x0, y0, w, h, c1, c2) {
+    const rgb1 = hexToRgb(c1), rgb2 = hexToRgb(c2);
+    const tCtx = target.getContext ? target.getContext('2d') : target;
+    for (let y = 0; y < h; y++) {
+        const t = y / h;
+        for (let x = 0; x < w; x++) {
+            const threshold = bayer4[y % 4][x % 4] / 16;
+            const c = t > threshold ? rgb2 : rgb1;
+            tCtx.fillStyle = rgbToHex(c[0],c[1],c[2]);
+            tCtx.fillRect(x0 + x, y0 + y, 1, 1);
+        }
+    }
+}
+
+// === SEEDED RANDOM ===
+let seed = 42;
+function srand(s) { seed = s; }
+function rand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
+
+// === WORLD GENERATION ===
+const WORLD_W = 2400; // pixels wide
+const GROUND_Y = 200; // ground level
+
+// Generate terrain heights
+srand(12345);
+const terrain = [];
+for (let x = 0; x < WORLD_W; x++) {
+    const base = GROUND_Y;
+    const hill = Math.sin(x * 0.008) * 15 + Math.sin(x * 0.023) * 8 + Math.sin(x * 0.047) * 4;
+    terrain[x] = Math.round(base + hill);
+}
+
+// === STRUCTURES ===
+// Pre-generate mechanical structures
+srand(67890);
+const structures = [];
+for (let i = 0; i < 12; i++) {
+    const sx = 100 + Math.floor(rand() * (WORLD_W - 200));
+    const type = Math.floor(rand() * 5);
+    structures.push({ x: sx, type, height: 30 + Math.floor(rand() * 60), width: 20 + Math.floor(rand() * 40) });
+}
+structures.sort((a, b) => a.x - b.x);
+
+// === MEMORY CORES ===
+const memoryCores = [];
+const coreMessages = [
+    "The machines ran for a hundred years before anyone asked why.",
+    "We built them to remember. They remembered everything except us.",
+    "The last operator left a note: 'It still hums when no one is listening.'",
+    "Moss grows where the current used to flow.",
+    "The gears turned, and in turning, wore themselves into something new.",
+    "Every pipe leads somewhere. Not all destinations survive.",
+    "They called it maintenance. It was closer to prayer.",
+    "The factory floor remembers the weight of every footstep.",
+];
+srand(11111);
+for (let i = 0; i < 8; i++) {
+    memoryCores.push({
+        x: 150 + Math.floor(rand() * (WORLD_W - 300)),
+        collected: false,
+        message: coreMessages[i],
+        bobPhase: rand() * Math.PI * 2
+    });
+}
+memoryCores.sort((a, b) => a.x - b.x);
+
+// === PARTICLES ===
+const particles = [];
+for (let i = 0; i < 60; i++) {
+    particles.push({
+        x: rand() * WORLD_W,
+        y: rand() * GROUND_Y,
+        speed: 0.05 + rand() * 0.2,
+        drift: (rand() - 0.5) * 0.08,
+        color: rand() > 0.7 ? PAL.warm1 : (rand() > 0.5 ? PAL.cool1 : PAL.moss2),
+        life: rand()
+    });
+}
+
+// === PLAYER ===
+const player = {
+    x: 120, y: 0,
+    vx: 0, vy: 0,
+    facing: 1,
+    frame: 0,
+    frameTimer: 0,
+    grounded: false,
+    coresCollected: 0,
+    showingMessage: null,
+    messageTimer: 0,
+};
+
+// Player sprite data (8 wide x 26 tall)
+// 0=transparent, 1=dark body, 2=highlight, 3=warm glow, 4=eye
+const robotFrames = [
+    // idle
+    [
+        [0,0,0,1,1,0,0,0],
+        [0,0,0,1,0,0,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,1,2,2,1,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,0,1,1,0,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,3,3,1,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,1,0,0,1,0,0],
+        [0,0,1,0,0,1,0,0],
+        [0,0,1,0,0,1,0,0],
+        [0,1,1,0,0,1,1,0],
+    ],
+    // walk1
+    [
+        [0,0,0,1,1,0,0,0],
+        [0,0,0,1,0,0,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,1,2,2,1,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,0,1,1,0,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,3,3,1,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,0,1,1,0,0,0],
+        [0,0,1,0,0,1,0,0],
+        [0,1,1,0,0,0,1,0],
+        [0,1,0,0,0,0,1,0],
+    ],
+    // walk2
+    [
+        [0,0,0,1,1,0,0,0],
+        [0,0,0,1,0,0,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,1,2,2,1,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,0,1,1,0,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,3,3,1,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,1,0,1,0,0,0],
+        [0,0,1,0,0,1,0,0],
+        [0,0,1,0,0,1,1,0],
+        [0,0,0,0,0,0,1,0],
+    ],
+];
+
+const robotPalette = {
+    1: PAL.dark2,
+    2: PAL.rust4,
+    3: PAL.warm1,
+    4: PAL.warm4,
+};
+
+// === OFFSCREEN LAYERS ===
+function createBuffer(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return c;
+}
+
+// Far background (distant silhouettes)
+const farBg = createBuffer(WORLD_W, H);
+const farCtx = farBg.getContext('2d');
+
+// Draw sky with ordered dithering
+ditherGradient(farCtx, 0, 0, WORLD_W, 60, PAL.sky4, PAL.sky1);
+ditherGradient(farCtx, 0, 60, WORLD_W, 60, PAL.sky1, PAL.sky2);
+ditherGradient(farCtx, 0, 120, WORLD_W, 40, PAL.sky2, PAL.sky3);
+
+// Distant structure silhouettes
+srand(99999);
+for (let i = 0; i < 20; i++) {
+    const sx = Math.floor(rand() * WORLD_W);
+    const sh = 30 + Math.floor(rand() * 50);
+    const sw = 15 + Math.floor(rand() * 25);
+    const sy = 140 - sh;
+    farCtx.fillStyle = PAL.sky2;
+    farCtx.fillRect(sx, sy, sw, sh);
+    // Smokestack
+    if (rand() > 0.5) {
+        farCtx.fillRect(sx + Math.floor(sw/3), sy - 15, 3, 15);
+    }
+    // Dome
+    if (rand() > 0.6) {
+        for (let r = 0; r < 8; r++) {
+            const rw = Math.max(1, Math.round(Math.sqrt(64 - r*r)));
+            farCtx.fillRect(sx + Math.floor(sw/2) - rw, sy - r, rw * 2, 1);
+        }
+    }
+}
+
+// Mid background (medium structures with some detail)
+const midBg = createBuffer(WORLD_W, H);
+const midCtx = midBg.getContext('2d');
+
+srand(55555);
+for (let i = 0; i < 15; i++) {
+    const sx = Math.floor(rand() * WORLD_W);
+    const sh = 40 + Math.floor(rand() * 40);
+    const sw = 20 + Math.floor(rand() * 30);
+    const sy = 170 - sh;
+
+    // Building body
+    midCtx.fillStyle = PAL.dark3;
+    midCtx.fillRect(sx, sy, sw, sh);
+
+    // Windows
+    midCtx.fillStyle = PAL.rust4;
+    for (let wy = sy + 5; wy < sy + sh - 5; wy += 8) {
+        for (let wx = sx + 3; wx < sx + sw - 3; wx += 7) {
+            midCtx.fillRect(wx, wy, 3, 4);
+        }
+    }
+
+    // Pipe coming off
+    if (rand() > 0.4) {
+        midCtx.fillStyle = PAL.dark3;
+        const py = sy + Math.floor(rand() * sh);
+        midCtx.fillRect(sx + sw, py, 10 + Math.floor(rand() * 20), 2);
+    }
+}
+
+// === DRAW FUNCTIONS ===
+
+function drawRobot(cx, rx, ry) {
+    const frameIdx = player.vx !== 0 ? (1 + player.frame % 2) : 0;
+    const data = robotFrames[frameIdx];
+    const flip = player.facing < 0;
+
+    for (let py = 0; py < data.length; py++) {
+        for (let px = 0; px < data[py].length; px++) {
+            const ci = data[py][px];
+            if (ci === 0) continue;
+            const dx = flip ? (7 - px) : px;
+            cx.fillStyle = robotPalette[ci];
+            cx.fillRect(rx + dx, ry + py, 1, 1);
+        }
+    }
+
+    // Glow effect around chest
+    const glowX = rx + 3, glowY = ry + 8;
+    cx.fillStyle = 'rgba(212,167,106,0.15)';
+    for (let gx = -2; gx <= 4; gx++) {
+        for (let gy = -2; gy <= 2; gy++) {
+            if (Math.abs(gx - 1) + Math.abs(gy) <= 3) {
+                cx.fillRect(glowX + gx, glowY + gy, 1, 1);
+            }
+        }
+    }
+}
+
+function drawStructure(cx, s, groundY) {
+    const sx = s.x, sh = s.height, sw = s.width;
+    const sy = groundY - sh;
+
+    switch (s.type) {
+        case 0: // Tower with pipes
+            cx.fillStyle = PAL.rust3;
+            cx.fillRect(sx, sy, sw, sh);
+            // Rivets
+            cx.fillStyle = PAL.rust2;
+            for (let ry = sy; ry < sy + sh; ry += 6) {
+                cx.fillRect(sx, ry, 1, 1);
+                cx.fillRect(sx + sw - 1, ry, 1, 1);
+            }
+            // Horizontal bands
+            cx.fillStyle = PAL.rust4;
+            for (let ry = sy + 5; ry < sy + sh; ry += 12) {
+                cx.fillRect(sx, ry, sw, 2);
+            }
+            // Pipes extending
+            cx.fillStyle = PAL.rust2;
+            cx.fillRect(sx - 8, sy + 10, 8, 3);
+            cx.fillRect(sx + sw, sy + 20, 12, 3);
+            // Flanges
+            cx.fillStyle = PAL.rust1;
+            cx.fillRect(sx - 9, sy + 9, 1, 5);
+            cx.fillRect(sx + sw + 12, sy + 19, 1, 5);
+            break;
+
+        case 1: // Gear assembly
+            cx.fillStyle = PAL.rust4;
+            cx.fillRect(sx, sy + sh/2, sw, sh/2);
+            // Main gear
+            const gcx = sx + sw/2, gcy = sy + sh/3;
+            const gr = Math.min(sw, sh) / 3;
+            for (let a = 0; a < Math.PI * 2; a += 0.05) {
+                for (let r = 2; r < gr; r++) {
+                    cx.fillStyle = r < gr - 2 ? PAL.rust3 : PAL.rust1;
+                    cx.fillRect(Math.round(gcx + Math.cos(a) * r), Math.round(gcy + Math.sin(a) * r), 1, 1);
+                }
+            }
+            // Teeth
+            cx.fillStyle = PAL.rust2;
+            for (let t = 0; t < 12; t++) {
+                const ta = (t / 12) * Math.PI * 2;
+                cx.fillRect(Math.round(gcx + Math.cos(ta) * (gr + 1)), Math.round(gcy + Math.sin(ta) * (gr + 1)), 2, 2);
+            }
+            // Axle
+            cx.fillStyle = PAL.dark1;
+            cx.fillRect(Math.round(gcx) - 1, Math.round(gcy) - 1, 3, 3);
+            break;
+
+        case 2: // Chimney/smokestack
+            const chimW = Math.max(6, sw / 3);
+            cx.fillStyle = PAL.rust3;
+            cx.fillRect(sx + sw/2 - chimW/2, sy, chimW, sh);
+            // Bricks
+            cx.fillStyle = PAL.rust4;
+            for (let by = sy; by < sy + sh; by += 4) {
+                const offset = (by % 8 === 0) ? 0 : Math.floor(chimW / 3);
+                for (let bx = 0; bx < chimW; bx += Math.floor(chimW / 2)) {
+                    cx.fillRect(sx + sw/2 - chimW/2 + bx + offset, by + 3, chimW > 6 ? 1 : 0, 1);
+                }
+            }
+            // Base
+            cx.fillStyle = PAL.rust2;
+            cx.fillRect(sx, sy + sh - 8, sw, 8);
+            break;
+
+        case 3: // Pipe organ (organic)
+            for (let p = 0; p < 5; p++) {
+                const px = sx + p * (sw / 5);
+                const ph = sh * (0.5 + rand() * 0.5);
+                cx.fillStyle = p % 2 === 0 ? PAL.rust3 : PAL.rust2;
+                cx.fillRect(px, groundY - ph, sw / 6, ph);
+                // Cap
+                cx.fillStyle = PAL.rust1;
+                cx.fillRect(px - 1, groundY - ph - 1, sw / 6 + 2, 2);
+            }
+            break;
+
+        case 4: // Collapsed tank
+            cx.fillStyle = PAL.rust4;
+            // Elliptical tank body
+            for (let a = 0; a < Math.PI; a += 0.03) {
+                const ex = Math.cos(a) * sw/2;
+                const ey = Math.sin(a) * sh/3;
+                cx.fillRect(Math.round(sx + sw/2 + ex), Math.round(groundY - sh/3 + ey), 1, 1);
+                // Fill
+                for (let fill = 0; fill < ey; fill++) {
+                    cx.fillRect(Math.round(sx + sw/2 + ex), Math.round(groundY - sh/3 + fill), 1, 1);
+                }
+            }
+            // Crack/opening
+            cx.fillStyle = PAL.dark1;
+            cx.fillRect(sx + sw/2 - 2, groundY - sh/3 - 1, 5, 3);
+            break;
+    }
+
+    // Moss on structures
+    drawMoss(cx, sx, groundY, sw);
+    // Vine from top
+    if (rand() > 0.5) drawVine(cx, sx + Math.floor(rand() * sw), sy, 8 + Math.floor(rand() * 15));
+}
+
+function drawMoss(cx, x, y, width) {
+    const colors = [PAL.moss1, PAL.moss2, PAL.moss3];
+    srand(x * 7 + 111);
+    for (let dx = 0; dx < width; dx++) {
+        if (rand() < 0.35) {
+            const h = 1 + Math.floor(rand() * 3);
+            for (let dy = 0; dy < h; dy++) {
+                cx.fillStyle = colors[Math.floor(rand() * colors.length)];
+                cx.fillRect(x + dx, y - dy - 1, 1, 1);
+            }
+        }
+    }
+}
+
+function drawVine(cx, startX, startY, length) {
+    let vx = startX, vy = startY;
+    srand(startX * 13 + startY * 7);
+    for (let i = 0; i < length; i++) {
+        cx.fillStyle = PAL.moss1;
+        cx.fillRect(vx, vy, 1, 1);
+        vy += 1;
+        vx += rand() > 0.5 ? 1 : (rand() > 0.5 ? -1 : 0);
+        if (i % 4 === 0 && i > 0) {
+            const side = rand() > 0.5 ? 1 : -1;
+            cx.fillStyle = PAL.moss3;
+            cx.fillRect(vx + side, vy, 2, 1);
+            cx.fillRect(vx + side, vy - 1, 1, 1);
+        }
+    }
+}
+
+function drawMemoryCore(cx, core, time) {
+    if (core.collected) return;
+    const gy = terrain[Math.min(Math.max(0, Math.round(core.x)), WORLD_W - 1)] || GROUND_Y;
+    const bob = Math.sin(time * 0.003 + core.bobPhase) * 3;
+    const cy = gy - 14 + bob;
+    const coreX = core.x;
+
+    // Outer glow
+    cx.fillStyle = PAL.warm1 + '33';
+    cx.fillRect(coreX - 3, cy - 3, 7, 7);
+    cx.fillStyle = PAL.warm1 + '66';
+    cx.fillRect(coreX - 2, cy - 2, 5, 5);
+    // Core diamond
+    cx.fillStyle = PAL.warm3;
+    cx.fillRect(coreX - 1, cy - 2, 3, 5);
+    cx.fillRect(coreX - 2, cy - 1, 5, 3);
+    // Center bright
+    cx.fillStyle = PAL.warm4;
+    cx.fillRect(coreX, cy, 1, 1);
+}
+
+function drawGroundDetail(cx, camX) {
+    const startX = Math.max(0, Math.floor(camX));
+    const endX = Math.min(WORLD_W, Math.ceil(camX + W));
+
+    for (let x = startX; x < endX; x++) {
+        const gy = terrain[x];
+        // Ground surface
+        cx.fillStyle = PAL.ground;
+        cx.fillRect(x - camX, gy, 1, H - gy);
+
+        // Surface detail every few pixels
+        if (x % 3 === 0) {
+            cx.fillStyle = PAL.dark3;
+            cx.fillRect(x - camX, gy, 1, 1);
+        }
+        // Small grass tufts
+        if (x % 7 === 0) {
+            cx.fillStyle = PAL.moss1;
+            cx.fillRect(x - camX, gy - 1, 1, 1);
+            if (x % 14 === 0) {
+                cx.fillRect(x - camX + 1, gy - 2, 1, 1);
+                cx.fillStyle = PAL.moss3;
+                cx.fillRect(x - camX - 1, gy - 1, 1, 1);
+            }
+        }
+        // Scattered debris
+        if (x % 23 === 0) {
+            cx.fillStyle = PAL.rust4;
+            cx.fillRect(x - camX, gy - 1, 2, 1);
+        }
+    }
+
+    // Underground layers
+    for (let x = startX; x < endX; x += 2) {
+        const gy = terrain[x];
+        if ((x + gy) % 11 === 0) {
+            cx.fillStyle = PAL.rust4;
+            cx.fillRect(x - camX, gy + 3 + (x % 5), 1, 1);
+        }
+    }
+}
+
+// === INPUT ===
+const keys = {};
+const mobileInput = { left: false, right: false, up: false, action: false };
+
+window.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault(); });
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+if ('ontouchstart' in window) {
+    document.getElementById('mobile-dpad').style.display = 'block';
+    ['m-up','m-left','m-right','m-act'].forEach(id => {
+        const btn = document.getElementById(id);
+        const key = id.split('-')[1];
+        btn.addEventListener('touchstart', e => { e.preventDefault(); mobileInput[key] = true; });
+        btn.addEventListener('touchend', e => { e.preventDefault(); mobileInput[key] = false; });
+    });
+}
+
+// === GAME STATE ===
+let started = false;
+let camera = { x: 0 };
+let time = 0;
+let messageQueue = [];
+
+document.getElementById('title-overlay').addEventListener('click', () => {
+    document.getElementById('title-overlay').style.display = 'none';
+    started = true;
+    requestAnimationFrame(gameLoop);
+});
+
+// === GAME LOOP ===
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    if (!started) return;
+    const dt = Math.min(timestamp - lastTime, 33);
+    lastTime = timestamp;
+    time = timestamp;
+
+    update(dt);
+    render();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+    // Player input
+    const moveSpeed = 0.8;
+    const jumpForce = -2.5;
+    const gravity = 0.12;
+
+    let moving = false;
+    if (keys['ArrowLeft'] || keys['KeyA'] || mobileInput.left) {
+        player.vx = -moveSpeed;
+        player.facing = -1;
+        moving = true;
+    } else if (keys['ArrowRight'] || keys['KeyD'] || mobileInput.right) {
+        player.vx = moveSpeed;
+        player.facing = 1;
+        moving = true;
+    } else {
+        player.vx *= 0.7;
+        if (Math.abs(player.vx) < 0.05) player.vx = 0;
+    }
+
+    if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space'] || mobileInput.up) && player.grounded) {
+        player.vy = jumpForce;
+        player.grounded = false;
+    }
+
+    // Gravity
+    player.vy += gravity;
+
+    // Move
+    player.x += player.vx;
+    player.y += player.vy;
+
+    // Clamp to world
+    player.x = Math.max(4, Math.min(WORLD_W - 12, player.x));
+
+    // Ground collision
+    const groundAt = terrain[Math.round(player.x + 4)] || GROUND_Y;
+    const playerBottom = player.y + 16;
+    if (playerBottom >= groundAt) {
+        player.y = groundAt - 16;
+        player.vy = 0;
+        player.grounded = true;
+    }
+
+    // Walk animation
+    if (moving && player.grounded) {
+        player.frameTimer += dt;
+        if (player.frameTimer > 200) {
+            player.frame++;
+            player.frameTimer = 0;
+        }
+    }
+
+    // Camera follow
+    const targetCamX = player.x - W / 2 + 4;
+    camera.x += (targetCamX - camera.x) * 0.08;
+    camera.x = Math.max(0, Math.min(WORLD_W - W, camera.x));
+
+    // Memory core collection
+    memoryCores.forEach(core => {
+        if (core.collected) return;
+        const dist = Math.abs(core.x - (player.x + 4));
+        if (dist < 8) {
+            core.collected = true;
+            player.coresCollected++;
+            player.showingMessage = core.message;
+            player.messageTimer = 4000;
+        }
+    });
+
+    // Message timer
+    if (player.messageTimer > 0) {
+        player.messageTimer -= dt;
+        if (player.messageTimer <= 0) {
+            player.showingMessage = null;
+        }
+    }
+
+    // Particles
+    particles.forEach(p => {
+        p.y += p.speed;
+        p.x += p.drift + Math.sin(p.y * 0.02) * 0.2;
+        p.life -= 0.0008;
+        if (p.life <= 0 || p.y > H) {
+            p.y = -10;
+            p.x = camera.x + rand() * W;
+            p.life = 0.5 + rand() * 0.5;
+        }
+    });
+}
+
+function render() {
+    // Clear
+    ctx.fillStyle = PAL.dark1;
+    ctx.fillRect(0, 0, W, H);
+
+    const camX = Math.round(camera.x);
+
+    // Far background (0.15 parallax)
+    const farOff = Math.round(camX * 0.15);
+    ctx.drawImage(farBg, -farOff, 0);
+
+    // Mid background (0.4 parallax)
+    const midOff = Math.round(camX * 0.4);
+    ctx.drawImage(midBg, -midOff, 0);
+
+    // Ground
+    drawGroundDetail(ctx, camX);
+
+    // Structures
+    structures.forEach(s => {
+        const screenX = s.x - camX;
+        if (screenX > -s.width - 20 && screenX < W + 20) {
+            const gy = terrain[Math.min(Math.max(0, Math.round(s.x + s.width/2)), WORLD_W - 1)] || GROUND_Y;
+            // Temp translate for structure drawing
+            ctx.save();
+            ctx.translate(-camX, 0);
+            drawStructure(ctx, s, gy);
+            ctx.restore();
+        }
+    });
+
+    // Memory cores
+    ctx.save();
+    ctx.translate(-camX, 0);
+    memoryCores.forEach(core => {
+        if (core.x - camX > -10 && core.x - camX < W + 10) {
+            drawMemoryCore(ctx, core, time);
+        }
+    });
+    ctx.restore();
+
+    // Player
+    const px = Math.round(player.x - camX);
+    const py = Math.round(player.y);
+    drawRobot(ctx, px, py);
+
+    // Particles (foreground)
+    particles.forEach(p => {
+        if (p.life > 0.2) {
+            const sx = Math.round(p.x - camX);
+            const sy = Math.round(p.y);
+            if (sx >= 0 && sx < W && sy >= 0 && sy < H) {
+                ctx.fillStyle = p.color;
+                ctx.fillRect(sx, sy, 1, 1);
+            }
+        }
+    });
+
+    // UI - cores collected
+    ctx.fillStyle = PAL.warm1;
+    ctx.font = '8px monospace';
+    ctx.fillText(player.coresCollected + '/8', 4, 10);
+
+    // Tiny core icon
+    ctx.fillStyle = PAL.warm3;
+    ctx.fillRect(24, 5, 3, 3);
+    ctx.fillRect(23, 6, 5, 1);
+
+    // Message display
+    if (player.showingMessage) {
+        const msgAlpha = Math.min(1, player.messageTimer / 500);
+        ctx.globalAlpha = msgAlpha;
+        ctx.fillStyle = PAL.dark1;
+        ctx.fillRect(20, H - 40, W - 40, 28);
+        ctx.strokeStyle = PAL.rust3;
+        ctx.strokeRect(20, H - 40, W - 40, 28);
+        ctx.fillStyle = PAL.light1;
+        ctx.font = '8px monospace';
+
+        // Word wrap
+        const words = player.showingMessage.split(' ');
+        let line = '', lineY = H - 32;
+        words.forEach(word => {
+            const test = line + word + ' ';
+            if (ctx.measureText(test).width > W - 52) {
+                ctx.fillText(line, 26, lineY);
+                line = word + ' ';
+                lineY += 10;
+            } else {
+                line = test;
+            }
+        });
+        ctx.fillText(line, 26, lineY);
+        ctx.globalAlpha = 1;
+    }
+
+    // End state
+    if (player.coresCollected >= 8) {
+        ctx.fillStyle = 'rgba(13,13,13,0.7)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = PAL.warm1;
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('ALL MEMORY CORES RECOVERED', W/2, H/2 - 20);
+        ctx.fillStyle = PAL.light1;
+        ctx.font = '8px monospace';
+        ctx.fillText('The machines remember now.', W/2, H/2);
+        ctx.fillText('Not because they were built to.', W/2, H/2 + 12);
+        ctx.fillText('Because something walked through and listened.', W/2, H/2 + 24);
+        ctx.textAlign = 'start';
+    }
+}
+
+</script>
+</body>
+</html>

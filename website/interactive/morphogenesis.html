@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Morphogenesis — Reaction-Diffusion</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #08080f; overflow: hidden; font-family: 'Courier New', monospace; touch-action: none; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#ui { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(8,8,15,0.97), rgba(8,8,15,0.88)); border-top: 1px solid #1e1e33; padding: 6px 10px 10px; z-index: 10; }
+#presets { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; margin-bottom: 5px; }
+.preset-btn {
+    background: linear-gradient(to bottom, #1a1a2e, #121225);
+    color: #6666aa; border: 1px solid #2a2a44; padding: 4px 9px;
+    font-family: 'Courier New', monospace; font-size: 10px; cursor: pointer;
+    border-radius: 4px; transition: all 0.15s; position: relative;
+}
+.preset-btn::after {
+    content: ''; position: absolute; bottom: 2px; left: 20%; right: 20%; height: 2px;
+    border-radius: 1px; opacity: 0; transition: opacity 0.2s;
+}
+.preset-btn.active { background: linear-gradient(to bottom, #2a2a55, #1e1e44); color: #ccccee; border-color: #6666aa; }
+.preset-btn.active::after { opacity: 1; }
+.preset-btn:hover { background: #222240; color: #aaaacc; }
+#tools-row { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+.tool-btn {
+    background: linear-gradient(to bottom, #1a1a2e, #121225);
+    color: #6666aa; border: 1px solid #2a2a44; padding: 4px 9px;
+    font-family: 'Courier New', monospace; font-size: 10px; cursor: pointer;
+    border-radius: 4px; transition: all 0.15s;
+}
+.tool-btn.active { background: #2a2a55; color: #ccccee; border-color: #6666aa; }
+.tool-btn:hover { background: #222240; }
+.sep { width: 1px; background: #1e1e33; margin: 0 2px; height: 20px; }
+#controls { display: flex; gap: 8px; justify-content: center; align-items: center; font-size: 10px; color: #4a4a77; flex-wrap: wrap; }
+#controls input[type=range] { width: 60px; accent-color: #6666aa; }
+#controls button { background: #121225; color: #4a4a77; border: 1px solid #2a2a44; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 10px; }
+#controls button:hover { background: #1e1e38; color: #8888bb; }
+#controls button.active-ctrl { background: #2a2a55; color: #ccccee; }
+#title-screen { position: fixed; inset: 0; background: #08080f; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.8s; }
+#title-screen h1 { color: #7777aa; font-size: 28px; letter-spacing: 8px; margin-bottom: 4px; text-shadow: 0 0 30px rgba(119,119,170,0.2); }
+#title-screen .subtitle { color: #444466; font-size: 10px; font-style: italic; letter-spacing: 4px; margin-bottom: 20px; }
+#title-screen p { color: #555577; font-size: 12px; max-width: 380px; text-align: center; line-height: 1.8; margin-bottom: 20px; }
+#title-screen .start-btn { background: linear-gradient(to bottom, #222244, #1a1a38); color: #7777aa; border: 1px solid #444466; padding: 12px 36px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; border-radius: 5px; letter-spacing: 4px; transition: all 0.3s; }
+#title-screen .start-btn:hover { background: linear-gradient(to bottom, #2a2a55, #222244); box-shadow: 0 0 20px rgba(119,119,170,0.15); }
+#info-bar { display: flex; gap: 12px; justify-content: center; font-size: 9px; color: #3a3a55; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+  <h1>MORPHOGENESIS</h1>
+  <div class="subtitle">after Alan Turing, 1952</div>
+  <p>Two chemicals react and diffuse across a surface. From this interaction, organic patterns emerge — spots, stripes, labyrinths, coral growths. The same math that gives leopards their spots and seashells their spirals.</p>
+  <p style="font-size:10px; color:#333350;">Gray-Scott reaction-diffusion model. Click to seed. Try different presets.</p>
+  <button class="start-btn" onclick="startGame()">OBSERVE</button>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <div id="presets">
+    <button class="preset-btn active" data-preset="mitosis" style="--pc:#4488cc;">Mitosis</button>
+    <button class="preset-btn" data-preset="coral" style="--pc:#cc6644;">Coral</button>
+    <button class="preset-btn" data-preset="spots" style="--pc:#ccaa44;">Spots</button>
+    <button class="preset-btn" data-preset="stripes" style="--pc:#44cc88;">Stripes</button>
+    <button class="preset-btn" data-preset="maze" style="--pc:#aa44cc;">Maze</button>
+    <button class="preset-btn" data-preset="worms" style="--pc:#cc8844;">Worms</button>
+    <button class="preset-btn" data-preset="solitons" style="--pc:#44aacc;">Solitons</button>
+    <button class="preset-btn" data-preset="chaos" style="--pc:#cc4444;">Chaos</button>
+  </div>
+  <div id="tools-row">
+    <button class="tool-btn active" data-tool="seed" title="Seed chemical B">Seed</button>
+    <button class="tool-btn" data-tool="erase" title="Remove chemical B">Erase</button>
+    <div class="sep"></div>
+    <span style="font-size:10px; color:#4a4a77;">Brush</span>
+    <input type="range" id="brush-size" min="2" max="20" value="5" style="width:60px; accent-color:#6666aa;">
+    <span id="brush-label" style="font-size:10px; color:#4a4a77; width:14px;">5</span>
+    <div class="sep"></div>
+    <span style="font-size:10px; color:#4a4a77;">Symmetry</span>
+    <button class="tool-btn" data-sym="0" id="sym-none">Off</button>
+    <button class="tool-btn" data-sym="4" id="sym-4">4×</button>
+    <button class="tool-btn" data-sym="6" id="sym-6">6×</button>
+    <button class="tool-btn" data-sym="8" id="sym-8">8×</button>
+  </div>
+  <div id="controls">
+    <span>Speed:</span>
+    <button onclick="setSteps(2)" id="sp2">2</button>
+    <button onclick="setSteps(8)" id="sp8" class="active-ctrl">8</button>
+    <button onclick="setSteps(16)" id="sp16">16</button>
+    <button onclick="setSteps(32)" id="sp32">32</button>
+    <div class="sep"></div>
+    <button onclick="togglePause()" id="pause-btn">Pause</button>
+    <button onclick="clearGrid()">Clear</button>
+    <button onclick="autoSeed()">Auto Seed</button>
+    <button onclick="saveImage()">Save PNG</button>
+    <button onclick="toggleEdges()" id="edge-btn">Edges: On</button>
+  </div>
+  <div id="info-bar">
+    <span>Click to seed · Scroll to adjust brush · 1-8 presets</span>
+    <span id="fps-display">-- fps</span>
+    <span id="step-display">step: 0</span>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let W, H, gridW, gridH;
+const SCALE = 2;
+let running = false;
+let paused = false;
+let selectedTool = 'seed';
+let stepCount = 0;
+let stepsPerFrame = 8;
+let brushRadius = 5;
+let symmetry = 0; // 0=off, 4, 6, 8
+let showEdges = true;
+
+// Gray-Scott parameters
+let feed = 0.0367, kill = 0.0649;
+const dA = 1.0, dB = 0.5, dt = 1.0;
+
+const presets = {
+    mitosis:  { f: 0.0367, k: 0.0649 },
+    coral:    { f: 0.0545, k: 0.062 },
+    spots:    { f: 0.035, k: 0.065 },
+    stripes:  { f: 0.04, k: 0.06 },
+    maze:     { f: 0.029, k: 0.057 },
+    worms:    { f: 0.078, k: 0.061 },
+    solitons: { f: 0.03, k: 0.062 },
+    chaos:    { f: 0.026, k: 0.051 }
+};
+let currentPreset = 'mitosis';
+
+// Richer palettes with more gradient stops
+const palettes = {
+    mitosis:  [[6,6,18],[12,30,70],[25,70,130],[50,130,190],[100,200,230],[180,235,250],[240,250,255]],
+    coral:    [[8,6,12],[50,15,30],[120,25,45],[180,50,60],[220,100,70],[245,160,110],[255,220,180]],
+    spots:    [[12,10,6],[60,45,15],[130,100,25],[190,155,40],[230,200,70],[250,230,140],[255,245,210]],
+    stripes:  [[6,10,12],[15,40,50],[30,90,75],[50,150,120],[80,210,165],[150,240,200],[220,255,235]],
+    maze:     [[10,6,14],[30,15,50],[60,30,95],[100,50,150],[150,80,200],[200,150,235],[235,210,255]],
+    worms:    [[8,8,6],[35,25,15],[80,50,20],[140,80,30],[200,120,40],[240,170,65],[255,210,120]],
+    solitons: [[6,10,14],[15,40,60],[30,80,120],[50,140,180],[90,190,220],[160,220,240],[230,245,255]],
+    chaos:    [[10,4,4],[50,8,8],[120,15,15],[200,30,20],[245,60,30],[255,140,60],[255,220,140]]
+};
+
+let gridA, gridB, nextA, nextB;
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    gridW = Math.floor(W / SCALE);
+    gridH = Math.floor(H / SCALE);
+    initGrids();
+}
+
+function initGrids() {
+    gridA = new Float32Array(gridW * gridH);
+    gridB = new Float32Array(gridW * gridH);
+    nextA = new Float32Array(gridW * gridH);
+    nextB = new Float32Array(gridW * gridH);
+    gridA.fill(1.0);
+    gridB.fill(0.0);
+    stepCount = 0;
+}
+
+function seedAt(cx, cy, radius) {
+    const points = getSymmetryPoints(cx, cy);
+    for (const [px, py] of points) {
+        for (let dx = -radius; dx <= radius; dx++) {
+            for (let dy = -radius; dy <= radius; dy++) {
+                if (dx * dx + dy * dy > radius * radius) continue;
+                const x = px + dx, y = py + dy;
+                if (x >= 0 && x < gridW && y >= 0 && y < gridH) {
+                    const idx = y * gridW + x;
+                    gridB[idx] = 0.8 + Math.random() * 0.2;
+                    gridA[idx] = 0.4 + Math.random() * 0.2;
+                }
+            }
+        }
+    }
+}
+
+function eraseAt(cx, cy, radius) {
+    const points = getSymmetryPoints(cx, cy);
+    for (const [px, py] of points) {
+        for (let dx = -radius; dx <= radius; dx++) {
+            for (let dy = -radius; dy <= radius; dy++) {
+                if (dx * dx + dy * dy > radius * radius) continue;
+                const x = px + dx, y = py + dy;
+                if (x >= 0 && x < gridW && y >= 0 && y < gridH) {
+                    gridB[y * gridW + x] = 0;
+                    gridA[y * gridW + x] = 1.0;
+                }
+            }
+        }
+    }
+}
+
+function getSymmetryPoints(cx, cy) {
+    if (symmetry === 0) return [[cx, cy]];
+    const midX = gridW / 2, midY = gridH / 2;
+    const dx = cx - midX, dy = cy - midY;
+    const points = [];
+    for (let i = 0; i < symmetry; i++) {
+        const angle = (i / symmetry) * Math.PI * 2;
+        const rx = Math.round(midX + dx * Math.cos(angle) - dy * Math.sin(angle));
+        const ry = Math.round(midY + dx * Math.sin(angle) + dy * Math.cos(angle));
+        points.push([rx, ry]);
+    }
+    return points;
+}
+
+function laplacian(grid, x, y) {
+    const w = gridW, h = gridH;
+    const xm = x > 0 ? x - 1 : w - 1;
+    const xp = x < w - 1 ? x + 1 : 0;
+    const ym = y > 0 ? y - 1 : h - 1;
+    const yp = y < h - 1 ? y + 1 : 0;
+    return grid[ym*w+xm]*0.05 + grid[ym*w+x]*0.2 + grid[ym*w+xp]*0.05 +
+           grid[y*w+xm]*0.2 + grid[y*w+x]*(-1.0) + grid[y*w+xp]*0.2 +
+           grid[yp*w+xm]*0.05 + grid[yp*w+x]*0.2 + grid[yp*w+xp]*0.05;
+}
+
+function simulate() {
+    for (let y = 0; y < gridH; y++) {
+        for (let x = 0; x < gridW; x++) {
+            const idx = y * gridW + x;
+            const a = gridA[idx], b = gridB[idx];
+            const lA = laplacian(gridA, x, y);
+            const lB = laplacian(gridB, x, y);
+            const reaction = a * b * b;
+            nextA[idx] = Math.max(0, Math.min(1, a + (dA * lA - reaction + feed * (1.0 - a)) * dt));
+            nextB[idx] = Math.max(0, Math.min(1, b + (dB * lB + reaction - (kill + feed) * b) * dt));
+        }
+    }
+    [gridA, nextA] = [nextA, gridA];
+    [gridB, nextB] = [nextB, gridB];
+    stepCount++;
+}
+
+// Edge detection (Sobel-like on B channel)
+let edgeBuffer;
+
+function computeEdges() {
+    if (!edgeBuffer || edgeBuffer.length !== gridW * gridH) {
+        edgeBuffer = new Float32Array(gridW * gridH);
+    }
+    for (let y = 1; y < gridH - 1; y++) {
+        for (let x = 1; x < gridW - 1; x++) {
+            const w = gridW;
+            const gx = -gridB[(y-1)*w+x-1] + gridB[(y-1)*w+x+1]
+                       -2*gridB[y*w+x-1] + 2*gridB[y*w+x+1]
+                       -gridB[(y+1)*w+x-1] + gridB[(y+1)*w+x+1];
+            const gy = -gridB[(y-1)*w+x-1] - 2*gridB[(y-1)*w+x] - gridB[(y-1)*w+x+1]
+                       +gridB[(y+1)*w+x-1] + 2*gridB[(y+1)*w+x] + gridB[(y+1)*w+x+1];
+            edgeBuffer[y * w + x] = Math.min(1, Math.sqrt(gx*gx + gy*gy) * 3);
+        }
+    }
+}
+
+function render() {
+    const imageData = ctx.createImageData(W, H);
+    const data = imageData.data;
+    const palette = palettes[currentPreset];
+    const pLen = palette.length - 1;
+
+    if (showEdges) computeEdges();
+
+    for (let y = 0; y < gridH; y++) {
+        for (let x = 0; x < gridW; x++) {
+            const idx = y * gridW + x;
+            const b = gridB[idx];
+
+            // Palette interpolation
+            const t = Math.max(0, Math.min(1, b)) * pLen;
+            const i = Math.floor(t);
+            const frac = t - i;
+            const j = Math.min(i + 1, pLen);
+
+            let r = palette[i][0] * (1-frac) + palette[j][0] * frac;
+            let g = palette[i][1] * (1-frac) + palette[j][1] * frac;
+            let bl = palette[i][2] * (1-frac) + palette[j][2] * frac;
+
+            // Edge highlight
+            if (showEdges && edgeBuffer) {
+                const edge = edgeBuffer[idx];
+                if (edge > 0.05) {
+                    // Bright edge line in a lighter version of the palette's brightest color
+                    const bright = palette[pLen];
+                    r += (bright[0] - r) * edge * 0.6;
+                    g += (bright[1] - g) * edge * 0.6;
+                    bl += (bright[2] - bl) * edge * 0.6;
+                }
+            }
+
+            r = Math.max(0, Math.min(255, Math.floor(r)));
+            g = Math.max(0, Math.min(255, Math.floor(g)));
+            bl = Math.max(0, Math.min(255, Math.floor(bl)));
+
+            const px = x * SCALE, py = y * SCALE;
+            for (let dy = 0; dy < SCALE; dy++) {
+                for (let dx = 0; dx < SCALE; dx++) {
+                    const ppx = px + dx, ppy = py + dy;
+                    if (ppx >= W || ppy >= H) continue;
+                    const pidx = (ppy * W + ppx) * 4;
+                    data[pidx] = r; data[pidx+1] = g; data[pidx+2] = bl; data[pidx+3] = 255;
+                }
+            }
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
+// --- INPUT ---
+let mouseDown = false;
+
+function handleInput(px, py) {
+    const gx = Math.floor(px / SCALE);
+    const gy = Math.floor(py / SCALE);
+    if (selectedTool === 'seed') seedAt(gx, gy, brushRadius);
+    else if (selectedTool === 'erase') eraseAt(gx, gy, brushRadius + 2);
+}
+
+canvas.addEventListener('mousedown', (e) => { mouseDown = true; handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mousemove', (e) => { if (mouseDown) handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mouseup', () => { mouseDown = false; });
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); mouseDown = true; handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (mouseDown) handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchend', () => { mouseDown = false; });
+
+// Scroll to adjust brush
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    brushRadius = Math.max(2, Math.min(20, brushRadius + (e.deltaY > 0 ? -1 : 1)));
+    document.getElementById('brush-size').value = brushRadius;
+    document.getElementById('brush-label').textContent = brushRadius;
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    const presetKeys = ['1','2','3','4','5','6','7','8'];
+    const presetNames = Object.keys(presets);
+    if (presetKeys.includes(e.key)) {
+        const idx = parseInt(e.key) - 1;
+        if (idx < presetNames.length) {
+            setPreset(presetNames[idx]);
+        }
+    }
+    if (e.key === 's') selectedTool = 'seed';
+    if (e.key === 'e') selectedTool = 'erase';
+    if (e.key === 'c') clearGrid();
+    if (e.key === ' ') { e.preventDefault(); togglePause(); }
+    if (e.key === 'a') autoSeed();
+    if (e.key === 'x') toggleEdges();
+    if (e.key === '[') { brushRadius = Math.max(2, brushRadius - 1); document.getElementById('brush-size').value = brushRadius; document.getElementById('brush-label').textContent = brushRadius; }
+    if (e.key === ']') { brushRadius = Math.min(20, brushRadius + 1); document.getElementById('brush-size').value = brushRadius; document.getElementById('brush-label').textContent = brushRadius; }
+});
+
+// Tool buttons
+document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedTool = btn.dataset.tool;
+    });
+});
+
+// Symmetry buttons
+document.querySelectorAll('.tool-btn[data-sym]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn[data-sym]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        symmetry = parseInt(btn.dataset.sym);
+    });
+});
+
+// Preset buttons
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => setPreset(btn.dataset.preset));
+});
+
+function setPreset(name) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === name));
+    currentPreset = name;
+    const p = presets[name];
+    feed = p.f; kill = p.k;
+}
+
+// Brush size slider
+document.getElementById('brush-size').addEventListener('input', (e) => {
+    brushRadius = parseInt(e.target.value);
+    document.getElementById('brush-label').textContent = brushRadius;
+});
+
+function setSteps(n) {
+    stepsPerFrame = n;
+    ['2','8','16','32'].forEach(id => {
+        document.getElementById('sp' + id).classList.toggle('active-ctrl', n === parseInt(id));
+    });
+}
+
+function togglePause() {
+    paused = !paused;
+    document.getElementById('pause-btn').textContent = paused ? 'Play' : 'Pause';
+}
+
+function clearGrid() {
+    initGrids();
+}
+
+function autoSeed() {
+    // Varied seed patterns
+    const pattern = Math.floor(Math.random() * 4);
+    if (pattern === 0) {
+        // Random spots
+        const count = 6 + Math.floor(Math.random() * 10);
+        for (let i = 0; i < count; i++) {
+            const x = Math.floor(gridW * 0.15 + Math.random() * gridW * 0.7);
+            const y = Math.floor(gridH * 0.15 + Math.random() * gridH * 0.7);
+            seedAt(x, y, 2 + Math.floor(Math.random() * 5));
+        }
+    } else if (pattern === 1) {
+        // Ring
+        const cx = gridW / 2, cy = gridH / 2;
+        const radius = Math.min(gridW, gridH) * 0.25;
+        for (let angle = 0; angle < Math.PI * 2; angle += 0.15) {
+            const x = Math.round(cx + Math.cos(angle) * radius);
+            const y = Math.round(cy + Math.sin(angle) * radius);
+            seedAt(x, y, 3);
+        }
+    } else if (pattern === 2) {
+        // Grid
+        const spacing = Math.floor(Math.min(gridW, gridH) / 6);
+        for (let x = spacing; x < gridW - spacing; x += spacing) {
+            for (let y = spacing; y < gridH - spacing; y += spacing) {
+                seedAt(x + Math.floor(Math.random() * 6 - 3), y + Math.floor(Math.random() * 6 - 3), 3);
+            }
+        }
+    } else {
+        // Center cross
+        const cx = gridW / 2, cy = gridH / 2;
+        for (let d = -Math.min(gridW, gridH) * 0.3; d < Math.min(gridW, gridH) * 0.3; d += 8) {
+            seedAt(Math.round(cx + d), Math.round(cy), 2);
+            seedAt(Math.round(cx), Math.round(cy + d), 2);
+        }
+    }
+}
+
+function toggleEdges() {
+    showEdges = !showEdges;
+    document.getElementById('edge-btn').textContent = 'Edges: ' + (showEdges ? 'On' : 'Off');
+}
+
+function saveImage() {
+    const link = document.createElement('a');
+    link.download = `morphogenesis-${currentPreset}-${stepCount}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+// FPS tracking
+let lastFpsTime = 0, fpsCount = 0;
+
+function gameLoop(timestamp) {
+    if (!running) { requestAnimationFrame(gameLoop); return; }
+
+    if (!paused) {
+        for (let i = 0; i < stepsPerFrame; i++) simulate();
+    }
+
+    render();
+
+    fpsCount++;
+    if (timestamp - lastFpsTime > 1000) {
+        document.getElementById('fps-display').textContent = fpsCount + ' fps';
+        fpsCount = 0;
+        lastFpsTime = timestamp;
+    }
+    if (stepCount % 8 === 0) {
+        document.getElementById('step-display').textContent = `step: ${stepCount.toLocaleString()}`;
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => document.getElementById('title-screen').style.display = 'none', 800);
+    running = true;
+    autoSeed();
+}
+
+resize();
+window.addEventListener('resize', resize);
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

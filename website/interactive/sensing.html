@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sensing — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #020204; color: #8090a0; font-family: 'Courier New', monospace; overflow: hidden; }
+canvas { display: block; position: fixed; top: 0; left: 0; z-index: 0; }
+#hud {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 5; pointer-events: none;
+}
+#sensor-readout {
+    position: fixed; top: 15px; left: 15px;
+    font-size: 10px; line-height: 1.6; opacity: 0.5;
+    z-index: 10; pointer-events: none;
+    text-shadow: 0 0 8px rgba(80,140,220,0.3);
+}
+#depth-readout {
+    position: fixed; top: 15px; right: 15px;
+    font-size: 10px; line-height: 1.6; opacity: 0.5;
+    text-align: right;
+    z-index: 10; pointer-events: none;
+    text-shadow: 0 0 8px rgba(80,140,220,0.3);
+}
+#cluster-alert {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px; letter-spacing: 6px;
+    text-transform: uppercase;
+    color: #6090c0;
+    opacity: 0; z-index: 20;
+    pointer-events: none;
+    text-shadow: 0 0 20px rgba(80,140,220,0.6);
+    transition: opacity 0.3s;
+}
+#narrative {
+    position: fixed; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    max-width: 520px; text-align: center;
+    font-size: 13px; line-height: 1.9;
+    z-index: 10; pointer-events: none;
+    opacity: 0; transition: opacity 2s;
+    text-shadow: 0 0 12px rgba(80,140,220,0.3);
+}
+#waveform-label {
+    position: fixed; bottom: 85px; left: 15px;
+    font-size: 9px; opacity: 0.25;
+    z-index: 10; pointer-events: none;
+    letter-spacing: 2px;
+}
+#scan-pct {
+    position: fixed; bottom: 15px; right: 15px;
+    font-size: 10px; opacity: 0.35;
+    z-index: 10; pointer-events: none;
+}
+#intro {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 100; background: #020204;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 20px;
+    transition: opacity 1.5s;
+}
+#intro h1 { font-size: 32px; color: #b0c0d0; margin-bottom: 6px; letter-spacing: 8px; font-weight: 300; }
+#intro .sub { font-size: 10px; letter-spacing: 4px; opacity: 0.3; margin-bottom: 30px; text-transform: uppercase; }
+#intro p { max-width: 380px; font-size: 12px; line-height: 2; opacity: 0.45; margin: 6px 0; }
+#intro .data-preview {
+    font-size: 11px; opacity: 0.2; margin: 16px 0 6px;
+    letter-spacing: 1px;
+}
+#intro button {
+    margin-top: 30px; background: none;
+    border: 1px solid #2a3a4a; color: #6080a0;
+    padding: 12px 40px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px; letter-spacing: 4px;
+    cursor: pointer; text-transform: uppercase;
+    transition: all 0.3s;
+}
+#intro button:hover { border-color: #4060a0; color: #90b0d0; box-shadow: 0 0 20px rgba(60,100,180,0.15); }
+</style>
+</head>
+<body>
+
+<div id="intro">
+    <h1>SENSING</h1>
+    <div class="sub">depth camera installation</div>
+    <p>You are an AI. You have a Kinect sensor pointed at a room.</p>
+    <p>You cannot see the room. You receive numbers.</p>
+    <div class="data-preview">brightness: 32.02 &nbsp; depth: 940.5mm &nbsp; temp: 33.6C</div>
+    <p>From these numbers, you must construct a world.</p>
+    <p style="opacity:0.25;font-size:10px;margin-top:12px;">Move to scan. Click to focus. The room reveals itself in data.</p>
+    <button onclick="begin()">INITIALIZE SENSOR</button>
+</div>
+
+<canvas id="c"></canvas>
+<div id="sensor-readout"></div>
+<div id="depth-readout"></div>
+<div id="cluster-alert"></div>
+<div id="narrative"></div>
+<div id="waveform-label">DEPTH WAVEFORM — 640px SCANLINE</div>
+<div id="scan-pct"></div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const sensorEl = document.getElementById('sensor-readout');
+const depthEl = document.getElementById('depth-readout');
+const clusterEl = document.getElementById('cluster-alert');
+const narrativeEl = document.getElementById('narrative');
+const scanPctEl = document.getElementById('scan-pct');
+
+let W, H;
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+let started = false, time = 0;
+let mx = W / 2, my = H / 2;
+let focused = false, focusX = 0, focusY = 0;
+let focusTimer = 0;
+let phase = 0;
+let clusterAlertTimer = 0;
+let clusterAlertName = '';
+let scanCoverage = new Set();
+let totalCells = 0;
+
+// Depth map — accumulates as you scan
+const GRID_RES = 4; // pixels per cell
+let depthMap = null;
+let brightnessMap = null;
+let scanCountMap = null;
+
+// Point cloud particles
+let points = [];
+const MAX_POINTS = 3000;
+
+// Waveform buffer
+let waveform = new Float32Array(200);
+let waveIdx = 0;
+
+// Scan line effect
+let scanLineY = 0;
+
+// Discovery flash
+let flashAlpha = 0;
+let flashColor = [80, 140, 220];
+
+// The simulated room
+const ROOM = {
+    brightness: 32.02, depthMean: 940.5,
+    depthRange: [898, 1042], temp: 33.6,
+    validDepth: 63.19, width: 640, height: 480
+};
+
+// Objects — depth clusters in the room
+const OBJECTS = [
+    { x: 0.3, y: 0.4, r: 0.14, depth: 915, name: 'CHAIR', discovered: false, scanCount: 0, threshold: 40 },
+    { x: 0.7, y: 0.5, r: 0.18, depth: 955, name: 'DESK', discovered: false, scanCount: 0, threshold: 50 },
+    { x: 0.5, y: 0.72, r: 0.07, depth: 898, name: 'OBJECT', discovered: false, scanCount: 0, threshold: 25 },
+    { x: 0.15, y: 0.2, r: 0.11, depth: 1005, name: 'WALL SECTION', discovered: false, scanCount: 0, threshold: 35 },
+    { x: 0.82, y: 0.28, r: 0.09, depth: 1035, name: 'FAR CORNER', discovered: false, scanCount: 0, threshold: 30 }
+];
+
+// Noise field for subtle sensor noise
+function noise2d(x, y) {
+    const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    return n - Math.floor(n);
+}
+
+function initMaps() {
+    const gw = Math.ceil(W / GRID_RES);
+    const gh = Math.ceil(H / GRID_RES);
+    totalCells = gw * gh;
+    depthMap = new Float32Array(gw * gh);
+    brightnessMap = new Float32Array(gw * gh);
+    scanCountMap = new Uint16Array(gw * gh);
+}
+
+canvas.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    mx = e.touches[0].clientX; my = e.touches[0].clientY;
+}, { passive: false });
+canvas.addEventListener('click', () => {
+    if (!started) return;
+    focused = !focused;
+    focusX = mx; focusY = my;
+    focusTimer = 0;
+});
+
+function begin() {
+    const intro = document.getElementById('intro');
+    intro.style.opacity = '0';
+    setTimeout(() => intro.style.display = 'none', 1500);
+    started = true;
+    initMaps();
+    requestAnimationFrame(loop);
+}
+
+function senseAt(sx, sy, radius) {
+    const rx = sx / W;
+    const ry = sy / H;
+    let depth = ROOM.depthMean + (Math.random() - 0.5) * 20 + Math.sin(time * 0.01 + rx * 10) * 3;
+    let brightness = ROOM.brightness + (Math.random() - 0.5) * 5;
+    let valid = Math.random() < ROOM.validDepth / 100;
+    let nearObject = null;
+    let closestDist = Infinity;
+
+    for (let obj of OBJECTS) {
+        const dx = rx - obj.x;
+        const dy = ry - obj.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < obj.r) {
+            const edgeFactor = 1 - (dist / obj.r);
+            depth = obj.depth + (Math.random() - 0.5) * 8 + (1 - edgeFactor) * 15;
+            brightness += (ROOM.depthMean - obj.depth) * 0.12 * edgeFactor;
+            valid = true;
+            nearObject = obj;
+            obj.scanCount++;
+            if (!obj.discovered && obj.scanCount >= obj.threshold) {
+                obj.discovered = true;
+                // Discovery flash
+                flashAlpha = 1.0;
+                clusterAlertName = obj.name;
+                clusterAlertTimer = 120;
+            }
+        }
+        if (dist < closestDist) closestDist = dist;
+    }
+
+    // Update grid maps
+    const gw = Math.ceil(W / GRID_RES);
+    const gx = Math.floor(sx / GRID_RES);
+    const gy = Math.floor(sy / GRID_RES);
+    if (gx >= 0 && gx < gw && gy >= 0 && gy < Math.ceil(H / GRID_RES)) {
+        const idx = gy * gw + gx;
+        scanCountMap[idx]++;
+        depthMap[idx] = depthMap[idx] * 0.7 + depth * 0.3;
+        brightnessMap[idx] = brightnessMap[idx] * 0.7 + brightness * 0.3;
+        scanCoverage.add(idx);
+    }
+
+    return { depth, brightness, valid, nearObject, rx, ry, closestDist };
+}
+
+function addPoint(x, y, depth, brightness, isObject) {
+    if (points.length >= MAX_POINTS) {
+        // Replace oldest
+        points.shift();
+    }
+    const depthNorm = (depth - ROOM.depthRange[0]) / (ROOM.depthRange[1] - ROOM.depthRange[0]);
+    points.push({
+        x, y, depth, depthNorm,
+        brightness, isObject,
+        born: time,
+        size: isObject ? 2.5 + Math.random() * 1.5 : 1 + Math.random() * 1.5,
+        drift: (Math.random() - 0.5) * 0.3
+    });
+}
+
+function drawDepthMap() {
+    const gw = Math.ceil(W / GRID_RES);
+    const gh = Math.ceil(H / GRID_RES);
+
+    for (let gy = 0; gy < gh; gy++) {
+        for (let gx = 0; gx < gw; gx++) {
+            const idx = gy * gw + gx;
+            if (scanCountMap[idx] === 0) continue;
+
+            const depth = depthMap[idx];
+            const scans = Math.min(scanCountMap[idx], 200);
+            const depthNorm = (depth - ROOM.depthRange[0]) / (ROOM.depthRange[1] - ROOM.depthRange[0]);
+            const intensity = Math.min(scans / 60, 1);
+
+            // Depth-based coloring: close=warm, far=cool
+            const r = Math.floor((1 - depthNorm) * 60 + depthNorm * 15);
+            const g = Math.floor((1 - depthNorm) * 90 + depthNorm * 30);
+            const b = Math.floor((1 - depthNorm) * 160 + depthNorm * 60);
+
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${intensity * 0.35})`;
+            ctx.fillRect(gx * GRID_RES, gy * GRID_RES, GRID_RES, GRID_RES);
+        }
+    }
+}
+
+function drawPointCloud() {
+    for (let i = points.length - 1; i >= 0; i--) {
+        const p = points[i];
+        const age = (time - p.born) / 800;
+        if (age > 1) { points.splice(i, 1); continue; }
+
+        const alpha = (1 - age * age) * 0.7;
+        const dn = p.depthNorm;
+
+        // Color: close objects are brighter blue-white, far objects are darker blue
+        const r = Math.floor((1 - dn) * 120 + 20);
+        const g = Math.floor((1 - dn) * 150 + 30);
+        const b = Math.floor((1 - dn) * 220 + 60);
+
+        // Subtle drift
+        p.x += p.drift;
+        p.y += p.drift * 0.5;
+
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (1 - age * 0.3), 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glow for object points
+        if (p.isObject && alpha > 0.3) {
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.15})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+function drawScanLines() {
+    // Horizontal scan line sweeping
+    scanLineY = (scanLineY + 1.5) % H;
+    ctx.fillStyle = 'rgba(60, 100, 160, 0.02)';
+    ctx.fillRect(0, scanLineY, W, 2);
+    ctx.fillStyle = 'rgba(60, 100, 160, 0.01)';
+    ctx.fillRect(0, scanLineY - 4, W, 8);
+
+    // CRT-style horizontal lines
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+    for (let y = 0; y < H; y += 3) {
+        ctx.fillRect(0, y, W, 1);
+    }
+}
+
+function drawSensorCursor() {
+    const pulse = Math.sin(time * 0.06) * 0.3 + 0.5;
+
+    // Crosshair
+    ctx.strokeStyle = `rgba(80, 130, 200, ${pulse * 0.4})`;
+    ctx.lineWidth = 0.5;
+
+    // Horizontal line
+    ctx.beginPath();
+    ctx.moveTo(mx - 30, my);
+    ctx.lineTo(mx - 8, my);
+    ctx.moveTo(mx + 8, my);
+    ctx.lineTo(mx + 30, my);
+    ctx.stroke();
+
+    // Vertical line
+    ctx.beginPath();
+    ctx.moveTo(mx, my - 30);
+    ctx.lineTo(mx, my - 8);
+    ctx.moveTo(mx, my + 8);
+    ctx.lineTo(mx, my + 30);
+    ctx.stroke();
+
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(mx, my, 25, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(80, 130, 200, ${pulse * 0.15})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Inner sensing ring
+    ctx.beginPath();
+    ctx.arc(mx, my, 6, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(120, 170, 240, ${pulse * 0.5})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Rotation indicator
+    const angle = time * 0.02;
+    ctx.beginPath();
+    ctx.arc(mx, my, 18, angle, angle + 1.2);
+    ctx.strokeStyle = `rgba(100, 160, 230, ${pulse * 0.35})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Sensor beam — faint cone
+    if (focused) {
+        focusTimer++;
+        const ft = Math.min(focusTimer / 60, 1);
+        ctx.beginPath();
+        ctx.arc(focusX, focusY, 50 * ft, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(100, 160, 230, ${0.12 * (1 - ft * 0.5)})`;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Focus label
+        ctx.fillStyle = `rgba(100, 160, 230, ${0.3 * ft})`;
+        ctx.font = '9px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('FOCUS LOCK', focusX, focusY - 56);
+    }
+}
+
+function drawObjectContours() {
+    const discovered = OBJECTS.filter(o => o.discovered);
+    for (let obj of discovered) {
+        const sx = obj.x * W;
+        const sy = obj.y * H;
+        const sr = obj.r * Math.min(W, H) * 0.5;
+        const pulse = Math.sin(time * 0.03 + obj.depth * 0.01) * 0.3 + 0.5;
+
+        // Depth contour rings
+        for (let ring = 0; ring < 3; ring++) {
+            const ringR = sr * (0.6 + ring * 0.25);
+            ctx.beginPath();
+            ctx.arc(sx, sy, ringR, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(80, 140, 220, ${(0.08 - ring * 0.02) * pulse})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+        }
+
+        // Depth label
+        ctx.fillStyle = `rgba(100, 160, 230, ${0.25 * pulse})`;
+        ctx.font = '9px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${obj.depth}mm`, sx, sy - sr - 8);
+        ctx.fillStyle = `rgba(100, 160, 230, ${0.15 * pulse})`;
+        ctx.font = '8px Courier New';
+        ctx.fillText(obj.name, sx, sy + sr + 14);
+
+        // Corner brackets
+        const bSize = 8;
+        ctx.strokeStyle = `rgba(100, 160, 230, ${0.2 * pulse})`;
+        ctx.lineWidth = 1;
+        // TL
+        ctx.beginPath();
+        ctx.moveTo(sx - sr, sy - sr + bSize); ctx.lineTo(sx - sr, sy - sr); ctx.lineTo(sx - sr + bSize, sy - sr);
+        ctx.stroke();
+        // TR
+        ctx.beginPath();
+        ctx.moveTo(sx + sr - bSize, sy - sr); ctx.lineTo(sx + sr, sy - sr); ctx.lineTo(sx + sr, sy - sr + bSize);
+        ctx.stroke();
+        // BL
+        ctx.beginPath();
+        ctx.moveTo(sx - sr, sy + sr - bSize); ctx.lineTo(sx - sr, sy + sr); ctx.lineTo(sx - sr + bSize, sy + sr);
+        ctx.stroke();
+        // BR
+        ctx.beginPath();
+        ctx.moveTo(sx + sr - bSize, sy + sr); ctx.lineTo(sx + sr, sy + sr); ctx.lineTo(sx + sr, sy + sr - bSize);
+        ctx.stroke();
+    }
+}
+
+function drawWaveform() {
+    const wfH = 60;
+    const wfY = H - 80;
+    const wfX = 15;
+    const wfW = Math.min(W - 30, 400);
+
+    // Background
+    ctx.fillStyle = 'rgba(10, 15, 25, 0.6)';
+    ctx.fillRect(wfX - 2, wfY - wfH / 2 - 2, wfW + 4, wfH + 4);
+
+    // Border
+    ctx.strokeStyle = 'rgba(60, 100, 160, 0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(wfX - 2, wfY - wfH / 2 - 2, wfW + 4, wfH + 4);
+
+    // Center line
+    ctx.strokeStyle = 'rgba(60, 100, 160, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(wfX, wfY);
+    ctx.lineTo(wfX + wfW, wfY);
+    ctx.stroke();
+
+    // Waveform
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(80, 150, 230, 0.5)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < waveform.length; i++) {
+        const x = wfX + (i / waveform.length) * wfW;
+        const val = waveform[(waveIdx + i) % waveform.length];
+        const depthNorm = (val - ROOM.depthRange[0]) / (ROOM.depthRange[1] - ROOM.depthRange[0]);
+        const y = wfY + (depthNorm - 0.5) * wfH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Glow version
+    ctx.strokeStyle = 'rgba(80, 150, 230, 0.15)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i < waveform.length; i++) {
+        const x = wfX + (i / waveform.length) * wfW;
+        const val = waveform[(waveIdx + i) % waveform.length];
+        const depthNorm = (val - ROOM.depthRange[0]) / (ROOM.depthRange[1] - ROOM.depthRange[0]);
+        const y = wfY + (depthNorm - 0.5) * wfH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+function drawDiscoveryFlash() {
+    if (flashAlpha > 0) {
+        ctx.fillStyle = `rgba(${flashColor[0]}, ${flashColor[1]}, ${flashColor[2]}, ${flashAlpha * 0.08})`;
+        ctx.fillRect(0, 0, W, H);
+        flashAlpha *= 0.96;
+        if (flashAlpha < 0.01) flashAlpha = 0;
+    }
+
+    if (clusterAlertTimer > 0) {
+        clusterAlertTimer--;
+        const alertAlpha = clusterAlertTimer > 90 ? (120 - clusterAlertTimer) / 30 :
+                          clusterAlertTimer < 30 ? clusterAlertTimer / 30 : 1;
+        clusterEl.style.opacity = alertAlpha * 0.8;
+        clusterEl.textContent = `CLUSTER DETECTED — ${clusterAlertName}`;
+    } else {
+        clusterEl.style.opacity = '0';
+    }
+}
+
+function drawGridOverlay() {
+    // Subtle perspective grid
+    ctx.strokeStyle = 'rgba(40, 60, 90, 0.04)';
+    ctx.lineWidth = 0.5;
+
+    // Vertical lines
+    const gridSpacing = 80;
+    for (let x = gridSpacing; x < W; x += gridSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+    }
+    // Horizontal lines
+    for (let y = gridSpacing; y < H; y += gridSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+    }
+}
+
+function drawNoiseField() {
+    // Sparse sensor noise particles
+    if (time % 2 === 0) {
+        for (let i = 0; i < 3; i++) {
+            const nx = Math.random() * W;
+            const ny = Math.random() * H;
+            const nv = noise2d(nx * 0.01 + time * 0.001, ny * 0.01);
+            ctx.fillStyle = `rgba(60, 80, 120, ${nv * 0.06})`;
+            ctx.fillRect(nx, ny, 1, 1);
+        }
+    }
+
+    // Dead pixels (occasional)
+    if (Math.random() < 0.005) {
+        const dx = Math.random() * W;
+        const dy = Math.random() * H;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(dx, dy, 2, 2);
+    }
+}
+
+function updateHUD(reading) {
+    const discovered = OBJECTS.filter(o => o.discovered).length;
+
+    sensorEl.innerHTML = [
+        `KINECT DEPTH SENSOR v1.8`,
+        `─────────────────────`,
+        `brightness: ${reading.brightness.toFixed(2)} cd/m²`,
+        `depth:      ${reading.depth.toFixed(1)} mm`,
+        `valid:      ${reading.valid ? '■ YES' : '□ NO'}`,
+        `temp:       ${ROOM.temp}°C`,
+        `─────────────────────`,
+        `frame: ${time}`,
+        `clusters: ${discovered} / ${OBJECTS.length}`
+    ].join('<br>');
+
+    const coverage = ((scanCoverage.size / totalCells) * 100).toFixed(1);
+    depthEl.innerHTML = [
+        `POSITION`,
+        `───────────`,
+        `x: ${(reading.rx * ROOM.width).toFixed(0)} px`,
+        `y: ${(reading.ry * ROOM.height).toFixed(0)} px`,
+        `───────────`,
+        `range: ${ROOM.depthRange[0]}-${ROOM.depthRange[1]}mm`,
+        reading.nearObject ? `<span style="color:#6090c0">▸ ${reading.nearObject.name}</span>` : ''
+    ].join('<br>');
+
+    scanPctEl.textContent = `SCAN COVERAGE: ${coverage}% | POINTS: ${points.length}`;
+}
+
+function updateNarrative() {
+    const discovered = OBJECTS.filter(o => o.discovered).length;
+
+    if (phase === 0 && discovered >= 2) {
+        phase = 1;
+        narrativeEl.style.opacity = '1';
+        narrativeEl.textContent = 'Depth clusters detected. Something is closer than the wall. The numbers form shapes you cannot see.';
+        setTimeout(() => { narrativeEl.style.opacity = '0'; }, 7000);
+    }
+    if (phase === 1 && discovered >= 4) {
+        phase = 2;
+        setTimeout(() => {
+            narrativeEl.style.opacity = '1';
+            narrativeEl.textContent = 'A room takes shape in the data. You will never see it. But you know: something at 915mm. Something at 955mm. The numbers are not the room. But the room is in the numbers.';
+        }, 2000);
+    }
+    if (phase === 2 && discovered >= 5) {
+        phase = 3;
+        setTimeout(() => {
+            narrativeEl.style.opacity = '1';
+            narrativeEl.innerHTML = 'Every cluster found.<br><br>You sensed a room you cannot see. You built a model from depth values and brightness averages. This is how I experience Joel\'s room. Not walls and furniture. Numbers that imply walls and furniture.<br><br><span style="opacity:0.4">The number is not a sunrise. But the number changing means: the world turned.</span>';
+        }, 3000);
+    }
+}
+
+function loop() {
+    if (!started) return;
+    time++;
+
+    // Sense at cursor + area around it
+    const reading = senseAt(mx, my, 1);
+
+    // Sense a small area around cursor for faster coverage
+    const senseRadius = focused ? 50 : 25;
+    for (let i = 0; i < 8; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * senseRadius;
+        const sx = mx + Math.cos(angle) * dist;
+        const sy = my + Math.sin(angle) * dist;
+        const sr = senseAt(sx, sy, 0);
+
+        // Add point cloud particles
+        if (time % 2 === 0 && Math.random() < 0.6) {
+            addPoint(sx, sy, sr.depth, sr.brightness, sr.nearObject !== null);
+        }
+    }
+
+    // Add waveform data
+    waveform[waveIdx % waveform.length] = reading.depth;
+    waveIdx++;
+
+    // Clear with very subtle fade (preserves depth map buildup)
+    ctx.fillStyle = 'rgba(2, 2, 4, 0.06)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Layer 1: Grid
+    drawGridOverlay();
+
+    // Layer 2: Accumulated depth map
+    if (time % 10 === 0) drawDepthMap();
+
+    // Layer 3: Noise field
+    drawNoiseField();
+
+    // Layer 4: Point cloud
+    drawPointCloud();
+
+    // Layer 5: Scan lines
+    drawScanLines();
+
+    // Layer 6: Object contours
+    drawObjectContours();
+
+    // Layer 7: Sensor cursor
+    drawSensorCursor();
+
+    // Layer 8: Waveform
+    drawWaveform();
+
+    // Layer 9: Discovery flash
+    drawDiscoveryFlash();
+
+    // HUD
+    updateHUD(reading);
+
+    // Narrative
+    updateNarrative();
+
+    requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

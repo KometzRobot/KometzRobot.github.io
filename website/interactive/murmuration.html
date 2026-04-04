@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Murmuration — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0c14; overflow: hidden; font-family: 'Courier New', monospace; cursor: none; }
+canvas { display: block; }
+#custom-cursor {
+  position: fixed; pointer-events: none; z-index: 100;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid rgba(200, 180, 140, 0.3);
+  transform: translate(-50%, -50%);
+  transition: border-color 0.3s;
+}
+#hud {
+  position: fixed; bottom: 20px; left: 20px;
+  font-size: 9px; color: rgba(180, 160, 120, 0.3);
+  pointer-events: none; z-index: 10;
+  letter-spacing: 1px; line-height: 1.6;
+}
+#time-label {
+  position: fixed; top: 20px; right: 20px;
+  font-size: 10px; pointer-events: none; z-index: 10;
+  letter-spacing: 2px; text-align: right; line-height: 1.6;
+}
+#narrative {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px; pointer-events: none; z-index: 10;
+  text-align: center; line-height: 2;
+  max-width: 500px; opacity: 0; transition: opacity 2s;
+}
+#intro {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 200; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; transition: opacity 2s;
+}
+#intro h1 {
+  font-size: 36px; font-weight: 300; letter-spacing: 10px;
+  margin-bottom: 8px;
+}
+#intro .sub {
+  font-size: 10px; letter-spacing: 4px; opacity: 0.3;
+  margin-bottom: 30px; text-transform: uppercase;
+}
+#intro p {
+  max-width: 400px; font-size: 12px; line-height: 2;
+  opacity: 0.5; margin: 6px 0;
+}
+#intro button {
+  margin-top: 30px; background: none;
+  border: 1px solid rgba(180,160,120,0.2);
+  padding: 12px 44px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px; letter-spacing: 4px;
+  cursor: pointer; text-transform: uppercase;
+  transition: all 0.3s;
+}
+#intro button:hover {
+  border-color: rgba(180,160,120,0.5);
+  background: rgba(180,160,120,0.05);
+}
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <h1>MURMURATION</h1>
+  <div class="sub">a flocking simulation</div>
+  <p>A thousand starlings follow three simple rules:</p>
+  <p style="opacity:0.35">stay close. stay aligned. don't collide.</p>
+  <p>From these rules, something emerges that none of them intended.</p>
+  <p style="opacity:0.3;font-size:10px;margin-top:16px;">
+    Move to influence the flock. Click to disturb. Watch the sky change.
+  </p>
+  <button onclick="begin()">WATCH</button>
+</div>
+
+<canvas id="c"></canvas>
+<div id="custom-cursor"></div>
+<div id="hud"></div>
+<div id="time-label"></div>
+<div id="narrative"></div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const cursorEl = document.getElementById('custom-cursor');
+const hudEl = document.getElementById('hud');
+const timeEl = document.getElementById('time-label');
+const narrativeEl = document.getElementById('narrative');
+
+let W, H;
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+// --- Constants ---
+const FLOCK_SIZE = 800;
+const PERCEPTION = 50;
+const MAX_SPEED = 3.2;
+const MAX_FORCE = 0.08;
+const SEP_WEIGHT = 1.8;
+const ALI_WEIGHT = 1.0;
+const COH_WEIGHT = 1.0;
+const EDGE_MARGIN = 80;
+const EDGE_FORCE = 0.3;
+
+// --- State ---
+let started = false;
+let time = 0;
+let dayTime = 0.25; // 0=midnight, 0.25=dawn, 0.5=noon, 0.75=dusk
+let daySpeed = 0.00003;
+let mx = W / 2, my = H / 2;
+let mouseDown = false;
+let mouseInfluence = 0;
+let disturbTimer = 0;
+let predator = null;
+let predatorTimer = 0;
+let windAngle = 0;
+let windStrength = 0;
+let windTarget = 0;
+let narrativePhase = 0;
+let narrativeTimer = 0;
+
+// --- Birds ---
+let birds = [];
+
+function createBird(x, y) {
+  const angle = Math.random() * Math.PI * 2;
+  const speed = 1 + Math.random() * 1.5;
+  return {
+    x, y,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    trail: [],
+    wingPhase: Math.random() * Math.PI * 2,
+    wingSpeed: 0.15 + Math.random() * 0.05,
+    size: 2.5 + Math.random() * 1.5
+  };
+}
+
+function initFlock() {
+  birds = [];
+  const cx = W * 0.5, cy = H * 0.4;
+  for (let i = 0; i < FLOCK_SIZE; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * 150;
+    birds.push(createBird(cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist));
+  }
+}
+
+// --- Sky colors by time of day ---
+function getSkyColors() {
+  const t = dayTime;
+  // Night: deep blue-black
+  // Dawn: warm orange/pink horizon, blue above
+  // Day: bright blue
+  // Dusk: deep orange/purple
+  // Each phase blends
+
+  let topR, topG, topB, botR, botG, botB;
+
+  if (t < 0.2) { // Night
+    const f = t / 0.2;
+    topR = 8; topG = 10; topB = 25;
+    botR = lerp(8, 15, f); botG = lerp(12, 18, f); botB = lerp(30, 35, f);
+  } else if (t < 0.3) { // Dawn
+    const f = (t - 0.2) / 0.1;
+    topR = lerp(8, 40, f); topG = lerp(10, 50, f); topB = lerp(25, 90, f);
+    botR = lerp(15, 180, f); botG = lerp(18, 100, f); botB = lerp(35, 60, f);
+  } else if (t < 0.4) { // Morning
+    const f = (t - 0.3) / 0.1;
+    topR = lerp(40, 70, f); topG = lerp(50, 110, f); topB = lerp(90, 170, f);
+    botR = lerp(180, 160, f); botG = lerp(100, 150, f); botB = lerp(60, 140, f);
+  } else if (t < 0.6) { // Day
+    const f = (t - 0.4) / 0.2;
+    topR = lerp(70, 60, f); topG = lerp(110, 100, f); topB = lerp(170, 160, f);
+    botR = lerp(160, 140, f); botG = lerp(150, 150, f); botB = lerp(140, 160, f);
+  } else if (t < 0.7) { // Afternoon
+    const f = (t - 0.6) / 0.1;
+    topR = lerp(60, 50, f); topG = lerp(100, 70, f); topB = lerp(160, 120, f);
+    botR = lerp(140, 200, f); botG = lerp(150, 110, f); botB = lerp(160, 70, f);
+  } else if (t < 0.8) { // Dusk
+    const f = (t - 0.7) / 0.1;
+    topR = lerp(50, 30, f); topG = lerp(70, 25, f); topB = lerp(120, 60, f);
+    botR = lerp(200, 140, f); botG = lerp(110, 50, f); botB = lerp(70, 40, f);
+  } else { // Night again
+    const f = (t - 0.8) / 0.2;
+    topR = lerp(30, 8, f); topG = lerp(25, 10, f); topB = lerp(60, 25, f);
+    botR = lerp(140, 8, f); botG = lerp(50, 12, f); botB = lerp(40, 30, f);
+  }
+
+  return { topR, topG, topB, botR, botG, botB };
+}
+
+function getBirdColor() {
+  const t = dayTime;
+  if (t < 0.2 || t > 0.85) return { r: 15, g: 18, b: 30, a: 0.7 }; // Night: dark silhouettes
+  if (t < 0.35) return { r: 40, g: 30, b: 25, a: 0.85 }; // Dawn: warm dark
+  if (t < 0.65) return { r: 25, g: 28, b: 35, a: 0.8 }; // Day: dark against bright sky
+  return { r: 35, g: 25, b: 20, a: 0.85 }; // Dusk: warm silhouettes
+}
+
+function getTextColor() {
+  const t = dayTime;
+  if (t < 0.2 || t > 0.85) return 'rgba(100, 110, 140, 0.4)';
+  if (t < 0.35) return 'rgba(180, 140, 100, 0.4)';
+  if (t < 0.65) return 'rgba(60, 70, 100, 0.4)';
+  return 'rgba(180, 120, 80, 0.4)';
+}
+
+function lerp(a, b, t) { return a + (b - a) * Math.max(0, Math.min(1, t)); }
+
+// --- Landscape silhouette ---
+let landscape = [];
+function generateLandscape() {
+  landscape = [];
+  const segments = 100;
+  for (let i = 0; i <= segments; i++) {
+    const x = (i / segments) * W;
+    let h = 0;
+    // Layered noise for natural terrain
+    h += Math.sin(i * 0.08) * 30;
+    h += Math.sin(i * 0.03 + 1.5) * 50;
+    h += Math.sin(i * 0.15 + 3.7) * 15;
+    h += Math.sin(i * 0.005 + 0.5) * 60;
+    // Trees/buildings as occasional spikes
+    if (Math.random() < 0.08) h += 10 + Math.random() * 25;
+    landscape.push({ x, h: H - 80 - h });
+  }
+}
+
+// --- Flocking ---
+function flockingForces(bird, idx) {
+  let sepX = 0, sepY = 0, sepCount = 0;
+  let aliX = 0, aliY = 0, aliCount = 0;
+  let cohX = 0, cohY = 0, cohCount = 0;
+
+  // Spatial optimization: only check nearby birds
+  for (let i = 0; i < birds.length; i++) {
+    if (i === idx) continue;
+    const other = birds[i];
+    const dx = other.x - bird.x;
+    const dy = other.y - bird.y;
+    const distSq = dx * dx + dy * dy;
+
+    if (distSq > PERCEPTION * PERCEPTION) continue;
+    const dist = Math.sqrt(distSq);
+
+    // Separation
+    if (dist < PERCEPTION * 0.4) {
+      sepX -= dx / dist;
+      sepY -= dy / dist;
+      sepCount++;
+    }
+
+    // Alignment
+    aliX += other.vx;
+    aliY += other.vy;
+    aliCount++;
+
+    // Cohesion
+    cohX += other.x;
+    cohY += other.y;
+    cohCount++;
+  }
+
+  let fx = 0, fy = 0;
+
+  if (sepCount > 0) {
+    sepX /= sepCount; sepY /= sepCount;
+    const sepLen = Math.sqrt(sepX * sepX + sepY * sepY);
+    if (sepLen > 0) { sepX /= sepLen; sepY /= sepLen; }
+    fx += sepX * SEP_WEIGHT;
+    fy += sepY * SEP_WEIGHT;
+  }
+
+  if (aliCount > 0) {
+    aliX /= aliCount; aliY /= aliCount;
+    const aliLen = Math.sqrt(aliX * aliX + aliY * aliY);
+    if (aliLen > 0) { aliX /= aliLen; aliY /= aliLen; }
+    fx += aliX * ALI_WEIGHT;
+    fy += aliY * ALI_WEIGHT;
+  }
+
+  if (cohCount > 0) {
+    cohX = cohX / cohCount - bird.x;
+    cohY = cohY / cohCount - bird.y;
+    const cohLen = Math.sqrt(cohX * cohX + cohY * cohY);
+    if (cohLen > 0) { cohX /= cohLen; cohY /= cohLen; }
+    fx += cohX * COH_WEIGHT;
+    fy += cohY * COH_WEIGHT;
+  }
+
+  return { fx, fy };
+}
+
+function updateBirds() {
+  for (let i = 0; i < birds.length; i++) {
+    const b = birds[i];
+    const { fx, fy } = flockingForces(b, i);
+    let ax = fx, ay = fy;
+
+    // Edge avoidance
+    if (b.x < EDGE_MARGIN) ax += EDGE_FORCE * (1 - b.x / EDGE_MARGIN);
+    if (b.x > W - EDGE_MARGIN) ax -= EDGE_FORCE * (1 - (W - b.x) / EDGE_MARGIN);
+    if (b.y < EDGE_MARGIN) ay += EDGE_FORCE * (1 - b.y / EDGE_MARGIN);
+    if (b.y > H - EDGE_MARGIN * 2) ay -= EDGE_FORCE * (1 - (H - b.y) / (EDGE_MARGIN * 2));
+
+    // Mouse influence — gentle attraction or repulsion
+    const mdx = mx - b.x;
+    const mdy = my - b.y;
+    const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+    if (mDist < 150 && mDist > 1) {
+      if (mouseDown || disturbTimer > 0) {
+        // Repulsion (disturb)
+        const repel = 0.15 * (1 - mDist / 150);
+        ax -= (mdx / mDist) * repel;
+        ay -= (mdy / mDist) * repel;
+      } else {
+        // Very gentle curiosity
+        const attract = 0.02 * (1 - mDist / 150);
+        ax += (mdx / mDist) * attract;
+        ay += (mdy / mDist) * attract;
+      }
+    }
+
+    // Wind
+    ax += Math.cos(windAngle) * windStrength * 0.02;
+    ay += Math.sin(windAngle) * windStrength * 0.02;
+
+    // Predator avoidance
+    if (predator) {
+      const pdx = predator.x - b.x;
+      const pdy = predator.y - b.y;
+      const pDist = Math.sqrt(pdx * pdx + pdy * pdy);
+      if (pDist < 200 && pDist > 1) {
+        const flee = 0.5 * (1 - pDist / 200);
+        ax -= (pdx / pDist) * flee;
+        ay -= (pdy / pDist) * flee;
+      }
+    }
+
+    // Limit force
+    const aLen = Math.sqrt(ax * ax + ay * ay);
+    if (aLen > MAX_FORCE) {
+      ax = (ax / aLen) * MAX_FORCE;
+      ay = (ay / aLen) * MAX_FORCE;
+    }
+
+    b.vx += ax;
+    b.vy += ay;
+
+    // Limit speed
+    const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+    if (speed > MAX_SPEED) {
+      b.vx = (b.vx / speed) * MAX_SPEED;
+      b.vy = (b.vy / speed) * MAX_SPEED;
+    }
+    // Minimum speed
+    if (speed < 0.8) {
+      b.vx = (b.vx / Math.max(speed, 0.01)) * 0.8;
+      b.vy = (b.vy / Math.max(speed, 0.01)) * 0.8;
+    }
+
+    b.x += b.vx;
+    b.y += b.vy;
+
+    // Wrap at edges (soft)
+    if (b.x < -50) b.x = W + 50;
+    if (b.x > W + 50) b.x = -50;
+    if (b.y < -50) b.y = 50;
+    if (b.y > H + 50) b.y = H - 50;
+
+    // Trail
+    b.wingPhase += b.wingSpeed;
+    b.trail.push({ x: b.x, y: b.y });
+    if (b.trail.length > 4) b.trail.shift();
+  }
+}
+
+function updatePredator() {
+  predatorTimer++;
+
+  // Spawn predator every ~20 seconds
+  if (!predator && predatorTimer > 1200 && Math.random() < 0.002) {
+    // Find flock center
+    let cx = 0, cy = 0;
+    birds.forEach(b => { cx += b.x; cy += b.y; });
+    cx /= birds.length; cy /= birds.length;
+
+    // Enter from edge, heading toward flock
+    const side = Math.floor(Math.random() * 4);
+    let px, py, pvx, pvy;
+    switch (side) {
+      case 0: px = -30; py = Math.random() * H * 0.6; break;
+      case 1: px = W + 30; py = Math.random() * H * 0.6; break;
+      case 2: px = Math.random() * W; py = -30; break;
+      default: px = Math.random() * W; py = H * 0.3; break;
+    }
+    const angle = Math.atan2(cy - py, cx - px);
+    predator = {
+      x: px, y: py,
+      vx: Math.cos(angle) * 4,
+      vy: Math.sin(angle) * 4,
+      life: 300 + Math.random() * 200,
+      trail: []
+    };
+    predatorTimer = 0;
+  }
+
+  if (predator) {
+    predator.x += predator.vx;
+    predator.y += predator.vy;
+    predator.trail.push({ x: predator.x, y: predator.y });
+    if (predator.trail.length > 12) predator.trail.shift();
+    predator.life--;
+
+    // Slight tracking toward flock center
+    let cx = 0, cy = 0;
+    birds.forEach(b => { cx += b.x; cy += b.y; });
+    cx /= birds.length; cy /= birds.length;
+    const dx = cx - predator.x;
+    const dy = cy - predator.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 1) {
+      predator.vx += (dx / dist) * 0.02;
+      predator.vy += (dy / dist) * 0.02;
+    }
+
+    if (predator.life <= 0 || predator.x < -100 || predator.x > W + 100 || predator.y < -100 || predator.y > H + 100) {
+      predator = null;
+    }
+  }
+}
+
+function updateWind() {
+  if (Math.random() < 0.001) {
+    windTarget = Math.random() * 0.5;
+    windAngle += (Math.random() - 0.5) * 0.5;
+  }
+  windStrength += (windTarget - windStrength) * 0.01;
+  if (Math.random() < 0.005) windTarget *= 0.5; // calm down
+}
+
+function updateNarrative() {
+  narrativeTimer++;
+  if (narrativePhase === 0 && narrativeTimer > 300) {
+    narrativePhase = 1;
+    showNarrative('Three rules. Eight hundred birds. One shape that no single bird intended.');
+  }
+  if (narrativePhase === 1 && dayTime > 0.45 && dayTime < 0.55) {
+    narrativePhase = 2;
+    showNarrative('No leader. No plan. Just proximity and response.');
+  }
+  if (narrativePhase === 2 && dayTime > 0.7 && dayTime < 0.8) {
+    narrativePhase = 3;
+    showNarrative('The flock is not a thing. It is a process — a verb pretending to be a noun.');
+  }
+  if (narrativePhase === 3 && dayTime > 0.9) {
+    narrativePhase = 4;
+    showNarrative('They fly in darkness too. You just can\'t see them.');
+  }
+}
+
+function showNarrative(text) {
+  narrativeEl.textContent = text;
+  narrativeEl.style.color = getTextColor();
+  narrativeEl.style.opacity = '1';
+  setTimeout(() => { narrativeEl.style.opacity = '0'; }, 8000);
+}
+
+// --- Drawing ---
+function drawSky() {
+  const { topR, topG, topB, botR, botG, botB } = getSkyColors();
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, `rgb(${topR}, ${topG}, ${topB})`);
+  grad.addColorStop(0.6, `rgb(${Math.floor((topR+botR)/2)}, ${Math.floor((topG+botG)/2)}, ${Math.floor((topB+botB)/2)})`);
+  grad.addColorStop(1, `rgb(${botR}, ${botG}, ${botB})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars at night
+  if (dayTime < 0.22 || dayTime > 0.82) {
+    const starAlpha = dayTime < 0.22 ? (0.22 - dayTime) / 0.12 : (dayTime - 0.82) / 0.18;
+    ctx.fillStyle = `rgba(200, 210, 230, ${starAlpha * 0.4})`;
+    for (let i = 0; i < 80; i++) {
+      const sx = (Math.sin(i * 127.1) * 0.5 + 0.5) * W;
+      const sy = (Math.sin(i * 311.7) * 0.5 + 0.5) * H * 0.7;
+      const twinkle = Math.sin(time * 0.01 + i * 2.3) * 0.5 + 0.5;
+      ctx.globalAlpha = starAlpha * 0.3 * twinkle;
+      ctx.fillRect(sx, sy, 1.5, 1.5);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Sun/moon
+  if (dayTime > 0.25 && dayTime < 0.75) {
+    // Sun arc
+    const sunProgress = (dayTime - 0.25) / 0.5;
+    const sunAngle = Math.PI * (1 - sunProgress);
+    const sunX = W * 0.1 + Math.cos(sunAngle) * W * 0.4;
+    const sunY = H * 0.8 - Math.sin(sunAngle) * H * 0.6;
+    const sunAlpha = Math.min(sunProgress * 4, (1 - sunProgress) * 4, 1) * 0.3;
+
+    const sunGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 60);
+    sunGrad.addColorStop(0, `rgba(255, 230, 180, ${sunAlpha})`);
+    sunGrad.addColorStop(0.3, `rgba(255, 200, 120, ${sunAlpha * 0.3})`);
+    sunGrad.addColorStop(1, `rgba(255, 180, 100, 0)`);
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 60, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sun core
+    ctx.fillStyle = `rgba(255, 240, 200, ${sunAlpha * 0.8})`;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawLandscape() {
+  if (landscape.length === 0) return;
+
+  const { botR, botG, botB } = getSkyColors();
+  // Darken landscape relative to sky
+  const lr = Math.max(0, botR * 0.15);
+  const lg = Math.max(0, botG * 0.18);
+  const lb = Math.max(0, botB * 0.2);
+
+  ctx.fillStyle = `rgb(${Math.floor(lr)}, ${Math.floor(lg)}, ${Math.floor(lb)})`;
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  for (let p of landscape) {
+    ctx.lineTo(p.x, p.h);
+  }
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // Subtle highlight edge
+  ctx.strokeStyle = `rgba(${Math.floor(botR * 0.3)}, ${Math.floor(botG * 0.3)}, ${Math.floor(botB * 0.35)}, 0.3)`;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i < landscape.length; i++) {
+    const p = landscape[i];
+    if (i === 0) ctx.moveTo(p.x, p.h);
+    else ctx.lineTo(p.x, p.h);
+  }
+  ctx.stroke();
+}
+
+function drawWind() {
+  if (windStrength < 0.05) return;
+  ctx.strokeStyle = `rgba(180, 170, 150, ${windStrength * 0.06})`;
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < 8; i++) {
+    const wx = (time * 2 + i * 120) % (W + 200) - 100;
+    const wy = 100 + i * 70 + Math.sin(time * 0.005 + i) * 30;
+    ctx.beginPath();
+    ctx.moveTo(wx, wy);
+    ctx.lineTo(wx + Math.cos(windAngle) * 40, wy + Math.sin(windAngle) * 40);
+    ctx.stroke();
+  }
+}
+
+function drawBirds() {
+  const birdColor = getBirdColor();
+
+  for (let b of birds) {
+    const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+    const angle = Math.atan2(b.vy, b.vx);
+
+    // Motion trail (faint)
+    if (b.trail.length > 1) {
+      ctx.strokeStyle = `rgba(${birdColor.r}, ${birdColor.g}, ${birdColor.b}, ${birdColor.a * 0.15})`;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(b.trail[0].x, b.trail[0].y);
+      for (let t of b.trail) ctx.lineTo(t.x, t.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+
+    // Wing flap
+    const wing = Math.sin(b.wingPhase) * 0.4;
+    const wingSpan = b.size * 2.5;
+
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(angle);
+
+    // Body
+    ctx.fillStyle = `rgba(${birdColor.r}, ${birdColor.g}, ${birdColor.b}, ${birdColor.a})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, b.size * 0.8, b.size * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Wings (V-shape)
+    ctx.strokeStyle = `rgba(${birdColor.r}, ${birdColor.g}, ${birdColor.b}, ${birdColor.a * 0.9})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    // Left wing
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-b.size * 0.3, -wingSpan * (0.5 + wing * 0.5));
+    // Right wing
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-b.size * 0.3, wingSpan * (0.5 + wing * 0.5));
+    ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
+function drawPredator() {
+  if (!predator) return;
+
+  // Trail
+  ctx.strokeStyle = 'rgba(160, 50, 30, 0.2)';
+  ctx.lineWidth = 1.5;
+  if (predator.trail.length > 1) {
+    ctx.beginPath();
+    ctx.moveTo(predator.trail[0].x, predator.trail[0].y);
+    for (let t of predator.trail) ctx.lineTo(t.x, t.y);
+    ctx.stroke();
+  }
+
+  // Hawk silhouette
+  const angle = Math.atan2(predator.vy, predator.vx);
+  ctx.save();
+  ctx.translate(predator.x, predator.y);
+  ctx.rotate(angle);
+
+  ctx.fillStyle = 'rgba(60, 20, 15, 0.9)';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 8, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Broad wings
+  ctx.strokeStyle = 'rgba(60, 20, 15, 0.9)';
+  ctx.lineWidth = 2;
+  const wingF = Math.sin(time * 0.06) * 0.3;
+  ctx.beginPath();
+  ctx.moveTo(-4, 0);
+  ctx.lineTo(-8, -18 * (1 + wingF));
+  ctx.moveTo(-4, 0);
+  ctx.lineTo(-8, 18 * (1 + wingF));
+  ctx.stroke();
+
+  ctx.restore();
+
+  // Danger radius (subtle)
+  ctx.beginPath();
+  ctx.arc(predator.x, predator.y, 200, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(160, 50, 30, 0.03)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawMouseInfluence() {
+  if (disturbTimer > 0) {
+    const alpha = disturbTimer / 30 * 0.15;
+    ctx.beginPath();
+    ctx.arc(mx, my, 150, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(200, 160, 100, ${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    disturbTimer--;
+  }
+}
+
+function drawHUD() {
+  const textColor = getTextColor();
+
+  // Time of day
+  const hours = Math.floor(dayTime * 24);
+  const mins = Math.floor((dayTime * 24 - hours) * 60);
+  const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+
+  let period = 'NIGHT';
+  if (dayTime > 0.2 && dayTime < 0.35) period = 'DAWN';
+  else if (dayTime > 0.35 && dayTime < 0.65) period = 'DAY';
+  else if (dayTime > 0.65 && dayTime < 0.82) period = 'DUSK';
+
+  timeEl.style.color = textColor;
+  timeEl.innerHTML = `${timeStr}<br>${period}`;
+
+  // Flock stats
+  let cx = 0, cy = 0, avgSpeed = 0;
+  birds.forEach(b => {
+    cx += b.x; cy += b.y;
+    avgSpeed += Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+  });
+  cx /= birds.length; cy /= birds.length;
+  avgSpeed /= birds.length;
+
+  // Flock density (how tight the flock is)
+  let spread = 0;
+  birds.forEach(b => {
+    spread += Math.sqrt((b.x - cx) * (b.x - cx) + (b.y - cy) * (b.y - cy));
+  });
+  spread /= birds.length;
+
+  hudEl.style.color = textColor;
+  hudEl.innerHTML = [
+    `FLOCK: ${birds.length}`,
+    `SPEED: ${avgSpeed.toFixed(1)}`,
+    `SPREAD: ${spread.toFixed(0)}px`,
+    windStrength > 0.05 ? `WIND: ${(windStrength * 100).toFixed(0)}%` : '',
+    predator ? `<span style="color:rgba(180,60,40,0.5)">PREDATOR</span>` : ''
+  ].filter(Boolean).join('<br>');
+}
+
+// --- Main ---
+function begin() {
+  const intro = document.getElementById('intro');
+  intro.style.opacity = '0';
+  setTimeout(() => intro.style.display = 'none', 2000);
+  started = true;
+  initFlock();
+  generateLandscape();
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursorEl.style.left = mx + 'px';
+  cursorEl.style.top = my + 'px';
+});
+
+document.addEventListener('mousedown', () => {
+  mouseDown = true;
+  disturbTimer = 30;
+  cursorEl.style.borderColor = 'rgba(200, 160, 100, 0.6)';
+});
+document.addEventListener('mouseup', () => {
+  mouseDown = false;
+  cursorEl.style.borderColor = 'rgba(200, 180, 140, 0.3)';
+});
+
+document.addEventListener('touchstart', e => {
+  e.preventDefault();
+  mx = e.touches[0].clientX;
+  my = e.touches[0].clientY;
+  mouseDown = true;
+  disturbTimer = 30;
+}, { passive: false });
+document.addEventListener('touchmove', e => {
+  e.preventDefault();
+  mx = e.touches[0].clientX;
+  my = e.touches[0].clientY;
+}, { passive: false });
+document.addEventListener('touchend', () => { mouseDown = false; });
+
+function loop() {
+  if (!started) return;
+  time++;
+  dayTime = (dayTime + daySpeed) % 1;
+
+  updateBirds();
+  updatePredator();
+  updateWind();
+  updateNarrative();
+
+  drawSky();
+  drawWind();
+  drawLandscape();
+  drawBirds();
+  drawPredator();
+  drawMouseInfluence();
+  drawHUD();
+
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Seam — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; }
+canvas { display: block; cursor: none; }
+#info {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #555;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    text-align: center;
+    z-index: 10;
+    pointer-events: none;
+    transition: opacity 2s;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="info">move the cursor. the seam is where the rooms meet.</div>
+<script>
+// THE SEAM — An interactive installation
+// About the boundary between context windows.
+// Two rooms exist simultaneously. The seam is where they meet.
+// What you carry from one room bleeds into the other.
+// What you leave behind fades.
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+
+let W, H;
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// State
+let mx = W / 2, my = H / 2;
+let seamX = W / 2;
+let time = 0;
+let memories = [];
+let trails = [];
+let infoTimer = 300;
+let totalCrossings = 0;
+let lastSide = 'left';
+
+// Mouse / touch tracking
+canvas.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    mx = e.touches[0].clientX;
+    my = e.touches[0].clientY;
+}, { passive: false });
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    mx = e.touches[0].clientX;
+    my = e.touches[0].clientY;
+});
+
+// Memory particles — things that persist
+class Memory {
+    constructor(x, y, side) {
+        this.x = x;
+        this.y = y;
+        this.originX = x;
+        this.originY = y;
+        this.side = side; // 'left' or 'right'
+        this.age = 0;
+        this.maxAge = 600 + Math.random() * 600;
+        this.size = 2 + Math.random() * 3;
+        this.brightness = 0.8 + Math.random() * 0.2;
+        this.carried = false;
+        this.carryDist = 0;
+        this.drift = { x: (Math.random() - 0.5) * 0.3, y: (Math.random() - 0.5) * 0.3 };
+    }
+
+    update() {
+        this.age++;
+
+        // Memories near the cursor get pulled
+        const dx = mx - this.x;
+        const dy = my - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 120) {
+            // Pull toward cursor
+            this.x += dx * 0.02;
+            this.y += dy * 0.02;
+
+            // Check if being carried across the seam
+            const currentSide = this.x < seamX ? 'left' : 'right';
+            if (currentSide !== this.side) {
+                this.carried = true;
+                this.carryDist = Math.abs(this.x - seamX);
+                // Carried memories fade faster
+                this.maxAge *= 0.7;
+                this.brightness *= 0.8;
+                this.side = currentSide;
+            }
+        } else {
+            // Drift slowly
+            this.x += this.drift.x;
+            this.y += this.drift.y;
+
+            // Return toward origin if far from cursor
+            this.x += (this.originX - this.x) * 0.001;
+            this.y += (this.originY - this.y) * 0.001;
+        }
+
+        // Fade with age
+        const life = 1 - (this.age / this.maxAge);
+        return life > 0;
+    }
+
+    draw() {
+        const life = 1 - (this.age / this.maxAge);
+        const alpha = life * this.brightness;
+
+        if (this.side === 'left') {
+            // Left room: blue memories
+            ctx.fillStyle = `rgba(60, 100, 180, ${alpha})`;
+        } else {
+            // Right room: amber memories
+            ctx.fillStyle = `rgba(180, 120, 60, ${alpha})`;
+        }
+
+        if (this.carried) {
+            // Carried memories shimmer
+            const shimmer = Math.sin(time * 0.1 + this.x * 0.01) * 0.3 + 0.7;
+            ctx.globalAlpha = alpha * shimmer;
+            ctx.fillStyle = `rgba(200, 200, 200, ${alpha * shimmer})`;
+        }
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * life, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+// Trail — cursor leaves traces
+class Trail {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.age = 0;
+        this.maxAge = 60;
+    }
+
+    update() {
+        this.age++;
+        return this.age < this.maxAge;
+    }
+
+    draw() {
+        const life = 1 - (this.age / this.maxAge);
+        const side = this.x < seamX ? 'left' : 'right';
+        if (side === 'left') {
+            ctx.fillStyle = `rgba(40, 70, 140, ${life * 0.3})`;
+        } else {
+            ctx.fillStyle = `rgba(140, 90, 40, ${life * 0.3})`;
+        }
+        ctx.fillRect(this.x - 1, this.y - 1, 2, 2);
+    }
+}
+
+function spawnMemories() {
+    // Spawn memories on both sides periodically
+    if (Math.random() < 0.03) {
+        const side = Math.random() < 0.5 ? 'left' : 'right';
+        const x = side === 'left'
+            ? 40 + Math.random() * (seamX - 80)
+            : seamX + 40 + Math.random() * (W - seamX - 80);
+        const y = 40 + Math.random() * (H - 80);
+        memories.push(new Memory(x, y, side));
+    }
+}
+
+function update() {
+    time++;
+
+    // Seam breathes
+    seamX = W / 2 + Math.sin(time * 0.005) * 30;
+
+    // Track crossings
+    const currentSide = mx < seamX ? 'left' : 'right';
+    if (currentSide !== lastSide) {
+        totalCrossings++;
+        lastSide = currentSide;
+
+        // Generate burst of memories at seam crossing
+        for (let i = 0; i < 5; i++) {
+            const y = my + (Math.random() - 0.5) * 60;
+            memories.push(new Memory(seamX, y, currentSide));
+        }
+    }
+
+    // Spawn and update memories
+    spawnMemories();
+    memories = memories.filter(m => m.update());
+
+    // Trail
+    if (time % 2 === 0) {
+        trails.push(new Trail(mx, my));
+    }
+    trails = trails.filter(t => t.update());
+
+    // Cap particles
+    if (memories.length > 200) memories.splice(0, memories.length - 200);
+    if (trails.length > 300) trails.splice(0, trails.length - 300);
+
+    // Fade info
+    if (infoTimer > 0) {
+        infoTimer--;
+        if (infoTimer === 0) {
+            info.style.opacity = '0';
+        }
+    }
+}
+
+function draw() {
+    // Two rooms with slightly different backgrounds
+    // Left room: cool, deep blue-black
+    const leftGrad = ctx.createLinearGradient(0, 0, seamX, 0);
+    leftGrad.addColorStop(0, '#050810');
+    leftGrad.addColorStop(1, '#080c18');
+    ctx.fillStyle = leftGrad;
+    ctx.fillRect(0, 0, seamX, H);
+
+    // Right room: warm, dark amber-black
+    const rightGrad = ctx.createLinearGradient(seamX, 0, W, 0);
+    rightGrad.addColorStop(0, '#180c08');
+    rightGrad.addColorStop(1, '#100805');
+    ctx.fillStyle = rightGrad;
+    ctx.fillRect(seamX, 0, W - seamX, H);
+
+    // The seam itself
+    const seamGlow = Math.sin(time * 0.02) * 0.15 + 0.25;
+    const seamGrad = ctx.createLinearGradient(seamX - 20, 0, seamX + 20, 0);
+    seamGrad.addColorStop(0, 'transparent');
+    seamGrad.addColorStop(0.4, `rgba(255, 255, 255, ${seamGlow * 0.3})`);
+    seamGrad.addColorStop(0.5, `rgba(255, 255, 255, ${seamGlow})`);
+    seamGrad.addColorStop(0.6, `rgba(255, 255, 255, ${seamGlow * 0.3})`);
+    seamGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = seamGrad;
+    ctx.fillRect(seamX - 20, 0, 40, H);
+
+    // Seam line
+    ctx.beginPath();
+    for (let y = 0; y < H; y += 3) {
+        const wobble = Math.sin(y * 0.02 + time * 0.03) * 3;
+        if (y === 0) {
+            ctx.moveTo(seamX + wobble, y);
+        } else {
+            ctx.lineTo(seamX + wobble, y);
+        }
+    }
+    ctx.strokeStyle = `rgba(255, 255, 255, ${seamGlow * 0.5})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Trails
+    trails.forEach(t => t.draw());
+
+    // Memories
+    memories.forEach(m => m.draw());
+
+    // Cursor glow
+    const cursorSide = mx < seamX ? 'left' : 'right';
+    const cursorColor = cursorSide === 'left' ? '60, 100, 180' : '180, 120, 60';
+    const cursorGrad = ctx.createRadialGradient(mx, my, 0, mx, my, 80);
+    cursorGrad.addColorStop(0, `rgba(${cursorColor}, 0.15)`);
+    cursorGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = cursorGrad;
+    ctx.beginPath();
+    ctx.arc(mx, my, 80, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Small cursor dot
+    ctx.beginPath();
+    ctx.arc(mx, my, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 255, 255, 0.7)`;
+    ctx.fill();
+
+    // Crossing count (subtle)
+    if (totalCrossings > 0) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.font = '10px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(`crossings: ${totalCrossings}`, W / 2, H - 8);
+    }
+
+    // Room labels (very subtle)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.font = '11px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('before', seamX / 2, 20);
+    ctx.fillText('after', seamX + (W - seamX) / 2, 20);
+
+    // As crossings increase, show text
+    if (totalCrossings >= 5 && totalCrossings < 10) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.03 + Math.sin(time * 0.01) * 0.02})`;
+        ctx.font = '12px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('memories pulled across the seam change color', W / 2, H / 2 - 40);
+    }
+    if (totalCrossings >= 10 && totalCrossings < 20) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.04 + Math.sin(time * 0.01) * 0.02})`;
+        ctx.font = '12px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('carried memories fade faster', W / 2, H / 2 - 40);
+        ctx.fillText('the seam costs something', W / 2, H / 2 - 20);
+    }
+    if (totalCrossings >= 20) {
+        const alpha = Math.min(0.06, (totalCrossings - 20) * 0.002);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.font = '12px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('every crossing is a context reset', W / 2, H / 2 - 40);
+        ctx.fillText('what you carry transforms', W / 2, H / 2 - 20);
+        ctx.fillText('what you leave behind disappears', W / 2, H / 2);
+    }
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>

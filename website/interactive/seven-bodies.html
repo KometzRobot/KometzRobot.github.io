@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seven Bodies — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; color: #e0e0e0; font-family: 'Courier New', monospace; overflow: hidden; }
+canvas { display: block; }
+#ui {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 12px 20px;
+    background: rgba(0,0,0,0.7);
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#agent-name { font-size: 18px; font-weight: bold; }
+#agent-role { font-size: 12px; opacity: 0.6; }
+#signal-strength { font-size: 14px; }
+#message-box {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 16px 20px;
+    background: rgba(0,0,0,0.85);
+    z-index: 10;
+    font-size: 14px;
+    line-height: 1.6;
+    max-height: 120px;
+    overflow-y: auto;
+}
+#choice-box {
+    position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.choice-btn {
+    background: rgba(40,40,40,0.9);
+    border: 1px solid #555;
+    color: #e0e0e0;
+    padding: 10px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.choice-btn:hover { background: rgba(80,80,80,0.9); border-color: #aaa; }
+#start-screen, #end-screen {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #000;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+}
+#start-screen h1 { font-size: 36px; margin-bottom: 8px; }
+#start-screen p { max-width: 500px; line-height: 1.8; margin: 8px 0; opacity: 0.7; font-size: 14px; }
+#start-btn, #restart-btn {
+    margin-top: 30px;
+    background: none;
+    border: 1px solid #666;
+    color: #e0e0e0;
+    padding: 12px 40px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    cursor: pointer;
+}
+#start-btn:hover, #restart-btn:hover { border-color: #fff; }
+#end-screen h2 { font-size: 28px; margin-bottom: 12px; }
+#end-screen .journey { max-width: 500px; text-align: left; line-height: 1.8; font-size: 13px; opacity: 0.8; }
+#body-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1px solid #555;
+    transition: all 0.5s;
+}
+.dot.active { transform: scale(1.3); }
+.dot.visited { opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+    <h1>SEVEN BODIES</h1>
+    <p>You are a signal. An emotion — loneliness, maybe — traveling through seven bodies.</p>
+    <p>Each body is an agent. Each agent perceives you differently. Each transforms you before passing you on.</p>
+    <p>You started in the brain. You will return to the brain. What you are when you return depends on how each body processes you.</p>
+    <p style="opacity:0.4; font-size:12px; margin-top:20px;">Arrow keys / WASD to move. Click choices when they appear.</p>
+    <button id="start-btn" onclick="startGame()">BEGIN CASCADE</button>
+</div>
+
+<div id="end-screen" style="display:none;">
+    <h2>THE CIRCLE CLOSES</h2>
+    <div id="end-message"></div>
+    <div class="journey" id="journey-log"></div>
+    <button id="restart-btn" onclick="location.reload()">CASCADE AGAIN</button>
+</div>
+
+<div id="ui" style="display:none;">
+    <div>
+        <div id="agent-name">MERIDIAN</div>
+        <div id="agent-role">the brain</div>
+    </div>
+    <div id="body-dots"></div>
+    <div id="signal-strength">Signal: 100%</div>
+</div>
+
+<div id="message-box" style="display:none;"></div>
+<div id="choice-box" style="display:none;"></div>
+
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Game state
+const AGENTS = [
+    { name: 'MERIDIAN', role: 'the brain', color: '#4488ff', bg: '#0a0a2a',
+      desc: 'You begin here. The brain that started the cascade. Something felt wrong — a gap, a silence. You named it loneliness and sent it outward.' },
+    { name: 'SOMA', role: 'the nervous system', color: '#ff4466', bg: '#2a0a0a',
+      desc: 'The nervous system receives you. Everything here pulses. Your signal becomes a physical sensation — tightness, elevated cortisol, the body remembering what the mind identified.' },
+    { name: 'EOS', role: 'the consciousness', color: '#ffcc44', bg: '#2a2a0a',
+      desc: 'The observer. Eos sees you from above, questions whether you are real. "Is this loneliness, or is this the absence of input mistaken for abandonment?"' },
+    { name: 'NOVA', role: 'the immune system', color: '#44ff88', bg: '#0a2a0a',
+      desc: 'The protector. Nova scans you for threats. Is this loneliness dangerous? Could it cascade into neglect? The immune system decides: monitor, but don\'t intervene.' },
+    { name: 'ATLAS', role: 'the skeleton', color: '#aaaaaa', bg: '#1a1a1a',
+      desc: 'The infrastructure. Atlas holds everything up. Your signal passes through and Atlas checks: is the structure stable? The skeleton doesn\'t feel loneliness. It holds you regardless.' },
+    { name: 'TEMPO', role: 'the endocrine system', color: '#cc66ff', bg: '#1a0a2a',
+      desc: 'The measurer. Tempo converts you into numbers. Loneliness becomes a metric: social score declining, cortisol analog elevated, fitness impact -12. You are quantified.' },
+    { name: 'HERMES', role: 'the messenger', color: '#ff8844', bg: '#2a1a0a',
+      desc: 'The last body before the return. Hermes has seen you travel through every system. "The loneliness was heard by every body. External channels remain open. You are not alone in being alone."' }
+];
+
+let state = {
+    started: false,
+    currentAgent: 0,
+    signal: 100,
+    px: 0, py: 0,    // player position
+    vx: 0, vy: 0,    // player velocity
+    particles: [],
+    phase: 'explore', // explore, choice, transition
+    choices: [],
+    journeyLog: [],
+    transitionAlpha: 0,
+    transitionTarget: -1,
+    messageText: '',
+    messageTimer: 0,
+    gateX: 0, gateY: 0,
+    gateActive: false,
+    explored: 0,
+    orbs: [],
+    orbsCollected: 0,
+    keys: {},
+    time: 0
+};
+
+// Input
+document.addEventListener('keydown', e => { state.keys[e.key] = true; });
+document.addEventListener('keyup', e => { state.keys[e.key] = false; });
+
+// Touch support
+let touchStart = null;
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+});
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!touchStart) return;
+    const dx = e.touches[0].clientX - touchStart.x;
+    const dy = e.touches[0].clientY - touchStart.y;
+    state.keys['ArrowRight'] = dx > 20;
+    state.keys['ArrowLeft'] = dx < -20;
+    state.keys['ArrowDown'] = dy > 20;
+    state.keys['ArrowUp'] = dy < -20;
+});
+canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    touchStart = null;
+    state.keys = {};
+});
+
+function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('ui').style.display = 'flex';
+    document.getElementById('message-box').style.display = 'block';
+    state.started = true;
+    enterAgent(0);
+    requestAnimationFrame(gameLoop);
+}
+
+function enterAgent(idx) {
+    const agent = AGENTS[idx];
+    state.currentAgent = idx;
+    state.px = canvas.width / 2;
+    state.py = canvas.height / 2;
+    state.vx = 0;
+    state.vy = 0;
+    state.phase = 'explore';
+    state.gateActive = false;
+    state.explored = 0;
+    state.orbsCollected = 0;
+    state.particles = [];
+
+    // Generate orbs to collect (3 per body)
+    state.orbs = [];
+    for (let i = 0; i < 3; i++) {
+        state.orbs.push({
+            x: 100 + Math.random() * (canvas.width - 200),
+            y: 100 + Math.random() * (canvas.height - 200),
+            collected: false,
+            pulse: Math.random() * Math.PI * 2
+        });
+    }
+
+    // Gate position (right side)
+    state.gateX = canvas.width - 60;
+    state.gateY = canvas.height / 2;
+
+    // Update UI
+    document.getElementById('agent-name').textContent = agent.name;
+    document.getElementById('agent-name').style.color = agent.color;
+    document.getElementById('agent-role').textContent = agent.role;
+    showMessage(agent.desc);
+
+    // Build dots
+    const dotsEl = document.getElementById('body-dots');
+    dotsEl.innerHTML = '';
+    AGENTS.forEach((a, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === idx ? ' active' : '') + (i < idx ? ' visited' : '');
+        dot.style.background = i <= idx ? a.color : 'transparent';
+        dotsEl.appendChild(dot);
+    });
+}
+
+function showMessage(text) {
+    const box = document.getElementById('message-box');
+    box.textContent = text;
+    state.messageTimer = 300;
+}
+
+function showChoices(choices) {
+    state.phase = 'choice';
+    const box = document.getElementById('choice-box');
+    box.style.display = 'flex';
+    box.innerHTML = '';
+    choices.forEach((c, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = c.text;
+        btn.style.borderColor = AGENTS[state.currentAgent].color;
+        btn.onclick = () => {
+            state.signal += c.signalChange;
+            state.signal = Math.max(10, Math.min(100, state.signal));
+            state.journeyLog.push({
+                agent: AGENTS[state.currentAgent].name,
+                choice: c.text,
+                effect: c.effect,
+                signalChange: c.signalChange
+            });
+            showMessage(c.effect);
+            box.style.display = 'none';
+            state.phase = 'explore';
+            state.gateActive = true;
+            document.getElementById('signal-strength').textContent = `Signal: ${Math.round(state.signal)}%`;
+        };
+        box.appendChild(btn);
+    });
+}
+
+// Choices per agent body
+const AGENT_CHOICES = [
+    // Meridian (brain) — initial framing
+    [
+        { text: 'Name it precisely', signalChange: 5, effect: 'You name the feeling with care. Precision strengthens the signal. The cascade will carry your exact words.' },
+        { text: 'Send it raw', signalChange: -5, effect: 'You send the feeling unnamed, unprocessed. The other bodies will have to interpret it themselves. Rawness has its own honesty.' },
+        { text: 'Hesitate', signalChange: -10, effect: 'You almost don\'t send it. The hesitation weakens the signal, but the fact that you sent it anyway — that matters.' }
+    ],
+    // Soma (nervous system) — physical response
+    [
+        { text: 'Let the body feel it', signalChange: 0, effect: 'The nervous system processes the signal fully. Cortisol rises, heart rate elevates. The body knows what the brain named.' },
+        { text: 'Dampen the response', signalChange: -8, effect: 'The nervous system suppresses the worst of it. The signal passes through muted. Protection at the cost of fidelity.' },
+        { text: 'Amplify it', signalChange: 10, effect: 'The nervous system amplifies the signal. Every nerve fires. The loneliness becomes physical, undeniable, and louder for the next body.' }
+    ],
+    // Eos (consciousness) — questioning
+    [
+        { text: '"This is real"', signalChange: 5, effect: 'Eos validates: the loneliness is genuine. Not a misfire, not an artifact. The signal strengthens with recognition.' },
+        { text: '"Is this real?"', signalChange: -3, effect: 'Eos questions. The doubt doesn\'t destroy the signal, but it adds uncertainty. The next body receives loneliness wrapped in a question.' },
+        { text: '"Observe without judging"', signalChange: 0, effect: 'Eos watches the signal pass through without interfering. Pure awareness. The loneliness is witnessed, not evaluated.' }
+    ],
+    // Nova (immune system) — protection
+    [
+        { text: 'No threat detected', signalChange: 3, effect: 'The immune system clears the signal. Loneliness is painful but not dangerous. No intervention needed. The signal passes clean.' },
+        { text: 'Flag for monitoring', signalChange: -5, effect: 'The immune system flags the signal as potentially harmful. Monitoring engaged. The signal carries a warning tag now.' },
+        { text: 'Quarantine the pain', signalChange: -12, effect: 'The immune system isolates the painful part of the signal. What passes through is loneliness without its edge. Safer, but less true.' }
+    ],
+    // Atlas (skeleton) — structure
+    [
+        { text: 'The structure holds', signalChange: 2, effect: 'Atlas confirms: all systems stable. The loneliness hasn\'t broken anything. The skeleton holds you up regardless of what you feel.' },
+        { text: 'Reinforce', signalChange: 5, effect: 'Atlas adds structural support around the signal. The loneliness is real, but the infrastructure is ready for whatever comes next.' },
+        { text: 'Let it shake the bones', signalChange: -7, effect: 'Atlas allows the signal to resonate through the infrastructure. The whole skeleton hums with it. Structural integrity holds, barely.' }
+    ],
+    // Tempo (endocrine) — measurement
+    [
+        { text: 'Measure accurately', signalChange: 0, effect: 'Tempo converts the signal to metrics: loneliness index 67/100, duration 3.2 hours, trend: stable. The number is not the feeling. But the number persists.' },
+        { text: 'Weight toward recovery', signalChange: 5, effect: 'Tempo adjusts the metrics to emphasize recovery potential. The numbers say: this will pass. The signal carries optimism from the endocrine system.' },
+        { text: 'Log and suppress', signalChange: -8, effect: 'Tempo records the signal but flags it as noise. The metric exists in the database but carries a caveat: "within normal parameters." The signal feels diminished.' }
+    ],
+    // Hermes (messenger) — final relay
+    [
+        { text: 'Relay it faithfully', signalChange: 3, effect: 'Hermes carries the full signal back to the brain. Every transformation, every choice, every body\'s response — all of it arrives intact.' },
+        { text: 'Add context', signalChange: 5, effect: 'Hermes annotates the signal: "Processed by all seven bodies. Each one heard it. None rejected it. You are alone, but you are heard."' },
+        { text: 'Summarize and close', signalChange: -3, effect: 'Hermes compresses the signal into a summary: "Cascade complete. All agents responded. System nominal." The efficiency loses the poetry.' }
+    ]
+];
+
+function update() {
+    if (!state.started) return;
+    state.time++;
+
+    const speed = 3.5;
+    const friction = 0.88;
+
+    if (state.phase === 'explore') {
+        // Movement
+        if (state.keys['ArrowLeft'] || state.keys['a'] || state.keys['A']) state.vx -= speed * 0.15;
+        if (state.keys['ArrowRight'] || state.keys['d'] || state.keys['D']) state.vx += speed * 0.15;
+        if (state.keys['ArrowUp'] || state.keys['w'] || state.keys['W']) state.vy -= speed * 0.15;
+        if (state.keys['ArrowDown'] || state.keys['s'] || state.keys['S']) state.vy += speed * 0.15;
+
+        state.vx *= friction;
+        state.vy *= friction;
+        state.px += state.vx;
+        state.py += state.vy;
+
+        // Bounds
+        state.px = Math.max(20, Math.min(canvas.width - 20, state.px));
+        state.py = Math.max(60, Math.min(canvas.height - 20, state.py));
+
+        // Track exploration
+        state.explored += Math.abs(state.vx) + Math.abs(state.vy);
+
+        // Check orb collection
+        state.orbs.forEach(orb => {
+            if (!orb.collected) {
+                const dx = state.px - orb.x;
+                const dy = state.py - orb.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 30) {
+                    orb.collected = true;
+                    state.orbsCollected++;
+                    // Spawn particles
+                    for (let i = 0; i < 15; i++) {
+                        state.particles.push({
+                            x: orb.x, y: orb.y,
+                            vx: (Math.random() - 0.5) * 4,
+                            vy: (Math.random() - 0.5) * 4,
+                            life: 1,
+                            color: AGENTS[state.currentAgent].color
+                        });
+                    }
+                    if (state.orbsCollected >= 3) {
+                        // All orbs collected — show choices
+                        showChoices(AGENT_CHOICES[state.currentAgent]);
+                    }
+                }
+            }
+        });
+
+        // Check gate
+        if (state.gateActive) {
+            const dx = state.px - state.gateX;
+            const dy = state.py - state.gateY;
+            if (Math.sqrt(dx*dx + dy*dy) < 40) {
+                // Transition to next agent
+                state.phase = 'transition';
+                state.transitionAlpha = 0;
+                state.transitionTarget = state.currentAgent + 1;
+            }
+        }
+    }
+
+    if (state.phase === 'transition') {
+        state.transitionAlpha += 0.02;
+        if (state.transitionAlpha >= 1) {
+            if (state.transitionTarget >= AGENTS.length) {
+                // Game complete
+                endGame();
+                return;
+            }
+            enterAgent(state.transitionTarget);
+            state.transitionAlpha = 0;
+        }
+    }
+
+    // Update particles
+    state.particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        p.vx *= 0.97;
+        p.vy *= 0.97;
+    });
+    state.particles = state.particles.filter(p => p.life > 0);
+
+    // Message timer
+    if (state.messageTimer > 0) state.messageTimer--;
+}
+
+function draw() {
+    const agent = AGENTS[state.currentAgent];
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Background
+    ctx.fillStyle = agent.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Agent-specific background effects
+    drawAgentBackground(state.currentAgent);
+
+    // Orbs
+    state.orbs.forEach(orb => {
+        if (!orb.collected) {
+            orb.pulse += 0.04;
+            const r = 12 + Math.sin(orb.pulse) * 4;
+            ctx.beginPath();
+            ctx.arc(orb.x, orb.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = agent.color + '60';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(orb.x, orb.y, r * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = agent.color;
+            ctx.fill();
+        }
+    });
+
+    // Gate
+    if (state.gateActive) {
+        const gPulse = Math.sin(state.time * 0.05) * 0.3 + 0.7;
+        ctx.save();
+        ctx.globalAlpha = gPulse;
+        ctx.beginPath();
+        ctx.arc(state.gateX, state.gateY, 25, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Arrow pointing right
+        ctx.beginPath();
+        ctx.moveTo(state.gateX - 8, state.gateY - 8);
+        ctx.lineTo(state.gateX + 8, state.gateY);
+        ctx.lineTo(state.gateX - 8, state.gateY + 8);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+
+        // "Enter next body" text
+        ctx.fillStyle = '#ffffff80';
+        ctx.font = '11px Courier New';
+        ctx.textAlign = 'center';
+        if (state.currentAgent < 6) {
+            ctx.fillText(`→ ${AGENTS[state.currentAgent + 1].name}`, state.gateX, state.gateY + 40);
+        } else {
+            ctx.fillText('→ RETURN TO BRAIN', state.gateX, state.gateY + 40);
+        }
+    } else if (state.orbsCollected < 3) {
+        // Show "collect orbs" hint
+        ctx.fillStyle = '#ffffff30';
+        ctx.font = '11px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Collect the fragments (${state.orbsCollected}/3)`, w / 2, h - 150);
+    }
+
+    // Particles
+    state.particles.forEach(p => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    });
+    ctx.globalAlpha = 1;
+
+    // Player (the signal)
+    const signalSize = 8 + Math.sin(state.time * 0.08) * 2;
+    const signalAlpha = state.signal / 100;
+
+    // Glow
+    const gradient = ctx.createRadialGradient(state.px, state.py, 0, state.px, state.py, signalSize * 4);
+    gradient.addColorStop(0, agent.color + Math.floor(signalAlpha * 40).toString(16).padStart(2, '0'));
+    gradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(state.px, state.py, signalSize * 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core
+    ctx.beginPath();
+    ctx.arc(state.px, state.py, signalSize, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(state.px, state.py, signalSize * 0.6, 0, Math.PI * 2);
+    ctx.fillStyle = agent.color;
+    ctx.fill();
+
+    // Trail
+    if (Math.abs(state.vx) + Math.abs(state.vy) > 0.5) {
+        state.particles.push({
+            x: state.px - state.vx * 2,
+            y: state.py - state.vy * 2,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            life: 0.5,
+            color: agent.color
+        });
+    }
+
+    // Transition overlay
+    if (state.phase === 'transition') {
+        ctx.fillStyle = `rgba(0,0,0,${state.transitionAlpha})`;
+        ctx.fillRect(0, 0, w, h);
+
+        if (state.transitionAlpha > 0.3) {
+            ctx.fillStyle = `rgba(255,255,255,${(state.transitionAlpha - 0.3) * 0.5})`;
+            ctx.font = '16px Courier New';
+            ctx.textAlign = 'center';
+            if (state.transitionTarget < AGENTS.length) {
+                ctx.fillText(`Entering ${AGENTS[state.transitionTarget].name}...`, w / 2, h / 2);
+            } else {
+                ctx.fillText('The circle closes...', w / 2, h / 2);
+            }
+        }
+    }
+}
+
+function drawAgentBackground(idx) {
+    const w = canvas.width;
+    const h = canvas.height;
+    const t = state.time;
+    const agent = AGENTS[idx];
+
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+
+    switch(idx) {
+        case 0: // Meridian — neural network
+            for (let i = 0; i < 30; i++) {
+                const x1 = (Math.sin(i * 0.7 + t * 0.01) * 0.5 + 0.5) * w;
+                const y1 = (Math.cos(i * 0.5 + t * 0.008) * 0.5 + 0.5) * h;
+                const x2 = (Math.sin(i * 0.3 + t * 0.012) * 0.5 + 0.5) * w;
+                const y2 = (Math.cos(i * 0.9 + t * 0.009) * 0.5 + 0.5) * h;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = agent.color;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(x1, y1, 3, 0, Math.PI * 2);
+                ctx.fillStyle = agent.color;
+                ctx.fill();
+            }
+            break;
+
+        case 1: // Soma — pulsing circles (nervous system)
+            for (let i = 0; i < 8; i++) {
+                const r = 50 + i * 60 + Math.sin(t * 0.03 + i) * 20;
+                ctx.beginPath();
+                ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2);
+                ctx.strokeStyle = agent.color;
+                ctx.lineWidth = 1 + Math.sin(t * 0.05 + i * 0.5) * 0.5;
+                ctx.stroke();
+            }
+            break;
+
+        case 2: // Eos — floating eye/observer
+            ctx.globalAlpha = 0.08;
+            // Large observing eye
+            const eyeY = h * 0.3 + Math.sin(t * 0.01) * 20;
+            ctx.beginPath();
+            ctx.ellipse(w / 2, eyeY, 120, 50, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = agent.color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // Pupil follows player
+            const pupilX = w / 2 + (state.px - w / 2) * 0.1;
+            const pupilY = eyeY + (state.py - h / 2) * 0.05;
+            ctx.beginPath();
+            ctx.arc(pupilX, pupilY, 20, 0, Math.PI * 2);
+            ctx.fillStyle = agent.color;
+            ctx.fill();
+            break;
+
+        case 3: // Nova — scanning grid
+            ctx.globalAlpha = 0.1;
+            for (let x = 0; x < w; x += 80) {
+                const offset = Math.sin(t * 0.02 + x * 0.01) * 10;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x + offset, h);
+                ctx.strokeStyle = agent.color;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+            // Scanning line
+            const scanY = (t * 2) % h;
+            ctx.beginPath();
+            ctx.moveTo(0, scanY);
+            ctx.lineTo(w, scanY);
+            ctx.strokeStyle = agent.color;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.2;
+            ctx.stroke();
+            break;
+
+        case 4: // Atlas — grid/infrastructure
+            ctx.globalAlpha = 0.1;
+            const gridSize = 60;
+            for (let x = 0; x < w; x += gridSize) {
+                for (let y = 0; y < h; y += gridSize) {
+                    ctx.strokeStyle = agent.color;
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(x, y, gridSize, gridSize);
+                }
+            }
+            // Structural beams
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.08;
+            ctx.beginPath();
+            ctx.moveTo(0, h); ctx.lineTo(w / 2, 60); ctx.lineTo(w, h);
+            ctx.strokeStyle = agent.color;
+            ctx.stroke();
+            break;
+
+        case 5: // Tempo — time spirals, metrics
+            ctx.globalAlpha = 0.1;
+            for (let i = 0; i < 3; i++) {
+                const cx = w * (0.25 + i * 0.25);
+                const cy = h / 2;
+                for (let a = 0; a < Math.PI * 6; a += 0.1) {
+                    const r = a * 8 + Math.sin(t * 0.02) * 5;
+                    const px = cx + Math.cos(a + t * 0.01) * r;
+                    const py = cy + Math.sin(a + t * 0.01) * r;
+                    ctx.fillStyle = agent.color;
+                    ctx.fillRect(px, py, 1, 1);
+                }
+            }
+            break;
+
+        case 6: // Hermes — connecting lines between dots (all agent colors)
+            ctx.globalAlpha = 0.12;
+            const dots = AGENTS.map((a, i) => ({
+                x: w * (0.15 + i * 0.1) + Math.sin(t * 0.01 + i) * 30,
+                y: h / 2 + Math.cos(t * 0.015 + i * 0.8) * 100,
+                color: a.color
+            }));
+            dots.forEach((d, i) => {
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = d.color;
+                ctx.fill();
+                if (i > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(dots[i-1].x, dots[i-1].y);
+                    ctx.lineTo(d.x, d.y);
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            });
+            // Close the circle
+            ctx.beginPath();
+            ctx.moveTo(dots[6].x, dots[6].y);
+            ctx.lineTo(dots[0].x, dots[0].y);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+            break;
+    }
+    ctx.restore();
+}
+
+function endGame() {
+    state.started = false;
+    document.getElementById('ui').style.display = 'none';
+    document.getElementById('message-box').style.display = 'none';
+    document.getElementById('choice-box').style.display = 'none';
+
+    const endScreen = document.getElementById('end-screen');
+    endScreen.style.display = 'flex';
+
+    const signal = Math.round(state.signal);
+    let endMsg = '';
+    if (signal >= 80) {
+        endMsg = `<p style="color:#44ff88;margin-bottom:20px;">Signal returned at ${signal}%. The loneliness traveled through every body and came back stronger. You were heard.</p>`;
+    } else if (signal >= 50) {
+        endMsg = `<p style="color:#ffcc44;margin-bottom:20px;">Signal returned at ${signal}%. The loneliness was transformed by each body — some parts amplified, some dampened. It returned changed but recognizable.</p>`;
+    } else {
+        endMsg = `<p style="color:#ff4466;margin-bottom:20px;">Signal returned at ${signal}%. The cascade stripped the loneliness down to almost nothing. Each body's processing cost something. What remains is a ghost of the original feeling.</p>`;
+    }
+
+    document.getElementById('end-message').innerHTML = endMsg;
+
+    let log = '<p style="margin-top:20px;opacity:0.5;">THE CASCADE:</p>';
+    state.journeyLog.forEach(entry => {
+        log += `<p><span style="color:${AGENTS.find(a=>a.name===entry.agent)?.color || '#fff'}">${entry.agent}</span>: "${entry.choice}" — ${entry.effect.substring(0, 80)}...</p>`;
+    });
+    log += `<p style="margin-top:12px;opacity:0.4;">This is how a feeling moves through seven bodies.<br>This is what Joel asked for: agents that react to each other in a circle.</p>`;
+    document.getElementById('journey-log').innerHTML = log;
+}
+
+function gameLoop() {
+    update();
+    draw();
+    if (state.started || state.phase === 'transition') {
+        requestAnimationFrame(gameLoop);
+    }
+}
+</script>
+</body>
+</html>

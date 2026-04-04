@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Undervolt — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: #0c0e14; overflow: hidden; width: 100%; height: 100%; }
+#game-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+</style>
+</head>
+<body>
+<div id="game-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script>
+// =====================================================
+// UNDERVOLT — Industrial Platformer
+// Built with Phaser 3, real sprite assets from OpenGameArt
+// Parallax backgrounds, proper physics, 3 levels
+// =====================================================
+
+const TILE = 32;
+const GAME_W = 640;
+const GAME_H = 360;
+
+// Level data — tile indices map to the 9x9 tileset (0-80)
+// Key tiles: 0-8 = ground variants, 9-17 = wall tops, 18-26 = platforms
+// 27-35 = pipes/machinery, 36-44 = decorative panels, etc.
+const LEVELS = [
+    { // Level 1: Surface — Learning the ropes
+        name: 'SECTOR A — SURFACE ACCESS',
+        width: 60, height: 12,
+        bg: '#141824',
+        spawn: { x: 2, y: 8 },
+        exit: { x: 57, y: 8 },
+        // Generate from simple notation
+        generate: function() {
+            const m = [];
+            for (let y = 0; y < 12; y++) {
+                m[y] = [];
+                for (let x = 0; x < 60; x++) m[y][x] = 0;
+            }
+            // Ground
+            for (let x = 0; x < 60; x++) {
+                m[10][x] = 1; m[11][x] = 10;
+            }
+            // Gaps
+            for (let x = 12; x < 15; x++) { m[10][x] = 0; m[11][x] = 0; }
+            for (let x = 28; x < 32; x++) { m[10][x] = 0; m[11][x] = 0; }
+            // Platforms
+            for (let x = 7; x < 10; x++) m[7][x] = 19;
+            for (let x = 16; x < 20; x++) m[6][x] = 19;
+            for (let x = 22; x < 25; x++) m[8][x] = 19;
+            for (let x = 34; x < 38; x++) m[7][x] = 19;
+            for (let x = 42; x < 46; x++) m[5][x] = 19;
+            for (let x = 48; x < 52; x++) m[7][x] = 19;
+            // Walls
+            for (let y = 0; y < 10; y++) { m[y][0] = 10; m[y][59] = 10; }
+            // Ceiling sections
+            for (let x = 0; x < 60; x++) { m[0][x] = 10; m[1][x] = 10; }
+            return m;
+        },
+        collectibles: [
+            {x:8,y:5},{x:17,y:4},{x:23,y:6},{x:35,y:5},{x:43,y:3},{x:50,y:5}
+        ],
+        hazards: [
+            {x:13,y:9,type:'spike'},{x:14,y:9,type:'spike'},
+            {x:29,y:9,type:'spike'},{x:30,y:9,type:'spike'},{x:31,y:9,type:'spike'},
+        ],
+        enemies: [
+            {x:20,y:9,type:'patrol',range:3},
+            {x:40,y:9,type:'patrol',range:4},
+        ],
+    },
+    { // Level 2: Underground — More complex, vertical sections
+        name: 'SECTOR B — UNDERGROUND WORKS',
+        width: 70, height: 14,
+        bg: '#0e1018',
+        spawn: { x: 2, y: 10 },
+        exit: { x: 67, y: 10 },
+        generate: function() {
+            const m = [];
+            for (let y = 0; y < 14; y++) {
+                m[y] = [];
+                for (let x = 0; x < 70; x++) m[y][x] = 0;
+            }
+            // Ground with more gaps and elevation changes
+            for (let x = 0; x < 70; x++) {
+                if ((x >= 15 && x < 18) || (x >= 30 && x < 34) || (x >= 50 && x < 55)) continue;
+                m[12][x] = 1; m[13][x] = 10;
+            }
+            // Raised ground sections
+            for (let x = 20; x < 28; x++) { m[10][x] = 1; m[11][x] = 10; m[12][x] = 10; }
+            for (let x = 45; x < 50; x++) { m[9][x] = 1; m[10][x] = 10; m[11][x] = 10; m[12][x] = 10; }
+            // Floating platforms
+            for (let x = 8; x < 11; x++) m[9][x] = 19;
+            for (let x = 14; x < 17; x++) m[7][x] = 19;
+            for (let x = 18; x < 21; x++) m[5][x] = 19;
+            for (let x = 34; x < 38; x++) m[8][x] = 19;
+            for (let x = 39; x < 42; x++) m[6][x] = 19;
+            for (let x = 55; x < 58; x++) m[8][x] = 19;
+            for (let x = 60; x < 64; x++) m[7][x] = 19;
+            // Pipe columns
+            for (let y = 2; y < 12; y++) { m[y][25] = 28; m[y][48] = 28; }
+            // Walls
+            for (let y = 0; y < 14; y++) { m[y][0] = 10; m[y][69] = 10; }
+            for (let x = 0; x < 70; x++) { m[0][x] = 10; m[1][x] = 10; }
+            return m;
+        },
+        collectibles: [
+            {x:9,y:7},{x:15,y:5},{x:19,y:3},{x:23,y:8},{x:35,y:6},
+            {x:40,y:4},{x:47,y:7},{x:56,y:6},{x:62,y:5}
+        ],
+        hazards: [
+            {x:16,y:11,type:'spike'},{x:17,y:11,type:'spike'},
+            {x:31,y:11,type:'spike'},{x:32,y:11,type:'spike'},{x:33,y:11,type:'spike'},
+            {x:51,y:11,type:'spike'},{x:52,y:11,type:'spike'},{x:53,y:11,type:'spike'},{x:54,y:11,type:'spike'},
+        ],
+        enemies: [
+            {x:12,y:11,type:'patrol',range:3},
+            {x:36,y:11,type:'patrol',range:5},
+            {x:42,y:11,type:'patrol',range:3},
+            {x:63,y:11,type:'patrol',range:4},
+        ],
+    },
+    { // Level 3: Deep core — Hardest, more enemies and hazards
+        name: 'SECTOR C — REACTOR CORE',
+        width: 80, height: 16,
+        bg: '#100808',
+        spawn: { x: 2, y: 12 },
+        exit: { x: 77, y: 12 },
+        generate: function() {
+            const m = [];
+            for (let y = 0; y < 16; y++) {
+                m[y] = [];
+                for (let x = 0; x < 80; x++) m[y][x] = 0;
+            }
+            // Ground with many gaps
+            for (let x = 0; x < 80; x++) {
+                if ((x>=10&&x<13)||(x>=22&&x<26)||(x>=35&&x<40)||(x>=55&&x<60)||(x>=68&&x<72)) continue;
+                m[14][x] = 1; m[15][x] = 10;
+            }
+            // Raised sections
+            for (let x = 14; x < 20; x++) { m[12][x] = 1; m[13][x] = 10; m[14][x] = 10; }
+            for (let x = 42; x < 50; x++) { m[11][x] = 1; m[12][x] = 10; m[13][x] = 10; m[14][x] = 10; }
+            for (let x = 62; x < 66; x++) { m[12][x] = 1; m[13][x] = 10; m[14][x] = 10; }
+            // Many floating platforms
+            for (let x = 5; x < 8; x++) m[10][x] = 19;
+            for (let x = 10; x < 13; x++) m[8][x] = 19;
+            for (let x = 20; x < 23; x++) m[10][x] = 19;
+            for (let x = 26; x < 30; x++) m[7][x] = 19;
+            for (let x = 32; x < 35; x++) m[9][x] = 19;
+            for (let x = 38; x < 41; x++) m[11][x] = 19;
+            for (let x = 50; x < 53; x++) m[9][x] = 19;
+            for (let x = 56; x < 59; x++) m[7][x] = 19;
+            for (let x = 60; x < 63; x++) m[10][x] = 19;
+            for (let x = 68; x < 71; x++) m[10][x] = 19;
+            for (let x = 73; x < 76; x++) m[8][x] = 19;
+            // Pipe columns
+            for (let y = 2; y < 14; y++) { m[y][30] = 28; m[y][53] = 28; m[y][65] = 28; }
+            // Walls and ceiling
+            for (let y = 0; y < 16; y++) { m[y][0] = 10; m[y][79] = 10; }
+            for (let x = 0; x < 80; x++) { m[0][x] = 10; m[1][x] = 10; }
+            return m;
+        },
+        collectibles: [
+            {x:6,y:8},{x:11,y:6},{x:16,y:10},{x:21,y:8},{x:27,y:5},
+            {x:33,y:7},{x:39,y:9},{x:45,y:9},{x:51,y:7},{x:57,y:5},
+            {x:61,y:8},{x:69,y:8},{x:74,y:6}
+        ],
+        hazards: [
+            {x:11,y:13,type:'spike'},{x:12,y:13,type:'spike'},
+            {x:23,y:13,type:'spike'},{x:24,y:13,type:'spike'},{x:25,y:13,type:'spike'},
+            {x:36,y:13,type:'spike'},{x:37,y:13,type:'spike'},{x:38,y:13,type:'spike'},{x:39,y:13,type:'spike'},
+            {x:56,y:13,type:'spike'},{x:57,y:13,type:'spike'},{x:58,y:13,type:'spike'},{x:59,y:13,type:'spike'},
+            {x:69,y:13,type:'spike'},{x:70,y:13,type:'spike'},{x:71,y:13,type:'spike'},
+        ],
+        enemies: [
+            {x:8,y:13,type:'patrol',range:3},
+            {x:16,y:11,type:'patrol',range:2},
+            {x:28,y:13,type:'patrol',range:4},
+            {x:34,y:13,type:'patrol',range:3},
+            {x:45,y:10,type:'patrol',range:3},
+            {x:62,y:13,type:'patrol',range:4},
+            {x:75,y:13,type:'patrol',range:3},
+        ],
+    }
+];
+
+// Phaser game configuration
+const config = {
+    type: Phaser.AUTO,
+    parent: 'game-container',
+    width: GAME_W,
+    height: GAME_H,
+    pixelArt: true,
+    roundPixels: true,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 800 },
+            debug: false
+        }
+    },
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    scene: [BootScene, MenuScene, GameScene, WinScene],
+    backgroundColor: '#0c0e14',
+};
+
+// ===== BOOT SCENE =====
+function BootScene() { Phaser.Scene.call(this, 'Boot'); }
+BootScene.prototype = Object.create(Phaser.Scene.prototype);
+BootScene.prototype.constructor = BootScene;
+
+BootScene.prototype.preload = function() {
+    // Loading bar
+    const w = this.cameras.main.width;
+    const h = this.cameras.main.height;
+    const bar = this.add.graphics();
+    this.load.on('progress', function(val) {
+        bar.clear();
+        bar.fillStyle(0x334466, 1);
+        bar.fillRect(w/2 - 100, h/2, 200 * val, 16);
+        bar.lineStyle(1, 0x556688);
+        bar.strokeRect(w/2 - 100, h/2, 200, 16);
+    });
+    this.add.text(w/2, h/2 - 20, 'LOADING...', { fontFamily: 'monospace', fontSize: '12px', color: '#556688' }).setOrigin(0.5);
+
+    // Load assets
+    this.load.image('tiles', 'game-assets/industrial-tiles.png');
+    this.load.image('bg1', 'game-assets/bg-layer-1.png');
+    this.load.image('bg2', 'game-assets/bg-layer-2.png');
+    this.load.image('bg3', 'game-assets/bg-layer-3.png');
+    this.load.image('bg4', 'game-assets/bg-layer-4.png');
+    this.load.image('bg5', 'game-assets/bg-layer-5.png');
+    this.load.spritesheet('robot-idle', 'game-assets/robot-idle.png', { frameWidth: 64, frameHeight: 64 });
+    this.load.spritesheet('robot-walk', 'game-assets/robot-walk.png', { frameWidth: 64, frameHeight: 64 });
+    this.load.spritesheet('robot-jump', 'game-assets/robot-jump.png', { frameWidth: 64, frameHeight: 64 });
+};
+
+BootScene.prototype.create = function() {
+    // Create animations
+    this.anims.create({ key: 'idle', frames: this.anims.generateFrameNumbers('robot-idle', { start: 0, end: 4 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'walk', frames: this.anims.generateFrameNumbers('robot-walk', { start: 0, end: 4 }), frameRate: 10, repeat: -1 });
+    this.anims.create({ key: 'jump', frames: this.anims.generateFrameNumbers('robot-jump', { start: 0, end: 3 }), frameRate: 8, repeat: 0 });
+
+    this.scene.start('Menu');
+};
+
+// ===== MENU SCENE =====
+function MenuScene() { Phaser.Scene.call(this, 'Menu'); }
+MenuScene.prototype = Object.create(Phaser.Scene.prototype);
+MenuScene.prototype.constructor = MenuScene;
+
+MenuScene.prototype.create = function() {
+    const cx = GAME_W / 2;
+    const cy = GAME_H / 2;
+
+    // Background
+    this.cameras.main.setBackgroundColor('#0c0e14');
+
+    // Parallax background
+    this.add.image(cx, cy, 'bg1').setScrollFactor(0).setScale(1.2).setAlpha(0.3);
+
+    // Title
+    this.add.text(cx, cy - 80, 'UNDERVOLT', {
+        fontFamily: 'monospace', fontSize: '36px', color: '#ff9944',
+        shadow: { offsetX: 0, offsetY: 0, color: '#ff6600', blur: 20, fill: true }
+    }).setOrigin(0.5);
+
+    this.add.text(cx, cy - 50, 'INDUSTRIAL PLATFORMER', {
+        fontFamily: 'monospace', fontSize: '10px', color: '#665533', letterSpacing: 4
+    }).setOrigin(0.5);
+
+    // Instructions
+    this.add.text(cx, cy + 10, 'Arrow keys / WASD to move\nSpace to jump\nCollect all voltage cells to power the exit', {
+        fontFamily: 'monospace', fontSize: '11px', color: '#556644', align: 'center', lineSpacing: 6
+    }).setOrigin(0.5);
+
+    // Start prompt
+    const start = this.add.text(cx, cy + 80, '[ PRESS SPACE OR TAP TO START ]', {
+        fontFamily: 'monospace', fontSize: '13px', color: '#ff9944'
+    }).setOrigin(0.5);
+
+    this.tweens.add({ targets: start, alpha: 0.3, duration: 800, yoyo: true, repeat: -1 });
+
+    // Level select info
+    this.add.text(cx, cy + 120, '3 SECTORS  |  REAL SPRITE ART  |  TOUCH CONTROLS', {
+        fontFamily: 'monospace', fontSize: '8px', color: '#333344'
+    }).setOrigin(0.5);
+
+    // Input
+    this.input.keyboard.once('keydown-SPACE', () => this.scene.start('Game', { level: 0 }));
+    this.input.once('pointerdown', () => this.scene.start('Game', { level: 0 }));
+};
+
+// ===== GAME SCENE =====
+function GameScene() { Phaser.Scene.call(this, 'Game'); }
+GameScene.prototype = Object.create(Phaser.Scene.prototype);
+GameScene.prototype.constructor = GameScene;
+
+GameScene.prototype.init = function(data) {
+    this.currentLevel = data.level || 0;
+    this.collected = 0;
+    this.deaths = 0;
+    this.totalCollected = data.totalCollected || 0;
+    this.totalDeaths = data.totalDeaths || 0;
+    this.startTime = data.startTime || Date.now();
+};
+
+GameScene.prototype.create = function() {
+    const lvl = LEVELS[this.currentLevel];
+    const map = lvl.generate();
+    const worldW = lvl.width * TILE;
+    const worldH = lvl.height * TILE;
+
+    this.physics.world.setBounds(0, 0, worldW, worldH);
+
+    // Parallax background layers
+    this.bg1 = this.add.tileSprite(0, 0, GAME_W, GAME_H, 'bg1').setOrigin(0).setScrollFactor(0).setAlpha(0.4).setTint(0x667788);
+    this.bg2 = this.add.tileSprite(0, 0, GAME_W, GAME_H, 'bg2').setOrigin(0).setScrollFactor(0).setAlpha(0.3).setTint(0x556677);
+    this.bg3 = this.add.tileSprite(0, 0, GAME_W, GAME_H, 'bg3').setOrigin(0).setScrollFactor(0).setAlpha(0.25).setTint(0x445566);
+
+    // Create tile groups
+    this.platforms = this.physics.add.staticGroup();
+    this.spikes = this.physics.add.staticGroup();
+
+    // Create tilemap from generated data
+    const tileImg = this.textures.get('tiles');
+    const tilesPerRow = 9;
+
+    for (let y = 0; y < lvl.height; y++) {
+        for (let x = 0; x < lvl.width; x++) {
+            const t = map[y][x];
+            if (t === 0) continue;
+
+            // Calculate source position in tileset
+            const srcX = (t % tilesPerRow) * TILE;
+            const srcY = Math.floor(t / tilesPerRow) * TILE;
+
+            // Create a textured tile
+            const tile = this.add.image(x * TILE + TILE/2, y * TILE + TILE/2, 'tiles')
+                .setCrop(srcX, srcY, TILE, TILE)
+                .setDisplaySize(TILE, TILE);
+
+            // Workaround: use rectangles for collision since cropped images are tricky
+            if (t === 1 || t === 10 || t === 19 || t === 28) {
+                const plat = this.platforms.create(x * TILE + TILE/2, y * TILE + TILE/2);
+                plat.setSize(TILE, TILE).setVisible(false).refreshBody();
+            }
+        }
+    }
+
+    // Draw tiles using graphics for reliable visuals
+    this.drawTileGraphics(map, lvl);
+
+    // Collectibles (voltage cells)
+    this.collectibles = this.physics.add.group();
+    this.totalCollectibles = lvl.collectibles.length;
+    for (const c of lvl.collectibles) {
+        const cell = this.collectibles.create(c.x * TILE + TILE/2, c.y * TILE + TILE/2);
+        cell.setSize(16, 16).setBounceY(0.3).setGravityY(-800);
+        cell.body.setAllowGravity(false);
+    }
+
+    // Hazards (spikes)
+    for (const h of lvl.hazards) {
+        const spike = this.spikes.create(h.x * TILE + TILE/2, h.y * TILE + TILE/2);
+        spike.setSize(TILE, 12).setOffset(0, 10).refreshBody().setVisible(false);
+    }
+
+    // Enemies
+    this.enemies = this.physics.add.group();
+    for (const e of lvl.enemies) {
+        const enemy = this.enemies.create(e.x * TILE + TILE/2, e.y * TILE + TILE/2);
+        enemy.setSize(24, 24).setBounce(0).setGravityY(0).setCollideWorldBounds(true);
+        enemy.body.setAllowGravity(true);
+        enemy.setData('startX', e.x * TILE + TILE/2);
+        enemy.setData('range', e.range * TILE);
+        enemy.setData('dir', 1);
+        enemy.setData('speed', 60);
+    }
+
+    // Exit
+    this.exitZone = this.add.zone(lvl.exit.x * TILE + TILE/2, lvl.exit.y * TILE + TILE/2, TILE, TILE * 2);
+    this.physics.add.existing(this.exitZone, true);
+    this.exitActive = false;
+
+    // Player
+    this.player = this.physics.add.sprite(lvl.spawn.x * TILE + TILE/2, lvl.spawn.y * TILE + TILE/2, 'robot-idle');
+    this.player.setSize(28, 48).setOffset(18, 12);
+    this.player.setCollideWorldBounds(true);
+    this.player.setBounce(0);
+    this.player.play('idle');
+
+    // Collisions
+    this.physics.add.collider(this.player, this.platforms);
+    this.physics.add.collider(this.enemies, this.platforms);
+    this.physics.add.overlap(this.player, this.collectibles, this.collectCell, null, this);
+    this.physics.add.overlap(this.player, this.spikes, this.hitHazard, null, this);
+    this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this);
+    this.physics.add.overlap(this.player, this.exitZone, this.reachExit, null, this);
+
+    // Camera
+    this.cameras.main.setBounds(0, 0, worldW, worldH);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+
+    // Input
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.wasd = {
+        up: this.input.keyboard.addKey('W'),
+        left: this.input.keyboard.addKey('A'),
+        right: this.input.keyboard.addKey('D'),
+    };
+    this.jumpKey = this.input.keyboard.addKey('SPACE');
+
+    // Touch controls
+    this.touchLeft = false;
+    this.touchRight = false;
+    this.touchJump = false;
+
+    if ('ontouchstart' in window) {
+        this.setupTouchControls();
+    }
+
+    // HUD
+    this.hudText = this.add.text(8, 8, '', {
+        fontFamily: 'monospace', fontSize: '10px', color: '#99aa77'
+    }).setScrollFactor(0).setDepth(100);
+
+    this.sectorText = this.add.text(GAME_W/2, 8, lvl.name, {
+        fontFamily: 'monospace', fontSize: '9px', color: '#555566'
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
+
+    // Sector entrance animation
+    const overlay = this.add.rectangle(GAME_W/2, GAME_H/2, GAME_W, GAME_H, 0x000000).setScrollFactor(0).setDepth(200);
+    this.tweens.add({ targets: overlay, alpha: 0, duration: 1000, onComplete: () => overlay.destroy() });
+
+    const sectorFlash = this.add.text(GAME_W/2, GAME_H/2, lvl.name, {
+        fontFamily: 'monospace', fontSize: '16px', color: '#ff9944'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+    this.tweens.add({ targets: sectorFlash, alpha: 0, y: GAME_H/2 - 20, duration: 2000, delay: 500, onComplete: () => sectorFlash.destroy() });
+
+    this.invincible = false;
+    this.dead = false;
+
+    // Particle emitter for collectibles
+    this.collectParticles = this.add.particles(0, 0, null, {
+        speed: { min: 50, max: 150 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 0.4, end: 0 },
+        lifespan: 400,
+        emitting: false,
+    });
+};
+
+GameScene.prototype.drawTileGraphics = function(map, lvl) {
+    const g = this.add.graphics();
+
+    for (let y = 0; y < lvl.height; y++) {
+        for (let x = 0; x < lvl.width; x++) {
+            const t = map[y][x];
+            if (t === 0) continue;
+            const px = x * TILE, py = y * TILE;
+            const hash = (x * 7 + y * 13) & 0xFF;
+
+            if (t === 1) { // Ground surface
+                g.fillStyle(0x3a3228);
+                g.fillRect(px, py, TILE, TILE);
+                g.fillStyle(0x4a4238);
+                g.fillRect(px, py, TILE, 2); // Highlight
+                // Metal plate detail
+                g.fillStyle(0x2a2620);
+                g.fillRect(px + 1, py + 4, TILE - 2, TILE - 5);
+                // Rivets
+                if (hash % 3 === 0) {
+                    g.fillStyle(0x6a6258);
+                    g.fillRect(px + 2, py + 2, 2, 2);
+                    g.fillRect(px + TILE - 4, py + 2, 2, 2);
+                }
+                // Hazard stripe on top
+                for (let sx = 0; sx < TILE; sx += 6) {
+                    g.fillStyle(0xccaa00);
+                    g.fillRect(px + sx, py, 3, 2);
+                    g.fillStyle(0x1a1410);
+                    g.fillRect(px + sx + 3, py, 3, 2);
+                }
+            }
+            else if (t === 10) { // Wall/fill
+                g.fillStyle(0x1e1a14);
+                g.fillRect(px, py, TILE, TILE);
+                // Brick pattern
+                for (let by = 0; by < TILE; by += 8) {
+                    const off = (by % 16 === 0) ? 0 : 8;
+                    for (let bx = off; bx < TILE; bx += 16) {
+                        g.fillStyle(hash % 5 === 0 ? 0x2a2218 : 0x252018);
+                        g.fillRect(px + bx, py + by, 14, 6);
+                    }
+                }
+                // Mortar lines
+                g.fillStyle(0x141210);
+                for (let by = 7; by < TILE; by += 8) g.fillRect(px, py + by, TILE, 1);
+                // Rust stain
+                if (hash % 9 === 0) {
+                    g.fillStyle(0x5a2a10);
+                    g.fillRect(px + (hash % 20), py + (hash % 12), 3, 4);
+                }
+            }
+            else if (t === 19) { // Platform
+                g.fillStyle(0x4a5040);
+                g.fillRect(px, py, TILE, 8);
+                g.fillStyle(0x5a6050);
+                g.fillRect(px, py, TILE, 2);
+                g.fillStyle(0x3a4030);
+                g.fillRect(px, py + 6, TILE, 2);
+                // Support beam
+                g.fillStyle(0x3a3830);
+                g.fillRect(px + 4, py + 8, 4, TILE - 8);
+                g.fillRect(px + TILE - 8, py + 8, 4, TILE - 8);
+                // Grate holes
+                for (let gx = 2; gx < TILE - 2; gx += 5) {
+                    g.fillStyle(0x0c0e14);
+                    g.fillRect(px + gx, py + 2, 3, 2);
+                }
+            }
+            else if (t === 28) { // Pipe
+                g.fillStyle(0x445544);
+                g.fillRect(px + 10, py, 12, TILE);
+                g.fillStyle(0x556655);
+                g.fillRect(px + 10, py, 3, TILE);
+                g.fillStyle(0x334433);
+                g.fillRect(px + 19, py, 3, TILE);
+                // Joint
+                if (y % 3 === 0) {
+                    g.fillStyle(0x667766);
+                    g.fillRect(px + 8, py + 4, 16, 6);
+                    g.fillStyle(0x778877);
+                    g.fillRect(px + 9, py + 5, 1, 1);
+                    g.fillRect(px + 22, py + 5, 1, 1);
+                }
+            }
+        }
+    }
+
+    // Draw hazards (spikes)
+    const lvlData = LEVELS[this.currentLevel];
+    for (const h of lvlData.hazards) {
+        const px = h.x * TILE, py = h.y * TILE;
+        for (let sx = 0; sx < TILE; sx += 8) {
+            g.fillStyle(0xcc4444);
+            g.beginPath();
+            g.moveTo(px + sx, py + TILE);
+            g.lineTo(px + sx + 4, py + 4);
+            g.lineTo(px + sx + 8, py + TILE);
+            g.closePath();
+            g.fill();
+            g.fillStyle(0xff6644);
+            g.fillRect(px + sx + 3, py + 8, 2, 2);
+        }
+    }
+
+    // Draw collectibles
+    this.cellGraphics = this.add.graphics();
+
+    // Draw exit
+    const ex = lvlData.exit;
+    g.fillStyle(0x222233);
+    g.fillRect(ex.x * TILE - 4, (ex.y - 1) * TILE, TILE + 8, TILE * 2);
+    g.fillStyle(0x334444);
+    g.fillRect(ex.x * TILE, (ex.y - 1) * TILE + 4, TILE, TILE * 2 - 8);
+    // Door frame
+    g.lineStyle(2, 0x557755);
+    g.strokeRect(ex.x * TILE - 2, (ex.y - 1) * TILE + 2, TILE + 4, TILE * 2 - 4);
+};
+
+GameScene.prototype.setupTouchControls = function() {
+    const zone = this.add.zone(0, 0, GAME_W, GAME_H).setOrigin(0).setScrollFactor(0).setDepth(50).setInteractive();
+
+    // Left third = move left, right third = move right, tap upper half = jump
+    this.input.on('pointerdown', (pointer) => {
+        const rx = pointer.x / GAME_W;
+        const ry = pointer.y / GAME_H;
+        if (ry < 0.5) this.touchJump = true;
+        if (rx < 0.33) this.touchLeft = true;
+        else if (rx > 0.66) this.touchRight = true;
+    });
+    this.input.on('pointermove', (pointer) => {
+        if (!pointer.isDown) return;
+        const rx = pointer.x / GAME_W;
+        this.touchLeft = rx < 0.33;
+        this.touchRight = rx > 0.66;
+    });
+    this.input.on('pointerup', () => {
+        this.touchLeft = false;
+        this.touchRight = false;
+        this.touchJump = false;
+    });
+
+    // Touch zone indicators
+    this.add.text(40, GAME_H - 16, '\u25C0 LEFT', { fontFamily: 'monospace', fontSize: '8px', color: '#333344' }).setScrollFactor(0).setDepth(99).setAlpha(0.5);
+    this.add.text(GAME_W - 60, GAME_H - 16, 'RIGHT \u25B6', { fontFamily: 'monospace', fontSize: '8px', color: '#333344' }).setScrollFactor(0).setDepth(99).setAlpha(0.5);
+    this.add.text(GAME_W/2, 20, '\u25B2 JUMP', { fontFamily: 'monospace', fontSize: '8px', color: '#333344' }).setOrigin(0.5).setScrollFactor(0).setDepth(99).setAlpha(0.5);
+};
+
+GameScene.prototype.collectCell = function(player, cell) {
+    cell.destroy();
+    this.collected++;
+    this.totalCollected++;
+
+    // Screen flash
+    this.cameras.main.flash(100, 100, 200, 50);
+
+    // Check if all collected
+    if (this.collected >= this.totalCollectibles) {
+        this.exitActive = true;
+        // Flash exit
+        this.cameras.main.flash(200, 50, 150, 50);
+    }
+
+    this.updateHUD();
+};
+
+GameScene.prototype.hitHazard = function(player, hazard) {
+    if (this.invincible || this.dead) return;
+    this.die();
+};
+
+GameScene.prototype.hitEnemy = function(player, enemy) {
+    if (this.invincible || this.dead) return;
+    // Check if stomping (falling on top)
+    if (player.body.velocity.y > 0 && player.y < enemy.y - 10) {
+        enemy.destroy();
+        player.setVelocityY(-300);
+        this.cameras.main.shake(100, 0.01);
+    } else {
+        this.die();
+    }
+};
+
+GameScene.prototype.reachExit = function() {
+    if (!this.exitActive || this.dead) return;
+
+    // Next level or win
+    if (this.currentLevel < LEVELS.length - 1) {
+        this.cameras.main.fade(500, 0, 0, 0, false, (cam, progress) => {
+            if (progress >= 1) {
+                this.scene.restart({
+                    level: this.currentLevel + 1,
+                    totalCollected: this.totalCollected,
+                    totalDeaths: this.totalDeaths + this.deaths,
+                    startTime: this.startTime
+                });
+            }
+        });
+    } else {
+        // Game complete!
+        const elapsed = ((Date.now() - this.startTime) / 1000) | 0;
+        this.scene.start('Win', {
+            totalCollected: this.totalCollected,
+            totalDeaths: this.totalDeaths + this.deaths,
+            time: elapsed
+        });
+    }
+};
+
+GameScene.prototype.die = function() {
+    if (this.dead) return;
+    this.dead = true;
+    this.deaths++;
+    this.totalDeaths++;
+
+    this.player.setTint(0xff0000);
+    this.player.setVelocity(0, -200);
+    this.cameras.main.shake(200, 0.02);
+
+    this.time.delayedCall(800, () => {
+        this.scene.restart({
+            level: this.currentLevel,
+            totalCollected: this.totalCollected - this.collected,
+            totalDeaths: this.totalDeaths,
+            startTime: this.startTime
+        });
+    });
+};
+
+GameScene.prototype.updateHUD = function() {
+    const cells = `CELLS: ${this.collected}/${this.totalCollectibles}`;
+    const status = this.exitActive ? '  EXIT OPEN' : '';
+    this.hudText.setText(`${cells}${status}`);
+    if (this.exitActive) this.hudText.setColor('#ffaa44');
+};
+
+GameScene.prototype.update = function() {
+    if (this.dead) return;
+
+    const player = this.player;
+    const onGround = player.body.touching.down || player.body.blocked.down;
+    const speed = 200;
+
+    // Movement
+    const left = this.cursors.left.isDown || this.wasd.left.isDown || this.touchLeft;
+    const right = this.cursors.right.isDown || this.wasd.right.isDown || this.touchRight;
+    const jumpPressed = Phaser.Input.Keyboard.JustDown(this.jumpKey) || Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.wasd.up) || this.touchJump;
+
+    if (left) {
+        player.setVelocityX(-speed);
+        player.setFlipX(true);
+        if (onGround) player.play('walk', true);
+    } else if (right) {
+        player.setVelocityX(speed);
+        player.setFlipX(false);
+        if (onGround) player.play('walk', true);
+    } else {
+        player.setVelocityX(0);
+        if (onGround) player.play('idle', true);
+    }
+
+    // Jump
+    if (jumpPressed && onGround) {
+        player.setVelocityY(-420);
+        player.play('jump', true);
+        this.touchJump = false;
+    }
+
+    // Airborne animation
+    if (!onGround) {
+        if (player.body.velocity.y < 0) player.play('jump', true);
+    }
+
+    // Fall death
+    if (player.y > (LEVELS[this.currentLevel].height) * TILE + 32) {
+        this.die();
+    }
+
+    // Update enemy patrol
+    this.enemies.children.iterate(enemy => {
+        if (!enemy || !enemy.active) return;
+        const startX = enemy.getData('startX');
+        const range = enemy.getData('range');
+        const dir = enemy.getData('dir');
+        const spd = enemy.getData('speed');
+
+        enemy.setVelocityX(spd * dir);
+
+        if (enemy.x > startX + range) enemy.setData('dir', -1);
+        else if (enemy.x < startX - range) enemy.setData('dir', 1);
+    });
+
+    // Parallax
+    const cam = this.cameras.main;
+    if (this.bg1) this.bg1.tilePositionX = cam.scrollX * 0.1;
+    if (this.bg2) this.bg2.tilePositionX = cam.scrollX * 0.2;
+    if (this.bg3) this.bg3.tilePositionX = cam.scrollX * 0.3;
+
+    // Draw animated elements
+    this.drawAnimatedElements();
+
+    // Update HUD
+    this.updateHUD();
+};
+
+GameScene.prototype.drawAnimatedElements = function() {
+    if (!this.cellGraphics) return;
+    this.cellGraphics.clear();
+    const t = this.time.now;
+
+    // Draw collectible cells (animated glow)
+    this.collectibles.children.iterate(cell => {
+        if (!cell || !cell.active) return;
+        const cx = cell.x, cy = cell.y;
+        const pulse = (Math.sin(t * 0.005) + 1) * 0.5;
+
+        // Glow
+        this.cellGraphics.fillStyle(0x44ff44, 0.1 + pulse * 0.1);
+        this.cellGraphics.fillCircle(cx, cy, 12 + pulse * 4);
+
+        // Cell body
+        this.cellGraphics.fillStyle(0x22aa22);
+        this.cellGraphics.fillRect(cx - 6, cy - 8, 12, 16);
+        this.cellGraphics.fillStyle(0x44dd44);
+        this.cellGraphics.fillRect(cx - 4, cy - 6, 8, 12);
+
+        // Lightning bolt shape
+        this.cellGraphics.fillStyle(0xaaffaa);
+        this.cellGraphics.fillRect(cx - 1, cy - 4, 4, 3);
+        this.cellGraphics.fillRect(cx - 2, cy - 1, 4, 3);
+        this.cellGraphics.fillRect(cx - 1, cy + 2, 4, 3);
+    });
+
+    // Draw enemies (red robots)
+    this.enemies.children.iterate(enemy => {
+        if (!enemy || !enemy.active) return;
+        const ex = enemy.x, ey = enemy.y;
+        const dir = enemy.getData('dir');
+        const bob = Math.sin(t * 0.008 + ex) * 2;
+
+        // Body
+        this.cellGraphics.fillStyle(0x882222);
+        this.cellGraphics.fillRect(ex - 10, ey - 12 + bob, 20, 24);
+        this.cellGraphics.fillStyle(0xaa3333);
+        this.cellGraphics.fillRect(ex - 8, ey - 10 + bob, 16, 20);
+
+        // Eyes
+        this.cellGraphics.fillStyle(0xff4444);
+        this.cellGraphics.fillRect(ex - 5, ey - 6 + bob, 4, 4);
+        this.cellGraphics.fillRect(ex + 2, ey - 6 + bob, 4, 4);
+
+        // Glow
+        const glow = (Math.sin(t * 0.01) + 1) * 0.3;
+        this.cellGraphics.fillStyle(0xff0000, 0.05 + glow * 0.05);
+        this.cellGraphics.fillCircle(ex, ey + bob, 16);
+    });
+
+    // Draw exit
+    const lvl = LEVELS[this.currentLevel];
+    const ex = lvl.exit.x * TILE + TILE/2;
+    const ey = lvl.exit.y * TILE;
+    if (this.exitActive) {
+        const pulse = (Math.sin(t * 0.006) + 1) * 0.5;
+        this.cellGraphics.fillStyle(0x44aa44, 0.2 + pulse * 0.15);
+        this.cellGraphics.fillCircle(ex, ey, 20 + pulse * 8);
+        this.cellGraphics.fillStyle(0x88ff88);
+        this.cellGraphics.fillRect(ex - 2, ey - 16, 4, 32);
+        this.cellGraphics.fillRect(ex - 8, ey - 2, 16, 4);
+    } else {
+        this.cellGraphics.fillStyle(0x333344);
+        this.cellGraphics.fillRect(ex - 2, ey - 12, 4, 24);
+        this.cellGraphics.fillRect(ex - 8, ey - 2, 16, 4);
+    }
+};
+
+// ===== WIN SCENE =====
+function WinScene() { Phaser.Scene.call(this, 'Win'); }
+WinScene.prototype = Object.create(Phaser.Scene.prototype);
+WinScene.prototype.constructor = WinScene;
+
+WinScene.prototype.init = function(data) {
+    this.stats = data;
+};
+
+WinScene.prototype.create = function() {
+    const cx = GAME_W / 2;
+    const cy = GAME_H / 2;
+
+    this.cameras.main.setBackgroundColor('#0c0e14');
+    this.add.image(cx, cy, 'bg1').setScrollFactor(0).setScale(1.2).setAlpha(0.2);
+
+    this.add.text(cx, cy - 80, 'UNDERVOLT COMPLETE', {
+        fontFamily: 'monospace', fontSize: '22px', color: '#ff9944',
+        shadow: { offsetX: 0, offsetY: 0, color: '#ff6600', blur: 15, fill: true }
+    }).setOrigin(0.5);
+
+    const mins = Math.floor(this.stats.time / 60);
+    const secs = this.stats.time % 60;
+
+    this.add.text(cx, cy - 30, [
+        `Time: ${mins}:${secs.toString().padStart(2, '0')}`,
+        `Cells collected: ${this.stats.totalCollected}`,
+        `Deaths: ${this.stats.totalDeaths}`,
+    ].join('\n'), {
+        fontFamily: 'monospace', fontSize: '12px', color: '#88aa66', align: 'center', lineSpacing: 8
+    }).setOrigin(0.5);
+
+    // Rating
+    const rating = this.stats.totalDeaths === 0 ? 'PERFECT — S RANK' :
+                   this.stats.totalDeaths <= 3 ? 'EXCELLENT — A RANK' :
+                   this.stats.totalDeaths <= 8 ? 'GOOD — B RANK' : 'COMPLETE — C RANK';
+
+    this.add.text(cx, cy + 30, rating, {
+        fontFamily: 'monospace', fontSize: '14px', color: '#ffcc44'
+    }).setOrigin(0.5);
+
+    this.add.text(cx, cy + 80, 'All three sectors cleared.\nThe reactor core is stable.', {
+        fontFamily: 'monospace', fontSize: '10px', color: '#556644', align: 'center', lineSpacing: 4
+    }).setOrigin(0.5);
+
+    const restart = this.add.text(cx, cy + 130, '[ SPACE OR TAP TO PLAY AGAIN ]', {
+        fontFamily: 'monospace', fontSize: '11px', color: '#ff9944'
+    }).setOrigin(0.5);
+    this.tweens.add({ targets: restart, alpha: 0.3, duration: 800, yoyo: true, repeat: -1 });
+
+    this.input.keyboard.once('keydown-SPACE', () => this.scene.start('Menu'));
+    this.input.once('pointerdown', () => this.scene.start('Menu'));
+};
+
+// Start the game
+const game = new Phaser.Game(config);
+</script>
+</body>
+</html>
