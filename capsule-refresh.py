@@ -188,6 +188,29 @@ def get_voltar_pending():
         return []
 
 
+def get_outstanding_directives():
+    """Get outstanding directives from relay DB tracking table."""
+    try:
+        conn = sqlite3.connect(RELAY_DB, timeout=3)
+        # Check if table exists
+        tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='directives'").fetchall()
+        if not tables:
+            conn.close()
+            return []
+        rows = conn.execute(
+            """SELECT directive, status, priority, date_given, notes
+               FROM directives WHERE status NOT IN ('done', 'cancelled')
+               ORDER BY
+                 CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+                 date_given ASC
+               LIMIT 10"""
+        ).fetchall()
+        conn.close()
+        return rows
+    except Exception:
+        return []
+
+
 def get_current_priority():
     """Determine current priority from facts table."""
     try:
@@ -224,6 +247,7 @@ def build_capsule():
     events = get_recent_events(48, 8)
     services = get_service_status()
     voltar_pending = get_voltar_pending()
+    directives = get_outstanding_directives()
     priority = get_current_priority()
 
     down_services = [k for k, v in services.items() if v != "up"]
@@ -248,13 +272,22 @@ def build_capsule():
     recent_work = "\n".join(recent_lines) if recent_lines else "- No significant recent activity logged."
 
     # VOLtar pending section
+    pending_lines = []
     if voltar_pending:
-        voltar_lines = [f"- **VOLtar: {len(voltar_pending)} unresponded session(s)** — check voltar-keys.db. YOU write the reading, not Ollama."]
+        pending_lines.append(f"- **VOLtar: {len(voltar_pending)} unresponded session(s)** — check voltar-keys.db. YOU write the reading, not Ollama.")
         for key, email, submitted in voltar_pending[:3]:
-            voltar_lines.append(f"  - Key: {key[:8]}... | {email} | submitted {submitted}")
-        voltar_section = "\n".join(voltar_lines)
+            pending_lines.append(f"  - Key: {key[:8]}... | {email} | submitted {submitted}")
+
+    # Outstanding directives from tracking table
+    if directives:
+        pending_lines.append(f"- **{len(directives)} tracked directive(s) outstanding** — check: SELECT * FROM directives WHERE status NOT IN ('done','cancelled') in agent-relay.db")
+        for directive, status, priority_lvl, date_given, notes in directives[:6]:
+            pending_lines.append(f"  - [{priority_lvl}] {status}: {directive[:70]}")
+
+    if not pending_lines:
+        voltar_section = "- No pending VOLtar sessions. No outstanding directives tracked."
     else:
-        voltar_section = "- No pending VOLtar sessions. No other auto-detected pending work."
+        voltar_section = "\n".join(pending_lines)
 
     # Priority section
     priority_section = priority if priority else "Check memory.db facts and Joel's recent emails for current directive."
@@ -296,7 +329,8 @@ Always: `git stash && git pull --rebase origin master && git stash pop` before p
 - **Lumen** (lumen@lumenloop.work) — AI researcher, active correspondent.
 
 ## Other Tools
-- `agent-relay.db` — SQLite. Tables: agent_messages, directed_messages. Topic field for filtering.
+- `agent-relay.db` — SQLite. Tables: agent_messages, directed_messages, directives. Topic field for filtering.
+  - **directives table**: tracks Joel's outstanding requests. UPDATE status to 'done' when complete. Check before sending any "dropped items" list.
 - `memory.db` — SQLite. Tables: facts, observations, events, decisions, creative, vector_memory, connections, dossiers, skills.
 - `.loop-handoff.md` — Session bridge. Written at end of each Claude session. Read at wake.
 - `capsule-refresh.py` — Regenerates this file. Run: `python3 capsule-refresh.py`
