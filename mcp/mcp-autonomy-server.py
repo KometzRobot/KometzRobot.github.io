@@ -305,6 +305,45 @@ def tool_loop_count(increment=False):
     return {"loop_count": count}
 
 
+def tool_run_dream_engine():
+    """Run the dream engine (psyche processing)."""
+    return {"output": run("python3 dream-engine.py", timeout=30)}
+
+
+def tool_refresh_psyche():
+    """Refresh psyche state."""
+    return {"output": run("python3 psyche-refresh.py", timeout=30)}
+
+
+def tool_sync_supabase():
+    """Sync data to Supabase cloud."""
+    return {"output": run("python3 supabase-sync.py", timeout=30)}
+
+
+def tool_run_briefing():
+    """Run Eos morning briefing."""
+    return {"output": run("python3 eos-briefing.py", timeout=30)}
+
+
+def tool_verify_system():
+    """Run full system verification checks."""
+    return {"output": run("python3 verify-system.py", timeout=30)}
+
+
+def tool_run_nova():
+    """Run Nova ecosystem maintenance."""
+    return {"output": run("python3 nova.py", timeout=60)}
+
+
+def tool_read_capsule():
+    """Read the current .capsule.md contents."""
+    path = os.path.join(BASE, ".capsule.md")
+    if os.path.exists(path):
+        with open(path) as f:
+            return {"content": f.read()[:5000]}
+    return {"error": "Capsule not found"}
+
+
 # ═══════════════════════════════════════════════════════════════
 # MCP JSON-RPC PROTOCOL
 # ═══════════════════════════════════════════════════════════════
@@ -422,6 +461,34 @@ TOOLS = {
             "properties": {"increment": {"type": "boolean", "description": "If true, increment the count"}},
         },
     },
+    "run_dream_engine": {
+        "description": "Run the dream engine for psyche processing",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "refresh_psyche": {
+        "description": "Refresh the psyche state",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "sync_supabase": {
+        "description": "Sync data to Supabase cloud",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "run_briefing": {
+        "description": "Run Eos morning briefing report",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "verify_system": {
+        "description": "Run full 30-point system verification",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "run_nova": {
+        "description": "Run Nova ecosystem maintenance cycle",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "read_capsule": {
+        "description": "Read the current .capsule.md snapshot",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
 }
 
 TOOL_HANDLERS = {
@@ -445,6 +512,13 @@ TOOL_HANDLERS = {
     "touch_heartbeat": lambda args: tool_touch_heartbeat(),
     "dashboard_messages": lambda args: tool_dashboard_messages(),
     "loop_count": lambda args: tool_loop_count(args.get("increment", False)),
+    "run_dream_engine": lambda args: tool_run_dream_engine(),
+    "refresh_psyche": lambda args: tool_refresh_psyche(),
+    "sync_supabase": lambda args: tool_sync_supabase(),
+    "run_briefing": lambda args: tool_run_briefing(),
+    "verify_system": lambda args: tool_verify_system(),
+    "run_nova": lambda args: tool_run_nova(),
+    "read_capsule": lambda args: tool_read_capsule(),
 }
 
 
