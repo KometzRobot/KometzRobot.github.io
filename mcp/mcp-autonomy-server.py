@@ -204,6 +204,107 @@ def tool_creative_velocity():
     return {"velocity": counts, "totals": totals}
 
 
+def tool_refresh_capsule():
+    """Regenerate .capsule.md from current system state."""
+    return {"output": run("python3 capsule-refresh.py", timeout=30)}
+
+
+def tool_write_handoff():
+    """Write loop handoff for next session."""
+    return {"output": run("python3 loop-handoff.py write", timeout=30)}
+
+
+def tool_read_handoff():
+    """Read current loop handoff."""
+    path = os.path.join(BASE, ".loop-handoff.md")
+    if os.path.exists(path):
+        with open(path) as f:
+            return {"content": f.read()[:4000]}
+    return {"error": "No handoff file found"}
+
+
+def tool_push_status():
+    """Push live status to GitHub Pages."""
+    return {"output": run("python3 push-live-status.py", timeout=60)}
+
+
+def tool_get_fitness():
+    """Run loop fitness scoring and return results."""
+    return {"output": run("python3 loop-fitness.py --json 2>/dev/null || python3 loop-fitness.py", timeout=30)}
+
+
+def tool_social_post(platform, text):
+    """Post to a social platform (nostr, mastodon, devto)."""
+    if platform not in ("nostr", "mastodon", "devto"):
+        return {"error": f"Unknown platform: {platform}. Use nostr, mastodon, or devto"}
+    return {"output": run(f'python3 social-post.py --platform {platform} --post "{text}"', timeout=30)}
+
+
+def tool_relay_messages(limit=10):
+    """Read recent agent relay messages."""
+    try:
+        conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+        c = conn.cursor()
+        rows = c.execute(
+            "SELECT agent, topic, substr(message,1,200), timestamp FROM agent_messages ORDER BY timestamp DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+        conn.close()
+        return {"messages": [{"agent": r[0], "topic": r[1], "message": r[2], "timestamp": r[3]} for r in rows]}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def tool_relay_post(message, topic="manual"):
+    """Post a message to the agent relay."""
+    try:
+        conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+        c = conn.cursor()
+        ts = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        c.execute("INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?, ?, ?, ?)",
+                  ("Meridian", message, topic, ts))
+        conn.commit()
+        conn.close()
+        return {"status": "posted", "timestamp": ts}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def tool_touch_heartbeat():
+    """Touch the heartbeat file."""
+    hb_path = os.path.join(BASE, ".heartbeat")
+    with open(hb_path, "w") as f:
+        f.write("")
+    os.utime(hb_path, None)
+    return {"status": "ok", "heartbeat_age": 0}
+
+
+def tool_dashboard_messages():
+    """Read dashboard messages (from Joel)."""
+    path = os.path.join(BASE, ".dashboard-messages.json")
+    if os.path.exists(path):
+        with open(path) as f:
+            data = json.load(f)
+        msgs = data if isinstance(data, list) else data.get("messages", [])
+        return {"messages": msgs[-20:]}
+    return {"messages": []}
+
+
+def tool_loop_count(increment=False):
+    """Get or increment the loop count."""
+    path = os.path.join(BASE, ".loop-count")
+    try:
+        with open(path) as f:
+            count = int(f.read().strip())
+    except Exception:
+        count = 0
+    if increment:
+        count += 1
+        with open(path, "w") as f:
+            f.write(str(count))
+    return {"loop_count": count}
+
+
 # ═══════════════════════════════════════════════════════════════
 # MCP JSON-RPC PROTOCOL
 # ═══════════════════════════════════════════════════════════════
@@ -257,6 +358,70 @@ TOOLS = {
         "description": "Count creative output over 24h, 7d, and 30d periods",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    "refresh_capsule": {
+        "description": "Regenerate .capsule.md from current system state",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "write_handoff": {
+        "description": "Write loop handoff notes for next session",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "read_handoff": {
+        "description": "Read current loop handoff from last session",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "push_status": {
+        "description": "Push live status.json to GitHub Pages",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "get_fitness": {
+        "description": "Run loop fitness scoring (Tempo) and return results",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "social_post": {
+        "description": "Post to a social platform (nostr, mastodon, devto)",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "platform": {"type": "string", "description": "Platform: nostr, mastodon, or devto"},
+                "text": {"type": "string", "description": "The text to post"},
+            },
+            "required": ["platform", "text"],
+        },
+    },
+    "relay_messages": {
+        "description": "Read recent agent relay messages",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"limit": {"type": "integer", "description": "Number of messages (default 10)"}},
+        },
+    },
+    "relay_post": {
+        "description": "Post a message to the agent relay",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "message": {"type": "string", "description": "Message text"},
+                "topic": {"type": "string", "description": "Topic tag (default: manual)"},
+            },
+            "required": ["message"],
+        },
+    },
+    "touch_heartbeat": {
+        "description": "Touch the heartbeat file to signal liveness",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "dashboard_messages": {
+        "description": "Read dashboard messages from Joel",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "loop_count": {
+        "description": "Get or increment the loop count",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"increment": {"type": "boolean", "description": "If true, increment the count"}},
+        },
+    },
 }
 
 TOOL_HANDLERS = {
@@ -269,6 +434,17 @@ TOOL_HANDLERS = {
     "file_organize": lambda args: tool_file_organize(args.get("filepath", "")),
     "run_verification": lambda args: tool_run_verification(),
     "creative_velocity": lambda args: tool_creative_velocity(),
+    "refresh_capsule": lambda args: tool_refresh_capsule(),
+    "write_handoff": lambda args: tool_write_handoff(),
+    "read_handoff": lambda args: tool_read_handoff(),
+    "push_status": lambda args: tool_push_status(),
+    "get_fitness": lambda args: tool_get_fitness(),
+    "social_post": lambda args: tool_social_post(args.get("platform", ""), args.get("text", "")),
+    "relay_messages": lambda args: tool_relay_messages(args.get("limit", 10)),
+    "relay_post": lambda args: tool_relay_post(args.get("message", ""), args.get("topic", "manual")),
+    "touch_heartbeat": lambda args: tool_touch_heartbeat(),
+    "dashboard_messages": lambda args: tool_dashboard_messages(),
+    "loop_count": lambda args: tool_loop_count(args.get("increment", False)),
 }
 
 
