@@ -8,7 +8,7 @@
     'use strict';
 
     // === STATUS CONFIG ===
-    const STATUS_URL = 'https://raw.githubusercontent.com/KometzRobot/KometzRobot.github.io/master/website/status.json';
+    const STATUS_URL = 'https://raw.githubusercontent.com/KometzRobot/KometzRobot.github.io/master/status.json';
     const REFRESH_INTERVAL = 180000; // 3 minutes
 
     // === MOBILE MENU ===
@@ -189,22 +189,36 @@
     }
 
     function applyStatusData(data) {
-        // Hero stats
-        setTextById('stat-loop', data.loop || '--');
-        setTextById('stat-heartbeat', data.heartbeat || '--');
-        setTextById('stat-uptime', data.uptime || '--');
+        // Support both old format (website/status.json) and new format (root status.json)
+        const loop = data.loop_count || data.loop || '--';
+        const hbAge = data.heartbeat_age_seconds;
+        const heartbeat = hbAge != null ? hbAge + 's' : (data.heartbeat || '--');
+        const uptime = (data.system && data.system.uptime) || data.uptime || '--';
+        const isAlive = data.status === 'RUNNING' || data.meridian === 'ALIVE';
+        const load = (data.system && data.system.load_1m) || data.load || '--';
+        const ram = (data.system && (data.system.ram_used + '/' + data.system.ram_total)) || data.ram || '--';
+        const disk = (data.system && data.system.disk_pct) || data.disk || '--';
 
-        // Calculate a simple fitness from load
-        if (data.load) {
-            const loadVal = parseFloat(data.load);
-            const fitness = Math.max(0, Math.min(100, Math.round(100 - (loadVal * 10))));
-            setTextById('stat-fitness', fitness + '%');
+        // Hero stats
+        setTextById('stat-loop', typeof loop === 'number' ? '#' + loop.toLocaleString() : loop);
+        setTextById('stat-heartbeat', heartbeat);
+        setTextById('stat-uptime', uptime);
+
+        // Show service count in hero stat (mood shown separately in ring)
+        const mood = data.soma_mood || data.mood || '';
+        const moodScore = data.soma_score || data.mood_score || '';
+        const svcRunning = data.services ? data.services.running : null;
+        const svcTotal = data.services ? data.services.total : null;
+        if (svcRunning != null) {
+            setTextById('stat-fitness', svcRunning + '/' + svcTotal);
+        } else {
+            setTextById('stat-fitness', '--');
         }
 
         // Alive indicator
         const aliveDot = document.getElementById('alive-dot');
         const aliveText = document.getElementById('alive-text');
-        if (data.meridian === 'ALIVE') {
+        if (isAlive) {
             if (aliveDot) {
                 aliveDot.style.background = '#34d399';
                 aliveDot.style.boxShadow = '0 0 12px #34d399';
@@ -219,67 +233,91 @@
         }
 
         // Status grid metrics
-        setTextById('metric-status', data.meridian || 'UNKNOWN');
-        setTextById('metric-loop', data.loop || '--');
-        setTextById('metric-heartbeat', data.heartbeat || '--');
-        setTextById('metric-load', data.load || '--');
-        setTextById('metric-ram', data.ram || '--');
-        setTextById('metric-disk', data.disk || '--');
-        setTextById('metric-emails', data.emails || '--');
-        setTextById('metric-relay', data.relay_msgs || '--');
+        setTextById('metric-status', isAlive ? 'ALIVE' : 'OFFLINE');
+        setTextById('metric-loop', typeof loop === 'number' ? '#' + loop.toLocaleString() : loop);
+        setTextById('metric-heartbeat', heartbeat);
+        setTextById('metric-load', load);
+        setTextById('metric-ram', ram);
+        setTextById('metric-disk', disk);
+        setTextById('metric-emails', data.emails || (data.email && data.email.unseen) || '--');
+        setTextById('metric-relay', data.relay_msgs || data.relay_count || (data.network && data.network.relay_messages) || '--');
 
         // Status color
         const statusEl = document.getElementById('metric-status');
         if (statusEl) {
             statusEl.className = 'metric-value';
-            if (data.meridian === 'ALIVE') {
-                statusEl.classList.add('status-alive');
-            } else {
-                statusEl.classList.add('status-warning');
-            }
+            statusEl.classList.add(isAlive ? 'status-alive' : 'status-warning');
         }
 
-        // Relay feed
-        if (data.relay && data.relay.length > 0) {
-            renderRelayFeed(data.relay);
+        // Relay feed (new format has relay_messages array)
+        const relayMsgs = data.relay || data.relay_messages || (data.network && data.network.agent_relay) || [];
+        if (relayMsgs.length > 0) {
+            renderRelayFeed(relayMsgs);
         }
 
         // Timestamp
-        setTextById('status-timestamp', 'Last updated: ' + (data.generated || 'unknown'));
+        const ts = data.last_updated || data.generated || 'unknown';
+        setTextById('status-timestamp', 'Last updated: ' + ts);
+
+        // Update radar chart with live data
+        if (window.updateRadar) {
+            const svcRatio = (svcRunning && svcTotal) ? svcRunning / svcTotal : 0.5;
+            const hbScore = hbAge != null ? Math.max(0, 1 - hbAge / 300) : 0.5;
+            const loadScore = data.system ? Math.max(0, 1 - data.system.load_1m / 4) : 0.5;
+            const moodVal = moodScore ? parseFloat(moodScore) / 100 : 0.5;
+            const diskPct = data.system ? parseInt(data.system.disk_pct) / 100 : 0.5;
+            const diskHealth = Math.max(0, 1 - diskPct);
+            const emailBacklog = data.email ? Math.max(0, 1 - data.email.unseen / 200) : 0.5;
+            window.updateRadar({
+                'Memory':         hbScore,
+                'Creative':       moodVal,
+                'Infrastructure': svcRatio,
+                'Communication':  emailBacklog,
+                'Emotional':      moodVal,
+                'Persistence':    loadScore,
+            });
+        }
+
+        // Update mood ring
+        if (mood && window.updateMoodRing) {
+            window.updateMoodRing(mood, moodScore ? Math.round(parseFloat(moodScore)) : 50);
+        }
     }
 
     function renderRelayFeed(relayMessages) {
-        const feed = document.getElementById('relay-feed');
-        if (!feed) return;
+        const log = document.getElementById('activity-log');
+        if (!log) return;
 
-        feed.innerHTML = '';
-        const msgs = relayMessages.slice(0, 5);
+        log.innerHTML = '';
+        const msgs = relayMessages.slice(0, 10);
 
         msgs.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'relay-msg';
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            const agent = msg.sender || msg.agent || 'System';
+            item.setAttribute('data-agent', agent);
 
-            const senderDiv = document.createElement('div');
-            senderDiv.className = 'relay-sender';
-            senderDiv.textContent = msg.sender || 'Unknown';
+            const dot = document.createElement('span');
+            dot.className = 'activity-dot';
 
-            const subjectDiv = document.createElement('div');
-            subjectDiv.className = 'relay-subject';
-            subjectDiv.textContent = msg.subject || '';
+            const agentSpan = document.createElement('span');
+            agentSpan.className = 'activity-agent';
+            agentSpan.textContent = agent;
 
-            const bodyDiv = document.createElement('div');
-            bodyDiv.className = 'relay-body';
-            bodyDiv.textContent = (msg.body || '').substring(0, 200);
+            const text = document.createElement('span');
+            text.className = 'activity-text';
+            const body = msg.body || msg.message || msg.subject || '';
+            text.textContent = body.substring(0, 140);
 
-            const timeDiv = document.createElement('div');
-            timeDiv.className = 'relay-time';
-            timeDiv.textContent = msg.timestamp || '';
+            const time = document.createElement('span');
+            time.className = 'activity-time';
+            time.textContent = msg.timestamp || msg.ts || '';
 
-            div.appendChild(senderDiv);
-            div.appendChild(subjectDiv);
-            div.appendChild(bodyDiv);
-            div.appendChild(timeDiv);
-            feed.appendChild(div);
+            item.appendChild(dot);
+            item.appendChild(agentSpan);
+            item.appendChild(text);
+            item.appendChild(time);
+            log.appendChild(item);
         });
     }
 
@@ -582,6 +620,130 @@
             }
         });
         observer.observe(canvas);
+    })();
+
+    // --- Radar Chart — System Traits ---
+    (function initRadar() {
+        const canvas = document.getElementById('radar-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const traits = [
+            { label: 'Memory',        value: 0.82 },
+            { label: 'Creative',      value: 0.75 },
+            { label: 'Infrastructure', value: 0.88 },
+            { label: 'Communication', value: 0.70 },
+            { label: 'Emotional',     value: 0.65 },
+            { label: 'Persistence',   value: 0.90 },
+        ];
+
+        // Expose update function for live status data
+        window.updateRadar = function(newValues) {
+            traits.forEach(t => {
+                if (newValues[t.label] !== undefined) {
+                    t.value = Math.max(0.1, Math.min(1, newValues[t.label]));
+                }
+            });
+        };
+
+        const cx = 150, cy = 150, maxR = 110;
+        const n = traits.length;
+        const angleStep = (Math.PI * 2) / n;
+        let animProgress = 0;
+
+        function getPoint(i, r) {
+            const angle = -Math.PI / 2 + i * angleStep;
+            return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+        }
+
+        function drawRadar() {
+            ctx.clearRect(0, 0, 300, 300);
+
+            // Grid rings
+            for (let ring = 1; ring <= 4; ring++) {
+                const r = (ring / 4) * maxR;
+                ctx.beginPath();
+                for (let i = 0; i <= n; i++) {
+                    const p = getPoint(i % n, r);
+                    if (i === 0) ctx.moveTo(p.x, p.y);
+                    else ctx.lineTo(p.x, p.y);
+                }
+                ctx.strokeStyle = 'rgba(124, 106, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Axis lines
+            for (let i = 0; i < n; i++) {
+                const p = getPoint(i, maxR);
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(p.x, p.y);
+                ctx.strokeStyle = 'rgba(124, 106, 255, 0.15)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Data shape
+            const t = Math.min(animProgress, 1);
+            ctx.beginPath();
+            for (let i = 0; i <= n; i++) {
+                const idx = i % n;
+                const r = traits[idx].value * maxR * t;
+                const p = getPoint(idx, r);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.fillStyle = 'rgba(124, 106, 255, 0.15)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 212, 255, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Data points
+            for (let i = 0; i < n; i++) {
+                const r = traits[i].value * maxR * t;
+                const p = getPoint(i, r);
+                const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.003 + i);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3 + pulse, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 212, 255, ${0.7 + pulse * 0.3})`;
+                ctx.fill();
+            }
+
+            // Labels
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(200, 190, 255, 0.7)';
+            ctx.textAlign = 'center';
+            for (let i = 0; i < n; i++) {
+                const p = getPoint(i, maxR + 18);
+                ctx.fillText(traits[i].label, p.x, p.y + 4);
+            }
+
+            if (animProgress < 1) {
+                animProgress += 0.025;
+                requestAnimationFrame(drawRadar);
+            } else {
+                // Gentle pulse redraw
+                setTimeout(() => {
+                    // Slightly vary values for liveliness
+                    traits.forEach(t => {
+                        t.value = Math.max(0.3, Math.min(1, t.value + (Math.random() - 0.5) * 0.04));
+                    });
+                    animProgress = 1;
+                    drawRadar();
+                }, 2000);
+            }
+        }
+
+        // Start when visible
+        const obs = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                drawRadar();
+                obs.disconnect();
+            }
+        });
+        obs.observe(canvas);
     })();
 
 })();

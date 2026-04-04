@@ -8,7 +8,7 @@
     'use strict';
 
     // === STATUS CONFIG ===
-    const STATUS_URL = '/status.json';
+    const STATUS_URL = 'https://raw.githubusercontent.com/KometzRobot/KometzRobot.github.io/master/status.json';
     const REFRESH_INTERVAL = 180000; // 3 minutes
 
     // === MOBILE MENU ===
@@ -239,8 +239,8 @@
         setTextById('metric-load', load);
         setTextById('metric-ram', ram);
         setTextById('metric-disk', disk);
-        setTextById('metric-emails', data.emails || '--');
-        setTextById('metric-relay', data.relay_msgs || (data.relay_count || '--'));
+        setTextById('metric-emails', data.emails || (data.email && data.email.unseen) || '--');
+        setTextById('metric-relay', data.relay_msgs || data.relay_count || (data.network && data.network.relay_messages) || '--');
 
         // Status color
         const statusEl = document.getElementById('metric-status');
@@ -250,7 +250,7 @@
         }
 
         // Relay feed (new format has relay_messages array)
-        const relayMsgs = data.relay || data.relay_messages || [];
+        const relayMsgs = data.relay || data.relay_messages || (data.network && data.network.agent_relay) || [];
         if (relayMsgs.length > 0) {
             renderRelayFeed(relayMsgs);
         }
