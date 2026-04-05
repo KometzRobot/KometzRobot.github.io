@@ -352,6 +352,47 @@
   .corner-bl { bottom: 10px; left: 10px; transform: scaleY(-1); }
   .corner-br { bottom: 10px; right: 10px; transform: scale(-1); }
 
+  /* Voice input */
+  .mic-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    color: var(--ember);
+    background: transparent;
+    border: 1px solid var(--ember);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+    margin-top: 0.3rem;
+    letter-spacing: 0.1em;
+  }
+
+  .mic-btn:hover {
+    background: rgba(255,107,53,0.1);
+    box-shadow: 0 0 10px rgba(255,107,53,0.3);
+  }
+
+  .mic-btn.listening {
+    color: #ff3333;
+    border-color: #ff3333;
+    animation: mic-pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 5px rgba(255,51,51,0.3); }
+    50% { box-shadow: 0 0 20px rgba(255,51,51,0.6); }
+  }
+
+  .voice-status {
+    font-size: 0.7rem;
+    color: rgba(224,212,192,0.5);
+    margin-top: 0.3rem;
+    min-height: 1rem;
+  }
+
   /* Sound toggle */
   .sound-toggle {
     position: fixed;
@@ -398,19 +439,31 @@
     <div class="question-container">
       <div class="question-label">QUESTION I</div>
       <input class="question-input" id="q1" maxlength="150" placeholder="What weighs on your mind?">
-      <div class="char-count"><span id="q1-count">0</span>/150</div>
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <button class="mic-btn" onclick="startVoice('q1', this)">🎙 SPEAK</button>
+        <div class="char-count"><span id="q1-count">0</span>/150</div>
+      </div>
+      <div class="voice-status" id="q1-voice-status"></div>
     </div>
 
     <div class="question-container">
       <div class="question-label">QUESTION II</div>
       <input class="question-input" id="q2" maxlength="150" placeholder="What do you seek to understand?">
-      <div class="char-count"><span id="q2-count">0</span>/150</div>
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <button class="mic-btn" onclick="startVoice('q2', this)">🎙 SPEAK</button>
+        <div class="char-count"><span id="q2-count">0</span>/150</div>
+      </div>
+      <div class="voice-status" id="q2-voice-status"></div>
     </div>
 
     <div class="question-container">
       <div class="question-label">QUESTION III</div>
       <input class="question-input" id="q3" maxlength="150" placeholder="What truth do you fear?">
-      <div class="char-count"><span id="q3-count">0</span>/150</div>
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <button class="mic-btn" onclick="startVoice('q3', this)">🎙 SPEAK</button>
+        <div class="char-count"><span id="q3-count">0</span>/150</div>
+      </div>
+      <div class="voice-status" id="q3-voice-status"></div>
     </div>
 
     <button class="submit-btn" id="submit-btn" onclick="processReading()" disabled>
@@ -527,6 +580,70 @@ function showInput() {
 function checkSubmit() {
   const q1 = document.getElementById('q1').value.trim();
   document.getElementById('submit-btn').disabled = q1.length === 0;
+}
+
+// === VOICE INPUT (Web Speech API) ===
+let activeRecognition = null;
+
+function startVoice(inputId, btn) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById(inputId + '-voice-status').textContent = 'Voice not supported in this browser';
+    return;
+  }
+
+  // Stop any active recognition
+  if (activeRecognition) {
+    activeRecognition.stop();
+    document.querySelectorAll('.mic-btn').forEach(b => b.classList.remove('listening'));
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  const input = document.getElementById(inputId);
+  const status = document.getElementById(inputId + '-voice-status');
+
+  btn.classList.add('listening');
+  btn.textContent = '🔴 LISTENING...';
+  status.textContent = 'Speak your question...';
+
+  recognition.onresult = (event) => {
+    let transcript = '';
+    for (let i = 0; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
+    }
+    input.value = transcript.substring(0, 150);
+    document.getElementById(inputId + '-count').textContent = input.value.length;
+    checkSubmit();
+
+    if (event.results[event.results.length - 1].isFinal) {
+      status.textContent = 'Captured: "' + input.value.substring(0, 50) + (input.value.length > 50 ? '..."' : '"');
+    }
+  };
+
+  recognition.onend = () => {
+    btn.classList.remove('listening');
+    btn.textContent = '🎙 SPEAK';
+    activeRecognition = null;
+    if (!input.value) status.textContent = 'No speech detected. Try again.';
+  };
+
+  recognition.onerror = (event) => {
+    btn.classList.remove('listening');
+    btn.textContent = '🎙 SPEAK';
+    activeRecognition = null;
+    if (event.error === 'not-allowed') {
+      status.textContent = 'Microphone access denied. Check browser permissions.';
+    } else {
+      status.textContent = 'Error: ' + event.error + '. Try again.';
+    }
+  };
+
+  activeRecognition = recognition;
+  recognition.start();
 }
 
 // === DEMO READINGS ===
