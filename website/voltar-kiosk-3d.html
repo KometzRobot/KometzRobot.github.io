@@ -61,6 +61,11 @@
     text-align:left; padding:1.5rem; border:1px solid rgba(255,107,53,0.25); border-radius:6px;
     background:rgba(0,0,0,0.6); max-height:50vh; overflow-y:auto; }
 
+  .mic-btn { pointer-events:auto; background:rgba(0,0,0,0.6); border:1px solid #ff6b35; color:#ff6b35;
+    font-size:1.2rem; padding:0.6rem 0.8rem; cursor:pointer; border-radius:3px; transition:all 0.3s; }
+  .mic-btn:hover { background:rgba(255,107,53,0.15); }
+  .mic-btn.on { border-color:#ff3333; color:#ff3333; animation:blink 1s step-end infinite; }
+
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
   @keyframes fadeIn { to { opacity:1; } }
 </style>
@@ -83,9 +88,18 @@
   <!-- INPUT -->
   <div class="panel" id="panel-input" style="display:none">
     <div style="color:#ff9a5c; font-size:0.9rem; letter-spacing:0.3em; margin-bottom:1.5rem;">ASK VOLtar THREE QUESTIONS</div>
-    <input class="q-input" id="q1" maxlength="150" placeholder="What weighs on your mind?">
-    <input class="q-input" id="q2" maxlength="150" placeholder="What do you seek to understand?">
-    <input class="q-input" id="q3" maxlength="150" placeholder="What truth do you fear?">
+    <div style="display:flex; gap:0.5rem; width:100%; align-items:center;">
+      <input class="q-input" id="q1" maxlength="150" placeholder="What weighs on your mind?" style="flex:1; margin:0;">
+      <button class="mic-btn" onclick="voiceInput('q1',this)">🎙</button>
+    </div>
+    <div style="display:flex; gap:0.5rem; width:100%; align-items:center;">
+      <input class="q-input" id="q2" maxlength="150" placeholder="What do you seek to understand?" style="flex:1; margin:0;">
+      <button class="mic-btn" onclick="voiceInput('q2',this)">🎙</button>
+    </div>
+    <div style="display:flex; gap:0.5rem; width:100%; align-items:center;">
+      <input class="q-input" id="q3" maxlength="150" placeholder="What truth do you fear?" style="flex:1; margin:0;">
+      <button class="mic-btn" onclick="voiceInput('q3',this)">🎙</button>
+    </div>
     <div class="prompt-box" onclick="startProcessing()" style="font-size:1.2rem; margin-top:1rem;">DIVINE</div>
   </div>
 
@@ -435,6 +449,25 @@ function animate() {
 }
 
 animate();
+
+// === VOICE INPUT ===
+let activeRec = null;
+function voiceInput(id, btn) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  if (activeRec) { activeRec.stop(); document.querySelectorAll('.mic-btn').forEach(b => b.classList.remove('on')); }
+  const rec = new SR();
+  rec.lang = 'en-US'; rec.interimResults = true;
+  btn.classList.add('on');
+  rec.onresult = (e) => {
+    let t = '';
+    for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+    document.getElementById(id).value = t.substring(0, 150);
+  };
+  rec.onend = () => { btn.classList.remove('on'); activeRec = null; };
+  rec.onerror = () => { btn.classList.remove('on'); activeRec = null; };
+  activeRec = rec; rec.start();
+}
 
 // === KIOSK FLOW ===
 function showPanel(id) {
