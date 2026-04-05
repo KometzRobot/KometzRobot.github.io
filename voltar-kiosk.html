@@ -900,13 +900,13 @@ async function initFaceTracking() {
           // face.xCenter and yCenter are 0-1 normalized
           const faceX = face.xCenter || (face.originX + face.width / 2);
           const faceY = face.yCenter || (face.originY + face.height / 2);
-          movePupils(faceX, faceY);
+          movePupils(1 - faceX, faceY);  // Mirror X — webcam is flipped
           status.textContent = 'VOLtar sees you';
         } else {
           status.textContent = 'VOLtar is watching...';
           // Gentle idle drift
           const t = Date.now() / 3000;
-          movePupils(0.5 + Math.sin(t) * 0.15, 0.5 + Math.cos(t * 0.7) * 0.1);
+          movePupils(0.5 - Math.sin(t) * 0.15, 0.5 + Math.cos(t * 0.7) * 0.1);
         }
       });
 
