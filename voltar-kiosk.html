@@ -677,37 +677,99 @@ function processReading() {
   setTimeout(() => document.getElementById('reel3').classList.add('stopped'), 5000);
 }
 
+// === TEXT-TO-SPEECH ENGINE ===
+let voltarVoice = null;
+
+function initVoltarVoice() {
+  // Find a deep male voice suitable for an oracle
+  const voices = speechSynthesis.getVoices();
+  // Preference order: deep English male voices
+  const prefs = ['Google UK English Male', 'Microsoft David', 'Daniel', 'Alex', 'Google US English'];
+  for (const pref of prefs) {
+    const found = voices.find(v => v.name.includes(pref));
+    if (found) { voltarVoice = found; return; }
+  }
+  // Fallback: any English male or first English voice
+  const english = voices.filter(v => v.lang.startsWith('en'));
+  if (english.length) voltarVoice = english[0];
+}
+
+// Voices load async
+speechSynthesis.onvoiceschanged = initVoltarVoice;
+initVoltarVoice();
+
+function speakSentence(text) {
+  return new Promise(resolve => {
+    const utter = new SpeechSynthesisUtterance(text);
+    if (voltarVoice) utter.voice = voltarVoice;
+    utter.rate = 0.85;   // slow, dramatic
+    utter.pitch = 0.7;   // deep
+    utter.volume = 1.0;
+    utter.onend = resolve;
+    utter.onerror = resolve;
+    speechSynthesis.speak(utter);
+  });
+}
+
 function showReading() {
   showView('view-reading');
   const output = document.getElementById('reading-output');
   const reading = demoReadings[Math.floor(Math.random() * demoReadings.length)];
 
-  // Typewriter effect
+  // Split into sentences for synchronized speech + typewriter
+  const sentences = reading.split(/(?<=[.!?])\s+|\n\n/);
   output.innerHTML = '';
-  let i = 0;
-  const typeInterval = setInterval(() => {
-    if (i < reading.length) {
-      if (reading[i] === '\n') {
-        output.innerHTML += '<br>';
-      } else {
-        const span = document.createElement('span');
-        span.className = 'char';
-        span.style.animationDelay = '0s';
-        span.textContent = reading[i];
-        output.appendChild(span);
-      }
-      i++;
-    } else {
-      clearInterval(typeInterval);
-    }
-  }, 25);
 
   // Session number
   document.getElementById('session-num').textContent =
     String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+
+  // Play sentences one at a time: type + speak simultaneously
+  async function playSentences() {
+    for (let s = 0; s < sentences.length; s++) {
+      const sentence = sentences[s].trim();
+      if (!sentence) {
+        output.innerHTML += '<br><br>';
+        continue;
+      }
+
+      // Start speaking this sentence
+      const speechPromise = speakSentence(sentence);
+
+      // Typewriter this sentence (estimate timing to match speech)
+      const charDelay = Math.max(20, (sentence.length > 50 ? 30 : 40));
+      await new Promise(resolve => {
+        let i = 0;
+        const typeInt = setInterval(() => {
+          if (i < sentence.length) {
+            const span = document.createElement('span');
+            span.className = 'char';
+            span.style.animationDelay = '0s';
+            span.textContent = sentence[i];
+            output.appendChild(span);
+            i++;
+          } else {
+            clearInterval(typeInt);
+            output.innerHTML += ' ';
+            resolve();
+          }
+        }, charDelay);
+      });
+
+      // Wait for speech to finish before next sentence
+      await speechPromise;
+
+      // Brief pause between sentences
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+
+  playSentences();
 }
 
 function resetToIdle() {
+  // Stop any speech
+  speechSynthesis.cancel();
   // Reset inputs
   ['q1','q2','q3'].forEach(id => {
     document.getElementById(id).value = '';
