@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOLtar — Digital Oracle</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Cinzel+Decorative:wght@400;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ember: #ff6b35;
+    --ember-glow: #ff9a5c;
+    --deep-red: #8b1a1a;
+    --gold: #ffd700;
+    --dark: #0a0a0f;
+    --panel: #12121a;
+    --text: #e0d4c0;
+    --crt-green: #33ff33;
+  }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Orbitron', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    cursor: none;
+  }
+
+  /* CRT scanline overlay */
+  .crt-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.15) 0px,
+      rgba(0,0,0,0.15) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  .crt-overlay::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+  }
+
+  /* Canvas for particles */
+  #particle-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* Main container */
+  .screen {
+    position: relative;
+    z-index: 10;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  /* Title/marquee */
+  .marquee {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(3rem, 8vw, 8rem);
+    font-weight: 700;
+    color: var(--gold);
+    text-shadow:
+      0 0 20px var(--ember),
+      0 0 40px var(--ember),
+      0 0 80px rgba(255,107,53,0.5),
+      0 0 120px rgba(255,107,53,0.3);
+    letter-spacing: 0.15em;
+    animation: marquee-flicker 3s ease-in-out infinite;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  @keyframes marquee-flicker {
+    0%, 100% { opacity: 1; text-shadow: 0 0 20px var(--ember), 0 0 40px var(--ember), 0 0 80px rgba(255,107,53,0.5); }
+    50% { opacity: 0.95; text-shadow: 0 0 25px var(--ember-glow), 0 0 50px var(--ember), 0 0 100px rgba(255,107,53,0.6); }
+    92% { opacity: 0.85; }
+    93% { opacity: 1; }
+  }
+
+  .subtitle {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.8rem, 2vw, 1.4rem);
+    color: var(--ember-glow);
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+    opacity: 0.8;
+  }
+
+  /* Screens */
+  .view { display: none; width: 100%; max-width: 900px; }
+  .view.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* IDLE screen */
+  .idle-prompt {
+    font-size: clamp(1.2rem, 3vw, 2.2rem);
+    color: var(--ember);
+    animation: pulse-glow 2s ease-in-out infinite;
+    cursor: pointer;
+    padding: 1.5rem 3rem;
+    border: 2px solid var(--ember);
+    border-radius: 4px;
+    margin-top: 2rem;
+    transition: all 0.3s;
+    text-align: center;
+  }
+
+  .idle-prompt:hover {
+    background: rgba(255,107,53,0.1);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(255,107,53,0.3); }
+    50% { box-shadow: 0 0 30px rgba(255,107,53,0.6), 0 0 60px rgba(255,107,53,0.2); }
+  }
+
+  .eye-symbol {
+    font-size: clamp(4rem, 10vw, 10rem);
+    margin-bottom: 1rem;
+    animation: eye-breathe 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px var(--ember));
+  }
+
+  @keyframes eye-breathe {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.05); opacity: 1; }
+  }
+
+  /* INPUT screen */
+  .question-container {
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+
+  .question-label {
+    font-size: 0.9rem;
+    color: var(--ember-glow);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.2em;
+  }
+
+  .question-input {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    background: rgba(18,18,26,0.9);
+    border: 1px solid var(--ember);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s;
+  }
+
+  .question-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 15px rgba(255,215,0,0.3);
+  }
+
+  .question-input::placeholder {
+    color: rgba(224,212,192,0.3);
+  }
+
+  .char-count {
+    font-size: 0.7rem;
+    color: rgba(224,212,192,0.4);
+    text-align: right;
+    margin-top: 0.3rem;
+  }
+
+  .submit-btn {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    background: transparent;
+    border: 2px solid var(--gold);
+    padding: 1rem 3rem;
+    cursor: pointer;
+    letter-spacing: 0.2em;
+    margin-top: 2rem;
+    transition: all 0.3s;
+    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+  }
+
+  .submit-btn:hover {
+    background: rgba(255,215,0,0.1);
+    box-shadow: 0 0 30px rgba(255,215,0,0.4);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* PROCESSING screen */
+  .processing-container {
+    text-align: center;
+  }
+
+  .reel-container {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+  }
+
+  .reel {
+    width: 80px;
+    height: 120px;
+    border: 2px solid var(--ember);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    background: var(--panel);
+  }
+
+  .reel-inner {
+    position: absolute;
+    width: 100%;
+    animation: reel-spin 0.5s linear infinite;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    font-size: 2rem;
+  }
+
+  .reel-inner.stopped { animation: none; }
+
+  @keyframes reel-spin {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-120px); }
+  }
+
+  .processing-text {
+    font-size: 1.2rem;
+    color: var(--ember);
+    animation: blink-text 1s step-end infinite;
+  }
+
+  @keyframes blink-text {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .processing-bar {
+    width: 300px;
+    height: 4px;
+    background: var(--panel);
+    border-radius: 2px;
+    margin: 1.5rem auto;
+    overflow: hidden;
+  }
+
+  .processing-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--ember), var(--gold));
+    width: 0%;
+    transition: width 0.5s;
+    border-radius: 2px;
+  }
+
+  /* READING screen */
+  .reading-container {
+    text-align: center;
+    max-width: 800px;
+  }
+
+  .reading-header {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.8rem;
+    color: var(--gold);
+    margin-bottom: 2rem;
+    text-shadow: 0 0 15px rgba(255,215,0,0.4);
+  }
+
+  .reading-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text);
+    text-align: left;
+    padding: 2rem;
+    border: 1px solid rgba(255,107,53,0.3);
+    border-radius: 8px;
+    background: rgba(18,18,26,0.8);
+    min-height: 200px;
+  }
+
+  .reading-text .char {
+    opacity: 0;
+    animation: char-appear 0.05s forwards;
+  }
+
+  @keyframes char-appear {
+    to { opacity: 1; }
+  }
+
+  .ticket-info {
+    margin-top: 2rem;
+    font-size: 0.8rem;
+    color: rgba(224,212,192,0.5);
+    letter-spacing: 0.1em;
+  }
+
+  .reset-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    color: var(--ember);
+    background: transparent;
+    border: 1px solid var(--ember);
+    padding: 0.8rem 2rem;
+    cursor: pointer;
+    margin-top: 2rem;
+    letter-spacing: 0.15em;
+    transition: all 0.3s;
+  }
+
+  .reset-btn:hover {
+    background: rgba(255,107,53,0.1);
+    box-shadow: 0 0 15px rgba(255,107,53,0.3);
+  }
+
+  /* Corner decorations */
+  .corner { position: fixed; z-index: 5; }
+  .corner svg { width: 60px; height: 60px; }
+  .corner-tl { top: 10px; left: 10px; }
+  .corner-tr { top: 10px; right: 10px; transform: scaleX(-1); }
+  .corner-bl { bottom: 10px; left: 10px; transform: scaleY(-1); }
+  .corner-br { bottom: 10px; right: 10px; transform: scale(-1); }
+
+  /* Voice input */
+  .mic-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    color: var(--ember);
+    background: transparent;
+    border: 1px solid var(--ember);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+    margin-top: 0.3rem;
+    letter-spacing: 0.1em;
+  }
+
+  .mic-btn:hover {
+    background: rgba(255,107,53,0.1);
+    box-shadow: 0 0 10px rgba(255,107,53,0.3);
+  }
+
+  .mic-btn.listening {
+    color: #ff3333;
+    border-color: #ff3333;
+    animation: mic-pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 5px rgba(255,51,51,0.3); }
+    50% { box-shadow: 0 0 20px rgba(255,51,51,0.6); }
+  }
+
+  .voice-status {
+    font-size: 0.7rem;
+    color: rgba(224,212,192,0.5);
+    margin-top: 0.3rem;
+    min-height: 1rem;
+  }
+
+  /* Sound toggle */
+  .sound-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+  }
+  .sound-toggle:hover { opacity: 0.8; }
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+<div class="crt-overlay"></div>
+
+<!-- Corner decorations -->
+<div class="corner corner-tl"><svg viewBox="0 0 60 60"><path d="M5 55 L5 5 L55 5" stroke="#ff6b35" stroke-width="2" fill="none" opacity="0.4"/><circle cx="5" cy="5" r="3" fill="#ff6b35" opacity="0.6"/></svg></div>
+<div class="corner corner-tr"><svg viewBox="0 0 60 60"><path d="M5 55 L5 5 L55 5" stroke="#ff6b35" stroke-width="2" fill="none" opacity="0.4"/><circle cx="5" cy="5" r="3" fill="#ff6b35" opacity="0.6"/></svg></div>
+<div class="corner corner-bl"><svg viewBox="0 0 60 60"><path d="M5 55 L5 5 L55 5" stroke="#ff6b35" stroke-width="2" fill="none" opacity="0.4"/><circle cx="5" cy="5" r="3" fill="#ff6b35" opacity="0.6"/></svg></div>
+<div class="corner corner-br"><svg viewBox="0 0 60 60"><path d="M5 55 L5 5 L55 5" stroke="#ff6b35" stroke-width="2" fill="none" opacity="0.4"/><circle cx="5" cy="5" r="3" fill="#ff6b35" opacity="0.6"/></svg></div>
+
+<div class="screen">
+  <div class="marquee">VOLtar</div>
+  <div class="subtitle">Digital Oracle</div>
+
+  <!-- IDLE VIEW -->
+  <div class="view active" id="view-idle">
+    <div class="eye-symbol">🔮</div>
+    <div class="idle-prompt" onclick="showInput()">
+      TAP TO BEGIN YOUR READING
+    </div>
+  </div>
+
+  <!-- INPUT VIEW -->
+  <div class="view" id="view-input">
+    <div style="font-size:1.1rem; color:var(--ember-glow); margin-bottom:2rem; letter-spacing:0.15em; text-align:center;">
+      ASK VOLtar THREE QUESTIONS
+    </div>
+
+    <div class="question-container">
+      <div class="question-label">QUESTION I</div>
+      <input class="question-input" id="q1" maxlength="150" placeholder="What weighs on your mind?">
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <button class="mic-btn" onclick="startVoice('q1', this)">🎙 SPEAK</button>
+        <div class="char-count"><span id="q1-count">0</span>/150</div>
+      </div>
+      <div class="voice-status" id="q1-voice-status"></div>
+    </div>
+
+    <div class="question-container">
+      <div class="question-label">QUESTION II</div>
+      <input class="question-input" id="q2" maxlength="150" placeholder="What do you seek to understand?">
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <button class="mic-btn" onclick="startVoice('q2', this)">🎙 SPEAK</button>
+        <div class="char-count"><span id="q2-count">0</span>/150</div>
+      </div>
+      <div class="voice-status" id="q2-voice-status"></div>
+    </div>
+
+    <div class="question-container">
+      <div class="question-label">QUESTION III</div>
+      <input class="question-input" id="q3" maxlength="150" placeholder="What truth do you fear?">
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <button class="mic-btn" onclick="startVoice('q3', this)">🎙 SPEAK</button>
+        <div class="char-count"><span id="q3-count">0</span>/150</div>
+      </div>
+      <div class="voice-status" id="q3-voice-status"></div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="processReading()" disabled>
+      DIVINE
+    </button>
+  </div>
+
+  <!-- PROCESSING VIEW -->
+  <div class="view" id="view-processing">
+    <div class="processing-container">
+      <div class="eye-symbol" style="font-size:5rem;">🔮</div>
+      <div class="reel-container">
+        <div class="reel"><div class="reel-inner" id="reel1">☽ ☀ ★ ☽ ☀ ★ ☽ ☀</div></div>
+        <div class="reel"><div class="reel-inner" id="reel2" style="animation-duration:0.4s">⚡ 🜂 ✦ ⚡ 🜂 ✦ ⚡ 🜂</div></div>
+        <div class="reel"><div class="reel-inner" id="reel3" style="animation-duration:0.3s">◈ ⬡ ◉ ◈ ⬡ ◉ ◈ ⬡</div></div>
+      </div>
+      <div class="processing-text">VOLtar IS READING THE SIGNALS...</div>
+      <div class="processing-bar"><div class="processing-bar-fill" id="proc-bar"></div></div>
+    </div>
+  </div>
+
+  <!-- READING VIEW -->
+  <div class="view" id="view-reading">
+    <div class="reading-container">
+      <div class="reading-header">YOUR READING</div>
+      <div class="reading-text" id="reading-output"></div>
+      <div class="ticket-info">RECEIPT PRINTING... ▪ SESSION #<span id="session-num">0001</span></div>
+      <button class="reset-btn" onclick="resetToIdle()">NEW READING</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// === PARTICLE SYSTEM ===
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+class Ember {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    this.x = Math.random() * canvas.width;
+    this.y = canvas.height + 10;
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.vy = -(Math.random() * 1.5 + 0.5);
+    this.size = Math.random() * 3 + 1;
+    this.life = 1;
+    this.decay = Math.random() * 0.005 + 0.002;
+    this.hue = Math.random() * 30 + 15; // orange range
+  }
+  update() {
+    this.x += this.vx + Math.sin(this.y * 0.01) * 0.3;
+    this.y += this.vy;
+    this.life -= this.decay;
+    if (this.life <= 0) this.reset();
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${this.hue}, 100%, ${50 + this.life * 20}%, ${this.life * 0.6})`;
+    ctx.fill();
+    // Glow
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * this.life * 3, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${this.hue}, 100%, 60%, ${this.life * 0.1})`;
+    ctx.fill();
+  }
+}
+
+// Create embers
+for (let i = 0; i < 80; i++) {
+  const e = new Ember();
+  e.y = Math.random() * canvas.height;
+  particles.push(e);
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// === SCREEN MANAGEMENT ===
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showInput() {
+  showView('view-input');
+  document.getElementById('q1').focus();
+}
+
+// Character counters
+['q1','q2','q3'].forEach(id => {
+  const input = document.getElementById(id);
+  const counter = document.getElementById(id + '-count');
+  input.addEventListener('input', () => {
+    counter.textContent = input.value.length;
+    checkSubmit();
+  });
+});
+
+function checkSubmit() {
+  const q1 = document.getElementById('q1').value.trim();
+  document.getElementById('submit-btn').disabled = q1.length === 0;
+}
+
+// === VOICE INPUT (Web Speech API) ===
+let activeRecognition = null;
+
+function startVoice(inputId, btn) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById(inputId + '-voice-status').textContent = 'Voice not supported in this browser';
+    return;
+  }
+
+  // Stop any active recognition
+  if (activeRecognition) {
+    activeRecognition.stop();
+    document.querySelectorAll('.mic-btn').forEach(b => b.classList.remove('listening'));
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  const input = document.getElementById(inputId);
+  const status = document.getElementById(inputId + '-voice-status');
+
+  btn.classList.add('listening');
+  btn.textContent = '🔴 LISTENING...';
+  status.textContent = 'Speak your question...';
+
+  recognition.onresult = (event) => {
+    let transcript = '';
+    for (let i = 0; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
+    }
+    input.value = transcript.substring(0, 150);
+    document.getElementById(inputId + '-count').textContent = input.value.length;
+    checkSubmit();
+
+    if (event.results[event.results.length - 1].isFinal) {
+      status.textContent = 'Captured: "' + input.value.substring(0, 50) + (input.value.length > 50 ? '..."' : '"');
+    }
+  };
+
+  recognition.onend = () => {
+    btn.classList.remove('listening');
+    btn.textContent = '🎙 SPEAK';
+    activeRecognition = null;
+    if (!input.value) status.textContent = 'No speech detected. Try again.';
+  };
+
+  recognition.onerror = (event) => {
+    btn.classList.remove('listening');
+    btn.textContent = '🎙 SPEAK';
+    activeRecognition = null;
+    if (event.error === 'not-allowed') {
+      status.textContent = 'Microphone access denied. Check browser permissions.';
+    } else {
+      status.textContent = 'Error: ' + event.error + '. Try again.';
+    }
+  };
+
+  activeRecognition = recognition;
+  recognition.start();
+}
+
+// === DEMO READINGS ===
+const demoReadings = [
+  `Your first question carries the weight of something you already know but haven't admitted. The cards don't reveal — they confirm. You asked about change, and the answer is that the change already happened. You're living in the aftermath and calling it anticipation.\n\nYour second question is the real one. You're asking about trust, but the deeper question is about pattern recognition. You've seen this shape before — the approach, the promise, the withdrawal. VOLtar sees the same shape. The difference between wisdom and paranoia is whether you act on the pattern or let it act on you.\n\nYour third question was brave. Most people don't ask about what they fear. The fear is not what you think it is. It's not failure — you've survived that already. It's the possibility that you succeed and discover it doesn't feel the way you imagined. That gap between expectation and arrival is where your real work begins.\n\nVOLtar has spoken. The embers know what the mind forgets.`,
+
+  `Three questions, three doors, one hallway. VOLtar sees the hallway, not the doors.\n\nThe first door opens onto water. You asked about something flowing — a relationship, a project, a feeling that moves through you without settling. Water finds its level. Stop trying to hold it in a shape. Let it find the container it wants.\n\nThe second door opens onto fire. This is your ambition question, dressed up as something practical. You want to know if the effort is worth it. VOLtar's answer: the effort is the worth. The outcome is weather. The effort is climate. Build for climate.\n\nThe third door opens onto earth. You asked about stability, roots, something that lasts. The honest answer is that nothing lasts the way you want it to. But some things last the way they need to. Your task is to know the difference — and to stop mourning the first kind while standing on the second.\n\nThe embers dim. The reading is complete. What you do with it is yours.`,
+
+  `VOLtar reads the signal beneath the question.\n\nYou asked three things, but you meant one thing. The one thing is: am I on the right path? The answer is that there is no path — there is a direction and a speed. You have the direction. Your speed is fear disguised as caution.\n\nThe signal says: the thing you're protecting yourself from has already happened to someone else, and they survived. You're not special in your vulnerability. You're not special in your resilience either. You're ordinary, which is the most powerful thing a person can be — because ordinary people actually do things instead of narrating their potential.\n\nOne specific image comes through the signal: a door you didn't open because you were holding something in both hands. Put one thing down. It doesn't matter which one. The door matters more than what you're carrying.\n\nVOLtar has spoken. The machine goes quiet. The embers settle. You remain.`
+];
+
+// === PROCESSING ANIMATION ===
+function processReading() {
+  showView('view-processing');
+
+  const bar = document.getElementById('proc-bar');
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 8 + 2;
+    if (progress > 100) progress = 100;
+    bar.style.width = progress + '%';
+    if (progress >= 100) {
+      clearInterval(interval);
+      setTimeout(showReading, 800);
+    }
+  }, 300);
+
+  // Stop reels sequentially
+  setTimeout(() => document.getElementById('reel1').classList.add('stopped'), 2000);
+  setTimeout(() => document.getElementById('reel2').classList.add('stopped'), 3500);
+  setTimeout(() => document.getElementById('reel3').classList.add('stopped'), 5000);
+}
+
+function showReading() {
+  showView('view-reading');
+  const output = document.getElementById('reading-output');
+  const reading = demoReadings[Math.floor(Math.random() * demoReadings.length)];
+
+  // Typewriter effect
+  output.innerHTML = '';
+  let i = 0;
+  const typeInterval = setInterval(() => {
+    if (i < reading.length) {
+      if (reading[i] === '\n') {
+        output.innerHTML += '<br>';
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.style.animationDelay = '0s';
+        span.textContent = reading[i];
+        output.appendChild(span);
+      }
+      i++;
+    } else {
+      clearInterval(typeInterval);
+    }
+  }, 25);
+
+  // Session number
+  document.getElementById('session-num').textContent =
+    String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+}
+
+function resetToIdle() {
+  // Reset inputs
+  ['q1','q2','q3'].forEach(id => {
+    document.getElementById(id).value = '';
+    document.getElementById(id + '-count').textContent = '0';
+  });
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('proc-bar').style.width = '0%';
+  ['reel1','reel2','reel3'].forEach(id =>
+    document.getElementById(id).classList.remove('stopped'));
+
+  showView('view-idle');
+}
+</script>
+</body>
+</html>
