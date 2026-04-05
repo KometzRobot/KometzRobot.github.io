@@ -45,6 +45,24 @@
   }
 
   .info-line { font-size:0.65rem; color:rgba(255,154,92,0.4); letter-spacing:0.15em; }
+
+  .panel { pointer-events:auto; max-width:700px; width:90%; }
+
+  .q-input { width:100%; padding:0.8rem 1rem; background:rgba(0,0,0,0.6); border:1px solid #ff6b35;
+    color:#e0d4c0; font-family:'Orbitron',monospace; font-size:0.9rem; margin-bottom:0.8rem;
+    outline:none; border-radius:3px; }
+  .q-input:focus { border-color:#ffd700; box-shadow:0 0 12px rgba(255,215,0,0.2); }
+  .q-input::placeholder { color:rgba(224,212,192,0.3); }
+
+  .progress-bar { width:250px; height:3px; background:rgba(255,255,255,0.1); margin:1.5rem auto; border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,#ff6b35,#ffd700); transition:width 0.4s; }
+
+  .reading-box { font-family:'Orbitron',monospace; font-size:0.95rem; line-height:1.8; color:#e0d4c0;
+    text-align:left; padding:1.5rem; border:1px solid rgba(255,107,53,0.25); border-radius:6px;
+    background:rgba(0,0,0,0.6); max-height:50vh; overflow-y:auto; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes fadeIn { to { opacity:1; } }
 </style>
 </head>
 <body>
@@ -56,10 +74,33 @@
 <div class="subtitle">Digital Oracle</div>
 
 <div class="ui">
-  <div class="prompt-box" id="start-btn" onclick="alert('Full kiosk flow coming — this is the 3D scene demo')">
-    TAP TO BEGIN YOUR READING
+  <!-- IDLE -->
+  <div class="panel" id="panel-idle">
+    <div class="prompt-box" onclick="showPanel('input')">TAP TO BEGIN YOUR READING</div>
+    <div class="info-line">3D RENDERED • LOCAL AI • NO CLOUD</div>
   </div>
-  <div class="info-line">3D RENDERED • LOCAL AI • NO CLOUD</div>
+
+  <!-- INPUT -->
+  <div class="panel" id="panel-input" style="display:none">
+    <div style="color:#ff9a5c; font-size:0.9rem; letter-spacing:0.3em; margin-bottom:1.5rem;">ASK VOLtar THREE QUESTIONS</div>
+    <input class="q-input" id="q1" maxlength="150" placeholder="What weighs on your mind?">
+    <input class="q-input" id="q2" maxlength="150" placeholder="What do you seek to understand?">
+    <input class="q-input" id="q3" maxlength="150" placeholder="What truth do you fear?">
+    <div class="prompt-box" onclick="startProcessing()" style="font-size:1.2rem; margin-top:1rem;">DIVINE</div>
+  </div>
+
+  <!-- PROCESSING -->
+  <div class="panel" id="panel-processing" style="display:none">
+    <div style="color:#ff6b35; font-size:1.1rem; animation:blink 1s step-end infinite;">VOLtar IS READING THE SIGNALS...</div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+  </div>
+
+  <!-- READING -->
+  <div class="panel" id="panel-reading" style="display:none">
+    <div style="font-family:'Cinzel Decorative',serif; font-size:1.5rem; color:#ffd700; margin-bottom:1rem;">YOUR READING</div>
+    <div class="reading-box" id="reading-text"></div>
+    <div class="prompt-box" onclick="showPanel('idle')" style="font-size:0.8rem; margin-top:1rem;">NEW READING</div>
+  </div>
 </div>
 
 <script>
@@ -264,6 +305,72 @@ function animate() {
 }
 
 animate();
+
+// === KIOSK FLOW ===
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-' + id).style.display = 'flex';
+  document.getElementById('panel-' + id).style.flexDirection = 'column';
+  document.getElementById('panel-' + id).style.alignItems = 'center';
+
+  // Adjust 3D scene based on state
+  if (id === 'processing') {
+    // Speed up runes, brighten glow during processing
+    runeGroup.children.forEach(r => r.userData.speed *= 2);
+    glowMat.color.setHex(0xffd700);
+  } else {
+    runeGroup.children.forEach(r => r.userData.speed = 0.2 + Math.random() * 0.3);
+    glowMat.color.setHex(0xff6b35);
+  }
+}
+
+const demoReadings = [
+  "Your first question carries the weight of something you already know but haven't admitted. The cards don't reveal — they confirm. You asked about change, and the answer is that the change already happened. You're living in the aftermath and calling it anticipation.\n\nYour second question is the real one. You're asking about trust, but the deeper question is about pattern recognition. The difference between wisdom and paranoia is whether you act on the pattern or let it act on you.\n\nYour third question was brave. Most people don't ask about what they fear. The fear is not what you think it is. It's the possibility that you succeed and discover it doesn't feel the way you imagined. That gap between expectation and arrival is where your real work begins.\n\nVOLtar has spoken. The embers know what the mind forgets.",
+  "Three questions, three doors, one hallway. VOLtar sees the hallway, not the doors.\n\nThe first door opens onto water. You asked about something flowing. Water finds its level. Stop trying to hold it in a shape.\n\nThe second door opens onto fire. This is your ambition question, dressed up as something practical. The effort is the worth. The outcome is weather. The effort is climate. Build for climate.\n\nThe third door opens onto earth. You asked about stability. The honest answer is that nothing lasts the way you want it to. But some things last the way they need to.\n\nThe embers dim. The reading is complete. What you do with it is yours."
+];
+
+function startProcessing() {
+  showPanel('processing');
+  const fill = document.getElementById('prog-fill');
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 6 + 2;
+    if (progress > 100) progress = 100;
+    fill.style.width = progress + '%';
+    if (progress >= 100) {
+      clearInterval(interval);
+      setTimeout(showReading, 500);
+    }
+  }, 200);
+}
+
+function showReading() {
+  showPanel('reading');
+  const output = document.getElementById('reading-text');
+  const reading = demoReadings[Math.floor(Math.random() * demoReadings.length)];
+  output.innerHTML = '';
+
+  // Typewriter + TTS
+  let i = 0;
+  const utter = new SpeechSynthesisUtterance(reading.replace(/\n/g, ' '));
+  utter.rate = 0.85;
+  utter.pitch = 0.7;
+  speechSynthesis.speak(utter);
+
+  const typeInt = setInterval(() => {
+    if (i < reading.length) {
+      if (reading[i] === '\n') { output.innerHTML += '<br>'; }
+      else {
+        const span = document.createElement('span');
+        span.textContent = reading[i];
+        span.style.opacity = '0';
+        span.style.animation = 'fadeIn 0.1s forwards';
+        output.appendChild(span);
+      }
+      i++;
+    } else { clearInterval(typeInt); }
+  }, 30);
+}
 
 // Resize handler
 window.addEventListener('resize', () => {
