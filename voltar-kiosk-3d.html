@@ -104,6 +104,47 @@
 </div>
 
 <script>
+// === FACE TRACKING STATE ===
+let trackedFaceX = 0;  // -1 to 1
+let trackedFaceY = 0;
+
+// Init webcam for face tracking
+async function initWebcamTracking() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 160, height: 120 } });
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.play();
+    const canvas = document.createElement('canvas');
+    canvas.width = 40; canvas.height = 30;
+    const ctx2 = canvas.getContext('2d');
+
+    setInterval(() => {
+      ctx2.drawImage(video, 0, 0, 40, 30);
+      const data = ctx2.getImageData(0, 0, 40, 30).data;
+      let maxB = 0, bx = 20, by = 15;
+      for (let y = 0; y < 30; y += 3) {
+        for (let x = 0; x < 40; x += 3) {
+          const i = (y * 40 + x) * 4;
+          const b = data[i] + data[i+1] + data[i+2];
+          if (b > maxB) { maxB = b; bx = x; by = y; }
+        }
+      }
+      // Mirror X, normalize -1 to 1
+      trackedFaceX = -((bx / 40) - 0.5) * 2;
+      trackedFaceY = -((by / 30) - 0.5) * 2;
+    }, 100);
+  } catch(e) {
+    // No webcam — idle drift
+    setInterval(() => {
+      const t = Date.now() / 3000;
+      trackedFaceX = Math.sin(t) * 0.5;
+      trackedFaceY = Math.cos(t * 0.7) * 0.3;
+    }, 50);
+  }
+}
+setTimeout(initWebcamTracking, 1000);
+
 // === THREE.JS 3D SCENE ===
 const canvas = document.getElementById('three-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -206,6 +247,75 @@ for (let i = 0; i < 12; i++) {
 }
 scene.add(runeGroup);
 
+// === ORACLE CHARACTER ===
+const oracleGroup = new THREE.Group();
+oracleGroup.position.set(0, 0, -1.2);
+
+// Body — dark robed torso
+const bodyGeo = new THREE.ConeGeometry(0.6, 2.2, 8);
+const robeMat = new THREE.MeshStandardMaterial({
+  color: 0x0a0a1a,
+  metalness: 0.3,
+  roughness: 0.8,
+});
+const body = new THREE.Mesh(bodyGeo, robeMat);
+body.position.y = 1.1;
+oracleGroup.add(body);
+
+// Hood — larger cone behind head
+const hoodGeo = new THREE.SphereGeometry(0.35, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.7);
+const hoodMat = new THREE.MeshStandardMaterial({
+  color: 0x0c0c20,
+  metalness: 0.2,
+  roughness: 0.9,
+  side: THREE.DoubleSide,
+});
+const hood = new THREE.Mesh(hoodGeo, hoodMat);
+hood.position.y = 2.3;
+hood.rotation.x = -0.2;
+oracleGroup.add(hood);
+
+// Face — dark void with faint glow (no visible features, just shadow)
+const faceGeo = new THREE.SphereGeometry(0.22, 16, 16);
+const faceMat = new THREE.MeshBasicMaterial({
+  color: 0x050510,
+});
+const face = new THREE.Mesh(faceGeo, faceMat);
+face.position.y = 2.25;
+face.position.z = 0.15;
+oracleGroup.add(face);
+
+// Eyes — two small ember glows
+const eyeGeo = new THREE.SphereGeometry(0.035, 8, 8);
+const eyeMat = new THREE.MeshBasicMaterial({
+  color: 0xff6b35,
+  transparent: true,
+  opacity: 0.8,
+});
+const eyeL = new THREE.Mesh(eyeGeo, eyeMat.clone());
+eyeL.position.set(-0.08, 2.28, 0.3);
+oracleGroup.add(eyeL);
+
+const eyeR = new THREE.Mesh(eyeGeo, eyeMat.clone());
+eyeR.position.set(0.08, 2.28, 0.3);
+oracleGroup.add(eyeR);
+
+// Hands — reaching toward crystal ball
+const handGeo = new THREE.SphereGeometry(0.08, 8, 8);
+const handMat = new THREE.MeshStandardMaterial({
+  color: 0x2a1a10,
+  roughness: 0.9,
+});
+const handL = new THREE.Mesh(handGeo, handMat);
+handL.position.set(-0.45, 1.4, 0.8);
+oracleGroup.add(handL);
+
+const handR = new THREE.Mesh(handGeo, handMat);
+handR.position.set(0.45, 1.4, 0.8);
+oracleGroup.add(handR);
+
+scene.add(oracleGroup);
+
 // === EMBER PARTICLES ===
 const particleCount = 200;
 const particleGeo = new THREE.BufferGeometry();
@@ -265,6 +375,26 @@ function animate() {
   innerGlow.position.y = crystalBall.position.y;
   innerGlow.scale.setScalar(0.9 + Math.sin(t * 2) * 0.15);
   glowMat.opacity = 0.2 + Math.sin(t * 1.5) * 0.15;
+
+  // Oracle character animation
+  oracleGroup.position.y = Math.sin(t * 0.5) * 0.03; // subtle breathing
+  hood.rotation.x = -0.2 + Math.sin(t * 0.3) * 0.05; // slight head movement
+  handL.position.y = 1.4 + Math.sin(t * 0.7) * 0.05;
+  handR.position.y = 1.4 + Math.sin(t * 0.7 + 0.5) * 0.05;
+  handL.position.z = 0.8 + Math.sin(t * 0.4) * 0.1;
+  handR.position.z = 0.8 + Math.sin(t * 0.4 + Math.PI) * 0.1;
+  // Eye glow pulse + tracking
+  eyeL.material.opacity = 0.5 + Math.sin(t * 2) * 0.3;
+  eyeR.material.opacity = 0.5 + Math.sin(t * 2 + 0.3) * 0.3;
+  // Eyes follow tracked face position
+  const eyeTrackX = trackedFaceX * 0.15;
+  const eyeTrackY = trackedFaceY * 0.08;
+  eyeL.position.x = -0.08 + eyeTrackX;
+  eyeL.position.y = 2.28 + eyeTrackY;
+  eyeR.position.x = 0.08 + eyeTrackX;
+  eyeR.position.y = 2.28 + eyeTrackY;
+  // Hood follows slightly
+  hood.rotation.y = eyeTrackX * 0.5;
 
   // Runes orbit
   runeGroup.children.forEach(rune => {
