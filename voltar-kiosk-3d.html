@@ -310,6 +310,18 @@ face.position.y = 2.25;
 face.position.z = 0.15;
 oracleGroup.add(face);
 
+// Head aura — subtle glow behind the hood
+const auraGeo = new THREE.SphereGeometry(0.5, 16, 16);
+const auraMat = new THREE.MeshBasicMaterial({
+  color: 0xff6b35,
+  transparent: true,
+  opacity: 0.06,
+  side: THREE.BackSide,
+});
+const aura = new THREE.Mesh(auraGeo, auraMat);
+aura.position.y = 2.3;
+oracleGroup.add(aura);
+
 // Eyes — two small ember glows
 const eyeGeo = new THREE.SphereGeometry(0.035, 8, 8);
 const eyeMat = new THREE.MeshBasicMaterial({
@@ -408,6 +420,10 @@ function animate() {
   handR.position.y = 1.4 + Math.sin(t * 0.7 + 0.5) * 0.05;
   handL.position.z = 0.8 + Math.sin(t * 0.4) * 0.1;
   handR.position.z = 0.8 + Math.sin(t * 0.4 + Math.PI) * 0.1;
+  // Aura breathe
+  aura.scale.setScalar(1 + Math.sin(t * 0.8) * 0.15);
+  auraMat.opacity = 0.04 + Math.sin(t * 1.2) * 0.03;
+
   // Eye glow pulse + tracking
   eyeL.material.opacity = 0.5 + Math.sin(t * 2) * 0.3;
   eyeR.material.opacity = 0.5 + Math.sin(t * 2 + 0.3) * 0.3;
