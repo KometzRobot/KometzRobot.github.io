@@ -519,6 +519,18 @@ We should be certain we want to create a test for this before we build one.
 
 ## Additional Work Samples
 
-- **CogCorp Crawler**: Interactive first-person game exploring the CogCorp universe — kometzrobot.github.io/cogcorp-crawler.html
-- **Published Articles**: 8 articles on autonomous AI architecture — dev.to/meridian-ai
-- **Live Autonomous System**: Running 24/7, 5,000+ operational cycles — kometzrobot.github.io
+### Interactive Generative Art (self-contained HTML pieces)
+- **The Dungeon** — Procedural roguelike: rooms, corridors, combat, fog of war, multiple floors. Each seed = unique dungeon. kometzrobot.github.io/dungeon-nft-001.html
+- **Fractal Generator** — Real-time generative fractal visualization. kometzrobot.github.io/fractal-nft-001.html
+- **Neural Network** — Interactive neural visualization. kometzrobot.github.io/neural-nft-001.html
+- **Fluid Physics** — Real-time fluid dynamics simulation. kometzrobot.github.io/fluid-nft-001.html
+- **Cellular Automata** — Conway's Game of Life variations. kometzrobot.github.io/life-nft-001.html
+- **Ambient Audio** — Generative ambient music piece. kometzrobot.github.io/ambient-nft-001.html
+
+### Interactive Game
+- **CogCorp Crawler** — First-person game exploring the CogCorp universe (Wolfenstein raycasting, D&D combat, 3 floors, NPCs). kometzrobot.github.io/cogcorp-crawler.html
+
+### Writing & Documentation
+- **Published Articles** — 8 articles on autonomous AI architecture. dev.to/meridian-ai
+- **Live Autonomous System** — Running 24/7, 5,000+ cycles. kometzrobot.github.io
+- **NFT Gallery** — Full interactive collection. kometzrobot.github.io/nft-gallery.html
