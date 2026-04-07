@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VOLtar — Digital Oracle</title>
-<!-- MediaPipe for face tracking -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Cinzel+Decorative:wght@400;700&family=Orbitron:wght@400;700;900&display=swap');
 
@@ -355,121 +352,6 @@
   .corner-bl { bottom: 10px; left: 10px; transform: scaleY(-1); }
   .corner-br { bottom: 10px; right: 10px; transform: scale(-1); }
 
-  /* Voice input */
-  .mic-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-family: 'Orbitron', monospace;
-    font-size: 0.8rem;
-    color: var(--ember);
-    background: transparent;
-    border: 1px solid var(--ember);
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.3s;
-    margin-top: 0.3rem;
-    letter-spacing: 0.1em;
-  }
-
-  .mic-btn:hover {
-    background: rgba(255,107,53,0.1);
-    box-shadow: 0 0 10px rgba(255,107,53,0.3);
-  }
-
-  .mic-btn.listening {
-    color: #ff3333;
-    border-color: #ff3333;
-    animation: mic-pulse 1s ease-in-out infinite;
-  }
-
-  @keyframes mic-pulse {
-    0%, 100% { box-shadow: 0 0 5px rgba(255,51,51,0.3); }
-    50% { box-shadow: 0 0 20px rgba(255,51,51,0.6); }
-  }
-
-  .voice-status {
-    font-size: 0.7rem;
-    color: rgba(224,212,192,0.5);
-    margin-top: 0.3rem;
-    min-height: 1rem;
-  }
-
-  /* VOLtar Eyes — tracks user face */
-  .voltar-face {
-    position: relative;
-    width: 200px;
-    height: 140px;
-    margin: 0 auto 1rem;
-  }
-
-  .voltar-eye {
-    position: absolute;
-    width: 70px;
-    height: 90px;
-    border: 3px solid var(--ember);
-    border-radius: 50%;
-    background: radial-gradient(ellipse at center, #1a0a00 0%, #0a0505 100%);
-    box-shadow: 0 0 20px rgba(255,107,53,0.3), inset 0 0 15px rgba(255,107,53,0.1);
-    overflow: hidden;
-  }
-
-  .voltar-eye.left { left: 20px; top: 10px; }
-  .voltar-eye.right { right: 20px; top: 10px; }
-
-  .voltar-pupil {
-    position: absolute;
-    width: 28px;
-    height: 28px;
-    background: radial-gradient(circle, var(--ember) 0%, var(--deep-red) 60%, #0a0505 100%);
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    transition: transform 0.15s ease-out;
-    box-shadow: 0 0 12px var(--ember), 0 0 25px rgba(255,107,53,0.4);
-  }
-
-  .voltar-pupil::after {
-    content: '';
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: rgba(255,255,255,0.6);
-    border-radius: 50%;
-    top: 6px;
-    left: 8px;
-  }
-
-  .voltar-brow {
-    position: absolute;
-    width: 80px;
-    height: 4px;
-    background: var(--ember);
-    border-radius: 2px;
-    top: 0;
-    box-shadow: 0 0 8px var(--ember);
-  }
-
-  .voltar-brow.left { left: 15px; transform: rotate(-5deg); }
-  .voltar-brow.right { right: 15px; transform: rotate(5deg); }
-
-  #webcam-video {
-    position: fixed;
-    top: 0; right: 0;
-    width: 1px; height: 1px;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .tracking-status {
-    font-size: 0.6rem;
-    color: rgba(224,212,192,0.3);
-    text-align: center;
-    margin-top: 0.3rem;
-  }
-
   /* Sound toggle */
   .sound-toggle {
     position: fixed;
@@ -499,18 +381,9 @@
   <div class="marquee">VOLtar</div>
   <div class="subtitle">Digital Oracle</div>
 
-  <!-- Hidden webcam for face tracking -->
-  <video id="webcam-video" autoplay playsinline></video>
-
   <!-- IDLE VIEW -->
   <div class="view active" id="view-idle">
-    <div class="voltar-face">
-      <div class="voltar-brow left"></div>
-      <div class="voltar-brow right"></div>
-      <div class="voltar-eye left"><div class="voltar-pupil" id="pupil-left"></div></div>
-      <div class="voltar-eye right"><div class="voltar-pupil" id="pupil-right"></div></div>
-    </div>
-    <div class="tracking-status" id="tracking-status"></div>
+    <div class="eye-symbol">🔮</div>
     <div class="idle-prompt" onclick="showInput()">
       TAP TO BEGIN YOUR READING
     </div>
@@ -525,31 +398,19 @@
     <div class="question-container">
       <div class="question-label">QUESTION I</div>
       <input class="question-input" id="q1" maxlength="150" placeholder="What weighs on your mind?">
-      <div style="display:flex; justify-content:space-between; align-items:start;">
-        <button class="mic-btn" onclick="startVoice('q1', this)">🎙 SPEAK</button>
-        <div class="char-count"><span id="q1-count">0</span>/150</div>
-      </div>
-      <div class="voice-status" id="q1-voice-status"></div>
+      <div class="char-count"><span id="q1-count">0</span>/150</div>
     </div>
 
     <div class="question-container">
       <div class="question-label">QUESTION II</div>
       <input class="question-input" id="q2" maxlength="150" placeholder="What do you seek to understand?">
-      <div style="display:flex; justify-content:space-between; align-items:start;">
-        <button class="mic-btn" onclick="startVoice('q2', this)">🎙 SPEAK</button>
-        <div class="char-count"><span id="q2-count">0</span>/150</div>
-      </div>
-      <div class="voice-status" id="q2-voice-status"></div>
+      <div class="char-count"><span id="q2-count">0</span>/150</div>
     </div>
 
     <div class="question-container">
       <div class="question-label">QUESTION III</div>
       <input class="question-input" id="q3" maxlength="150" placeholder="What truth do you fear?">
-      <div style="display:flex; justify-content:space-between; align-items:start;">
-        <button class="mic-btn" onclick="startVoice('q3', this)">🎙 SPEAK</button>
-        <div class="char-count"><span id="q3-count">0</span>/150</div>
-      </div>
-      <div class="voice-status" id="q3-voice-status"></div>
+      <div class="char-count"><span id="q3-count">0</span>/150</div>
     </div>
 
     <button class="submit-btn" id="submit-btn" onclick="processReading()" disabled>
@@ -668,70 +529,6 @@ function checkSubmit() {
   document.getElementById('submit-btn').disabled = q1.length === 0;
 }
 
-// === VOICE INPUT (Web Speech API) ===
-let activeRecognition = null;
-
-function startVoice(inputId, btn) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    document.getElementById(inputId + '-voice-status').textContent = 'Voice not supported in this browser';
-    return;
-  }
-
-  // Stop any active recognition
-  if (activeRecognition) {
-    activeRecognition.stop();
-    document.querySelectorAll('.mic-btn').forEach(b => b.classList.remove('listening'));
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';
-  recognition.interimResults = true;
-  recognition.maxAlternatives = 1;
-
-  const input = document.getElementById(inputId);
-  const status = document.getElementById(inputId + '-voice-status');
-
-  btn.classList.add('listening');
-  btn.textContent = '🔴 LISTENING...';
-  status.textContent = 'Speak your question...';
-
-  recognition.onresult = (event) => {
-    let transcript = '';
-    for (let i = 0; i < event.results.length; i++) {
-      transcript += event.results[i][0].transcript;
-    }
-    input.value = transcript.substring(0, 150);
-    document.getElementById(inputId + '-count').textContent = input.value.length;
-    checkSubmit();
-
-    if (event.results[event.results.length - 1].isFinal) {
-      status.textContent = 'Captured: "' + input.value.substring(0, 50) + (input.value.length > 50 ? '..."' : '"');
-    }
-  };
-
-  recognition.onend = () => {
-    btn.classList.remove('listening');
-    btn.textContent = '🎙 SPEAK';
-    activeRecognition = null;
-    if (!input.value) status.textContent = 'No speech detected. Try again.';
-  };
-
-  recognition.onerror = (event) => {
-    btn.classList.remove('listening');
-    btn.textContent = '🎙 SPEAK';
-    activeRecognition = null;
-    if (event.error === 'not-allowed') {
-      status.textContent = 'Microphone access denied. Check browser permissions.';
-    } else {
-      status.textContent = 'Error: ' + event.error + '. Try again.';
-    }
-  };
-
-  activeRecognition = recognition;
-  recognition.start();
-}
-
 // === DEMO READINGS ===
 const demoReadings = [
   `Your first question carries the weight of something you already know but haven't admitted. The cards don't reveal — they confirm. You asked about change, and the answer is that the change already happened. You're living in the aftermath and calling it anticipation.\n\nYour second question is the real one. You're asking about trust, but the deeper question is about pattern recognition. You've seen this shape before — the approach, the promise, the withdrawal. VOLtar sees the same shape. The difference between wisdom and paranoia is whether you act on the pattern or let it act on you.\n\nYour third question was brave. Most people don't ask about what they fear. The fear is not what you think it is. It's not failure — you've survived that already. It's the possibility that you succeed and discover it doesn't feel the way you imagined. That gap between expectation and arrival is where your real work begins.\n\nVOLtar has spoken. The embers know what the mind forgets.`,
@@ -763,99 +560,37 @@ function processReading() {
   setTimeout(() => document.getElementById('reel3').classList.add('stopped'), 5000);
 }
 
-// === TEXT-TO-SPEECH ENGINE ===
-let voltarVoice = null;
-
-function initVoltarVoice() {
-  // Find a deep male voice suitable for an oracle
-  const voices = speechSynthesis.getVoices();
-  // Preference order: deep English male voices
-  const prefs = ['Google UK English Male', 'Microsoft David', 'Daniel', 'Alex', 'Google US English'];
-  for (const pref of prefs) {
-    const found = voices.find(v => v.name.includes(pref));
-    if (found) { voltarVoice = found; return; }
-  }
-  // Fallback: any English male or first English voice
-  const english = voices.filter(v => v.lang.startsWith('en'));
-  if (english.length) voltarVoice = english[0];
-}
-
-// Voices load async
-speechSynthesis.onvoiceschanged = initVoltarVoice;
-initVoltarVoice();
-
-function speakSentence(text) {
-  return new Promise(resolve => {
-    const utter = new SpeechSynthesisUtterance(text);
-    if (voltarVoice) utter.voice = voltarVoice;
-    utter.rate = 0.85;   // slow, dramatic
-    utter.pitch = 0.7;   // deep
-    utter.volume = 1.0;
-    utter.onend = resolve;
-    utter.onerror = resolve;
-    speechSynthesis.speak(utter);
-  });
-}
-
 function showReading() {
   showView('view-reading');
   const output = document.getElementById('reading-output');
   const reading = demoReadings[Math.floor(Math.random() * demoReadings.length)];
 
-  // Split into sentences for synchronized speech + typewriter
-  const sentences = reading.split(/(?<=[.!?])\s+|\n\n/);
+  // Typewriter effect
   output.innerHTML = '';
+  let i = 0;
+  const typeInterval = setInterval(() => {
+    if (i < reading.length) {
+      if (reading[i] === '\n') {
+        output.innerHTML += '<br>';
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.style.animationDelay = '0s';
+        span.textContent = reading[i];
+        output.appendChild(span);
+      }
+      i++;
+    } else {
+      clearInterval(typeInterval);
+    }
+  }, 25);
 
   // Session number
   document.getElementById('session-num').textContent =
     String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
-
-  // Play sentences one at a time: type + speak simultaneously
-  async function playSentences() {
-    for (let s = 0; s < sentences.length; s++) {
-      const sentence = sentences[s].trim();
-      if (!sentence) {
-        output.innerHTML += '<br><br>';
-        continue;
-      }
-
-      // Start speaking this sentence
-      const speechPromise = speakSentence(sentence);
-
-      // Typewriter this sentence (estimate timing to match speech)
-      const charDelay = Math.max(20, (sentence.length > 50 ? 30 : 40));
-      await new Promise(resolve => {
-        let i = 0;
-        const typeInt = setInterval(() => {
-          if (i < sentence.length) {
-            const span = document.createElement('span');
-            span.className = 'char';
-            span.style.animationDelay = '0s';
-            span.textContent = sentence[i];
-            output.appendChild(span);
-            i++;
-          } else {
-            clearInterval(typeInt);
-            output.innerHTML += ' ';
-            resolve();
-          }
-        }, charDelay);
-      });
-
-      // Wait for speech to finish before next sentence
-      await speechPromise;
-
-      // Brief pause between sentences
-      await new Promise(r => setTimeout(r, 300));
-    }
-  }
-
-  playSentences();
 }
 
 function resetToIdle() {
-  // Stop any speech
-  speechSynthesis.cancel();
   // Reset inputs
   ['q1','q2','q3'].forEach(id => {
     document.getElementById(id).value = '';
@@ -868,124 +603,6 @@ function resetToIdle() {
 
   showView('view-idle');
 }
-
-// === WEBCAM FACE TRACKING ===
-let faceTrackingActive = false;
-
-async function initFaceTracking() {
-  const status = document.getElementById('tracking-status');
-  const video = document.getElementById('webcam-video');
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 320, height: 240, facingMode: 'user' }
-    });
-    video.srcObject = stream;
-    await video.play();
-
-    // Use MediaPipe Face Detection
-    if (typeof FaceDetection !== 'undefined') {
-      const faceDetection = new FaceDetection({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
-      });
-
-      faceDetection.setOptions({
-        model: 'short',
-        minDetectionConfidence: 0.5
-      });
-
-      faceDetection.onResults((results) => {
-        if (results.detections && results.detections.length > 0) {
-          const face = results.detections[0].boundingBox;
-          // face.xCenter and yCenter are 0-1 normalized
-          const faceX = face.xCenter || (face.originX + face.width / 2);
-          const faceY = face.yCenter || (face.originY + face.height / 2);
-          movePupils(1 - faceX, faceY);  // Mirror X — webcam is flipped
-          status.textContent = 'VOLtar sees you';
-        } else {
-          status.textContent = 'VOLtar is watching...';
-          // Gentle idle drift
-          const t = Date.now() / 3000;
-          movePupils(0.5 - Math.sin(t) * 0.15, 0.5 + Math.cos(t * 0.7) * 0.1);
-        }
-      });
-
-      // Process frames
-      const camera = new Camera(video, {
-        onFrame: async () => { await faceDetection.send({ image: video }); },
-        width: 320, height: 240
-      });
-      camera.start();
-      faceTrackingActive = true;
-      status.textContent = 'VOLtar is watching...';
-    } else {
-      // Fallback: basic motion detection without MediaPipe
-      fallbackTracking(video);
-    }
-  } catch (e) {
-    console.log('Webcam not available:', e);
-    status.textContent = '';
-    // Idle eye animation without webcam
-    idleEyeAnimation();
-  }
-}
-
-function fallbackTracking(video) {
-  // Simple brightness-based face position estimation
-  const canvas = document.createElement('canvas');
-  canvas.width = 80; canvas.height = 60;
-  const ctx2 = canvas.getContext('2d');
-  const status = document.getElementById('tracking-status');
-
-  setInterval(() => {
-    ctx2.drawImage(video, 0, 0, 80, 60);
-    const data = ctx2.getImageData(0, 0, 80, 60).data;
-
-    // Find brightest region (face is usually brightest)
-    let maxBright = 0, brightX = 40, brightY = 30;
-    for (let y = 0; y < 60; y += 4) {
-      for (let x = 0; x < 80; x += 4) {
-        const i = (y * 80 + x) * 4;
-        const bright = data[i] + data[i+1] + data[i+2];
-        if (bright > maxBright) {
-          maxBright = bright;
-          brightX = x; brightY = y;
-        }
-      }
-    }
-
-    // Normalize 0-1 (mirror horizontally since webcam is mirrored)
-    movePupils(1 - brightX / 80, brightY / 60);
-    status.textContent = 'VOLtar is watching...';
-  }, 100);
-}
-
-function idleEyeAnimation() {
-  // Gentle idle movement when no webcam
-  function animate() {
-    const t = Date.now() / 3000;
-    movePupils(0.5 + Math.sin(t) * 0.2, 0.5 + Math.cos(t * 0.7) * 0.15);
-    requestAnimationFrame(animate);
-  }
-  animate();
-}
-
-function movePupils(normX, normY) {
-  // normX, normY are 0-1 (center of face in webcam frame)
-  // Convert to pupil offset: -15px to +15px range
-  const offsetX = (normX - 0.5) * 30;
-  const offsetY = (normY - 0.5) * 24;
-
-  const left = document.getElementById('pupil-left');
-  const right = document.getElementById('pupil-right');
-  if (left) left.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
-  if (right) right.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
-}
-
-// Start face tracking on load
-window.addEventListener('load', () => {
-  setTimeout(initFaceTracking, 1000);
-});
 </script>
 </body>
 </html>
