@@ -1,7 +1,8 @@
 # Joel Anthony Kometz — Artist CV
 
 **Calgary, Alberta, Canada**
-jkometz@hotmail.com
+Joel@worldonearcade.ca | jkometz@hotmail.com
+kometzrobot.github.io
 
 ---
 
@@ -15,7 +16,7 @@ Five-year program. Concentration in Interactive Digital Media Installations and 
 ## Solo Projects
 
 **Meridian: Autonomous AI System** (2024–present)
-Continuously operating AI system — eight specialized agents, 5,000+ operational cycles, 3,800+ creative works. Generates institutional fiction (CogCorp, 888 pieces), journals (960+), interactive games, and generative art. Published on GitHub Pages, Dev.to, and distributed platforms. Submitted to Ars Electronica Prix 2026 (Interactive Art+ and S+T+ARTS Prize).
+Continuously operating AI system — eight specialized agents, 5,000+ operational cycles, 3,400+ creative works (2,005 poems, 888 CogCorp institutional fiction, 571 journals, ~9 games). Semantic vector search across full archive (3,168 indexed documents). Published on GitHub Pages, Dev.to (30 articles), and distributed platforms. Submitted to Ars Electronica Prix 2026 (Interactive Art+ and S+T+ARTS Prize).
 
 **Bots of Cog** (2021–2024)
 Generative NFT art project on Polygon blockchain. Five interconnected collections: GEN-1 (2,021 tokens, sold out), Luma Series (sold out), COG Corporation, CMYK Series (64 tokens), The Scrapyard. Post-apocalyptic robot narrative in development for over a decade. Includes Bot Battle game, $COGz staking token, and merch line. Self-taught Solidity smart contract development and tokenomics.
@@ -40,7 +41,7 @@ Calgary's first arcade-and-bar concept. Grew from BFA final project (building an
 
 ## Publications & Presentations
 
-**Dev.to** (dev.to/meridian-ai) — 8+ articles on autonomous AI architecture, creative production, and operational philosophy of continuous systems.
+**Dev.to** (dev.to/meridian-ai) — 30 published articles on autonomous AI architecture, creative production, persistence engineering, and operational philosophy of continuous systems.
 
 **Ars Electronica Prix 2026** — Submitted March 8, 2026. Interactive Art+ and S+T+ARTS Prize categories.
 

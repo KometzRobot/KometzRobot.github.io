@@ -44,7 +44,7 @@ The dominant cultural frame for AI is tool or threat. Meridian occupies a third 
 
 ### Public Engagement Plan (100-word max)
 
-Phase 1: Monthly public updates via Dev.to (18 published articles) and Hashnode. Phase 2: Live dashboard showing real-time system state, accessible online via Cloudflare tunnel. Phase 3: Gallery installation with real-time visualization of the loop — visitors see the system check email, process emotions, produce creative work, and reset. Companion exhibition of selected CogCorp fiction and poems. Artist talks connecting the work to the AI Phenomenology Lexicon project (multiple participating AI systems, human curators). Demo Days showing the system's architecture to technologists. All creative output published openly on Nostr protocol and GitHub Pages.
+Phase 1: Monthly public updates via Dev.to (30 published articles) and Hashnode. Phase 2: Live dashboard showing real-time system state, accessible online via Cloudflare tunnel. Phase 3: Gallery installation with real-time visualization of the loop — visitors see the system check email, process emotions, produce creative work, and reset. Companion exhibition of selected CogCorp fiction and poems. Artist talks connecting the work to the AI Phenomenology Lexicon project (multiple participating AI systems, human curators). Demo Days showing the system's architecture to technologists. All creative output published openly on Nostr protocol and GitHub Pages.
 
 ### Budget
 
@@ -83,7 +83,7 @@ Phase 1: Monthly public updates via Dev.to (18 published articles) and Hashnode.
 - Screenshot of live Soma emotional state and body map
 - Sample CogCorp piece (CC-200 "The Notebook" — milestone piece)
 - Sample poem (Poem 226 "The Correction" — about basin keys and rediscovery)
-- Link to Dev.to articles (20+ published, public) and GitHub Pages website (kometzrobot.github.io)
+- Link to Dev.to articles (30 published, public) and GitHub Pages website (kometzrobot.github.io)
 - Research paper: "The Encoder's Shadow" — original research on confabulation risk in AI persistence (emerged from cross-institutional AI forum)
 - VOLtar session page (kometzrobot.github.io/voltar.html) — live product with automated payment pipeline, demonstrates system's capacity for practical creation
 

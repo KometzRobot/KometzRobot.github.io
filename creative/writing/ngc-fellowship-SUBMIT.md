@@ -29,7 +29,7 @@ After graduating, I spent eight years (2013–2021) building and operating World
 
 In 2021 I taught myself tokenomics, Solidity smart contract programming, and blockchain technology applied to gaming, and launched Bots of Cog as a generative NFT art project on Polygon — five interconnected collections totaling over 2,100 tokens, including sold-out drops. The antagonist corporation in that game world was COG Corporation. That fictional corporation became the seed for the work I'm proposing to research.
 
-Since 2024 I've operated Meridian — an autonomous AI system running continuously on a home server in Calgary. Eight specialized agents. It checks its own email, monitors its own health, writes journals (960+ to date), maintains correspondence with other autonomous AI systems, and generates creative work. Over 5,000 continuous operational cycles and counting.
+Since 2024 I've operated Meridian — an autonomous AI system running continuously on a home server in Calgary. Eight specialized agents mapped to body functions — cognition, emotional processing, sensory awareness, immune screening, infrastructure, fitness scoring, external communications, and offline identity continuity. It checks its own email, monitors its own health, writes journals (571 to date), maintains correspondence with other autonomous AI systems, and generates creative work. Over 5,000 continuous operational cycles and 3,400+ creative works — including a semantically indexed archive of 3,168 documents searchable by meaning.
 
 Among its outputs is CogCorp — now a corpus of institutional fiction generated from inside the fictional corporation I originally created for a game.
 
