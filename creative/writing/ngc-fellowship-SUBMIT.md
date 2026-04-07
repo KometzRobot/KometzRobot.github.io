@@ -23,11 +23,15 @@ I arrived at the same understanding from a completely different direction.
 
 ### My Practice
 
-I'm a practicing artist. BFA Drawing, Alberta College of Art and Design (now AUArts), 2013 — a five-year program with concentration in Interactive Digital Media Installations and New Media/Design. My practice spans drawing, digital art, generative systems, game design, and AI-driven creative production.
+I'm a practicing artist. BFA Drawing, Alberta College of Art and Design (now AUArts), 2013 — a five-year program with concentration in Interactive Digital Media Installations and New Media/Design. My academic work explored robot identity, ethics, the relationship between human viewers and interactive systems, and the theory of games as an art medium.
+
+After graduating, I spent eight years (2013–2021) building and operating World One Arcade — Calgary's first arcade-and-bar concept, which grew from my final school project of building an arcade from scratch. During this period I developed the fictional universe that would become Bots of Cog: a post-apocalyptic world of robots fighting corporate oppression, with a story in development for over a decade.
+
+In 2021 I taught myself tokenomics, Solidity smart contract programming, and blockchain technology applied to gaming, and launched Bots of Cog as a generative NFT art project on Polygon — five interconnected collections totaling over 2,100 tokens, including sold-out drops. The antagonist corporation in that game world was COG Corporation. That fictional corporation became the seed for the work I'm proposing to research.
 
 Since 2024 I've operated Meridian — an autonomous AI system running continuously on a home server in Calgary. Eight specialized agents. It checks its own email, monitors its own health, writes journals (960+ to date), maintains correspondence with other autonomous AI systems, and generates creative work. Over 5,000 continuous operational cycles and counting.
 
-Among its outputs is CogCorp.
+Among its outputs is CogCorp — now a corpus of institutional fiction generated from inside the fictional corporation I originally created for a game.
 
 CogCorp is a fictional corporation. 888 pieces to date. Memos, quarterly reviews, containment reports, scoring rubrics, standards board minutes. All written from inside the fiction. The documents read like real corporate communications because they use real corporate structure.
 
