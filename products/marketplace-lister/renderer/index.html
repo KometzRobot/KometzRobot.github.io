@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketplace Lister</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Marketplace Lister</h1>
+      <p class="subtitle">Photos &rarr; Listing &rarr; Post</p>
+    </header>
+
+    <div class="main-layout">
+      <!-- LEFT: Photos -->
+      <div class="panel photos-panel">
+        <h2>1. Photos</h2>
+        <div class="photo-controls">
+          <button id="btn-add-photos" class="btn-primary">Add Photos</button>
+          <label class="checkbox-label">
+            <input type="checkbox" id="chk-enhance" checked> Auto-enhance
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="chk-square"> Square crop
+          </label>
+        </div>
+        <div id="photo-grid" class="photo-grid">
+          <div class="photo-placeholder">
+            Drop photos here or click "Add Photos"
+          </div>
+        </div>
+        <div class="photo-actions" style="display:none" id="photo-actions">
+          <button id="btn-save-photos" class="btn-secondary">Save Processed Photos</button>
+          <button id="btn-analyze-photo" class="btn-ai" style="display:none">Analyze Photo (AI Vision)</button>
+          <span id="photo-count">0 photos</span>
+        </div>
+      </div>
+
+      <!-- RIGHT: Item Details + Output -->
+      <div class="panel details-panel">
+        <h2>2. Item Details</h2>
+        <div class="form-group">
+          <label for="item-name">Item Name *</label>
+          <input type="text" id="item-name" placeholder="e.g. Samsung 55&quot; 4K Smart TV">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category">
+              <option value="">Select...</option>
+              <option value="electronics">Electronics</option>
+              <option value="furniture">Furniture</option>
+              <option value="clothing">Clothing</option>
+              <option value="home">Home & Garden</option>
+              <option value="sports">Sports & Outdoors</option>
+              <option value="toys">Toys & Games</option>
+              <option value="auto">Auto Parts</option>
+              <option value="tools">Tools</option>
+              <option value="collectibles">Collectibles</option>
+              <option value="music">Musical Instruments</option>
+              <option value="gaming">Video Games & Consoles</option>
+              <option value="books">Books & Media</option>
+              <option value="baby">Baby & Kids</option>
+              <option value="appliances">Appliances</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="condition">Condition</label>
+            <select id="condition">
+              <option value="good">Good</option>
+              <option value="new">New</option>
+              <option value="like-new">Like New</option>
+              <option value="fair">Fair</option>
+              <option value="for-parts">For Parts</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="price">Price ($)</label>
+          <input type="number" id="price" placeholder="0" min="0" step="5">
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" rows="3" placeholder="What is it? Why are you selling? Any flaws?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Key Features <button id="btn-add-feature" class="btn-small">+ Add</button></label>
+          <div id="features-list">
+            <input type="text" class="feature-input" placeholder="e.g. 55 inch screen">
+            <input type="text" class="feature-input" placeholder="e.g. 4K HDR">
+            <input type="text" class="feature-input" placeholder="e.g. Includes remote">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="btn-generate" class="btn-primary btn-full">Generate Listing</button>
+          <button id="btn-ai-generate" class="btn-ai btn-full" style="display:none">AI Generate (Ollama)</button>
+        </div>
+
+        <!-- Output -->
+        <div id="output-section" style="display:none">
+          <h2>3. Your Listing</h2>
+          <div class="output-block">
+            <label>Title <button class="btn-copy" data-target="output-title">Copy</button></label>
+            <div id="output-title" class="output-text"></div>
+          </div>
+          <div class="output-block">
+            <label>Description <button class="btn-copy" data-target="output-body">Copy</button></label>
+            <div id="output-body" class="output-text"></div>
+          </div>
+          <div class="output-block">
+            <label>Price</label>
+            <div id="output-price" class="output-text"></div>
+          </div>
+          <button id="btn-copy-all" class="btn-primary btn-full">Copy All to Clipboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

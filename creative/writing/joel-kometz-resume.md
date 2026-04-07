@@ -56,6 +56,7 @@ Drawing Instructor — Young Rembrandts, Calgary (Ages 3–12)
 
 ## Work History
 
+- Technician — Speeders Calgary (2025–2026)
 - Repair Technician — GRETA Arcade Bar Street Food, Calgary
 - Production Technician — Printwise
 - Copy Center Head — Vivid Interior Decor
