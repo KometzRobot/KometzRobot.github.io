@@ -292,8 +292,8 @@ def get_creative_stats():
     """Analyze creative output quality and trends."""
     stats = {}
 
-    poems = sorted(set(glob.glob(os.path.join(BASE, "poem-*.md")) + glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md"))), key=os.path.getmtime)
-    journals = sorted(set(glob.glob(os.path.join(BASE, "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md"))), key=os.path.getmtime)
+    poems = sorted(set(glob.glob(os.path.join(BASE, "poem-*.md")) + glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md")) + glob.glob(os.path.join(BASE, "creative", "writing", "poems", "poem-*.md"))), key=os.path.getmtime)
+    journals = sorted(set(glob.glob(os.path.join(BASE, "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "writing", "journals", "journal-*.md"))), key=os.path.getmtime)
 
     stats["total_poems"] = len(poems)
     stats["total_journals"] = len(journals)
@@ -1146,6 +1146,27 @@ def main():
     except Exception as e:
         log_observation(f"Cascade error: {e}")
 
+    # ── MERIDIAN SILENCE DETECTION (every 4 runs = ~1 hour) ──
+    if state["runs"] % 4 == 0:
+        try:
+            db = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+            last_meridian = db.execute("""
+                SELECT timestamp FROM agent_messages
+                WHERE agent IN ('Meridian', 'MeridianLoop')
+                ORDER BY timestamp DESC LIMIT 1
+            """).fetchone()
+            db.close()
+            if last_meridian:
+                last_ts = datetime.fromisoformat(last_meridian[0].replace('Z', '+00:00').split('+')[0])
+                silence_hours = (datetime.utcnow() - last_ts).total_seconds() / 3600
+                if silence_hours > 2:
+                    alert = f"Meridian silent for {silence_hours:.1f}h — possible context compression loop"
+                    actions.append(f"ALERT: {alert}")
+                    log_observation(alert)
+                    post_to_relay(f"[Nova ALERT] {alert}")
+        except Exception as e:
+            log_observation(f"Silence detection error: {e}")
+
     # ── PORT CONFLICT DETECTION (every run) ──
     port_issues = check_port_conflicts()
     if port_issues:
@@ -1161,6 +1182,23 @@ def main():
             for sp in stale_procs:
                 actions.append(sp)
                 log_observation(f"Stale process: {sp}")
+
+    # ── MEMORY HEALTH CHECK (every 12 runs = ~3 hours) ──
+    if state["runs"] % 12 == 0:
+        try:
+            result = subprocess.run(
+                ["python3", os.path.join(BASE, "tools", "memory-lint.py")],
+                capture_output=True, text=True, timeout=30
+            )
+            if result.returncode == 0:
+                # Extract summary line
+                for line in result.stdout.split('\n'):
+                    if 'SUMMARY:' in line:
+                        actions.append(f"Memory lint: {line.strip()}")
+                        log_observation(f"Memory lint: {line.strip()}")
+                        break
+        except Exception as e:
+            log_observation(f"Memory lint error: {e}")
 
     # ── FULL SYSTEM VERIFICATION (every 12 runs = ~4 hours) ──
     if state["runs"] % 12 == 0:
