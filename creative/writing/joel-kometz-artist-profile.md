@@ -8,6 +8,9 @@
 
 ## Creative Arc
 
+### ACAD Academic Work (2008–2013)
+At ACAD, Joel's projects explored robot identity, ethics, scientific-level study of human interaction with interactive systems/installations, the viewer becoming a participant (willingly or not), social dynamics, and theory on games as an art medium. Papers and documentation exist from this period (~2012). Too old for visual portfolio but critical intellectual foundation — the same questions that drive Bots of Cog and Meridian were being asked 14 years ago.
+
 ### World One Arcade (2013–2016)
 Final school project: built an arcade from scratch. Evolved into a real business venture — **WORLD-1: Arcade and Bar YYC**, Calgary's first arcade-and-bar concept. Published on LinkedIn (Nov 2015). Documented the mechanics of difficulty and fun in arcade game design. Live stream footage exists of Joel discussing these mechanics.
 
@@ -35,7 +38,7 @@ society6.com/jkometz — Art prints, wall art, apparel, accessories.
 888 pieces of institutional fiction generated through an autonomous AI system. The fictional corporation from the NFT game world became the subject of autonomous AI-generated documents — memos, quarterly reviews, containment reports, scoring rubrics. Over 5,000 operational cycles. Submitted to Ars Electronica 2026.
 
 ## The Creative Throughline
-Decade of world-building → arcade game mechanics → NFT generative art (sold-out collections) → autonomous AI generating institutional fiction from inside that fictional world → fellowship research connecting it to General Idea's institutional mimicry.
+14 years of sustained inquiry: ACAD academic work on robot identity, ethics, interactive systems, games-as-art (2012) → World One Arcade (2013) → decade of Bots of Cog world-building → NFT generative art with sold-out collections (2021-2024) → autonomous AI generating institutional fiction from inside that fictional world (2024-present) → fellowship research connecting it to General Idea's institutional mimicry. The questions have been consistent since the beginning. The medium evolved.
 
 ## Social Media
 - Twitter/X: @botsofcog (project), @jkometz (personal), @worldonearcade
