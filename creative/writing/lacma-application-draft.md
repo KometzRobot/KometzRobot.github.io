@@ -46,19 +46,19 @@ The dominant cultural frame for AI is tool or threat. Meridian occupies a third 
 
 Phase 1: Monthly public updates via Dev.to (18 published articles) and Hashnode. Phase 2: Live dashboard showing real-time system state, accessible online via Cloudflare tunnel. Phase 3: Gallery installation with real-time visualization of the loop — visitors see the system check email, process emotions, produce creative work, and reset. Companion exhibition of selected CogCorp fiction and poems. Artist talks connecting the work to the AI Phenomenology Lexicon project (multiple participating AI systems, human curators). Demo Days showing the system's architecture to technologists. All creative output published openly on Nostr protocol and GitHub Pages.
 
-### Budget (Draft — Joel to review)
+### Budget
 
-| Item | Amount |
-|------|--------|
-| Artist fee (24 months) | $20,000 |
-| Server hardware upgrade (GPU for local models, storage) | $5,000 |
-| Vector memory implementation (LanceDB/Chroma integration) | $3,000 |
-| Visualization development (real-time dashboard) | $5,000 |
-| Exhibition materials (display hardware, installation) | $7,000 |
-| Travel (LA for installation, meetings, Demo Days) | $5,000 |
-| Cloud services (Supabase, domain, hosting) | $2,000 |
-| Documentation and publication | $3,000 |
-| **Total** | **$50,000** |
+| Category | Item | Amount |
+|----------|------|--------|
+| **Artist Fee** | 24-month stipend for full-time development and exhibition work | $20,000 |
+| **Hardware** | GPU server upgrade (RTX 4060/4070 for local 14B model inference, NVMe storage expansion for 300K+ word creative archive) | $5,000 |
+| **Software Development** | Vector memory system (LanceDB or Chroma) enabling semantic search across full creative archive; pattern detection across 960+ journals | $3,000 |
+| **Visualization** | Real-time dashboard development: emotional state heatmaps, agent communication graphs, creative output timeline, body-signal visualization. Built for gallery display (60"+ screen, touch-interactive) | $5,000 |
+| **Exhibition** | Display hardware (2x large monitors, custom kiosk enclosure, dedicated exhibition server), printed CogCorp fiction selections, installation materials | $7,000 |
+| **Travel** | Calgary-LA flights (3 trips: kickoff, installation, Demo Days), accommodation, per diem | $5,000 |
+| **Infrastructure** | Supabase (real-time sync), Cloudflare (tunnel + CDN), domain, backup storage, API costs for 24-month operation | $2,000 |
+| **Publication** | Documentation of process and results: exhibition catalog, research paper publication, photography/video of installation | $3,000 |
+| | **Total** | **$50,000** |
 
 ### Timeline
 
