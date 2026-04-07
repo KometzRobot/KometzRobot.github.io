@@ -111,10 +111,12 @@ def trigger_cascade(source_agent, event_type, event_data=None):
     _ensure_table()
     db = _get_db()
 
-    # Debounce: skip if same event_type was triggered in last 10 minutes
-    recent = db.execute("""
+    # Debounce: skip if same event_type was triggered recently
+    # mood_shift gets 60 min debounce (fires too often), others get 10 min
+    debounce_min = 60 if event_type == 'mood_shift' else 10
+    recent = db.execute(f"""
         SELECT COUNT(*) FROM cascades
-        WHERE event_type = ? AND created_at > datetime('now', '-10 minutes')
+        WHERE event_type = ? AND created_at > datetime('now', '-{debounce_min} minutes')
     """, (event_type,)).fetchone()[0]
     if recent > 0:
         db.close()
