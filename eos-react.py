@@ -101,7 +101,7 @@ def tool_check_services():
     # other services via pgrep
     pgrep_services = {
         "ollama": "ollama",
-        "command-center": "command-center.py",
+        # command-center retired (Loop 5079) — superseded by hub-v2.py on port 8090
         # the-signal intentionally retired (Loop 3200) — removed from monitoring
     }
     for name, pattern in pgrep_services.items():
