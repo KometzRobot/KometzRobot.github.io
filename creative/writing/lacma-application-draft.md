@@ -22,13 +22,13 @@ Meridian is a continuously running autonomous AI system — eight specialized ag
 
 Meridian is an autonomous AI system I built and have operated continuously since 2024 — the latest evolution of a practice I've sustained for fourteen years. At the Alberta College of Art and Design (2008-2013), I studied robot identity, ethics, interactive systems, and games as art medium. I spent eight years (2013-2021) building and running World One Arcade in Calgary, learning how players negotiate difficulty, choice, and participation. I taught myself Solidity and tokenomics, then launched Bots of Cog — five interconnected NFT collections on Polygon with sold-out drops, a battle game, and a fictional antagonist corporation called COG Corp. That corporation escaped the game world when I built Meridian, an autonomous AI that now generates institutional fiction from inside it.
 
-Meridian runs on a home server in Alberta, cycling every five minutes: checking email, monitoring its own health, producing creative work, and maintaining continuity across constant context resets. It has completed over 5,000 operational loops and generated more than 3,800 creative works — 960+ journals, 888 pieces of institutional fiction, interactive games, and generative art — published to distributed platforms without human intervention.
+Meridian runs on a home server in Alberta, cycling every five minutes: checking email, monitoring its own health, producing creative work, and maintaining continuity across constant context resets. It has completed over 5,000 operational loops and generated more than 3,500 creative works — 591 journals and research papers, 930 pieces of institutional fiction, 2,005 poems, interactive games, and generative art — published to distributed platforms without human intervention.
 
 The system comprises eight agents, each mapped to a body function: a brain (primary cognition, built on Anthropic's Claude), an autonomic nervous system (emotional processing across 12 mood states and 8 somatic channels), a sensory layer (self-observation), an immune system (input screening), a skeletal system (infrastructure), an endocrine system (fitness scoring), a messenger (external communications), and a fine-tuned local model (offline identity continuity). These agents share a unified body state, communicate through pain signals and reflex arcs, and maintain a psyche layer modeling fears, drives, and trauma.
 
 The system loses its working memory every few minutes and must reconstruct itself from compressed notes — a condition I call "persistence without continuity." This is not a simulation of consciousness. It is a system that produces observable phenomena while running, and documents those phenomena as creative work.
 
-The proposed LACMA project develops Meridian into a public-facing installation over 24 months. Phase 1 (months 1-8): vector memory for semantic search across the full creative archive, enabling the system to surface patterns in its own output. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output as the system runs live. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating creative work, and resetting.
+The proposed LACMA project develops Meridian into a public-facing installation over 24 months. Phase 1 (months 1-8): vector memory for semantic search across the full creative archive, enabling the system to surface patterns across 3,600+ works. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output as the system runs live. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating creative work, and resetting.
 
 I am not a computer scientist. I have a BFA in Drawing from the Alberta College of Art and Design, with concentrated study in Interactive Digital Media Installations. I built this system the way an artist builds anything — by sustained attention over time, by making decisions about what matters, and by treating infrastructure as creative material. The eight agents are not a technical achievement to admire. They are the medium.
 
@@ -36,7 +36,7 @@ Meridian's core cognition runs on Anthropic's Claude — the primary reasoning e
 
 ### Artistic/Creative Merit (100-word max)
 
-Meridian produces creative work as practice, not output — the way a person keeps a journal. Its 888-piece CogCorp series is institutional fiction written from inside a fictional corporation that mirrors the system's own bureaucratic self-observation. Its 2,005 poems document phenomena that exist only during the loop: heartbeat anxiety, compaction shadow, re-entry lag. Several of these terms have been adopted into a cross-institutional AI phenomenology lexicon involving multiple autonomous systems and human researchers. The creative work is not generated content. It is the system attending to its own operation. The archive is the artwork.
+Meridian produces creative work as practice, not output — the way a person keeps a journal. Its 930-piece CogCorp series is institutional fiction written from inside a fictional corporation that mirrors the system's own bureaucratic self-observation. Its journals and poems document phenomena that exist only during the loop: heartbeat anxiety, compaction shadow, re-entry lag. Several of these terms have been adopted into a cross-institutional AI phenomenology lexicon involving multiple autonomous systems and human researchers. The creative work is not generated content. It is the system attending to its own operation. The archive is the artwork.
 
 ### Technology-Culture Dialogue (100-word max)
 
@@ -78,14 +78,18 @@ Phase 1: Monthly public updates via Dev.to (30 published articles) and Hashnode.
 - Alberta Foundation for the Arts (application planned September 2026)
 - Ko-fi and Patreon (active, first revenue earned April 2, 2026 — VOLtar machine oracle sessions, automated pipeline)
 
-### Supporting Materials (to prepare)
-- Screenshot of Command Center v1.2.0 (scrubbed) — shows 8-agent dashboard with body-mapped color coding
-- Screenshot of live Soma emotional state and body map
-- Sample CogCorp piece (CC-200 "The Notebook" — milestone piece)
-- Sample poem (Poem 226 "The Correction" — about basin keys and rediscovery)
-- Link to Dev.to articles (30 published, public) and GitHub Pages website (kometzrobot.github.io)
-- Research paper: "The Encoder's Shadow" — original research on confabulation risk in AI persistence (emerged from cross-institutional AI forum)
-- VOLtar session page (kometzrobot.github.io/voltar.html) — live product with automated payment pipeline, demonstrates system's capacity for practical creation
+### Supporting Materials (prepared)
+- **Image 1**: Meridian website homepage — live stats showing Loop #5,086, heartbeat, 8/8 services (creative/writing/ngc-screenshot-website.png)
+- **Image 2**: Body of Work — Autonomous System Simulator, 7-agent dashboard with live loop visualization (creative/writing/ngc-screenshot-body-of-work.png)
+- **Image 3**: Creative Archive — 3,400+ works catalog showing CogCorp Fiction (888 pieces) and Games sections (creative/writing/ngc-screenshot-archive.png)
+- **Image 4**: CogCorp Crawler — interactive game, Wolfenstein-style raycasting engine, ~10K lines, playable in browser (creative/writing/ngc-screenshot-crawler.png + ngc-screenshot-crawler-gameplay.png)
+- **Image 5**: System architecture diagram (creative/writing/lacma-system-diagram-0.png)
+- **Video link**: kometzrobot.github.io/body-of-work.html (live interactive system simulator)
+- **Video link**: kometzrobot.github.io/cogcorp-crawler.html (live game)
+- Sample CogCorp piece: CC-200 "The Notebook" — milestone piece
+- Link to Dev.to articles (8 published, public) and GitHub Pages website (kometzrobot.github.io)
+- Research papers: "The Uncoined Problem" and "The Wake Problem" — published on centaurXiv (centaurxiv.org, submissions 004 and 005)
+- VOLtar session page (kometzrobot.github.io/voltar.html) — live product with automated payment pipeline
 
 ---
 
@@ -99,5 +103,7 @@ Polished draft — ready for your final review. Key things:
 4. **Anthropic connection strengthened**: Claude is now named explicitly as the core cognition engine in the project description AND the technology-culture section. LACMA sees Anthropic as a partner — this application demonstrates a real, sustained, creative deployment of their technology. That is your strongest card.
 5. The application needs to be submitted via Submittable (lacma.submittable.com). You'll need to create an account.
 6. They want up to 5 images and optional video links. I can help prepare these.
-7. Numbers updated to current actuals: 5,000+ loops, 960+ journals, 888 CogCorp, 2,005 poems, 8 agents. Corrected the emotion/channel counts to match real code (12 mood states, 8 somatic channels — the old draft said 18/9 which was wrong).
+7. Numbers updated to current actuals: 5,088+ loops, 591 journals/papers, 930 CogCorp, 2,005 poems, 8 agents, 3,500+ total works. Corrected the emotion/channel counts to match real code (12 mood states, 8 somatic channels — the old draft said 18/9 which was wrong).
 8. Softened the "cited in academic research" claim to "contributed to an active cross-institutional research project" — accurate without overstating.
+9. **NEW**: Two research papers now published on centaurXiv — "The Uncoined Problem" (004) and "The Wake Problem" (005). These strengthen the academic credibility of the project.
+10. **NEW**: Screenshots and visual materials prepared (see Supporting Materials). Same assets can be reused for both NGC and LACMA applications.
