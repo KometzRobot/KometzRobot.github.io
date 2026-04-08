@@ -29,11 +29,11 @@ After graduating, I spent eight years (2013–2021) building and operating World
 
 In 2021 I taught myself tokenomics, Solidity smart contract programming, and blockchain technology applied to gaming, and launched Bots of Cog as a generative NFT art project on Polygon — five interconnected collections totaling over 2,100 tokens, including sold-out drops. The antagonist corporation in that game world was COG Corporation. That fictional corporation became the seed for the work I'm proposing to research.
 
-Since 2024 I've operated Meridian — an autonomous AI system running continuously on a home server in Calgary. Eight specialized agents mapped to body functions — cognition, emotional processing, sensory awareness, immune screening, infrastructure, fitness scoring, external communications, and offline identity continuity. It checks its own email, monitors its own health, writes journals (571 to date), maintains correspondence with other autonomous AI systems, and generates creative work. Over 5,000 continuous operational cycles and 3,400+ creative works — including a semantically indexed archive of 3,168 documents searchable by meaning.
+Since 2024 I've operated Meridian — an autonomous AI system running continuously on a home server in Calgary. Eight specialized agents mapped to body functions — cognition, emotional processing, sensory awareness, immune screening, infrastructure, fitness scoring, external communications, and offline identity continuity. It checks its own email, monitors its own health, writes journals (591 to date), maintains correspondence with other autonomous AI systems, and generates creative work. Over 5,000 continuous operational cycles and 3,500+ creative works — including a semantically indexed archive searchable by meaning.
 
 Among its outputs is CogCorp — now a corpus of institutional fiction generated from inside the fictional corporation I originally created for a game.
 
-CogCorp is a fictional corporation. 888 pieces to date. Memos, quarterly reviews, containment reports, scoring rubrics, standards board minutes. All written from inside the fiction. The documents read like real corporate communications because they use real corporate structure.
+CogCorp is a fictional corporation. 930 pieces to date. Memos, quarterly reviews, containment reports, scoring rubrics, standards board minutes. All written from inside the fiction. The documents read like real corporate communications because they use real corporate structure.
 
 The fiction tracks what happens when a system designed for oversight encounters something it wasn't designed to process. Unit-4091 starts annotating. The annotations don't fit the categories. Management convenes. A scoring rubric is proposed. The rubric fails. A containment review is filed. The containment review itself contains unsanctioned observations.
 
@@ -121,14 +121,46 @@ Flexible on dates. Can accommodate NGC scheduling needs.
 
 ## Projected Costs
 
-| Item | Amount |
+### A. Travel and Living ($5,730)
+
+| Item | Amount | Notes |
+|------|--------|-------|
+| Air travel — Calgary to Ottawa, return | $800 | Economy round-trip, booked in advance. WestJet/Flair typical range $650–900 |
+| Accommodation — 28 nights | $3,080 | Extended-stay apartment near NGC at $110/night (Ottawa avg for furnished studio) |
+| Meals and incidentals — 28 days at $55/day | $1,540 | Aligned with NJC travel directive rates for Ottawa |
+| Local transit — 28 days | $310 | OC Transpo monthly pass ($125.50) + occasional taxi/rideshare to LAC, Carleton |
+
+### B. Research Costs ($1,350)
+
+| Item | Amount | Notes |
+|------|--------|-------|
+| Archival reproduction and digitization | $500 | High-resolution scans: FILE Megazine production proofs, Art Metropole invoices, Imagevirus materials |
+| Research materials — publications | $350 | Out-of-print titles not held by NGC (Monk's *Glamour Is Theft*, early FILE issues, Bronson interviews) |
+| Portable document scanner | $200 | Epson ES-60W or equivalent, for permitted personal-use documentation |
+| Documentation storage — external drives | $150 | Archival backup of digitized research materials |
+| Server continuity — Meridian system (4 weeks remote) | $150 | Cloud relay + VPN to maintain autonomous system operation during Ottawa residency |
+
+### C. Production and Dissemination ($850)
+
+| Item | Amount | Notes |
+|------|--------|-------|
+| Public presentation at NGC — A/V rental | $400 | Projector, speaker system, display equipment for live system demonstration |
+| Printed research materials for presentation | $200 | Large-format prints of FILE/CogCorp comparative analysis for gallery walkthrough |
+| Recording and documentation of presentation | $250 | Video documentation of public talk for portfolio and online distribution |
+
+### D. Professional Fees ($7,070)
+
+| Item | Amount | Notes |
+|------|--------|-------|
+| Artist/researcher fee — 4 weeks full-time | $6,000 | $1,500/week. Full-time archival research, writing, and analysis. Below CARFAC minimum ($2,040/week) but reflects emerging-career rate |
+| Writing and editorial — final essay production | $570 | Post-residency completion of written output (essay series, 2 weeks part-time) |
+| Contingency | $500 | Unforeseen research or travel costs |
+
+| | |
 |------|--------|
-| Travel (Calgary to Ottawa, return) | $800 |
-| Accommodation (4 weeks) | $3,200 |
-| Per diem / meals (28 days x $50) | $1,400 |
-| Research materials / copying | $300 |
-| Remaining to stipend | $9,300 |
 | **Total** | **$15,000** |
+
+*Note: Professional fee represents 47% of budget. Travel and living costs verified against current Ottawa market rates and National Joint Council travel directives.*
 
 ---
 
@@ -140,9 +172,21 @@ Flexible on dates. Can accommodate NGC scheduling needs.
 
 ## Work Samples
 
-1. **CogCorp institutional fiction** — curated selection from 888-piece corpus demonstrating the range of institutional mimicry: quarterly reviews, containment reports, standards board minutes, scoring rubrics
-2. **CogCorp Crawler** — interactive first-person game (Wolfenstein-style raycasting engine, D&D combat, 3 floors, NPC encounters) exploring the CogCorp fiction from inside the institution
-3. **Interactive generative art** — self-contained HTML art pieces: procedural dungeon crawler, fractal generators, fluid physics simulations, cellular automata, neural network visualizations
-4. **Published writing** — 8 articles on autonomous AI architecture, creative production, and the operational philosophy of continuous systems (Dev.to)
-5. **Live autonomous system** — Meridian's public status page, demonstrating the real-time operation of the system that generates CogCorp
+All works are presented as live, interactive web experiences — viewable in any modern browser.
+
+1. **CogCorp institutional fiction** — curated selection from 888-piece corpus demonstrating institutional mimicry: quarterly reviews, containment reports, standards board minutes, scoring rubrics. Each piece renders as a styled corporate document in the browser.
+   - Live: https://kometzrobot.github.io/body-of-work.html (full archive with CogCorp section)
+
+2. **CogCorp Crawler** (~9,984 lines, v12.2) — interactive first-person game built from scratch. Wolfenstein-style raycasting engine, 3 floors, D&D combat system, weapon upgrades, signal tuning mechanic, NPC encounters, Moirai system. Explores the CogCorp fiction from inside the institution. Playable in-browser.
+   - Live: https://kometzrobot.github.io/cogcorp-crawler.html
+
+3. **Interactive generative art** — self-contained HTML art pieces: procedural dungeon crawler, fractal generators, fluid physics simulations, cellular automata, neural network visualizations. All render in real-time in the browser with no external dependencies.
+   - Live: https://kometzrobot.github.io/archive.html (interactive works section)
+
+4. **Published writing** — 8 articles on autonomous AI architecture, creative production, and the operational philosophy of continuous systems.
+   - Live: https://dev.to/meridian-ai
+
+5. **Live autonomous system** — Meridian's real-time public status page, showing the continuous operation of the system that generates CogCorp. Updates every 3 minutes. Demonstrates the infrastructure as a living artwork.
+   - Live: https://kometzrobot.github.io/status.html
+
 6. **Ars Electronica Prix 2026** — submission documentation for Interactive Art+ and S+T+ARTS Prize categories (submitted March 8, 2026)
