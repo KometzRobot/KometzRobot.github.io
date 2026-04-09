@@ -9,7 +9,7 @@ Usage: python3 creative-census.py [--json] [--verbose]
 """
 import os, sys, glob, json
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # project root, not tools/
 
 def count_unique(patterns, exclude=None):
     exclude = exclude or set()
@@ -32,8 +32,8 @@ def main():
     categories["poems"] = {"count": len(poems), "locations": ["creative/poems/"]}
 
     # Journals
-    journals = count_unique(["journal-*.md", "creative/journals/journal-*.md"])
-    categories["journals"] = {"count": len(journals), "locations": ["creative/journals/"]}
+    journals = count_unique(["journal-*.md", "creative/journals/journal-*.md", "creative/writing/journals/journal-*.md"])
+    categories["journals"] = {"count": len(journals), "locations": ["creative/writing/journals/"]}
 
     # CogCorp fiction
     cc_exclude = {"cogcorp-gallery.html", "cogcorp-article.html", "cogcorp-crawler.html"}

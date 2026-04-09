@@ -519,7 +519,7 @@ def push_status():
     subprocess.run(['git', 'commit', '-m', 'Update live status'], cwd=REPO_DIR,
                    capture_output=True, timeout=10,
                    env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
-    result = subprocess.run(['git', 'push'], cwd=REPO_DIR,
+    result = subprocess.run(['git', 'push', 'origin', 'master'], cwd=REPO_DIR,
                            capture_output=True, text=True, timeout=30,
                            env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
     if result.returncode == 0:
