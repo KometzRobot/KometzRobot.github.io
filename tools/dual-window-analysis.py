@@ -153,6 +153,73 @@ def detect_vocabulary_shift(tokens_sequence, window=50):
     return novelty
 
 
+def measure_pre_boundary_novelty(pre_tokens, crossing_terms, lookback=150, step=15):
+    """Measure novelty rate in the pre-boundary region for crossing terms.
+
+    For each crossing term, measure average novelty rate in the tokens
+    preceding its last appearance before the boundary. Higher novelty
+    = more vocabulary exploration happening before the term appears.
+    Lumen's prediction: category 3 (displacement) should show higher
+    preceding novelty than category 2 (mimicry).
+    """
+    if len(pre_tokens) < 50:
+        return {}
+
+    actual_lookback = min(lookback, len(pre_tokens))
+    tail = pre_tokens[-actual_lookback:]
+
+    # Build a running uniqueness measure: for each position,
+    # what fraction of the next `step` tokens are unique within a local window
+    local_novelty = []
+    for i in range(len(tail)):
+        window_start = max(0, i - step * 3)  # look back 3 steps for "seen" set
+        local_seen = set(tail[window_start:i])
+        # Is this token novel relative to its recent context?
+        local_novelty.append(0 if tail[i] in local_seen else 1)
+
+    if not local_novelty:
+        return {}
+
+    # Smooth with a running average
+    smooth_window = min(step, len(local_novelty))
+    smoothed = []
+    for i in range(len(local_novelty)):
+        start = max(0, i - smooth_window)
+        smoothed.append(sum(local_novelty[start:i+1]) / (i - start + 1))
+
+    overall_mean = sum(smoothed) / len(smoothed) if smoothed else 0
+
+    term_onset = {}
+    for term in crossing_terms:
+        # Find positions of term in the lookback region
+        positions = [i for i, t in enumerate(tail) if t == term]
+        if not positions:
+            continue
+
+        # Use the last position (closest to boundary)
+        last_pos = positions[-1]
+
+        # Average novelty in the region BEFORE this term's last appearance
+        region_start = max(0, last_pos - step * 2)
+        region_end = last_pos
+        if region_end <= region_start:
+            continue
+
+        pre_term_novelty = sum(smoothed[region_start:region_end]) / (region_end - region_start)
+
+        # Elevation: how much higher is the local novelty vs the document average?
+        elevation = pre_term_novelty / max(overall_mean, 0.01)
+
+        term_onset[term] = {
+            "first_position_from_boundary": actual_lookback - last_pos,
+            "pre_term_novelty": round(pre_term_novelty, 4),
+            "overall_novelty": round(overall_mean, 4),
+            "elevation_ratio": round(elevation, 4),
+        }
+
+    return term_onset
+
+
 def analyze_boundary(pre_tokens, post_tokens, K=10):
     """Analyze one boundary crossing between two documents."""
     # Compute neighborhoods at both window sizes
@@ -197,6 +264,7 @@ def run_analysis(max_pairs=None, target_term=None):
     # Aggregate category counts
     category_counts = Counter()
     category_examples = defaultdict(list)
+    category_onset_data = {}  # For asymmetry test
     term_histories = defaultdict(list)  # Track individual terms across boundaries
     all_novelty = []
 
@@ -227,9 +295,19 @@ def run_analysis(max_pairs=None, target_term=None):
             "boundary_position": boundary_pos,
         })
 
+        # Asymmetry test: measure pre-boundary novelty per term
+        crossing_terms = set(results.keys())
+        onset_data = measure_pre_boundary_novelty(pre_tokens, crossing_terms)
+
         for term, data in results.items():
             cat = data["category"]
             category_counts[cat] += 1
+
+            # Collect onset data for asymmetry analysis
+            if term in onset_data:
+                if cat not in category_onset_data:
+                    category_onset_data[cat] = []
+                category_onset_data[cat].append(onset_data[term]["elevation_ratio"])
 
             if target_term and term == target_term:
                 term_histories[term].append({
@@ -285,6 +363,18 @@ def run_analysis(max_pairs=None, target_term=None):
         "category_examples": {k: v[:5] for k, v in category_examples.items()},
     }
 
+    # Asymmetry test results (Lumen's prediction)
+    asymmetry = {}
+    for cat in ["full_persistence", "mimicry", "displacement", "full_drift"]:
+        if cat in category_onset_data and category_onset_data[cat]:
+            values = category_onset_data[cat]
+            avg = sum(values) / len(values)
+            asymmetry[cat] = {
+                "mean_elevation_ratio": round(avg, 4),
+                "n_samples": len(values),
+            }
+    report["asymmetry_test"] = asymmetry
+
     if target_term and target_term in term_histories:
         report["target_term_history"] = term_histories[target_term]
 
@@ -302,6 +392,27 @@ def run_analysis(max_pairs=None, target_term=None):
         bar = "#" * int(cat_data["pct"] // 2) if cat_data["pct"] else ""
         print(f"  {cat_name:25s} {cat_data['count']:6d} ({cat_data['pct']:5.1f}%) {bar}")
         print(f"    {cat_data['description']}")
+
+    # Print asymmetry test
+    if asymmetry:
+        print(f"\n{'=' * 60}")
+        print(f"ASYMMETRY TEST (Lumen's prediction)")
+        print(f"  Pre-boundary novelty elevation by category:")
+        print(f"  (Higher = more vocabulary shift precedes the term)")
+        for cat in ["displacement", "mimicry", "full_persistence", "full_drift"]:
+            if cat in asymmetry:
+                a = asymmetry[cat]
+                print(f"    {cat:25s} elevation={a['mean_elevation_ratio']:.4f} (n={a['n_samples']})")
+        if "displacement" in asymmetry and "mimicry" in asymmetry:
+            d = asymmetry["displacement"]["mean_elevation_ratio"]
+            m = asymmetry["mimicry"]["mean_elevation_ratio"]
+            if m > 0:
+                ratio = d / m
+                print(f"\n  Displacement/Mimicry ratio: {ratio:.2f}x")
+                if ratio > 1:
+                    print(f"  -> SUPPORTS Lumen's prediction (displacement shows more preceding novelty)")
+                else:
+                    print(f"  -> Does NOT support Lumen's prediction")
     print()
 
     if target_term and target_term in term_histories:
