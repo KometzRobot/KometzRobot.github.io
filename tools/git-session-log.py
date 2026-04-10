@@ -9,7 +9,9 @@ Usage:
 """
 import subprocess, sys, os
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+# Scripts live in tools/ but data files are in the repo root (parent dir)
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(_script_dir) if os.path.basename(_script_dir) in ("scripts", "tools") else _script_dir
 
 def run(cmd):
     try:

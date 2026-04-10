@@ -18,7 +18,7 @@ import sqlite3
 import argparse
 import urllib.request
 
-# Scripts live in tools/ but data files are in the repo root (parent dir)
+# Scripts live in scripts/ but data files are in the repo root (parent dir)
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(_script_dir) if os.path.basename(_script_dir) in ("scripts", "tools") else _script_dir
 DB = os.path.join(BASE, "memory.db")
