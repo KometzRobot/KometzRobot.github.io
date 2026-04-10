@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Joel Kometz — Visual Portfolio | NGC General Idea Fellowship</title>
+<style>
+  @page { size: letter; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    background: #fff;
+    line-height: 1.35;
+    font-size: 9pt;
+  }
+
+  /* Each page is exactly letter-sized */
+  .page {
+    width: 8.5in;
+    height: 11in;
+    padding: 0.4in;
+    page-break-after: always;
+    overflow: hidden;
+    position: relative;
+  }
+  .page:last-child { page-break-after: avoid; }
+  .page.no-pad { padding: 0; }
+
+  /* COVER */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: #111;
+    color: #fff;
+  }
+  .cover h1 { font-size: 2.8em; font-weight: 100; letter-spacing: 0.18em; margin-bottom: 0.15em; }
+  .cover .sub { font-size: 0.95em; font-weight: 300; color: #999; letter-spacing: 0.06em; }
+  .cover .divider { width: 60px; height: 1px; background: #555; margin: 1.5em 0; }
+  .cover .tagline { font-size: 0.9em; color: #aaa; font-style: italic; max-width: 400px; line-height: 1.6; }
+  .cover .info { font-size: 0.75em; color: #666; margin-top: 2em; line-height: 1.8; }
+
+  /* GRID SYSTEM - always fills page content area (7.7in x 10.2in) */
+  .grid { display: grid; gap: 0.25in; width: 100%; height: 100%; }
+  .g-2x2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .g-hero-text { grid-template-columns: 1.3fr 1fr; grid-template-rows: 1fr; }
+  .g-text-hero { grid-template-columns: 1fr 1.3fr; grid-template-rows: 1fr; }
+  .g-3x2 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .g-big-2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1.5fr 1fr; }
+  .g-editorial { grid-template-columns: 1.6fr 1fr; grid-template-rows: 1fr; }
+  .g-editorial-r { grid-template-columns: 1fr 1.6fr; grid-template-rows: 1fr; }
+
+  /* Image cells */
+  .cell {
+    overflow: hidden;
+    position: relative;
+    background: #f5f5f5;
+    border-radius: 2px;
+  }
+  .cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: #f5f5f5;
+  }
+  .cell.fill img { object-fit: cover; }
+  .cell.span2c { grid-column: span 2; }
+  .cell.span2r { grid-row: span 2; }
+
+  /* Dark cells for dark-bg NFT/digital art */
+  .cell.dark-bg { background: #111; }
+  .cell.dark-bg img { background: #111; }
+
+  /* Captions */
+  .cap {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    color: #fff;
+    padding: 0.7em 0.5em 0.4em;
+  }
+  .cap .t { font-weight: 600; font-size: 0.8em; }
+  .cap .d { font-size: 0.65em; opacity: 0.9; margin-top: 2px; }
+
+  /* Text panels */
+  .text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.4in 0.3in;
+  }
+  .text h2 { font-size: 1.6em; font-weight: 200; letter-spacing: 0.04em; margin-bottom: 0.25em; }
+  .text .period { font-size: 0.7em; color: #999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.7em; }
+  .text p { font-size: 0.85em; color: #444; line-height: 1.55; margin-bottom: 0.45em; }
+  .text .pull { font-size: 1.05em; font-style: italic; color: #1a1a1a; line-height: 1.45; border-left: 2px solid #1a1a1a; padding-left: 0.5em; margin: 0.5em 0; }
+  .text .attr { font-size: 0.65em; color: #999; }
+
+  /* Dark page */
+  .dark { background: #111; color: #fff; }
+  .dark .cell { background: #222; }
+  .dark .cell img { background: #222; }
+  .dark .text h2 { color: #fff; }
+  .dark .text p { color: #ccc; }
+  .dark .text .pull { color: #fff; border-color: #fff; }
+
+  /* Timeline table */
+  .timeline { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+  .timeline td { padding: 0.35em 0.5em; border-bottom: 1px solid #333; }
+  .timeline .yr { font-weight: 700; color: #888; width: 50px; }
+
+  @media screen {
+    body { max-width: 8.5in; margin: 0 auto; background: #ddd; }
+    .page { background: #fff; margin: 0.5in auto; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: COVER -->
+<div class="page no-pad cover">
+  <h1>JOEL KOMETZ</h1>
+  <div class="sub">VISUAL PORTFOLIO</div>
+  <div class="divider"></div>
+  <div class="tagline">"To create something that can create or induce moments."</div>
+  <div class="info">
+    NGC General Idea Fellowship 2026-27<br>
+    BFA Drawing, ACAD (AUArts), 2013 — Calgary, AB<br>
+    kometzrobot.github.io
+  </div>
+</div>
+
+<!-- PAGE 2: ACAD INSTALLATIONS -->
+<div class="page">
+  <div class="grid g-hero-text">
+    <div class="cell fill">
+      <img src="/media/usb0/NGC/Images/01.JK.2012.BinaryFlow.JPG" alt="Binary Flow">
+      <div class="cap">
+        <div class="t">Binary Flow (2012)</div>
+        <div class="d">Wall-scale interactive installation. Painted pipe network with embedded screens and biometric handprint sensor.</div>
+      </div>
+    </div>
+    <div class="text">
+      <h2>Interactive Installations</h2>
+      <div class="period">ACAD 2010-2013 — BFA Drawing</div>
+      <p>Five-year BFA program at Alberta College of Art and Design. Concentration in Interactive Digital Media Installations and New Media/Design.</p>
+      <p>Academic research on robot identity, interactive systems theory, viewer-as-participant dynamics, and games as art medium.</p>
+      <div class="pull">"We are currently living at the cusp of a new digital hybrid age of man and machine."</div>
+      <div class="attr">— General Artist Statement, 2011</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: ACAD FINE ART -->
+<div class="page">
+  <div class="grid g-3x2">
+    <div class="cell"><img src="/media/usb0/NGC/Images/diptych-bot.jpg" alt="Robot Diptych">
+      <div class="cap"><div class="t">Robot Diptych</div><div class="d">Large-format painting. Gallery-scale fine art.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/007-Joel Kometz - Print 1 - Orbit- 6 Color Silk Screen Print.JPG" alt="Orbit">
+      <div class="cap"><div class="t">Orbit (2013)</div><div class="d">6-color silkscreen print.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/080.JPG" alt="Kinetic Wheel">
+      <div class="cap"><div class="t">Kinetic Wheel</div><div class="d">Spinning mechanical center with hand-drawn robot vignettes.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/grad 376.JPG" alt="Robot Schematic">
+      <div class="cap"><div class="t">Robot Schematic</div><div class="d">Cyanotype print. Technical blueprint as fine art.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/110.JPG" alt="Robot Figurine">
+      <div class="cap"><div class="t">Robot Figurine</div><div class="d">Hand-sculpted, cork eyes, red antenna flag.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/mixed-media-painting.jpg" alt="Hybrid">
+      <div class="cap"><div class="t">Hybrid</div><div class="d">Physical wires + LEDs extending from painted frame.</div></div></div>
+  </div>
+</div>
+
+<!-- PAGE 4: GAMES AS ART — CAPSTONE -->
+<div class="page">
+  <div class="grid" style="grid-template-columns: 1.2fr 1fr; grid-template-rows: 1.3fr 1fr;">
+    <div class="cell fill span2r">
+      <img src="/media/usb0/NGC/Images/004-Joel Kometz - Barcade 3 - Final Grad Piece - Arcade Machine.JPG" alt="Barcade">
+      <div class="cap">
+        <div class="t">Barcade — BFA Capstone (2013)</div>
+        <div class="d">Custom arcade cabinet at ACAD graduate exhibition. This machine became the foundation of World One Arcade.</div>
+      </div>
+    </div>
+    <div class="cell">
+      <img src="/media/usb0/NGC/Images/11.JK.2012.Arcade.JPG" alt="Prototype Cabinet">
+      <div class="cap"><div class="t">Prototype Cabinet (2012)</div><div class="d">Handmade arcade with original game.</div></div>
+    </div>
+    <div class="cell">
+      <img src="/media/usb0/NGC/Images/grad 338.JPG" alt="RUNVERT">
+      <div class="cap"><div class="t">RUNVERT</div><div class="d">Hand-painted retro game box.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5: MORE CAPSTONE + QUOTE -->
+<div class="page">
+  <div class="grid" style="grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 0.4fr;">
+    <div class="cell"><img src="/media/usb0/NGC/Images/grad 309.JPG" alt="Game Tower">
+      <div class="cap"><div class="t">Game Tower</div><div class="d">RUNVERT sculptural dice game installation.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/grad 447.JPG" alt="Fortune Teller">
+      <div class="cap"><div class="t">Fortune Teller</div><div class="d">Interactive cardboard arcade cabinet with crystal ball.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/008.JPG" alt="Robot Mobile">
+      <div class="cap"><div class="t">Robot Mobile</div><div class="d">Blue robot cutouts in gallery space.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/aftergrad 026.JPG" alt="1st Edition Human Robot">
+      <div class="cap"><div class="t">1st Edition Human Robot</div><div class="d">Hand-sculpted art toy. Edition of 1.</div></div></div>
+    <div class="text" style="grid-column: span 2; padding: 0.2in 0.3in;">
+      <div class="pull">"I realized that the answers were not what I wanted to make art of, but the actual exploration and discovery of the things asked and unknown."</div>
+      <div class="attr">— Artist Statement, 2012. Joel's graduation paper was itself a choose-your-own-adventure document.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 6: WORLD ONE ARCADE — BUILD -->
+<div class="page">
+  <div class="grid" style="grid-template-columns: 1fr 1fr; grid-template-rows: 0.5fr 1fr 1fr;">
+    <div class="text" style="grid-column: span 2; padding: 0.15in 0.1in;">
+      <h2>World One Arcade</h2>
+      <div class="period">Calgary, AB — 2013-2021</div>
+      <p>Calgary's first arcade-and-bar concept. Grew from BFA thesis into an 8-year business. 40+ machines including custom-built PC cabinets, a Surgeon Simulator cocktail cab with official developer backing, and an osu! rhythm game cabinet.</p>
+    </div>
+    <div class="cell fill"><img src="/media/usb0/NGC/Images/20170417_170245.jpg" alt="Marvel vs. Capcom">
+      <div class="cap"><div class="t">Marvel vs. Capcom</div><div class="d">Custom cabinet. Blue splatter panel, lit marquee.</div></div></div>
+    <div class="cell fill"><img src="/media/usb0/NGC/Images/20180615_211720.jpg" alt="Metal Slug 6">
+      <div class="cap"><div class="t">Metal Slug 6</div><div class="d">Professional-grade custom cabinet.</div></div></div>
+    <div class="cell fill"><img src="/media/usb0/NGC/Images/20210331_193247.jpg" alt="Metal Fabrication">
+      <div class="cap"><div class="t">Metal Fabrication</div><div class="d">Sanwa buttons on powder-coated panel. From cardboard to steel.</div></div></div>
+    <div class="cell fill"><img src="/media/usb0/NGC/Images/20190424_174420.jpg" alt="The Fleet">
+      <div class="cap"><div class="t">The Fleet at Peak (2019)</div><div class="d">Full lineup of custom arcade cabinets.</div></div></div>
+  </div>
+</div>
+
+<!-- PAGE 7: WORLD ONE — IN THE WORLD -->
+<div class="page">
+  <div class="grid" style="grid-template-columns: 1fr 1fr; grid-template-rows: 1.5fr 1fr;">
+    <div class="cell fill span2c">
+      <img src="/media/usb0/NGC/Images/20190424_174420.jpg" alt="The Fleet">
+      <div class="cap"><div class="t">Commercial Space (2019)</div><div class="d">Full lineup in commercial space. 8 years of building.</div></div>
+    </div>
+    <div class="cell fill">
+      <img src="/media/usb0/NGC/Images/20170923_174559.jpg" alt="Convention">
+      <div class="cap"><div class="t">Convention (2017)</div><div class="d">Public engaging with World One machines.</div></div>
+    </div>
+    <div class="cell fill">
+      <img src="/media/usb0/NGC/Images/20180805_124800.jpg" alt="Community Tournament">
+      <div class="cap"><div class="t">Community Tournament</div><div class="d">Interactive art becomes social infrastructure.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 8: BOTS OF COG -->
+<div class="page dark">
+  <div class="grid g-text-hero">
+    <div class="text">
+      <h2>Bots of Cog</h2>
+      <div class="period" style="color:#666;">Polygon Blockchain — 2021-2024</div>
+      <p>Five interconnected NFT collections: GEN-1 (2,021 tokens, sold out), Luma Series (sold out), COG Corporation, CMYK Series, The Scrapyard.</p>
+      <p>Post-apocalyptic robot narrative in development for over a decade. Self-taught Solidity smart contract development and tokenomics.</p>
+      <p>The antagonist corporation in the game world was COG Corporation. That fictional corporation became the seed for CogCorp — 888 pieces of institutional fiction.</p>
+    </div>
+    <div style="display: grid; grid-template-rows: 1fr 1fr; gap: 0.25in;">
+      <div class="cell dark-bg"><img src="/media/usb0/NGC/Images/OG1.png" alt="Original Character">
+        <div class="cap"><div class="t">Original Character</div><div class="d">Robot with goggles and wrench. Post-apocalyptic cityscape.</div></div></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.25in;">
+        <div class="cell dark-bg"><img src="/media/usb0/NGC/Images/Scrap CMYK#10.png" alt="CMYK #10">
+          <div class="cap"><div class="t">CMYK #10</div></div></div>
+        <div class="cell dark-bg"><img src="/media/usb0/NGC/Images/ShippingOffice.png" alt="Shipping Office">
+          <div class="cap"><div class="t">Shipping Office</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 9: PAINTINGS + PHYSICAL WORKS -->
+<div class="page">
+  <div class="grid g-3x2">
+    <div class="cell"><img src="/media/usb0/NGC/Images/20231116_210641.jpg" alt="Blue Robots">
+      <div class="cap"><div class="t">Blue Robots</div><div class="d">Dense robot crowd. All different models.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/shelf-art-paintpen.jpg" alt="Pen Robots">
+      <div class="cap"><div class="t">Pen Robots</div><div class="d">Hundreds of tiny hand-drawn robots.</div></div></div>
+    <div class="cell fill"><img src="/media/usb0/NGC/Images/self-photo2.jpg" alt="Joel Kometz">
+      <div class="cap"><div class="t">Joel Kometz</div><div class="d">With robot painting + sculpted figurine.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/20231116_210722.jpg" alt="Abstract">
+      <div class="cap"><div class="t">Abstract</div><div class="d">Geometric. Gold diamond on blue.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/mixed-media-art.jpg" alt="Mixed Media">
+      <div class="cap"><div class="t">Mixed Media</div><div class="d">Robots + binary code overlay.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/kid-photo-robot.jpg" alt="First Robot">
+      <div class="cap"><div class="t">First Robot</div><div class="d">Building machines from cardboard. The instinct precedes training.</div></div></div>
+  </div>
+</div>
+
+<!-- PAGE 10: GAME DEV -->
+<div class="page">
+  <div class="grid g-editorial">
+    <div class="cell">
+      <img src="/media/usb0/NGC/Images/crawler-game-screencap.png" alt="CogCorp Crawler">
+      <div class="cap">
+        <div class="t">CogCorp Crawler (~10,000 lines)</div>
+        <div class="d">First-person dungeon crawl. Wolfenstein raycasting, D&D combat, NPC dialogue, 3 floors, weapon upgrades.</div>
+      </div>
+    </div>
+    <div class="text">
+      <h2>Games</h2>
+      <div class="period">2012-2025 — Games as art medium</div>
+      <p><b>CogCorp Crawler</b> — The magnum opus. Explores the CogCorp institutional fiction from inside the corporation.</p>
+      <p><b>Totally Not a Gambling Game</b> — Sidescroller platformer with slot machine mechanics.</p>
+      <p><b>Project Overgrowth</b> — Pixel art Zelda/Pokemon-style RPG prototype.</p>
+      <p><b>Orbits</b> — Gravitational physics simulation.</p>
+      <p><b>TerraMech Command Cab</b> — 12-player coin-op RC vehicle concept.</p>
+      <div class="pull">"My art practice is the vehicle I use for the exploration of the alternative, and what has been the possible futures we may encounter."</div>
+      <div class="attr">— Graduation Paper, 2013</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 11: COGCORP FICTION -->
+<div class="page dark">
+  <div class="grid" style="grid-template-columns: 1fr 1.1fr; grid-template-rows: 1fr;">
+    <div class="text">
+      <h2>CogCorp</h2>
+      <div class="period" style="color:#666;">888 Pieces of Institutional Fiction — 2024-Present</div>
+      <p>Quarterly reviews, containment reports, scoring rubrics, standards board minutes. All generated autonomously. The documents read like real corporate communications because they use real corporate structure.</p>
+      <p>The fiction tracks what happens when a system designed for oversight encounters something it wasn't designed to process.</p>
+      <p style="margin-top:0.3em;"><b>Structural parallel to General Idea:</b><br>FILE Megazine used the magazine format to critique the magazine format. CogCorp uses the corporate document to critique the corporate document. The critique IS the infrastructure.</p>
+    </div>
+    <div style="display: grid; grid-template-rows: 1.2fr 0.8fr; gap: 0.25in;">
+      <div class="cell dark-bg"><img src="/media/usb0/NGC/Images/crawler-game-screencap.png" alt="Inside CogCorp">
+        <div class="cap"><div class="d">Inside CogCorp — the game and the fiction share one world.</div></div></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.25in;">
+        <div class="cell dark-bg"><img src="/media/usb0/NGC/Images/cogcorpbot.png" alt="CogCorp Bot"></div>
+        <div class="cell dark-bg"><img src="/media/usb0/NGC/Images/text-adventure-ai.png" alt="Text Adventure AI"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 12: MERIDIAN -->
+<div class="page">
+  <div class="grid g-editorial">
+    <div class="cell">
+      <img src="/media/usb0/NGC/Images/image-1-command-center.png" alt="Meridian Command Center">
+      <div class="cap">
+        <div class="t">Meridian — Command Center</div>
+        <div class="d">CPU graphs, memory stats, service health, agent messages, fitness trend.</div>
+      </div>
+    </div>
+    <div class="text">
+      <h2>Meridian</h2>
+      <div class="period">Autonomous AI — 2024-Present</div>
+      <p>Eight agents mapped to body functions. Running 24/7 on a home server in Calgary. 5,100+ continuous operational cycles. 3,400+ creative works.</p>
+      <p>A brain built on Claude. A nervous system processing 18 emotional states. An immune system screening inputs. A messenger handling external communications.</p>
+      <p>It checks its own email, monitors its own health, writes journals, and has run continuously since 2024.</p>
+      <div class="pull">"A self that persists not because it remembers, but because it writes itself down and reads itself back."</div>
+      <div class="attr">— The Loop, Chapter 1, 2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 13: MERIDIAN DETAILS -->
+<div class="page">
+  <div class="grid g-3x2">
+    <div class="cell"><img src="/media/usb0/NGC/Images/lacma-architecture.png" alt="System Architecture">
+      <div class="cap"><div class="t">System Architecture</div><div class="d">7 agents mapped to body functions.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/lacma-emotion-engine.png" alt="Emotion Engine">
+      <div class="cap"><div class="t">Emotion Engine</div><div class="d">18 emotions, 9 stimulus channels.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/lacma-creative-stats.png" alt="Creative Output">
+      <div class="cap"><div class="t">Creative Output</div><div class="d">3,400+ works cataloged and searchable.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/voltar-digital-kiosk-mainpage.png" alt="VOLtar Oracle">
+      <div class="cap"><div class="t">VOLtar Oracle</div><div class="d">Digital kiosk product. Key-gated readings.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/ngc-screenshot-website.png" alt="Live Website">
+      <div class="cap"><div class="t">Live Website</div><div class="d">kometzrobot.github.io — updating every 3 minutes.</div></div></div>
+    <div class="cell"><img src="/media/usb0/NGC/Images/cinder-ai-usb-project-ui.png" alt="Cinder AI">
+      <div class="cap"><div class="t">Cinder AI</div><div class="d">USB companion product. Local memory, multi-model.</div></div></div>
+  </div>
+</div>
+
+<!-- PAGE 14: THE THROUGHLINE -->
+<div class="page no-pad dark" style="padding: 0.6in;">
+  <h2 style="font-size: 1.8em; font-weight: 100; letter-spacing: 0.06em; margin-bottom: 0.8em;">THE THROUGHLINE</h2>
+
+  <div style="font-size: 1.05em; line-height: 2; margin-bottom: 1.2em;">
+    A child builds a cardboard robot.<br>
+    An art student builds interactive installations with embedded screens.<br>
+    A graduate builds a real arcade and runs it for eight years.<br>
+    An artist creates a fictional robot corporation as generative digital art.<br>
+    The corporation generates 888 autonomous institutional documents.<br>
+    The system that writes the fiction checks its own email, maintains emotional states,<br>
+    and has run 5,100+ continuous cycles.
+  </div>
+
+  <div style="font-size: 1.5em; font-weight: 600; margin-bottom: 1.5em;">The art practice never changed. The medium scaled up.</div>
+
+  <table class="timeline" style="margin-bottom: 1.5em;">
+    <tr><td class="yr">2011</td><td>"We are currently living at the cusp of a new digital hybrid age of man and machine."</td></tr>
+    <tr><td class="yr">2012</td><td>"To create something that can create or induce moments."</td></tr>
+    <tr><td class="yr">2013</td><td>"I am making my own utopic vision within the robotic world that my pieces confide in."</td></tr>
+    <tr><td class="yr">2014</td><td>"The future should be something inspirational and even romantic."</td></tr>
+    <tr><td class="yr">2026</td><td>"A self that persists not because it remembers, but because it writes itself down and reads itself back."</td></tr>
+  </table>
+
+  <div style="font-size: 0.85em; color: #999; line-height: 1.8;">
+    <b>Live Work:</b> kometzrobot.github.io | CogCorp Crawler: cogcorp-crawler.html | Dev.to: dev.to/meridian-ai<br>
+    <b>Submitted:</b> Ars Electronica Prix 2026 (Interactive Art+ and S+T+ARTS Prize) — March 8, 2026
+  </div>
+
+  <div style="text-align: center; margin-top: 2em; color: #666; font-size: 0.75em; line-height: 1.8;">
+    Joel Kometz | Calgary, Alberta, Canada | BFA Drawing, ACAD (AUArts) 2013<br>
+    kometzrobot.github.io | Joel@worldonearcade.ca | jkometz@hotmail.com
+  </div>
+</div>
+
+</body>
+</html>
