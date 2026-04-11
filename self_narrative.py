@@ -1,1 +1,0 @@
-/home/joel/autonomous-ai/tools/self_narrative.py

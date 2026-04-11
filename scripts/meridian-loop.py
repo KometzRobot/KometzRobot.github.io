@@ -159,7 +159,7 @@ def push_status():
     """Run push-live-status.py to update GitHub Pages."""
     try:
         result = subprocess.run(
-            [sys.executable, os.path.join(BASE, "push-live-status.py")],
+            [sys.executable, os.path.join(BASE, "scripts", "push-live-status.py")],
             capture_output=True, text=True, timeout=60, cwd=BASE
         )
         if result.returncode == 0:
@@ -335,7 +335,7 @@ def run_once():
     if run_num % 50 == 0:
         try:
             subprocess.run(
-                [sys.executable, os.path.join(BASE, "capsule-refresh.py")],
+                [sys.executable, os.path.join(BASE, "scripts", "capsule-refresh.py")],
                 capture_output=True, text=True, timeout=15, cwd=BASE
             )
             results.append("capsule:refreshed")

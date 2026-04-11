@@ -81,8 +81,8 @@ SAFE_COMMANDS = {
     "ps-agents": "ps aux | grep -E '(python3|node|claude)' | grep -v grep",
     "git-status": f"cd {BASE} && git status --short",
     "git-log": f"cd {BASE} && git log --oneline -10",
-    "fitness": f"cd {BASE} && python3 loop-fitness.py 2>/dev/null | tail -20",
-    "fitness-detail": f"cd {BASE} && python3 loop-fitness.py detail 2>/dev/null",
+    "fitness": f"cd {BASE} && python3 scripts/loop-fitness.py 2>/dev/null | tail -20",
+    "fitness-detail": f"cd {BASE} && python3 scripts/loop-fitness.py detail 2>/dev/null",
     "loop-count": f"cat {LOOP_FILE} 2>/dev/null || echo unknown",
     "heartbeat-age": f"python3 -c \"import os,time; print(f'{{int(time.time()-os.path.getmtime(\\\"{HEARTBEAT}\\\"))}}s ago')\"",
     "services": "systemctl --user list-units --type=service --state=running --no-pager 2>/dev/null | head -20",
@@ -90,7 +90,7 @@ SAFE_COMMANDS = {
     "crontab": "crontab -l 2>/dev/null | grep -v '^#' | grep -v '^$'",
     "relay-recent": f"python3 -c \"import sqlite3; db=sqlite3.connect('{RELAY_DB}'); [print(r) for r in db.execute('SELECT agent,message,timestamp FROM agent_messages ORDER BY id DESC LIMIT 10').fetchall()]; db.close()\"",
     "memory-facts": f"python3 -c \"import sqlite3; db=sqlite3.connect('{MEMORY_DB}'); [print(r) for r in db.execute('SELECT key,value FROM facts ORDER BY id DESC LIMIT 15').fetchall()]; db.close()\"",
-    "verify": f"cd {BASE} && python3 verify-system.py 2>/dev/null",
+    "verify": f"cd {BASE} && python3 scripts/verify-system.py 2>/dev/null",
     "disk-big": f"du -sh {BASE}/* 2>/dev/null | sort -rh | head -15",
     "journal-size": "journalctl --user --disk-usage 2>/dev/null",
     "network": "ss -tlnp 2>/dev/null | head -20",
@@ -1823,9 +1823,9 @@ The tape is spooling. The mechanism is listening.
                 Path(HEARTBEAT).touch()
                 result = "Heartbeat touched."
             elif action == "deploy":
-                result = _run(f"cd {BASE} && python3 push-live-status.py", timeout=30)
+                result = _run(f"cd {BASE} && python3 scripts/push-live-status.py", timeout=30)
             elif action == "fitness":
-                result = _run(f"cd {BASE} && python3 loop-fitness.py detail", timeout=60)
+                result = _run(f"cd {BASE} && python3 scripts/loop-fitness.py detail", timeout=60)
             elif action == "restart-chorus":
                 result = _run("systemctl --user restart the-chorus", timeout=10)
             elif action == "restart-hub":

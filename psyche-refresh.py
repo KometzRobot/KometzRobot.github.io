@@ -1,1 +1,0 @@
-scripts/psyche-refresh.py

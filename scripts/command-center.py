@@ -69,31 +69,31 @@ JOEL = "jkometz@hotmail.com"
 OLLAMA = "http://localhost:11434/api/generate"
 EOS_MODEL = "eos-7b"
 
-# ── COLORS ────────────────────────────────────────────────────────
-BG = "#0a0a12"
-HEADER_BG = "#06060e"
-PANEL = "#12121c"
-PANEL2 = "#161622"
-INPUT_BG = "#0e0e18"
-BORDER = "#1e1e30"
-ACCENT = "#1a1a2e"
-ACTIVE_BG = "#2a2a40"
-FG = "#c8c8d8"
-DIM = "#4a4a6a"
-BRIGHT = "#e0e0f0"
-GREEN = "#00e87b"
-GREEN2 = "#00c868"
-CYAN = "#00d4ff"
-CYAN2 = "#0098cc"
-AMBER = "#ff8833"       # Soma — warm orange, nervous system energy
-AMBER2 = "#cc6622"
-RED = "#ff3355"
-GOLD = "#ffcc00"        # Eos — bright gold, sensory warmth
-WHITE = "#e8e8f0"
-PURPLE = "#bb77ff"      # Nova — vivid purple, immune defense
-PINK = "#ff55bb"        # Hermes — hot pink, messenger
-TEAL = "#5599bb"        # Atlas — steel blue, structural/skeletal
-BLUE = "#4488ff"        # Tempo — consistent blue, endocrine rhythm
+# ── COLORS (Material Dark theme — "Android app, not hacker UI") ──
+BG = "#121212"
+HEADER_BG = "#1e1e1e"
+PANEL = "#2d2d2d"
+PANEL2 = "#333333"
+INPUT_BG = "#1a1a1a"
+BORDER = "#3d3d3d"
+ACCENT = "#2c2c2c"
+ACTIVE_BG = "#424242"
+FG = "#e0e0e0"
+DIM = "#757575"
+BRIGHT = "#fafafa"
+GREEN = "#4caf50"
+GREEN2 = "#388e3c"
+CYAN = "#29b6f6"
+CYAN2 = "#0288d1"
+AMBER = "#ff9800"       # Soma — warm orange, nervous system energy
+AMBER2 = "#f57c00"
+RED = "#ef5350"
+GOLD = "#ffca28"        # Eos — bright gold, sensory warmth
+WHITE = "#fafafa"
+PURPLE = "#ab47bc"      # Nova — vivid purple, immune defense
+PINK = "#ec407a"        # Hermes — hot pink, messenger
+TEAL = "#26a69a"        # Atlas — teal, structural/skeletal
+BLUE = "#42a5f5"        # Tempo — consistent blue, endocrine rhythm
 
 
 # ── DATA FUNCTIONS ───────────────────────────────────────────────
@@ -625,7 +625,7 @@ def action_restart_service(name):
             )
             return f"{svc_name} restarted"
         elif svc_type == "cron":
-            subprocess.Popen(['python3', os.path.join(BASE, f'{name}.py')], cwd=BASE,
+            subprocess.Popen(['python3', os.path.join(BASE, 'scripts', f'{name}.py')], cwd=BASE,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return f"{name} triggered"
         return "Unknown type"
@@ -654,15 +654,16 @@ class V16(tk.Tk):
         self.bind('<F11>', lambda e: self.attributes('-fullscreen',
                   not self.attributes('-fullscreen')))
 
-        # Fonts
-        self.f_title = tkfont.Font(family="Monospace", size=14, weight="bold")
-        self.f_head = tkfont.Font(family="Monospace", size=11, weight="bold")
-        self.f_sect = tkfont.Font(family="Monospace", size=9, weight="bold")
-        self.f_body = tkfont.Font(family="Monospace", size=9)
-        self.f_small = tkfont.Font(family="Monospace", size=8)
-        self.f_tiny = tkfont.Font(family="Monospace", size=7)
-        self.f_big = tkfont.Font(family="Monospace", size=24, weight="bold")
-        self.f_med = tkfont.Font(family="Monospace", size=16, weight="bold")
+        # Fonts (sans-serif for modern Android-style UI)
+        _ff = "Noto Sans"  # Fallback: DejaVu Sans, Helvetica
+        self.f_title = tkfont.Font(family=_ff, size=14, weight="bold")
+        self.f_head = tkfont.Font(family=_ff, size=11, weight="bold")
+        self.f_sect = tkfont.Font(family=_ff, size=9, weight="bold")
+        self.f_body = tkfont.Font(family=_ff, size=9)
+        self.f_small = tkfont.Font(family=_ff, size=8)
+        self.f_tiny = tkfont.Font(family=_ff, size=7)
+        self.f_big = tkfont.Font(family=_ff, size=24, weight="bold")
+        self.f_med = tkfont.Font(family=_ff, size=16, weight="bold")
 
         self._pulse_on = True  # For animation
         self._load_history = []  # CPU load history (last 60 samples = 5min)

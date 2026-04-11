@@ -1,1 +1,0 @@
-scripts/eos-briefing.py

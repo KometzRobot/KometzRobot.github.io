@@ -1,1 +1,0 @@
-scripts/extract-joel-emails.py

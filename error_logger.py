@@ -1,1 +1,0 @@
-scripts/error_logger.py

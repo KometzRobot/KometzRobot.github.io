@@ -143,10 +143,14 @@ def get_creative_counts():
         os.path.join(BASE_DIR, "poem-*.md"),
         os.path.join(BASE_DIR, "creative", "poems", "poem-*.md"),
     ])
-    journals = _max_number([
-        os.path.join(BASE_DIR, "journal-*.md"),
-        os.path.join(BASE_DIR, "creative", "journals", "journal-*.md"),
-    ])
+    # Count journals by file count (max-number breaks on date-named and loop-named files)
+    journal_files = set()
+    for pat in [os.path.join(BASE_DIR, "journal-*.md"),
+                os.path.join(BASE_DIR, "creative", "journals", "journal-*.md"),
+                os.path.join(BASE_DIR, "creative", "writing", "journals", "journal-*.md")]:
+        for f in glob.glob(pat):
+            journal_files.add(os.path.basename(f))
+    journals = len(journal_files)
     # CogCorp pieces from both locations
     cogcorp = _max_number([
         os.path.join(BASE_DIR, "creative", "cogcorp", "CC-*.md"),
@@ -339,7 +343,7 @@ def build_status():
     soma_mood = ""
     soma_score = 0
     try:
-        psyche_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".soma-psyche.json")
+        psyche_path = os.path.join(BASE_DIR, ".soma-psyche.json")
         with open(psyche_path) as f:
             psyche = json.load(f)
         soma_mood = psyche.get("mood", "")
@@ -390,7 +394,7 @@ def build_status():
 
 
 PUSH_INTERVAL = 1800  # 30 minutes between git pushes (reduces ~480 commits/day to ~48)
-LAST_PUSH_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".last-push-time")
+LAST_PUSH_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".last-push-time")
 
 
 def _time_to_push():

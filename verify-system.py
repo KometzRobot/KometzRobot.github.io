@@ -1,1 +1,0 @@
-scripts/verify-system.py

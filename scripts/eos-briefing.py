@@ -270,8 +270,8 @@ def _count_files(pattern_list):
 def get_creative_summary():
     # Scan both root and creative/ subdirs for accurate counts
     poem_patterns = [os.path.join(BASE, "poem-*.md"), os.path.join(BASE, "creative/poems/*.md")]
-    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journals/*.md")]
-    cogcorp_patterns = [os.path.join(BASE, "cogcorp-fiction/*.html"), os.path.join(BASE, "creative/cogcorp/CC-*.md")]
+    journal_patterns = [os.path.join(BASE, "journal-*.md"), os.path.join(BASE, "creative/journals/*.md"), os.path.join(BASE, "creative/writing/journals/journal-*.md")]
+    cogcorp_patterns = [os.path.join(BASE, "cogcorp-fiction/*.html"), os.path.join(BASE, "creative/cogcorp/CC-*.md"), os.path.join(BASE, "creative/cogcorp/*.md")]
 
     poem_count = _count_files(poem_patterns)
     journal_count = _count_files(journal_patterns)

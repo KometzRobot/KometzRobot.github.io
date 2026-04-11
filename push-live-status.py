@@ -1,1 +1,0 @@
-scripts/push-live-status.py

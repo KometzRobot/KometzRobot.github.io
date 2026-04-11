@@ -1,1 +1,0 @@
-scripts/capsule-refresh.py

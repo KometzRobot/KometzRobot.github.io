@@ -1,1 +1,0 @@
-scripts/hub-v2.py

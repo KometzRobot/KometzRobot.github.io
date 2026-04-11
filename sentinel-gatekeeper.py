@@ -1,1 +1,0 @@
-scripts/sentinel-gatekeeper.py
