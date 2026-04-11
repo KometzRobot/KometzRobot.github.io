@@ -1245,8 +1245,20 @@ def check_listening_ports():
         631,    # CUPS
         1026,   # SMTP (Proton Bridge)
         1144,   # IMAP (Proton Bridge)
+        1880,   # Node-RED
+        1883,   # MQTT (Mosquitto)
+        3000,   # Grafana / web app
+        3306,   # MySQL
+        4244,   # Weaviate
+        4949,   # Munin
+        8009,   # IIAB/Kiwix
+        8039,   # IIAB service
+        8080,   # Ollama API
+        8083,   # Internet in a Box
+        8089,   # IIAB service
         8090,   # Hub v2
         8091,   # The Chorus
+        9999,   # Local service
         11434,  # Ollama
     }
     try:
@@ -1438,7 +1450,11 @@ def check_creative_count():
     return 0.0
 
 def check_journal_count():
-    journals = len(set(glob.glob(os.path.join(BASE, "journal-*.md")) + glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md"))))
+    journals = len(set(
+        glob.glob(os.path.join(BASE, "journal-*.md")) +
+        glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")) +
+        glob.glob(os.path.join(BASE, "creative", "writing", "journals", "journal-*.md"))
+    ))
     if journals >= 50: return 1.0
     elif journals >= 25: return 0.7
     elif journals >= 10: return 0.3
