@@ -8,10 +8,10 @@ on:
       - 'creative/cogcorp-fiction/**'
       - 'creative/nfts/**'
       - 'creative/articles-html/**'
+      - 'creative/games/**'
       - 'products/games/**'
       - 'assets/**'
       - 'cogcorp-fiction/**'
-      - '*.html'
 
 permissions:
   contents: read
@@ -42,12 +42,13 @@ jobs:
           cp -r creative/nfts _site/nfts 2>/dev/null || true
           cp -r creative/articles-html _site/articles 2>/dev/null || true
           cp -r creative/cogcorp-fiction _site/cogcorp-fiction 2>/dev/null || true
+          cp -r creative/games/godot-* _site/games/ 2>/dev/null || true
           cp -r assets _site/assets 2>/dev/null || true
           cp -r visuals _site/visuals 2>/dev/null || true
-          # Copy root-level HTML files (direct website pages)
-          for f in *.html; do [ -f "$f" ] && cp "$f" _site/ 2>/dev/null; done || true
-          # Copy root cogcorp-fiction/ if it exists
-          cp -r cogcorp-fiction _site/cogcorp-fiction 2>/dev/null || true
+          # Copy root-level HTML files (skip symlinks, real files only)
+          for f in *.html; do [ -f "$f" ] && [ ! -L "$f" ] && cp "$f" _site/ 2>/dev/null; done || true
+          # Copy root cogcorp-fiction/ if it exists (skip if symlink)
+          [ -d cogcorp-fiction ] && [ ! -L cogcorp-fiction ] && cp -r cogcorp-fiction _site/cogcorp-fiction 2>/dev/null || true
           # Copy status/config files if they exist
           cp status.json _site/ 2>/dev/null || true
           cp signal-config.json _site/ 2>/dev/null || true
