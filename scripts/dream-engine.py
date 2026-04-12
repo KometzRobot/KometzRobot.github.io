@@ -266,6 +266,22 @@ def select_seeds(pool, soma_state, count=SEED_COUNT):
                 t, m, c, w = weighted_pool[idx]
                 seeds.append({"table": t, "id": m, "content": c, "source": "emotional"})
 
+    # Semantic pattern seeds: use temporal patterns to inject cluster-representative themes
+    try:
+        import chromadb
+        chroma = chromadb.PersistentClient(path=os.path.join(BASE, "data", "chroma"))
+        journal_col = chroma.get_collection("journals")
+        if journal_col.count() > 20:
+            # Query for memories semantically similar to current emotional state
+            mood_query = f"{mood} {' '.join(emotion_keywords[:5])}"
+            sem_results = journal_col.query(query_texts=[mood_query], n_results=3)
+            for doc in sem_results["documents"][0]:
+                # Add as a high-weight emotional seed from semantic memory
+                seeds.append({"table": "semantic", "id": f"sem_{hash(doc[:50])}",
+                             "content": doc[:200], "source": "semantic_pattern"})
+    except Exception:
+        pass  # Graceful fallback if semantic memory unavailable
+
     # Noise seeds: truly random, no weighting
     noise_pool = [m for m in all_memories if m not in [(s["table"], s["id"], s["content"], 0) for s in seeds]]
     if noise_pool:

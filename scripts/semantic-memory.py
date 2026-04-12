@@ -156,8 +156,12 @@ def index_all():
     # Index journal files
     print("Indexing journals...")
     journal_rows = []
-    journal_dir = os.path.join(BASE, "creative", "journals")
-    for jpath in sorted(glob.glob(os.path.join(journal_dir, "journal-*.md"))):
+    journal_dirs = [
+        os.path.join(BASE, "creative", "journals"),
+        os.path.join(BASE, "creative", "writing", "journals"),
+    ]
+    for journal_dir in journal_dirs:
+      for jpath in sorted(glob.glob(os.path.join(journal_dir, "journal-*.md"))):
         fname = os.path.basename(jpath)
         try:
             with open(jpath) as f:
@@ -169,6 +173,73 @@ def index_all():
     if journal_rows:
         n, total = index_table(client, "journals", journal_rows)
         print(f"  Journals: {n} new, {total} total")
+        total_indexed += n
+
+    # Index CogCorp markdown files from filesystem
+    print("Indexing CogCorp files...")
+    cogcorp_rows = []
+    cogcorp_dir = os.path.join(BASE, "creative", "cogcorp")
+    for cpath in sorted(glob.glob(os.path.join(cogcorp_dir, "CC-*.md"))):
+        fname = os.path.basename(cpath)
+        try:
+            with open(cpath) as f:
+                content = f.read()[:2000]
+            cogcorp_rows.append((f"cc_{fname}", content,
+                                {"table": "cogcorp", "filename": fname}))
+        except Exception:
+            pass
+    if cogcorp_rows:
+        n, total = index_table(client, "cogcorp", cogcorp_rows)
+        print(f"  CogCorp: {n} new, {total} total")
+        total_indexed += n
+
+    # Index emails from IMAP
+    print("Indexing emails...")
+    email_rows = []
+    try:
+        # Load credentials
+        sys.path.insert(0, os.path.join(BASE, "scripts"))
+        try:
+            from load_env import load_env
+            load_env()
+        except Exception:
+            pass
+        import imaplib
+        import email as email_mod
+        from email.header import decode_header
+        imap = imaplib.IMAP4('127.0.0.1', 1144)
+        imap.login(os.environ.get('CRED_USER', ''), os.environ.get('CRED_PASS', ''))
+
+        for folder in ['INBOX', 'Sent']:
+            imap.select(folder, readonly=True)
+            status, msgs = imap.search(None, 'ALL')
+            msg_ids = msgs[0].split() if msgs[0] else []
+            for mid in msg_ids:
+                try:
+                    status, data = imap.fetch(mid, '(BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE)])')
+                    hdr = data[0][1].decode('utf-8', errors='replace')
+                    status, data = imap.fetch(mid, '(BODY.PEEK[TEXT])')
+                    body = data[0][1].decode('utf-8', errors='replace')
+                    import re
+                    body = re.sub(r'<[^>]+>', ' ', body)
+                    body = re.sub(r'=\n', '', body)
+                    body = re.sub(r'=3D', '=', body)
+                    body = re.sub(r'&nbsp;', ' ', body)
+                    body = re.sub(r'\s+', ' ', body).strip()
+                    text_content = f"{hdr.strip()}\n\n{body[:1500]}"
+                    if len(text_content.strip()) < 50:
+                        continue
+                    email_rows.append((f"email_{folder}_{mid.decode()}", text_content,
+                                      {"table": "emails", "folder": folder, "msg_id": mid.decode()}))
+                except Exception:
+                    pass
+        imap.logout()
+    except Exception as e:
+        print(f"  Email indexing error: {e}")
+
+    if email_rows:
+        n, total = index_table(client, "emails", email_rows)
+        print(f"  Emails: {n} new, {total} total")
         total_indexed += n
 
     db.close()
@@ -186,7 +257,7 @@ def query(text, k=5, collection_name=None):
 
     results = []
     collections = [collection_name] if collection_name else \
-        ["facts", "observations", "decisions", "dossiers", "creative", "journals"]
+        ["facts", "observations", "decisions", "dossiers", "creative", "journals", "cogcorp", "emails"]
 
     for cname in collections:
         try:
