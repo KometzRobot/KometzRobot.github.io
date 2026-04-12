@@ -81,7 +81,7 @@ memory.db-wal
 # *.wasm — allowed for game web exports
 poem-index.json
 game-assets/
-godot-*/
+# godot-*/ — web exports allowed, source files excluded below
 unity-*/
 love-orbits/
 renpy-*/
@@ -103,7 +103,15 @@ Modelfile-7b
 # Creative content (stored in memory.db, not needed in git)
 poem-*.md
 journal-*.md
-creative/
+creative/*
+!creative/cogcorp-fiction/
+!creative/games/
+creative/games/*
+!creative/games/godot-*/
+creative/games/godot-*/*
+!creative/games/godot-*/export/
+creative/games/godot-*/export/*
+!creative/games/godot-*/export/web/
 
 # Website deploys from website/ directory via GitHub Actions
 # (don't gitignore website/ — it contains the deployed site)
@@ -111,14 +119,16 @@ creative/
 # Local-only scripts and docs (not deployed)
 archive/
 docs/
-games/godot-*/export/mac/
-games/godot-*/export/linux/
-games/godot-*/export/windows/
-games/godot-*/project.godot
-games/godot-*/.godot/
-games/godot-*/scenes/
-games/godot-*/scripts/
-games/godot-*/assets/
+# Godot: track web exports only, ignore everything else
+**/godot-*/.godot/
+**/godot-*/project.godot
+**/godot-*/scenes/
+**/godot-*/scripts/
+**/godot-*/assets/
+**/godot-*/export/mac/
+**/godot-*/export/linux/
+**/godot-*/export/windows/
+# web exports are tracked (export/web/)
 games/game-template.html
 games/game-jam-template.html
 games/love-orbits/
