@@ -47,7 +47,10 @@ def read_dream_journal():
     """Read latest dream data."""
     try:
         with open(DREAM_JOURNAL) as f:
-            return json.load(f)
+            data = json.load(f)
+            if isinstance(data, list):
+                return data[-1] if data else {}
+            return data
     except Exception:
         return {}
 
