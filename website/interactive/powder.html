@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Powder — Particle Physics Sandbox</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #06080e; overflow: hidden; font-family: 'Courier New', monospace; touch-action: none; }
+canvas { display: block; }
+#ui { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(6,8,14,0.97), rgba(6,8,14,0.88)); border-top: 1px solid #1a1e2e; padding: 8px 10px 10px; z-index: 10; }
+#mat-groups { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; margin-bottom: 6px; }
+.mat-btn {
+    width: 50px; height: 34px; border: 2px solid transparent; cursor: pointer; border-radius: 5px;
+    font-size: 8px; font-family: 'Courier New', monospace; color: #fff; text-align: center;
+    line-height: 14px; text-shadow: 0 1px 3px rgba(0,0,0,0.9); padding-top: 4px;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    position: relative; overflow: hidden;
+}
+.mat-btn::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 40%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+    border-radius: 3px 3px 0 0;
+}
+.mat-btn:hover { transform: scale(1.05); }
+.mat-btn.active { border-color: #fff; box-shadow: 0 0 12px rgba(255,255,255,0.25), inset 0 0 8px rgba(255,255,255,0.1); transform: scale(1.08); }
+.mat-sep { width: 1px; background: #1a1e2e; margin: 2px 4px; }
+#controls { display: flex; gap: 10px; justify-content: center; align-items: center; font-size: 10px; color: #556; }
+#controls input[type=range] { width: 70px; accent-color: #667; }
+#controls button { background: #151822; color: #556; border: 1px solid #1a1e2e; padding: 3px 10px; border-radius: 3px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 10px; }
+#controls button:hover { background: #1e2233; color: #889; }
+#title-screen { position: fixed; inset: 0; background: #06080e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.8s; }
+#title-screen h1 { color: #cc8844; font-size: 36px; letter-spacing: 10px; margin-bottom: 4px; text-shadow: 0 0 30px rgba(204,136,68,0.3); }
+#title-screen .sub { color: #443320; font-size: 10px; letter-spacing: 6px; margin-bottom: 20px; }
+#title-screen p { color: #665533; font-size: 12px; max-width: 360px; text-align: center; line-height: 1.8; margin-bottom: 24px; }
+#title-screen .start-btn { background: linear-gradient(to bottom, #3a2211, #2a1808); color: #cc8844; border: 1px solid #664422; padding: 12px 36px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; border-radius: 5px; letter-spacing: 4px; transition: all 0.3s; }
+#title-screen .start-btn:hover { background: linear-gradient(to bottom, #4a3321, #3a2211); box-shadow: 0 0 20px rgba(204,136,68,0.2); }
+#fps { position: fixed; top: 6px; right: 8px; color: #334; font-size: 10px; font-family: monospace; z-index: 10; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+  <h1>POWDER</h1>
+  <div class="sub">PARTICLE PHYSICS SANDBOX</div>
+  <p>Paint with 11 materials. Sand piles, water flows, fire burns oil and wood, lava melts stone, gunpowder explodes in chain reactions, plants grow toward water, acid dissolves everything. Every pixel is alive.</p>
+  <button class="start-btn" onclick="startGame()">CREATE</button>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <div id="mat-groups">
+    <button class="mat-btn active" data-mat="sand" style="background:linear-gradient(135deg,#d4b050,#a07830);" title="Sand — falls, piles up">Sand</button>
+    <button class="mat-btn" data-mat="water" style="background:linear-gradient(135deg,#3378dd,#1a4488);" title="Water — flows, evaporates near fire">Water</button>
+    <button class="mat-btn" data-mat="stone" style="background:linear-gradient(135deg,#787878,#505050);" title="Stone — solid, melts in lava/acid">Stone</button>
+    <button class="mat-btn" data-mat="wood" style="background:linear-gradient(135deg,#8b6030,#5a3a18);" title="Wood — solid, burns slowly">Wood</button>
+    <div class="mat-sep"></div>
+    <button class="mat-btn" data-mat="fire" style="background:linear-gradient(135deg,#ee5500,#aa2200);" title="Fire — burns oil, wood, plant. Rises">Fire</button>
+    <button class="mat-btn" data-mat="lava" style="background:linear-gradient(135deg,#ff6600,#cc2200);" title="Lava — melts stone, hardens in water">Lava</button>
+    <button class="mat-btn" data-mat="gunpowder" style="background:linear-gradient(135deg,#444,#222);" title="Gunpowder — explodes near fire!">Powder</button>
+    <div class="mat-sep"></div>
+    <button class="mat-btn" data-mat="oil" style="background:linear-gradient(135deg,#5a4800,#302400);" title="Oil — floats on water, burns">Oil</button>
+    <button class="mat-btn" data-mat="plant" style="background:linear-gradient(135deg,#2a9940,#186628);" title="Plant — grows near water, burns">Plant</button>
+    <button class="mat-btn" data-mat="acid" style="background:linear-gradient(135deg,#99dd10,#668800);" title="Acid — dissolves everything">Acid</button>
+    <button class="mat-btn" data-mat="steam" style="background:linear-gradient(135deg,#b0c0d8,#7888a0);" title="Steam — rises, condenses to water">Steam</button>
+    <div class="mat-sep"></div>
+    <button class="mat-btn" data-mat="erase" style="background:linear-gradient(135deg,#1a1a22,#0a0a10);" title="Erase">Erase</button>
+  </div>
+  <div id="controls">
+    <span>Brush</span>
+    <input type="range" id="brush-size" min="1" max="12" value="3">
+    <span id="brush-label">3</span>
+    <span style="margin-left:8px;">Particles: <span id="particle-count">0</span></span>
+    <button onclick="clearAll()" style="margin-left:8px;">Clear</button>
+    <button onclick="togglePause()" id="pause-btn" style="margin-left:4px;">Pause</button>
+  </div>
+</div>
+<div id="fps">--</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let W, H, cols, rows;
+const PIXEL = 3;
+let running = false;
+let paused = false;
+let selectedMat = 'sand';
+let brushSize = 3;
+
+// Material types
+const EMPTY = 0, SAND = 1, WATER = 2, FIRE = 3, OIL = 4, PLANT = 5, ACID = 6, STONE = 7, STEAM = 8;
+const LAVA = 9, GUNPOWDER = 10, WOOD = 11, SMOKE = 12;
+
+const matMap = { sand:SAND, water:WATER, fire:FIRE, oil:OIL, plant:PLANT, acid:ACID, stone:STONE, steam:STEAM, lava:LAVA, gunpowder:GUNPOWDER, wood:WOOD, erase:EMPTY };
+
+// Is it a solid?
+function isSolid(m) { return m === STONE || m === WOOD; }
+function isLiquid(m) { return m === WATER || m === OIL || m === ACID || m === LAVA; }
+function isGas(m) { return m === STEAM || m === SMOKE || m === FIRE; }
+function isFlammable(m) { return m === OIL || m === PLANT || m === WOOD || m === GUNPOWDER; }
+
+// Grid data
+let grid, colorGrid, tempGrid;
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    cols = Math.floor(W / PIXEL);
+    rows = Math.floor(H / PIXEL);
+    grid = new Uint8Array(cols * rows);
+    colorGrid = new Uint8Array(cols * rows);
+    tempGrid = new Float32Array(cols * rows); // temperature 0-1
+}
+
+function idx(x, y) { return y * cols + x; }
+function get(x, y) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return STONE;
+    return grid[idx(x, y)];
+}
+function set(x, y, val) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+    grid[idx(x, y)] = val;
+}
+function getTemp(x, y) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return 0;
+    return tempGrid[idx(x, y)];
+}
+function setTemp(x, y, val) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+    tempGrid[idx(x, y)] = Math.max(0, Math.min(1, val));
+}
+function getCV(x, y) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return 0;
+    return colorGrid[idx(x, y)];
+}
+function setCV(x, y, val) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+    colorGrid[idx(x, y)] = val;
+}
+
+function swap(x1, y1, x2, y2) {
+    if (x2 < 0 || x2 >= cols || y2 < 0 || y2 >= rows) return false;
+    const i1 = idx(x1, y1), i2 = idx(x2, y2);
+    let t;
+    t = grid[i1]; grid[i1] = grid[i2]; grid[i2] = t;
+    t = colorGrid[i1]; colorGrid[i1] = colorGrid[i2]; colorGrid[i2] = t;
+    t = tempGrid[i1]; tempGrid[i1] = tempGrid[i2]; tempGrid[i2] = t;
+    return true;
+}
+
+let updateDir = 1;
+let frameCount = 0;
+
+function simulate() {
+    updateDir *= -1;
+    frameCount++;
+    const startX = updateDir === 1 ? 0 : cols - 1;
+    const endX = updateDir === 1 ? cols : -1;
+
+    // Temperature diffusion (every 3 frames for perf)
+    if (frameCount % 3 === 0) {
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                const i = idx(x, y);
+                const cell = grid[i];
+                if (cell === FIRE) { tempGrid[i] = 0.9 + Math.random() * 0.1; }
+                else if (cell === LAVA) { tempGrid[i] = 0.95; }
+                else if (tempGrid[i] > 0) {
+                    // Radiate heat to neighbors
+                    const rate = cell === EMPTY ? 0.15 : (isLiquid(cell) ? 0.08 : 0.04);
+                    tempGrid[i] *= (1 - rate);
+                    if (tempGrid[i] < 0.01) tempGrid[i] = 0;
+                }
+            }
+        }
+        // Heat spread
+        for (let y = 1; y < rows - 1; y++) {
+            for (let x = 1; x < cols - 1; x++) {
+                const i = idx(x, y);
+                if (tempGrid[i] > 0.1) {
+                    const spread = tempGrid[i] * 0.03;
+                    tempGrid[idx(x-1,y)] += spread;
+                    tempGrid[idx(x+1,y)] += spread;
+                    tempGrid[idx(x,y-1)] += spread;
+                    tempGrid[idx(x,y+1)] += spread;
+                }
+            }
+        }
+    }
+
+    for (let y = rows - 1; y >= 0; y--) {
+        for (let x = startX; x !== endX; x += updateDir) {
+            const cell = get(x, y);
+            if (cell === EMPTY) continue;
+
+            switch (cell) {
+                case SAND: updateSand(x, y); break;
+                case WATER: updateWater(x, y); break;
+                case FIRE: updateFire(x, y); break;
+                case OIL: updateOil(x, y); break;
+                case PLANT: updatePlant(x, y); break;
+                case ACID: updateAcid(x, y); break;
+                case STEAM: updateSteam(x, y); break;
+                case LAVA: updateLava(x, y); break;
+                case GUNPOWDER: updateGunpowder(x, y); break;
+                case WOOD: updateWood(x, y); break;
+                case SMOKE: updateSmoke(x, y); break;
+            }
+        }
+    }
+}
+
+// --- Shared movement helpers ---
+function fallSand(x, y, canDisplace) {
+    const below = get(x, y + 1);
+    if (below === EMPTY || canDisplace.includes(below)) {
+        swap(x, y, x, y + 1); return true;
+    }
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const bl = get(x + side, y + 1);
+    if (bl === EMPTY || canDisplace.includes(bl)) {
+        swap(x, y, x + side, y + 1); return true;
+    }
+    const br = get(x - side, y + 1);
+    if (br === EMPTY || canDisplace.includes(br)) {
+        swap(x, y, x - side, y + 1); return true;
+    }
+    return false;
+}
+
+function flowLiquid(x, y, canDisplace) {
+    const below = get(x, y + 1);
+    if (below === EMPTY || canDisplace.includes(below)) {
+        swap(x, y, x, y + 1); return true;
+    }
+    const side = Math.random() < 0.5 ? -1 : 1;
+    if (get(x + side, y + 1) === EMPTY) { swap(x, y, x + side, y + 1); return true; }
+    if (get(x - side, y + 1) === EMPTY) { swap(x, y, x - side, y + 1); return true; }
+    // Spread horizontally
+    const spreadDist = Math.random() < 0.5 ? 1 : (Math.random() < 0.3 ? 2 : 1);
+    for (let d = 1; d <= spreadDist; d++) {
+        if (get(x + side * d, y) === EMPTY) { swap(x, y, x + side * d, y); return true; }
+    }
+    if (get(x - side, y) === EMPTY) { swap(x, y, x - side, y); return true; }
+    return false;
+}
+
+// --- Material updates ---
+function updateSand(x, y) {
+    fallSand(x, y, [WATER, OIL, ACID]);
+}
+
+function updateWater(x, y) {
+    // Check for nearby fire — evaporate
+    for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+            const n = get(x + dx, y + dy);
+            if ((n === FIRE || n === LAVA) && Math.random() < 0.04) {
+                set(x, y, STEAM);
+                setCV(x, y, Math.floor(Math.random() * 30));
+                return;
+            }
+        }
+    }
+    flowLiquid(x, y, []);
+}
+
+function updateFire(x, y) {
+    // Die chance
+    if (Math.random() < 0.04) {
+        // Chance to become smoke instead of vanishing
+        if (Math.random() < 0.4) {
+            set(x, y, SMOKE);
+            setCV(x, y, Math.floor(Math.random() * 40));
+        } else {
+            set(x, y, EMPTY);
+        }
+        return;
+    }
+
+    // Rise with jitter
+    const jx = Math.random() < 0.3 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+    if (get(x + jx, y - 1) === EMPTY) {
+        swap(x, y, x + jx, y - 1);
+    } else if (get(x, y - 1) === EMPTY) {
+        swap(x, y, x, y - 1);
+    }
+
+    // Spread to flammable neighbors
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            if (dx === 0 && dy === 0) continue;
+            const n = get(x + dx, y + dy);
+            if (n === GUNPOWDER && Math.random() < 0.3) {
+                explode(x + dx, y + dy, 4 + Math.floor(Math.random() * 3));
+            } else if (isFlammable(n) && Math.random() < 0.06) {
+                set(x + dx, y + dy, FIRE);
+                setCV(x + dx, y + dy, Math.floor(Math.random() * 40));
+            }
+        }
+    }
+
+    // Flicker color
+    setCV(x, y, Math.floor(Math.random() * 60));
+}
+
+function updateOil(x, y) {
+    const below = get(x, y + 1);
+    if (below === EMPTY) { swap(x, y, x, y + 1); }
+    else if (below === WATER) { swap(x, y, x, y + 1); } // Float
+    else { flowLiquid(x, y, [WATER]); }
+}
+
+function updatePlant(x, y) {
+    let hasWater = false;
+    for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+            if (get(x + dx, y + dy) === WATER) hasWater = true;
+        }
+    }
+    if (hasWater && Math.random() < 0.012) {
+        const dirs = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+        const d = dirs[Math.floor(Math.random() * dirs.length)];
+        const gx = x + d[0], gy = y + d[1];
+        const target = get(gx, gy);
+        if (target === EMPTY || target === WATER) {
+            set(gx, gy, PLANT);
+            setCV(gx, gy, Math.floor(Math.random() * 50));
+        }
+    }
+}
+
+function updateAcid(x, y) {
+    const below = get(x, y + 1);
+    if (below === EMPTY) {
+        swap(x, y, x, y + 1);
+    } else if (below !== ACID && below !== EMPTY && Math.random() < 0.12) {
+        set(x, y + 1, EMPTY);
+        if (Math.random() < 0.3) {
+            // Acid creates smoke on dissolve
+            set(x, y, SMOKE);
+            setCV(x, y, 20 + Math.floor(Math.random() * 20));
+        } else if (Math.random() < 0.5) {
+            set(x, y, EMPTY);
+        }
+    } else {
+        flowLiquid(x, y, []);
+        // Dissolve adjacent
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                if (dx === 0 && dy === 0) continue;
+                const n = get(x + dx, y + dy);
+                if (n !== EMPTY && n !== ACID && Math.random() < 0.015) {
+                    set(x + dx, y + dy, EMPTY);
+                    if (Math.random() < 0.25) set(x, y, EMPTY);
+                }
+            }
+        }
+    }
+}
+
+function updateSteam(x, y) {
+    if (Math.random() < 0.004) {
+        set(x, y, WATER);
+        setCV(x, y, Math.floor(Math.random() * 30));
+        return;
+    }
+    // Rise with drift
+    const drift = Math.random() < 0.4 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+    if (get(x + drift, y - 1) === EMPTY) { swap(x, y, x + drift, y - 1); }
+    else if (get(x, y - 1) === EMPTY) { swap(x, y, x, y - 1); }
+    else {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        if (get(x + side, y) === EMPTY) swap(x, y, x + side, y);
+        else if (get(x - side, y) === EMPTY) swap(x, y, x - side, y);
+    }
+}
+
+// --- NEW MATERIALS ---
+
+function updateLava(x, y) {
+    // Lava flows slowly
+    if (Math.random() < 0.5) {
+        const below = get(x, y + 1);
+        if (below === EMPTY) { swap(x, y, x, y + 1); }
+        else if (below === WATER) {
+            // Lava + water = stone + steam
+            set(x, y, STONE);
+            setCV(x, y, 20 + Math.floor(Math.random() * 15));
+            set(x, y + 1, STEAM);
+            setCV(x, y + 1, Math.floor(Math.random() * 20));
+            return;
+        } else {
+            flowLiquid(x, y, []);
+        }
+    }
+
+    // Melt/burn neighbors
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            if (dx === 0 && dy === 0) continue;
+            const n = get(x + dx, y + dy);
+            if (n === WATER && Math.random() < 0.15) {
+                set(x + dx, y + dy, STEAM);
+                setCV(x + dx, y + dy, Math.floor(Math.random() * 20));
+                // Lava hardens
+                if (Math.random() < 0.3) {
+                    set(x, y, STONE);
+                    setCV(x, y, 10 + Math.floor(Math.random() * 20));
+                    return;
+                }
+            } else if (n === STONE && Math.random() < 0.003) {
+                set(x + dx, y + dy, LAVA);
+                setCV(x + dx, y + dy, Math.floor(Math.random() * 40));
+            } else if (n === GUNPOWDER && Math.random() < 0.4) {
+                explode(x + dx, y + dy, 5 + Math.floor(Math.random() * 4));
+            } else if (isFlammable(n) && Math.random() < 0.1) {
+                set(x + dx, y + dy, FIRE);
+                setCV(x + dx, y + dy, Math.floor(Math.random() * 40));
+            }
+        }
+    }
+
+    // Flicker
+    setCV(x, y, Math.floor(Math.random() * 50));
+}
+
+function updateGunpowder(x, y) {
+    // Falls like sand
+    fallSand(x, y, [WATER, OIL]);
+
+    // Check for nearby fire/lava
+    for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+            const n = get(x + dx, y + dy);
+            if ((n === FIRE || n === LAVA) && Math.random() < 0.25) {
+                explode(x, y, 4 + Math.floor(Math.random() * 4));
+                return;
+            }
+        }
+    }
+
+    // Temperature ignition
+    if (getTemp(x, y) > 0.6 && Math.random() < 0.1) {
+        explode(x, y, 3 + Math.floor(Math.random() * 3));
+    }
+}
+
+function explode(cx, cy, radius) {
+    for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > radius) continue;
+            const ex = cx + dx, ey = cy + dy;
+            if (ex < 0 || ex >= cols || ey < 0 || ey >= rows) continue;
+            const n = get(ex, ey);
+            if (n === STONE && dist < radius * 0.5) {
+                set(ex, ey, EMPTY);
+            } else if (n === GUNPOWDER) {
+                // Chain reaction with slight delay via fire
+                set(ex, ey, FIRE);
+                setCV(ex, ey, Math.floor(Math.random() * 60));
+                setTemp(ex, ey, 1.0);
+            } else if (n !== EMPTY && n !== STONE && Math.random() < 0.7) {
+                if (dist < radius * 0.3) {
+                    set(ex, ey, FIRE);
+                    setCV(ex, ey, Math.floor(Math.random() * 60));
+                } else if (n === WATER) {
+                    set(ex, ey, STEAM);
+                } else {
+                    set(ex, ey, (Math.random() < 0.3) ? SMOKE : EMPTY);
+                    setCV(ex, ey, Math.floor(Math.random() * 30));
+                }
+            }
+            setTemp(ex, ey, Math.max(getTemp(ex, ey), 1.0 - dist / radius));
+        }
+    }
+}
+
+function updateWood(x, y) {
+    // Wood is solid. It doesn't move.
+    // But it burns slowly when fire is adjacent
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            if (dx === 0 && dy === 0) continue;
+            const n = get(x + dx, y + dy);
+            if ((n === FIRE || n === LAVA) && Math.random() < 0.02) {
+                set(x, y, FIRE);
+                setCV(x, y, Math.floor(Math.random() * 40));
+                // Sometimes leave embers/smoke above
+                if (get(x, y - 1) === EMPTY && Math.random() < 0.3) {
+                    set(x, y - 1, SMOKE);
+                    setCV(x, y - 1, Math.floor(Math.random() * 20));
+                }
+                return;
+            }
+        }
+    }
+}
+
+function updateSmoke(x, y) {
+    // Smoke rises and fades
+    const cv = getCV(x, y);
+    if (cv > 55 || Math.random() < 0.008) {
+        set(x, y, EMPTY);
+        return;
+    }
+    setCV(x, y, cv + 1); // Age the smoke
+
+    // Rise with heavy drift
+    const drift = Math.random() < 0.6 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+    if (get(x + drift, y - 1) === EMPTY) { swap(x, y, x + drift, y - 1); }
+    else if (get(x, y - 1) === EMPTY) { swap(x, y, x, y - 1); }
+    else {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        if (get(x + side, y) === EMPTY) swap(x, y, x + side, y);
+        else if (get(x - side, y) === EMPTY) swap(x, y, x - side, y);
+    }
+}
+
+// --- RENDERING ---
+// Glow buffer for fire/lava light
+let glowBuffer;
+
+function render() {
+    const imageData = ctx.createImageData(W, H);
+    const data = imageData.data;
+
+    // Initialize glow buffer (lower res for perf)
+    const glowScale = 4;
+    const gCols = Math.ceil(cols / glowScale);
+    const gRows = Math.ceil(rows / glowScale);
+    if (!glowBuffer || glowBuffer.length !== gCols * gRows * 3) {
+        glowBuffer = new Float32Array(gCols * gRows * 3);
+    } else {
+        glowBuffer.fill(0);
+    }
+
+    // Pass 1: accumulate glow sources
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const cell = grid[idx(x, y)];
+            if (cell === FIRE || cell === LAVA) {
+                const gx = Math.floor(x / glowScale);
+                const gy = Math.floor(y / glowScale);
+                const gi = (gy * gCols + gx) * 3;
+                if (cell === FIRE) {
+                    glowBuffer[gi] += 0.8;     // R
+                    glowBuffer[gi+1] += 0.35;  // G
+                    glowBuffer[gi+2] += 0.05;  // B
+                } else {
+                    glowBuffer[gi] += 1.0;
+                    glowBuffer[gi+1] += 0.4;
+                    glowBuffer[gi+2] += 0.05;
+                }
+            }
+        }
+    }
+
+    // Blur glow (simple 3x3 box blur, 2 passes)
+    const glowTmp = new Float32Array(glowBuffer.length);
+    for (let pass = 0; pass < 2; pass++) {
+        const src = pass === 0 ? glowBuffer : glowTmp;
+        const dst = pass === 0 ? glowTmp : glowBuffer;
+        for (let gy = 0; gy < gRows; gy++) {
+            for (let gx = 0; gx < gCols; gx++) {
+                let r = 0, g = 0, b = 0, cnt = 0;
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const nx = gx + dx, ny = gy + dy;
+                        if (nx >= 0 && nx < gCols && ny >= 0 && ny < gRows) {
+                            const si = (ny * gCols + nx) * 3;
+                            r += src[si]; g += src[si+1]; b += src[si+2];
+                            cnt++;
+                        }
+                    }
+                }
+                const di = (gy * gCols + gx) * 3;
+                dst[di] = r / cnt; dst[di+1] = g / cnt; dst[di+2] = b / cnt;
+            }
+        }
+    }
+
+    // Pass 2: render particles with glow
+    // Background gradient
+    for (let py = 0; py < H; py++) {
+        const bgR = 6, bgG = 8 + (py / H) * 4, bgB = 14 + (py / H) * 6;
+        const gy = Math.floor((py / PIXEL) / glowScale);
+        for (let px = 0; px < W; px++) {
+            const gx = Math.floor((px / PIXEL) / glowScale);
+            const gi = (Math.min(gy, gRows-1) * gCols + Math.min(gx, gCols-1)) * 3;
+            const glowR = glowBuffer[gi] * 12;
+            const glowG = glowBuffer[gi+1] * 12;
+            const glowB = glowBuffer[gi+2] * 12;
+            const pidx = (py * W + px) * 4;
+            data[pidx] = Math.min(255, bgR + glowR);
+            data[pidx+1] = Math.min(255, bgG + glowG);
+            data[pidx+2] = Math.min(255, bgB + glowB);
+            data[pidx+3] = 255;
+        }
+    }
+
+    // Render particles on top
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const cell = grid[idx(x, y)];
+            if (cell === EMPTY) continue;
+
+            const cv = colorGrid[idx(x, y)];
+            const temp = tempGrid[idx(x, y)];
+            let r, g, b, a = 255;
+
+            // Per-material color with depth/shading
+            switch (cell) {
+                case SAND: {
+                    // Warm sand with granularity
+                    const shade = ((x + y) % 3 === 0) ? -12 : ((x * 7 + y * 13) % 5 === 0 ? 8 : 0);
+                    r = 195 + cv * 0.8 + shade; g = 165 + cv * 0.5 + shade; b = 70 + cv * 0.3;
+                    // Depth: darker when buried
+                    const aboveIsSand = get(x, y - 1) === SAND;
+                    if (aboveIsSand) { r -= 15; g -= 12; b -= 5; }
+                    break;
+                }
+                case WATER: {
+                    // Depth-based blue: deeper = darker
+                    let depth = 0;
+                    for (let dy = -1; dy >= -6; dy--) {
+                        if (get(x, y + dy) === WATER) depth++; else break;
+                    }
+                    const depthDarken = Math.min(depth * 8, 40);
+                    r = 25 + cv * 0.2 - depthDarken * 0.5;
+                    g = 80 + cv * 0.3 + Math.sin(frameCount * 0.05 + x * 0.3) * 5 - depthDarken * 0.3;
+                    b = 190 + cv * 0.6 - depthDarken;
+                    // Surface highlight
+                    if (get(x, y - 1) !== WATER && get(x, y - 1) !== OIL) {
+                        r += 30; g += 35; b += 25;
+                    }
+                    break;
+                }
+                case FIRE: {
+                    // Dynamic fire colors: white core → yellow → orange → red tips
+                    const life = cv / 60; // 0-1
+                    if (life < 0.3) { r = 255; g = 240; b = 180; } // bright core
+                    else if (life < 0.6) { r = 255; g = 160 + cv; b = 20 + cv * 0.5; } // orange
+                    else { r = 200 + cv * 0.5; g = 50 + cv; b = 10; } // red tips
+                    break;
+                }
+                case OIL: {
+                    // Dark iridescent
+                    const irid = Math.sin(x * 0.5 + y * 0.3 + cv * 0.1) * 15;
+                    r = 55 + cv * 0.3 + irid; g = 45 + cv * 0.2; b = 15 + cv * 0.1 + Math.abs(irid) * 0.5;
+                    break;
+                }
+                case PLANT: {
+                    // Living greens with variety
+                    const variety = (x * 17 + y * 31) % 4;
+                    if (variety === 0) { r = 15 + cv * 0.2; g = 120 + cv * 0.8; b = 25 + cv * 0.3; } // bright green
+                    else if (variety === 1) { r = 30 + cv * 0.3; g = 95 + cv * 0.7; b = 35 + cv * 0.4; } // forest
+                    else if (variety === 2) { r = 25 + cv * 0.2; g = 110 + cv * 0.6; b = 45 + cv * 0.5; } // blue-green
+                    else { r = 40 + cv * 0.3; g = 105 + cv * 0.6; b = 20 + cv * 0.2; } // yellow-green
+                    break;
+                }
+                case ACID: {
+                    // Toxic glow
+                    const pulse = Math.sin(frameCount * 0.1 + x * 0.2) * 15;
+                    r = 110 + cv * 0.5 + pulse; g = 220 + cv * 0.3; b = 15 + cv * 0.2;
+                    break;
+                }
+                case STONE: {
+                    // Textured rock with grain
+                    const grain = ((x * 23 + y * 37) % 7) * 3;
+                    r = 95 + cv * 0.4 + grain; g = 90 + cv * 0.4 + grain; b = 85 + cv * 0.3 + grain;
+                    // Top highlight
+                    if (get(x, y - 1) !== STONE) { r += 10; g += 10; b += 10; }
+                    break;
+                }
+                case STEAM: {
+                    // Wispy white-blue
+                    r = 170 + cv * 0.8; g = 180 + cv * 0.6; b = 200 + cv * 0.5;
+                    a = 180 - cv * 2;
+                    break;
+                }
+                case LAVA: {
+                    // Molten rock: bright orange-white core with dark crust
+                    const crust = ((x * 13 + y * 29 + frameCount) % 8 < 2) ? 1 : 0;
+                    if (crust) {
+                        r = 80 + cv * 0.3; g = 25 + cv * 0.2; b = 15;
+                    } else {
+                        const pulse = Math.sin(frameCount * 0.08 + x * 0.4 + y * 0.3) * 20;
+                        r = 255; g = 140 + cv + pulse; b = 20 + cv * 0.5;
+                    }
+                    break;
+                }
+                case GUNPOWDER: {
+                    // Dark gray-brown granules
+                    const grain = ((x * 19 + y * 41) % 5) * 4;
+                    r = 45 + cv * 0.2 + grain; g = 40 + cv * 0.15 + grain; b = 35 + cv * 0.1;
+                    break;
+                }
+                case WOOD: {
+                    // Wood grain texture
+                    const ring = Math.sin(x * 0.8 + y * 0.2) * 10;
+                    const grainY = ((y * 7) % 4) * 2;
+                    r = 120 + cv * 0.3 + ring; g = 80 + cv * 0.2 + ring * 0.5 + grainY; b = 35 + cv * 0.1;
+                    break;
+                }
+                case SMOKE: {
+                    // Gray smoke that fades with age
+                    const age = cv / 60;
+                    const brightness = 60 - age * 40;
+                    r = brightness + 10; g = brightness + 8; b = brightness + 15;
+                    a = Math.max(30, 160 - cv * 3);
+                    break;
+                }
+                default: continue;
+            }
+
+            // Apply temperature tinting (hot things glow red/orange)
+            if (temp > 0.05 && cell !== FIRE && cell !== LAVA) {
+                r = r + temp * 80;
+                g = g + temp * 30;
+                b = b - temp * 20;
+            }
+
+            r = Math.max(0, Math.min(255, Math.floor(r)));
+            g = Math.max(0, Math.min(255, Math.floor(g)));
+            b = Math.max(0, Math.min(255, Math.floor(b)));
+
+            // Get glow contribution at this position
+            const glowGx = Math.floor(x / glowScale);
+            const glowGy = Math.floor(y / glowScale);
+            const glowGi = (Math.min(glowGy, gRows-1) * gCols + Math.min(glowGx, gCols-1)) * 3;
+            const gr = glowBuffer[glowGi] * 18;
+            const gg = glowBuffer[glowGi+1] * 18;
+            const gb = glowBuffer[glowGi+2] * 18;
+
+            const px = x * PIXEL;
+            const py = y * PIXEL;
+            for (let dy = 0; dy < PIXEL && (py + dy) < H; dy++) {
+                for (let dx = 0; dx < PIXEL && (px + dx) < W; dx++) {
+                    const pidx = ((py + dy) * W + (px + dx)) * 4;
+                    if (a >= 255) {
+                        data[pidx] = Math.min(255, r + gr);
+                        data[pidx+1] = Math.min(255, g + gg);
+                        data[pidx+2] = Math.min(255, b + gb);
+                        data[pidx+3] = 255;
+                    } else {
+                        // Alpha blend for steam/smoke
+                        const af = a / 255;
+                        data[pidx] = Math.min(255, Math.floor(data[pidx] * (1-af) + (r + gr) * af));
+                        data[pidx+1] = Math.min(255, Math.floor(data[pidx+1] * (1-af) + (g + gg) * af));
+                        data[pidx+2] = Math.min(255, Math.floor(data[pidx+2] * (1-af) + (b + gb) * af));
+                    }
+                }
+            }
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
+// --- INPUT ---
+let mouseDown = false;
+let lastInputX = -1, lastInputY = -1;
+
+function handleInput(px, py) {
+    const gx = Math.floor(px / PIXEL);
+    const gy = Math.floor(py / PIXEL);
+    const mat = matMap[selectedMat] ?? EMPTY;
+
+    // Interpolate between last and current position for smooth strokes
+    const steps = (lastInputX >= 0) ? Math.max(1, Math.floor(Math.sqrt((gx-lastInputX)**2 + (gy-lastInputY)**2) / 2)) : 1;
+    for (let s = 0; s < steps; s++) {
+        const t = steps === 1 ? 1 : s / (steps - 1);
+        const ix = lastInputX >= 0 ? Math.round(lastInputX + (gx - lastInputX) * t) : gx;
+        const iy = lastInputY >= 0 ? Math.round(lastInputY + (gy - lastInputY) * t) : gy;
+
+        for (let dx = -brushSize; dx <= brushSize; dx++) {
+            for (let dy = -brushSize; dy <= brushSize; dy++) {
+                if (dx * dx + dy * dy > brushSize * brushSize) continue;
+                const nx = ix + dx, ny = iy + dy;
+                if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+
+                if (mat === EMPTY) {
+                    set(nx, ny, EMPTY);
+                    setTemp(nx, ny, 0);
+                } else if (get(nx, ny) === EMPTY) {
+                    if (Math.random() < 0.65) {
+                        set(nx, ny, mat);
+                        setCV(nx, ny, Math.floor(Math.random() * 45));
+                        if (mat === FIRE || mat === LAVA) setTemp(nx, ny, mat === LAVA ? 0.95 : 0.9);
+                    }
+                }
+            }
+        }
+    }
+    lastInputX = gx;
+    lastInputY = gy;
+}
+
+canvas.addEventListener('mousedown', (e) => { mouseDown = true; lastInputX = -1; lastInputY = -1; handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mousemove', (e) => { if (mouseDown) handleInput(e.clientX, e.clientY); });
+canvas.addEventListener('mouseup', () => { mouseDown = false; lastInputX = -1; lastInputY = -1; });
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); mouseDown = true; lastInputX = -1; lastInputY = -1; handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (mouseDown) handleInput(e.touches[0].clientX, e.touches[0].clientY); });
+canvas.addEventListener('touchend', () => { mouseDown = false; lastInputX = -1; lastInputY = -1; });
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    const keys = { '1':'sand', '2':'water', '3':'stone', '4':'wood', '5':'fire', '6':'lava', '7':'gunpowder', '8':'oil', '9':'plant', '0':'acid' };
+    if (keys[e.key]) {
+        selectedMat = keys[e.key];
+        document.querySelectorAll('.mat-btn').forEach(b => b.classList.toggle('active', b.dataset.mat === selectedMat));
+    }
+    if (e.key === 'c') clearAll();
+    if (e.key === ' ') { e.preventDefault(); togglePause(); }
+    if (e.key === '[') { brushSize = Math.max(1, brushSize - 1); document.getElementById('brush-size').value = brushSize; document.getElementById('brush-label').textContent = brushSize; }
+    if (e.key === ']') { brushSize = Math.min(12, brushSize + 1); document.getElementById('brush-size').value = brushSize; document.getElementById('brush-label').textContent = brushSize; }
+});
+
+// Material buttons
+document.querySelectorAll('.mat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedMat = btn.dataset.mat;
+    });
+});
+
+// Brush size
+document.getElementById('brush-size').addEventListener('input', (e) => {
+    brushSize = parseInt(e.target.value);
+    document.getElementById('brush-label').textContent = brushSize;
+});
+
+function clearAll() {
+    grid.fill(0);
+    colorGrid.fill(0);
+    tempGrid.fill(0);
+}
+
+function togglePause() {
+    paused = !paused;
+    document.getElementById('pause-btn').textContent = paused ? 'Play' : 'Pause';
+}
+
+// FPS tracking
+let lastFrameTime = performance.now();
+let fpsAccum = 0, fpsSamples = 0;
+
+function gameLoop() {
+    if (!running) { requestAnimationFrame(gameLoop); return; }
+
+    const now = performance.now();
+    const dt = now - lastFrameTime;
+    lastFrameTime = now;
+    fpsAccum += 1000 / dt;
+    fpsSamples++;
+    if (fpsSamples >= 30) {
+        document.getElementById('fps').textContent = Math.round(fpsAccum / fpsSamples) + ' fps';
+        fpsAccum = 0; fpsSamples = 0;
+    }
+
+    if (!paused) {
+        simulate();
+    }
+    render();
+
+    // Particle count (every 15 frames)
+    if (frameCount % 15 === 0) {
+        let count = 0;
+        for (let i = 0; i < grid.length; i++) {
+            if (grid[i] !== EMPTY) count++;
+        }
+        document.getElementById('particle-count').textContent = count.toLocaleString();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => document.getElementById('title-screen').style.display = 'none', 800);
+    running = true;
+}
+
+resize();
+window.addEventListener('resize', resize);
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

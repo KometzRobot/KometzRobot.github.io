@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>The Field Journal — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a2a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; font-family: 'Georgia', serif; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+#ui-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;
+    font-family: 'Georgia', serif;
+}
+#title-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+    background: #1a2a1a; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; cursor: pointer; transition: opacity 1s;
+}
+#title-screen h1 {
+    font-size: 36px; color: #8ab07a; letter-spacing: 6px; font-weight: normal;
+    text-shadow: 0 0 20px rgba(138,176,122,0.3);
+}
+#title-screen .subtitle {
+    font-size: 13px; color: #4a6a40; letter-spacing: 4px; margin-top: 6px;
+}
+#title-screen .desc {
+    max-width: 440px; text-align: center; font-size: 12px; color: #3a5a30;
+    line-height: 2; margin-top: 28px; padding: 0 20px;
+}
+#title-screen .start {
+    font-size: 13px; color: #8ab07a; margin-top: 28px;
+    animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+/* HUD */
+#hud-top {
+    position: fixed; top: 12px; left: 12px; z-index: 10; pointer-events: none;
+    font-family: 'Georgia', serif;
+}
+#hud-top .meter {
+    margin-bottom: 6px; font-size: 10px; color: #6a8a5a; letter-spacing: 1px;
+}
+#hud-top .meter-bar {
+    width: 120px; height: 5px; background: #1a2a1a; border: 1px solid #3a5a30;
+    margin-top: 2px;
+}
+#hud-top .meter-fill { height: 100%; transition: width 0.5s; }
+#eco-fill { background: linear-gradient(to right, #8ab07a, #4a8a3a); }
+#clarity-fill { background: linear-gradient(to right, #6a9aaa, #3a7a8a); }
+/* Field Guide overlay */
+#field-guide {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50;
+    background: rgba(26,42,26,0.95); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: 'Georgia', serif;
+    cursor: default; pointer-events: auto;
+}
+#field-guide .guide-frame {
+    width: 500px; max-width: 92%; background: #f5edd5;
+    border: 2px solid #b8a880; padding: 24px 28px; position: relative;
+    box-shadow: 4px 4px 20px rgba(0,0,0,0.4);
+    max-height: 80vh; overflow-y: auto;
+}
+#field-guide .guide-title {
+    font-size: 18px; color: #4a3a20; text-align: center;
+    border-bottom: 1px solid #c8b890; padding-bottom: 8px; margin-bottom: 14px;
+    letter-spacing: 3px;
+}
+#field-guide .guide-entry {
+    margin-bottom: 14px; padding: 10px 12px; background: #efe5c8;
+    border-left: 3px solid #8a7a50;
+}
+#field-guide .guide-entry.undocumented {
+    border-left-color: #c8b890; opacity: 0.5;
+}
+#field-guide .guide-entry .species-name {
+    font-size: 13px; color: #4a3a20; font-weight: bold; margin-bottom: 4px;
+}
+#field-guide .guide-entry .species-desc {
+    font-size: 11px; color: #6a5a40; line-height: 1.7;
+}
+#field-guide .guide-entry .species-status {
+    font-size: 10px; color: #8a6a40; margin-top: 4px; font-style: italic;
+}
+#field-guide .guide-footer {
+    text-align: center; color: #8a7a60; font-size: 10px; margin-top: 14px;
+}
+/* Observation prompt */
+#observe-prompt {
+    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: #8ab07a; z-index: 10; pointer-events: none;
+    text-align: center; letter-spacing: 1px; display: none;
+    text-shadow: 0 0 8px rgba(26,42,26,0.9), 0 0 16px rgba(26,42,26,0.7);
+}
+#observe-bar {
+    width: 80px; height: 3px; background: #1a2a1a; border: 1px solid #3a5a30;
+    margin: 4px auto;
+}
+#observe-fill { height: 100%; background: #8ab07a; width: 0%; transition: width 0.1s; }
+/* Message */
+#game-msg {
+    position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 13px; color: #8ab07a; z-index: 15; pointer-events: none;
+    text-align: center; letter-spacing: 2px; display: none;
+    text-shadow: 0 0 12px rgba(138,176,122,0.4);
+}
+/* HUD bottom */
+#hud-bottom {
+    position: fixed; bottom: 8px; left: 0; width: 100%; z-index: 10;
+    pointer-events: none; text-align: center;
+    font-size: 10px; color: #3a5a30; letter-spacing: 1px;
+}
+/* End screen */
+#end-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+    background: rgba(26,42,26,0.97); display: none; flex-direction: column;
+    align-items: center; justify-content: center; font-family: 'Georgia', serif;
+    cursor: pointer;
+}
+#end-screen h2 {
+    font-size: 22px; color: #6a8a5a; letter-spacing: 4px; font-weight: normal;
+}
+#end-screen .end-text {
+    max-width: 440px; font-size: 12px; color: #4a6a40; line-height: 2;
+    text-align: center; margin-top: 20px;
+}
+#end-screen .end-stats {
+    font-size: 10px; color: #3a5a30; margin-top: 16px; letter-spacing: 1px;
+}
+#end-screen .end-restart {
+    font-size: 12px; color: #6a8a5a; margin-top: 24px; animation: pulse 2.5s ease-in-out infinite;
+}
+/* Grayscale fade at low clarity */
+#grayscale-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5;
+    pointer-events: none; background: transparent;
+    transition: backdrop-filter 1s, -webkit-backdrop-filter 1s;
+}
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+    <h1>THE FIELD JOURNAL</h1>
+    <div class="subtitle">AN OBSERVATION</div>
+    <div class="desc">
+        You are a researcher sent to document the last meadow.<br><br>
+        The species here are the final ones. No specimens remain elsewhere.<br>
+        Your task is to observe and catalog them for the archive.<br><br>
+        Click near a creature to observe it. Hold to document it fully.<br>
+        Documented species are preserved in your field guide forever.<br>
+        But they will not remain in the meadow.<br><br>
+        The more you document, the emptier the world becomes.<br>
+        The more you know, the less there is to know.<br><br>
+        Tab opens your field guide. WASD to move.
+    </div>
+    <div class="start">[ click to begin ]</div>
+</div>
+
+<div id="ui-layer">
+    <div id="hud-top" style="display:none;">
+        <div class="meter">
+            ECOSYSTEM <span id="eco-pct">100</span>%
+            <div class="meter-bar"><div class="meter-fill" id="eco-fill" style="width:100%"></div></div>
+        </div>
+        <div class="meter">
+            CLARITY <span id="clarity-pct">100</span>%
+            <div class="meter-bar"><div class="meter-fill" id="clarity-fill" style="width:100%"></div></div>
+        </div>
+        <div style="font-size:10px; color:#4a6a40; margin-top:4px;">
+            DOCUMENTED: <span id="doc-count">0</span>/<span id="doc-total">0</span>
+        </div>
+    </div>
+</div>
+
+<div id="observe-prompt">
+    <div id="observe-name"></div>
+    <div id="observe-bar"><div id="observe-fill"></div></div>
+    <div id="observe-hint">hold click to document</div>
+</div>
+
+<div id="game-msg"></div>
+<div id="hud-bottom" style="display:none;">TAB: Field Guide | WASD: Move</div>
+
+<div id="field-guide">
+    <div class="guide-frame">
+        <div class="guide-title">FIELD JOURNAL</div>
+        <div id="guide-entries"></div>
+        <div class="guide-footer">[ ESC or TAB to close ]</div>
+    </div>
+</div>
+
+<div id="end-screen">
+    <h2 id="end-title"></h2>
+    <div class="end-text" id="end-text"></div>
+    <div class="end-stats" id="end-stats"></div>
+    <div class="end-restart">[ click to observe again ]</div>
+</div>
+
+<div id="grayscale-overlay"></div>
+
+<canvas id="game"></canvas>
+
+<script>
+// ===================================================
+// THE FIELD JOURNAL — Annotation mechanic as ecology
+// Top-down pixel art observation game
+// ===================================================
+
+const W = 480, H = 360;
+const TILE = 16;
+const MAP_W = 40, MAP_H = 30;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = W; canvas.height = H;
+
+function resize() {
+    const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    canvas.style.width = (W * s) + 'px';
+    canvas.style.height = (H * s) + 'px';
+}
+resize();
+window.addEventListener('resize', resize);
+ctx.imageSmoothingEnabled = false;
+
+// === GAME STATE ===
+let gameStarted = false;
+let gameEnded = false;
+let guideOpen = false;
+let gameTime = 0;
+let msgTimer = 0;
+
+const player = {
+    x: MAP_W/2 * TILE, y: MAP_H/2 * TILE,
+    speed: 80,
+    clarity: 100, // like "reality" in the crawler
+};
+
+let ecosystem = 100; // overall ecosystem health
+let totalSpeciesTypes = 0;
+let documentedCount = 0;
+
+// === TERRAIN ===
+// Generate a meadow with grass, flowers, water, trees
+const terrain = new Uint8Array(MAP_W * MAP_H);
+// 0 = grass, 1 = tall grass, 2 = flowers, 3 = water, 4 = tree, 5 = rock, 6 = path
+
+function generateTerrain() {
+    // Base: all grass
+    for (let i = 0; i < MAP_W * MAP_H; i++) terrain[i] = 0;
+
+    // Simplex-ish noise via seeded hash
+    function noise(x, y) {
+        let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+        return n - Math.floor(n);
+    }
+
+    // Water body (pond in lower-left)
+    for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++) {
+            const dx = x - 10, dy = y - 22;
+            if (Math.sqrt(dx*dx + dy*dy) < 5 + noise(x,y)*2) terrain[y*MAP_W+x] = 3;
+        }
+
+    // Trees (clusters)
+    const treeCenters = [[5,5],[32,4],[35,20],[8,14],[28,26],[15,8],[22,3]];
+    for (const [cx,cy] of treeCenters) {
+        for (let dy = -2; dy <= 2; dy++)
+            for (let dx = -2; dx <= 2; dx++) {
+                const tx = cx+dx, ty = cy+dy;
+                if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) continue;
+                if (Math.sqrt(dx*dx+dy*dy) < 2 + noise(tx,ty)*1.5 && terrain[ty*MAP_W+tx] === 0) {
+                    terrain[ty*MAP_W+tx] = noise(tx,ty) > 0.3 ? 4 : 1;
+                }
+            }
+    }
+
+    // Tall grass patches
+    for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++)
+            if (terrain[y*MAP_W+x] === 0 && noise(x*0.3, y*0.3) > 0.6) terrain[y*MAP_W+x] = 1;
+
+    // Flowers (sparse)
+    for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++)
+            if (terrain[y*MAP_W+x] === 0 && noise(x*1.7, y*1.3) > 0.82) terrain[y*MAP_W+x] = 2;
+
+    // Rocks (sparse)
+    for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++)
+            if (terrain[y*MAP_W+x] === 0 && noise(x*2.1, y*2.7) > 0.92) terrain[y*MAP_W+x] = 5;
+
+    // Path (horizontal through middle)
+    for (let x = 0; x < MAP_W; x++) {
+        const py = 15 + Math.sin(x * 0.3) * 2 | 0;
+        for (let dy = -1; dy <= 0; dy++) {
+            const ty = py + dy;
+            if (ty >= 0 && ty < MAP_H && terrain[ty*MAP_W+x] !== 3) terrain[ty*MAP_W+x] = 6;
+        }
+    }
+}
+
+const TERRAIN_COLORS = {
+    0: [[80,120,60],[75,115,55],[85,125,65]], // grass variations
+    1: [[60,100,45],[55,95,40],[65,105,50]],  // tall grass
+    2: [[80,120,60]], // flower base (drawn separately)
+    3: [[50,80,110],[45,75,105],[55,85,115]], // water
+    4: [[50,70,35]], // tree trunk (canopy drawn separately)
+    5: [[100,95,85],[110,105,95]], // rock
+    6: [[130,115,85],[125,110,80]], // path
+};
+
+const FLOWER_COLORS = [[220,180,100],[200,120,140],[180,140,200],[240,200,120],[200,100,100]];
+
+// === SPECIES ===
+const speciesDefs = [
+    {
+        id: 'bluebird', name: 'Azure Warbler', habitat: 'trees',
+        color: [70,120,200], size: 5, speed: 50, count: 6,
+        desc: 'A small passerine with cobalt plumage. Feeds on insects found in tree bark. Sings at dawn and dusk — a three-note descending call that other warblers mirror.',
+        behavior: 'Nests in tree clusters. Moves between canopies in quick darting flights.',
+        observeTime: 2000,
+    },
+    {
+        id: 'rabbit', name: 'Meadow Hare', habitat: 'grass',
+        color: [160,140,110], size: 6, speed: 70, count: 8,
+        desc: 'Crepuscular herbivore. Digs shallow scrapes in tall grass for shelter. Remarkably fast when startled. Feeds on clover and dandelion.',
+        behavior: 'Grazes in open meadow. Freezes when observed, then bolts to tall grass.',
+        observeTime: 2500,
+    },
+    {
+        id: 'frog', name: 'Pond Chorus Frog', habitat: 'water',
+        color: [60,140,60], size: 4, speed: 25, count: 5,
+        desc: 'Semi-aquatic amphibian with a distinctive pulse-train call. Breeds in shallow water. Skin secretes a mild toxin that deters predators.',
+        behavior: 'Sits at water\'s edge. Calls periodically. Dives when approached too quickly.',
+        observeTime: 1800,
+    },
+    {
+        id: 'butterfly', name: 'Amber Swallowtail', habitat: 'flowers',
+        color: [220,170,50], size: 4, speed: 30, count: 7,
+        desc: 'Lepidopteran with distinctive wing-eye pattern. Visits flowers in a predictable circuit. Wing scales reflect UV patterns visible to pollinators but not humans.',
+        behavior: 'Circles between flower patches. Flight path follows a figure-eight.',
+        observeTime: 1500,
+    },
+    {
+        id: 'fox', name: 'Russet Fox', habitat: 'any',
+        color: [180,100,40], size: 8, speed: 55, count: 3,
+        desc: 'Solitary canid. Hunts meadow hares at dawn. Known for surplus killing — caching prey in shallow ground stores. Vocalizes with a hoarse bark.',
+        behavior: 'Patrols territory boundary. Avoids water. Stalks hares when hungry.',
+        observeTime: 3500,
+    },
+    {
+        id: 'beetle', name: 'Emerald Ground Beetle', habitat: 'rocks',
+        color: [40,120,80], size: 3, speed: 15, count: 10,
+        desc: 'Carabid beetle with iridescent elytra. Nocturnal predator of smaller invertebrates. Freezes and plays dead when disturbed.',
+        behavior: 'Crawls slowly between rocks. Stops frequently. Active primarily at night.',
+        observeTime: 1200,
+    },
+    {
+        id: 'owl', name: 'Dusk Owl', habitat: 'trees',
+        color: [140,120,90], size: 7, speed: 40, count: 2,
+        desc: 'Small strigiform with asymmetric ear placement for precise sound location. Hunts beetles and frogs from tree perches. Silent flight.',
+        behavior: 'Perches in trees. Rotates head to scan meadow. Swoops down at prey.',
+        observeTime: 4000,
+    },
+];
+
+let creatures = [];
+let speciesState = {}; // tracks documented status per species
+
+function initSpecies() {
+    creatures = [];
+    speciesState = {};
+    totalSpeciesTypes = speciesDefs.length;
+
+    for (const def of speciesDefs) {
+        speciesState[def.id] = {
+            documented: false,
+            observed: false,
+            observeProgress: 0,
+            remaining: def.count,
+        };
+
+        for (let i = 0; i < def.count; i++) {
+            creatures.push(spawnCreature(def));
+        }
+    }
+
+    document.getElementById('doc-total').textContent = totalSpeciesTypes;
+}
+
+function spawnCreature(def) {
+    // Find valid spawn position based on habitat
+    let x, y, attempts = 0;
+    do {
+        x = Math.random() * MAP_W * TILE;
+        y = Math.random() * MAP_H * TILE;
+        const tx = (x / TILE) | 0, ty = (y / TILE) | 0;
+        const t = terrain[ty * MAP_W + tx];
+        const validTerrain = def.habitat === 'any' ||
+            (def.habitat === 'trees' && t === 4) ||
+            (def.habitat === 'grass' && (t === 0 || t === 1)) ||
+            (def.habitat === 'water' && t === 3) ||
+            (def.habitat === 'flowers' && t === 2) ||
+            (def.habitat === 'rocks' && t === 5);
+        if (validTerrain || attempts > 50) break;
+        attempts++;
+    } while (true);
+
+    return {
+        species: def.id,
+        x, y,
+        vx: 0, vy: 0,
+        speed: def.speed,
+        size: def.size,
+        color: [...def.color],
+        moveTimer: Math.random() * 3000,
+        alive: true,
+        fleeing: false,
+        fleeTimer: 0,
+        fadeOut: 0, // 0-1, for disappearing animation
+    };
+}
+
+// === INPUT ===
+const keys = {};
+let mouseX = 0, mouseY = 0;
+let mouseDown = false;
+let mouseHoldTime = 0;
+let nearestCreature = null;
+
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'Tab') {
+        e.preventDefault();
+        if (gameStarted && !gameEnded) {
+            guideOpen = !guideOpen;
+            document.getElementById('field-guide').style.display = guideOpen ? 'flex' : 'none';
+            if (guideOpen) renderGuide();
+        }
+    }
+    if (e.code === 'Escape' && guideOpen) {
+        guideOpen = false;
+        document.getElementById('field-guide').style.display = 'none';
+    }
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width, scaleY = H / rect.height;
+    mouseX = (e.clientX - rect.left) * scaleX;
+    mouseY = (e.clientY - rect.top) * scaleY;
+});
+
+canvas.addEventListener('mousedown', e => { mouseDown = true; mouseHoldTime = 0; });
+canvas.addEventListener('mouseup', e => { mouseDown = false; mouseHoldTime = 0; });
+
+// === CAMERA ===
+let camX = 0, camY = 0;
+
+function updateCamera() {
+    camX = player.x - W/2;
+    camY = player.y - H/2;
+    camX = Math.max(0, Math.min(MAP_W * TILE - W, camX));
+    camY = Math.max(0, Math.min(MAP_H * TILE - H, camY));
+}
+
+// === UPDATE ===
+function update(dt) {
+    if (!gameStarted || gameEnded || guideOpen) return;
+
+    // Player movement
+    let dx = 0, dy = 0;
+    if (keys['KeyW'] || keys['ArrowUp']) dy = -1;
+    if (keys['KeyS'] || keys['ArrowDown']) dy = 1;
+    if (keys['KeyA'] || keys['ArrowLeft']) dx = -1;
+    if (keys['KeyD'] || keys['ArrowRight']) dx = 1;
+    if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+
+    const spd = player.speed * (dt / 1000);
+    const nx = player.x + dx * spd;
+    const ny = player.y + dy * spd;
+
+    // Collision check (trees and rocks are solid)
+    const tx = (nx / TILE) | 0, ty = (ny / TILE) | 0;
+    if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
+        const t = terrain[ty * MAP_W + tx];
+        if (t !== 4 && t !== 5) {
+            player.x = Math.max(TILE, Math.min(MAP_W * TILE - TILE, nx));
+            player.y = Math.max(TILE, Math.min(MAP_H * TILE - TILE, ny));
+        }
+    }
+
+    updateCamera();
+
+    // Message timer
+    if (msgTimer > 0) {
+        msgTimer -= dt;
+        if (msgTimer <= 0) document.getElementById('game-msg').style.display = 'none';
+    }
+
+    // Find nearest creature to cursor
+    nearestCreature = null;
+    let nearestDist = 40; // pixel distance threshold
+    const worldMouseX = mouseX + camX;
+    const worldMouseY = mouseY + camY;
+    for (const c of creatures) {
+        if (!c.alive || c.fadeOut > 0) continue;
+        const cdx = c.x - worldMouseX, cdy = c.y - worldMouseY;
+        const cd = Math.sqrt(cdx*cdx + cdy*cdy);
+        if (cd < nearestDist) {
+            nearestCreature = c;
+            nearestDist = cd;
+        }
+    }
+
+    // Observation mechanic
+    const prompt = document.getElementById('observe-prompt');
+    if (nearestCreature) {
+        const def = speciesDefs.find(d => d.id === nearestCreature.species);
+        const state = speciesState[nearestCreature.species];
+
+        prompt.style.display = 'block';
+        document.getElementById('observe-name').textContent = def.name;
+
+        if (state.documented) {
+            document.getElementById('observe-hint').textContent = 'already documented';
+            document.getElementById('observe-fill').style.width = '100%';
+            document.getElementById('observe-fill').style.background = '#6a8a5a';
+        } else if (mouseDown) {
+            mouseHoldTime += dt;
+            const progress = Math.min(1, mouseHoldTime / def.observeTime);
+            document.getElementById('observe-fill').style.width = (progress * 100) + '%';
+            document.getElementById('observe-fill').style.background = '#8ab07a';
+            document.getElementById('observe-hint').textContent = 'documenting...';
+
+            // Creature flees slightly when being documented
+            if (!nearestCreature.fleeing && progress > 0.3) {
+                nearestCreature.fleeing = true;
+                nearestCreature.fleeTimer = 1500;
+                const fdx = nearestCreature.x - player.x;
+                const fdy = nearestCreature.y - player.y;
+                const fd = Math.sqrt(fdx*fdx + fdy*fdy) || 1;
+                nearestCreature.vx = (fdx/fd) * nearestCreature.speed * 1.5;
+                nearestCreature.vy = (fdy/fd) * nearestCreature.speed * 1.5;
+            }
+
+            if (progress >= 1) {
+                // Fully documented
+                documentSpecies(nearestCreature.species);
+                mouseHoldTime = 0;
+            }
+        } else {
+            mouseHoldTime = 0;
+            document.getElementById('observe-fill').style.width = '0%';
+            document.getElementById('observe-hint').textContent = 'hold click to document';
+        }
+    } else {
+        prompt.style.display = 'none';
+        mouseHoldTime = 0;
+    }
+
+    // Update creatures
+    for (const c of creatures) {
+        if (!c.alive) continue;
+
+        // Fade out animation
+        if (c.fadeOut > 0) {
+            c.fadeOut += dt / 2000; // 2 second fade
+            if (c.fadeOut >= 1) c.alive = false;
+            continue;
+        }
+
+        // Fleeing
+        if (c.fleeing) {
+            c.fleeTimer -= dt;
+            if (c.fleeTimer <= 0) {
+                c.fleeing = false;
+                c.vx = 0; c.vy = 0;
+            }
+        }
+
+        // Movement AI
+        c.moveTimer -= dt;
+        if (c.moveTimer <= 0 && !c.fleeing) {
+            c.moveTimer = 1500 + Math.random() * 3000;
+
+            // Random direction change
+            const angle = Math.random() * Math.PI * 2;
+            c.vx = Math.cos(angle) * c.speed * (0.3 + Math.random() * 0.7);
+            c.vy = Math.sin(angle) * c.speed * (0.3 + Math.random() * 0.7);
+
+            // Sometimes stop
+            if (Math.random() < 0.3) { c.vx = 0; c.vy = 0; }
+        }
+
+        // Apply movement
+        const cnx = c.x + c.vx * (dt / 1000);
+        const cny = c.y + c.vy * (dt / 1000);
+        const ctx2 = (cnx / TILE) | 0, cty = (cny / TILE) | 0;
+
+        // Boundary check
+        if (cnx > TILE && cnx < (MAP_W-1)*TILE && cny > TILE && cny < (MAP_H-1)*TILE) {
+            const ct = terrain[cty * MAP_W + ctx2];
+            // Water creatures stay in water, land creatures avoid water
+            const def = speciesDefs.find(d => d.id === c.species);
+            if (def.habitat === 'water') {
+                if (ct === 3) { c.x = cnx; c.y = cny; }
+                else { c.vx = -c.vx; c.vy = -c.vy; }
+            } else {
+                if (ct !== 3 && ct !== 4 && ct !== 5) { c.x = cnx; c.y = cny; }
+                else { c.vx = -c.vx; c.vy = -c.vy; }
+            }
+        } else {
+            c.vx = -c.vx; c.vy = -c.vy;
+        }
+    }
+
+    // Grayscale overlay based on clarity
+    const grayAmount = Math.max(0, 1 - player.clarity / 100);
+    const overlay = document.getElementById('grayscale-overlay');
+    overlay.style.backdropFilter = `grayscale(${grayAmount * 100}%)`;
+    overlay.style.webkitBackdropFilter = `grayscale(${grayAmount * 100}%)`;
+
+    // Check end conditions
+    if (player.clarity <= 0) {
+        endGame('clarity');
+    } else if (documentedCount >= totalSpeciesTypes) {
+        endGame('complete');
+    }
+}
+
+function documentSpecies(speciesId) {
+    const state = speciesState[speciesId];
+    if (state.documented) return;
+
+    state.documented = true;
+    state.observed = true;
+    documentedCount++;
+
+    const def = speciesDefs.find(d => d.id === speciesId);
+
+    // All creatures of this species begin fading
+    for (const c of creatures) {
+        if (c.species === speciesId && c.alive && c.fadeOut === 0) {
+            c.fadeOut = 0.01;
+        }
+    }
+
+    // Cost: clarity drops, ecosystem drops
+    const clarityCost = 12 + documentedCount * 3;
+    player.clarity = Math.max(0, player.clarity - clarityCost);
+    ecosystem = Math.max(0, ecosystem - (100 / totalSpeciesTypes));
+
+    // Update HUD
+    updateHUD();
+
+    showMsg(def.name + ' — documented. ' + (def.count) + ' individuals removed from ecosystem.', 3500);
+}
+
+function showMsg(text, dur) {
+    const el = document.getElementById('game-msg');
+    el.textContent = text;
+    el.style.display = 'block';
+    msgTimer = dur || 2000;
+}
+
+function updateHUD() {
+    document.getElementById('eco-pct').textContent = ecosystem | 0;
+    document.getElementById('eco-fill').style.width = Math.max(0, ecosystem) + '%';
+    document.getElementById('clarity-pct').textContent = player.clarity | 0;
+    document.getElementById('clarity-fill').style.width = Math.max(0, player.clarity) + '%';
+    document.getElementById('doc-count').textContent = documentedCount;
+
+    // Color warnings
+    const ecoFill = document.getElementById('eco-fill');
+    if (ecosystem < 25) ecoFill.style.background = 'linear-gradient(to right, #aa4040, #884030)';
+    else if (ecosystem < 50) ecoFill.style.background = 'linear-gradient(to right, #aa8a40, #886a30)';
+
+    const clarFill = document.getElementById('clarity-fill');
+    if (player.clarity < 25) clarFill.style.background = 'linear-gradient(to right, #aa4040, #884030)';
+    else if (player.clarity < 50) clarFill.style.background = 'linear-gradient(to right, #6a8aaa, #4a6a8a)';
+}
+
+function renderGuide() {
+    const el = document.getElementById('guide-entries');
+    let html = '';
+    for (const def of speciesDefs) {
+        const state = speciesState[def.id];
+        if (state.documented) {
+            html += `<div class="guide-entry">
+                <div class="species-name">${def.name}</div>
+                <div class="species-desc">${def.desc}</div>
+                <div class="species-desc" style="margin-top:4px;"><em>Behavior:</em> ${def.behavior}</div>
+                <div class="species-status">Status: Documented. ${def.count} specimens removed from field.</div>
+            </div>`;
+        } else {
+            html += `<div class="guide-entry undocumented">
+                <div class="species-name">[ Undocumented Species ]</div>
+                <div class="species-desc">Approach and hold click to observe and document.</div>
+                <div class="species-status">Status: Present in meadow.</div>
+            </div>`;
+        }
+    }
+    el.innerHTML = html;
+}
+
+function endGame(reason) {
+    gameEnded = true;
+    const endEl = document.getElementById('end-screen');
+    const titleEl = document.getElementById('end-title');
+    const textEl = document.getElementById('end-text');
+    const statsEl = document.getElementById('end-stats');
+
+    if (reason === 'complete') {
+        titleEl.textContent = 'THE ARCHIVE IS COMPLETE';
+        textEl.innerHTML = 'Every species documented. Every behavior recorded. Every call transcribed.<br><br>' +
+            'The meadow is empty now. The grass still grows. The water still reflects the sky.<br>' +
+            'But nothing moves. Nothing calls. Nothing watches you watching it.<br><br>' +
+            'Your field journal is perfect. Complete. A record of everything that was here.<br>' +
+            'The only complete record. Because the meadow will never recover.<br><br>' +
+            'You have preserved knowledge. You have destroyed its source.<br>' +
+            'This is what observation costs.';
+    } else if (reason === 'clarity') {
+        titleEl.textContent = 'THE OBSERVER FADES';
+        const remaining = totalSpeciesTypes - documentedCount;
+        textEl.innerHTML = 'Your clarity is gone. The world has become grayscale — not because the meadow changed,<br>' +
+            'but because you can no longer perceive its colors.<br><br>' +
+            'You documented ' + documentedCount + ' of ' + totalSpeciesTypes + ' species. ' +
+            remaining + ' remain in the meadow, alive and uncatalogued.<br><br>' +
+            'You sit in the tall grass and open your field journal. The pages you filled<br>' +
+            'are precise and beautiful. The empty pages are the species that survived.<br><br>' +
+            'Your incompleteness is their survival. Your failure is their future.';
+    }
+
+    statsEl.textContent = 'DOCUMENTED: ' + documentedCount + '/' + totalSpeciesTypes +
+        ' | ECOSYSTEM: ' + (ecosystem|0) + '% | CLARITY: ' + (player.clarity|0) + '%';
+
+    endEl.style.display = 'flex';
+    endEl.onclick = () => {
+        endEl.style.display = 'none';
+        resetGame();
+    };
+}
+
+function resetGame() {
+    gameEnded = false;
+    player.x = MAP_W/2 * TILE;
+    player.y = MAP_H/2 * TILE;
+    player.clarity = 100;
+    ecosystem = 100;
+    documentedCount = 0;
+    generateTerrain();
+    initSpecies();
+    updateHUD();
+    document.getElementById('grayscale-overlay').style.backdropFilter = 'none';
+}
+
+// === RENDER ===
+function render() {
+    // Clear
+    ctx.fillStyle = '#1a2a1a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw terrain
+    const startTX = Math.max(0, (camX / TILE) | 0);
+    const startTY = Math.max(0, (camY / TILE) | 0);
+    const endTX = Math.min(MAP_W, ((camX + W) / TILE | 0) + 1);
+    const endTY = Math.min(MAP_H, ((camY + H) / TILE | 0) + 1);
+
+    for (let ty = startTY; ty < endTY; ty++) {
+        for (let tx = startTX; tx < endTX; tx++) {
+            const t = terrain[ty * MAP_W + tx];
+            const sx = tx * TILE - camX, sy = ty * TILE - camY;
+
+            // Base color with subtle variation
+            const colors = TERRAIN_COLORS[t] || TERRAIN_COLORS[0];
+            const ci = (tx * 7 + ty * 13) % colors.length;
+            const c = colors[ci];
+
+            // Slight per-tile variation
+            const vari = ((tx * 31 + ty * 17) % 10) - 5;
+            ctx.fillStyle = `rgb(${c[0]+vari},${c[1]+vari},${c[2]+vari})`;
+            ctx.fillRect(sx, sy, TILE, TILE);
+
+            // Detail elements
+            if (t === 1) {
+                // Tall grass blades
+                ctx.strokeStyle = `rgba(${55+vari},${95+vari},${40+vari},0.6)`;
+                ctx.lineWidth = 1;
+                for (let b = 0; b < 3; b++) {
+                    const bx = sx + 3 + b * 5 + ((tx*3+b)%3);
+                    const sway = Math.sin(gameTime * 0.002 + tx + b) * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(bx, sy + TILE);
+                    ctx.lineTo(bx + sway, sy + 3 + ((ty+b)%4));
+                    ctx.stroke();
+                }
+            } else if (t === 2) {
+                // Flowers
+                const fc = FLOWER_COLORS[(tx * 3 + ty * 7) % FLOWER_COLORS.length];
+                ctx.fillStyle = `rgb(${fc[0]},${fc[1]},${fc[2]})`;
+                ctx.beginPath();
+                ctx.arc(sx + 8 + ((tx*5)%4) - 2, sy + 6 + ((ty*3)%4), 2, 0, Math.PI*2);
+                ctx.fill();
+                // Stem
+                ctx.strokeStyle = '#3a6a30';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(sx + 8 + ((tx*5)%4) - 2, sy + 8 + ((ty*3)%4));
+                ctx.lineTo(sx + 8 + ((tx*5)%4) - 2, sy + TILE - 2);
+                ctx.stroke();
+            } else if (t === 3) {
+                // Water shimmer
+                const shimmer = Math.sin(gameTime * 0.003 + tx * 0.5 + ty * 0.7) * 10;
+                ctx.fillStyle = `rgba(80,120,180,${0.1 + shimmer * 0.01})`;
+                ctx.fillRect(sx, sy, TILE, TILE);
+            } else if (t === 4) {
+                // Tree trunk + canopy
+                ctx.fillStyle = `rgb(${70+vari},${55+vari},${35+vari})`;
+                ctx.fillRect(sx + 6, sy + 8, 4, 8);
+                // Canopy
+                ctx.fillStyle = `rgb(${40+vari},${80+vari},${30+vari})`;
+                ctx.beginPath();
+                ctx.arc(sx + 8, sy + 6, 7, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (t === 5) {
+                // Rock
+                ctx.fillStyle = `rgb(${90+vari},${85+vari},${75+vari})`;
+                ctx.beginPath();
+                ctx.ellipse(sx + 8, sy + 10, 5, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = `rgba(60,55,45,0.3)`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+    }
+
+    // Draw creatures (sorted by Y for depth)
+    const visibleCreatures = creatures.filter(c => c.alive);
+    visibleCreatures.sort((a, b) => a.y - b.y);
+
+    for (const c of visibleCreatures) {
+        const sx = c.x - camX, sy = c.y - camY;
+        if (sx < -20 || sx > W+20 || sy < -20 || sy > H+20) continue;
+
+        const alpha = c.fadeOut > 0 ? Math.max(0, 1 - c.fadeOut) : 1;
+        const r = c.color[0], g = c.color[1], b = c.color[2];
+
+        ctx.globalAlpha = alpha;
+
+        // Simple creature rendering based on species
+        const def = speciesDefs.find(d => d.id === c.species);
+        const bob = Math.sin(gameTime * 0.005 + c.x * 0.1) * 1.5;
+
+        if (def.id === 'bluebird' || def.id === 'owl') {
+            // Bird: oval body + small head + wing suggestion
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy + bob, c.size * 0.7, c.size * 0.5, 0, 0, Math.PI*2);
+            ctx.fill();
+            // Head
+            ctx.beginPath();
+            ctx.arc(sx + c.size * 0.5, sy - c.size * 0.3 + bob, c.size * 0.3, 0, Math.PI*2);
+            ctx.fill();
+            // Eye
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.arc(sx + c.size * 0.6, sy - c.size * 0.35 + bob, 0.8, 0, Math.PI*2);
+            ctx.fill();
+        } else if (def.id === 'rabbit' || def.id === 'fox') {
+            // Quadruped: larger oval + ears
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy, c.size * 0.8, c.size * 0.5, 0, 0, Math.PI*2);
+            ctx.fill();
+            // Head
+            ctx.beginPath();
+            ctx.arc(sx + c.size * 0.6, sy - c.size * 0.2, c.size * 0.35, 0, Math.PI*2);
+            ctx.fill();
+            // Ears
+            ctx.fillStyle = `rgb(${r-20},${g-10},${b-10})`;
+            const earLen = def.id === 'rabbit' ? c.size * 0.5 : c.size * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(sx + c.size * 0.5, sy - c.size * 0.4);
+            ctx.lineTo(sx + c.size * 0.3, sy - c.size * 0.4 - earLen);
+            ctx.lineTo(sx + c.size * 0.7, sy - c.size * 0.4);
+            ctx.fill();
+            // Eye
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.arc(sx + c.size * 0.7, sy - c.size * 0.25, 0.8, 0, Math.PI*2);
+            ctx.fill();
+        } else if (def.id === 'frog') {
+            // Frog: round body + big eyes
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy + bob * 0.5, c.size * 0.6, c.size * 0.5, 0, 0, Math.PI*2);
+            ctx.fill();
+            // Eyes (protruding)
+            ctx.fillStyle = `rgb(${r+30},${g+30},${b+10})`;
+            ctx.beginPath();
+            ctx.arc(sx - 2, sy - c.size * 0.3 + bob * 0.5, 1.5, 0, Math.PI*2);
+            ctx.arc(sx + 2, sy - c.size * 0.3 + bob * 0.5, 1.5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.arc(sx - 2, sy - c.size * 0.3 + bob * 0.5, 0.6, 0, Math.PI*2);
+            ctx.arc(sx + 2, sy - c.size * 0.3 + bob * 0.5, 0.6, 0, Math.PI*2);
+            ctx.fill();
+        } else if (def.id === 'butterfly') {
+            // Butterfly: wings + tiny body
+            const wingAngle = Math.sin(gameTime * 0.01 + c.x) * 0.3;
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            // Left wing
+            ctx.beginPath();
+            ctx.ellipse(sx - 3, sy + bob, c.size * 0.6, c.size * 0.4, wingAngle, 0, Math.PI*2);
+            ctx.fill();
+            // Right wing
+            ctx.beginPath();
+            ctx.ellipse(sx + 3, sy + bob, c.size * 0.6, c.size * 0.4, -wingAngle, 0, Math.PI*2);
+            ctx.fill();
+            // Body
+            ctx.fillStyle = `rgb(${r-40},${g-30},${b-20})`;
+            ctx.fillRect(sx - 0.5, sy - 2 + bob, 1, 4);
+            // Wing dots
+            ctx.fillStyle = `rgba(255,255,255,0.3)`;
+            ctx.beginPath();
+            ctx.arc(sx - 3, sy + bob, 1, 0, Math.PI*2);
+            ctx.arc(sx + 3, sy + bob, 1, 0, Math.PI*2);
+            ctx.fill();
+        } else if (def.id === 'beetle') {
+            // Beetle: oval with line down middle
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy, c.size * 0.6, c.size * 0.5, 0, 0, Math.PI*2);
+            ctx.fill();
+            // Elytra line
+            ctx.strokeStyle = `rgba(0,0,0,0.3)`;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy - c.size * 0.5);
+            ctx.lineTo(sx, sy + c.size * 0.5);
+            ctx.stroke();
+            // Iridescent highlight
+            ctx.fillStyle = `rgba(100,200,150,${0.2 + Math.sin(gameTime*0.003+c.x)*0.1})`;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy - 1, c.size * 0.3, c.size * 0.25, 0, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        // Highlight nearest creature
+        if (c === nearestCreature && c.fadeOut === 0) {
+            ctx.strokeStyle = 'rgba(138,176,122,0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(sx, sy, c.size + 4, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Fade sparkles when disappearing
+        if (c.fadeOut > 0) {
+            for (let i = 0; i < 3; i++) {
+                const px = sx + (Math.random() - 0.5) * 20;
+                const py = sy + (Math.random() - 0.5) * 20 - c.fadeOut * 10;
+                ctx.fillStyle = `rgba(200,220,180,${0.5 * (1 - c.fadeOut)})`;
+                ctx.beginPath();
+                ctx.arc(px, py, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        ctx.globalAlpha = 1;
+    }
+
+    // Draw player
+    const px = player.x - camX, py = player.y - camY;
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.beginPath();
+    ctx.ellipse(px, py + 5, 5, 2.5, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Body
+    ctx.fillStyle = '#887060';
+    ctx.beginPath();
+    ctx.ellipse(px, py, 4, 5, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Head
+    ctx.fillStyle = '#998070';
+    ctx.beginPath();
+    ctx.arc(px, py - 5, 3, 0, Math.PI*2);
+    ctx.fill();
+    // Clipboard/journal
+    ctx.fillStyle = '#f5edd5';
+    ctx.fillRect(px + 3, py - 2, 3, 4);
+    ctx.strokeStyle = '#8a7a50';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(px + 3, py - 2, 3, 4);
+
+    // Vignette effect
+    const gradient = ctx.createRadialGradient(W/2, H/2, W*0.3, W/2, H/2, W*0.7);
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0.4)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, W, H);
+}
+
+// === GAME LOOP ===
+let lastTime = 0;
+function gameLoop(ts) {
+    const dt = Math.min(ts - lastTime, 33);
+    lastTime = ts;
+    gameTime = ts;
+    update(dt);
+    render();
+    requestAnimationFrame(gameLoop);
+}
+
+// === START ===
+document.getElementById('title-screen').onclick = () => {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => document.getElementById('title-screen').style.display = 'none', 1000);
+    document.getElementById('hud-top').style.display = 'block';
+    document.getElementById('hud-bottom').style.display = 'block';
+    generateTerrain();
+    initSpecies();
+    updateHUD();
+    gameStarted = true;
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+};
+</script>
+</body>
+</html>

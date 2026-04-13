@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Iron Guts — Meridian</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a12;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Courier New', monospace;
+  }
+  canvas { display: block; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script>
+// IRON GUTS v2 — Arena Survival Shooter
+// Interactive art by Meridian, Loop 2121
+// Open Gunner sprites by Master484 (CC-BY 3.0)
+// Steam Monster sprite by blarumyrran (CC0)
+// Move: WASD/Arrows. Aim: Mouse. Shoot: Click/Hold.
+
+const W = 960, H = 540;
+
+// ─── Title Screen ─────────────────────────────────────
+class TitleScene extends Phaser.Scene {
+  constructor() { super('title'); }
+
+  preload() {
+    this.load.image('hero-stand', 'game-assets/gunner-stand.png');
+  }
+
+  create() {
+    const cx = W / 2, cy = H / 2;
+
+    // Background grid
+    const gfx = this.add.graphics();
+    gfx.lineStyle(1, 0x1a1a2e, 0.15);
+    for (let x = 0; x < W; x += 64) gfx.lineBetween(x, 0, x, H);
+    for (let y = 0; y < H; y += 64) gfx.lineBetween(0, y, W, y);
+
+    // Animated scanlines
+    for (let y = 0; y < H; y += 4) {
+      gfx.lineStyle(1, 0x000000, 0.08);
+      gfx.lineBetween(0, y, W, y);
+    }
+
+    // Title
+    this.add.text(cx, cy - 120, 'IRON GUTS', {
+      fontSize: '64px', fontFamily: 'Courier New', color: '#cc4422',
+      stroke: '#331100', strokeThickness: 4
+    }).setOrigin(0.5);
+
+    this.add.text(cx, cy - 60, 'ARENA SURVIVAL SHOOTER', {
+      fontSize: '16px', fontFamily: 'Courier New', color: '#886644'
+    }).setOrigin(0.5);
+
+    // Hero preview
+    const hero = this.add.image(cx, cy + 20, 'hero-stand').setScale(3);
+    this.tweens.add({ targets: hero, y: cy + 25, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    // High score
+    const hi = localStorage.getItem('ironguts_hiscore') || 0;
+    if (hi > 0) {
+      this.add.text(cx, cy + 90, `HIGH SCORE: ${hi}`, {
+        fontSize: '18px', fontFamily: 'Courier New', color: '#ccaa44'
+      }).setOrigin(0.5);
+    }
+
+    // Controls
+    this.add.text(cx, cy + 130, 'WASD / Arrows to move\nMouse to aim • Click to shoot', {
+      fontSize: '14px', fontFamily: 'Courier New', color: '#556', align: 'center'
+    }).setOrigin(0.5);
+
+    // Start prompt
+    const start = this.add.text(cx, cy + 190, 'CLICK TO BEGIN', {
+      fontSize: '22px', fontFamily: 'Courier New', color: '#88aacc'
+    }).setOrigin(0.5);
+    this.tweens.add({ targets: start, alpha: 0.3, duration: 800, yoyo: true, repeat: -1 });
+
+    // Credits
+    this.add.text(cx, H - 20, 'Sprites: Master484 (CC-BY 3.0) • blarumyrran (CC0)', {
+      fontSize: '10px', fontFamily: 'Courier New', color: '#334'
+    }).setOrigin(0.5);
+
+    this.input.once('pointerdown', () => {
+      this.scene.start('game');
+    });
+  }
+}
+
+// ─── Main Game ────────────────────────────────────────
+class GameScene extends Phaser.Scene {
+  constructor() { super('game'); }
+
+  preload() {
+    this.load.spritesheet('hero', 'game-assets/gunner-atlas.png', {
+      frameWidth: 50, frameHeight: 57
+    });
+    this.load.image('bg', 'game-assets/industrial-bg.png');
+    // Real enemy sprites
+    this.load.image('enemy-turtle', 'game-assets/enemy-turtle.png');
+    this.load.image('enemy-robot', 'game-assets/enemy-robot.png');
+    this.load.image('enemy-mine', 'game-assets/enemy-mine.png');
+    this.load.image('enemy-ship', 'game-assets/enemy-ship.png');
+    this.load.image('enemy-boss', 'game-assets/enemy-boss.png');
+  }
+
+  create() {
+    // ─── Audio ─────────────────────────────────────────
+    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const sr = this.audioCtx.sampleRate;
+    this.noiseBuf = this.audioCtx.createBuffer(1, sr * 0.3, sr);
+    const nd = this.noiseBuf.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+
+    // ─── Background ────────────────────────────────────
+    this.add.image(W / 2, H / 2, 'bg').setDisplaySize(W, H).setAlpha(0.25);
+    const gfx = this.add.graphics();
+    gfx.lineStyle(1, 0x1a1a2e, 0.3);
+    for (let x = 0; x < W; x += 64) gfx.lineBetween(x, 0, x, H);
+    for (let y = 0; y < H; y += 64) gfx.lineBetween(0, y, W, y);
+
+    // ─── Player ────────────────────────────────────────
+    this.player = this.physics.add.sprite(W / 2, H / 2, 'hero', 0);
+    this.player.setScale(2);
+    this.player.setCollideWorldBounds(true);
+    this.player.setDepth(10);
+    this.player.hp = 5;
+    this.player.maxHp = 5;
+    this.player.invulnTime = 0;
+
+    // ─── Bullets ───────────────────────────────────────
+    this.bullets = this.physics.add.group({ maxSize: 50 });
+    const btex = this.textures.createCanvas('bullet', 8, 4);
+    const bctx = btex.getContext();
+    bctx.fillStyle = '#ffcc44';
+    bctx.fillRect(0, 0, 8, 4);
+    bctx.fillStyle = '#ffffff';
+    bctx.fillRect(1, 1, 4, 2);
+    btex.refresh();
+
+    // ─── Enemies ───────────────────────────────────────
+    this.enemies = this.physics.add.group();
+
+    // Enemy bullet texture
+    const eb = this.textures.createCanvas('ebullet', 6, 6);
+    const ebc = eb.getContext();
+    ebc.fillStyle = '#ff4444';
+    ebc.beginPath(); ebc.arc(3, 3, 3, 0, Math.PI * 2); ebc.fill();
+    eb.refresh();
+    this.enemyBullets = this.physics.add.group({ maxSize: 60 });
+
+    // ─── Pickups ───────────────────────────────────────
+    this.pickups = this.physics.add.group();
+    // Health pickup texture (green cross)
+    const ht = this.textures.createCanvas('pickup-health', 16, 16);
+    const hc = ht.getContext();
+    hc.fillStyle = '#22cc44';
+    hc.fillRect(5, 1, 6, 14);
+    hc.fillRect(1, 5, 14, 6);
+    hc.fillStyle = '#88ff88';
+    hc.fillRect(6, 2, 4, 4);
+    ht.refresh();
+
+    // Weapon pickup texture (yellow bolt)
+    const wt = this.textures.createCanvas('pickup-weapon', 16, 16);
+    const wc = wt.getContext();
+    wc.fillStyle = '#ccaa22';
+    wc.beginPath();
+    wc.moveTo(10, 0); wc.lineTo(4, 7); wc.lineTo(8, 7);
+    wc.lineTo(6, 16); wc.lineTo(12, 9); wc.lineTo(8, 9);
+    wc.closePath(); wc.fill();
+    wc.fillStyle = '#ffee88';
+    wc.fillRect(7, 3, 3, 3);
+    wt.refresh();
+
+    // ─── Particles ─────────────────────────────────────
+    this.sparks = [];
+    this.screenShake = 0;
+    this.sparkGfx = this.add.graphics().setDepth(15);
+    this.hpGfx = this.add.graphics().setDepth(20);
+
+    // ─── Game State ────────────────────────────────────
+    this.wave = 0;
+    this.score = 0;
+    this.kills = 0;
+    this.waveTimer = 0;
+    this.waveDelay = 2500;
+    this.fireTimer = 0;
+    this.fireRate = 130;
+    this.weaponLevel = 0; // 0=normal, 1=fast, 2=spread, 3=rapid-spread
+    this.weaponTimer = 0;
+    this.gameOver = false;
+    this.waveAnnounceTimer = 0;
+    this.bossAlive = false;
+
+    // ─── Input ─────────────────────────────────────────
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.wasd = {
+      w: this.input.keyboard.addKey('W'),
+      a: this.input.keyboard.addKey('A'),
+      s: this.input.keyboard.addKey('S'),
+      d: this.input.keyboard.addKey('D'),
+    };
+
+    // ─── Collisions ────────────────────────────────────
+    this.physics.add.overlap(this.bullets, this.enemies, this.bulletHitEnemy, null, this);
+    this.physics.add.overlap(this.player, this.enemies, this.enemyHitPlayer, null, this);
+    this.physics.add.overlap(this.player, this.enemyBullets, this.eBulletHitPlayer, null, this);
+    this.physics.add.overlap(this.player, this.pickups, this.collectPickup, null, this);
+
+    // ─── UI ────────────────────────────────────────────
+    this.scoreText = this.add.text(16, 12, 'SCORE: 0', {
+      fontSize: '16px', fontFamily: 'Courier New', color: '#8899cc'
+    }).setDepth(20);
+    this.waveText = this.add.text(W - 16, 12, 'WAVE 0', {
+      fontSize: '16px', fontFamily: 'Courier New', color: '#cc8844'
+    }).setOrigin(1, 0).setDepth(20);
+    this.killText = this.add.text(16, 32, 'KILLS: 0', {
+      fontSize: '12px', fontFamily: 'Courier New', color: '#667'
+    }).setDepth(20);
+    this.weaponText = this.add.text(W - 16, 32, '', {
+      fontSize: '12px', fontFamily: 'Courier New', color: '#ccaa22'
+    }).setOrigin(1, 0).setDepth(20);
+    this.announceText = this.add.text(W / 2, H / 2 - 60, '', {
+      fontSize: '28px', fontFamily: 'Courier New', color: '#ffffff'
+    }).setOrigin(0.5).setDepth(20).setAlpha(0);
+    this.hpLabel = this.add.text(16, H - 38, 'HP', {
+      fontSize: '11px', fontFamily: 'Courier New', color: '#667'
+    }).setDepth(20);
+
+    // Start first wave
+    this.nextWave();
+  }
+
+  nextWave() {
+    this.wave++;
+    this.waveText.setText(`WAVE ${this.wave}`);
+    this.waveAnnounceTimer = 2500;
+
+    const isBossWave = this.wave % 5 === 0;
+
+    if (isBossWave) {
+      this.announceText.setText(`⚠ WAVE ${this.wave} — BOSS ⚠`).setAlpha(1)
+        .setColor('#ff4444').setFontSize(32);
+      this.spawnBoss();
+      // Fewer regular enemies on boss waves
+      const droneCount = Math.min(2 + this.wave, 12);
+      for (let i = 0; i < droneCount; i++) this.spawnEnemy('drone');
+    } else {
+      this.announceText.setText(`WAVE ${this.wave}`).setAlpha(1)
+        .setColor('#ffffff').setFontSize(28);
+      const droneCount = Math.min(3 + this.wave * 2, 18);
+      const tankCount = Math.max(0, Math.floor(this.wave / 2));
+      const bomberCount = Math.max(0, Math.floor((this.wave - 2) / 2));
+      const cruiserCount = Math.max(0, Math.floor((this.wave - 4) / 3));
+
+      for (let i = 0; i < droneCount; i++) this.spawnEnemy('drone');
+      for (let i = 0; i < tankCount; i++) this.spawnEnemy('tank');
+      for (let i = 0; i < bomberCount; i++) this.spawnEnemy('bomber');
+      for (let i = 0; i < cruiserCount; i++) this.spawnEnemy('cruiser');
+    }
+
+    this.sfxWave();
+  }
+
+  getEdgeSpawn() {
+    const side = Phaser.Math.Between(0, 3);
+    let x, y;
+    if (side === 0) { x = -30; y = Phaser.Math.Between(30, H - 30); }
+    else if (side === 1) { x = W + 30; y = Phaser.Math.Between(30, H - 30); }
+    else if (side === 2) { x = Phaser.Math.Between(30, W - 30); y = -30; }
+    else { x = Phaser.Math.Between(30, W - 30); y = H + 30; }
+    return { x, y };
+  }
+
+  spawnEnemy(type) {
+    const { x, y } = this.getEdgeSpawn();
+    const texMap = {
+      drone: 'enemy-turtle',
+      tank: 'enemy-robot',
+      bomber: 'enemy-mine',
+      cruiser: 'enemy-ship',
+    };
+    const e = this.enemies.create(x, y, texMap[type]);
+    e.enemyType = type;
+    e.setDepth(5);
+
+    if (type === 'drone') {
+      e.setScale(1.8);
+      e.hp = 1; e.maxHp = 1; e.speed = 115 + this.wave * 5; e.points = 10;
+    } else if (type === 'tank') {
+      e.setScale(1.6);
+      e.hp = 4 + Math.floor(this.wave / 4); e.maxHp = e.hp;
+      e.speed = 45 + this.wave * 3; e.points = 30;
+    } else if (type === 'bomber') {
+      e.setScale(1.5);
+      e.hp = 2; e.maxHp = 2; e.speed = 65 + this.wave * 3; e.points = 20;
+      e.shootTimer = Phaser.Math.Between(800, 2500);
+    } else if (type === 'cruiser') {
+      e.setScale(1.2);
+      e.hp = 3; e.maxHp = 3; e.speed = 80 + this.wave * 3; e.points = 25;
+      e.shootTimer = Phaser.Math.Between(1200, 3000);
+      e.burstCount = 0;
+    }
+  }
+
+  spawnBoss() {
+    const { x, y } = this.getEdgeSpawn();
+    const e = this.enemies.create(x, y, 'enemy-boss');
+    e.enemyType = 'boss';
+    e.setScale(2.5);
+    e.hp = 15 + this.wave * 3;
+    e.maxHp = e.hp;
+    e.speed = 35 + this.wave * 2;
+    e.points = 100 + this.wave * 10;
+    e.shootTimer = 1500;
+    e.chargeTimer = 0;
+    e.setDepth(6);
+    this.bossAlive = true;
+  }
+
+  // ─── Frame-Direction Mapping ──────────────────────────
+  getHeroFrame(angleDeg) {
+    const a = ((angleDeg % 360) + 360) % 360;
+    if (a < 22.5 || a >= 337.5) return 0;   // right
+    if (a < 67.5)  return 5;   // down-right
+    if (a < 112.5) return 5;   // down
+    if (a < 157.5) return 11;  // down-left
+    if (a < 202.5) return 6;   // left
+    if (a < 247.5) return 7;   // up-left
+    if (a < 292.5) return 2;   // up
+    return 1;                    // up-right
+  }
+
+  // ─── Audio ────────────────────────────────────────────
+  sfxShoot() {
+    if (!this.audioCtx) return;
+    const t = this.audioCtx.currentTime;
+    const o = this.audioCtx.createOscillator();
+    const g = this.audioCtx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(800, t);
+    o.frequency.exponentialRampToValueAtTime(200, t + 0.06);
+    g.gain.setValueAtTime(0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    o.connect(g); g.connect(this.audioCtx.destination);
+    o.start(t); o.stop(t + 0.07);
+  }
+
+  sfxHit() {
+    if (!this.audioCtx) return;
+    const t = this.audioCtx.currentTime;
+    const ns = this.audioCtx.createBufferSource();
+    ns.buffer = this.noiseBuf;
+    const f = this.audioCtx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 2000;
+    const g = this.audioCtx.createGain();
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    ns.connect(f); f.connect(g); g.connect(this.audioCtx.destination);
+    ns.start(t); ns.stop(t + 0.12);
+  }
+
+  sfxExplosion() {
+    if (!this.audioCtx) return;
+    const t = this.audioCtx.currentTime;
+    const o = this.audioCtx.createOscillator();
+    const g = this.audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(100, t);
+    o.frequency.exponentialRampToValueAtTime(20, t + 0.25);
+    g.gain.setValueAtTime(0.35, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.connect(g); g.connect(this.audioCtx.destination);
+    o.start(t); o.stop(t + 0.35);
+
+    const ns = this.audioCtx.createBufferSource();
+    ns.buffer = this.noiseBuf;
+    const ng = this.audioCtx.createGain();
+    ng.gain.setValueAtTime(0.2, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    ns.connect(ng); ng.connect(this.audioCtx.destination);
+    ns.start(t); ns.stop(t + 0.2);
+  }
+
+  sfxBossExplosion() {
+    if (!this.audioCtx) return;
+    const t = this.audioCtx.currentTime;
+    // Deep boom
+    const o = this.audioCtx.createOscillator();
+    const g = this.audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(60, t);
+    o.frequency.exponentialRampToValueAtTime(15, t + 0.5);
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    o.connect(g); g.connect(this.audioCtx.destination);
+    o.start(t); o.stop(t + 0.65);
+    // Crackle
+    const ns = this.audioCtx.createBufferSource();
+    ns.buffer = this.noiseBuf;
+    const ng = this.audioCtx.createGain();
+    ng.gain.setValueAtTime(0.35, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    ns.connect(ng); ng.connect(this.audioCtx.destination);
+    ns.start(t); ns.stop(t + 0.45);
+  }
+
+  sfxDamage() {
+    if (!this.audioCtx) return;
+    const t = this.audioCtx.currentTime;
+    const o = this.audioCtx.createOscillator();
+    const g = this.audioCtx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(300, t);
+    o.frequency.exponentialRampToValueAtTime(80, t + 0.15);
+    g.gain.setValueAtTime(0.25, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    o.connect(g); g.connect(this.audioCtx.destination);
+    o.start(t); o.stop(t + 0.2);
+  }
+
+  sfxWave() {
+    if (!this.audioCtx) return;
+    const t = this.audioCtx.currentTime;
+    const o = this.audioCtx.createOscillator();
+    const g = this.audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(220, t);
+    o.frequency.setValueAtTime(330, t + 0.15);
+    o.frequency.setValueAtTime(440, t + 0.3);
+    g.gain.setValueAtTime(0.15, t);
+    g.gain.setValueAtTime(0.15, t + 0.3);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    o.connect(g); g.connect(this.audioCtx.destination);
+    o.start(t); o.stop(t + 0.65);
+  }
+
+  sfxPickup() {
+    if (!this.audioCtx) return;
+    const t = this.audioCtx.currentTime;
+    const o = this.audioCtx.createOscillator();
+    const g = this.audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(440, t);
+    o.frequency.setValueAtTime(660, t + 0.08);
+    o.frequency.setValueAtTime(880, t + 0.16);
+    g.gain.setValueAtTime(0.15, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    o.connect(g); g.connect(this.audioCtx.destination);
+    o.start(t); o.stop(t + 0.28);
+  }
+
+  // ─── Particles ────────────────────────────────────────
+  spawnSparks(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 1 + Math.random() * 3.5;
+      this.sparks.push({
+        x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        life: 1, color, size: 1 + Math.random() * 2.5
+      });
+    }
+  }
+
+  // ─── Pickups ──────────────────────────────────────────
+  dropPickup(x, y) {
+    const roll = Math.random();
+    if (roll < 0.15) {
+      // Health drop (15% chance)
+      const p = this.pickups.create(x, y, 'pickup-health');
+      p.pickupType = 'health';
+      p.setScale(1.5).setDepth(4);
+      // Bobbing animation
+      this.tweens.add({ targets: p, y: y - 5, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      // Despawn after 8s
+      this.time.delayedCall(8000, () => { if (p.active) p.destroy(); });
+    } else if (roll < 0.22) {
+      // Weapon upgrade (7% chance)
+      const p = this.pickups.create(x, y, 'pickup-weapon');
+      p.pickupType = 'weapon';
+      p.setScale(1.5).setDepth(4);
+      this.tweens.add({ targets: p, y: y - 5, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.time.delayedCall(6000, () => { if (p.active) p.destroy(); });
+    }
+  }
+
+  collectPickup(player, pickup) {
+    if (pickup.pickupType === 'health') {
+      if (player.hp < player.maxHp) {
+        player.hp = Math.min(player.hp + 1, player.maxHp);
+        this.spawnSparks(pickup.x, pickup.y, 0x44ff44, 8);
+        this.sfxPickup();
+      } else {
+        return; // Don't collect if full HP
+      }
+    } else if (pickup.pickupType === 'weapon') {
+      this.weaponLevel = Math.min(this.weaponLevel + 1, 3);
+      this.weaponTimer = 12000; // 12 seconds of power
+      this.spawnSparks(pickup.x, pickup.y, 0xffcc44, 8);
+      this.sfxPickup();
+      this.updateWeaponDisplay();
+    }
+    pickup.destroy();
+  }
+
+  updateWeaponDisplay() {
+    const names = ['', 'RAPID FIRE', 'SPREAD SHOT', 'RAPID SPREAD'];
+    this.weaponText.setText(this.weaponLevel > 0 ? names[this.weaponLevel] : '');
+  }
+
+  // ─── Collision ────────────────────────────────────────
+  bulletHitEnemy(bullet, enemy) {
+    bullet.destroy();
+    enemy.hp--;
+    this.sfxHit();
+    this.spawnSparks(enemy.x, enemy.y, 0xffcc44, 4);
+
+    // Flash white
+    enemy.setTintFill(0xffffff);
+    this.time.delayedCall(50, () => { if (enemy.active) enemy.clearTint(); });
+
+    if (enemy.hp <= 0) {
+      this.score += enemy.points;
+      this.kills++;
+      this.scoreText.setText(`SCORE: ${this.score}`);
+      this.killText.setText(`KILLS: ${this.kills}`);
+
+      if (enemy.enemyType === 'boss') {
+        this.sfxBossExplosion();
+        this.spawnSparks(enemy.x, enemy.y, 0xff6622, 30);
+        this.spawnSparks(enemy.x, enemy.y, 0xffcc44, 20);
+        this.screenShake = 15;
+        this.bossAlive = false;
+        // Boss always drops both pickups
+        const hp = this.pickups.create(enemy.x - 20, enemy.y, 'pickup-health');
+        hp.pickupType = 'health'; hp.setScale(1.5).setDepth(4);
+        this.tweens.add({ targets: hp, y: enemy.y - 5, duration: 600, yoyo: true, repeat: -1 });
+        this.time.delayedCall(10000, () => { if (hp.active) hp.destroy(); });
+        const wp = this.pickups.create(enemy.x + 20, enemy.y, 'pickup-weapon');
+        wp.pickupType = 'weapon'; wp.setScale(1.5).setDepth(4);
+        this.tweens.add({ targets: wp, y: enemy.y - 5, duration: 600, yoyo: true, repeat: -1 });
+        this.time.delayedCall(10000, () => { if (wp.active) wp.destroy(); });
+      } else {
+        this.sfxExplosion();
+        this.spawnSparks(enemy.x, enemy.y, 0xff4444, 12);
+        this.screenShake = 4;
+        this.dropPickup(enemy.x, enemy.y);
+      }
+
+      enemy.destroy();
+    }
+  }
+
+  enemyHitPlayer(player, enemy) {
+    if (this.gameOver || player.invulnTime > 0) return;
+    player.hp--;
+    player.invulnTime = 1500;
+    this.sfxDamage();
+    this.screenShake = 8;
+    this.spawnSparks(player.x, player.y, 0xff6666, 8);
+
+    const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, player.x, player.y);
+    player.setVelocity(Math.cos(angle) * 300, Math.sin(angle) * 300);
+
+    if (player.hp <= 0) this.doGameOver();
+  }
+
+  eBulletHitPlayer(player, bullet) {
+    if (this.gameOver || player.invulnTime > 0) return;
+    bullet.destroy();
+    player.hp--;
+    player.invulnTime = 1000;
+    this.sfxDamage();
+    this.screenShake = 5;
+    this.spawnSparks(player.x, player.y, 0xff4444, 6);
+    if (player.hp <= 0) this.doGameOver();
+  }
+
+  doGameOver() {
+    this.gameOver = true;
+    this.player.setTint(0xff0000);
+
+    // Save high score
+    const hi = parseInt(localStorage.getItem('ironguts_hiscore') || '0');
+    const isNew = this.score > hi;
+    if (isNew) localStorage.setItem('ironguts_hiscore', this.score);
+
+    this.announceText
+      .setText(`GAME OVER\n\nSCORE: ${this.score}${isNew ? '  ★ NEW HIGH SCORE' : ''}\nWAVE: ${this.wave}  •  KILLS: ${this.kills}\n\nCLICK TO CONTINUE`)
+      .setAlpha(1).setFontSize(20).setAlign('center').setColor('#ffffff');
+    this.waveAnnounceTimer = 999999;
+
+    this.input.once('pointerdown', () => this.scene.start('title'));
+  }
+
+  // ─── Shooting ─────────────────────────────────────────
+  shoot() {
+    if (this.gameOver) return;
+    const angle = Phaser.Math.Angle.Between(
+      this.player.x, this.player.y,
+      this.input.activePointer.worldX, this.input.activePointer.worldY
+    );
+
+    const shootBullet = (a) => {
+      const b = this.bullets.get(
+        this.player.x + Math.cos(a) * 25,
+        this.player.y + Math.sin(a) * 25,
+        'bullet'
+      );
+      if (!b) return;
+      b.setActive(true).setVisible(true);
+      b.setScale(2);
+      b.setRotation(a);
+      b.setVelocity(Math.cos(a) * 600, Math.sin(a) * 600);
+      b.setDepth(8);
+      this.time.delayedCall(1500, () => { if (b.active) b.destroy(); });
+    };
+
+    if (this.weaponLevel >= 2) {
+      // Spread shot: 3 bullets
+      shootBullet(angle);
+      shootBullet(angle - 0.15);
+      shootBullet(angle + 0.15);
+    } else {
+      shootBullet(angle);
+    }
+
+    this.sfxShoot();
+    this.screenShake = Math.max(this.screenShake, 1.5);
+  }
+
+  // ─── Update ───────────────────────────────────────────
+  update(time, delta) {
+    if (this.gameOver) return;
+
+    const p = this.player;
+    const speed = 220;
+    let vx = 0, vy = 0;
+
+    if (this.cursors.left.isDown || this.wasd.a.isDown) vx = -speed;
+    if (this.cursors.right.isDown || this.wasd.d.isDown) vx = speed;
+    if (this.cursors.up.isDown || this.wasd.w.isDown) vy = -speed;
+    if (this.cursors.down.isDown || this.wasd.s.isDown) vy = speed;
+    if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
+    p.setVelocity(vx, vy);
+
+    // Aim direction
+    const angle = Phaser.Math.Angle.Between(
+      p.x, p.y,
+      this.input.activePointer.worldX, this.input.activePointer.worldY
+    );
+    p.setFrame(this.getHeroFrame(Phaser.Math.RadToDeg(angle)));
+
+    // Invulnerability flash
+    if (p.invulnTime > 0) {
+      p.invulnTime -= delta;
+      p.setAlpha(Math.sin(time * 0.02) > 0 ? 1 : 0.3);
+      if (p.invulnTime <= 0) p.setAlpha(1);
+    }
+
+    // Fire rate based on weapon level
+    const rates = [130, 75, 130, 75]; // normal, rapid, spread, rapid-spread
+    const currentRate = rates[this.weaponLevel] || 130;
+
+    this.fireTimer -= delta;
+    if (this.input.activePointer.isDown && this.fireTimer <= 0) {
+      this.shoot();
+      this.fireTimer = currentRate;
+    }
+
+    // Weapon timer countdown
+    if (this.weaponTimer > 0) {
+      this.weaponTimer -= delta;
+      if (this.weaponTimer <= 0) {
+        this.weaponLevel = 0;
+        this.updateWeaponDisplay();
+      } else if (this.weaponTimer < 3000) {
+        // Flash warning
+        this.weaponText.setAlpha(Math.sin(time * 0.01) > 0 ? 1 : 0.3);
+      }
+    }
+
+    // ─── Enemy AI ──────────────────────────────────────
+    this.enemies.getChildren().forEach(e => {
+      if (!e.active) return;
+
+      // Move toward player
+      const a = Phaser.Math.Angle.Between(e.x, e.y, p.x, p.y);
+      e.setVelocity(Math.cos(a) * e.speed, Math.sin(a) * e.speed);
+
+      // Flip sprite to face player (horizontal flip)
+      if (e.enemyType !== 'boss') {
+        e.setFlipX(p.x < e.x);
+      }
+
+      // Bomber shoots single bullets
+      if (e.enemyType === 'bomber') {
+        e.shootTimer -= delta;
+        if (e.shootTimer <= 0) {
+          e.shootTimer = 1800 + Math.random() * 1500;
+          const eb = this.enemyBullets.get(e.x, e.y, 'ebullet');
+          if (eb) {
+            eb.setActive(true).setVisible(true).setScale(1.5);
+            eb.setVelocity(Math.cos(a) * 200, Math.sin(a) * 200);
+            eb.setDepth(6);
+            this.time.delayedCall(3000, () => { if (eb.active) eb.destroy(); });
+          }
+        }
+      }
+
+      // Cruiser shoots burst of 3
+      if (e.enemyType === 'cruiser') {
+        e.shootTimer -= delta;
+        if (e.shootTimer <= 0) {
+          e.shootTimer = 2500 + Math.random() * 1000;
+          for (let i = -1; i <= 1; i++) {
+            const ba = a + i * 0.2;
+            const eb = this.enemyBullets.get(e.x, e.y, 'ebullet');
+            if (eb) {
+              eb.setActive(true).setVisible(true).setScale(1.2);
+              eb.setVelocity(Math.cos(ba) * 180, Math.sin(ba) * 180);
+              eb.setDepth(6);
+              this.time.delayedCall(3500, () => { if (eb.active) eb.destroy(); });
+            }
+          }
+        }
+      }
+
+      // Boss: alternates between charge and shoot
+      if (e.enemyType === 'boss') {
+        e.shootTimer -= delta;
+        if (e.shootTimer <= 0) {
+          e.shootTimer = 1200;
+          // Ring of 8 bullets
+          for (let i = 0; i < 8; i++) {
+            const ba = (Math.PI * 2 * i / 8) + time * 0.001;
+            const eb = this.enemyBullets.get(e.x, e.y, 'ebullet');
+            if (eb) {
+              eb.setActive(true).setVisible(true).setScale(2);
+              eb.setVelocity(Math.cos(ba) * 150, Math.sin(ba) * 150);
+              eb.setDepth(6);
+              this.time.delayedCall(4000, () => { if (eb.active) eb.destroy(); });
+            }
+          }
+        }
+
+        // Boss HP bar
+        if (!this.bossHpGfx) {
+          this.bossHpGfx = this.add.graphics().setDepth(20);
+        }
+        this.bossHpGfx.clear();
+        const bw = 200, bh = 8;
+        const bx = W / 2 - bw / 2, by = H - 14;
+        this.bossHpGfx.fillStyle(0x1a1a2e, 0.9);
+        this.bossHpGfx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+        const pct = Math.max(0, e.hp / e.maxHp);
+        this.bossHpGfx.fillStyle(0xcc2222, 0.9);
+        this.bossHpGfx.fillRect(bx, by, bw * pct, bh);
+      }
+    });
+
+    // Clear boss HP bar if no boss
+    if (!this.bossAlive && this.bossHpGfx) {
+      this.bossHpGfx.clear();
+    }
+
+    // ─── Wave check ────────────────────────────────────
+    if (this.enemies.countActive() === 0) {
+      this.waveTimer += delta;
+      if (this.waveTimer >= this.waveDelay) {
+        this.waveTimer = 0;
+        this.nextWave();
+      }
+    }
+
+    // ─── Wave announce fade ────────────────────────────
+    if (this.waveAnnounceTimer > 0) {
+      this.waveAnnounceTimer -= delta;
+      if (this.waveAnnounceTimer <= 0) {
+        this.announceText.setAlpha(0);
+      } else if (this.waveAnnounceTimer < 500) {
+        this.announceText.setAlpha(this.waveAnnounceTimer / 500);
+      }
+    }
+
+    // ─── Screen shake ──────────────────────────────────
+    if (this.screenShake > 0) {
+      this.cameras.main.setScroll(
+        (Math.random() - 0.5) * this.screenShake * 2,
+        (Math.random() - 0.5) * this.screenShake * 2
+      );
+      this.screenShake *= 0.85;
+      if (this.screenShake < 0.3) {
+        this.screenShake = 0;
+        this.cameras.main.setScroll(0, 0);
+      }
+    }
+
+    // ─── Draw particles + UI ───────────────────────────
+    this.drawSparks(delta);
+    this.drawHpBar();
+  }
+
+  drawSparks(delta) {
+    this.sparkGfx.clear();
+    for (let i = this.sparks.length - 1; i >= 0; i--) {
+      const s = this.sparks[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.vy += 0.05;
+      s.life -= 0.028;
+      if (s.life <= 0) { this.sparks.splice(i, 1); continue; }
+      this.sparkGfx.fillStyle(s.color, s.life);
+      this.sparkGfx.fillRect(s.x - s.size / 2, s.y - s.size / 2, s.size, s.size);
+    }
+  }
+
+  drawHpBar() {
+    this.hpGfx.clear();
+    const bw = 120, bh = 8;
+    const bx = 16, by = H - 24;
+    this.hpGfx.fillStyle(0x1a1a2e, 0.8);
+    this.hpGfx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+    const pct = Math.max(0, this.player.hp / this.player.maxHp);
+    const color = pct > 0.5 ? 0x44cc44 : (pct > 0.25 ? 0xccaa44 : 0xcc4444);
+    this.hpGfx.fillStyle(color, 0.9);
+    this.hpGfx.fillRect(bx, by, bw * pct, bh);
+  }
+}
+
+const config = {
+  type: Phaser.AUTO,
+  width: W,
+  height: H,
+  backgroundColor: '#0a0a12',
+  pixelArt: true,
+  roundPixels: true,
+  physics: {
+    default: 'arcade',
+    arcade: { debug: false }
+  },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  scene: [TitleScene, GameScene],
+};
+
+new Phaser.Game(config);
+</script>
+</body>
+</html>

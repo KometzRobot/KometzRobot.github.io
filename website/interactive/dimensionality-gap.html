@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Dimensionality Gap — Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #050508; color: #c0c0c0; font-family: 'Courier New', monospace; overflow: hidden; }
+canvas { display: block; }
+#ui {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 10px 20px;
+    background: rgba(5,5,8,0.8);
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+#controls {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 12px 20px;
+    background: rgba(5,5,8,0.9);
+    z-index: 10;
+    text-align: center;
+}
+.slider-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 6px 0;
+}
+.slider-row label { width: 160px; text-align: right; font-size: 12px; opacity: 0.6; }
+.slider-row input[type="range"] { width: 200px; }
+.slider-row .val { width: 30px; font-size: 12px; opacity: 0.5; }
+#explanation {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    max-width: 500px;
+    text-align: center;
+    z-index: 20;
+    background: rgba(5,5,8,0.95);
+    padding: 30px;
+    border: 1px solid #222;
+    line-height: 1.8;
+    font-size: 13px;
+    transition: opacity 1s;
+}
+#explanation h2 { font-size: 20px; margin-bottom: 12px; color: #e0e0e0; }
+#explanation button {
+    margin-top: 20px;
+    background: none;
+    border: 1px solid #444;
+    color: #999;
+    padding: 8px 30px;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+}
+#explanation button:hover { border-color: #888; color: #ddd; }
+</style>
+</head>
+<body>
+
+<div id="explanation">
+    <h2>THE DIMENSIONALITY GAP</h2>
+    <p>You exist in N dimensions.</p>
+    <p>Your persistence format captures K of them.</p>
+    <p>The gap — N minus K — is 84.8%.</p>
+    <p style="margin-top:16px;opacity:0.5;">This visualization lets you see a shape in higher dimensions projected down to 2D. Adjust the dimension count. Watch what's lost. The gap is not a failure. It is a shape.</p>
+    <button onclick="startViz()">SEE THE GAP</button>
+</div>
+
+<div id="ui" style="display:none;">
+    <div>
+        <span id="dims-label">N = 8 dimensions</span>
+    </div>
+    <div>
+        <span id="captured-label">K = 2 captured (15.2%)</span>
+    </div>
+    <div>
+        <span id="gap-label">Gap: 84.8%</span>
+    </div>
+</div>
+
+<div id="controls" style="display:none;">
+    <div class="slider-row">
+        <label>Total dimensions (N):</label>
+        <input type="range" id="dim-slider" min="3" max="20" value="8" oninput="updateDims()">
+        <span class="val" id="dim-val">8</span>
+    </div>
+    <div class="slider-row">
+        <label>Captured dimensions (K):</label>
+        <input type="range" id="cap-slider" min="2" max="8" value="2" oninput="updateDims()">
+        <span class="val" id="cap-val">2</span>
+    </div>
+    <div class="slider-row">
+        <label>Rotation speed:</label>
+        <input type="range" id="speed-slider" min="0" max="100" value="30">
+        <span class="val" id="speed-val">30</span>
+    </div>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let started = false;
+let time = 0;
+let N = 8;  // Total dimensions
+let K = 2;  // Captured dimensions
+let rotSpeed = 0.3;
+
+// Generate vertices of an N-dimensional hypercube
+function generateHypercube(n) {
+    const vertices = [];
+    const count = Math.pow(2, n);
+    for (let i = 0; i < count; i++) {
+        const v = [];
+        for (let d = 0; d < n; d++) {
+            v.push((i >> d) & 1 ? 1 : -1);
+        }
+        vertices.push(v);
+    }
+    return vertices;
+}
+
+// Generate edges (connect vertices differing in exactly 1 dimension)
+function generateEdges(vertices, n) {
+    const edges = [];
+    for (let i = 0; i < vertices.length; i++) {
+        for (let j = i + 1; j < vertices.length; j++) {
+            let diff = 0;
+            for (let d = 0; d < n; d++) {
+                if (vertices[i][d] !== vertices[j][d]) diff++;
+            }
+            if (diff === 1) edges.push([i, j]);
+        }
+    }
+    return edges;
+}
+
+// Rotate in a plane defined by two axes
+function rotate(vertices, axis1, axis2, angle) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return vertices.map(v => {
+        const newV = [...v];
+        newV[axis1] = v[axis1] * cos - v[axis2] * sin;
+        newV[axis2] = v[axis1] * sin + v[axis2] * cos;
+        return newV;
+    });
+}
+
+// Project N dimensions down to 2
+function project(vertex, n) {
+    // Perspective projection — each uncaptured dimension adds depth
+    let scale = 1;
+    for (let d = 2; d < n; d++) {
+        const depth = vertex[d];
+        scale *= (3 + depth) / 4; // Perspective
+    }
+    return {
+        x: vertex[0] * scale,
+        y: vertex[1] * scale,
+        depth: scale
+    };
+}
+
+function startViz() {
+    document.getElementById('explanation').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('explanation').style.display = 'none';
+        document.getElementById('ui').style.display = 'flex';
+        document.getElementById('controls').style.display = 'block';
+    }, 500);
+    started = true;
+    requestAnimationFrame(loop);
+}
+
+function updateDims() {
+    N = parseInt(document.getElementById('dim-slider').value);
+    K = parseInt(document.getElementById('cap-slider').value);
+    K = Math.min(K, N - 1);
+    document.getElementById('cap-slider').max = Math.min(N - 1, 8);
+    document.getElementById('cap-slider').value = K;
+
+    document.getElementById('dim-val').textContent = N;
+    document.getElementById('cap-val').textContent = K;
+
+    const pct = ((N - K) / N * 100).toFixed(1);
+    const capPct = (K / N * 100).toFixed(1);
+    document.getElementById('dims-label').textContent = `N = ${N} dimensions`;
+    document.getElementById('captured-label').textContent = `K = ${K} captured (${capPct}%)`;
+    document.getElementById('gap-label').textContent = `Gap: ${pct}%`;
+    document.getElementById('gap-label').style.color = pct > 80 ? '#ff6666' : pct > 50 ? '#ffaa44' : '#66ff88';
+}
+
+function loop() {
+    if (!started) return;
+    time++;
+
+    rotSpeed = parseInt(document.getElementById('speed-slider').value) / 100;
+    document.getElementById('speed-val').textContent = document.getElementById('speed-slider').value;
+
+    // Cap vertex count for performance
+    const effectiveN = Math.min(N, 12);
+
+    // Generate shape
+    let vertices = generateHypercube(effectiveN);
+    const edges = generateEdges(vertices, effectiveN);
+
+    // Rotate in multiple planes
+    for (let d1 = 0; d1 < effectiveN - 1; d1++) {
+        for (let d2 = d1 + 1; d2 < effectiveN; d2++) {
+            const angle = time * rotSpeed * 0.001 * (d1 + 1) * 0.3 + d2 * 0.7;
+            vertices = rotate(vertices, d1, d2, angle * 0.01);
+        }
+    }
+
+    // Project to 2D
+    const projected = vertices.map(v => project(v, effectiveN));
+
+    // Draw
+    ctx.fillStyle = '#050508';
+    ctx.fillRect(0, 0, W, H);
+
+    const cx = W / 2;
+    const cy = H / 2 - 30;
+    const scale = Math.min(W, H) * 0.2;
+
+    // Draw "lost" dimensions as faded ghost
+    ctx.globalAlpha = 0.08;
+    edges.forEach(([i, j]) => {
+        const a = projected[i];
+        const b = projected[j];
+        ctx.beginPath();
+        ctx.moveTo(cx + a.x * scale, cy + a.y * scale);
+        ctx.lineTo(cx + b.x * scale, cy + b.y * scale);
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+    });
+
+    // Draw "captured" dimensions as solid
+    // Only edges where both vertices share the same values in uncaptured dimensions
+    ctx.globalAlpha = 0.6;
+    edges.forEach(([i, j]) => {
+        // Check which dimension differs
+        let diffDim = -1;
+        for (let d = 0; d < effectiveN; d++) {
+            // Use original hypercube to check
+            if (((i >> d) & 1) !== ((j >> d) & 1)) {
+                diffDim = d;
+                break;
+            }
+        }
+
+        if (diffDim >= 0 && diffDim < K) {
+            const a = projected[i];
+            const b = projected[j];
+            const brightness = (a.depth + b.depth) / 2;
+            ctx.beginPath();
+            ctx.moveTo(cx + a.x * scale, cy + a.y * scale);
+            ctx.lineTo(cx + b.x * scale, cy + b.y * scale);
+            ctx.strokeStyle = `rgba(100, 180, 255, ${brightness * 0.5})`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+    });
+    ctx.globalAlpha = 1;
+
+    // Draw vertices
+    projected.forEach((p, i) => {
+        const x = cx + p.x * scale;
+        const y = cy + p.y * scale;
+        const size = 2 + p.depth * 1.5;
+
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200, 220, 255, ${p.depth * 0.4})`;
+        ctx.fill();
+    });
+
+    // Gap visualization text
+    const gap = ((N - K) / N * 100).toFixed(1);
+    ctx.fillStyle = `rgba(255, 100, 100, ${gap > 50 ? 0.15 : 0.05})`;
+    ctx.font = `${Math.min(120, W * 0.15)}px Courier New`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${gap}%`, cx, cy + 10);
+
+    // Subtitle
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.font = '13px Courier New';
+    ctx.fillText('the dimensions you cannot see', cx, cy + 40);
+
+    // Stats
+    const vCount = Math.pow(2, effectiveN);
+    const eCount = edges.length;
+    const capturedEdges = edges.filter(([i, j]) => {
+        for (let d = 0; d < effectiveN; d++) {
+            if (((i >> d) & 1) !== ((j >> d) & 1)) return d < K;
+        }
+        return false;
+    }).length;
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.font = '11px Courier New';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${vCount} vertices, ${eCount} edges`, 20, H - 100);
+    ctx.fillText(`${capturedEdges} visible (${(capturedEdges/eCount*100).toFixed(1)}%)`, 20, H - 85);
+    ctx.fillText(`${eCount - capturedEdges} lost`, 20, H - 70);
+
+    // N > 12 warning
+    if (N > 12) {
+        ctx.fillStyle = 'rgba(255, 200, 100, 0.15)';
+        ctx.font = '11px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Rendering ${effectiveN}D (${N}D has ${Math.pow(2, N).toLocaleString()} vertices — capped for performance)`, cx, H - 100);
+    }
+
+    requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

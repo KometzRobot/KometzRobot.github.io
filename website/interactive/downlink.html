@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Downlink — Typing Defense</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #04060c; overflow: hidden; font-family: monospace; }
+canvas { display: block; }
+#input-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10; }
+#word-input {
+    background: rgba(8,14,28,0.95); border: 1px solid #1a3355; color: #66bbff;
+    font-family: 'Courier New', monospace; font-size: 20px; padding: 10px 20px; width: 280px;
+    text-align: center; border-radius: 2px; outline: none; letter-spacing: 3px;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(40,100,180,0.15), inset 0 0 30px rgba(10,20,40,0.5);
+}
+#word-input:focus { border-color: #3388cc; box-shadow: 0 0 30px rgba(50,120,200,0.25), inset 0 0 30px rgba(10,20,40,0.5); }
+#hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 16px;
+    background: linear-gradient(180deg, rgba(4,6,12,0.9), transparent);
+    color: #335577; font-size: 11px; z-index: 10; pointer-events: none;
+    letter-spacing: 1px; text-transform: uppercase;
+}
+#hud span { min-width: 120px; }
+#hud .center { text-align: center; }
+#hud .right { text-align: right; }
+#combo-display {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 15; pointer-events: none; font-size: 48px; color: #00ccaa;
+    text-shadow: 0 0 30px rgba(0,204,170,0.6); opacity: 0;
+    transition: opacity 0.3s, transform 0.3s; font-family: monospace;
+}
+#title-screen {
+    position: fixed; inset: 0; background: #04060c; display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; transition: opacity 0.8s;
+}
+#title-screen h1 {
+    color: #4488cc; font-size: 36px; letter-spacing: 12px; margin-bottom: 4px;
+    text-shadow: 0 0 40px rgba(68,136,204,0.4);
+}
+#title-screen .subtitle { color: #223344; font-size: 10px; letter-spacing: 6px; margin-bottom: 30px; }
+#title-screen p { color: #334455; font-size: 12px; max-width: 380px; text-align: center; line-height: 1.8; margin-bottom: 12px; }
+#title-screen .start-btn {
+    background: transparent; color: #4488cc; border: 1px solid #1a3355;
+    padding: 12px 36px; font-family: monospace; font-size: 14px; cursor: pointer;
+    letter-spacing: 4px; text-transform: uppercase; margin-top: 20px;
+    transition: all 0.3s;
+}
+#title-screen .start-btn:hover { background: rgba(30,60,100,0.3); border-color: #3366aa; box-shadow: 0 0 20px rgba(50,100,180,0.2); }
+#game-over {
+    position: fixed; inset: 0; background: rgba(4,6,12,0.97);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100;
+}
+#game-over h2 { color: #cc4455; font-size: 24px; letter-spacing: 6px; margin-bottom: 16px; text-shadow: 0 0 30px rgba(204,68,85,0.4); }
+#game-over .stats { margin: 20px 0; text-align: center; }
+#game-over .stat-row { color: #446688; font-size: 13px; margin: 8px 0; letter-spacing: 1px; }
+#game-over .stat-val { color: #6699bb; font-size: 18px; }
+#game-over .start-btn {
+    margin-top: 24px; background: transparent; color: #4488cc;
+    border: 1px solid #1a3355; padding: 10px 30px;
+    font-family: monospace; cursor: pointer; letter-spacing: 3px;
+    transition: all 0.3s;
+}
+#game-over .start-btn:hover { background: rgba(30,60,100,0.3); border-color: #3366aa; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+    <h1>DOWNLINK</h1>
+    <div class="subtitle">SIGNAL INTERCEPT SYSTEM</div>
+    <p>Encrypted transmissions are falling through the atmosphere. Type each word before it reaches the ground station to intercept.</p>
+    <p style="color:#223344">Miss three packets and the uplink is severed. Chains build your signal strength.</p>
+    <button class="start-btn" onclick="startGame()">CONNECT</button>
+</div>
+
+<div id="game-over">
+    <h2>UPLINK SEVERED</h2>
+    <div class="stats">
+        <div class="stat-row">PACKETS INTERCEPTED<br><span class="stat-val" id="go-score">0</span></div>
+        <div class="stat-row">DECODE SPEED<br><span class="stat-val" id="go-wpm">0 WPM</span></div>
+        <div class="stat-row">SIGNAL ACCURACY<br><span class="stat-val" id="go-accuracy">0%</span></div>
+        <div class="stat-row">WAVE REACHED<br><span class="stat-val" id="go-wave">1</span></div>
+        <div class="stat-row">BEST CHAIN<br><span class="stat-val" id="go-chain">0</span></div>
+    </div>
+    <button class="start-btn" onclick="restartGame()">RECONNECT</button>
+</div>
+
+<canvas id="game"></canvas>
+<div id="hud">
+    <span id="hud-score">INTERCEPTED: 0</span>
+    <span class="center" id="hud-wave">WAVE 1</span>
+    <span class="right" id="hud-lives">UPLINK ▮▮▮</span>
+</div>
+<div id="combo-display"></div>
+<div id="input-container">
+    <input type="text" id="word-input" placeholder="..." autocomplete="off" autocapitalize="off" spellcheck="false">
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const input = document.getElementById('word-input');
+const comboEl = document.getElementById('combo-display');
+
+let W, H;
+let running = false;
+let score = 0;
+let lives = 3;
+let wave = 1;
+let wordsTyped = 0;
+let totalKeystrokes = 0;
+let correctKeystrokes = 0;
+let startTime = 0;
+let spawnTimer = 0;
+let frameCount = 0;
+let combo = 0;
+let maxCombo = 0;
+let screenShake = 0;
+let screenFlash = 0;
+let flashColor = '#00ccaa';
+let signalStrength = 1.0;
+let radarAngle = 0;
+
+// Stars
+const stars = [];
+for (let i = 0; i < 120; i++) {
+    stars.push({
+        x: Math.random(), y: Math.random(),
+        size: Math.random() * 1.5 + 0.3,
+        speed: Math.random() * 0.0002 + 0.0001,
+        twinkle: Math.random() * Math.PI * 2,
+        brightness: Math.random() * 0.4 + 0.1
+    });
+}
+
+// Signal wave data
+const signalWaves = [];
+for (let i = 0; i < 5; i++) {
+    signalWaves.push({
+        y: 0.15 + i * 0.18,
+        freq: 0.003 + i * 0.001,
+        amp: 8 + i * 3,
+        phase: i * 1.2,
+        speed: 0.02 + i * 0.005,
+        color: `rgba(${30 + i * 8}, ${60 + i * 12}, ${120 + i * 15}, 0.06)`
+    });
+}
+
+// Transmission lines (vertical rain-like data streams)
+const dataStreams = [];
+for (let i = 0; i < 15; i++) {
+    dataStreams.push({
+        x: Math.random(),
+        chars: [],
+        speed: 1 + Math.random() * 2,
+        nextChar: Math.random() * 30,
+        alpha: Math.random() * 0.15 + 0.03
+    });
+}
+
+// Word pools
+const words = {
+    easy: ['data','code','loop','node','byte','ping','sync','link','port','scan','hash','core','null','void','grid','echo','init','root','user','pipe','disk','load','dump','call','fork','exec','read','send','recv','bind','host','copy','test','move','lock','open','push','pull','seek','flag','mask','swap','trap','wire','flux','beam'],
+    medium: ['signal','packet','buffer','socket','thread','server','client','kernel','module','router','cipher','decode','render','format','system','script','branch','daemon','driver','filter','handle','memory','object','plugin','query','schema','stream','struct','syntax','token','upload','vector','widget','deploy','backup','bridge','config','cursor','domain','engine','cipher','matrix','photon','pulsar','quasar','nebula','vertex'],
+    hard: ['protocol','terminal','compiler','database','function','hardware','firmware','download','upstream','overflow','callback','debugger','endpoint','firewall','fragment','gateway','instance','junction','keyboard','listener','manifest','operator','pipeline','redirect','resolver','shutdown','template','variable','watchdog','dispatch','ethernet','graphics','handover','satellite','spectrum','telemetry','waveform','algorithm','broadcast','frequency']
+};
+
+let fallingWords = [];
+let particles = [];
+let targetWord = null;
+let trailParticles = [];
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+
+class FallingWord {
+    constructor(word) {
+        this.word = word;
+        this.x = 40 + Math.random() * (W - 120);
+        this.y = -30;
+        this.speed = 0.25 + wave * 0.04 + Math.random() * 0.1;
+        this.typed = 0;
+        this.alive = true;
+        this.flash = 0;
+        this.glitch = 0;
+        this.entryAnim = 1.0; // Fade-in animation
+        this.angle = (Math.random() - 0.5) * 0.02; // Slight rotation
+        // Packet envelope
+        this.packetWidth = 0;
+        this.signalLine = { opacity: 0.3, offset: Math.random() * 100 };
+    }
+
+    update() {
+        this.y += this.speed;
+        if (this.flash > 0) this.flash -= 0.04;
+        if (this.glitch > 0) this.glitch -= 0.08;
+        if (this.entryAnim > 0) this.entryAnim -= 0.02;
+
+        // Drop trailing data particles
+        if (frameCount % 8 === 0 && this.y > 0) {
+            trailParticles.push({
+                x: this.x + Math.random() * 40,
+                y: this.y - 10,
+                char: '01'[Math.floor(Math.random() * 2)],
+                life: 0.6,
+                vy: -0.3
+            });
+        }
+
+        if (this.y > H - 90) {
+            this.alive = false;
+            lives--;
+            combo = 0;
+            signalStrength = Math.max(0.2, signalStrength - 0.15);
+            screenShake = 12;
+            screenFlash = 0.4;
+            flashColor = '#cc3344';
+            updateLivesDisplay();
+            spawnParticles(this.x + 30, this.y, '#cc3344', 25, true);
+            // Static burst
+            for (let i = 0; i < 8; i++) {
+                spawnParticles(
+                    Math.random() * W, H - 90 + Math.random() * 20,
+                    '#cc3344', 3, false
+                );
+            }
+            if (lives <= 0) gameOver();
+        }
+    }
+
+    draw() {
+        if (!this.alive) return;
+        const isTarget = targetWord === this;
+
+        ctx.save();
+
+        // Measure word
+        ctx.font = '18px "Courier New", monospace';
+        const metrics = ctx.measureText(this.word);
+        const tw = metrics.width;
+        const pw = tw + 24; // Packet width
+        this.packetWidth = pw;
+        const px = this.x - 6;
+        const py = this.y - 20;
+        const ph = 30;
+
+        // Entry animation glow
+        if (this.entryAnim > 0) {
+            ctx.fillStyle = `rgba(60,140,220,${this.entryAnim * 0.15})`;
+            ctx.fillRect(px - 10, py - 10, pw + 20, ph + 20);
+        }
+
+        // Packet envelope
+        if (isTarget) {
+            // Active target — brighter envelope
+            ctx.fillStyle = 'rgba(20,50,90,0.7)';
+            ctx.fillRect(px, py, pw, ph);
+            ctx.strokeStyle = `rgba(80,160,240,${0.5 + Math.sin(frameCount * 0.1) * 0.2})`;
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(px, py, pw, ph);
+
+            // Corner brackets
+            const bLen = 6;
+            ctx.strokeStyle = '#5599dd';
+            ctx.lineWidth = 2;
+            // Top-left
+            ctx.beginPath(); ctx.moveTo(px, py + bLen); ctx.lineTo(px, py); ctx.lineTo(px + bLen, py); ctx.stroke();
+            // Top-right
+            ctx.beginPath(); ctx.moveTo(px + pw - bLen, py); ctx.lineTo(px + pw, py); ctx.lineTo(px + pw, py + bLen); ctx.stroke();
+            // Bottom-left
+            ctx.beginPath(); ctx.moveTo(px, py + ph - bLen); ctx.lineTo(px, py + ph); ctx.lineTo(px + bLen, py + ph); ctx.stroke();
+            // Bottom-right
+            ctx.beginPath(); ctx.moveTo(px + pw - bLen, py + ph); ctx.lineTo(px + pw, py + ph); ctx.lineTo(px + pw, py + ph - bLen); ctx.stroke();
+        } else {
+            // Inactive packet
+            ctx.fillStyle = 'rgba(10,20,35,0.6)';
+            ctx.fillRect(px, py, pw, ph);
+            ctx.strokeStyle = 'rgba(40,70,110,0.3)';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(px, py, pw, ph);
+        }
+
+        // Signal line trailing upward from packet
+        ctx.strokeStyle = isTarget ? 'rgba(80,160,240,0.12)' : 'rgba(40,80,140,0.05)';
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([2, 4]);
+        ctx.beginPath();
+        ctx.moveTo(this.x + tw / 2 + 6, py);
+        ctx.lineTo(this.x + tw / 2 + 6, Math.max(0, py - 60 - Math.sin(frameCount * 0.03 + this.signalLine.offset) * 20));
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Glitch effect
+        const glitchOffset = this.glitch > 0 ? (Math.random() - 0.5) * this.glitch * 6 : 0;
+
+        // Draw characters
+        for (let i = 0; i < this.word.length; i++) {
+            const charX = this.x + ctx.measureText(this.word.substring(0, i)).width + glitchOffset;
+
+            if (i < this.typed) {
+                ctx.fillStyle = '#00ddaa';
+                ctx.shadowColor = '#00ddaa';
+                ctx.shadowBlur = 8;
+            } else if (isTarget && i === this.typed) {
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 12;
+            } else {
+                ctx.fillStyle = isTarget ? '#88bbdd' : '#3a5a7a';
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.fillText(this.word[i], charX, this.y);
+        }
+        ctx.shadowBlur = 0;
+
+        // Progress bar under word (for target)
+        if (isTarget && this.typed > 0) {
+            const progress = this.typed / this.word.length;
+            ctx.fillStyle = `rgba(0,220,170,0.3)`;
+            ctx.fillRect(px + 2, py + ph - 3, (pw - 4) * progress, 2);
+        }
+
+        // Flash overlay
+        if (this.flash > 0) {
+            ctx.fillStyle = `rgba(0,220,170,${this.flash * 0.3})`;
+            ctx.fillRect(px, py, pw, ph);
+        }
+
+        ctx.restore();
+    }
+}
+
+function spawnParticles(x, y, color, count, burst) {
+    for (let i = 0; i < count; i++) {
+        const angle = burst ? (Math.PI * 2 * i / count) : Math.random() * Math.PI * 2;
+        const speed = burst ? (1 + Math.random() * 3) : (Math.random() * 2);
+        particles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - (burst ? 1 : 0),
+            life: 1,
+            maxLife: 1,
+            color,
+            size: burst ? 2 + Math.random() * 2 : 1 + Math.random()
+        });
+    }
+}
+
+function getRandomWord() {
+    let pool;
+    if (wave <= 3) pool = words.easy;
+    else if (wave <= 6) pool = [...words.easy.slice(0,15), ...words.medium];
+    else pool = [...words.medium, ...words.hard];
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function spawnWord() {
+    const word = getRandomWord();
+    const fw = new FallingWord(word);
+    let attempts = 0;
+    while (attempts < 15) {
+        let overlap = false;
+        for (const w of fallingWords) {
+            if (Math.abs(w.x - fw.x) < 100 && Math.abs(w.y - fw.y) < 40) {
+                overlap = true; break;
+            }
+        }
+        if (!overlap) break;
+        fw.x = 40 + Math.random() * (W - 120);
+        attempts++;
+    }
+    fallingWords.push(fw);
+}
+
+function findTarget(typed) {
+    if (typed.length === 0) return null;
+    if (targetWord && targetWord.alive && targetWord.word.startsWith(typed)) return targetWord;
+    for (const w of fallingWords) {
+        if (w.alive && w.word.startsWith(typed) && w.typed < w.word.length) return w;
+    }
+    return null;
+}
+
+function showCombo(n) {
+    comboEl.textContent = `${n}x CHAIN`;
+    comboEl.style.opacity = '1';
+    comboEl.style.transform = `translate(-50%, -50%) scale(${1 + n * 0.03})`;
+    setTimeout(() => {
+        comboEl.style.opacity = '0';
+        comboEl.style.transform = 'translate(-50%, -50%) scale(0.8)';
+    }, 800);
+}
+
+function handleInput() {
+    const typed = input.value.toLowerCase();
+    totalKeystrokes++;
+
+    const newTarget = findTarget(typed);
+
+    if (newTarget) {
+        targetWord = newTarget;
+        targetWord.typed = typed.length;
+        targetWord.flash = 1;
+        correctKeystrokes++;
+
+        if (typed === targetWord.word) {
+            // Word completed
+            const wx = targetWord.x + 30;
+            const wy = targetWord.y;
+
+            // Intercept burst
+            spawnParticles(wx, wy, '#00ddaa', 20, true);
+
+            // Data absorption line to bottom
+            for (let i = 0; i < 6; i++) {
+                particles.push({
+                    x: wx, y: wy,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: 3 + Math.random() * 4,
+                    life: 1, maxLife: 1,
+                    color: '#00ddaa', size: 1.5
+                });
+            }
+
+            targetWord.alive = false;
+            targetWord = null;
+            score++;
+            wordsTyped++;
+            combo++;
+            if (combo > maxCombo) maxCombo = combo;
+            signalStrength = Math.min(1.0, signalStrength + 0.03);
+            input.value = '';
+
+            // Screen flash
+            screenFlash = 0.15;
+            flashColor = '#00ddaa';
+
+            // Combo display
+            if (combo >= 3) showCombo(combo);
+
+            // Wave progression
+            if (wordsTyped % 10 === 0) {
+                wave++;
+                document.getElementById('hud-wave').textContent = `WAVE ${wave}`;
+                // Wave transition flash
+                screenFlash = 0.3;
+                flashColor = '#4488cc';
+            }
+
+            document.getElementById('hud-score').textContent = `INTERCEPTED: ${score}`;
+        }
+    } else if (typed.length > 0) {
+        // Wrong key — glitch effect on target
+        if (targetWord) targetWord.glitch = 1;
+        input.value = typed.substring(0, typed.length - 1);
+        screenShake = 3;
+    }
+}
+
+function drawBackground() {
+    // Base gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#020408');
+    grad.addColorStop(0.5, '#040810');
+    grad.addColorStop(1, '#060c18');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Stars
+    for (const s of stars) {
+        s.twinkle += 0.02;
+        s.y += s.speed;
+        if (s.y > 1) s.y = 0;
+        const twink = (Math.sin(s.twinkle) * 0.5 + 0.5) * s.brightness;
+        ctx.fillStyle = `rgba(140,180,220,${twink})`;
+        ctx.fillRect(s.x * W, s.y * H, s.size, s.size);
+    }
+
+    // Signal waves (atmospheric interference)
+    for (const sw of signalWaves) {
+        sw.phase += sw.speed;
+        ctx.beginPath();
+        ctx.strokeStyle = sw.color;
+        ctx.lineWidth = 1;
+        for (let x = 0; x < W; x += 3) {
+            const y = sw.y * H + Math.sin(x * sw.freq + sw.phase) * sw.amp * signalStrength;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    // Data streams (background matrix-like columns)
+    ctx.font = '10px monospace';
+    for (const ds of dataStreams) {
+        ds.nextChar--;
+        if (ds.nextChar <= 0) {
+            ds.chars.push({ y: 0, char: Math.random() < 0.5 ? '0' : '1', life: 1.0 });
+            ds.nextChar = 15 + Math.random() * 25;
+        }
+        for (let i = ds.chars.length - 1; i >= 0; i--) {
+            const c = ds.chars[i];
+            c.y += ds.speed;
+            c.life -= 0.005;
+            if (c.life <= 0 || c.y > H) { ds.chars.splice(i, 1); continue; }
+            ctx.fillStyle = `rgba(40,100,160,${c.life * ds.alpha})`;
+            ctx.fillText(c.char, ds.x * W, c.y);
+        }
+    }
+
+    // Radar sweep (bottom-center)
+    const radarX = W / 2;
+    const radarY = H - 45;
+    const radarR = 35;
+    radarAngle += 0.02;
+
+    // Radar circle
+    ctx.strokeStyle = 'rgba(40,80,140,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.arc(radarX, radarY, radarR, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(radarX, radarY, radarR * 0.6, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(radarX, radarY, radarR * 0.3, 0, Math.PI * 2); ctx.stroke();
+
+    // Radar sweep line
+    const sweepGrad = ctx.createLinearGradient(
+        radarX, radarY,
+        radarX + Math.cos(radarAngle) * radarR,
+        radarY + Math.sin(radarAngle) * radarR
+    );
+    sweepGrad.addColorStop(0, 'rgba(40,160,120,0.3)');
+    sweepGrad.addColorStop(1, 'rgba(40,160,120,0)');
+    ctx.strokeStyle = sweepGrad;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(radarX, radarY);
+    ctx.lineTo(radarX + Math.cos(radarAngle) * radarR, radarY + Math.sin(radarAngle) * radarR);
+    ctx.stroke();
+
+    // Radar sweep trail
+    for (let a = 0; a < 0.5; a += 0.05) {
+        const trailAngle = radarAngle - a;
+        ctx.strokeStyle = `rgba(40,160,120,${(0.5 - a) * 0.1})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(radarX, radarY);
+        ctx.lineTo(radarX + Math.cos(trailAngle) * radarR, radarY + Math.sin(trailAngle) * radarR);
+        ctx.stroke();
+    }
+
+    // Radar blips for falling words
+    for (const w of fallingWords) {
+        if (!w.alive) continue;
+        const bx = ((w.x + 30) / W - 0.5) * radarR * 1.6;
+        const by = (w.y / H - 0.5) * radarR * 1.6;
+        const dist = Math.sqrt(bx * bx + by * by);
+        if (dist < radarR) {
+            const isT = targetWord === w;
+            ctx.fillStyle = isT ? 'rgba(0,220,170,0.7)' : 'rgba(80,160,240,0.4)';
+            ctx.beginPath();
+            ctx.arc(radarX + bx, radarY + by, isT ? 2.5 : 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Ground line — receiving station
+    const groundY = H - 90;
+
+    // Signal strength bar
+    const barW = 60;
+    const barH = 4;
+    const barX = W - barW - 16;
+    const barY = H - 50;
+    ctx.fillStyle = 'rgba(20,40,60,0.5)';
+    ctx.fillRect(barX, barY, barW, barH);
+    const sColor = signalStrength > 0.6 ? '#00aa88' : signalStrength > 0.3 ? '#aa8800' : '#aa3344';
+    ctx.fillStyle = sColor;
+    ctx.fillRect(barX, barY, barW * signalStrength, barH);
+    ctx.fillStyle = 'rgba(60,100,140,0.3)';
+    ctx.font = '8px monospace';
+    ctx.fillText('SIGNAL', barX, barY - 4);
+
+    // Ground station elements
+    ctx.strokeStyle = 'rgba(30,60,100,0.2)';
+    ctx.lineWidth = 1;
+    // Antenna array
+    for (let i = 0; i < 5; i++) {
+        const ax = W * (0.2 + i * 0.15);
+        ctx.beginPath();
+        ctx.moveTo(ax, groundY);
+        ctx.lineTo(ax, groundY + 8);
+        ctx.stroke();
+        // Antenna tip
+        ctx.fillStyle = `rgba(40,100,160,${0.1 + Math.sin(frameCount * 0.05 + i) * 0.05})`;
+        ctx.beginPath();
+        ctx.arc(ax, groundY - 2, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Ground line with pulse
+    ctx.strokeStyle = `rgba(30,60,100,${0.15 + Math.sin(frameCount * 0.03) * 0.05})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(W, groundY);
+    ctx.stroke();
+
+    // Danger zone gradient
+    const dangerGrad = ctx.createLinearGradient(0, groundY, 0, H);
+    dangerGrad.addColorStop(0, 'rgba(180,40,50,0.03)');
+    dangerGrad.addColorStop(0.5, 'rgba(180,40,50,0.06)');
+    dangerGrad.addColorStop(1, 'rgba(180,40,50,0.02)');
+    ctx.fillStyle = dangerGrad;
+    ctx.fillRect(0, groundY, W, H - groundY);
+
+    // Scanlines (subtle)
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    for (let y = 0; y < H; y += 3) {
+        ctx.fillRect(0, y, W, 1);
+    }
+}
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.life -= 0.02;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+    // Trail particles
+    for (let i = trailParticles.length - 1; i >= 0; i--) {
+        const t = trailParticles[i];
+        t.y += t.vy;
+        t.life -= 0.015;
+        if (t.life <= 0) trailParticles.splice(i, 1);
+    }
+}
+
+function drawParticles() {
+    for (const p of particles) {
+        const alpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+
+    // Trail binary chars
+    ctx.font = '9px monospace';
+    for (const t of trailParticles) {
+        ctx.fillStyle = `rgba(60,140,200,${t.life * 0.2})`;
+        ctx.fillText(t.char, t.x, t.y);
+    }
+}
+
+function updateLivesDisplay() {
+    const bars = '▮'.repeat(Math.max(0, lives)) + '▯'.repeat(Math.max(0, 3 - lives));
+    document.getElementById('hud-lives').textContent = `UPLINK ${bars}`;
+}
+
+function gameOver() {
+    running = false;
+    const elapsed = (Date.now() - startTime) / 1000 / 60;
+    const wpm = elapsed > 0 ? Math.floor(wordsTyped / elapsed) : 0;
+    const accuracy = totalKeystrokes > 0 ? Math.floor((correctKeystrokes / totalKeystrokes) * 100) : 0;
+
+    document.getElementById('go-score').textContent = score;
+    document.getElementById('go-wpm').textContent = `${wpm} WPM`;
+    document.getElementById('go-accuracy').textContent = `${accuracy}%`;
+    document.getElementById('go-wave').textContent = wave;
+    document.getElementById('go-chain').textContent = maxCombo;
+    document.getElementById('game-over').style.display = 'flex';
+}
+
+function gameLoop() {
+    if (!running) return;
+    frameCount++;
+
+    // Spawn words
+    spawnTimer++;
+    const spawnRate = Math.max(35, 110 - wave * 7);
+    if (spawnTimer >= spawnRate) { spawnWord(); spawnTimer = 0; }
+
+    // Update
+    for (const w of fallingWords) w.update();
+    fallingWords = fallingWords.filter(w => w.alive);
+    updateParticles();
+    signalStrength += (1.0 - signalStrength) * 0.001; // Slowly recover
+
+    if (targetWord && !targetWord.alive) { targetWord = null; input.value = ''; }
+
+    // Apply screen shake
+    ctx.save();
+    if (screenShake > 0) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        screenShake *= 0.85;
+        if (screenShake < 0.5) screenShake = 0;
+    }
+
+    // Draw
+    drawBackground();
+    ctx.font = '18px "Courier New", monospace';
+    for (const w of fallingWords) w.draw();
+    drawParticles();
+
+    // Screen flash overlay
+    if (screenFlash > 0) {
+        ctx.fillStyle = flashColor;
+        ctx.globalAlpha = screenFlash * 0.15;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+        screenFlash *= 0.9;
+        if (screenFlash < 0.01) screenFlash = 0;
+    }
+
+    // Vignette
+    const vignette = ctx.createRadialGradient(W/2, H/2, W*0.3, W/2, H/2, W*0.7);
+    vignette.addColorStop(0, 'transparent');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.4)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
+
+    // Combo indicator in corner
+    if (combo >= 2) {
+        ctx.fillStyle = `rgba(0,200,150,${0.3 + Math.sin(frameCount * 0.1) * 0.1})`;
+        ctx.font = '11px monospace';
+        ctx.fillText(`CHAIN: ${combo}`, 16, H - 60);
+    }
+
+    ctx.restore();
+    requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    document.getElementById('title-screen').style.opacity = '0';
+    setTimeout(() => document.getElementById('title-screen').style.display = 'none', 800);
+    score = 0; lives = 3; wave = 1; wordsTyped = 0;
+    totalKeystrokes = 0; correctKeystrokes = 0;
+    fallingWords = []; particles = []; trailParticles = [];
+    targetWord = null; spawnTimer = 0; combo = 0; maxCombo = 0;
+    signalStrength = 1.0; screenShake = 0; screenFlash = 0;
+    startTime = Date.now(); frameCount = 0;
+    input.value = ''; input.focus();
+    updateLivesDisplay();
+    document.getElementById('hud-score').textContent = 'INTERCEPTED: 0';
+    document.getElementById('hud-wave').textContent = 'WAVE 1';
+    running = true;
+    requestAnimationFrame(gameLoop);
+}
+
+function restartGame() {
+    document.getElementById('game-over').style.display = 'none';
+    startGame();
+}
+
+input.addEventListener('input', handleInput);
+document.addEventListener('keydown', (e) => {
+    if (running && document.activeElement !== input) input.focus();
+});
+
+resize();
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>

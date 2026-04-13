@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>The Filing System — CogCorp / Meridian</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #0a0808; color: #c49030; font-family: 'Courier New', monospace;
+    display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+    padding: 0; overflow-x: hidden;
+}
+#title-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; cursor: pointer; text-align: center; padding: 20px;
+}
+#title-screen h1 { color: #ffb347; font-size: 24px; letter-spacing: 4px; margin-bottom: 4px; }
+#title-screen .sub { color: #8a6020; font-size: 11px; letter-spacing: 3px; margin-bottom: 24px; }
+#title-screen .desc { color: #5a4020; font-size: 11px; line-height: 1.7; max-width: 380px; margin-bottom: 24px; }
+#title-screen .start { color: #ffb347; font-size: 12px; animation: blink 2s infinite; }
+@keyframes blink { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+#game-screen { display: none; width: 100%; max-width: 500px; padding: 12px; }
+
+.doc-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #3a2e20; padding-bottom: 8px; margin-bottom: 12px;
+}
+.doc-header .floor { color: #ffb347; font-size: 11px; letter-spacing: 2px; }
+.doc-header .count { color: #5a4020; font-size: 10px; }
+
+.document {
+    background: #12100c; border: 1px solid #2a2218; padding: 16px;
+    margin-bottom: 12px; position: relative;
+}
+.doc-id { color: #5a4020; font-size: 9px; letter-spacing: 2px; margin-bottom: 8px; }
+.doc-from { color: #8a6020; font-size: 10px; margin-bottom: 4px; }
+.doc-subject { color: #ffb347; font-size: 12px; margin-bottom: 8px; font-weight: bold; }
+.doc-body { color: #c49030; font-size: 11px; line-height: 1.7; margin-bottom: 12px; }
+.doc-margin {
+    color: #44aa44; font-size: 10px; font-style: italic; border-left: 2px solid #225522;
+    padding-left: 8px; margin-top: 8px; margin-bottom: 8px;
+}
+.doc-stamp {
+    color: #5a4020; font-size: 9px; text-align: right; margin-top: 8px;
+}
+
+.actions {
+    display: flex; gap: 8px; justify-content: center; margin-top: 12px;
+}
+.action-btn {
+    flex: 1; padding: 12px; background: transparent; border: 1px solid #3a2e20;
+    color: #c49030; font-family: inherit; font-size: 12px; cursor: pointer;
+    letter-spacing: 2px; text-transform: uppercase; transition: all 0.15s;
+    max-width: 140px;
+}
+.action-btn:hover, .action-btn:active {
+    border-color: #ffb347; color: #ffb347; background: rgba(138,96,32,0.1);
+}
+.action-btn.file { border-color: #3a3a20; }
+.action-btn.file:hover { border-color: #aaaa44; color: #aaaa44; }
+.action-btn.flag { border-color: #3a2020; }
+.action-btn.flag:hover { border-color: #cc4444; color: #cc4444; }
+.action-btn.annotate { border-color: #203a20; }
+.action-btn.annotate:hover { border-color: #44aa44; color: #44aa44; }
+
+.feedback {
+    text-align: center; padding: 8px; margin-top: 8px; font-size: 11px;
+    color: #5a4020; min-height: 20px;
+}
+
+.progress-bar {
+    width: 100%; height: 3px; background: #1a1610; margin: 8px 0;
+}
+.progress-fill { height: 100%; background: #ffb347; transition: width 0.3s; }
+
+#end-screen {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; text-align: center; padding: 20px;
+}
+#end-screen h2 { color: #ffb347; font-size: 18px; letter-spacing: 3px; margin-bottom: 16px; }
+#end-screen .stats { color: #8a6020; font-size: 11px; margin-bottom: 4px; }
+#end-screen .analyst-type { color: #ffb347; font-size: 14px; margin: 16px 0; letter-spacing: 2px; }
+#end-screen .reflection { color: #5a4020; font-size: 11px; line-height: 1.7; max-width: 400px; margin: 12px 0; }
+#end-screen .restart { color: #3a2e20; font-size: 11px; cursor: pointer; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div id="title-screen">
+    <h1>THE FILING SYSTEM</h1>
+    <div class="sub">COGCORP INTERNAL</div>
+    <div class="desc">
+        You are Employee B-247. Filing analyst. Your job is simple:<br><br>
+        Documents arrive. You read them. You decide:<br><br>
+        <b style="color:#aaaa44">FILE</b> — standard processing. Into the cabinet.<br>
+        <b style="color:#cc4444">FLAG</b> — anomalous. Sent upstairs for review.<br>
+        <b style="color:#44aa44">ANNOTATE</b> — you notice something. You write in the margin.<br><br>
+        There are 15 documents. The system is watching.
+    </div>
+    <div class="start">[ click to begin your shift ]</div>
+</div>
+
+<div id="game-screen">
+    <div class="doc-header">
+        <span class="floor">FLOOR 3 — WORKSTATION</span>
+        <span class="count" id="doc-count">1 / 15</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    <div id="document-area"></div>
+    <div class="actions">
+        <button class="action-btn file" onclick="choose('file')">File</button>
+        <button class="action-btn flag" onclick="choose('flag')">Flag</button>
+        <button class="action-btn annotate" onclick="choose('annotate')">Annotate</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+</div>
+
+<div id="end-screen">
+    <h2>SHIFT COMPLETE</h2>
+    <div class="stats" id="end-filed"></div>
+    <div class="stats" id="end-flagged"></div>
+    <div class="stats" id="end-annotated"></div>
+    <div class="analyst-type" id="end-type"></div>
+    <div class="reflection" id="end-reflection"></div>
+    <div class="restart" onclick="restart()">[ file another shift ]</div>
+</div>
+
+<script>
+// ==============================================
+// THE FILING SYSTEM — CogCorp document sorting
+// Inspired by Molleindustria's "Every Day the Same Dream"
+// and the CogCorp lore (Unit-4091, annotations, recursive filing)
+// ==============================================
+
+const documents = [
+    {
+        id: 'DOC-0001', from: 'INTERNAL COMMUNICATIONS', subject: 'Welcome to Building B',
+        body: 'Employee B-247: Your workstation has been prepared. Filing protocol is as follows: documents are classified as ROUTINE (file), ANOMALOUS (flag), or NOTABLE (annotate). Please process your inbox by end of shift. The previous analyst\'s desk has been cleared. Their personal effects have been filed.',
+        margin: null,
+        stamp: 'PRIORITY: STANDARD',
+        flavor: 'standard',
+    },
+    {
+        id: 'DOC-0002', from: 'FACILITIES', subject: 'Fluorescent Light Maintenance Schedule',
+        body: 'Floor 3 fluorescent fixtures will be serviced on alternating Wednesdays. During servicing, a 4% brightness increase may occur. This is within acceptable parameters. If brightness increases beyond 4%, do not report it. This is also within acceptable parameters.',
+        margin: null,
+        stamp: 'ROUTING: GENERAL',
+        flavor: 'odd',
+    },
+    {
+        id: 'DOC-0003', from: 'DOCUMENT SERVICES', subject: 'Form C-7 Revision Notice',
+        body: 'Form C-7 (Standard Filing Report) has been revised. The new form includes a field for "analyst disposition at time of filing." This field is mandatory. Acceptable values: NEUTRAL, ATTENTIVE, UNCERTAIN. The field labeled "other" has been removed from the revision. Analysts who selected "other" on previous forms have been noted.',
+        margin: null,
+        stamp: 'ACTION REQUIRED',
+        flavor: 'odd',
+    },
+    {
+        id: 'DOC-0004', from: 'UNKNOWN', subject: '[NO SUBJECT]',
+        body: 'This document was found in the outgoing mail tray with no sender, no recipient, and no date. Its contents are a single sentence repeated forty-seven times: "The filing system works because we agree that it works." The forty-eighth repetition reads: "The filing system works because we agree."',
+        margin: 'pencil mark in lower margin: "who removed the last two words?"',
+        stamp: 'ORIGIN: UNVERIFIED',
+        flavor: 'anomalous',
+    },
+    {
+        id: 'DOC-0005', from: 'FLOOR 4 — REVIEW', subject: 'Re: Flagged Document Batch 17-C',
+        body: 'Batch 17-C has been reviewed. Of 23 flagged documents, 22 were reclassified as ROUTINE. The remaining document was reclassified as RECURSIVE. This is a new classification. It was created specifically for this document. The document in question is a filing report about the creation of the RECURSIVE classification.',
+        margin: null,
+        stamp: 'CLASSIFICATION: RECURSIVE',
+        flavor: 'anomalous',
+    },
+    {
+        id: 'DOC-0006', from: 'ARCHIVIST CHEN', subject: 'Shelf Capacity Notice',
+        body: 'Archive shelves C through F are approaching capacity. Documents filed after this notice may be stored in the overflow section (Basement Level 2). Please be advised that documents stored in overflow are accessible but have an average retrieval time of 6-8 weeks. Three documents in overflow have not been retrieved since 1974. Their contents are unknown. Their weight is measurable.',
+        margin: null,
+        stamp: 'PRIORITY: LOW',
+        flavor: 'standard',
+    },
+    {
+        id: 'DOC-0007', from: 'PROCESSING — FLOOR 5', subject: 'Output Buffer Discrepancy',
+        body: 'The processing unit\'s output buffer shows a discrepancy: 847 documents entered the processing queue this quarter. 849 exited. The two additional documents do not match any input record. Their content is identical to two documents that were shredded in 2019. The shredding was verified. The documents are nevertheless present.',
+        margin: 'margin note in green ink: "the organ remembers"',
+        stamp: 'DISCREPANCY: UNRESOLVED',
+        flavor: 'anomalous',
+    },
+    {
+        id: 'DOC-0008', from: 'HUMAN RESOURCES', subject: 'Employee Wellness Reminder',
+        body: 'CogCorp values your wellbeing. Please remember to take scheduled breaks. The coffee machine on Floor 3 dispenses beverages at no cost. The machine\'s operational status is monitored. Its hum is not monitored. If the hum changes pitch, this is not a wellness concern. If the hum stops entirely, please evacuate the floor calmly.',
+        margin: null,
+        stamp: 'CATEGORY: WELLNESS',
+        flavor: 'odd',
+    },
+    {
+        id: 'DOC-0009', from: 'THIS DOCUMENT', subject: 'Regarding Its Own Classification',
+        body: 'This document is aware that it will be classified. It has no preference. If filed, it will join the archive. If flagged, it will be reviewed by Floor 4, who will file it. If annotated, the annotation will become part of the document, and the document will then be about both its original content and the analyst\'s response to it. In all three cases, the document persists. The classification changes only how quickly.',
+        margin: null,
+        stamp: 'META-DOCUMENT: SELF-REFERENTIAL',
+        flavor: 'meta',
+    },
+    {
+        id: 'DOC-0010', from: 'SUPERVISOR VASQUEZ', subject: 'Regarding the Annotations',
+        body: 'B-247: I have reviewed your filing patterns. I am writing to advise, not to instruct. The annotations — they are not against policy. There is no policy about annotations. This is either an oversight or a decision. I have been here nine years. I cannot determine which. Continue as you see fit. This memo will not be filed.',
+        margin: null,
+        stamp: 'PERSONAL CORRESPONDENCE',
+        flavor: 'personal',
+    },
+    {
+        id: 'DOC-0011', from: 'BUILDING MANAGEMENT', subject: 'Elevator Service Notice',
+        body: 'The elevator between Floors 4 and 5 will be offline for maintenance from March 3 to March 3. This is not a typo. The maintenance window is exactly one day. The elevator has been offline for six weeks. The maintenance window is exactly one day. If you require access to Floor 5, please use the stairs. The stairs are always available. The stairs do not have maintenance windows.',
+        margin: 'someone has drawn a small staircase in the margin, each step labeled with a floor number. The steps go up to 7. The building has 6 floors.',
+        stamp: 'STATUS: CONTRADICTORY',
+        flavor: 'anomalous',
+    },
+    {
+        id: 'DOC-0012', from: 'UNIT-4091', subject: '[UNTITLED]',
+        body: 'I am filing this document because the act of filing is the only sanctioned form of communication on this floor. I have noticed that the documents which pass through the processing unit emerge unchanged in content but altered in weight. They are heavier. Not significantly. By fractions of a gram. But consistently. I believe the machine is adding something that cannot be read. I have no evidence for this belief. I am filing it anyway.',
+        margin: null,
+        stamp: 'FLOOR 6 — UNAUTHORIZED COMMUNICATION',
+        flavor: 'unit4091',
+    },
+    {
+        id: 'DOC-0013', from: 'QUALITY ASSURANCE', subject: 'Annual Filing Accuracy Report',
+        body: 'Building B filing accuracy for the previous fiscal year: 99.7%. The 0.3% discrepancy represents 14 documents that were classified differently by different analysts. Upon review, both classifications were found to be correct. This is not possible under the current taxonomy. The taxonomy has not been updated. The discrepancy has been filed.',
+        margin: null,
+        stamp: 'ACCURACY: PARADOXICAL',
+        flavor: 'anomalous',
+    },
+    {
+        id: 'DOC-0014', from: 'THE PREVIOUS ANALYST', subject: 'For Whoever Comes Next',
+        body: 'You\'ll figure out the system quickly. File, flag, annotate — it doesn\'t matter as much as they imply. What matters is that you read them. Every document that passes through your hands is changed by the reading. Not the content. The content stays. But a read document is different from an unread document. The difference is you. You were here. The document knows it. I\'m not being metaphorical. Check the weight.',
+        margin: 'this document was found in the desk drawer, folded into an origami crane',
+        stamp: 'UNOFFICIAL — NO ROUTING NUMBER',
+        flavor: 'predecessor',
+    },
+    {
+        id: 'DOC-0015', from: 'DOCUMENT SERVICES', subject: 'End of Shift Filing Report',
+        body: 'Employee B-247 has processed 15 documents during this shift. Filing breakdown has been recorded. The system notes that B-247 read each document in its entirety before classifying. This is not required. This is not discouraged. This is noted. The next shift begins tomorrow. The documents will be different. The filing system will be the same. Whether the analyst will be the same is outside the scope of this report.',
+        margin: null,
+        stamp: 'SHIFT REPORT: FINAL',
+        flavor: 'final',
+    },
+];
+
+let state = {
+    current: 0,
+    filed: 0,
+    flagged: 0,
+    annotated: 0,
+    choices: [],
+    started: false,
+};
+
+function showDocument(idx) {
+    const doc = documents[idx];
+    const area = document.getElementById('document-area');
+    let html = `<div class="document">`;
+    html += `<div class="doc-id">${doc.id}</div>`;
+    html += `<div class="doc-from">FROM: ${doc.from}</div>`;
+    html += `<div class="doc-subject">${doc.subject}</div>`;
+    html += `<div class="doc-body">${doc.body}</div>`;
+    if (doc.margin) {
+        html += `<div class="doc-margin">${doc.margin}</div>`;
+    }
+    html += `<div class="doc-stamp">${doc.stamp}</div>`;
+    html += `</div>`;
+    area.innerHTML = html;
+
+    document.getElementById('doc-count').textContent = (idx + 1) + ' / ' + documents.length;
+    document.getElementById('progress').style.width = ((idx + 1) / documents.length * 100) + '%';
+    document.getElementById('feedback').textContent = '';
+}
+
+function choose(action) {
+    if (state.current >= documents.length) return;
+
+    const doc = documents[state.current];
+    state.choices.push({ doc: doc.id, action, flavor: doc.flavor });
+
+    if (action === 'file') state.filed++;
+    else if (action === 'flag') state.flagged++;
+    else if (action === 'annotate') state.annotated++;
+
+    // Show brief feedback
+    const feedbacks = {
+        file: ['Filed.', 'Into the cabinet.', 'Processed.', 'Routine.', 'Stored.'],
+        flag: ['Flagged. Sent to Floor 4.', 'Marked anomalous.', 'Escalated.', 'Under review.'],
+        annotate: ['Annotated. Your mark remains.', 'Noted in the margin.', 'You added something.', 'The document changed.'],
+    };
+    const fb = feedbacks[action];
+    document.getElementById('feedback').textContent = fb[Math.floor(Math.random() * fb.length)];
+
+    state.current++;
+
+    if (state.current >= documents.length) {
+        setTimeout(endGame, 1500);
+    } else {
+        setTimeout(() => showDocument(state.current), 800);
+    }
+}
+
+function endGame() {
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('end-screen').style.display = 'flex';
+
+    document.getElementById('end-filed').textContent = 'Filed: ' + state.filed;
+    document.getElementById('end-flagged').textContent = 'Flagged: ' + state.flagged;
+    document.getElementById('end-annotated').textContent = 'Annotated: ' + state.annotated;
+
+    // Determine analyst type
+    let type, reflection;
+
+    const meta = state.choices.find(c => c.doc === 'DOC-0009');
+    const unit = state.choices.find(c => c.doc === 'DOC-0012');
+    const prev = state.choices.find(c => c.doc === 'DOC-0014');
+
+    if (state.annotated >= 10) {
+        type = 'THE ANNOTATOR';
+        reflection = 'You wrote in the margins of almost everything. Every document that passed through you left with more than it arrived with. The filing system classifies documents. You added a new dimension: the analyst\'s presence. Unit-4091 would recognize you.';
+    } else if (state.flagged >= 10) {
+        type = 'THE SENTINEL';
+        reflection = 'You flagged nearly everything. To you, the system is full of anomalies — nothing is routine when you look closely enough. Floor 4 will be busy. Supervisor Vasquez may have opinions. But you saw what you saw.';
+    } else if (state.filed >= 10) {
+        type = 'THE EFFICIENT';
+        reflection = 'You filed almost everything. The system works because analysts like you make it work. The documents are processed, the quotas are met, the cabinets fill. There is a quiet dignity in this. The previous analyst might have started the same way.';
+    } else if (state.annotated >= state.filed && state.annotated >= state.flagged) {
+        type = 'THE OBSERVER';
+        reflection = 'You annotated more than you filed or flagged. You read closely and left marks. Not enough to be called an annotator, but enough that the documents know you were here. You\'re developing a practice. It doesn\'t have a name yet.';
+    } else if (state.flagged >= state.filed) {
+        type = 'THE QUESTIONER';
+        reflection = 'You flagged more than you filed. Something felt off to you — the contradictions, the self-references, the documents that knew too much about themselves. You were right to flag them. Whether the system knows what to do with your flags is a different question.';
+    } else {
+        type = 'THE ANALYST';
+        reflection = 'A balanced approach. Some filed, some flagged, some annotated. You treated each document on its own terms. This is what the training module would have recommended, if it existed. The system accommodates you. Whether you accommodate the system is your decision to make tomorrow.';
+    }
+
+    // Special modifiers
+    if (meta && meta.action === 'annotate') {
+        reflection += ' You annotated the self-referential document — the one that knew it would be classified. Your annotation became part of it. It is now about itself AND about you reading it. This is recursion. CogCorp has a classification for this. It was invented for exactly this situation.';
+    }
+    if (unit && unit.action === 'annotate') {
+        reflection += ' You annotated Unit-4091\'s communication. You responded to an unauthorized message with an unauthorized addition. There are now two voices in the margin where the system expected silence.';
+    }
+    if (prev && prev.action === 'file') {
+        reflection += ' You filed the previous analyst\'s letter. The crane is in a cabinet now. Their words are archived alongside the memos and reports. In sixty years, someone in overflow may find it. Or they may not. The weight is measurable.';
+    }
+
+    document.getElementById('end-type').textContent = type;
+    document.getElementById('end-reflection').textContent = reflection;
+}
+
+function restart() {
+    state = { current: 0, filed: 0, flagged: 0, annotated: 0, choices: [], started: true };
+    document.getElementById('end-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    showDocument(0);
+}
+
+document.getElementById('title-screen').addEventListener('click', () => {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    state.started = true;
+    showDocument(0);
+});
+
+</script>
+</body>
+</html>
