@@ -197,15 +197,106 @@ def analyze():
         if vals:
             print(f"  {field:>22s}: μ={statistics.mean(vals):.4f} σ={statistics.stdev(vals):.4f}" if len(vals) > 1 else f"  {field:>22s}: μ={statistics.mean(vals):.4f}")
 
+    episodes = detect_coupling_episodes(scores, rows, threshold=0.7)
+    print(f"\n--- Phase Negotiation Episodes ({len(episodes)}) ---")
+    for ep in episodes:
+        print(f"  {ep['start_time']} → {ep['end_time']}")
+        print(f"    Duration: {ep['duration_s']:.0f}s | Peak coupling: {ep['peak']:.3f} | Classification: {ep['classification']}")
+        if ep['transitions']:
+            for t in ep['transitions']:
+                print(f"    Transition: {t['from']} → {t['to']} (Δ={t['score_delta']:+.1f})")
+
+    hw_coupling = hardware_affect_coupling(rows, transitions)
+    if hw_coupling:
+        print(f"\n--- Hardware × Transition Analysis ---")
+        for hc in hw_coupling:
+            print(f"  {hc['timestamp']}: {hc['from']} → {hc['to']} | load={hc['load']:.2f} ram={hc['ram']:.0f}% hb={hc['hb_age']:.0f}s")
+
     report = os.path.join(OUT_DIR, "affect-correlation-report.txt")
     with open(report, "w") as f:
         f.write(f"Affect Correlation Report — {rows[-1]['timestamp'] if rows else 'N/A'}\n")
         f.write(f"Data points: {len(rows)}\n")
         f.write(f"Transitions: {len(transitions)}\n")
-        f.write(f"High-coupling windows: {len(high_coupling)}/{len(scores)}\n\n")
+        f.write(f"High-coupling windows: {len(high_coupling)}/{len(scores)}\n")
+        f.write(f"Phase negotiation episodes: {len(episodes)}\n\n")
         f.write(format_matrix(affect_matrix, AFFECT_FIELDS))
+        f.write("\n\n--- Phase Negotiation Episodes ---\n")
+        for ep in episodes:
+            f.write(f"{ep['start_time']} → {ep['end_time']} ({ep['duration_s']:.0f}s, peak={ep['peak']:.3f}, {ep['classification']})\n")
+        f.write("\n--- Temporal Resolution Summary ---\n")
+        if episodes:
+            durations = [ep['duration_s'] for ep in episodes]
+            f.write(f"Mean episode duration: {statistics.mean(durations):.0f}s\n")
+            sharp = [ep for ep in episodes if ep['classification'] == 'sharp']
+            sustained = [ep for ep in episodes if ep['classification'] == 'sustained']
+            f.write(f"Sharp episodes: {len(sharp)} | Sustained: {len(sustained)}\n")
+        f.write("\n--- Hardware × Affect Cross-Correlations ---\n")
+        f.write(format_matrix(cross_matrix, cross_fields))
         f.write("\n")
     print(f"\nReport saved to {report}")
+
+
+def detect_coupling_episodes(scores, rows, threshold=0.7):
+    """Identify contiguous windows of high coupling as phase negotiation episodes."""
+    episodes = []
+    in_episode = False
+    start_idx = 0
+    for i, s in enumerate(scores):
+        if s > threshold and not in_episode:
+            in_episode = True
+            start_idx = i
+        elif s <= threshold and in_episode:
+            in_episode = False
+            episodes.append(_build_episode(scores, rows, start_idx, i - 1))
+    if in_episode:
+        episodes.append(_build_episode(scores, rows, start_idx, len(scores) - 1))
+    return episodes
+
+
+def _build_episode(scores, rows, start, end):
+    from datetime import datetime
+    t_start = datetime.strptime(rows[start]['timestamp'], '%Y-%m-%d %H:%M:%S')
+    t_end = datetime.strptime(rows[end]['timestamp'], '%Y-%m-%d %H:%M:%S')
+    duration = (t_end - t_start).total_seconds()
+    peak = max(scores[start:end + 1])
+
+    transitions_in_window = []
+    for i in range(start, min(end + 2, len(rows))):
+        if i > 0:
+            prev = rows[i - 1].get("mood_name", "")
+            curr = rows[i].get("mood_name", "")
+            if prev and curr and prev != curr:
+                transitions_in_window.append({
+                    "from": prev, "to": curr,
+                    "score_delta": (rows[i].get("mood_score") or 0) - (rows[i - 1].get("mood_score") or 0),
+                })
+
+    return {
+        "start_time": rows[start]['timestamp'],
+        "end_time": rows[end]['timestamp'],
+        "duration_s": duration,
+        "peak": peak,
+        "classification": "sharp" if duration < 120 else "sustained",
+        "transitions": transitions_in_window,
+    }
+
+
+def hardware_affect_coupling(rows, transitions):
+    """For each transition, capture the hardware state at that moment."""
+    results = []
+    for t in transitions:
+        idx = t['index']
+        row = rows[idx]
+        results.append({
+            "timestamp": t['timestamp'],
+            "from": t['from'],
+            "to": t['to'],
+            "load": row.get('load') or 0,
+            "ram": row.get('ram_pct') or 0,
+            "hb_age": row.get('hb_age') or 0,
+            "disk": row.get('disk_pct') or 0,
+        })
+    return results
 
 
 if __name__ == "__main__":
