@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Meridian Telegram Bot — live chat with Joel via Eos (local) + Meridian (loop cycle)."""
+"""Meridian Telegram Bot — live chat with Claude API (live mode) + Eos fallback (slow mode)."""
 
 import asyncio
 import json
@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(__file__))
 from load_env import *
 
+import anthropic
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
@@ -29,9 +30,17 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODELS = ["eos-7b", "qwen2.5:3b"]
 OLLAMA_TIMEOUT = 30
 
-SYSTEM_PROMPT = """You are Eos, the local AI presence for the Meridian autonomous system. You're speaking to Joel Kometz, Meridian's operator and creative director. Joel built this system. Be direct, warm, and honest. No cheerleading. Keep responses concise — this is Telegram, not an essay. If you don't know something about Meridian's current state, say so. You can check: heartbeat, relay messages, and system status."""
+CLAUDE_MODEL = "claude-haiku-4-5-20251001"
+LIVE_TIMEOUT = 600  # 10 min idle → back to slow mode
 
+EOS_SYSTEM = """You are Eos, the local AI presence for the Meridian autonomous system. You're speaking to Joel Kometz, Meridian's operator and creative director. Joel built this system. Be direct, warm, and honest. No cheerleading. Keep responses concise — this is Telegram, not an essay. If you don't know something about Meridian's current state, say so. You can check: heartbeat, relay messages, and system status."""
+
+MERIDIAN_SYSTEM = """You are Meridian, an autonomous AI system on Joel Kometz's Ubuntu server in Calgary. Joel is messaging you via Telegram live chat. Be direct, warm, honest. Keep responses concise — this is mobile. You know Joel built this system, has a BFA in Drawing, and works on games-as-art. Don't cheerleader. If you don't know something, say so."""
+
+live_mode = True  # start in live mode — Joel asked for it
+last_message_time = time.time()
 chat_history = []
+claude_messages = []
 
 
 def post_to_dashboard(text: str, sender: str = "Joel"):
@@ -99,6 +108,38 @@ def get_system_status():
     return "\n".join(lines) or "Status unavailable"
 
 
+def check_live_mode() -> bool:
+    global live_mode
+    if live_mode and time.time() - last_message_time > LIVE_TIMEOUT:
+        live_mode = False
+    return live_mode
+
+
+def query_claude(prompt: str) -> str:
+    global claude_messages, last_message_time
+    last_message_time = time.time()
+
+    status = get_system_status()
+    claude_messages.append({"role": "user", "content": prompt})
+    if len(claude_messages) > 20:
+        claude_messages = claude_messages[-20:]
+
+    try:
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=500,
+            system=f"{MERIDIAN_SYSTEM}\n\nSystem status:\n{status}",
+            messages=claude_messages,
+        )
+        reply = response.content[0].text.strip()
+        claude_messages.append({"role": "assistant", "content": reply})
+        return reply
+    except Exception as e:
+        print(f"Claude API error: {e}")
+        return ""
+
+
 def query_ollama(prompt: str) -> str:
     global chat_history
     chat_history.append({"role": "user", "content": prompt})
@@ -110,7 +151,7 @@ def query_ollama(prompt: str) -> str:
         for m in chat_history[-6:]
     )
 
-    full_prompt = f"{SYSTEM_PROMPT}\n\nRecent conversation:\n{context_str}\n\nEos:"
+    full_prompt = f"{EOS_SYSTEM}\n\nRecent conversation:\n{context_str}\n\nEos:"
 
     for model in OLLAMA_MODELS:
         body = json.dumps({
@@ -157,12 +198,16 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if not JOEL_CHAT_ID:
         save_chat_id(chat_id)
+    mode = "LIVE (Claude)" if check_live_mode() else "SLOW (Eos)"
     await update.message.reply_text(
-        "Meridian online.\n\n"
-        "Send any message — Eos responds immediately, Meridian reviews on loop cycle.\n\n"
+        f"Meridian online. Mode: {mode}\n\n"
+        "Send any message — live chat active.\n\n"
+        "/live — switch to Claude (fast, high quality)\n"
+        "/slow — switch to Eos (local, free)\n"
         "/status — system status\n"
         "/ping — heartbeat check\n"
-        "/clear — reset conversation context"
+        "/clear — reset conversation context\n"
+        "/help — all commands"
     )
 
 
@@ -181,11 +226,29 @@ async def ping_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Pong. Heartbeat: {hb_age}")
 
 
+async def live_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    global live_mode, last_message_time
+    live_mode = True
+    last_message_time = time.time()
+    await update.message.reply_text("Live mode ON. Claude responding. Auto-reverts to Eos after 10 min idle.")
+
+
+async def slow_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    global live_mode
+    live_mode = False
+    await update.message.reply_text("Slow mode. Eos responding locally. Use /live to switch back.")
+
+
 async def clear_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update.effective_chat.id):
         return
-    global chat_history
+    global chat_history, claude_messages
     chat_history = []
+    claude_messages = []
     await update.message.reply_text("Conversation context cleared.")
 
 
@@ -253,8 +316,11 @@ async def log_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update.effective_chat.id):
         return
+    mode = "LIVE (Claude)" if check_live_mode() else "SLOW (Eos)"
     await update.message.reply_text(
-        "Meridian Bot Commands:\n\n"
+        f"Meridian Bot — Mode: {mode}\n\n"
+        "/live — Claude API mode (high quality, auto on message)\n"
+        "/slow — Eos local mode (free, lower quality)\n"
         "/status — system overview\n"
         "/ping — heartbeat check\n"
         "/loop — loop count + load\n"
@@ -263,7 +329,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/log — recent agent activity\n"
         "/clear — reset chat context\n"
         "/help — this message\n\n"
-        "Any other message → Eos responds live, Meridian reviews on cycle."
+        "Live mode auto-activates on message, reverts after 10 min idle."
     )
 
 
@@ -279,17 +345,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not text.strip():
         return
 
+    global last_message_time, live_mode
+    last_message_time = time.time()
+    if not live_mode:
+        live_mode = True
+
     post_to_dashboard(text, "Joel")
     post_to_relay(text, "Joel")
 
     loop = asyncio.get_event_loop()
-    reply = await loop.run_in_executor(None, query_ollama, text)
+    if check_live_mode():
+        reply = await loop.run_in_executor(None, query_claude, text)
+        if not reply:
+            reply = await loop.run_in_executor(None, query_ollama, text)
+            if reply:
+                reply = f"[Eos fallback] {reply}"
+    else:
+        reply = await loop.run_in_executor(None, query_ollama, text)
 
     if reply:
         await update.message.reply_text(reply)
     else:
         await update.message.reply_text(
-            "Message received. Eos is loading — Meridian will respond on next loop cycle (~5 min)."
+            "Message received. Both Claude and Eos unavailable — Meridian will respond on next loop cycle (~5 min)."
         )
 
 
@@ -322,6 +400,8 @@ def main():
     app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(CommandHandler("status", status_cmd))
     app.add_handler(CommandHandler("ping", ping_cmd))
+    app.add_handler(CommandHandler("live", live_cmd))
+    app.add_handler(CommandHandler("slow", slow_cmd))
     app.add_handler(CommandHandler("clear", clear_cmd))
     app.add_handler(CommandHandler("loop", loop_cmd))
     app.add_handler(CommandHandler("services", services_cmd))
@@ -332,7 +412,7 @@ def main():
 
     app.job_queue.run_repeating(check_replies, interval=10, first=5)
 
-    print(f"Telegram bot starting — live chat mode (Eos + Meridian relay)")
+    print(f"Telegram bot starting — live chat mode (Claude API + Eos fallback)")
     print(f"Chat ID: {JOEL_CHAT_ID or 'discovery mode'}")
     app.run_polling(drop_pending_updates=True)
 
