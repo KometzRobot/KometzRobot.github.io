@@ -1165,24 +1165,24 @@ def _login_page():
 <title>Meridian Nuevo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#080c14;color:#e2e8f0;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+body{background:#020a0e;color:#e2e8f0;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   display:flex;align-items:center;justify-content:center;min-height:100vh}
-.login{background:#0f1623;border:1px solid rgba(56,100,160,.28);border-radius:16px;padding:2.2rem;
+.login{background:#0f1623;border:1px solid #1e1e2e;border-radius:16px;padding:2.2rem;
   width:min(92vw,300px);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.6)}
-.badge{width:52px;height:52px;border-radius:50%;background:#080c14;border:2px solid #38bdf8;
+.badge{width:52px;height:52px;border-radius:50%;background:#020a0e;border:2px solid #00e5ff;
   display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;
-  font-size:1.4rem;font-weight:700;color:#38bdf8;letter-spacing:-1px}
-.login h1{color:#38bdf8;font-size:1rem;letter-spacing:3px;margin-bottom:.25rem}
+  font-size:1.4rem;font-weight:700;color:#00e5ff;letter-spacing:-1px}
+.login h1{color:#00e5ff;font-size:1rem;letter-spacing:3px;margin-bottom:.25rem}
 .login h2{color:#e2e8f0;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
   opacity:.4;margin-bottom:1.6rem}
 input{width:100%;padding:.75rem;background:#080c14;border:1px solid rgba(56,100,160,.2);
   border-radius:10px;color:#e2e8f0;font-family:inherit;font-size:.95rem;
   text-align:center;margin-bottom:.9rem}
 input:focus{outline:none;border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.12)}
-button{width:100%;padding:.75rem;background:#38bdf8;color:#080c14;border:none;
+button{width:100%;padding:.75rem;background:#7c5cfc;color:#fff;border:none;
   border-radius:10px;font-family:inherit;font-size:.95rem;cursor:pointer;font-weight:700;
   letter-spacing:.5px}
-button:hover{background:#7dd3fc}
+button:hover{background:#9b7dff}
 .err{color:#f87171;font-size:.8rem;margin-top:.5rem}
 </style></head><body>
 <div class="login">

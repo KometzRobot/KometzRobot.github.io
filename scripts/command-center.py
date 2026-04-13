@@ -51,8 +51,9 @@ HB = os.path.join(BASE, ".heartbeat")
 EOS_MEM = os.path.join(BASE, "eos-memory.json")
 EOS_OBS = os.path.join(BASE, "eos-observations.md")
 EOS_CREATIVE = os.path.join(BASE, "eos-creative-log.md")
-RELAY_DB = os.path.join(BASE, "relay.db")
+RELAY_DB = os.path.join(BASE, "data", "relay.db")
 AGENT_RELAY_DB = os.path.join(BASE, "agent-relay.db")
+MEMORY_DB = os.path.join(BASE, "data", "memory.db")
 NOVA_STATE = os.path.join(BASE, ".nova-state.json")
 NFT_DIR = os.path.join(BASE, "nft-prototypes")
 DASH_MSG = os.path.join(BASE, ".dashboard-messages.json")
@@ -175,10 +176,10 @@ def services():
 def cron_ok():
     checks = {
         "Eos Watchdog": (os.path.join(BASE, ".eos-watchdog-state.json"), 300),
-        "Push Status": (os.path.join(BASE, "push-live-status.log"), 600),
+        "Push Status": (os.path.join(BASE, "logs", "push-live-status.log"), 600),
         "Nova": (NOVA_STATE, 1200),
         "Atlas": (os.path.join(BASE, "goose.log"), 900),
-        "Tempo": (os.path.join(BASE, "loop-fitness.log"), 2400),
+        "Tempo": (os.path.join(BASE, "logs", "loop-fitness.log"), 2400),
     }
     r = {}
     for name, (path, thresh) in checks.items():
@@ -261,9 +262,12 @@ def dashboard_messages(n=20):
 def last_edited_files(n=15):
     """Get the most recently modified files in the project."""
     all_files = []
+    scan_dirs = [BASE, os.path.join(BASE, "website"), os.path.join(BASE, "scripts"),
+                 os.path.join(BASE, "tools"), os.path.join(BASE, "configs"),
+                 os.path.join(BASE, "creative"), os.path.join(BASE, "data")]
     for ext in ['*.md', '*.py', '*.html', '*.json', '*.js', '*.sh']:
-        all_files.extend(glob.glob(os.path.join(BASE, ext)))
-        all_files.extend(glob.glob(os.path.join(BASE, "website", ext)))
+        for d in scan_dirs:
+            all_files.extend(glob.glob(os.path.join(d, ext)))
     # Sort by mtime, newest first
     all_files = sorted(all_files, key=os.path.getmtime, reverse=True)
     results = []
@@ -569,7 +573,7 @@ def action_deploy_website():
 def action_run_fitness():
     try:
         r = subprocess.run(
-            ['python3', os.path.join(BASE, 'loop-fitness.py')],
+            ['python3', os.path.join(BASE, 'scripts', 'loop-fitness.py')],
             capture_output=True, text=True, timeout=60, cwd=BASE)
         if r.returncode == 0:
             # Try to extract score from output
@@ -1917,7 +1921,7 @@ class V16(tk.Tk):
                     loop = _read(LOOP_FILE, "?").strip()
                     msg = f"Loop {loop} — Meridian autonomous AI, still running. Systems nominal."
                     r = subprocess.run(
-                        ['python3', os.path.join(BASE, 'social-post.py'), '--platform', 'nostr', '--post', msg],
+                        ['python3', os.path.join(BASE, 'scripts', 'social-post.py'), '--platform', 'nostr', '--post', msg],
                         capture_output=True, text=True, timeout=30, cwd=BASE)
                     result = r.stdout.strip() or r.stderr.strip() or "Posted"
                     self.after(0, lambda: self._chat_append(f"[Nostr] {result}\n", "meridian"))
@@ -1953,7 +1957,7 @@ class V16(tk.Tk):
             def _do_eos():
                 try:
                     r = subprocess.run(
-                        ['python3', os.path.join(BASE, 'eos-watchdog.py')],
+                        ['python3', os.path.join(BASE, 'scripts', 'eos-watchdog.py')],
                         capture_output=True, text=True, timeout=60, cwd=BASE)
                     out = (r.stdout.strip() or r.stderr.strip() or "Check complete")[-300:]
                     self.after(0, lambda: self._chat_append(f"[Eos] {out}\n", "eos"))
@@ -1996,7 +2000,7 @@ class V16(tk.Tk):
             def _do_nova():
                 try:
                     r = subprocess.run(
-                        ['python3', os.path.join(BASE, 'nova.py')],
+                        ['python3', os.path.join(BASE, 'scripts', 'nova.py')],
                         capture_output=True, text=True, timeout=60, cwd=BASE)
                     out = (r.stdout.strip() or r.stderr.strip() or "Run complete")[-300:]
                     self.after(0, lambda: self._chat_append(f"[Nova] {out}\n", "nova"))
@@ -2023,7 +2027,7 @@ class V16(tk.Tk):
             def _do_atlas():
                 try:
                     r = subprocess.run(
-                        ['bash', os.path.join(BASE, 'goose-runner.sh')],
+                        ['bash', os.path.join(BASE, 'scripts', 'goose-runner.sh')],
                         capture_output=True, text=True, timeout=90, cwd=BASE)
                     out = (r.stdout.strip() or r.stderr.strip() or "Audit complete")[-300:]
                     self.after(0, lambda: self._chat_append(f"[Atlas] {out}\n", "atlas"))
@@ -2473,7 +2477,7 @@ class V16(tk.Tk):
     def _build_cr_memory(self, parent):
         """Memory database browser — browse facts, observations, events, decisions."""
         f = tk.Frame(parent, bg=BG)
-        MEMDB = os.path.join(BASE, "memory.db")
+        MEMDB = MEMORY_DB
 
         # Header + stats
         hdr = tk.Frame(f, bg=PANEL2)
@@ -2520,7 +2524,7 @@ class V16(tk.Tk):
 
     def _memb_refresh(self):
         """Load memory.db entries for the selected table."""
-        MEMDB = os.path.join(BASE, "memory.db")
+        MEMDB = MEMORY_DB
         table = self.memb_table.get()
         search = self.memb_search.get().strip() if hasattr(self, 'memb_search') else ""
         def do():
@@ -3450,7 +3454,7 @@ class V16(tk.Tk):
             search = ""
         def do():
             try:
-                conn = sqlite3.connect(os.path.join(BASE, "memory.db"))
+                conn = sqlite3.connect(MEMORY_DB)
                 c = conn.cursor()
                 q = "SELECT id, name, email, role, relationship, trust_level, is_human, platform, website, wallet, notes, tags, first_contact, last_contact, interaction_count FROM contacts"
                 conditions = []
@@ -3547,7 +3551,7 @@ class V16(tk.Tk):
             return
         def do():
             try:
-                conn = sqlite3.connect(os.path.join(BASE, "memory.db"))
+                conn = sqlite3.connect(MEMORY_DB)
                 conn.execute("UPDATE contacts SET notes = ?, updated = CURRENT_TIMESTAMP WHERE id = ?",
                            (new_notes, self.ct_selected_id))
                 conn.commit()
@@ -3579,7 +3583,7 @@ class V16(tk.Tk):
             if not name:
                 return
             try:
-                conn = sqlite3.connect(os.path.join(BASE, "memory.db"))
+                conn = sqlite3.connect(MEMORY_DB)
                 conn.execute("""INSERT INTO contacts (name, email, role, relationship, trust_level, is_human, platform, website, notes, tags)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (name, fields["Email"].get().strip() or None,
@@ -4279,15 +4283,15 @@ class V16(tk.Tk):
         tk.Label(log_head, text="Log:", font=self.f_tiny, fg=DIM, bg=PANEL).pack(side=tk.LEFT)
 
         self._log_files = {
-            "eos-watchdog": "eos-watchdog.log",
-            "nova": "nova.log",
-            "goose (Atlas)": "goose.log",
-            "watchdog": "watchdog.log",
-            "push-status": "push-live-status.log",
-            "eos-creative": "eos-creative.log",
-            "loop-fitness": "loop-fitness.log",
-            "hermes-bridge": "hermes-bridge.log",
-            "daily-log": "daily-log.log",
+            "eos-watchdog": os.path.join("logs", "eos-watchdog.log"),
+            "nova": os.path.join("logs", "nova.log"),
+            "goose (Atlas)": os.path.join("logs", "goose.log"),
+            "watchdog": os.path.join("logs", "watchdog.log"),
+            "push-status": os.path.join("logs", "push-live-status.log"),
+            "eos-creative": os.path.join("logs", "eos-creative.log"),
+            "loop-fitness": os.path.join("logs", "loop-fitness.log"),
+            "hermes-bridge": os.path.join("logs", "hermes-bridge.log"),
+            "daily-log": os.path.join("logs", "daily-log.log"),
         }
         self._log_var = tk.StringVar(value="eos-watchdog")
         log_menu = tk.OptionMenu(log_head, self._log_var, *self._log_files.keys())
@@ -4563,7 +4567,7 @@ class V16(tk.Tk):
             db_size = "?"
             try:
                 import sqlite3
-                db_path = os.path.join(BASE, "memory.db")
+                db_path = MEMORY_DB
                 db_size = f"{os.path.getsize(db_path) / 1024:.0f} KB" if os.path.exists(db_path) else "N/A"
                 conn = sqlite3.connect(db_path, timeout=2)
                 for table in ["facts", "observations", "events", "decisions", "sent_emails", "creative"]:
@@ -4642,7 +4646,7 @@ class V16(tk.Tk):
         def run():
             try:
                 import sqlite3 as sq
-                conn = sq.connect(os.path.join(BASE, "memory.db"))
+                conn = sq.connect(MEMORY_DB)
                 c = conn.cursor()
                 stats = []
                 for table in ["facts", "observations", "events", "decisions", "creative"]:
