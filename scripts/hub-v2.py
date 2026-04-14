@@ -1103,6 +1103,127 @@ def _get_files_direct(dir_path="."):
     return {"path": rel_path, "entries": entries}
 
 
+def _get_inner_world():
+    """Full Soma/body state for Inner World tab."""
+    result = {}
+    try:
+        with open(SOMA_STATE) as f:
+            soma = json.load(f)
+        result["mood"] = soma.get("mood", "unknown")
+        result["mood_score"] = soma.get("mood_score", 0)
+        result["mood_voice"] = soma.get("mood_voice", "")
+        result["mood_context"] = soma.get("mood_context", [])
+        result["ram_history"] = soma.get("ram_history", [])[-30:]
+        result["load_history"] = soma.get("load_history", [])[-30:]
+        result["disk_history"] = soma.get("disk_history", [])[-30:]
+        result["thermal"] = soma.get("thermal", {})
+        result["agent_health"] = soma.get("agent_health", {})
+    except Exception:
+        result["mood"] = "offline"
+        result["mood_score"] = 0
+        result["mood_voice"] = ""
+        result["mood_context"] = []
+    try:
+        with open(os.path.join(BASE, ".soma-psyche.json")) as f:
+            psyche = json.load(f)
+        result["fears"] = psyche.get("fears", [])
+        result["dreams"] = psyche.get("dreams", [])
+        result["volatility"] = psyche.get("volatility", 0)
+    except Exception:
+        result["fears"] = []
+        result["dreams"] = []
+    try:
+        with open(os.path.join(BASE, ".soma-goals.json")) as f:
+            goals = json.load(f)
+        result["goals"] = goals.get("goals", [])
+    except Exception:
+        result["goals"] = []
+    try:
+        with open(os.path.join(BASE, ".soma-inner-monologue.json")) as f:
+            content = f.read().strip()
+            if content:
+                mono = json.loads(content)
+                result["monologue"] = mono.get("text", "")
+            else:
+                result["monologue"] = ""
+    except Exception:
+        result["monologue"] = ""
+    try:
+        with open(BODY_STATE) as f:
+            result["body"] = json.load(f)
+    except Exception:
+        result["body"] = {}
+    try:
+        with open(os.path.join(BASE, ".sentinel-briefing.md")) as f:
+            result["sentinel"] = f.read().strip()
+    except Exception:
+        result["sentinel"] = ""
+    return result
+
+
+def _get_memory_browse(table="facts", search="", limit=50):
+    """Browse memory database entries."""
+    allowed = {"facts", "observations", "events", "decisions", "creative", "connections", "dossiers"}
+    if table not in allowed:
+        table = "facts"
+    try:
+        db = sqlite3.connect(MEMORY_DB, timeout=3)
+        db.row_factory = sqlite3.Row
+        cols = [row[1] for row in db.execute(f"PRAGMA table_info({table})").fetchall()]
+        text_cols = [c for c in cols if c not in ("id",)]
+        if search and text_cols:
+            conditions = " OR ".join(f'"{c}" LIKE ?' for c in text_cols)
+            query = f'SELECT * FROM "{table}" WHERE {conditions} ORDER BY id DESC LIMIT ?'
+            params = [f"%{search}%"] * len(text_cols) + [limit]
+        else:
+            query = f'SELECT * FROM "{table}" ORDER BY id DESC LIMIT ?'
+            params = [limit]
+        rows = db.execute(query, params).fetchall()
+        result_rows = [dict(row) for row in rows]
+        total = db.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
+        table_counts = {}
+        for t in sorted(allowed):
+            try:
+                table_counts[t] = db.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()[0]
+            except Exception:
+                table_counts[t] = 0
+        db.close()
+        return {"table": table, "columns": cols, "rows": result_rows, "total": total, "tables": table_counts}
+    except Exception as e:
+        return {"error": str(e), "tables": {t: 0 for t in sorted(allowed)}}
+
+
+def _get_quick_actions():
+    """Available quick actions with categories."""
+    return {
+        "diagnostics": {
+            "uptime": "System uptime",
+            "free": "RAM usage",
+            "df": "Disk usage",
+            "top": "Top processes",
+            "network": "Network listeners",
+        },
+        "agents": {
+            "ps-agents": "Running agents",
+            "heartbeat-age": "Heartbeat age",
+            "loop-count": "Current loop",
+            "relay-recent": "Recent relay messages",
+            "fitness": "Loop fitness score",
+        },
+        "git": {
+            "git-status": "Git status",
+            "git-log": "Recent commits",
+        },
+        "system": {
+            "crontab": "Cron jobs",
+            "disk-big": "Largest files",
+            "services": "Running services",
+            "tunnel-url": "Tunnel config",
+            "verify": "System verification",
+        },
+    }
+
+
 # ═══════════════════════════════════════════════════════════════
 # AUTH HELPERS
 # ═══════════════════════════════════════════════════════════════
@@ -1512,6 +1633,18 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(_get_creative_live())
         elif path.path == "/api/system":
             self._send_json(_get_system_direct())
+        elif path.path == "/api/inner-world":
+            self._send_json(_get_inner_world())
+        elif path.path == "/api/memory/browse":
+            table = qs.get("table", "facts")
+            search = qs.get("search", "")
+            try:
+                limit = min(int(qs.get("limit", 50)), 200)
+            except (ValueError, TypeError):
+                limit = 50
+            self._send_json(_get_memory_browse(table, search, limit))
+        elif path.path == "/api/quick-actions":
+            self._send_json(_get_quick_actions())
         elif path.path == "/api/files":
             dir_path = qs.get("dir", ".")
             self._send_json(_get_files_direct(dir_path))
@@ -1559,6 +1692,32 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 self._send_json({"error": "missing agent"}, 400)
             else:
                 self._send_json(_get_agent_history(agent, limit))
+        elif path.path == "/api/stream":
+            # SSE — push system updates every 5 seconds
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Connection", "keep-alive")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+            try:
+                import threading
+                stop_event = threading.Event()
+                for _ in range(360):  # max 30 min
+                    if stop_event.is_set():
+                        break
+                    try:
+                        data = json.dumps(_get_home_direct())
+                        self.wfile.write(f"event: update\ndata: {data}\n\n".encode())
+                        self.wfile.flush()
+                    except (BrokenPipeError, ConnectionResetError):
+                        break
+                    except Exception:
+                        break
+                    time.sleep(5)
+            except Exception:
+                pass
+            return
         elif path.path.startswith("/chorus"):
             # Proxy to The Chorus on port 8091
             try:
@@ -1892,8 +2051,11 @@ The tape is spooling. The mechanism is listening.
 # MAIN
 # ═══════════════════════════════════════════════════════════════
 
+class ThreadingHub(http.server.ThreadingHTTPServer):
+    daemon_threads = True
+
 def main():
-    server = http.server.HTTPServer(("0.0.0.0", PORT), HubHandler)
+    server = ThreadingHub(("0.0.0.0", PORT), HubHandler)
     print(f"Hub v2 running on port {PORT}")
     try:
         server.serve_forever()
