@@ -107,6 +107,8 @@ LOG_FILES = {
     "eos-react": "logs/eos-react.log",
     "meridian-loop": "logs/meridian-loop.log",
     "startup": "logs/startup.log",
+    "predictive": "logs/predictive-engine.log",
+    "coordinator": "logs/agent-coordinator.log",
 }
 
 
@@ -854,6 +856,8 @@ def _get_agents_direct_inner():
         {"name": "Tempo", "role": "Fitness scoring engine", "color": "#34d399"},
         {"name": "Hermes", "role": "Email bridge", "color": "#f472b6"},
         {"name": "Sentinel", "role": "Gatekeeper (fine-tuned 3B)", "color": "#fb923c"},
+        {"name": "Predictive", "role": "Anomaly detection / forecasting", "color": "#e879f9"},
+        {"name": "Coordinator", "role": "Event bus / incident management", "color": "#22d3ee"},
     ]
     relay_aliases = {
         "Meridian": ["Meridian", "MeridianLoop"],
@@ -1692,6 +1696,20 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 self._send_json({"error": "missing agent"}, 400)
             else:
                 self._send_json(_get_agent_history(agent, limit))
+        elif path.path == "/api/predictions":
+            # Predictive engine state
+            try:
+                with open(os.path.join(BASE, ".predictive-state.json")) as f:
+                    self._send_json(json.load(f))
+            except Exception:
+                self._send_json({"predictions": [], "health": {"score": 0, "status": "unknown"}})
+        elif path.path == "/api/coordination":
+            # Agent coordinator state
+            try:
+                with open(os.path.join(BASE, ".coordinator-state.json")) as f:
+                    self._send_json(json.load(f))
+            except Exception:
+                self._send_json({"incidents": [], "agent_scores": {}})
         elif path.path == "/api/stream":
             # SSE — push system updates every 5 seconds
             self.send_response(200)
