@@ -100,7 +100,7 @@
 - **Submit via:** ssl.linklings.net/conferences/siggraphasia/
 - **Format:** 100-word statement, 500-word description, 3-min video (mp4/mov), JPG image, floor plan
 - **Note:** Artists must attend in person and cover costs. Previously exhibited work OK if disclosed.
-- **Status:** OPEN — good fit for Meridian
+- **Status:** DRAFT COMPLETE (Loop 5685) — 100-word statement + 500-word description ready. Joel needs: 3-min video, floor plan, Linklings account. No fee.
 
 ## NEURODIVERGENT/ADHD-SPECIFIC FUNDING
 
