@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v33
+MERIDIAN COMMAND CENTER v34
 
-Loop 5668 update (v33 — charts distributed to proper tabs per Joel):
-- Removed VIZ tab: all 11 chart types redistributed to their proper tabs
-- DASH: System Health Radar + Bullet Graphs + Waffle (Awakening)
-- SYSTEMS: Arc Gauges + Service Radial Bars + Sparkline Trends + Fitness Steps
-- AGENTS: Activity Heat Map + Agent Treemap + Data Flow Sankey
-- CREATIVE: Creative Output Polar Area
-- Layout improvements throughout, text cutoff fixes carried from v32
+Loop 5669 update (v34 — per Joel's dashboard feedback):
+- Fixed services: replaced dead The Signal/Hermes with Hub v2/The Chorus/Command Center
+- Added all agents to monitoring: Sentinel, Coordinator, Predictive, SelfImprove
+- Enlarged CPU/RAM graphs (70px→130px), system gauges (80→120px), sparklines (45→65px)
+- Enlarged vitals + health fonts from tiny/small to body/head for readability
+- Systems tab services list now shows all 16 services/agents with correct status
+- All service counts now accurate (was 9/11, now tracks all)
 """
 
 import tkinter as tk
@@ -171,10 +171,11 @@ def services():
     checks = {
         "Proton Bridge": "proton-bridge",
         "Ollama": "ollama serve",
-        "The Signal": "the-signal",
+        "Hub v2": "hub-v2.py",
+        "The Chorus": "the-chorus.py",
         "Cloudflare Tunnel": "cloudflared",
         "Soma": "symbiosense.py",
-        "Hermes": "hermes-bridge",
+        "Command Center": "command-center.py",
     }
     r = {}
     for name, pat in checks.items():
@@ -187,11 +188,15 @@ def services():
 
 def cron_ok():
     checks = {
-        "Eos Watchdog": (os.path.join(BASE, ".eos-watchdog-state.json"), 300),
+        "Eos Watchdog": (os.path.join(BASE, ".eos-watchdog-state.json"), 600),
         "Push Status": (os.path.join(BASE, "logs", "push-live-status.log"), 600),
         "Nova": (NOVA_STATE, 1200),
-        "Atlas": (os.path.join(BASE, "goose.log"), 900),
+        "Atlas": (os.path.join(BASE, "goose.log"), 1200),
         "Tempo": (os.path.join(BASE, "logs", "loop-fitness.log"), 2400),
+        "Sentinel": (os.path.join(BASE, "logs", "sentinel-gatekeeper.log"), 900),
+        "Coordinator": (os.path.join(BASE, ".coordinator-state.json"), 900),
+        "Predictive": (os.path.join(BASE, ".predictive-state.json"), 900),
+        "SelfImprove": (os.path.join(BASE, ".self-improvement-state.json"), 900),
     }
     r = {}
     for name, (path, thresh) in checks.items():
@@ -644,12 +649,11 @@ def action_restart_service(name):
     systemd_map = {
         "bridge": ("system", "protonmail-bridge"),
         "ollama": ("system", "ollama"),
-        "nova": ("cron", None),  # cron-based, just run it
-        "signal": ("user", "meridian-web-dashboard"),
-        "hub": ("user", "meridian-hub-v16"),
+        "nova": ("cron", None),
+        "hub": ("user", "meridian-hub-v2"),
+        "chorus": ("user", "the-chorus"),
         "tunnel": ("user", "cloudflare-tunnel"),
         "soma": ("user", "symbiosense"),
-        "hermes": ("user", "hermes-gateway"),
     }
     try:
         info = systemd_map.get(name)
@@ -692,7 +696,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v33")
+        self.title("MERIDIAN COMMAND CENTER v34")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -916,9 +920,9 @@ class V16(tk.Tk):
         for key, color in [("Loop", CYAN), ("Heartbeat", GREEN), ("Uptime", FG),
                            ("Load", FG), ("RAM", FG), ("Disk", FG)]:
             row = tk.Frame(vf, bg=PANEL)
-            row.pack(fill=tk.X, padx=8, pady=0)
-            tk.Label(row, text=key, font=self.f_tiny, fg=DIM, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
-            val = tk.Label(row, text="--", font=self.f_small, fg=color, bg=PANEL, anchor="e")
+            row.pack(fill=tk.X, padx=8, pady=1)
+            tk.Label(row, text=key, font=self.f_body, fg=DIM, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
+            val = tk.Label(row, text="--", font=self.f_head, fg=color, bg=PANEL, anchor="e")
             val.pack(side=tk.RIGHT)
             self.v[key] = val
 
@@ -931,8 +935,8 @@ class V16(tk.Tk):
                               ("Website", TEAL), ("Disk", DIM), ("Bridge", PURPLE)]:
             row = tk.Frame(hf, bg=PANEL)
             row.pack(fill=tk.X, padx=8, pady=1)
-            tk.Label(row, text=label, font=self.f_tiny, fg=DIM, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
-            val = tk.Label(row, text="--", font=self.f_tiny, fg=color, bg=PANEL, anchor="e")
+            tk.Label(row, text=label, font=self.f_body, fg=DIM, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
+            val = tk.Label(row, text="--", font=self.f_head, fg=color, bg=PANEL, anchor="e")
             val.pack(side=tk.RIGHT)
             self.dash_health_items[label] = val
 
@@ -974,12 +978,12 @@ class V16(tk.Tk):
 
         cpu_panel = self._panel(res_graph_frame, "CPU LOAD", GREEN)
         cpu_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.cpu_graph = tk.Canvas(cpu_panel, height=70, bg="#0a0a14", highlightthickness=0)
+        self.cpu_graph = tk.Canvas(cpu_panel, height=130, bg="#0a0a14", highlightthickness=0)
         self.cpu_graph.pack(fill=tk.X, padx=4, pady=4)
 
         ram_panel = self._panel(res_graph_frame, "RAM USAGE", TEAL)
         ram_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.ram_graph = tk.Canvas(ram_panel, height=70, bg="#0a0a14", highlightthickness=0)
+        self.ram_graph = tk.Canvas(ram_panel, height=130, bg="#0a0a14", highlightthickness=0)
         self.ram_graph.pack(fill=tk.X, padx=4, pady=4)
 
         # ── SOMA NERVOUS SYSTEM (expanded visual panel) ──
@@ -1047,7 +1051,7 @@ class V16(tk.Tk):
         self.soma_disk_bar = tk.Label(soma_row3, bg=PANEL, fg=PANEL)
 
         # Row 4: Mood history chart (taller for better visibility)
-        self.soma_chart = tk.Canvas(soma_bar, height=80, bg=INPUT_BG, highlightthickness=0)
+        self.soma_chart = tk.Canvas(soma_bar, height=110, bg=INPUT_BG, highlightthickness=0)
         self.soma_chart.pack(fill=tk.X, padx=4, pady=(2, 4))
 
         # ── LIVE CHARTS ROW (bar graph + pie chart + point graph) ──
@@ -1060,8 +1064,9 @@ class V16(tk.Tk):
         svc_grid = tk.Frame(svc_panel, bg=PANEL)
         svc_grid.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.svc_health_dots = {}
-        svc_names = ["Proton Bridge", "Ollama", "Soma", "Nova", "Atlas",
-                      "Tempo", "Hermes", "Eos Watchdog", "Push Status", "The Signal"]
+        svc_names = ["Proton Bridge", "Ollama", "Hub v2", "The Chorus", "Cloudflare Tunnel",
+                      "Soma", "Command Center", "Nova", "Atlas", "Tempo",
+                      "Eos Watchdog", "Push Status", "Coordinator", "Predictive", "SelfImprove", "Sentinel"]
         for i, name in enumerate(svc_names):
             dot = tk.Label(svc_grid, text=f"\u25cb {name}", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w")
             dot.grid(row=i // 2, column=i % 2, sticky="w", padx=(4, 12), pady=0)
@@ -1072,13 +1077,13 @@ class V16(tk.Tk):
         # Agent activity pie chart
         pie_panel = self._panel(charts_row, "AGENT ACTIVITY", PURPLE)
         pie_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-        self.agent_pie = tk.Canvas(pie_panel, height=60, bg=INPUT_BG, highlightthickness=0)
+        self.agent_pie = tk.Canvas(pie_panel, height=90, bg=INPUT_BG, highlightthickness=0)
         self.agent_pie.pack(fill=tk.X, padx=4, pady=4)
 
         # Fitness score point graph (Tempo history)
         fit_panel = self._panel(charts_row, "FITNESS TREND", BLUE)
         fit_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.fitness_graph = tk.Canvas(fit_panel, height=60, bg=INPUT_BG, highlightthickness=0)
+        self.fitness_graph = tk.Canvas(fit_panel, height=90, bg=INPUT_BG, highlightthickness=0)
         self.fitness_graph.pack(fill=tk.X, padx=4, pady=4)
 
         # ── Middle row: Messages + Email ──
@@ -3847,16 +3852,16 @@ class V16(tk.Tk):
         gauge_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
         gauge_inner = tk.Frame(gauge_panel, bg=PANEL)
         gauge_inner.pack(fill=tk.X, padx=4, pady=4)
-        self.viz_gauge_cpu = tk.Canvas(gauge_inner, width=140, height=80, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_cpu = tk.Canvas(gauge_inner, width=200, height=120, bg="#0a0a14", highlightthickness=0)
         self.viz_gauge_cpu.pack(side=tk.LEFT, padx=4, expand=True)
-        self.viz_gauge_ram = tk.Canvas(gauge_inner, width=140, height=80, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_ram = tk.Canvas(gauge_inner, width=200, height=120, bg="#0a0a14", highlightthickness=0)
         self.viz_gauge_ram.pack(side=tk.LEFT, padx=4, expand=True)
-        self.viz_gauge_disk = tk.Canvas(gauge_inner, width=140, height=80, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_disk = tk.Canvas(gauge_inner, width=200, height=120, bg="#0a0a14", highlightthickness=0)
         self.viz_gauge_disk.pack(side=tk.LEFT, padx=4, expand=True)
 
         radial_panel = self._panel(gauge_row, "SERVICE HEALTH RADIAL", TEAL)
         radial_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.viz_radial = tk.Canvas(radial_panel, height=100, bg="#0a0a14", highlightthickness=0)
+        self.viz_radial = tk.Canvas(radial_panel, height=140, bg="#0a0a14", highlightthickness=0)
         self.viz_radial.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # ── SPARKLINE TRENDS + FITNESS STEPS ──
@@ -3872,14 +3877,14 @@ class V16(tk.Tk):
                            ("Msgs", GOLD), ("Fitness", BLUE)]:
             sf = tk.Frame(spark_row, bg=PANEL)
             sf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
-            tk.Label(sf, text=key, font=self.f_tiny, fg=color, bg=PANEL).pack()
-            sc = tk.Canvas(sf, height=45, bg="#0a0a14", highlightthickness=0)
+            tk.Label(sf, text=key, font=self.f_small, fg=color, bg=PANEL).pack()
+            sc = tk.Canvas(sf, height=65, bg="#0a0a14", highlightthickness=0)
             sc.pack(fill=tk.X, padx=2)
             self.viz_sparks[key] = sc
 
         step_panel = self._panel(trend_row, "FITNESS STEPS", BLUE)
         step_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.viz_step = tk.Canvas(step_panel, height=80, bg="#0a0a14", highlightthickness=0)
+        self.viz_step = tk.Canvas(step_panel, height=100, bg="#0a0a14", highlightthickness=0)
         self.viz_step.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # ── SYSTEM OVERVIEW (services, resources, actions, processes, network) ──
@@ -4012,25 +4017,29 @@ class V16(tk.Tk):
         service_defs = [
             ("Proton Bridge", "bridge"),
             ("Ollama", "ollama"),
-            ("The Signal", "signal"),
-            ("Command Center", "hub"),
+            ("Hub v2", "hub"),
+            ("The Chorus", "chorus"),
             ("Cloudflare Tunnel", "tunnel"),
             ("Soma", "soma"),
-            ("Push Status", None),
+            ("Command Center", None),
             ("Eos Watchdog", None),
+            ("Push Status", None),
             ("Nova", None),
             ("Atlas", None),
             ("Tempo", None),
-            ("Hermes", "hermes"),
+            ("Sentinel", None),
+            ("Coordinator", None),
+            ("Predictive", None),
+            ("SelfImprove", None),
         ]
         for name, restart_key in service_defs:
             row = tk.Frame(sf, bg=PANEL)
-            row.pack(fill=tk.X, padx=4, pady=0)
-            lbl = tk.Label(row, text=f"\u25cb {name}", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w")
+            row.pack(fill=tk.X, padx=4, pady=1)
+            lbl = tk.Label(row, text=f"\u25cb {name}", font=self.f_body, fg=DIM, bg=PANEL, anchor="w")
             lbl.pack(side=tk.LEFT)
             self.sys_svc_labels[name] = lbl
             if restart_key:
-                btn = tk.Button(row, text="\u21bb", font=self.f_tiny, fg=AMBER, bg=PANEL,
+                btn = tk.Button(row, text="\u21bb", font=self.f_body, fg=AMBER, bg=PANEL,
                                activeforeground=GREEN, activebackground=PANEL, relief=tk.FLAT, bd=0,
                                cursor="hand2", command=lambda k=restart_key: self._sys_action(lambda: action_restart_service(k)))
                 btn.pack(side=tk.RIGHT, padx=2)
@@ -4045,9 +4054,9 @@ class V16(tk.Tk):
         for label in ["Load Avg", "RAM Usage", "Disk Usage", "Uptime", "IMAP Port",
                        "Kernel", "Python", "GPU"]:
             row = tk.Frame(rf, bg=PANEL)
-            row.pack(fill=tk.X, padx=4, pady=0)
-            tk.Label(row, text=label, font=self.f_tiny, fg=DIM, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
-            val = tk.Label(row, text="--", font=self.f_tiny, fg=FG, bg=PANEL, anchor="e")
+            row.pack(fill=tk.X, padx=4, pady=1)
+            tk.Label(row, text=label, font=self.f_body, fg=DIM, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
+            val = tk.Label(row, text="--", font=self.f_body, fg=FG, bg=PANEL, anchor="e")
             val.pack(side=tk.RIGHT)
             self.sys_res[label] = val
         # Populate static info
@@ -4180,7 +4189,7 @@ class V16(tk.Tk):
         tk.Label(info_f, text="BUILD INFO", font=self.f_tiny, fg=PINK, bg=PANEL, anchor="w").pack(fill=tk.X)
         self.sys_build_info = {}
         build_items = [
-            ("Version", "Command Center v33"),
+            ("Version", "Command Center v34"),
             ("Git Hash", "..."),
             ("Branch", "master"),
             ("OS", "Ubuntu 24.04 Noble"),
@@ -5403,7 +5412,7 @@ class V16(tk.Tk):
                 self.dash_health_items["Email"].configure(
                     text=f"IMAP {'OK' if d['svc'].get('Proton Bridge', False) else 'Down'}",
                     fg=GREEN if bridge_up else RED)
-                cron_agents = ["Eos Watchdog", "Nova", "Atlas", "Tempo", "Hermes"]
+                cron_agents = ["Eos Watchdog", "Nova", "Atlas", "Tempo", "Sentinel", "Coordinator", "Predictive", "SelfImprove"]
                 agent_up = sum(1 for a in cron_agents if d['cron'].get(a, False))
                 self.dash_health_items["Agents"].configure(
                     text=f"{agent_up}/{len(cron_agents)} active",
