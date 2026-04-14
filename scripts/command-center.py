@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v42
+MERIDIAN COMMAND CENTER v43
 
-Loop 5678 update (v42 — final polish):
-- Radar grid: switched to grid layout with uniform columns (fixes cutoff on smaller screens)
-- Fixed broken paths for capsule-refresh.py and push-live-status.py Quick Actions
-- Version bump and code cleanup
+Loop 5679 update (v43 — final polish):
+- Better button styling with hover effects (darken on hover, brighten on press)
+- Dream Engine + Memory System compact panel on dashboard
+- Improved container fill/expand for proper sizing
+- Horizontal scroll for radar grid on narrow screens
+- Pop-out buttons on more panels (agent relay, radar grid)
+- Overall spacing and weight improvements
 """
 
 import tkinter as tk
@@ -696,7 +699,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v42")
+        self.title("MERIDIAN COMMAND CENTER v43")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -755,7 +758,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v42", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v43", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         # Toast notification area (right side of header, auto-dismiss)
         self._toast_frame = tk.Frame(h, bg=HEADER_BG)
@@ -885,9 +888,20 @@ class V16(tk.Tk):
         if width:
             kw['width'] = width
         b = tk.Button(parent, text=text, font=self.f_small, fg=BG, bg=color,
-                     activeforeground=BG, activebackground=color,
-                     relief=tk.FLAT, bd=0, padx=8, pady=2, cursor="hand2",
+                     activeforeground=WHITE, activebackground=color,
+                     relief=tk.FLAT, bd=0, padx=8, pady=3, cursor="hand2",
                      command=command, **kw)
+        def _hover_color(hex_color, factor):
+            r = int(hex_color[1:3], 16)
+            g = int(hex_color[3:5], 16)
+            b_val = int(hex_color[5:7], 16)
+            r = min(255, int(r * factor))
+            g = min(255, int(g * factor))
+            b_val = min(255, int(b_val * factor))
+            return f"#{r:02x}{g:02x}{b_val:02x}"
+        hover_bg = _hover_color(color, 1.25)
+        b.bind("<Enter>", lambda e: b.configure(bg=hover_bg, fg=WHITE))
+        b.bind("<Leave>", lambda e: b.configure(bg=color, fg=BG))
         return b
 
     def _copy_to_clipboard(self, text, label=None):
@@ -1176,9 +1190,41 @@ class V16(tk.Tk):
         self.soma_chart = tk.Canvas(soma_bar, height=70, bg=INPUT_BG, highlightthickness=0)
         self.soma_chart.pack(fill=tk.BOTH, expand=True, padx=4, pady=(2, 4))
 
-        # ── 3x4 RADAR GRID — 12 project radars (grid layout for proper sizing) ──
-        radar_grid = tk.Frame(f, bg=BG)
-        radar_grid.pack(fill=tk.BOTH, padx=4, pady=3)
+        # ── DREAM ENGINE + MEMORY SYSTEM (compact dashboard display) ──
+        inner_row = tk.Frame(f, bg=BG)
+        inner_row.pack(fill=tk.X, padx=6, pady=2)
+
+        dream_panel = self._panel(inner_row, "DREAM ENGINE", PURPLE)
+        dream_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
+        self.dash_dream_state = tk.Label(dream_panel, text="No dream data", font=self.f_small,
+                                          fg=PURPLE, bg=PANEL, anchor="w", wraplength=400)
+        self.dash_dream_state.pack(fill=tk.X, padx=8, pady=2)
+        self.dash_dream_phase = tk.Label(dream_panel, text="", font=self.f_tiny,
+                                          fg=DIM, bg=PANEL, anchor="w")
+        self.dash_dream_phase.pack(fill=tk.X, padx=8, pady=(0, 4))
+
+        mem_panel = self._panel(inner_row, "MEMORY SYSTEM", BLUE)
+        mem_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
+        self.dash_mem_facts = tk.Label(mem_panel, text="--", font=self.f_small,
+                                        fg=BLUE, bg=PANEL, anchor="w")
+        self.dash_mem_facts.pack(fill=tk.X, padx=8, pady=2)
+        self.dash_mem_detail = tk.Label(mem_panel, text="", font=self.f_tiny,
+                                         fg=DIM, bg=PANEL, anchor="w")
+        self.dash_mem_detail.pack(fill=tk.X, padx=8, pady=(0, 4))
+
+        # ── 3x4 RADAR GRID — 12 project radars (scrollable grid) ──
+        radar_outer = tk.Frame(f, bg=BG)
+        radar_outer.pack(fill=tk.BOTH, padx=4, pady=3)
+
+        radar_header = tk.Frame(radar_outer, bg=BG)
+        radar_header.pack(fill=tk.X, padx=2, pady=(0, 2))
+        tk.Label(radar_header, text="PROJECT RADARS", font=self.f_sect, fg=GOLD, bg=BG).pack(side=tk.LEFT)
+        tk.Button(radar_header, text="\u2b08 Pop Out", font=self.f_tiny, fg=GOLD, bg=PANEL2,
+                 activeforeground=GREEN, activebackground=ACCENT, relief=tk.FLAT,
+                 cursor="hand2", command=lambda: self._popout_radars()).pack(side=tk.RIGHT)
+
+        radar_grid = tk.Frame(radar_outer, bg=BG)
+        radar_grid.pack(fill=tk.BOTH, expand=True)
 
         self.mini_radars = {}
         self.mini_radar_colors = {}
@@ -1191,6 +1237,8 @@ class V16(tk.Tk):
         ]
         for col in range(4):
             radar_grid.columnconfigure(col, weight=1, uniform="radar")
+        for row_i in range(3):
+            radar_grid.rowconfigure(row_i, weight=1)
         for idx, (title, color) in enumerate(radar_defs):
             row, col = divmod(idx, 4)
             rp = self._panel(radar_grid, title, color)
@@ -1249,6 +1297,13 @@ class V16(tk.Tk):
         # Right: Agent Relay (moved from email — Joel requested email only in Email tab)
         rf = self._panel(mid, "AGENT RELAY", CYAN)
         rf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+
+        relay_popout = tk.Frame(rf, bg=PANEL)
+        relay_popout.pack(fill=tk.X, padx=4, pady=(2, 0))
+        tk.Button(relay_popout, text="\u2b08 Pop Out", font=self.f_tiny, fg=CYAN, bg=PANEL2,
+                 activeforeground=GREEN, activebackground=ACCENT, relief=tk.FLAT,
+                 cursor="hand2", command=lambda: self._popout_text("relay")).pack(side=tk.RIGHT)
+
         self.dash_relay_list = tk.Frame(rf, bg=PANEL)
         self.dash_relay_list.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         self.dash_relay_rows = []
@@ -1271,14 +1326,14 @@ class V16(tk.Tk):
         bullet_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
         self.viz_bullets = {}
         for key in ["System Health", "Loop Fitness", "Creative Output", "Agent Coverage"]:
-            bc = tk.Canvas(bullet_panel, height=22, bg=PANEL, highlightthickness=0)
-            bc.pack(fill=tk.X, padx=6, pady=1)
+            bc = tk.Canvas(bullet_panel, height=24, bg=PANEL, highlightthickness=0)
+            bc.pack(fill=tk.X, padx=6, pady=2)
             self.viz_bullets[key] = bc
 
         waffle_panel = self._panel(bottom_row, "AWAKENING (97/100)", GOLD)
         waffle_panel.pack(side=tk.LEFT, fill=tk.BOTH, padx=(2, 0))
-        self.viz_waffle = tk.Canvas(waffle_panel, width=140, height=90, bg="#0a0a14", highlightthickness=0)
-        self.viz_waffle.pack(padx=4, pady=4)
+        self.viz_waffle = tk.Canvas(waffle_panel, width=160, height=100, bg="#0a0a14", highlightthickness=0)
+        self.viz_waffle.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         return outer
 
@@ -3055,6 +3110,72 @@ class V16(tk.Tk):
         except (tk.TclError, AttributeError):
             if which in self._popout_windows:
                 del self._popout_windows[which]
+
+    def _popout_radars(self):
+        """Pop out radar grid into a larger resizable window."""
+        win = tk.Toplevel(self)
+        win.title("MERIDIAN — PROJECT RADARS")
+        win.configure(bg=BG)
+        win.geometry("1200x700")
+        win.minsize(600, 400)
+
+        hdr = tk.Frame(win, bg=HEADER_BG, height=32)
+        hdr.pack(fill=tk.X)
+        hdr.pack_propagate(False)
+        tk.Frame(hdr, bg=GOLD, width=4, height=32).pack(side=tk.LEFT)
+        tk.Label(hdr, text=" PROJECT RADARS", font=self.f_head, fg=GOLD, bg=HEADER_BG).pack(side=tk.LEFT, padx=8)
+
+        grid = tk.Frame(win, bg=BG)
+        grid.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        radar_defs = [
+            ("CogCorp Crawler", PURPLE), ("Command Center", GREEN), ("Grants & Revenue", GOLD),
+            ("Inner World", AMBER), ("Hub & Services", CYAN), ("Creative Output", TEAL),
+            ("Website & Presence", BLUE), ("Cinder USB", PINK), ("Homecoming", PURPLE),
+            ("Game Dev", GOLD), ("System Perf", RED), ("Network & Comms", CYAN),
+        ]
+        popout_radars = {}
+        for col in range(4):
+            grid.columnconfigure(col, weight=1, uniform="popr")
+        for row_i in range(3):
+            grid.rowconfigure(row_i, weight=1)
+        for idx, (title, color) in enumerate(radar_defs):
+            row, col = divmod(idx, 4)
+            rp = self._panel(grid, title, color)
+            rp.grid(row=row, column=col, padx=2, pady=2, sticky="nsew")
+            rc = tk.Canvas(rp, height=180, bg="#0a0a14", highlightthickness=0)
+            rc.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+            popout_radars[title] = rc
+
+        def _refresh_pop():
+            try:
+                for title in popout_radars:
+                    if title in self.mini_radars:
+                        src = self.mini_radars[title]
+                        dst = popout_radars[title]
+                        dst.delete("all")
+                        for item in src.find_all():
+                            item_type = src.type(item)
+                            coords = src.coords(item)
+                            opts = {}
+                            for key in ['fill', 'outline', 'width', 'text', 'font', 'anchor']:
+                                try:
+                                    val = src.itemcget(item, key)
+                                    if val:
+                                        opts[key] = val
+                                except tk.TclError:
+                                    pass
+                            if item_type == 'polygon':
+                                dst.create_polygon(*coords, **opts)
+                            elif item_type == 'line':
+                                dst.create_line(*coords, **opts)
+                            elif item_type == 'oval':
+                                dst.create_oval(*coords, **opts)
+                            elif item_type == 'text':
+                                dst.create_text(*coords, **opts)
+                win.after(5000, _refresh_pop)
+            except tk.TclError:
+                pass
+        _refresh_pop()
 
     def _chat_append(self, text, tag="sys"):
         """Thread-safe append to chat display + sync to pop-out."""
@@ -6078,6 +6199,49 @@ class V16(tk.Tk):
                 self._draw_mood_chart()
             except Exception:
                 pass
+
+            # ── DREAM ENGINE + MEMORY SYSTEM ──
+            try:
+                with open(os.path.join(BASE, ".symbiosense-state.json")) as sf:
+                    soma_full = json.load(sf)
+                bmap = soma_full.get("body_map", {})
+                dream = bmap.get("psyche_dream", bmap.get("dream_state", ""))
+                dream_phase = bmap.get("dream_phase", "")
+                emergent = bmap.get("emergent_goals", [])
+                if dream:
+                    self.dash_dream_state.configure(text=f"Dream: {dream}", fg=PURPLE)
+                elif emergent:
+                    goals_str = ", ".join(emergent[:3]) if isinstance(emergent, list) else str(emergent)
+                    self.dash_dream_state.configure(text=f"Goals: {goals_str}", fg=PURPLE)
+                else:
+                    self.dash_dream_state.configure(text="No active dream", fg=DIM)
+                if dream_phase:
+                    self.dash_dream_phase.configure(text=f"Phase: {dream_phase}")
+                else:
+                    ns = bmap.get("nervous_system", {})
+                    arousal = ns.get("arousal", 0)
+                    valence = ns.get("valence", 0)
+                    self.dash_dream_phase.configure(text=f"Arousal: {arousal:.0f}  Valence: {valence:.0f}")
+            except Exception:
+                pass
+
+            try:
+                mconn = sqlite3.connect(os.path.join(BASE, "data", "memory.db"))
+                mc = mconn.cursor()
+                counts = {}
+                for tbl in ["facts", "observations", "events", "decisions", "creative"]:
+                    try:
+                        mc.execute(f"SELECT COUNT(*) FROM {tbl}")
+                        counts[tbl] = mc.fetchone()[0]
+                    except Exception:
+                        counts[tbl] = 0
+                mconn.close()
+                total = sum(counts.values())
+                self.dash_mem_facts.configure(text=f"{total} memories stored", fg=BLUE)
+                detail_parts = [f"{v} {k}" for k, v in counts.items() if v > 0]
+                self.dash_mem_detail.configure(text=" | ".join(detail_parts[:4]))
+            except Exception:
+                self.dash_mem_facts.configure(text="Memory DB unavailable", fg=DIM)
 
             # ── 2x6 PROJECT RADAR GRID (12 radars) ──
             try:
