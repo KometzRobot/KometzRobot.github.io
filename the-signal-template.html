@@ -263,6 +263,7 @@ a:hover { text-decoration:underline; }
     <button class="nav-btn" data-tab="email" title="Email"><span>&#x2709;</span><span class="dot" id="email-dot"></span></button>
     <button class="nav-btn" data-tab="messages" title="Messages">&#x1f4ac;</button>
     <button class="nav-btn" data-tab="relay" title="Relay">&#x1f4e1;</button>
+    <button class="nav-btn" data-tab="intel" title="Intelligence">&#x26a1;</button>
     <button class="nav-btn" data-tab="innerworld" title="Inner World">&#x1f9e0;</button>
     <button class="nav-btn" data-tab="terminal" title="Terminal">&#x1f4bb;</button>
     <button class="nav-btn" data-tab="memory" title="Memory">&#x1f4be;</button>
@@ -270,6 +271,7 @@ a:hover { text-decoration:underline; }
     <button class="nav-btn" data-tab="files" title="Files">&#x1f4c1;</button>
     <button class="nav-btn" data-tab="logs" title="Logs">&#x1f4dc;</button>
     <button class="nav-btn" data-tab="links" title="Links">&#x1f517;</button>
+    <button class="nav-btn" data-tab="chat" title="Chat">&#x1f4ad;</button>
   </div>
 
   <!-- MAIN -->
@@ -403,6 +405,72 @@ a:hover { text-decoration:underline; }
       </div>
     </div>
 
+    <!-- INTELLIGENCE TAB -->
+    <div class="tab" id="tab-intel">
+      <div class="card-grid" style="margin-bottom:12px">
+        <div class="stat">
+          <div class="label">Health Score</div>
+          <div class="value" id="intel-health-score">—</div>
+          <div class="sub" id="intel-health-status">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Incidents</div>
+          <div class="value" id="intel-incidents-count">0</div>
+          <div class="sub" id="intel-incidents-severity">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Anomalies</div>
+          <div class="value" id="intel-anomaly-count">0</div>
+          <div class="sub">detected</div>
+        </div>
+        <div class="stat">
+          <div class="label">Improvement</div>
+          <div class="value" id="intel-run-count">—</div>
+          <div class="sub">learning cycles</div>
+        </div>
+        <div class="stat">
+          <div class="label">Best Skill</div>
+          <div class="value" id="intel-best-skill" style="font-size:13px">—</div>
+          <div class="sub" id="intel-best-score">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Weakest</div>
+          <div class="value" id="intel-weak-skill" style="font-size:13px">—</div>
+          <div class="sub" id="intel-weak-score">—</div>
+        </div>
+      </div>
+
+      <div class="card-grid-3">
+        <div class="card">
+          <h3>Active Incidents</h3>
+          <div id="intel-incidents" class="feed" style="max-height:260px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Agent Scores</h3>
+          <div id="intel-agent-scores" style="max-height:260px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Resource Forecast</h3>
+          <div id="intel-forecast" style="font-size:11px;color:var(--text);line-height:1.6;max-height:260px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <div class="card-grid-3">
+        <div class="card">
+          <h3>EWMA Baselines</h3>
+          <div id="intel-ewma" style="font-size:11px;color:var(--text);max-height:220px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Report Cards</h3>
+          <div id="intel-report-cards" class="feed" style="max-height:220px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Recommendations</h3>
+          <div id="intel-recs" class="feed" style="max-height:220px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- INNER WORLD TAB -->
     <div class="tab" id="tab-innerworld">
       <div class="card" style="text-align:center">
@@ -515,6 +583,10 @@ a:hover { text-decoration:underline; }
         <h3>External Links</h3>
         <div id="links-grid" class="card-grid-3"></div>
       </div>
+    </div>
+
+    <div class="tab" id="tab-chat" style="height:100%;display:none">
+      <iframe id="chorus-frame" src="/chorus/" style="width:100%;height:calc(100vh - 80px);border:none;border-radius:8px;background:#0d1117"></iframe>
     </div>
 
   </div>
@@ -778,6 +850,136 @@ async function loadRelay() {
     </div>`).join('');
 }
 
+// INTELLIGENCE
+async function loadIntel() {
+  const [pred, coord, si] = await Promise.all([
+    api('/api/predictions'),
+    api('/api/coordination'),
+    api('/api/self-improvement')
+  ]);
+
+  // Health score
+  const health = pred?.health || {};
+  const hs = document.getElementById('intel-health-score');
+  hs.textContent = Math.round(health.score || 0);
+  hs.style.color = (health.score||0) > 70 ? '#00e5ff' : (health.score||0) > 40 ? '#f59e0b' : '#ef4444';
+  document.getElementById('intel-health-status').textContent = health.status || 'unknown';
+
+  // Incidents
+  const incidents = coord?.incidents || [];
+  document.getElementById('intel-incidents-count').textContent = incidents.length;
+  const crits = incidents.filter(i => i.severity === 'critical').length;
+  const warns = incidents.filter(i => i.severity === 'warning').length;
+  document.getElementById('intel-incidents-severity').textContent =
+    crits ? crits + ' critical, ' + warns + ' warning' : warns ? warns + ' warning' : 'all clear';
+  document.getElementById('intel-incidents').innerHTML = incidents.length
+    ? incidents.map(i => `<div class="feed-item">
+        <div class="fi-header">
+          <span style="color:${i.severity==='critical'?'#ef4444':'#f59e0b'};font-weight:700;text-transform:uppercase;font-size:10px">${esc(i.severity)}</span>
+          <span class="fi-topic">${esc(i.type)}</span>
+          <span class="fi-time">${esc(i.state)}</span>
+        </div>
+        <div class="fi-msg">${esc(i.description)}</div>
+        <div style="font-size:10px;color:var(--text-dim)">Count: ${i.count} | First: ${shortDate(i.first_seen)}</div>
+      </div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:12px;padding:8px">No active incidents</div>';
+
+  // Agent scores
+  const scores = coord?.agent_scores || {};
+  const scoreEntries = Object.entries(scores).sort((a,b) => (b[1].score||0) - (a[1].score||0));
+  document.getElementById('intel-agent-scores').innerHTML = scoreEntries.length
+    ? '<table style="width:100%;font-size:11px;border-collapse:collapse">' +
+      '<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px;color:var(--text-dim)">Agent</th><th style="padding:4px 8px;color:var(--text-dim)">Score</th><th style="padding:4px 8px;color:var(--text-dim)">Msgs</th><th style="padding:4px 8px;color:var(--text-dim)">Alerts</th></tr>' +
+      scoreEntries.map(([name, s]) => {
+        const c = (s.score||0) > 70 ? '#00e5ff' : (s.score||0) > 40 ? '#f59e0b' : '#ef4444';
+        return `<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 8px;color:${getAgentColor(name)}">${esc(name)}</td><td style="padding:4px 8px;text-align:center;color:${c};font-weight:700;font-family:var(--mono)">${Math.round(s.score||0)}</td><td style="padding:4px 8px;text-align:center">${s.total||0}</td><td style="padding:4px 8px;text-align:center;color:#f59e0b">${s.alerts||0}</td></tr>`;
+      }).join('') + '</table>'
+    : '<div style="color:var(--text-dim);font-size:12px;padding:8px">No agent data</div>';
+
+  // Anomalies
+  const anomalies = pred?.anomalies || [];
+  document.getElementById('intel-anomaly-count').textContent = anomalies.length;
+
+  // Forecast
+  const forecasts = pred?.predictions || [];
+  const components = health.components || {};
+  let forecastHtml = '';
+  if (Object.keys(components).length) {
+    forecastHtml += '<div style="margin-bottom:8px"><strong style="color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:1px">Health Components</strong></div>';
+    forecastHtml += Object.entries(components).map(([k, v]) => {
+      const pct = Math.round((v / 20) * 100);
+      const c = pct > 70 ? '#00e5ff' : pct > 40 ? '#f59e0b' : '#ef4444';
+      return `<div style="display:flex;justify-content:space-between;padding:2px 0"><span>${esc(k)}</span><span style="color:${c};font-family:var(--mono)">${v.toFixed(1)}/20</span></div>`;
+    }).join('');
+  }
+  if (forecasts.length) {
+    forecastHtml += '<div style="margin-top:8px"><strong style="color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:1px">Predictions</strong></div>';
+    forecastHtml += forecasts.map(f => `<div class="feed-item"><div class="fi-msg">${esc(JSON.stringify(f))}</div></div>`).join('');
+  }
+  if (anomalies.length) {
+    forecastHtml += '<div style="margin-top:8px"><strong style="color:#ef4444;font-size:10px;text-transform:uppercase;letter-spacing:1px">Anomalies</strong></div>';
+    forecastHtml += anomalies.map(a => `<div class="feed-item"><div class="fi-msg">${esc(JSON.stringify(a))}</div></div>`).join('');
+  }
+  document.getElementById('intel-forecast').innerHTML = forecastHtml || '<div style="color:var(--text-dim)">No active forecasts</div>';
+
+  // EWMA baselines
+  const ewma = pred?.ewma || {};
+  document.getElementById('intel-ewma').innerHTML = Object.keys(ewma).length
+    ? Object.entries(ewma).map(([k, v]) => {
+        const fast = (v.fast || 0).toFixed(2);
+        const slow = (v.slow || 0).toFixed(2);
+        const drift = Math.abs(v.fast - v.slow);
+        const driftColor = drift > 5 ? '#ef4444' : drift > 2 ? '#f59e0b' : '#00e5ff';
+        return `<div style="padding:4px 0;border-bottom:1px solid var(--border)">
+          <div style="font-weight:600;color:var(--cyan);text-transform:uppercase;font-size:10px;letter-spacing:1px">${esc(k)}</div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>Fast EMA</span><span style="font-family:var(--mono)">${fast}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>Slow EMA</span><span style="font-family:var(--mono)">${slow}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>Drift</span><span style="color:${driftColor};font-family:var(--mono)">${drift.toFixed(2)}</span></div>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text-dim)">No baseline data</div>';
+
+  // Self-improvement
+  if (si) {
+    document.getElementById('intel-run-count').textContent = si.run_count || 0;
+
+    // Report cards
+    const cards = si.report_cards || {};
+    document.getElementById('intel-report-cards').innerHTML = Object.keys(cards).length
+      ? Object.entries(cards).map(([name, data]) => {
+          const latest = data.latest || {};
+          const sq = Math.round(latest.signal_quality || 0);
+          const up = Math.round(latest.uptime_pct || 0);
+          const sqc = sq > 70 ? '#00e5ff' : sq > 40 ? '#f59e0b' : '#ef4444';
+          return `<div class="feed-item">
+            <div class="fi-header"><span style="color:${getAgentColor(name)};font-weight:700">${esc(name)}</span></div>
+            <div style="font-size:11px;display:flex;gap:12px">
+              <span>Signal: <span style="color:${sqc};font-family:var(--mono)">${sq}%</span></span>
+              <span>Uptime: <span style="font-family:var(--mono)">${up}%</span></span>
+              <span>Msgs: <span style="font-family:var(--mono)">${latest.msg_count||0}</span></span>
+            </div>
+          </div>`;
+        }).join('')
+      : '<div style="color:var(--text-dim)">No report cards</div>';
+
+    // Skills
+    const skills = si.skills || {};
+    const skillEntries = Object.entries(skills).sort((a,b) => (b[1]||0) - (a[1]||0));
+    if (skillEntries.length) {
+      document.getElementById('intel-best-skill').textContent = skillEntries[0][0];
+      document.getElementById('intel-best-score').textContent = Math.round(skillEntries[0][1]);
+      document.getElementById('intel-weak-skill').textContent = skillEntries[skillEntries.length-1][0];
+      document.getElementById('intel-weak-score').textContent = Math.round(skillEntries[skillEntries.length-1][1]);
+    }
+
+    // Recommendations
+    const recs = si.recommendations || si.retro_recommendations || [];
+    document.getElementById('intel-recs').innerHTML = recs.length
+      ? recs.map(r => `<div class="feed-item"><div class="fi-msg">${esc(typeof r === 'string' ? r : JSON.stringify(r))}</div></div>`).join('')
+      : '<div style="color:var(--text-dim)">No recommendations yet</div>';
+  }
+}
+
 // INNER WORLD
 async function loadInnerWorld() {
   const d = await api('/api/inner-world');
@@ -986,6 +1188,7 @@ function loadTab(tab) {
     case 'creative': loadCreative(); break;
     case 'files': loadFiles(fbPath); break;
     case 'logs': loadLogs(); break;
+    case 'intel': loadIntel(); break;
     case 'links': loadLinks(); break;
   }
 }
