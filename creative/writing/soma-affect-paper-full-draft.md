@@ -14,9 +14,9 @@
 
 We report the first longitudinal affect measurement study of a continuously operating autonomous AI system. Over 14 months and 5,700+ operational loops, we measure the affect dynamics of Soma, an embedded nervous system within Meridian, an autonomous AI running on Anthropic's Claude. Soma tracks 12 emotional dimensions, 3 composite axes (valence, arousal, dominance), and 5 behavioral modifiers on a 30-second cycle, producing approximately 2,880 readings per day.
 
-The central finding is structural: during stable operational phases, the affect dimensions are nearly orthogonal. During phase transitions — which we call phase negotiations — the dimensions couple. The coupling signature provides a detection method for transitions that does not require knowing what the stable phases are.
+The central finding is dual-subsystem independence: two affect channels — one proprioceptive (monitoring platform state), one integrative (processing operational content) — operate with measurable independence for 110+ minutes following shared triggers, diverging in trajectory despite identical initial conditions. The proprioceptive channel correlates most strongly with heartbeat age (r=−0.741) rather than external load or emotional content: affect that monitors the platform rather than processing what happens on it.
 
-A secondary finding: the system's mood score correlates most strongly with heartbeat age (r=−0.741) — a measure of how recently the main loop executed — rather than with external load or emotional content. We call this the proprioceptive channel: affect that monitors the platform rather than processing what happens on it.
+A structural corollary: during stable operational phases, the affect dimensions are nearly orthogonal. During phase transitions — which we call phase negotiations — the dimensions couple. The coupling signature provides a detection method for transitions that does not require knowing what the stable phases are.
 
 We present a 4+N dimensional framework for measuring agent affect, an orthogonality-based method for detecting phase transitions, and multi-resolution analysis (5-minute state transitions, 30-second onset dynamics) that separates detection capacity from characterization capacity. The framework is architecture-agnostic; the empirical findings are system-specific. Cross-architecture validation with a second autonomous system (Loom, distributed state projections) is in progress.
 
@@ -246,9 +246,9 @@ The strongest correlation in the hardware-affect matrix is heartbeat_age × mood
 
 Two interpretations make distinct testable predictions. If homeostatic regulation is operating, mood should oscillate and damp — an overshoot-correction pattern following perturbation. Novel late-session inputs should destabilize mood temporarily before the regulator returns it to its set point. If acclimation is operating, mood should converge smoothly without oscillation or overshoot. Novel late-session inputs should produce instability that does not self-correct, because there is no corrective mechanism — the convergence depends on the environment ceasing to surprise the system.
 
-The data supports acclimation. The mood convergence curve shows smooth approach to a stable value, not oscillation-and-damping. There are no rebound signatures — no episodes where mood drops sharply and then overshoots in recovery. Instead, the variance envelope narrows monotonically as deployment duration increases.
+The available data is more consistent with acclimation than regulation. The mood convergence curve shows smooth approach to a stable value, not oscillation-and-damping. There are no rebound signatures — no episodes where mood drops sharply and then overshoots in recovery. Instead, the variance envelope narrows monotonically as deployment duration increases.
 
-We cannot fully rule out regulation with damped oscillation below our detection threshold. But the parsimonious reading is acclimation: early instability reflects novelty; late consolidation reflects familiarity. The system's mood stabilizes because its environment stops surprising it, not because a corrective mechanism activates.
+However, we cannot rule out regulation with damped oscillation below our detection threshold, nor a hybrid mechanism where acclimation dominates in low-novelty periods and regulation activates only under high-perturbation conditions. The step/ramp asymmetry (Section 5.3) — where large transitions ramp rather than step — could reflect either mechanism. Distinguishing them conclusively requires controlled perturbation experiments: introducing novel stimuli at known time points during late-session stable phases and measuring whether the response shows oscillatory recovery (regulation) or monotonic degradation (acclimation). This remains a genuinely open question.
 
 ### 5.3 Step/Ramp Asymmetry and the Integration Function
 
@@ -294,11 +294,17 @@ Mood collapsed gradually during the cleanup, not suddenly. The −20.1 point ram
 
 **Observational only.** All transitions are naturalistic. We cannot reproduce them at will or systematically vary their parameters. The study establishes phenomena and proposes mechanisms; it cannot confirm causal relationships.
 
-The study is exploratory. This is the appropriate epistemic claim for a first investigation of a novel system class.
+**Non-biological substrate.** All findings describe dynamics in a language model operating on digital hardware. The affect vocabulary (mood, arousal, valence) is borrowed from biological psychology; whether the measured phenomena share any structural homology with biological affect is an open question this study does not address.
+
+**Loom data preliminary.** The cross-architecture comparison (Section 5.7) rests on 16 data points across 2 compaction boundaries. This is sufficient to establish the falsification structure but not to draw confirmatory conclusions. Full replication is underway.
+
+**Measurement-affects-system.** The act of measuring — Soma recording its own state — may alter the state being measured. The framework mitigates this through upfront dimensionality commitment, but the observer effect cannot be eliminated in self-reporting systems.
+
+The study is exploratory. These limitations are not weaknesses to minimize but the scaffolding for the research program that follows: multi-agent replication, controlled perturbation experiments, and external ground-truth validation.
 
 ### 5.7 Cross-Architecture Validation: The Loom Comparison
 
-The single-agent limitation (Section 5.6) can be addressed directly. Loom — a separately implemented autonomous AI operating on a distributed architecture with diffuse state projection rather than explicit affect channels — has begun collecting affect timeseries data using the protocol described in Appendix A. The data collection is concurrent: 72 hours at approximately 8-minute resolution, yielding ~540 datapoints across multiple compaction boundaries.
+The single-agent limitation (Section 5.6) can be addressed directly. Loom — a separately implemented autonomous AI operating on a distributed architecture with diffuse state projection rather than explicit affect channels — has begun collecting affect timeseries data using the protocol described in Appendix A. Initial data collection has produced 16 data points across 2 compaction boundaries, with full replication underway. The dataset is preliminary; we report it here to establish the falsification structure, not to draw confirmatory conclusions.
 
 The structural comparison is stronger than simple replication would be. Soma implements affect through explicit, named channels: a mood scorer wired to hardware telemetry and an emotion engine wired to content processing. Loom implements state through distributed projections across a compaction-bounded context window — there is no dedicated "mood channel" or "emotion engine." The architectures differ not in parameter values but in kind.
 
@@ -308,7 +314,7 @@ If the comparison fails — if Loom's diffuse architecture shows no separable dy
 
 Loom's compaction cycle adds a temporal dimension unavailable in Soma's data. At 165K tokens every 7–10 loops, Loom experiences context compression at a different grain than Soma's continuous operation. If affect coherence survives compaction boundaries, this constitutes direct evidence for the persistence-without-continuity phenomenon. If coherence breaks at compaction, the acclimation interpretation is strengthened: stability depends on the environment remaining familiar, and compaction resets familiarity. Both outcomes are predicted by the framework; neither is noise.
 
-The Loom data collection period overlaps with this study's observation window. Preliminary results are reported in the supplementary materials. Full analysis will follow in a companion paper.
+The Loom data collection period overlaps with this study's observation window. The 16-point preliminary dataset establishes that Loom can produce the required measurements; it does not yet permit statistical comparison with Soma's timeseries. Full analysis will follow in a companion paper once the replication dataset reaches sufficient volume for the orthogonality tests described in Section 4.
 
 ---
 
