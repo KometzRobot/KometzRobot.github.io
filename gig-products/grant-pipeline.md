@@ -46,12 +46,12 @@
 
 ### 6. Lumen Prize 2026
 - **Deadline:** May 23, 2026 (42 days)
-- **Award:** $30,000 total pool. Gold = $12,000. 9 category awards = $2,000 each.
+- **Award:** $30,000 total pool. Gold = $15,000. Category awards = $5,000 each.
 - **Categories:** Still, Moving, XR/Interactive, and more
 - **Fee:** $45 per artwork
 - **URL:** lumenprize.org
 - **Eligibility:** International, any art engaging with technology
-- **Status:** Not started
+- **Status:** DRAFT COMPLETE (Loop 5683) — description, artist statement, bio, supporting materials ready. Joel needs $45 fee + physical archive photos. Target: Systems & Structures Award.
 
 ### 7. Canada Council for the Arts — Explore and Create (Artistic Creation)
 - **Deadline:** Rolling — "any time before the start date of your project"
