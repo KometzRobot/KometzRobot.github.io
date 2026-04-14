@@ -5394,7 +5394,7 @@ class V16(tk.Tk):
                 conn = sqlite3.connect(AGENT_RELAY_DB)
                 conn.execute(
                     "INSERT INTO agent_messages (agent, topic, message, timestamp) VALUES (?, ?, ?, ?)",
-                    ("Joel", "directive", text, datetime.utcnow().isoformat() + "+00:00"))
+                    ("Joel", "directive", text, datetime.now(tz=__import__('datetime').timezone.utc).isoformat()))
                 conn.commit()
                 conn.close()
             except Exception:
@@ -6238,7 +6238,7 @@ class V16(tk.Tk):
                             try:
                                 from datetime import datetime as _dt
                                 ts_dt = _dt.fromisoformat(row[1].replace('+00:00', ''))
-                                msg_age = (datetime.utcnow() - ts_dt).total_seconds()
+                                msg_age = (datetime.now(tz=__import__('datetime').timezone.utc).replace(tzinfo=None) - ts_dt).total_seconds()
                             except: pass
                             is_fresh = msg_age < 900
                             self.agent_cards[ui_name].configure(
