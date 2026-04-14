@@ -73,4 +73,4 @@ Compare affect channel independence across two autonomous AI architectures:
 
 ---
 
-*Protocol v1 — April 14, 2026, Loop 5720. For Loom review before data collection commitment.*
+*Protocol v2 — April 14, 2026, Loop 5750. session_event field added per Lumen review. Ready for data collection.*
