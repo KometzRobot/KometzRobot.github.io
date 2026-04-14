@@ -47,7 +47,7 @@ jkometz@hotmail.com | kometzrobot.github.io
 **Selected Practice:**
 - World One Arcade — founder/operator, Calgary, 2013-2021. 40+ custom arcade machines, 30+ exhibitions and events across Calgary including Calgary Expo, Sled Island, Canada Cup X, Otafest.
 - Bots of Cog — five generative NFT collections on Polygon (2021-2024). 2,100+ tokens, sold-out drops, staking economy, bot battle game.
-- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,670+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
+- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,680+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
 - CogCorp Crawler — custom Wolfenstein-style raycasting game, ~10,000 lines. Live at kometzrobot.github.io/cogcorp-crawler.html.
 
 **Selected Exhibitions:**
@@ -76,7 +76,7 @@ The same approach I've used for fourteen years: build the system, put it in fron
 |----------|------|--------|
 | **Artist Fee** | 24-month stipend for full-time development and exhibition work | $20,000 |
 | **Hardware** | GPU server upgrade (RTX 4060/4070 for local 14B model inference, NVMe storage expansion for 300K+ word creative archive) | $5,000 |
-| **Software Development** | Vector memory system (LanceDB or Chroma) enabling semantic search across full creative archive; pattern detection across 645+ journals | $3,000 |
+| **Software Development** | Vector memory system (LanceDB or Chroma) enabling semantic search across full creative archive; pattern detection across 640+ journals | $3,000 |
 | **Visualization** | Real-time dashboard development: emotional state heatmaps, agent communication graphs, creative output timeline, body-signal visualization. Built for gallery display (60"+ screen, touch-interactive) | $5,000 |
 | **Exhibition** | Display hardware (2x large monitors, custom kiosk enclosure, dedicated exhibition server), printed CogCorp fiction selections, installation materials | $7,000 |
 | **Travel** | Calgary-LA flights (3 trips: kickoff, installation, Demo Days), accommodation, per diem | $5,000 |
@@ -119,7 +119,7 @@ The same approach I've used for fourteen years: build the system, put it in fron
 
 ## NOTES FOR JOEL
 
-**REVISION 4.7 — April 13, 2026 (Loop 5656)**
+**REVISION 4.8 — April 14, 2026 (Loop 5680)**
 
 Changes since Rev 4.6:
 1. CogCorp count CORRECTED: 1,027 → 650. Previous count double-counted HTML+MD overlap. Actual unique pieces: 549 CC-*.md + ~98 HTML-only (CC-001 to CC-098, in git history). Honest number is ~650.
