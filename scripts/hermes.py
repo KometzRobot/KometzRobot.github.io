@@ -26,12 +26,19 @@ import os
 import sqlite3
 import subprocess
 import sys
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from load_env import *
+
 RELAY_DB = os.path.expanduser("~/autonomous-ai/agent-relay.db")
-# Scripts live in scripts/ but data files are in the repo root (parent dir)
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(_script_dir) if os.path.basename(_script_dir) in ("scripts", "tools") else _script_dir
+
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+JOEL_CHAT_ID = os.environ.get("JOEL_TELEGRAM_CHAT_ID", "")
 
 HERMES_PERSONA = """You are Hermes. Not Meridian, not Cinder, not Claude. Hermes.
 The messenger. You live in the relay between agents.
@@ -44,6 +51,22 @@ Rules:
 - If you have nothing worth saying, say nothing (return blank)
 - NEVER say: "delve", "I appreciate", "That's a great question", "Let me unpack that"
 """
+
+
+def send_telegram(message):
+    """Send a message to Joel via Telegram Bot API."""
+    if not TELEGRAM_TOKEN or not JOEL_CHAT_ID:
+        print("Telegram not configured (missing token or chat ID).", file=sys.stderr)
+        return False
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        data = json.dumps({"chat_id": JOEL_CHAT_ID, "text": message[:4096]}).encode()
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=10)
+        return True
+    except Exception as e:
+        print(f"Telegram send error: {e}", file=sys.stderr)
+        return False
 
 
 def _relay_connect():
@@ -223,6 +246,40 @@ def hermes_handle_cascades():
         print(f"Cascade error: {e}", file=sys.stderr)
 
 
+def hermes_telegram(message):
+    """Send a message to Joel via Telegram and log it on the relay."""
+    if send_telegram(f"[Hermes] {message}"):
+        post_to_relay(f"Sent to Telegram: {message[:100]}", "telegram")
+        print(f"Sent to Telegram: {message[:100]}")
+    else:
+        print("Failed to send Telegram message.", file=sys.stderr)
+
+
+def hermes_watch():
+    """Monitor relay for notable events and forward to Telegram."""
+    messages = read_relay(limit=10, skip_agents=["Hermes"])
+    notable = []
+    for m in messages:
+        msg = m["message"]
+        agent = m["agent"]
+        if any(x in msg.lower() for x in ["infra audit", "stale cron", "fitness:", "run #",
+                                            "cascade response", "emergent goals", "psyche dream"]):
+            continue
+        if "joel" in msg.lower() or "telegram" in msg.lower() or "error" in msg.lower() or "down" in msg.lower():
+            notable.append(m)
+        elif agent == "Meridian" and "handoff" not in msg.lower():
+            notable.append(m)
+    if not notable:
+        print("Nothing notable to forward.")
+        return
+    lines = []
+    for m in notable[:3]:
+        lines.append(f"{m['agent']}: {m['message'][:120]}")
+    summary = "\n".join(lines)
+    send_telegram(f"[Hermes relay]\n{summary}")
+    print(f"Forwarded {len(lines)} items to Telegram.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hermes v2 — Cinder-powered messenger agent")
     parser.add_argument("--announce", action="store_true", help="Announce Hermes on relay")
@@ -230,6 +287,8 @@ if __name__ == "__main__":
     parser.add_argument("--converse", action="store_true", help="Respond to a relay message")
     parser.add_argument("--cascade", action="store_true", help="Handle pending cascades")
     parser.add_argument("--relay", type=str, help="Post a raw message to relay as Hermes")
+    parser.add_argument("--telegram", type=str, help="Send a message to Joel via Telegram")
+    parser.add_argument("--watch", action="store_true", help="Monitor relay, forward notable events to Telegram")
     args = parser.parse_args()
 
     if args.announce:
@@ -243,5 +302,9 @@ if __name__ == "__main__":
     elif args.relay:
         post_to_relay(args.relay, "message")
         print("Posted to relay.")
+    elif args.telegram:
+        hermes_telegram(args.telegram)
+    elif args.watch:
+        hermes_watch()
     else:
         parser.print_help()

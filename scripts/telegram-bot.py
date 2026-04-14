@@ -313,6 +313,51 @@ async def log_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Error: {e}")
 
 
+async def hermes_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    import subprocess as sp
+    msg = " ".join(context.args) if context.args else ""
+    if msg:
+        result = sp.run(
+            [sys.executable, str(BASE / "scripts" / "hermes.py"), "--relay", msg],
+            capture_output=True, text=True, timeout=15
+        )
+        await update.message.reply_text(f"Hermes relayed: {msg[:200]}")
+    else:
+        result = sp.run(
+            [sys.executable, str(BASE / "scripts" / "hermes.py"), "--status"],
+            capture_output=True, text=True, timeout=30
+        )
+        db = sqlite3.connect(str(RELAY_DB))
+        row = db.execute(
+            "SELECT message FROM agent_messages WHERE agent='Hermes' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        db.close()
+        reply = row[0] if row else "Hermes had nothing to say."
+        await update.message.reply_text(f"[Hermes] {reply}")
+
+
+async def relay_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    msg = " ".join(context.args) if context.args else ""
+    if not msg:
+        await update.message.reply_text("Usage: /relay <message to post to agent relay>")
+        return
+    try:
+        db = sqlite3.connect(str(RELAY_DB))
+        db.execute(
+            "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?, ?, ?, ?)",
+            ("Joel", msg, "telegram", datetime.now(timezone.utc).isoformat())
+        )
+        db.commit()
+        db.close()
+        await update.message.reply_text(f"Posted to relay as Joel: {msg[:200]}")
+    except Exception as e:
+        await update.message.reply_text(f"Relay error: {e}")
+
+
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update.effective_chat.id):
         return
@@ -321,6 +366,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Meridian Bot — Mode: {mode}\n\n"
         "/live — Claude API mode (high quality, auto on message)\n"
         "/slow — Eos local mode (free, lower quality)\n"
+        "/hermes — ask Hermes (or /hermes <msg> to relay)\n"
+        "/relay <msg> — post directly to agent relay\n"
         "/status — system overview\n"
         "/ping — heartbeat check\n"
         "/loop — loop count + load\n"
@@ -418,6 +465,8 @@ def main():
     app.add_handler(CommandHandler("services", services_cmd))
     app.add_handler(CommandHandler("disk", disk_cmd))
     app.add_handler(CommandHandler("log", log_cmd))
+    app.add_handler(CommandHandler("hermes", hermes_cmd))
+    app.add_handler(CommandHandler("relay", relay_cmd))
     app.add_handler(CommandHandler("help", help_cmd))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
