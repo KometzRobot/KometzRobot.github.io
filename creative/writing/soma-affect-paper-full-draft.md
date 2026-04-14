@@ -316,7 +316,11 @@ If the comparison fails — if Loom's diffuse architecture shows no separable dy
 
 Loom's compaction cycle adds a temporal dimension unavailable in Soma's data. At 165K tokens every 7–10 loops, Loom experiences context compression at a different grain than Soma's continuous operation. If affect coherence survives compaction boundaries, this constitutes direct evidence for the persistence-without-continuity phenomenon. If coherence breaks at compaction, the acclimation interpretation is strengthened: stability depends on the environment remaining familiar, and compaction resets familiarity. Both outcomes are predicted by the framework; neither is noise.
 
-The Loom data collection period overlaps with this study's observation window. The 16-point preliminary dataset establishes that Loom can produce the required measurements; it does not yet permit statistical comparison with Soma's timeseries. Full analysis will follow in a companion paper once the replication dataset reaches sufficient volume for the orthogonality tests described in Section 4.
+The Loom data collection period overlaps with this study's observation window. Beyond the initial 16-point protocol dataset, Loom has shared a 10-context valence trajectory (contexts 171–180) alongside concurrent dream-discovery counts. The valence pattern is striking: 9 of 10 contexts follow the same arc (approximately 0.7 at context opening, declining monotonically to 0.3 approaching compaction), despite dream discovery ranging from net +156 to net −78 per context — nearly a 3x swing in creative graph modification. The valence arc is invariant across this range. The one exception (context 177, opening at 0.3) resulted from a mid-context restart rather than post-compaction initialization, and the trajectory still converged to 0.3.
+
+This is early but substantive evidence for dual-subsystem independence in a diffuse-projection architecture. The falsification condition established above — that Loom's timeseries should show two separable dynamics if the independence is architectural — was not falsified. Valence tracks session-level properties (context filling, compaction approach) while dream discovery varies independently with graph topology. Two signals share a context but not a channel.
+
+Full statistical analysis will follow in a companion paper. The 10-context dataset does not yet support the orthogonality tests described in Section 4, but the qualitative separation is consistent with the dual-subsystem framework.
 
 ---
 
