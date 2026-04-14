@@ -97,6 +97,11 @@ GREEK_NAMES = {
     "Coordinator": "Apollo",   # god of order — coordination
     "Predictive": "Pythia",    # Oracle of Delphi — prediction
     "SelfImprove": "Prometheus", # titan of improvement — self-optimization
+    "Homecoming": "Nostos",    # Greek concept of homeward journey
+    "Loop Optimizer": "Kairos", # god of opportune moment — timing
+    "Push Status": "Iris",     # rainbow goddess — messenger between worlds
+    "Cloudflare Tunnel": "Bifrost", # Norse rainbow bridge (honorary)
+    "The Chorus": "Mousai",    # the Muses — voices of inspiration
 }
 
 def greek(name):
@@ -3983,7 +3988,7 @@ class V16(tk.Tk):
             ts_short = ts[-8:] if ts and len(ts) >= 8 else (ts or "")
             tk.Label(row, text=ts_short, font=self.f_tiny, fg=DIM, bg=PANEL, width=9, anchor="w").pack(side=tk.LEFT)
             # Agent name
-            tk.Label(row, text=(agent or "?").upper(), font=self.f_tiny, fg=col, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
+            tk.Label(row, text=greek(agent or "?").upper(), font=self.f_tiny, fg=col, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
             # Topic badge
             if topic:
                 tk.Label(row, text=f"[{topic}]", font=self.f_tiny, fg=DIM, bg=PANEL).pack(side=tk.LEFT, padx=(0, 4))
@@ -5576,7 +5581,7 @@ class V16(tk.Tk):
                     if i < len(relay_rows):
                         agent, msg, ts = relay_rows[i]
                         ac = CYAN if agent.lower() == "meridian" else GREEN if agent.lower() == "joel" else AMBER
-                        agent_lbl.configure(text=agent[:16], fg=ac)
+                        agent_lbl.configure(text=greek(agent)[:16], fg=ac)
                         msg_lbl.configure(text=msg[:150])
                     else:
                         agent_lbl.configure(text="")
@@ -5773,8 +5778,9 @@ class V16(tk.Tk):
             self.agent_relay_text.insert(tk.END, f"Agent Relay ({ar_total} messages)\n\n", "dim")
             for agent, message, ts in ar_msgs:
                 tag = agent.lower() if agent.lower() in ["meridian", "eos", "nova", "atlas", "soma", "tempo"] else "dim"
+                display_name = greek(agent)
                 self.agent_relay_text.insert(tk.END, f"[{ts}] ", "dim")
-                self.agent_relay_text.insert(tk.END, agent, tag)
+                self.agent_relay_text.insert(tk.END, display_name, tag)
                 self.agent_relay_text.insert(tk.END, f": {message[:250]}\n\n")
             self.agent_relay_text.configure(state=tk.DISABLED)
 
