@@ -90,6 +90,19 @@ PINK = "#ec407a"        # Hermes — hot pink, messenger
 TEAL = "#26a69a"        # Atlas — teal, structural/skeletal
 BLUE = "#42a5f5"        # Tempo — consistent blue, endocrine rhythm
 
+# Greek/mythological display names (DB names unchanged for compatibility)
+GREEK_NAMES = {
+    "Sentinel": "Argus",       # 100-eyed giant — security watchman
+    "Nova": "Athena",          # goddess of strategy — immune defense
+    "Coordinator": "Apollo",   # god of order — coordination
+    "Predictive": "Pythia",    # Oracle of Delphi — prediction
+    "SelfImprove": "Prometheus", # titan of improvement — self-optimization
+}
+
+def greek(name):
+    """Return Greek display name if available, else original."""
+    return GREEK_NAMES.get(name, name)
+
 
 # ── DATA FUNCTIONS ───────────────────────────────────────────────
 def _read(path, default=""):
@@ -2319,7 +2332,7 @@ class V16(tk.Tk):
             ("SOMA", "Python daemon — Nervous System", AMBER, "Systemd: 30s",
              "Tracks mood, agent awareness, trend predictions, body map. Emotion engine + psyche.",
              [("View Mood", "soma_mood"), ("Body Map", "soma_body"), ("Predictions", "soma_predict")]),
-            ("NOVA", "Python — Maintenance", PURPLE, "Cron: 15min",
+            ("NOVA", "Athena — Maintenance", PURPLE, "Cron: 15min",
              "Cleans temp files, verifies services, tracks file changes, posts maintenance reports.",
              [("View Last Run", "nova_last"), ("Run Now", "nova_run"), ("View Changes", "nova_changes")]),
             ("ATLAS", "Bash+Ollama — Infra", TEAL, "Cron: 10min",
@@ -2328,17 +2341,17 @@ class V16(tk.Tk):
             ("TEMPO", "Python — Fitness", BLUE, "Cron: 30min",
              "Scores system across 121 dimensions on 0-10000 scale. Tracks trends.",
              [("View Score", "tempo_score"), ("Weak Areas", "tempo_weak"), ("History", "tempo_history")]),
-            ("SENTINEL", "Python — Gatekeeper", "#e57373", "Cron: 5min",
-             "Security gatekeeper. Monitors for threats, unauthorized access, anomalous patterns.",
+            ("SENTINEL", "Argus — Gatekeeper", "#e57373", "Cron: 5min",
+             "Security gatekeeper. The hundred-eyed watchman. Monitors threats, unauthorized access.",
              [("View Status", "sentinel_status")]),
-            ("COORDINATOR", "Python — Orchestrator", "#ffb74d", "Cron: 5min",
-             "Coordinates agent activity. Detects incidents, tracks response times, manages alerts.",
+            ("COORDINATOR", "Apollo — Orchestrator", "#ffb74d", "Cron: 5min",
+             "Coordinates agent activity. God of order. Detects incidents, tracks response times.",
              [("View Incidents", "coordinator_incidents")]),
-            ("PREDICTIVE", "Python — Forecaster", "#81c784", "Cron: 10min",
-             "Forecasts system health. Predicts resource exhaustion, trend analysis.",
+            ("PREDICTIVE", "Pythia — Forecaster", "#81c784", "Cron: 10min",
+             "The Oracle. Forecasts system health. Predicts resource exhaustion, trend analysis.",
              [("View Forecasts", "predictive_forecasts")]),
-            ("SELFIMPROVE", "Python — Optimizer", "#ce93d8", "Cron: 10min",
-             "Tracks efficiency metrics. MTBI, MTTD, MTTR. Skills assessment and report cards.",
+            ("SELFIMPROVE", "Prometheus — Optimizer", "#ce93d8", "Cron: 10min",
+             "The fire-bringer. Tracks efficiency metrics. MTBI, MTTD, MTTR. Self-optimization.",
              [("View Report", "selfimprove_report")]),
             ("HERMES", "OpenClaw/Ollama — Messenger", PINK, "Bridge: on-demand",
              "External communications via Discord, Nostr, and relay.",
