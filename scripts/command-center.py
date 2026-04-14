@@ -1033,7 +1033,7 @@ class V16(tk.Tk):
         self.svc_labels = {}
         self.dash_health_items = {}
         for label, color in [("Services", GREEN), ("Email", AMBER), ("Agents", CYAN),
-                              ("Website", TEAL), ("Disk", DIM), ("Bridge", PURPLE)]:
+                              ("Website", TEAL), ("Tunnel", DIM), ("Bridge", PURPLE)]:
             row = tk.Frame(hf, bg=PANEL)
             row.pack(fill=tk.X, padx=8, pady=1)
             tk.Label(row, text=label, font=self.f_body, fg=DIM, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
@@ -1193,11 +1193,13 @@ class V16(tk.Tk):
             ("Website & Presence", BLUE), ("Cinder USB", PINK), ("Homecoming", PURPLE),
             ("Game Dev", GOLD), ("System Perf", RED), ("Network & Comms", CYAN),
         ]
-        for row_start in (0, 6):
+        for row_start in (0, 4, 8):
             row_frame = tk.Frame(radar_grid, bg=BG)
             row_frame.pack(fill=tk.X, pady=1)
-            for col in range(6):
+            for col in range(4):
                 idx = row_start + col
+                if idx >= len(radar_defs):
+                    break
                 title, color = radar_defs[idx]
                 rp = self._panel(row_frame, title, color)
                 rp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
@@ -5957,7 +5959,10 @@ class V16(tk.Tk):
                 self.dash_health_items["Services"].configure(
                     text=f"{up_count}/{total_svc} up",
                     fg=GREEN if up_count == total_svc else AMBER if up_count > total_svc - 2 else RED)
-                self.dash_health_items["Disk"].configure(text=st['disk'], fg=dc)
+                tunnel_up = d['svc'].get("Cloudflare Tunnel", d['svc'].get("cloudflared", False))
+                self.dash_health_items["Tunnel"].configure(
+                    text="Active" if tunnel_up else "Down",
+                    fg=GREEN if tunnel_up else RED)
                 bridge_up = d['svc'].get("Proton Bridge", False)
                 self.dash_health_items["Bridge"].configure(
                     text="Online" if bridge_up else "Down",
