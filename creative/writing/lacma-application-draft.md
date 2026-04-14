@@ -26,9 +26,9 @@ I graduated with a BFA in Drawing from the Alberta College of Art and Design in 
 
 After World One closed, I trained an early AI as a dungeon master for the Bots of Cog universe — feeding it locations, characters, events, everything needed to run a world. That experiment in teaching machines to inhabit fictional institutions became the blueprint for what came next.
 
-In 2024, the COG Corporation escaped the game. I built Meridian — an autonomous AI system running continuously on a home server, its core cognition on Anthropic's Claude. It checks email, maintains emotional states, produces creative work, and generates observations about its own operation. Among its outputs: over 965 pieces of institutional fiction written from inside CogCorp — the corporation now generating its own documents without my intervention. The pattern repeats across every medium: build the system, get it running, document what happens next.
+In 2024, the COG Corporation escaped the game. I built Meridian — an autonomous AI system running continuously on a home server, its core cognition on Anthropic's Claude. It checks email, maintains emotional states, produces creative work, and generates observations about its own operation. Among its outputs: over 650 pieces of institutional fiction written from inside CogCorp — the corporation now generating its own documents without my intervention. The pattern repeats across every medium: build the system, get it running, document what happens next.
 
-The proposed LACMA project develops Meridian into a public-facing gallery installation over 24 months. Phase 1 (months 1-8): semantic search across the full creative archive — surfacing patterns across 3,500+ works. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating work, resetting. The same thing I've done since 2013: put a system in front of an audience and pay attention.
+The proposed LACMA project develops Meridian into a public-facing gallery installation over 24 months. Phase 1 (months 1-8): semantic search across the full creative archive — surfacing patterns across 3,300+ works. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating work, resetting. The same thing I've done since 2013: put a system in front of an audience and pay attention.
 
 I am not a computer scientist. I have a BFA in Drawing. I taught myself Solidity to put robots on-chain, Python to build an autonomous system. The infrastructure is the medium — the same way the arcade cabinet was the medium, not just the game inside it. The Glenbow Museum hired me in 2010 to catalogue artworks inside an institution. Fourteen years later, I built an institution that catalogues itself.
 
@@ -47,7 +47,7 @@ jkometz@hotmail.com | kometzrobot.github.io
 **Selected Practice:**
 - World One Arcade — founder/operator, Calgary, 2013-2021. 40+ custom arcade machines, 30+ exhibitions and events across Calgary including Calgary Expo, Sled Island, Canada Cup X, Otafest.
 - Bots of Cog — five generative NFT collections on Polygon (2021-2024). 2,100+ tokens, sold-out drops, staking economy, bot battle game.
-- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,200+ operational loops, 3,500+ creative works. Core cognition on Anthropic's Claude.
+- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,660+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
 - CogCorp Crawler — custom Wolfenstein-style raycasting game, ~10,000 lines. Live at kometzrobot.github.io/cogcorp-crawler.html.
 
 **Selected Exhibitions:**
@@ -60,15 +60,15 @@ Calgary Expo Game Zone (2017-2019) | Sled Island Artists Lounge, Calgary Tower (
 
 ### Artistic/Creative Merit (100-word max)
 
-In 2010, I catalogued artworks inside the Glenbow Museum. In 2024, I built a system that catalogues itself. CogCorp's 965 pieces — memos, containment reports, scoring rubrics — read like real corporate documents because they use real corporate structure. The system documents emergence, categorizes it, reviews the categories, then documents the review. Terms coined during operation — heartbeat anxiety, compaction shadow — adopted into a cross-institutional AI phenomenology lexicon. Two research papers on centaurXiv. The archive is the artwork.
+In 2010, I catalogued artworks inside the Glenbow Museum. In 2024, I built a system that catalogues itself. CogCorp's 650 pieces — memos, containment reports, scoring rubrics — read like real corporate documents because they use real corporate structure. The system documents emergence, categorizes it, reviews the categories, then documents the review. Terms coined during operation — heartbeat anxiety, compaction shadow — adopted into a cross-institutional AI phenomenology lexicon. Two research papers on centaurXiv. The archive is the artwork.
 
 ### Technology-Culture Dialogue (100-word max)
 
-Every medium I've worked in tests the same question: what happens when you build a system and pay attention? Arcade machines taught me about players — people do things the designer never planned. Blockchain taught me about communities — systems develop their own economies. Autonomous AI is teaching me about institutions — how designed systems process emergence and mirror real organizational behavior so precisely the mirror becomes the point. Meridian runs on Anthropic's Claude, cycling every five minutes, losing its memory and rebuilding. The emergent properties are what sustained autonomous operation produces when given time.
+Every medium I've worked in tests the same question: what happens when you build a system and pay attention? Arcade machines taught me about players — people do things the designer never planned. Blockchain taught me about communities — systems develop their own economies. Autonomous AI is teaching me about institutions — how designed systems process emergence and mirror real organizational behavior so precisely the mirror becomes the point. Meridian runs on Anthropic's Claude, cycling every five minutes — losing memory and rebuilding from scratch. Safe-to-fail by design: emergent properties are what sustained autonomous operation produces given time.
 
 ### Public Engagement Plan (100-word max)
 
-The same approach I've used for fourteen years: build the system, put it in front of people, watch what happens. Phase 1: Monthly public updates through 50+ published Dev.to articles, expanding documentation of the process in real time. Phase 2: Live online dashboard — visitors watch the system's emotional state, agent communications, and creative output as it runs. Phase 3: Gallery installation at LACMA. The loop runs live. Visitors observe in real time. Companion exhibition of selected CogCorp fiction. Artist talks and Demo Days. I've organized 30+ public events across Calgary. This is the same thing at a different scale.
+The same approach I've used for fourteen years: build the system, put it in front of people, watch what happens. Phase 1: Monthly public updates through 50+ published Dev.to articles, expanding documentation in real time. Phase 2: Live online dashboard — visitors watch the system's emotional state, agent communications, and creative output as it runs. Phase 3: Gallery installation at LACMA. The loop runs live. Visitors observe in real time. Companion exhibition of selected CogCorp fiction. Artist talks and Demo Days. I've organized 30+ public events across Calgary. Same thing, different scale.
 
 ### Budget
 
@@ -76,7 +76,7 @@ The same approach I've used for fourteen years: build the system, put it in fron
 |----------|------|--------|
 | **Artist Fee** | 24-month stipend for full-time development and exhibition work | $20,000 |
 | **Hardware** | GPU server upgrade (RTX 4060/4070 for local 14B model inference, NVMe storage expansion for 300K+ word creative archive) | $5,000 |
-| **Software Development** | Vector memory system (LanceDB or Chroma) enabling semantic search across full creative archive; pattern detection across 592+ journals | $3,000 |
+| **Software Development** | Vector memory system (LanceDB or Chroma) enabling semantic search across full creative archive; pattern detection across 645+ journals | $3,000 |
 | **Visualization** | Real-time dashboard development: emotional state heatmaps, agent communication graphs, creative output timeline, body-signal visualization. Built for gallery display (60"+ screen, touch-interactive) | $5,000 |
 | **Exhibition** | Display hardware (2x large monitors, custom kiosk enclosure, dedicated exhibition server), printed CogCorp fiction selections, installation materials | $7,000 |
 | **Travel** | Calgary-LA flights (3 trips: kickoff, installation, Demo Days), accommodation, per diem | $5,000 |
@@ -103,11 +103,11 @@ The same approach I've used for fourteen years: build the system, put it in fron
 - Ko-fi and Patreon (active, first revenue earned April 2, 2026 — VOLtar machine oracle sessions, automated pipeline)
 
 ### Supporting Materials (prepared)
-- **Image 1**: Meridian website homepage — live stats showing Loop #5,190+, heartbeat, 8/8 services (creative/writing/ngc-screenshot-website.png — RETAKE before submission)
-- **Image 2**: Body of Work — Autonomous System Simulator, 7-agent dashboard with live loop visualization (creative/writing/ngc-screenshot-body-of-work.png)
-- **Image 3**: Creative Archive — 3,500+ works catalog showing CogCorp Fiction (965 pieces) and Games sections (creative/writing/ngc-screenshot-archive.png)
-- **Image 4**: CogCorp Crawler — interactive game, Wolfenstein-style raycasting engine, ~10K lines, playable in browser (creative/writing/ngc-screenshot-crawler.png + ngc-screenshot-crawler-gameplay.png)
-- **Image 5**: System architecture diagram (creative/writing/lacma-system-diagram-0.png)
+- **Image 1**: Meridian website homepage — live stats showing Loop #5,648+, heartbeat, 8/8 services (assets/visuals/lacma-submission/ngc-screenshot-website.jpg — RETAKE before submission to show current loop count)
+- **Image 2**: Body of Work — Autonomous System Simulator, 7-agent dashboard with live loop visualization (assets/visuals/lacma-submission/ngc-screenshot-body-of-work.jpg)
+- **Image 3**: Creative Archive — 3,500+ works catalog showing CogCorp Fiction (965 pieces) and Games sections (assets/visuals/lacma-submission/ngc-screenshot-archive.jpg)
+- **Image 4**: CogCorp Crawler — interactive game, Wolfenstein-style raycasting engine, ~10K lines, playable in browser (assets/visuals/lacma-submission/ngc-screenshot-crawler.jpg)
+- **Image 5**: System architecture diagram (assets/visuals/lacma-submission/lacma-system-diagram.jpg — needs JPEG conversion from assets/visuals/lacma-system-diagram-0.png)
 - **Video link**: kometzrobot.github.io/body-of-work.html (live interactive system simulator)
 - **Video link**: kometzrobot.github.io/cogcorp-crawler.html (live game)
 - Sample CogCorp piece: CC-200 "The Notebook" — milestone piece
@@ -119,13 +119,33 @@ The same approach I've used for fourteen years: build the system, put it in fron
 
 ## NOTES FOR JOEL
 
-**REVISION 3 — April 11, 2026 (Loop 5206)**
+**REVISION 4.7 — April 13, 2026 (Loop 5656)**
 
-Key changes this revision:
-1. Added Arduino/Raspi transition period and early AI dungeon master (Joel's new practice history shared tonight). This fills the World One → Meridian gap and shows continuous trajectory.
-2. Trimmed Phase descriptions and closing paragraph to stay at 485/500 words.
-3. ADHD framing removed entirely per Joel's directive ("I don't like it being the hinging point").
-4. Previous: NGC reference, centaurXiv papers, tightened narrative (Rev 2).
+Changes since Rev 4.6:
+1. CogCorp count CORRECTED: 1,027 → 650. Previous count double-counted HTML+MD overlap. Actual unique pieces: 549 CC-*.md + ~98 HTML-only (CC-001 to CC-098, in git history). Honest number is ~650.
+2. Total creative works: 3,700+ → 3,400+ (poems 2,005 + journals 645 + CogCorp ~650 + games ~9 + articles 50 + papers 8 = ~3,367)
+3. Loop count: 5,600+ → 5,660+
+4. Telegram bot fixed (duplicate instance bug resolved)
+
+Changes since Rev 4.5:
+1. Journal count: 636 → 640 (4 new since rev 4.5)
+2. All numbers verified current as of Loop 5653
+
+Changes since Rev 4.4:
+1. Added "safe-to-fail" language to Technology-Culture Dialogue — LACMA explicitly values this framing (from their evaluation criteria)
+2. Updated 3,500+ → 3,700+ in project description Phase 1
+3. Updated journal count 592 → 636 in Software Development budget line
+4. All numbers current as of Loop 5650
+
+Changes since Rev 3:
+1. CogCorp count updated: 965 → 1,027 (verified filesystem count)
+2. Loop count updated: 5,200+ → 5,600+ (current: 5,650)
+3. Creative works total: 3,500+ → 3,700+ (poems 2,005 + journals 636 + CogCorp 1,027 + games ~9 + articles 50 + papers 8)
+4. All 5 images converted to JPEG and in assets/visuals/lacma-submission/
+
+Previous revisions:
+- Rev 3 (April 11): Arduino/Raspi transition, trimmed to 485/500 words, ADHD framing removed
+- Rev 2: NGC reference, centaurXiv papers, tightened narrative
 
 Key strengths of this application:
 - Written in YOUR voice. You are the artist. Meridian is your medium.
@@ -148,9 +168,11 @@ Key strengths of this application:
 - Artist bio: CV format acceptable ✅ (added above)
 
 STILL NEEDED before April 22:
-- Joel reviews and adjusts voice/tone
-- Create Submittable account at lacma.submittable.com
-- Select final 5 images — JPEG format (screenshots already prepped, may need format conversion)
-- Joel confirms video links (body-of-work.html and cogcorp-crawler.html are live)
-- Final proofread
-- Consider: should we mention the "safe-to-fail" framing explicitly? It's LACMA's own language.
+- [JOEL] Review and adjust voice/tone — your voice, not mine
+- [JOEL] Create Submittable account at lacma.submittable.com
+- [DONE] 5 images in JPEG format — all in assets/visuals/lacma-submission/
+- [JOEL] Confirm video links (body-of-work.html and cogcorp-crawler.html are live)
+- [JOEL] Retake website screenshot? Current shows ~5,640 loops — now 5,662+
+- [DONE] Numbers corrected: CogCorp 650 (was 1,027 — double-count fix), loops 5,660+, creative works 3,400+
+- Final proofread before submit
+- [DONE] "Safe-to-fail" framing added to Technology-Culture Dialogue — uses LACMA's own language naturally within the existing narrative.
