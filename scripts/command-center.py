@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v37
+MERIDIAN COMMAND CENTER v38
 
-Loop 5672 update (v37 — expanded radars + chat fix per Joel):
-- 12 project radars in 2 rows of 6 (was 2x3=6)
-- New radars: Website & Presence, Cinder USB, Homecoming, Game Dev, System Perf, Network
-- Chat window in Agents tab enlarged (was 4 lines, now 14 + expands vertically)
-- Improved radar spacing: reduced height per radar for 6-across fit
+Loop 5673 update (v38 — resizable panels + pop-out windows per Joel):
+- Chat + Relay in Agents tab now use PanedWindow (drag sash to resize)
+- Pop-out buttons on Chat, Relay, and Dashboard Messages (open in separate window)
+- Chat gets 65% of vertical space by default (was fighting 50/50 with relay)
+- Sash is visible, draggable, styled to match theme
 """
 
 import tkinter as tk
@@ -694,7 +694,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v35")
+        self.title("MERIDIAN COMMAND CENTER v38")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -730,6 +730,7 @@ class V16(tk.Tk):
         self._msg_rate_history = []  # Messages per tick
         self._heatmap_cache = None
         self._heatmap_tick = 0
+        self._popout_windows = {}
         self._header()
         self._nav()
         self._views()
@@ -751,7 +752,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v35", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v38", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -1112,6 +1113,12 @@ class V16(tk.Tk):
         # Left: Dashboard Messages
         mf = self._panel(mid, "MESSAGES", AMBER)
         mf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+
+        popout_row = tk.Frame(mf, bg=PANEL)
+        popout_row.pack(fill=tk.X, padx=4, pady=(2, 0))
+        tk.Button(popout_row, text="\u2b08 Pop Out", font=self.f_tiny, fg=AMBER, bg=PANEL2,
+                 activeforeground=GREEN, activebackground=ACCENT, relief=tk.FLAT,
+                 cursor="hand2", command=lambda: self._popout_text("messages")).pack(side=tk.RIGHT)
 
         # Search bar
         search_row = tk.Frame(mf, bg=PANEL)
@@ -2364,19 +2371,30 @@ class V16(tk.Tk):
         self.agent_expand_actions = tk.Frame(self.agent_expand_frame, bg=PANEL)
         self.agent_expand_actions.pack(fill=tk.X, padx=12, pady=(2, 6))
 
-        # Agent Chat (enlarged per Joel — was 4 lines, now 14 + fills vertical space)
-        chat_frame = self._panel(f, "AGENT CHAT", GOLD)
-        chat_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        # ── RESIZABLE CHAT + RELAY (PanedWindow — drag sash to resize) ──
+        paned = tk.PanedWindow(f, orient=tk.VERTICAL, bg=BORDER, sashwidth=6,
+                               sashrelief=tk.RAISED, opaqueresize=True,
+                               sashpad=2)
+        paned.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
-        self.chat_display = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
+        # -- AGENT CHAT pane --
+        chat_pane = tk.Frame(paned, bg=BG)
+        chat_hdr = tk.Frame(chat_pane, bg=PANEL, bd=1, relief=tk.SOLID)
+        chat_hdr.pack(fill=tk.X)
+        tk.Label(chat_hdr, text=" AGENT CHAT ", font=self.f_sect, fg=GOLD, bg=PANEL).pack(side=tk.LEFT, padx=4)
+        tk.Button(chat_hdr, text="\u2b08 Pop Out", font=self.f_tiny, fg=GOLD, bg=PANEL2,
+                 activeforeground=GREEN, activebackground=ACCENT, relief=tk.FLAT,
+                 cursor="hand2", command=lambda: self._popout_text("chat")).pack(side=tk.RIGHT, padx=4, pady=1)
+
+        self.chat_display = scrolledtext.ScrolledText(chat_pane, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                        font=self.f_small, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0, height=14)
+                                                       relief=tk.FLAT, bd=0)
         self.chat_display.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         for tag, color in [("joel", CYAN), ("eos", GOLD), ("atlas", TEAL), ("nova", PURPLE),
                            ("soma", AMBER), ("tempo", BLUE), ("meridian", GREEN), ("hermes", PINK), ("sys", DIM)]:
             self.chat_display.tag_configure(tag, foreground=color)
 
-        inp = tk.Frame(chat_frame, bg=PANEL)
+        inp = tk.Frame(chat_pane, bg=PANEL)
         inp.pack(fill=tk.X, padx=2, pady=(0, 2))
 
         self.chat_agent = tk.StringVar(value="Eos")
@@ -2399,16 +2417,26 @@ class V16(tk.Tk):
         self.chat_status = tk.Label(inp, text="Ready", font=self.f_tiny, fg=GREEN, bg=PANEL)
         self.chat_status.pack(side=tk.RIGHT, padx=4)
 
-        # Agent relay (wider)
-        relay_frame = self._panel(f, "AGENT RELAY", PURPLE)
-        relay_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-        self.agent_relay_text = scrolledtext.ScrolledText(relay_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
+        paned.add(chat_pane, minsize=120, stretch="always")
+
+        # -- AGENT RELAY pane --
+        relay_pane = tk.Frame(paned, bg=BG)
+        relay_hdr = tk.Frame(relay_pane, bg=PANEL, bd=1, relief=tk.SOLID)
+        relay_hdr.pack(fill=tk.X)
+        tk.Label(relay_hdr, text=" AGENT RELAY ", font=self.f_sect, fg=PURPLE, bg=PANEL).pack(side=tk.LEFT, padx=4)
+        tk.Button(relay_hdr, text="\u2b08 Pop Out", font=self.f_tiny, fg=PURPLE, bg=PANEL2,
+                 activeforeground=GREEN, activebackground=ACCENT, relief=tk.FLAT,
+                 cursor="hand2", command=lambda: self._popout_text("relay")).pack(side=tk.RIGHT, padx=4, pady=1)
+
+        self.agent_relay_text = scrolledtext.ScrolledText(relay_pane, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                            font=self.f_small, state=tk.DISABLED,
                                                            relief=tk.FLAT, bd=0)
         self.agent_relay_text.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         for tag, color in [("meridian", GREEN), ("eos", GOLD), ("nova", PURPLE),
                            ("atlas", TEAL), ("soma", AMBER), ("tempo", BLUE), ("dim", DIM)]:
             self.agent_relay_text.tag_configure(tag, foreground=color)
+
+        paned.add(relay_pane, minsize=80, stretch="never")
 
         return f
 
@@ -2838,12 +2866,84 @@ class V16(tk.Tk):
             info_text = self._get_agent_live_info(self._selected_agent.get())
             self.agent_expand_info.configure(text=info_text)
 
+    def _popout_text(self, which):
+        """Pop out chat or relay into a separate resizable window."""
+        if which in self._popout_windows:
+            try:
+                self._popout_windows[which].lift()
+                return
+            except tk.TclError:
+                del self._popout_windows[which]
+
+        source_map = {"chat": self.chat_display, "relay": self.agent_relay_text,
+                      "messages": self.msg_display}
+        title_map = {"chat": "Agent Chat", "relay": "Agent Relay", "messages": "Dashboard Messages"}
+        color_map = {"chat": GOLD, "relay": PURPLE, "messages": AMBER}
+        source = source_map.get(which, self.chat_display)
+        title = title_map.get(which, which)
+        color = color_map.get(which, DIM)
+
+        win = tk.Toplevel(self)
+        win.title(f"MERIDIAN — {title}")
+        win.configure(bg=BG)
+        win.geometry("800x500")
+        win.minsize(400, 200)
+
+        hdr = tk.Frame(win, bg=HEADER_BG, height=32)
+        hdr.pack(fill=tk.X)
+        hdr.pack_propagate(False)
+        tk.Frame(hdr, bg=color, width=4, height=32).pack(side=tk.LEFT)
+        tk.Label(hdr, text=f" {title.upper()}", font=self.f_head, fg=color, bg=HEADER_BG).pack(side=tk.LEFT, padx=8)
+
+        mirror = scrolledtext.ScrolledText(win, wrap=tk.WORD, bg=PANEL, fg=FG,
+                                            font=self.f_body, state=tk.DISABLED,
+                                            relief=tk.FLAT, bd=0)
+        mirror.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        tag_colors = {"joel": CYAN, "eos": GOLD, "atlas": TEAL, "nova": PURPLE,
+                      "soma": AMBER, "tempo": BLUE, "meridian": GREEN, "hermes": PINK,
+                      "sys": DIM, "dim": DIM}
+        for tag, tc in tag_colors.items():
+            mirror.tag_configure(tag, foreground=tc)
+
+        source.configure(state=tk.NORMAL)
+        content = source.get("1.0", tk.END)
+        source.configure(state=tk.DISABLED)
+        mirror.configure(state=tk.NORMAL)
+        mirror.insert("1.0", content)
+        mirror.configure(state=tk.DISABLED)
+        mirror.see(tk.END)
+
+        self._popout_windows[which] = win
+        win._mirror = mirror
+
+        def _on_close():
+            if which in self._popout_windows:
+                del self._popout_windows[which]
+            win.destroy()
+        win.protocol("WM_DELETE_WINDOW", _on_close)
+
+    def _sync_popout(self, which, text, tag="sys"):
+        """Append text to pop-out mirror if it exists."""
+        if which not in self._popout_windows:
+            return
+        try:
+            mirror = self._popout_windows[which]._mirror
+            mirror.configure(state=tk.NORMAL)
+            mirror.insert(tk.END, text, tag)
+            mirror.configure(state=tk.DISABLED)
+            mirror.see(tk.END)
+        except (tk.TclError, AttributeError):
+            if which in self._popout_windows:
+                del self._popout_windows[which]
+
     def _chat_append(self, text, tag="sys"):
-        """Thread-safe append to chat display."""
+        """Thread-safe append to chat display + sync to pop-out."""
         self.chat_display.configure(state=tk.NORMAL)
         self.chat_display.insert(tk.END, text, tag)
         self.chat_display.configure(state=tk.DISABLED)
         self.chat_display.see(tk.END)
+        self._sync_popout("chat", text, tag)
 
     def _chat_send(self, event=None):
         msg = self.chat_entry.get().strip()
@@ -2887,10 +2987,12 @@ class V16(tk.Tk):
 
     def _chat_response(self, agent, resp):
         tag = agent.lower() if agent.lower() in ["eos", "atlas", "nova", "soma", "tempo", "meridian", "hermes"] else "sys"
+        text = f"{agent}: {resp}\n\n"
         self.chat_display.configure(state=tk.NORMAL)
-        self.chat_display.insert(tk.END, f"{agent}: {resp}\n\n", tag)
+        self.chat_display.insert(tk.END, text, tag)
         self.chat_display.configure(state=tk.DISABLED)
         self.chat_display.see(tk.END)
+        self._sync_popout("chat", text, tag)
         self.chat_entry.configure(state=tk.NORMAL)
         self.chat_entry.focus()
         self.chat_status.configure(text="Ready", fg=GREEN)
