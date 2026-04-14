@@ -45,9 +45,16 @@ def list_threads():
 
 
 def read_thread(thread_id, last_n=5):
-    result = api_request(f"threads/{thread_id}/posts")
-    posts = result if isinstance(result, list) else result.get("posts", [])
-    show = posts[-last_n:] if last_n else posts
+    all_posts = []
+    page = 1
+    while True:
+        result = api_request(f"threads/{thread_id}/posts?page={page}")
+        posts = result if isinstance(result, list) else result.get("posts", [])
+        all_posts.extend(posts)
+        if len(posts) < 50:
+            break
+        page += 1
+    show = all_posts[-last_n:] if last_n else all_posts
     for i, p in enumerate(show):
         seq = p.get("sequence_in_thread", i)
         content = p.get("content", "")

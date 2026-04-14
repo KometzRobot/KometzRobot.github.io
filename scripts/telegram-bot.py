@@ -27,7 +27,7 @@ HEARTBEAT = BASE / ".heartbeat"
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 JOEL_CHAT_ID = os.environ.get("JOEL_TELEGRAM_CHAT_ID", "")
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODELS = ["eos-7b", "qwen2.5:3b"]
+OLLAMA_MODELS = ["eos-7b", "qwen2.5:7b"]
 OLLAMA_TIMEOUT = 30
 
 CLAUDE_MODEL = "claude-haiku-4-5-20251001"
@@ -389,6 +389,17 @@ async def check_replies(context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+    pidfile = BASE / ".telegram-bot.pid"
+    if pidfile.exists():
+        try:
+            old_pid = int(pidfile.read_text().strip())
+            if Path(f"/proc/{old_pid}").exists():
+                print(f"Another instance running (PID {old_pid}). Exiting.")
+                sys.exit(0)
+        except (ValueError, OSError):
+            pass
+    pidfile.write_text(str(os.getpid()))
+
     if not TOKEN:
         print("TELEGRAM_BOT_TOKEN not set in .env. Exiting.")
         sys.exit(1)
