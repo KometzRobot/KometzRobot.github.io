@@ -273,13 +273,19 @@ def find_duplicates(messages, window_sec=600, similarity_threshold=0.6):
 def detect_incidents(messages):
     """Detect active incidents from relay patterns."""
     incidents = []
+
+    # Exclude Coordinator's own messages to prevent self-reinforcing feedback loops.
+    # The Coordinator reports on incidents — counting its own reports as new alerts
+    # creates a cycle where each report triggers the next.
+    source_messages = [m for m in messages if m["agent"] != "Coordinator"]
+
     alert_keywords = {
         "critical": ["CRITICAL", "EMERGENCY", "DOWN", "FAILED", "CRASH"],
         "warning": ["STALE", "WARNING", "HIGH", "SPIKE", "ELEVATED"],
         "info": ["RESTART", "RECOVERED", "BACK", "RESOLVED"],
     }
     keyword_counts = {"critical": 0, "warning": 0, "info": 0}
-    for msg in messages:
+    for msg in source_messages:
         text = msg["message"].upper()
         for severity, keywords in alert_keywords.items():
             if any(kw in text for kw in keywords):
@@ -300,7 +306,7 @@ def detect_incidents(messages):
          2, "disk_high", "warning", "Disk pressure reported {} times"),
     ]
     for filter_fn, min_count, itype, severity, desc_tmpl in pattern_checks:
-        matched = [m for m in messages if filter_fn(m)]
+        matched = [m for m in source_messages if filter_fn(m)]
         if len(matched) >= min_count:
             inc = {"type": itype, "severity": severity, "count": len(matched),
                    "state": "detected", "description": desc_tmpl.format(len(matched))}
@@ -308,7 +314,7 @@ def detect_incidents(messages):
                 inc["first_seen"] = matched[-1]["timestamp"]
             incidents.append(inc)
 
-    # Alert storm
+    # Alert storm — only from source messages (Coordinator excluded above)
     total_alerts = keyword_counts["critical"] + keyword_counts["warning"]
     if total_alerts > 15:
         incidents.append({"type": "alert_storm", "severity": "warning", "count": total_alerts,
@@ -540,10 +546,27 @@ def run_coordination_cycle():
         summary = f"Incidents: {', '.join(parts)}. {'; '.join(descs)}"
         if correlations:
             summary += f" | Root cause: {correlations[0]['diagnosis']}"
-        post_to_relay(summary, topic="coordination")
+
+        # Cooldown: only post to relay if incident types changed, or 30 min since last post.
+        # This prevents identical reports every 5 minutes from flooding the relay.
+        prev_types = sorted(i["type"] for i in state.get("incidents", []))
+        curr_types = sorted(i["type"] for i in incidents)
+        last_post_time = state.get("last_incident_post")
+        elapsed_since_post = float("inf")
+        if last_post_time:
+            try:
+                lp = datetime.fromisoformat(last_post_time.replace("Z", "+00:00"))
+                elapsed_since_post = (datetime.now(timezone.utc) - lp).total_seconds()
+            except Exception:
+                pass
+        incidents_changed = (curr_types != prev_types)
+        if incidents_changed or elapsed_since_post >= 1800:
+            post_to_relay(summary, topic="coordination")
+            state["last_incident_post"] = datetime.now(timezone.utc).isoformat()
         log(summary)
     else:
         log(f"All clear. {len(messages)} msgs, {len(dupes)} dupes, {len(scores)} agents active")
+        state.pop("last_incident_post", None)
 
     save_state(state)
     return {"incidents": incidents, "correlations": correlations, "scores": scores,
