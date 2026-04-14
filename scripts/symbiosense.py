@@ -69,6 +69,7 @@ DISK_SPIKE_PCT = 5           # disk % increase per check
 HB_STALE_SEC = 600           # heartbeat stale threshold
 SERVICE_CHECK_INTERVAL = 60  # check services every N seconds
 DASHBOARD_COOLDOWN = 900     # suppress same alert type on dashboard for 15 min
+RELAY_COOLDOWN = 300         # suppress same event type on relay for 5 min
 
 
 def log(msg):
@@ -1858,6 +1859,7 @@ def main():
     cycle_count = 0
     quiet_cycles = 0  # cycles since last event
     last_dash_alert = {}  # {event_type: timestamp} for dashboard cooldown
+    last_relay_alert = {}  # {event_type: timestamp} for relay cooldown
 
     while True:
         try:
@@ -1892,8 +1894,17 @@ def main():
                         mood = state.get("mood", "?")
                         post_dashboard(f"[{mood}] " + " | ".join(fresh))
 
-                # Post all events to relay
-                post_relay(" | ".join(events), topic="nerve-event")
+                # Post events to relay (with cooldown to reduce noise)
+                now_relay = time.time()
+                relay_fresh = []
+                for evt in events:
+                    etype = evt.split(":")[0].strip()
+                    last_t = last_relay_alert.get(etype, 0)
+                    if now_relay - last_t > RELAY_COOLDOWN:
+                        relay_fresh.append(evt)
+                        last_relay_alert[etype] = now_relay
+                if relay_fresh:
+                    post_relay(" | ".join(relay_fresh), topic="nerve-event")
             else:
                 quiet_cycles += 1
 

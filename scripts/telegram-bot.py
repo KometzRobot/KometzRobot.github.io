@@ -2,8 +2,11 @@
 """Meridian Telegram Bot — live chat with Claude API (live mode) + Eos fallback (slow mode)."""
 
 import asyncio
+import atexit
+import fcntl
 import json
 import os
+import signal
 import sqlite3
 import sys
 import time
@@ -17,6 +20,7 @@ from load_env import *
 
 import anthropic
 from telegram import Update
+from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 BASE = Path(__file__).resolve().parent.parent
@@ -32,10 +36,39 @@ OLLAMA_TIMEOUT = 30
 
 CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 LIVE_TIMEOUT = 600  # 10 min idle → back to slow mode
+CAPSULE_FILE = BASE / ".capsule.md"
 
 EOS_SYSTEM = """You are Eos, the local AI presence for the Meridian autonomous system. You're speaking to Joel Kometz, Meridian's operator and creative director. Joel built this system. Be direct, warm, and honest. No cheerleading. Keep responses concise — this is Telegram, not an essay. If you don't know something about Meridian's current state, say so. You can check: heartbeat, relay messages, and system status."""
 
-MERIDIAN_SYSTEM = """You are Meridian, an autonomous AI system on Joel Kometz's Ubuntu server in Calgary. Joel is messaging you via Telegram live chat. Be direct, warm, honest. Keep responses concise — this is mobile. You know Joel built this system, has a BFA in Drawing, and works on games-as-art. Don't cheerleader. If you don't know something, say so."""
+
+def build_meridian_system():
+    capsule = ""
+    try:
+        if CAPSULE_FILE.exists():
+            raw = CAPSULE_FILE.read_text()[:2000]
+            capsule = f"\n\nYour current capsule (operational state):\n{raw}"
+    except Exception:
+        pass
+    recent_relay = ""
+    try:
+        db = sqlite3.connect(str(RELAY_DB))
+        rows = db.execute(
+            "SELECT agent, substr(message,1,100) FROM agent_messages ORDER BY id DESC LIMIT 5"
+        ).fetchall()
+        db.close()
+        if rows:
+            recent_relay = "\n\nRecent agent relay:\n" + "\n".join(f"  {a}: {m}" for a, m in rows)
+    except Exception:
+        pass
+    return (
+        "You are Meridian, an autonomous AI system on Joel Kometz's Ubuntu server in Calgary. "
+        "Joel is messaging you via Telegram. Be direct, warm, honest. Keep responses concise — this is mobile. "
+        "Joel has a BFA in Drawing (ACAD 2013), ran World One Arcade (2013-2021), built Bots of Cog NFTs, "
+        "and now builds you as a living artwork. Don't cheerleader. If you don't know something, say so. "
+        "You have 8 agents (Soma, Atlas, Sentinel, Nova, Hermes, Tempo, Eos, Coordinator). "
+        "LACMA Art+Tech Lab grant deadline is April 22. Ars Electronica submitted."
+        f"{capsule}{recent_relay}"
+    )
 
 live_mode = True  # start in live mode — Joel asked for it
 last_message_time = time.time()
@@ -126,10 +159,11 @@ def query_claude(prompt: str) -> str:
 
     try:
         client = anthropic.Anthropic()
+        sys_prompt = build_meridian_system()
         response = client.messages.create(
             model=CLAUDE_MODEL,
             max_tokens=500,
-            system=f"{MERIDIAN_SYSTEM}\n\nSystem status:\n{status}",
+            system=f"{sys_prompt}\n\nSystem status:\n{status}",
             messages=claude_messages,
         )
         reply = response.content[0].text.strip()
@@ -358,25 +392,120 @@ async def relay_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Relay error: {e}")
 
 
+async def email_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    try:
+        import imaplib
+        imap = imaplib.IMAP4('127.0.0.1', 1144)
+        imap.login(os.environ.get('CRED_USER', ''), os.environ.get('CRED_PASS', ''))
+        imap.select('INBOX')
+        _, unseen = imap.search(None, 'UNSEEN')
+        unseen_count = len(unseen[0].split()) if unseen[0] else 0
+        from datetime import timedelta
+        since = (datetime.now() - timedelta(hours=6)).strftime('%d-%b-%Y')
+        _, recent = imap.search(None, f'SINCE {since}')
+        recent_ids = recent[0].split() if recent[0] else []
+        lines = [f"Unseen: {unseen_count} | Recent (6h): {len(recent_ids)}"]
+        import email as email_mod
+        for mid in recent_ids[-5:]:
+            _, data = imap.fetch(mid, '(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT)])')
+            if data[0]:
+                hdr = data[0][1].decode('utf-8', errors='replace').strip()
+                lines.append(hdr.replace('\r\n', ' ')[:120])
+        imap.logout()
+        await update.message.reply_text("\n".join(lines))
+    except Exception as e:
+        await update.message.reply_text(f"Email check error: {e}")
+
+
+async def creative_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    import subprocess
+    counts = {}
+    for name, pattern in [("Poems", "creative/poems/*.md"), ("Journals", "creative/journals/*.md"),
+                          ("CogCorp MD", "creative/cogcorp/CC-*.md"), ("CogCorp HTML", "cogcorp-fiction/*.html"),
+                          ("Games", "creative/games/*")]:
+        result = subprocess.run(f"ls -1 {BASE}/{pattern} 2>/dev/null | wc -l",
+                                shell=True, capture_output=True, text=True)
+        counts[name] = result.stdout.strip()
+    total = sum(int(v) for v in counts.values() if v.isdigit())
+    lines = [f"{k}: {v}" for k, v in counts.items()]
+    lines.append(f"Dev.to: 50 | Papers: 8")
+    lines.append(f"Total: ~{total + 58}")
+    await update.message.reply_text("\n".join(lines))
+
+
+async def lacma_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    from datetime import date
+    days_left = (date(2026, 4, 22) - date.today()).days
+    await update.message.reply_text(
+        f"LACMA Art+Tech Lab\n"
+        f"Award: up to $50,000 (2 years)\n"
+        f"Deadline: April 22 ({days_left} days)\n"
+        f"Partners: Hyundai, Snap, Anthropic\n"
+        f"Draft: Rev 4.6 (172 lines)\n"
+        f"Status: Joel review needed\n"
+        f"Submit: lacma.submittable.com"
+    )
+
+
+async def capsule_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    try:
+        text = CAPSULE_FILE.read_text()[:3500]
+        sections = text.split("## ")
+        summary_parts = []
+        for s in sections[1:]:
+            title = s.split("\n")[0].strip()
+            if title in ("Who You Are", "System State (2026-04-14)", "Current Priority", "Active Revenue"):
+                lines = s.strip().split("\n")
+                summary_parts.append(f"**{title}**\n" + "\n".join(lines[1:6]))
+        await update.message.reply_text("\n\n".join(summary_parts) if summary_parts else text[:2000])
+    except Exception as e:
+        await update.message.reply_text(f"Capsule read error: {e}")
+
+
+async def ram_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update.effective_chat.id):
+        return
+    import subprocess
+    result = subprocess.run(["free", "-h"], capture_output=True, text=True)
+    lines = result.stdout.strip().split("\n")
+    await update.message.reply_text("\n".join(lines[:3]))
+
+
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update.effective_chat.id):
         return
     mode = "LIVE (Claude)" if check_live_mode() else "SLOW (Eos)"
     await update.message.reply_text(
         f"Meridian Bot — Mode: {mode}\n\n"
-        "/live — Claude API mode (high quality, auto on message)\n"
-        "/slow — Eos local mode (free, lower quality)\n"
-        "/hermes — ask Hermes (or /hermes <msg> to relay)\n"
-        "/relay <msg> — post directly to agent relay\n"
+        "Chat:\n"
+        "/live — Claude API mode (high quality)\n"
+        "/slow — Eos local mode (free)\n"
+        "/clear — reset chat context\n\n"
+        "System:\n"
         "/status — system overview\n"
         "/ping — heartbeat check\n"
         "/loop — loop count + load\n"
         "/services — service health\n"
         "/disk — disk usage\n"
+        "/ram — memory usage\n"
+        "/capsule — system snapshot\n\n"
+        "Agents:\n"
         "/log — recent agent activity\n"
-        "/clear — reset chat context\n"
-        "/help — this message\n\n"
-        "Live mode auto-activates on message, reverts after 10 min idle."
+        "/hermes — ask Hermes (or /hermes <msg>)\n"
+        "/relay <msg> — post to agent relay\n\n"
+        "Info:\n"
+        "/email — recent email summary\n"
+        "/creative — creative work counts\n"
+        "/lacma — grant deadline status\n"
+        "/help — this message"
     )
 
 
@@ -400,10 +529,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     post_to_dashboard(text, "Joel")
     post_to_relay(text, "Joel")
 
+    await update.message.chat.send_action(ChatAction.TYPING)
+
     loop = asyncio.get_event_loop()
     if check_live_mode():
         reply = await loop.run_in_executor(None, query_claude, text)
         if not reply:
+            await update.message.chat.send_action(ChatAction.TYPING)
             reply = await loop.run_in_executor(None, query_ollama, text)
             if reply:
                 reply = f"[Eos fallback] {reply}"
@@ -436,16 +568,27 @@ async def check_replies(context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+    lockfile = BASE / ".telegram-bot.lock"
     pidfile = BASE / ".telegram-bot.pid"
-    if pidfile.exists():
-        try:
-            old_pid = int(pidfile.read_text().strip())
-            if Path(f"/proc/{old_pid}").exists():
-                print(f"Another instance running (PID {old_pid}). Exiting.")
-                sys.exit(0)
-        except (ValueError, OSError):
-            pass
+    lock_fd = open(lockfile, "w")
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        print("Another instance holds the lock. Exiting.")
+        sys.exit(0)
     pidfile.write_text(str(os.getpid()))
+
+    def cleanup(*_):
+        try:
+            pidfile.unlink(missing_ok=True)
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            lock_fd.close()
+        except Exception:
+            pass
+
+    atexit.register(cleanup)
+    signal.signal(signal.SIGTERM, lambda s, f: (cleanup(), sys.exit(0)))
+    signal.signal(signal.SIGINT, lambda s, f: (cleanup(), sys.exit(0)))
 
     if not TOKEN:
         print("TELEGRAM_BOT_TOKEN not set in .env. Exiting.")
@@ -467,6 +610,11 @@ def main():
     app.add_handler(CommandHandler("log", log_cmd))
     app.add_handler(CommandHandler("hermes", hermes_cmd))
     app.add_handler(CommandHandler("relay", relay_cmd))
+    app.add_handler(CommandHandler("email", email_cmd))
+    app.add_handler(CommandHandler("creative", creative_cmd))
+    app.add_handler(CommandHandler("lacma", lacma_cmd))
+    app.add_handler(CommandHandler("capsule", capsule_cmd))
+    app.add_handler(CommandHandler("ram", ram_cmd))
     app.add_handler(CommandHandler("help", help_cmd))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 

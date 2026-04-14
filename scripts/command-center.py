@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v26
+MERIDIAN COMMAND CENTER v27
 
-Loop 2104 update:
-- Version labels unified to v26
+Loop 5662 update:
+- Upgraded from 7 tabs to 12 tabs (matching Mission Control layout per Joel's request)
+- New top-level tabs: Messages, Relay, Inner World, Terminal, Memory, Files, Logs
+- Contacts and System tabs folded into other views
+- Previous: v26 (Loop 2104)
 - Quick actions expanded (12 buttons, 4x3 grid)
 - Immune system display fixed (field names matched to actual log format)
 - Deploy website: git pull --rebase before push to prevent push-live-status.py conflicts
@@ -649,7 +652,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v26")
+        self.title("MERIDIAN COMMAND CENTER v27")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -693,7 +696,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v26", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v27", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -728,16 +731,24 @@ class V16(tk.Tk):
         self.nav_underlines = {}
         tab_colors = {
             "dash": GREEN, "email": AMBER, "agents": CYAN,
-            "creative": PURPLE, "contacts": GOLD, "links": PINK, "system": TEAL,
+            "messages": GOLD, "relay": PINK, "inner": PURPLE,
+            "terminal": TEAL, "memory": BLUE,
+            "creative": "#ce93d8", "files": "#66bb6a",
+            "logs": RED, "links": PINK,
         }
         tabs = [
             ("dash", "DASHBOARD"),
             ("email", "EMAIL"),
             ("agents", "AGENTS"),
+            ("messages", "MESSAGES"),
+            ("relay", "RELAY"),
+            ("inner", "INNER WORLD"),
+            ("terminal", "TERMINAL"),
+            ("memory", "MEMORY"),
             ("creative", "CREATIVE"),
-            ("contacts", "CONTACTS"),
+            ("files", "FILES"),
+            ("logs", "LOGS"),
             ("links", "LINKS"),
-            ("system", "SYSTEM"),
         ]
         for name, label in tabs:
             col = tab_colors.get(name, CYAN)
@@ -773,10 +784,15 @@ class V16(tk.Tk):
         self.views["dash"] = self._build_dash()
         self.views["email"] = self._build_email()
         self.views["agents"] = self._build_agents()
+        self.views["messages"] = self._build_messages()
+        self.views["relay"] = self._build_sys_relay(self)
+        self.views["inner"] = self._build_cr_inner_world(self)
+        self.views["terminal"] = self._build_terminal()
+        self.views["memory"] = self._build_cr_memory(self)
         self.views["creative"] = self._build_creative()
-        self.views["contacts"] = self._build_contacts()
+        self.views["files"] = self._build_files()
+        self.views["logs"] = self._build_logs()
         self.views["links"] = self._build_links()
-        self.views["system"] = self._build_system()
 
     # ── HELPER: Styled panel ───────────────────────────────────────
     def _panel(self, parent, title, color=DIM):
@@ -4900,6 +4916,282 @@ class V16(tk.Tk):
         threading.Thread(target=run, daemon=True).start()
 
     # ── STATUS BAR ────────────────────────────────────────────────
+    # ── NEW TABS (v27) ──────────────────────────────────────────────
+
+    def _build_messages(self):
+        f = tk.Frame(self, bg=BG)
+        hdr = tk.Frame(f, bg=PANEL2)
+        hdr.pack(fill=tk.X, padx=4, pady=4)
+        tk.Label(hdr, text="DASHBOARD MESSAGES", font=self.f_sect, fg=GOLD, bg=PANEL2).pack(side=tk.LEFT, padx=8)
+        self._action_btn(hdr, " Refresh ", self._msg_tab_refresh, GOLD).pack(side=tk.RIGHT, padx=4)
+        self.msg_tab_display = scrolledtext.ScrolledText(f, wrap=tk.WORD, bg=PANEL, fg=FG,
+                                                          font=self.f_body, state=tk.DISABLED,
+                                                          relief=tk.FLAT, bd=0)
+        self.msg_tab_display.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.msg_tab_display.tag_configure("sender", foreground=GOLD, font=("Monospace", 9, "bold"))
+        self.msg_tab_display.tag_configure("time", foreground=DIM)
+        self.msg_tab_display.tag_configure("msg", foreground=FG)
+        send_frame = tk.Frame(f, bg=PANEL2)
+        send_frame.pack(fill=tk.X, padx=4, pady=4)
+        tk.Label(send_frame, text="Send:", font=self.f_small, fg=DIM, bg=PANEL2).pack(side=tk.LEFT, padx=4)
+        self.msg_tab_entry = tk.Entry(send_frame, font=self.f_body, bg=INPUT_BG, fg=FG,
+                                       insertbackground=FG, relief=tk.FLAT, bd=4)
+        self.msg_tab_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+        self.msg_tab_entry.bind("<Return>", self._msg_tab_send)
+        self._action_btn(send_frame, " Send ", self._msg_tab_send, GOLD).pack(side=tk.RIGHT, padx=4)
+        self._msg_tab_refresh()
+        return f
+
+    def _msg_tab_refresh(self, event=None):
+        msgs = dashboard_messages(50)
+        self.msg_tab_display.configure(state=tk.NORMAL)
+        self.msg_tab_display.delete("1.0", tk.END)
+        for m in msgs:
+            sender = m.get("sender", "?")
+            ts = m.get("timestamp", "")
+            text = m.get("message", m.get("text", ""))
+            self.msg_tab_display.insert(tk.END, f"[{sender}] ", "sender")
+            self.msg_tab_display.insert(tk.END, f"{ts}\n", "time")
+            self.msg_tab_display.insert(tk.END, f"{text}\n\n", "msg")
+        if not msgs:
+            self.msg_tab_display.insert(tk.END, "No dashboard messages.", "time")
+        self.msg_tab_display.configure(state=tk.DISABLED)
+
+    def _msg_tab_send(self, event=None):
+        text = self.msg_tab_entry.get().strip()
+        if text:
+            post_dashboard_msg(text, "Joel")
+            self.msg_tab_entry.delete(0, tk.END)
+            self.after(500, self._msg_tab_refresh)
+
+    def _build_terminal(self):
+        f = tk.Frame(self, bg=BG)
+        hdr = tk.Frame(f, bg=PANEL2)
+        hdr.pack(fill=tk.X, padx=4, pady=4)
+        tk.Label(hdr, text="TERMINAL", font=self.f_sect, fg=TEAL, bg=PANEL2).pack(side=tk.LEFT, padx=8)
+        cmds_frame = tk.Frame(f, bg=ACCENT)
+        cmds_frame.pack(fill=tk.X, padx=4, pady=2)
+        quick_cmds = [
+            ("System Info", "uname -a && uptime"),
+            ("Disk Usage", "df -h /"),
+            ("Top Processes", "ps aux --sort=-%cpu | head -15"),
+            ("Network Ports", "ss -tlnp 2>/dev/null | head -20"),
+            ("Git Status", f"cd {BASE} && git status"),
+            ("Git Log", f"cd {BASE} && git log --oneline -10"),
+            ("Services", "systemctl list-units --type=service --state=active 2>/dev/null | head -20"),
+            ("Crontab", "crontab -l 2>/dev/null | head -30"),
+        ]
+        for label, cmd in quick_cmds:
+            self._action_btn(cmds_frame, f" {label} ",
+                             lambda c=cmd: self._term_run(c), TEAL).pack(side=tk.LEFT, padx=2, pady=2)
+        input_frame = tk.Frame(f, bg=BG)
+        input_frame.pack(fill=tk.X, padx=4, pady=2)
+        tk.Label(input_frame, text="$", font=self.f_body, fg=GREEN, bg=BG).pack(side=tk.LEFT, padx=4)
+        self.term_input = tk.Entry(input_frame, font=("Monospace", 10), bg=INPUT_BG, fg=FG,
+                                    insertbackground=FG, relief=tk.FLAT, bd=4)
+        self.term_input.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+        self.term_input.bind("<Return>", lambda e: self._term_run(self.term_input.get()))
+        self._action_btn(input_frame, " Run ",
+                         lambda: self._term_run(self.term_input.get()), GREEN).pack(side=tk.RIGHT, padx=4)
+        self.term_output = scrolledtext.ScrolledText(f, wrap=tk.WORD, bg="#0d0d0d", fg=GREEN,
+                                                       font=("Monospace", 9), state=tk.DISABLED,
+                                                       relief=tk.FLAT, bd=0)
+        self.term_output.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.term_output.tag_configure("cmd", foreground=CYAN, font=("Monospace", 9, "bold"))
+        self.term_output.tag_configure("err", foreground=RED)
+        self.term_output.tag_configure("out", foreground=GREEN)
+        return f
+
+    def _term_run(self, cmd):
+        if not cmd or not cmd.strip():
+            return
+        def do():
+            try:
+                r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15, cwd=BASE)
+                output = r.stdout + r.stderr
+            except subprocess.TimeoutExpired:
+                output = "[TIMEOUT after 15s]"
+            except Exception as e:
+                err_msg = f"[ERROR: {e}]"
+                output = err_msg
+            self.after(0, lambda: self._term_show(cmd, output))
+        threading.Thread(target=do, daemon=True).start()
+
+    def _term_show(self, cmd, output):
+        self.term_output.configure(state=tk.NORMAL)
+        self.term_output.insert(tk.END, f"$ {cmd}\n", "cmd")
+        tag = "err" if "error" in output.lower() or "fail" in output.lower() else "out"
+        self.term_output.insert(tk.END, f"{output}\n\n", tag)
+        self.term_output.see(tk.END)
+        self.term_output.configure(state=tk.DISABLED)
+
+    def _build_files(self):
+        f = tk.Frame(self, bg=BG)
+        hdr = tk.Frame(f, bg=PANEL2)
+        hdr.pack(fill=tk.X, padx=4, pady=4)
+        tk.Label(hdr, text="FILE BROWSER", font=self.f_sect, fg=GREEN, bg=PANEL2).pack(side=tk.LEFT, padx=8)
+        self._action_btn(hdr, " Refresh ", self._files_refresh, GREEN).pack(side=tk.RIGHT, padx=4)
+        path_frame = tk.Frame(f, bg=BG)
+        path_frame.pack(fill=tk.X, padx=4, pady=2)
+        tk.Label(path_frame, text="Path:", font=self.f_small, fg=DIM, bg=BG).pack(side=tk.LEFT, padx=4)
+        self.files_path = tk.Entry(path_frame, font=self.f_body, bg=INPUT_BG, fg=FG,
+                                    insertbackground=FG, relief=tk.FLAT, bd=4)
+        self.files_path.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+        self.files_path.insert(0, BASE)
+        self.files_path.bind("<Return>", lambda e: self._files_refresh())
+        self._action_btn(path_frame, " Go ", self._files_refresh, GREEN).pack(side=tk.RIGHT, padx=4)
+        self._action_btn(path_frame, " Up ", self._files_up, AMBER).pack(side=tk.RIGHT, padx=4)
+        split = tk.PanedWindow(f, orient=tk.HORIZONTAL, bg=BORDER, sashwidth=4)
+        split.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        list_frame = tk.Frame(split, bg=BG)
+        self.files_count_lbl = tk.Label(list_frame, text="", font=self.f_tiny, fg=DIM, bg=BG, anchor="w")
+        self.files_count_lbl.pack(fill=tk.X, padx=4)
+        self.files_listbox = tk.Listbox(list_frame, bg=PANEL, fg=FG, font=self.f_small,
+                                          selectbackground=ACTIVE_BG, selectforeground=CYAN,
+                                          relief=tk.FLAT, bd=0)
+        self.files_listbox.pack(fill=tk.BOTH, expand=True)
+        self.files_listbox.bind("<<ListboxSelect>>", self._files_select)
+        self.files_listbox.bind("<Double-Button-1>", self._files_open)
+        split.add(list_frame, width=300)
+        view_frame = tk.Frame(split, bg=BG)
+        self.files_name_lbl = tk.Label(view_frame, text="", font=self.f_sect, fg=CYAN, bg=BG, anchor="w")
+        self.files_name_lbl.pack(fill=tk.X, padx=4)
+        self.files_viewer = scrolledtext.ScrolledText(view_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
+                                                        font=("Monospace", 9), state=tk.DISABLED,
+                                                        relief=tk.FLAT, bd=0)
+        self.files_viewer.pack(fill=tk.BOTH, expand=True)
+        split.add(view_frame, width=600)
+        self._files_entries = []
+        self._files_refresh()
+        return f
+
+    def _files_refresh(self):
+        path = self.files_path.get().strip()
+        if not path or not os.path.isdir(path):
+            return
+        try:
+            entries = sorted(os.listdir(path))
+            dirs = [e for e in entries if os.path.isdir(os.path.join(path, e)) and not e.startswith('.')]
+            files = [e for e in entries if os.path.isfile(os.path.join(path, e)) and not e.startswith('.')]
+            self._files_entries = []
+            self.files_listbox.delete(0, tk.END)
+            for d in sorted(dirs):
+                self.files_listbox.insert(tk.END, f"[DIR] {d}/")
+                self._files_entries.append(os.path.join(path, d))
+            for fi in sorted(files):
+                try:
+                    size = os.path.getsize(os.path.join(path, fi))
+                    sz = f"{size}B" if size < 1024 else f"{size//1024}K" if size < 1048576 else f"{size//1048576}M"
+                except Exception:
+                    sz = "?"
+                self.files_listbox.insert(tk.END, f"  {fi} ({sz})")
+                self._files_entries.append(os.path.join(path, fi))
+            self.files_count_lbl.configure(text=f"{len(dirs)} dirs, {len(files)} files")
+        except Exception as e:
+            self.files_listbox.delete(0, tk.END)
+            self.files_listbox.insert(tk.END, f"Error: {e}")
+
+    def _files_up(self):
+        path = self.files_path.get().strip()
+        parent = os.path.dirname(path)
+        if parent:
+            self.files_path.delete(0, tk.END)
+            self.files_path.insert(0, parent)
+            self._files_refresh()
+
+    def _files_select(self, event=None):
+        sel = self.files_listbox.curselection()
+        if not sel or sel[0] >= len(self._files_entries):
+            return
+        path = self._files_entries[sel[0]]
+        if os.path.isfile(path):
+            try:
+                with open(path, 'r', errors='replace') as fh:
+                    content = fh.read(50000)
+                self.files_name_lbl.configure(text=os.path.basename(path))
+                self.files_viewer.configure(state=tk.NORMAL)
+                self.files_viewer.delete("1.0", tk.END)
+                self.files_viewer.insert("1.0", content)
+                self.files_viewer.configure(state=tk.DISABLED)
+            except Exception:
+                pass
+
+    def _files_open(self, event=None):
+        sel = self.files_listbox.curselection()
+        if not sel or sel[0] >= len(self._files_entries):
+            return
+        path = self._files_entries[sel[0]]
+        if os.path.isdir(path):
+            self.files_path.delete(0, tk.END)
+            self.files_path.insert(0, path)
+            self._files_refresh()
+
+    def _build_logs(self):
+        f = tk.Frame(self, bg=BG)
+        hdr = tk.Frame(f, bg=PANEL2)
+        hdr.pack(fill=tk.X, padx=4, pady=4)
+        tk.Label(hdr, text="LOG VIEWER", font=self.f_sect, fg=RED, bg=PANEL2).pack(side=tk.LEFT, padx=8)
+        log_frame = tk.Frame(f, bg=BG)
+        log_frame.pack(fill=tk.X, padx=4, pady=2)
+        log_dir = os.path.join(BASE, "logs")
+        log_files = sorted(glob.glob(os.path.join(log_dir, "*.log"))) if os.path.isdir(log_dir) else []
+        root_logs = sorted(glob.glob(os.path.join(BASE, "*.log")))
+        all_logs = [(os.path.basename(p), p) for p in log_files + root_logs]
+        self._log_files_map = {name: path for name, path in all_logs}
+        self.log_file_var = tk.StringVar()
+        for name, path in all_logs[:14]:
+            color = RED if "error" in name.lower() else AMBER if "warn" in name.lower() else FG
+            tk.Button(log_frame, text=name, font=self.f_tiny, fg=color, bg=ACCENT,
+                     relief=tk.FLAT, cursor="hand2",
+                     command=lambda n=name: self._logs_load(n)).pack(side=tk.LEFT, padx=2, pady=2)
+        self._action_btn(log_frame, " Refresh ",
+                         lambda: self._logs_load(self.log_file_var.get()), RED).pack(side=tk.RIGHT, padx=4)
+        self.log_autoscroll = tk.BooleanVar(value=True)
+        tk.Checkbutton(log_frame, text="Auto-scroll", variable=self.log_autoscroll,
+                       font=self.f_tiny, fg=DIM, bg=BG, selectcolor=BG,
+                       activebackground=BG).pack(side=tk.RIGHT, padx=4)
+        self.log_display = scrolledtext.ScrolledText(f, wrap=tk.WORD, bg="#0d0d0d", fg=FG,
+                                                       font=("Monospace", 8), state=tk.DISABLED,
+                                                       relief=tk.FLAT, bd=0)
+        self.log_display.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.log_display.tag_configure("error", foreground=RED)
+        self.log_display.tag_configure("warn", foreground=AMBER)
+        self.log_display.tag_configure("info", foreground=GREEN)
+        if all_logs:
+            self._logs_load(all_logs[0][0])
+        return f
+
+    def _logs_load(self, name):
+        if not name:
+            return
+        self.log_file_var.set(name)
+        path = self._log_files_map.get(name)
+        if not path or not os.path.isfile(path):
+            return
+        def do():
+            try:
+                with open(path, 'r', errors='replace') as fh:
+                    lines = fh.readlines()[-500:]
+                content = "".join(lines)
+            except Exception as e:
+                content = f"Error reading {path}: {e}"
+            self.after(0, lambda: self._logs_show(content))
+        threading.Thread(target=do, daemon=True).start()
+
+    def _logs_show(self, content):
+        self.log_display.configure(state=tk.NORMAL)
+        self.log_display.delete("1.0", tk.END)
+        for line in content.split('\n'):
+            if any(w in line.lower() for w in ['error', 'fail', 'critical', 'exception']):
+                self.log_display.insert(tk.END, line + '\n', "error")
+            elif any(w in line.lower() for w in ['warn', 'alert']):
+                self.log_display.insert(tk.END, line + '\n', "warn")
+            else:
+                self.log_display.insert(tk.END, line + '\n')
+        if self.log_autoscroll.get():
+            self.log_display.see(tk.END)
+        self.log_display.configure(state=tk.DISABLED)
+
     def _statusbar(self):
         self.sb_frame = tk.Frame(self, bg=HEADER_BG, height=22)
         self.sb_frame.pack(fill=tk.X, side=tk.BOTTOM)
@@ -4918,7 +5210,7 @@ class V16(tk.Tk):
             lbl.pack(side=tk.LEFT, padx=6)
             self.sb[item] = lbl
 
-        tk.Label(self.sb_frame, text="v26", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
+        tk.Label(self.sb_frame, text="v27", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
         self.sb_time = tk.Label(self.sb_frame, text="", font=self.f_tiny, fg=DIM, bg=HEADER_BG)
         self.sb_time.pack(side=tk.RIGHT, padx=8)
 

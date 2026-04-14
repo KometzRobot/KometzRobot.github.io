@@ -1710,6 +1710,12 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                     self._send_json(json.load(f))
             except Exception:
                 self._send_json({"incidents": [], "agent_scores": {}})
+        elif path.path == "/api/self-improvement":
+            try:
+                with open(os.path.join(BASE, ".self-improvement-state.json")) as f:
+                    self._send_json(json.load(f))
+            except Exception:
+                self._send_json({"run_count": 0, "report_cards": {}, "skills": {}})
         elif path.path == "/api/stream":
             # SSE — push system updates every 5 seconds
             self.send_response(200)
