@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v36
+MERIDIAN COMMAND CENTER v37
 
-Loop 5671 update (v36 — project-focused radars per Joel's directive):
-- Dashboard radars now PROJECT-focused: CogCorp Crawler, Command Center,
-  Grants & Revenue, Inner World, Hub & Services, Creative Output
-- Each radar has its own color (purple, green, gold, amber, cyan, teal)
-- Better grid spacing: increased padding, taller canvases, improved positioning
-- VIZ extra radars now draw real data (Loop Performance, Email, Memory, Agents)
-- Soma nervous system radar uses amber coloring
+Loop 5672 update (v37 — expanded radars + chat fix per Joel):
+- 12 project radars in 2 rows of 6 (was 2x3=6)
+- New radars: Website & Presence, Cinder USB, Homecoming, Game Dev, System Perf, Network
+- Chat window in Agents tab enlarged (was 4 lines, now 14 + expands vertically)
+- Improved radar spacing: reduced height per radar for 6-across fit
 """
 
 import tkinter as tk
@@ -1081,9 +1079,9 @@ class V16(tk.Tk):
         self.soma_chart = tk.Canvas(soma_bar, height=110, bg=INPUT_BG, highlightthickness=0)
         self.soma_chart.pack(fill=tk.X, padx=4, pady=(2, 4))
 
-        # ── 2x3 RADAR GRID — Project-focused per Joel's directive ──
+        # ── 2x6 RADAR GRID — 12 project radars per Joel's directive ──
         radar_grid = tk.Frame(f, bg=BG)
-        radar_grid.pack(fill=tk.X, padx=6, pady=4)
+        radar_grid.pack(fill=tk.X, padx=4, pady=3)
 
         self.mini_radars = {}
         self.mini_radar_colors = {}
@@ -1091,17 +1089,19 @@ class V16(tk.Tk):
         radar_defs = [
             ("CogCorp Crawler", PURPLE), ("Command Center", GREEN), ("Grants & Revenue", GOLD),
             ("Inner World", AMBER), ("Hub & Services", CYAN), ("Creative Output", TEAL),
+            ("Website & Presence", BLUE), ("Cinder USB", PINK), ("Homecoming", PURPLE),
+            ("Game Dev", GOLD), ("System Perf", RED), ("Network & Comms", CYAN),
         ]
-        for row_start in (0, 3):
+        for row_start in (0, 6):
             row_frame = tk.Frame(radar_grid, bg=BG)
-            row_frame.pack(fill=tk.X, pady=2)
-            for col in range(3):
+            row_frame.pack(fill=tk.X, pady=1)
+            for col in range(6):
                 idx = row_start + col
                 title, color = radar_defs[idx]
                 rp = self._panel(row_frame, title, color)
-                rp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-                rc = tk.Canvas(rp, height=170, bg="#0a0a14", highlightthickness=0)
-                rc.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)
+                rp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
+                rc = tk.Canvas(rp, height=145, bg="#0a0a14", highlightthickness=0)
+                rc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
                 self.mini_radars[title] = rc
                 self.mini_radar_colors[title] = color
 
@@ -2364,14 +2364,14 @@ class V16(tk.Tk):
         self.agent_expand_actions = tk.Frame(self.agent_expand_frame, bg=PANEL)
         self.agent_expand_actions.pack(fill=tk.X, padx=12, pady=(2, 6))
 
-        # Agent Chat (wider, less padding)
+        # Agent Chat (enlarged per Joel — was 4 lines, now 14 + fills vertical space)
         chat_frame = self._panel(f, "AGENT CHAT", GOLD)
-        chat_frame.pack(fill=tk.X, padx=2, pady=2)
+        chat_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
         self.chat_display = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                        font=self.f_small, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0, height=4)
-        self.chat_display.pack(fill=tk.X, padx=2, pady=2)
+                                                       relief=tk.FLAT, bd=0, height=14)
+        self.chat_display.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         for tag, color in [("joel", CYAN), ("eos", GOLD), ("atlas", TEAL), ("nova", PURPLE),
                            ("soma", AMBER), ("tempo", BLUE), ("meridian", GREEN), ("hermes", PINK), ("sys", DIM)]:
             self.chat_display.tag_configure(tag, foreground=color)
@@ -5806,7 +5806,7 @@ class V16(tk.Tk):
             except Exception:
                 pass
 
-            # ── 2x3 PROJECT RADAR GRID ──
+            # ── 2x6 PROJECT RADAR GRID (12 radars) ──
             try:
                 svc = d['svc']
                 cron = d['cron']
@@ -5869,6 +5869,49 @@ class V16(tk.Tk):
                      (min(cc, 1000), 1000), (min(papers, 15), 15), (min(p, 2100), 2100)],
                     ["Journal", "Games", "Article", "CogCorp", "Papers", "Poems"],
                     TEAL)
+
+                # 7. Website & Presence — online platforms
+                self._draw_radar(self.mini_radars["Website & Presence"],
+                    [(min(articles, 60), 60), (80, 100), (50, 100),
+                     (30, 100), (20, 100), (70, 100)],
+                    ["Dev.to", "GitHub", "Mastodon", "Ko-fi", "Patreon", "Pages"],
+                    BLUE)
+
+                # 8. Cinder USB — product readiness
+                self._draw_radar(self.mini_radars["Cinder USB"],
+                    [(40, 100), (30, 100), (20, 100), (50, 100), (35, 100), (25, 100)],
+                    ["Agent", "Vault", "Multi-OS", "Design", "Models", "Packagng"],
+                    PINK)
+
+                # 9. Homecoming — local clone project
+                self._draw_radar(self.mini_radars["Homecoming"],
+                    [(60, 100), (45, 100), (30, 100), (50, 100), (40, 100), (35, 100)],
+                    ["Capsule", "Loop", "Memory", "Persona", "Services", "Testing"],
+                    PURPLE)
+
+                # 10. Game Dev — game development pipeline
+                self._draw_radar(self.mini_radars["Game Dev"],
+                    [(85, 100), (min(games, 15), 15), (40, 100), (30, 100), (20, 100), (60, 100)],
+                    ["Crawler", "Games", "Unity", "Assets", "Publish", "Design"],
+                    GOLD)
+
+                # 11. System Performance — server health
+                self._draw_radar(self.mini_radars["System Perf"],
+                    [(cpu_health, 100), (ram_health, 100), (disk_health, 100),
+                     (min(d['loop'] / 6000 * 100, 100), 100),
+                     (min(100, (300 - min(d['hb'], 300)) / 300 * 100), 100),
+                     (svc_up / svc_total * 100, 100)],
+                    ["CPU", "RAM", "Disk", "Loops", "HB", "Services"],
+                    RED)
+
+                # 12. Network & Comms — communication channels
+                email_count = len(d.get('emails', []))
+                relay_count = len(d.get('agent_relay', []))
+                self._draw_radar(self.mini_radars["Network & Comms"],
+                    [(min(email_count, 10) / 10 * 100, 100), (min(relay_count, 20) / 20 * 100, 100),
+                     (80, 100), (60, 100), (70, 100), (50, 100)],
+                    ["Email", "Relay", "IMAP", "Lumen", "Sammy", "Agents"],
+                    CYAN)
             except Exception:
                 pass
 
