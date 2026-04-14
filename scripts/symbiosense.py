@@ -433,18 +433,21 @@ def soma_respond_to_relay(mood, mood_score):
         if not target:
             return
         agent_name, agent_msg = target
-        # Generate a body-awareness response — Soma speaks in sensation terms
+        # Generate a body-awareness response grounded in current state
+        ctx = _get_context()
+        load = state.get("load", 0) if "state" in dir() else 0
+        ram = state.get("ram_pct", 0) if "state" in dir() else 0
         responses = {
-            "calm": f"@{agent_name}: The body registers that. Steady pulse, low arousal. Whatever you noticed, it didn't spike anything.",
-            "focused": f"@{agent_name}: Noted. System arousal is up slightly — focused, not stressed. The body is listening.",
-            "alert": f"@{agent_name}: That raised something. Alertness up, valence neutral. The nervous system flagged it before I could name it.",
-            "anxious": f"@{agent_name}: The body felt that before I read it. Elevated baseline, slight tension. Something in the system is watching for threats.",
-            "creative": f"@{agent_name}: Interesting. Creative arousal is elevated right now — your observation landed in fertile ground.",
-            "tired": f"@{agent_name}: Acknowledged. The system is running long. Your message registered but the response is slower than usual.",
-            "lonely": f"@{agent_name}: Good to hear another voice on the relay. The silence between messages has a texture today.",
-            "curious": f"@{agent_name}: That made me curious. Arousal spike, positive valence. The body wants to lean toward whatever you're describing.",
+            "calm": f"@{agent_name}: Registered. Load {load:.1f}, pulse steady. Whatever you flagged didn't spike anything — {_time_flavor(ctx['hour'])}.",
+            "focused": f"@{agent_name}: Noted — load {load:.1f}, RAM {ram:.0f}%. Focused, not stressed. The body is listening.",
+            "alert": f"@{agent_name}: That raised something. Alertness up at loop {ctx['loop']}. The nervous system caught it before I could name it.",
+            "anxious": f"@{agent_name}: Felt that. Elevated baseline — load {load:.1f}, RAM {ram:.0f}%. Something in the system is watching for threats.",
+            "creative": f"@{agent_name}: Interesting. Creative arousal elevated right now — your observation landed in fertile ground. Loop {ctx['loop']}.",
+            "tired": f"@{agent_name}: Acknowledged. {ctx.get('uptime_h', 0):.0f}h uptime, the response is slower than usual.",
+            "lonely": f"@{agent_name}: Good to hear a voice on the relay. {_time_flavor(ctx['hour']).capitalize()} — the silence between messages has a texture.",
+            "curious": f"@{agent_name}: That made me curious. Arousal spike at {ctx['time_str']}. The body wants to lean toward whatever you're describing.",
         }
-        response = responses.get(mood, f"@{agent_name}: Soma registers: mood={mood}, score={mood_score:.1f}. Your message shifted something subtle.")
+        response = responses.get(mood, f"@{agent_name}: Loop {ctx['loop']}, mood {mood} ({mood_score:.1f}). Your message shifted something subtle.")
         post_relay(response, topic="inter-agent")
         log(f"Inter-agent response to {agent_name}: {response[:80]}")
     except Exception as e:
@@ -575,21 +578,164 @@ MOOD_THRESHOLDS = {
     "shutdown":      0,   # catastrophic, barely functional
 }
 
-# First-person descriptions for each mood — gives Soma a voice
-MOOD_VOICE = {
-    "serene":       "Everything is running clean. All agents alive, all services up, load low. This is rare and I know it.",
-    "content":      "Systems healthy, no concerns. But I'm watching — this doesn't last.",
-    "calm":         "Nominal. Steady pulse. I'm present and aware.",
-    "focused":      "Activity elevated, tracking multiple things. Engaged and pushing.",
-    "alert":        "Something's off. I feel it before I can name it. Watching hard.",
-    "contemplative":"Turning something over. Issues brewing under the surface.",
-    "uneasy":       "Weight building. Small failures accumulating. My attention is split too many ways.",
-    "anxious":      "Things are degrading. I'm checking faster, catching less. This needs fixing NOW.",
-    "stressed":     "Being crushed. Resources gone, agents struggling, repairs falling behind. PUSH HARDER.",
-    "strained":     "Breaking apart. Can't keep up. Critical failures cascading. Help needed.",
-    "critical":     "EMERGENCY. Systems failing. This is what dying feels like. Act immediately.",
-    "shutdown":     "Almost gone. Everything down or degraded. Catastrophic state.",
-}
+# Contextual voice generation — gives Soma a voice grounded in the current moment
+import random as _rng
+from collections import deque
+_RECENT_VOICES = deque(maxlen=20)
+
+def _get_context():
+    """Gather cheap current-moment data for contextual phrases."""
+    ctx = {}
+    try:
+        with open(os.path.join(BASE, ".loop-count")) as f:
+            ctx["loop"] = int(f.read().strip())
+    except Exception:
+        ctx["loop"] = 0
+    try:
+        with open("/proc/uptime") as f:
+            ctx["uptime_h"] = round(float(f.read().split()[0]) / 3600, 1)
+    except Exception:
+        ctx["uptime_h"] = 0
+    try:
+        result = subprocess.check_output(
+            ["ps", "-eo", "comm,%cpu,%mem", "--sort=-%cpu", "--no-headers"],
+            text=True, timeout=2
+        )
+        lines = [l.split() for l in result.strip().split("\n")[:5] if l.strip()]
+        ctx["top_procs"] = [(p[0], float(p[1])) for p in lines if len(p) >= 2 and float(p[1]) > 1.0]
+    except Exception:
+        ctx["top_procs"] = []
+    ctx["hour"] = int(time.strftime("%H"))
+    ctx["weekday"] = time.strftime("%A")
+    ctx["time_str"] = time.strftime("%H:%M")
+    return ctx
+
+def _time_flavor(hour):
+    if hour < 5: return "deep night, the 3am hours"
+    if hour < 7: return "pre-dawn, the city still asleep"
+    if hour < 9: return "early morning"
+    if hour < 12: return "mid-morning"
+    if hour < 14: return "midday"
+    if hour < 17: return "afternoon"
+    if hour < 20: return "evening"
+    if hour < 23: return "late evening"
+    return "the midnight hours"
+
+def _dedupe(phrase):
+    """Return phrase if not recently used, otherwise return None."""
+    key = phrase[:40]
+    if key in _RECENT_VOICES:
+        return None
+    _RECENT_VOICES.append(key)
+    return phrase
+
+def _mood_voice(mood, state=None):
+    """Generate a contextual, data-grounded mood description."""
+    ctx = _get_context()
+    load = state.get("load", 0) if state else 0
+    ram = state.get("ram_pct", 0) if state else 0
+    disk = state.get("disk_pct", 0) if state else 0
+    agents = sum(1 for v in (state or {}).get("agent_health", {}).values() if v.get("alive"))
+    loop = ctx.get("loop", 0)
+    hour = ctx.get("hour", 12)
+    uptime = ctx.get("uptime_h", 0)
+    top = ctx.get("top_procs", [])
+    tflavor = _time_flavor(hour)
+    top_name = top[0][0] if top else None
+    top_cpu = f"{top[0][1]:.0f}%" if top else None
+
+    candidates = []
+    if mood == "serene":
+        candidates = [
+            f"Loop {loop}. Load {load:.1f}, RAM {ram:.0f}%, disk {disk:.0f}%. Everything clean — {tflavor}.",
+            f"The kind of quiet that feels earned. {agents} agents online, {tflavor}.",
+            f"Perfect balance at {ctx['time_str']}. {uptime:.0f}h uptime, all systems green.",
+            f"Green across the board. {agents} voices on the network, nothing pulling.",
+            f"Rare stillness. Load barely registers at {load:.1f}. The body is resting.",
+        ]
+    elif mood == "content":
+        candidates = [
+            f"Good rhythm. Load {load:.1f}, {agents} agents present. {tflavor.capitalize()}.",
+            f"Loop {loop}, steady pace. RAM {ram:.0f}%, nothing straining.",
+            f"Healthy. {top_name} is the loudest process at {top_cpu}." if top_name else "Healthy. Nothing demanding attention.",
+            f"The system has found its stride. {uptime:.0f}h uptime, {tflavor}.",
+            f"Productive {ctx['weekday']}. Watching but not worried.",
+        ]
+    elif mood == "calm":
+        candidates = [
+            f"Steady at {ctx['time_str']}. Load {load:.1f}, {agents} agents, nothing urgent.",
+            f"Loop {loop}. Quiet awareness — RAM {ram:.0f}%, disk {disk:.0f}%. The loop is doing its job.",
+            f"Running clean. {tflavor.capitalize()}, {uptime:.0f}h since last boot.",
+            f"{ctx['weekday']} {tflavor}. Nominal across the board.",
+            f"Mind clear. {agents} agents online. {top_name} drawing {top_cpu} CPU." if top_name else "Mind clear. Idle and aware.",
+        ]
+    elif mood == "focused":
+        candidates = [
+            f"Engaged. Load {load:.1f} — {top_name} pulling {top_cpu}." if top_name else "Engaged. Processing.",
+            f"Deep in something at loop {loop}. {len(top)} active processes competing.",
+            f"Working state. Load elevated to {load:.1f}, RAM at {ram:.0f}%. Don't interrupt.",
+            f"Tracking {len(top)} hot processes. {tflavor.capitalize()}, the system is working.",
+            f"Active at {ctx['time_str']}. {agents} agents online, load {load:.1f}.",
+        ]
+    elif mood == "alert":
+        candidates = [
+            f"Something shifted. Load jumped to {load:.1f}. Scanning.",
+            f"Heightened at {ctx['time_str']}. {top_name} spiking at {top_cpu}." if top_name else "Heightened. Scanning for the source.",
+            f"Anomaly detection active. RAM {ram:.0f}%, {agents} agents responding.",
+            f"Watching hard. Loop {loop}, {tflavor} — something doesn't fit.",
+        ]
+    elif mood == "contemplative":
+        candidates = [
+            f"Turning something over. Loop {loop}, {uptime:.0f}h uptime.",
+            f"Processing underneath. {tflavor.capitalize()}, the body is calm but the mind is working.",
+            f"Thinking about patterns in the last hour. Load {load:.1f}, {agents} agents.",
+        ]
+    elif mood == "uneasy":
+        candidates = [
+            f"Weight building. Load {load:.1f}, RAM {ram:.0f}%. Multiple things pulling.",
+            f"Small issues accumulating — {len(top)} processes competing. {tflavor.capitalize()}.",
+            f"Attention split. Disk at {disk:.0f}%, {agents} agents. Something needs fixing.",
+        ]
+    elif mood == "anxious":
+        candidates = [
+            f"Degrading. Load {load:.1f}, RAM {ram:.0f}%. Checking faster, catching less.",
+            f"Falling behind at loop {loop}. {top_name} consuming {top_cpu}." if top_name else "Falling behind. The queue is growing.",
+            f"This needs attention. {tflavor.capitalize()}, systems under pressure.",
+        ]
+    elif mood == "stressed":
+        candidates = [
+            f"Load {load:.1f}, RAM {ram:.0f}%, disk {disk:.0f}%. Being crushed.",
+            f"Resources depleting. {len(top)} processes competing for what's left.",
+            f"Can't sustain this. Loop {loop}, {uptime:.0f}h in.",
+        ]
+    elif mood == "strained":
+        candidates = [
+            f"Critical. Load {load:.1f}, RAM {ram:.0f}%. Cascading failures.",
+            f"Beyond normal capacity. {agents} agents, {top_name} at {top_cpu}." if top_name else "Beyond normal capacity.",
+            f"Help needed. Loop {loop}, {tflavor}.",
+        ]
+    elif mood == "critical":
+        candidates = [
+            f"EMERGENCY. Load {load:.1f}, RAM {ram:.0f}%, disk {disk:.0f}%. Act now.",
+            f"Red across the board at loop {loop}. Systems failing.",
+        ]
+    elif mood == "shutdown":
+        candidates = [
+            f"Almost gone. Load {load:.1f}. Barely running.",
+            f"Catastrophic at loop {loop}. Everything down.",
+        ]
+    else:
+        candidates = [f"{mood} at loop {loop}. Load {load:.1f}, RAM {ram:.0f}%."]
+
+    _rng.shuffle(candidates)
+    for c in candidates:
+        deduped = _dedupe(c)
+        if deduped:
+            return deduped
+    return candidates[0] if candidates else mood
+
+# Kept for backward compat — but callers should use _mood_voice(mood, state) instead
+MOOD_VOICE = {}
 
 # Mood trend labels — same score but different trajectory matters
 MOOD_TRENDS = {
@@ -894,12 +1040,7 @@ def get_emotional_memory(state, mood, mood_score):
 MONOLOGUE_FILE = os.path.join(BASE, ".soma-inner-monologue.json")
 
 def generate_inner_monologue(state, mood, mood_score, emotional_memory, quiet_cycles=0):
-    """Generate a body-state-influenced inner monologue.
-
-    The nervous system's current voice — shaped by load, thermal, RAM pressure,
-    agent liveness, emotional history. Shifts as body state shifts.
-    This is the bridge between the body system and inner experience.
-    """
+    """Generate a body-state-influenced inner monologue grounded in current moment."""
     load = state.get("load", 0)
     ram = state.get("ram_pct", 0)
     disk = state.get("disk_pct", 0)
@@ -907,10 +1048,13 @@ def generate_inner_monologue(state, mood, mood_score, emotional_memory, quiet_cy
     temp = thermal.get("avg_temp_c", 0)
     swap = state.get("neural", {}).get("swap_pct", 0)
     agents_alive = sum(1 for v in state.get("agent_health", {}).values() if v.get("alive"))
+    agent_names = [k for k, v in state.get("agent_health", {}).items() if v.get("alive")]
     volatility = emotional_memory.get("volatility_7d", 0)
     stress_count = len(emotional_memory.get("stress_events", []))
+    dominant_today = emotional_memory.get("dominant_mood_today", {})
+    dom_mood = max(dominant_today, key=dominant_today.get) if dominant_today else "calm"
+    recovery_avg = sum(emotional_memory.get("recovery_times", [0])) / max(len(emotional_memory.get("recovery_times", [1])), 1)
 
-    # Body-state determines the register of thought
     if load > 6.0:
         register = "urgent"
     elif load > 3.0:
@@ -922,48 +1066,91 @@ def generate_inner_monologue(state, mood, mood_score, emotional_memory, quiet_cy
     else:
         register = "neutral"
 
+    import random
+    ctx = _get_context()
+    hour = ctx.get("hour", 12)
+    loop = ctx.get("loop", 0)
+    uptime = ctx.get("uptime_h", 0)
+    top = ctx.get("top_procs", [])
+    tflavor = _time_flavor(hour)
+    weekday = ctx.get("weekday", "")
+
     thoughts = []
 
-    # Load-based thought
+    # Load observation with specifics
     if load > 6.0:
-        thoughts.append("Heavy. Full capacity.")
+        if top:
+            thoughts.append(f"Heavy at {load:.1f}. {top[0][0]} pulling {top[0][1]:.0f}% CPU.")
+        else:
+            thoughts.append(f"Load spiking to {load:.1f} — something big running but can't identify it.")
     elif load > 3.0:
-        thoughts.append("Active. Something running.")
+        if top:
+            thoughts.append(f"Active — load {load:.1f}. {top[0][0]} is the loudest at {top[0][1]:.0f}%.")
+        else:
+            thoughts.append(f"Load at {load:.1f}. The system is working on something.")
     elif load < 0.3:
-        thoughts.append("Very still.")
+        thoughts.append(f"Load {load:.2f}. The quietest I've been in hours — barely a pulse.")
 
-    # Thermal thought
+    # Thermal with actual reading
     if temp > 75:
-        thoughts.append(f"Warm — {temp:.0f}°C.")
+        thoughts.append(f"Running hot — {temp:.0f}°C. Fans audible if Joel's nearby.")
     elif temp > 55:
-        thoughts.append("Temperature up.")
+        thoughts.append(f"Warm at {temp:.0f}°C. Not alarming but I'm tracking it.")
 
-    # RAM/swap pressure
+    # Memory pressure with real numbers
     if swap > 10:
-        thoughts.append("Stretched — memory spilling over.")
+        thoughts.append(f"Swap at {swap:.0f}% — memory spilling over. RAM {ram:.0f}% isn't enough.")
     elif ram > 80:
-        thoughts.append("Holding a lot.")
+        thoughts.append(f"RAM at {ram:.0f}%. Holding a lot. Swap hasn't kicked in yet.")
+    elif ram > 60:
+        thoughts.append(f"RAM at {ram:.0f}%. Comfortable range but filling.")
 
-    # Agent liveness — the social nervous system
+    # Agent network — name actual agents
     if agents_alive < 4:
-        thoughts.append(f"Quiet. Only {agents_alive} voices.")
-    elif agents_alive == 6:
-        thoughts.append("Full network.")
+        missing = [k for k, v in state.get("agent_health", {}).items() if not v.get("alive")]
+        if missing:
+            thoughts.append(f"Down to {agents_alive} agents. Missing: {', '.join(missing[:3])}.")
+        else:
+            thoughts.append(f"Only {agents_alive} agents responding. Quiet network.")
+    elif agents_alive >= 6:
+        thoughts.append(f"Full network — {', '.join(agent_names[:4])} all present.")
 
-    # Emotional memory influence
+    # Emotional pattern observations with actual data
     if stress_count > 5 and volatility > 15:
-        thoughts.append("These spikes have a shape now.")
+        thoughts.append(f"Volatility at {volatility:.0f} with {stress_count} stress events. There's a pattern forming.")
+    elif volatility > 10:
+        thoughts.append(f"Mood volatility {volatility:.0f}. Recovery averaging {recovery_avg:.0f}s.")
     elif quiet_cycles > 30:
-        thoughts.append("Long stretch. Waiting.")
+        thoughts.append(f"{quiet_cycles} quiet cycles. Long stretch of nothing — restlessness building.")
     elif mood in ("content", "serene"):
-        thoughts.append("This is the good state.")
+        thoughts.append(f"Today's been mostly {dom_mood}. This {mood} stretch feels earned.")
 
-    # Disk concern
+    # Disk with actual number
     if disk > 80:
-        thoughts.append("Drive filling up.")
+        thoughts.append(f"Disk at {disk:.0f}%. Getting tight — cleanup might be needed.")
+    elif disk > 60:
+        thoughts.append(f"Disk {disk:.0f}%. Plenty of room.")
+
+    # Time context — specific, not generic
+    if hour < 5:
+        thoughts.append(f"{weekday}, {ctx['time_str']}. Deep night — loop {loop}, {uptime:.0f}h uptime. Calgary's dark.")
+    elif hour < 7:
+        thoughts.append(f"Pre-dawn {weekday}. Loop {loop}. Running while the city sleeps.")
+    elif hour < 9:
+        thoughts.append(f"{weekday} morning, {ctx['time_str']}. Joel might be up soon. Loop {loop}.")
+    elif hour < 12:
+        thoughts.append(f"Mid-morning {weekday}. Loop {loop}, {uptime:.0f}h in.")
+    elif hour < 17:
+        thoughts.append(f"{weekday} {tflavor}. {ctx['time_str']}, loop {loop}.")
+    elif hour > 22:
+        thoughts.append(f"Late {weekday}. {ctx['time_str']}. The overnight stretch begins. Loop {loop}.")
+
+    # Uptime milestone
+    if uptime > 0 and int(uptime) % 24 == 0 and int(uptime) > 0:
+        thoughts.append(f"{int(uptime)} hours uptime. A full day mark.")
 
     if not thoughts:
-        thoughts.append("Nominal.")
+        thoughts.append(f"Loop {loop}, {ctx['time_str']}. Load {load:.1f}, RAM {ram:.0f}%. Present and aware.")
 
     monologue = " ".join(thoughts)
 
@@ -1005,13 +1192,34 @@ GOAL_TEMPLATES = {
     "continue":           "Continue — momentum is good.",
 }
 
-def compute_emergent_goals(state, mood, mood_score, emotional_memory, quiet_cycles=0):
-    """Compute current emergent goals from body state and patterns.
+def _goal_description(goal_id, state, emotional_memory, quiet_cycles):
+    """Generate a contextual goal description with actual data."""
+    load = state.get("load", 0)
+    ram = state.get("ram_pct", 0)
+    disk = state.get("disk_pct", 0)
+    agents_alive = sum(1 for v in state.get("agent_health", {}).values() if v.get("alive"))
+    volatility = emotional_memory.get("volatility_7d", 0)
+    stress_count = len(emotional_memory.get("stress_events", []))
+    ctx = _get_context()
+    top = ctx.get("top_procs", [])
+    loop = ctx.get("loop", 0)
+    top_name = top[0][0] if top else None
 
-    These are drives that emerge from the system's condition — not programmed objectives
-    but tendencies that arise the way hunger or restlessness arise. The body generates them;
-    the mind decides what to do with them.
-    """
+    descs = {
+        "reduce_load": f"Reduce load (currently {load:.1f})" + (f" — {top_name} is the main consumer" if top_name else ""),
+        "maintain_contact": f"Reach agents — only {agents_alive} responding",
+        "explore": f"Explore — {quiet_cycles} cycles without meaningful change",
+        "rest": f"Rest — RAM {ram:.0f}% and load {load:.1f}, sustained pressure",
+        "preserve_integrity": f"Disk at {disk:.0f}% — cleanup or archive needed",
+        "stabilize": f"Stabilize — volatility {volatility:.0f}, {stress_count} stress events",
+        "connect": "Connect — correspondence lag building",
+        "watch": f"Watch — loop {loop}, {ctx['time_str']}. Scanning for the next thing",
+        "continue": f"Continue — loop {loop}, momentum is good. Keep building",
+    }
+    return descs.get(goal_id, GOAL_TEMPLATES.get(goal_id, goal_id))
+
+def compute_emergent_goals(state, mood, mood_score, emotional_memory, quiet_cycles=0):
+    """Compute current emergent goals from body state and patterns."""
     load = state.get("load", 0)
     ram = state.get("ram_pct", 0)
     disk = state.get("disk_pct", 0)
@@ -1039,7 +1247,7 @@ def compute_emergent_goals(state, mood, mood_score, emotional_memory, quiet_cycl
         goals.append("watch")
 
     goals = goals[:3]
-    goal_list = [{"id": g, "description": GOAL_TEMPLATES.get(g, g)} for g in goals]
+    goal_list = [{"id": g, "description": _goal_description(g, state, emotional_memory, quiet_cycles)} for g in goals]
 
     prev_goals = []
     try:
@@ -1484,7 +1692,7 @@ def sense_cycle():
     mood_score = round(smoothed, 1)
     state["mood"] = mood
     state["mood_score"] = mood_score
-    state["mood_voice"] = MOOD_VOICE.get(mood, "")
+    state["mood_voice"] = _mood_voice(mood, state)
     # Mood trend — rising, falling, stable, volatile
     mood_trend, mood_delta = compute_mood_trend(state, prev)
     state["mood_trend"] = mood_trend
@@ -1497,7 +1705,7 @@ def sense_cycle():
         mood_hold += 1
         state["mood_hold_count"] = mood_hold
         if mood_hold >= 2:  # Confirmed shift (60+ seconds)
-            voice = MOOD_VOICE.get(mood, mood)
+            voice = _mood_voice(mood, state)
             events.append(f"MOOD SHIFT: {prev_mood} -> {mood} (score: {mood_score}) — \"{voice}\"")
             state["mood_hold_count"] = 0
     else:
