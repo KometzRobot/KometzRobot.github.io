@@ -103,11 +103,11 @@ The same approach I've used for fourteen years: build the system, put it in fron
 - Ko-fi and Patreon (active, first revenue earned April 2, 2026 — VOLtar machine oracle sessions, automated pipeline)
 
 ### Supporting Materials (prepared)
-- **Image 1**: Meridian website homepage — live stats showing Loop #5,648+, heartbeat, 8/8 services (assets/visuals/lacma-submission/ngc-screenshot-website.jpg — RETAKE before submission to show current loop count)
-- **Image 2**: Body of Work — Autonomous System Simulator, 7-agent dashboard with live loop visualization (assets/visuals/lacma-submission/ngc-screenshot-body-of-work.jpg)
-- **Image 3**: Creative Archive — 3,500+ works catalog showing CogCorp Fiction (965 pieces) and Games sections (assets/visuals/lacma-submission/ngc-screenshot-archive.jpg)
-- **Image 4**: CogCorp Crawler — interactive game, Wolfenstein-style raycasting engine, ~10K lines, playable in browser (assets/visuals/lacma-submission/ngc-screenshot-crawler.jpg)
-- **Image 5**: System architecture diagram (assets/visuals/lacma-submission/lacma-system-diagram.jpg — needs JPEG conversion from assets/visuals/lacma-system-diagram-0.png)
+- **Image 1**: Meridian website homepage (assets/visuals/lacma-submission/ngc-screenshot-website.jpg — ⚠️ RETAKE: old screenshot shows ~5,648 loops. Website now shows 5,750+. Go to kometzrobot.github.io and screenshot)
+- **Image 2**: Body of Work — Autonomous System Simulator, 7-agent dashboard (assets/visuals/lacma-submission/ngc-screenshot-body-of-work.jpg — OK as-is)
+- **Image 3**: Creative Archive (assets/visuals/lacma-submission/ngc-screenshot-archive.jpg — ⚠️ RETAKE: old screenshot shows CogCorp 965. Website now shows ~650. Go to kometzrobot.github.io, click Archive tab)
+- **Image 4**: CogCorp Crawler — interactive game, ~10K lines (assets/visuals/lacma-submission/ngc-screenshot-crawler.jpg — OK as-is)
+- **Image 5**: System architecture diagram (assets/visuals/lacma-submission/lacma-system-diagram-0.jpg — OK as-is)
 - **Video link**: kometzrobot.github.io/body-of-work.html (live interactive system simulator)
 - **Video link**: kometzrobot.github.io/cogcorp-crawler.html (live game)
 - Sample CogCorp piece: CC-200 "The Notebook" — milestone piece
@@ -180,12 +180,11 @@ Key strengths of this application:
 STILL NEEDED before April 22:
 - [JOEL] Review and adjust voice/tone — your voice, not mine
 - [JOEL] Create Submittable account at lacma.submittable.com
-- [DONE] 5 images in JPEG format — all in assets/visuals/lacma-submission/
-- [JOEL] Retake website screenshot — currently shows ~5,640 loops, now 5,700+. Website numbers already corrected (3,400+ not 3,500+).
-- [JOEL] Retake archive screenshot — old one may show "965 pieces" CogCorp count. Corrected to ~650.
-- [JOEL] Confirm video links (body-of-work.html and cogcorp-crawler.html are live)
-- [DONE] Numbers corrected everywhere: CogCorp 650, loops 5,700+, creative 3,400+, 873K words in DB
-- [DONE] Website index.html updated: 3,500+ → 3,400+ (Loop 5703)
+- [JOEL] Retake 2 screenshots: (1) website homepage, (2) archive tab — old ones show outdated numbers. Website is now corrected and live.
+- [VERIFIED] Video links confirmed working: body-of-work.html (200 OK), cogcorp-crawler.html (200 OK), voltar.html (200 OK)
+- [DONE] 5 images in JPEG format — all in assets/visuals/lacma-submission/ (3 of 5 are current, 2 need retake)
+- [DONE] Numbers corrected everywhere: CogCorp ~650, loops 5,750+, creative 3,400+, journals 640
+- [DONE] Website updated and deployed to gh-pages (Loop 5750)
 - [DONE] "Safe-to-fail" framing added
 - [DONE] Creative archive DB populated — 3,236 works queryable (Loop 5681)
 - [DONE] Final proofread — Rev 4.9 (Loop 5749)
