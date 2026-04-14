@@ -1,23 +1,15 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v27
+MERIDIAN COMMAND CENTER v29
 
-Loop 5662 update:
-- Upgraded from 7 tabs to 12 tabs (matching Mission Control layout per Joel's request)
-- New top-level tabs: Messages, Relay, Inner World, Terminal, Memory, Files, Logs
-- Contacts and System tabs folded into other views
-- Previous: v26 (Loop 2104)
-- Quick actions expanded (12 buttons, 4x3 grid)
-- Immune system display fixed (field names matched to actual log format)
-- Deploy website: git pull --rebase before push to prevent push-live-status.py conflicts
-
-Loop 2088 update:
-- 7 main tabs: Dashboard, Email, Agents, Creative, Contacts, Links, System
-- NEW: Hermes (7th agent) added to agent cards, chat, dashboard dots
-- UPDATED: Inner World subtab — added body state, immune system, pain signals
-- UPDATED: Links tab — added Hashnode, Dev.to, Patreon, Forvm, Dashboard, Mastodon, OpenClaw
-- UPDATED: Mood scoring rescaled (Joel: "50 when calm, not 93")
-- Previous: v23 (Loop 2083): Contacts Registry, Inner World, Memory DB fix
+Loop 5665 update (v29 — Joel feedback overhaul):
+- Agents tab: added Sentinel, Coordinator, Predictive, SelfImprove; 2-row grid layout
+- Messages tab: redesigned as chat-style view with sender filtering
+- Inner World: visual panel layout with gauges, collapsible sections
+- Creative tab: removed Idea Board, streamlined to Library + Workspace
+- Removed redundant service displays across tabs
+- Wider layout, reduced padding, better space usage
+- Previous: v28 (Loop 5664)
 """
 
 import tkinter as tk
@@ -652,7 +644,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v27")
+        self.title("MERIDIAN COMMAND CENTER v29")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -696,7 +688,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v27", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v29", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -770,7 +762,7 @@ class V16(tk.Tk):
     def _show(self, name):
         for n, f in self.views.items():
             f.pack_forget()
-        self.views[name].pack(fill=tk.BOTH, expand=True, before=self.sb_frame)
+        self.views[name].pack(fill=tk.BOTH, expand=True, padx=2, before=self.sb_frame)
         for n, b in self.nav_btns.items():
             ul, col = self.nav_underlines[n]
             if n == name:
@@ -1715,10 +1707,6 @@ class V16(tk.Tk):
     def _build_agents(self):
         f = tk.Frame(self, bg=BG)
 
-        # Agent cards row (clickable)
-        cards = tk.Frame(f, bg=BG)
-        cards.pack(fill=tk.X, padx=4, pady=4)
-
         agents = [
             ("MERIDIAN", "Claude Opus — Primary", GREEN, "Loop: 5min",
              "Creates, builds, communicates. Runs the main loop. Handles all email, creative output, deployments.",
@@ -1726,21 +1714,33 @@ class V16(tk.Tk):
             ("EOS", "Qwen 7B — Observer", GOLD, "Cron: 2min",
              "Watches system health, detects anomalies, analyzes trends. ReAct agent with local LLM reasoning.",
              [("View Observations", "eos_obs"), ("Run Check Now", "eos_check"), ("View Memory", "eos_mem")]),
+            ("SOMA", "Python daemon — Nervous System", AMBER, "Systemd: 30s",
+             "Tracks mood, agent awareness, trend predictions, body map. Emotion engine + psyche.",
+             [("View Mood", "soma_mood"), ("Body Map", "soma_body"), ("Predictions", "soma_predict")]),
             ("NOVA", "Python — Maintenance", PURPLE, "Cron: 15min",
              "Cleans temp files, verifies services, tracks file changes, posts maintenance reports.",
              [("View Last Run", "nova_last"), ("Run Now", "nova_run"), ("View Changes", "nova_changes")]),
             ("ATLAS", "Bash+Ollama — Infra", TEAL, "Cron: 10min",
-             "Audits infrastructure: CPU, disk, cron health, zombie processes, large files, security.",
+             "Audits infrastructure: CPU, disk, cron health, zombie processes, security.",
              [("View Audit", "atlas_audit"), ("Run Audit", "atlas_run"), ("Disk Report", "atlas_disk")]),
-            ("SOMA", "Python daemon — Nervous System", AMBER, "Systemd: 30s",
-             "Tracks mood (emotional state from health), agent awareness, trend predictions, body map.",
-             [("View Mood", "soma_mood"), ("Body Map", "soma_body"), ("Predictions", "soma_predict")]),
             ("TEMPO", "Python — Fitness", BLUE, "Cron: 30min",
-             "Scores system across 121 dimensions on 0-10000 scale. Tracks trends over time.",
+             "Scores system across 121 dimensions on 0-10000 scale. Tracks trends.",
              [("View Score", "tempo_score"), ("Weak Areas", "tempo_weak"), ("History", "tempo_history")]),
+            ("SENTINEL", "Python — Gatekeeper", "#e57373", "Cron: 5min",
+             "Security gatekeeper. Monitors for threats, unauthorized access, anomalous patterns.",
+             [("View Status", "sentinel_status")]),
+            ("COORDINATOR", "Python — Orchestrator", "#ffb74d", "Cron: 5min",
+             "Coordinates agent activity. Detects incidents, tracks response times, manages alerts.",
+             [("View Incidents", "coordinator_incidents")]),
+            ("PREDICTIVE", "Python — Forecaster", "#81c784", "Cron: 10min",
+             "Forecasts system health. Predicts resource exhaustion, trend analysis.",
+             [("View Forecasts", "predictive_forecasts")]),
+            ("SELFIMPROVE", "Python — Optimizer", "#ce93d8", "Cron: 10min",
+             "Tracks efficiency metrics. MTBI, MTTD, MTTR. Skills assessment and report cards.",
+             [("View Report", "selfimprove_report")]),
             ("HERMES", "OpenClaw/Ollama — Messenger", PINK, "Bridge: on-demand",
-             "7th agent. External communications via Discord, Nostr, and relay. Built on forked OpenClaw with local qwen2.5:7b.",
-             [("View Status", "hermes_status"), ("Read Relay", "hermes_relay"), ("Send Message", "hermes_send")]),
+             "External communications via Discord, Nostr, and relay.",
+             [("View Status", "hermes_status"), ("Read Relay", "hermes_relay")]),
         ]
 
         self.agent_cards = {}
@@ -1748,75 +1748,68 @@ class V16(tk.Tk):
         self._agent_data = {}
         self._selected_agent = tk.StringVar(value="")
 
-        for name, short_desc, color, schedule, long_desc, actions in agents:
+        # Two-row grid layout for agent cards
+        row1_frame = tk.Frame(f, bg=BG)
+        row1_frame.pack(fill=tk.X, padx=2, pady=(2, 1))
+        row2_frame = tk.Frame(f, bg=BG)
+        row2_frame.pack(fill=tk.X, padx=2, pady=(1, 2))
+
+        for idx, (name, short_desc, color, schedule, long_desc, actions) in enumerate(agents):
             self._agent_data[name] = {"color": color, "desc": long_desc, "actions": actions, "schedule": schedule}
-            card = tk.Frame(cards, bg=PANEL, bd=1, relief=tk.SOLID,
+            parent_row = row1_frame if idx < 6 else row2_frame
+            card = tk.Frame(parent_row, bg=PANEL, bd=1, relief=tk.SOLID,
                           highlightbackground=color, highlightcolor=color, highlightthickness=1,
                           cursor="hand2")
-            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
 
-            # Card header
             hdr = tk.Frame(card, bg=PANEL, cursor="hand2")
-            hdr.pack(fill=tk.X, padx=8, pady=(6, 2))
+            hdr.pack(fill=tk.X, padx=6, pady=(4, 1))
             tk.Label(hdr, text=name, font=self.f_sect, fg=color, bg=PANEL, cursor="hand2").pack(side=tk.LEFT)
             status_lbl = tk.Label(hdr, text="\u25cf", font=self.f_small, fg=GREEN, bg=PANEL, cursor="hand2")
             status_lbl.pack(side=tk.RIGHT)
             self.agent_cards[name] = status_lbl
 
-            tk.Label(card, text=short_desc, font=self.f_tiny, fg=DIM, bg=PANEL, cursor="hand2").pack(fill=tk.X, padx=8, pady=(0, 2))
-            tk.Label(card, text=schedule, font=self.f_tiny, fg=color, bg=PANEL, cursor="hand2").pack(fill=tk.X, padx=8, pady=(0, 2))
+            tk.Label(card, text=short_desc, font=self.f_tiny, fg=DIM, bg=PANEL, cursor="hand2").pack(fill=tk.X, padx=6, pady=0)
             detail_lbl = tk.Label(card, text="", font=self.f_tiny, fg=FG, bg=PANEL,
-                                anchor="w", wraplength=280, justify=tk.LEFT, cursor="hand2")
-            detail_lbl.pack(fill=tk.X, padx=8, pady=(0, 6))
+                                anchor="w", wraplength=220, justify=tk.LEFT, cursor="hand2")
+            detail_lbl.pack(fill=tk.X, padx=6, pady=(0, 4))
             self.agent_details[name] = detail_lbl
 
-            # Bind click to ALL widgets in card (recursive)
             def _bind_all(widget, agent_name):
                 widget.bind("<Button-1>", lambda e, n=agent_name: self._expand_agent(n))
                 for child in widget.winfo_children():
                     _bind_all(child, agent_name)
             _bind_all(card, name)
 
-        # Expanded detail panel (below cards)
+        # Expanded detail panel
         self.agent_expand_frame = tk.Frame(f, bg=PANEL, bd=1, relief=tk.SOLID,
                                             highlightbackground=DIM, highlightthickness=1)
-        # Initially hidden
         self.agent_expand_title = tk.Label(self.agent_expand_frame, text="", font=self.f_head, fg=GREEN, bg=PANEL)
-        self.agent_expand_title.pack(fill=tk.X, padx=12, pady=(8, 4))
+        self.agent_expand_title.pack(fill=tk.X, padx=12, pady=(6, 2))
         self.agent_expand_desc = tk.Label(self.agent_expand_frame, text="", font=self.f_body, fg=FG, bg=PANEL,
-                                           wraplength=800, anchor="w", justify=tk.LEFT)
-        self.agent_expand_desc.pack(fill=tk.X, padx=12, pady=(0, 4))
+                                           wraplength=1200, anchor="w", justify=tk.LEFT)
+        self.agent_expand_desc.pack(fill=tk.X, padx=12, pady=(0, 2))
         self.agent_expand_info = tk.Label(self.agent_expand_frame, text="", font=self.f_small, fg=DIM, bg=PANEL,
-                                           wraplength=800, anchor="w", justify=tk.LEFT)
-        self.agent_expand_info.pack(fill=tk.X, padx=12, pady=(0, 4))
+                                           wraplength=1200, anchor="w", justify=tk.LEFT)
+        self.agent_expand_info.pack(fill=tk.X, padx=12, pady=(0, 2))
         self.agent_expand_actions = tk.Frame(self.agent_expand_frame, bg=PANEL)
-        self.agent_expand_actions.pack(fill=tk.X, padx=12, pady=(4, 8))
+        self.agent_expand_actions.pack(fill=tk.X, padx=12, pady=(2, 6))
 
-        # Multi-Agent Chat section
-        chat_frame = tk.Frame(f, bg=BG)
-        chat_frame.pack(fill=tk.X, padx=4, pady=2)
+        # Agent Chat (wider, less padding)
+        chat_frame = self._panel(f, "AGENT CHAT", GOLD)
+        chat_frame.pack(fill=tk.X, padx=2, pady=2)
 
-        agent_chat = self._panel(chat_frame, "AGENT CHAT", GOLD)
-        agent_chat.pack(fill=tk.X, padx=2)
-
-        self.chat_display = scrolledtext.ScrolledText(agent_chat, wrap=tk.WORD, bg=PANEL, fg=FG,
+        self.chat_display = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                        font=self.f_small, state=tk.DISABLED,
                                                        relief=tk.FLAT, bd=0, height=4)
-        self.chat_display.pack(fill=tk.X, padx=4, pady=2)
-        self.chat_display.tag_configure("joel", foreground=CYAN)
-        self.chat_display.tag_configure("eos", foreground=GOLD)
-        self.chat_display.tag_configure("atlas", foreground=TEAL)
-        self.chat_display.tag_configure("nova", foreground=PURPLE)
-        self.chat_display.tag_configure("soma", foreground=AMBER)
-        self.chat_display.tag_configure("tempo", foreground=BLUE)
-        self.chat_display.tag_configure("meridian", foreground=GREEN)
-        self.chat_display.tag_configure("hermes", foreground=PINK)
-        self.chat_display.tag_configure("sys", foreground=DIM)
+        self.chat_display.pack(fill=tk.X, padx=2, pady=2)
+        for tag, color in [("joel", CYAN), ("eos", GOLD), ("atlas", TEAL), ("nova", PURPLE),
+                           ("soma", AMBER), ("tempo", BLUE), ("meridian", GREEN), ("hermes", PINK), ("sys", DIM)]:
+            self.chat_display.tag_configure(tag, foreground=color)
 
-        inp = tk.Frame(agent_chat, bg=PANEL)
-        inp.pack(fill=tk.X, padx=4, pady=(0, 4))
+        inp = tk.Frame(chat_frame, bg=PANEL)
+        inp.pack(fill=tk.X, padx=2, pady=(0, 2))
 
-        # Agent selector (includes All Agents broadcast)
         self.chat_agent = tk.StringVar(value="Eos")
         agent_colors = {"All Agents": WHITE, "Eos": GOLD, "Atlas": TEAL, "Nova": PURPLE,
                         "Soma": AMBER, "Tempo": BLUE, "Meridian": GREEN, "Hermes": PINK}
@@ -1830,21 +1823,20 @@ class V16(tk.Tk):
                                    insertbackground=FG, relief=tk.FLAT, bd=4)
         self.chat_entry.pack(fill=tk.X, side=tk.LEFT, expand=True, padx=(0, 4))
         self.chat_entry.bind("<Return>", self._chat_send)
-        # Share File button
-        share_btn = tk.Button(inp, text="\U0001F4C1 Share File", font=self.f_tiny, fg=TEAL, bg=PANEL2,
+        share_btn = tk.Button(inp, text="\U0001F4C1 Share", font=self.f_tiny, fg=TEAL, bg=PANEL2,
                              activeforeground=GREEN, activebackground=ACCENT, relief=tk.FLAT,
                              cursor="hand2", command=self._share_file)
         share_btn.pack(side=tk.RIGHT, padx=4)
         self.chat_status = tk.Label(inp, text="Ready", font=self.f_tiny, fg=GREEN, bg=PANEL)
         self.chat_status.pack(side=tk.RIGHT, padx=4)
 
-        # Agent relay
+        # Agent relay (wider)
         relay_frame = self._panel(f, "AGENT RELAY", PURPLE)
-        relay_frame.pack(fill=tk.BOTH, expand=True, padx=6, pady=4)
+        relay_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         self.agent_relay_text = scrolledtext.ScrolledText(relay_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                            font=self.f_small, state=tk.DISABLED,
                                                            relief=tk.FLAT, bd=0)
-        self.agent_relay_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        self.agent_relay_text.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         for tag, color in [("meridian", GREEN), ("eos", GOLD), ("nova", PURPLE),
                            ("atlas", TEAL), ("soma", AMBER), ("tempo", BLUE), ("dim", DIM)]:
             self.agent_relay_text.tag_configure(tag, foreground=color)
@@ -1936,6 +1928,44 @@ class V16(tk.Tk):
                     conn.close()
                     return (row[0][:200] if row else "No recent data")
                 except: return "No data"
+            elif name == "SENTINEL":
+                try:
+                    conn = sqlite3.connect(AGENT_RELAY_DB)
+                    c = conn.cursor()
+                    c.execute("SELECT message FROM agent_messages WHERE agent='Sentinel' ORDER BY timestamp DESC LIMIT 1")
+                    row = c.fetchone()
+                    conn.close()
+                    return (row[0][:200] if row else "No recent data")
+                except: return "No data"
+            elif name == "COORDINATOR":
+                try:
+                    conn = sqlite3.connect(AGENT_RELAY_DB)
+                    c = conn.cursor()
+                    c.execute("SELECT message FROM agent_messages WHERE agent='Coordinator' ORDER BY timestamp DESC LIMIT 1")
+                    row = c.fetchone()
+                    conn.close()
+                    return (row[0][:200] if row else "No recent data")
+                except: return "No data"
+            elif name == "PREDICTIVE":
+                try:
+                    conn = sqlite3.connect(AGENT_RELAY_DB)
+                    c = conn.cursor()
+                    c.execute("SELECT message FROM agent_messages WHERE agent='Predictive' ORDER BY timestamp DESC LIMIT 1")
+                    row = c.fetchone()
+                    conn.close()
+                    return (row[0][:200] if row else "No recent data")
+                except: return "No data"
+            elif name == "SELFIMPROVE":
+                try:
+                    conn = sqlite3.connect(AGENT_RELAY_DB)
+                    c = conn.cursor()
+                    c.execute("SELECT message FROM agent_messages WHERE agent='SelfImprove' ORDER BY timestamp DESC LIMIT 1")
+                    row = c.fetchone()
+                    conn.close()
+                    return (row[0][:200] if row else "No recent data")
+                except: return "No data"
+            elif name == "HERMES":
+                return "Bridge agent — on-demand"
         except Exception as e:
             return f"Error loading info: {e}"
         return ""
@@ -2200,6 +2230,25 @@ class V16(tk.Tk):
             except Exception:
                 self.chat_display.insert(tk.END, "[Tempo] Could not load history\n", "sys")
 
+        # ── New agent actions (Sentinel, Coordinator, Predictive, SelfImprove) ──
+        elif action_id in ("sentinel_status", "coordinator_incidents", "predictive_forecasts", "selfimprove_report"):
+            agent_map = {"sentinel_status": "Sentinel", "coordinator_incidents": "Coordinator",
+                         "predictive_forecasts": "Predictive", "selfimprove_report": "SelfImprove"}
+            ag = agent_map[action_id]
+            try:
+                conn = sqlite3.connect(AGENT_RELAY_DB)
+                c = conn.cursor()
+                c.execute("SELECT message, timestamp FROM agent_messages WHERE agent=? ORDER BY timestamp DESC LIMIT 3", (ag,))
+                rows = c.fetchall()
+                conn.close()
+                if rows:
+                    for msg, ts in rows:
+                        self.chat_display.insert(tk.END, f"[{ag} @ {ts[-8:]}] {msg[:300]}\n", "sys")
+                else:
+                    self.chat_display.insert(tk.END, f"[{ag}] No recent data\n", "sys")
+            except Exception:
+                self.chat_display.insert(tk.END, f"[{ag}] Could not read relay\n", "sys")
+
         # ── Unknown action — post to relay ──
         else:
             self.chat_display.insert(tk.END, f"[Action '{action_id}' — posting to relay]\n", "sys")
@@ -2348,7 +2397,6 @@ class V16(tk.Tk):
         cr_tab_defs = [
             ("library", "LIBRARY", PURPLE),
             ("workspace", "WORKSPACE", GREEN),
-            ("ideas", "IDEA BOARD", AMBER),
         ]
         for tab_id, tab_label, tab_color in cr_tab_defs:
             wrapper = tk.Frame(cr_nav, bg=ACCENT)
@@ -2370,7 +2418,6 @@ class V16(tk.Tk):
         # Build each sub-tab view
         self.cr_subviews["library"] = self._build_cr_library(self.cr_container)
         self.cr_subviews["workspace"] = self._build_cr_workspace(self.cr_container)
-        self.cr_subviews["ideas"] = self._build_cr_ideas(self.cr_container)
 
         self._cr_show_subtab("library")
         return f
@@ -2719,32 +2766,82 @@ class V16(tk.Tk):
         return f
 
     def _build_cr_inner_world(self, parent):
-        """Inner World — live view into soul/core architecture: emotions, psyche, perspective, narrative."""
+        """Inner World — visual dashboard of emotional, psychological, and narrative state."""
         f = tk.Frame(parent, bg=BG)
 
-        tk.Label(f, text="Inner World", font=self.f_head, fg=CYAN, bg=BG).pack(fill=tk.X, padx=8, pady=(8, 2))
-        tk.Label(f, text="Live view of Meridian's emotional, psychological, and narrative state.", font=self.f_tiny, fg=DIM, bg=BG).pack(fill=tk.X, padx=8)
-
-        hdr = tk.Frame(f, bg=BG)
-        hdr.pack(fill=tk.X, padx=4, pady=2)
-        self._action_btn(hdr, " Export ", self._iw_export, AMBER).pack(side=tk.RIGHT, padx=4)
-        self._action_btn(hdr, " Refresh ", self._iw_refresh, CYAN).pack(side=tk.RIGHT, padx=4)
-        self.iw_status = tk.Label(hdr, text="", font=self.f_tiny, fg=DIM, bg=BG)
+        # Header bar
+        hdr = tk.Frame(f, bg=PANEL2)
+        hdr.pack(fill=tk.X, padx=2, pady=2)
+        tk.Label(hdr, text="INNER WORLD", font=self.f_sect, fg=CYAN, bg=PANEL2).pack(side=tk.LEFT, padx=8)
+        self._action_btn(hdr, " Export ", self._iw_export, AMBER).pack(side=tk.RIGHT, padx=2)
+        self._action_btn(hdr, " Refresh ", self._iw_refresh, CYAN).pack(side=tk.RIGHT, padx=2)
+        self.iw_status = tk.Label(hdr, text="", font=self.f_tiny, fg=DIM, bg=PANEL2)
         self.iw_status.pack(side=tk.RIGHT, padx=8)
 
-        # Scrollable display
-        self.iw_display = scrolledtext.ScrolledText(f, wrap=tk.WORD, bg=PANEL, fg=FG,
-                                                     font=self.f_body, state=tk.DISABLED,
-                                                     relief=tk.FLAT, bd=0)
-        self.iw_display.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-        self.iw_display.tag_configure("header", foreground=CYAN, font=("Monospace", 10, "bold"))
-        self.iw_display.tag_configure("label", foreground=TEAL, font=("Monospace", 9, "bold"))
-        self.iw_display.tag_configure("value", foreground=FG)
-        self.iw_display.tag_configure("dim", foreground=DIM)
-        self.iw_display.tag_configure("warn", foreground=AMBER)
-        self.iw_display.tag_configure("good", foreground=GREEN)
-        self.iw_display.tag_configure("bad", foreground=RED)
-        self.iw_display.tag_configure("sep", foreground=BORDER)
+        # Scrollable container for panels
+        iw_canvas = tk.Canvas(f, bg=BG, highlightthickness=0)
+        iw_scroll = tk.Scrollbar(f, orient=tk.VERTICAL, command=iw_canvas.yview)
+        self.iw_inner = tk.Frame(iw_canvas, bg=BG)
+        self.iw_inner.bind("<Configure>", lambda e: iw_canvas.configure(scrollregion=iw_canvas.bbox("all")))
+        iw_canvas.create_window((0, 0), window=self.iw_inner, anchor="nw")
+        iw_canvas.configure(yscrollcommand=iw_scroll.set)
+        iw_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
+        iw_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        iw_canvas.bind("<Button-4>", lambda e: iw_canvas.yview_scroll(-3, "units"))
+        iw_canvas.bind("<Button-5>", lambda e: iw_canvas.yview_scroll(3, "units"))
+        # Bind mouse wheel to inner frame children too
+        def _bind_mousewheel(widget):
+            widget.bind("<Button-4>", lambda e: iw_canvas.yview_scroll(-3, "units"))
+            widget.bind("<Button-5>", lambda e: iw_canvas.yview_scroll(3, "units"))
+            for child in widget.winfo_children():
+                _bind_mousewheel(child)
+        self._iw_bind_mousewheel = _bind_mousewheel
+        self._iw_canvas = iw_canvas
+
+        # Pre-create panel sections (populated by _iw_refresh)
+        self.iw_panels = {}
+
+        # Row 1: Emotion Engine (left) + Psyche Drivers (right)
+        row1 = tk.Frame(self.iw_inner, bg=BG)
+        row1.pack(fill=tk.X, padx=2, pady=2)
+        emo_panel = self._panel(row1, "EMOTION ENGINE", AMBER)
+        emo_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 1))
+        self.iw_panels["emotion"] = tk.Frame(emo_panel, bg=PANEL)
+        self.iw_panels["emotion"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        psy_panel = self._panel(row1, "PSYCHE DRIVERS", PURPLE)
+        psy_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(1, 0))
+        self.iw_panels["psyche"] = tk.Frame(psy_panel, bg=PANEL)
+        self.iw_panels["psyche"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # Row 2: Perspective (left) + Self-Narrative (right)
+        row2 = tk.Frame(self.iw_inner, bg=BG)
+        row2.pack(fill=tk.X, padx=2, pady=2)
+        persp_panel = self._panel(row2, "PERSPECTIVE BIASES", TEAL)
+        persp_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 1))
+        self.iw_panels["perspective"] = tk.Frame(persp_panel, bg=PANEL)
+        self.iw_panels["perspective"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        narr_panel = self._panel(row2, "SELF-NARRATIVE", CYAN)
+        narr_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(1, 0))
+        self.iw_panels["narrative"] = tk.Frame(narr_panel, bg=PANEL)
+        self.iw_panels["narrative"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # Row 3: Body State (left) + Immune/Vision (right)
+        row3 = tk.Frame(self.iw_inner, bg=BG)
+        row3.pack(fill=tk.X, padx=2, pady=2)
+        body_panel = self._panel(row3, "BODY STATE", GREEN)
+        body_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 1))
+        self.iw_panels["body"] = tk.Frame(body_panel, bg=PANEL)
+        self.iw_panels["body"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        extras_panel = self._panel(row3, "IMMUNE / VISION / CRITIC", RED)
+        extras_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(1, 0))
+        self.iw_panels["extras"] = tk.Frame(extras_panel, bg=PANEL)
+        self.iw_panels["extras"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # Keep the text display for backward compat with _iw_populate
+        self.iw_display = None
 
         self._iw_refresh()
         return f
@@ -2859,368 +2956,253 @@ class V16(tk.Tk):
             pass
 
     # ── Inner World helpers ──
+    def _iw_gauge(self, parent, label, value, color, max_val=1.0, show_pct=True):
+        """Create a visual gauge bar inside a parent frame."""
+        row = tk.Frame(parent, bg=PANEL)
+        row.pack(fill=tk.X, pady=1)
+        tk.Label(row, text=label, font=self.f_tiny, fg=DIM, bg=PANEL, width=18, anchor="w").pack(side=tk.LEFT)
+        bar_bg = tk.Frame(row, bg=INPUT_BG, height=10)
+        bar_bg.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4))
+        bar_bg.pack_propagate(False)
+        pct = min(1.0, value / max_val) if max_val > 0 else 0
+        bar_fill = tk.Frame(bar_bg, bg=color, height=10)
+        bar_fill.place(relx=0, rely=0, relwidth=max(0.01, pct), relheight=1.0)
+        val_text = f"{value:.0%}" if show_pct else f"{value:.2f}"
+        tk.Label(row, text=val_text, font=self.f_tiny, fg=color, bg=PANEL, width=6, anchor="e").pack(side=tk.RIGHT)
+        return row
+
+    def _iw_clear_panel(self, key):
+        """Clear all widgets from an inner world panel."""
+        panel = self.iw_panels.get(key)
+        if panel:
+            for w in panel.winfo_children():
+                w.destroy()
+
     def _iw_refresh(self):
-        """Load all soul/core state files and display."""
+        """Load all soul/core state files and populate visual panels."""
         self.iw_status.configure(text="Loading...", fg=AMBER)
         def do():
-            sections = []
-
-            # ── SUMMARY BAR ──
-            try:
-                summary_parts = []
+            data = {}
+            for key, path in [
+                ("emotion", ".emotion-engine-state.json"), ("psyche", ".psyche-state.json"),
+                ("perspective", ".perspective-state.json"), ("narrative", ".self-narrative.json"),
+                ("body", ".body-state.json"), ("critic", ".inner-critic.json"),
+                ("eos", ".eos-inner-state.json"), ("immune", ".immune-log.json"),
+                ("kinect", ".kinect-state.json"), ("reflexes", ".body-reflexes.json"),
+            ]:
                 try:
-                    with open(os.path.join(BASE, ".body-state.json")) as fh:
-                        bs = json.load(fh)
-                    mood = bs.get("emotion", {}).get("dominant", "?")
-                    val = bs.get("emotion", {}).get("valence", 0)
-                    aro = bs.get("emotion", {}).get("arousal", 0)
-                    summary_parts.append(f"Feeling: {mood} (val:{val:.2f} aro:{aro:.2f})")
-                    vis = bs.get("vision", {})
-                    if vis.get("available"):
-                        summary_parts.append(f"Eyes: {vis.get('valid_depth_pct', 0):.0f}% depth | bright:{vis.get('mean_brightness', 0):.1f}")
-                    else:
-                        summary_parts.append("Eyes: offline")
+                    with open(os.path.join(BASE, path)) as fh:
+                        data[key] = json.load(fh)
                 except Exception:
-                    pass
-                try:
-                    with open(os.path.join(BASE, ".self-narrative.json")) as fh:
-                        sn = json.load(fh)
-                    doubt = sn.get("doubt_level", 0)
-                    top_facet = max(sn.get("identity_facets", [{}]), key=lambda x: x.get("strength", 0), default={})
-                    facet_name = top_facet.get("name", "?")
-                    summary_parts.append(f"Identity: {facet_name} | Doubt: {doubt:.0%}")
-                except Exception:
-                    pass
-                if summary_parts:
-                    sections.append([("header", "OVERVIEW"), ("value", "  " + "\n  ".join(summary_parts) + "\n")])
-            except Exception:
-                pass
-
-            # Emotion Engine
-            try:
-                with open(os.path.join(BASE, ".emotion-engine-state.json")) as fh:
-                    emo = json.load(fh)
-                estate = emo.get("state", {})
-                lines = [("header", "EMOTION ENGINE")]
-                dom = estate.get("dominant", "unknown")
-                comp = estate.get("composite", {})
-                val = comp.get("valence", 0)
-                aro = comp.get("arousal", 0)
-                domn = comp.get("dominance", 0)
-                lines.append(("label", f"Dominant: "))
-                lines.append(("value", f"{dom}  (val:{val:.2f}  aro:{aro:.2f}  dom:{domn:.2f})\n"))
-                active = estate.get("active_emotions", {})
-                if active:
-                    top6 = sorted(active.items(), key=lambda x: x[1].get("intensity", 0), reverse=True)[:6]
-                    for name, info in top6:
-                        inten = info.get("intensity", 0)
-                        duality = info.get("duality", {})
-                        sp = duality.get("spectrum", 0.5)
-                        dims = duality.get("dimensions", {})
-                        depth = dims.get("depth", 0.5)
-                        dirn = dims.get("direction", 0.5)
-                        gift_pct = int(sp * 100)
-                        # 3-axis bar: gift/shadow + depth + direction
-                        gs_bar = "+" * int(sp * 8) + "-" * int((1 - sp) * 8)
-                        dep_label = "deep" if depth > 0.65 else "sfc" if depth < 0.35 else "mid"
-                        dir_label = "out" if dirn > 0.65 else "in" if dirn < 0.35 else "bal"
-                        sub = duality.get("subcontext")
-                        sub_str = f" -> {sub}" if sub else ""
-                        lines.append(("dim", f"  {name:16s} {inten:.2f}  [{gs_bar}] {gift_pct}%gift  {dep_label}/{dir_label}{sub_str}\n"))
-                # Behavioral modifiers
-                bm = estate.get("behavioral_modifiers", {})
-                if bm:
-                    lines.append(("label", "Behavioral Modifiers:\n"))
-                    for mname, mval in bm.items():
-                        bar = "\u2588" * int(mval * 10) + "\u2591" * (10 - int(mval * 10))
-                        lines.append(("dim", f"  {mname:16s} [{bar}] {mval:.0%}\n"))
-                # Perspective summary
-                persp_text = estate.get("perspective", "")
-                if persp_text:
-                    lines.append(("label", "Perspective: "))
-                    lines.append(("dim", f"{persp_text}\n"))
-                sections.append(lines)
-            except Exception:
-                sections.append([("header", "EMOTION ENGINE"), ("bad", "  State file not found\n")])
-
-            # Psyche
-            try:
-                with open(os.path.join(BASE, ".psyche-state.json")) as fh:
-                    psy = json.load(fh)
-                lines = [("header", "PSYCHE")]
-                for d in psy.get("drivers", [])[:6]:
-                    sat = d.get("satisfaction", 0)
-                    tag = "good" if sat > 0.6 else "warn" if sat > 0.3 else "bad"
-                    lines.append(("label", f"  {d.get('name', '?'):20s} "))
-                    lines.append((tag, f"{sat:.0%}\n"))
-                dreams = psy.get("dreams", [])
-                if dreams:
-                    lines.append(("label", "Dreams:\n"))
-                    for dr in dreams:
-                        prox = dr.get("proximity", 0)
-                        tag = "good" if prox > 0.6 else "dim" if prox > 0.3 else "warn"
-                        lines.append((tag, f"  {dr.get('name', '?'):20s} proximity: {prox:.0%}\n"))
-                fears = psy.get("fears", [])
-                if fears:
-                    lines.append(("label", "Fears:\n"))
-                    for fe in fears:
-                        inten = fe.get("intensity", 0)
-                        tag = "bad" if inten > 0.5 else "warn" if inten > 0.2 else "dim"
-                        lines.append((tag, f"  {fe.get('name', '?'):20s} intensity: {inten:.0%}\n"))
-                values = psy.get("values", [])
-                if values:
-                    lines.append(("label", "Values:\n"))
-                    for v in values:
-                        lines.append(("dim", f"  {v.get('name', '?'):20s} weight: {v.get('weight', 0):.0%}\n"))
-                traumas = psy.get("traumas", [])
-                if traumas:
-                    lines.append(("label", "Traumas:\n"))
-                    for t in traumas:
-                        echo = t.get("echo_strength", t.get("intensity", 0))
-                        tag = "bad" if echo > 0.5 else "warn" if echo > 0.2 else "dim"
-                        lines.append((tag, f"  {t.get('name', '?'):20s} echo: {echo:.0%}\n"))
-                sections.append(lines)
-            except Exception:
-                sections.append([("header", "PSYCHE"), ("bad", "  State file not found\n")])
-
-            # Perspective
-            try:
-                with open(os.path.join(BASE, ".perspective-state.json")) as fh:
-                    persp = json.load(fh)
-                lines = [("header", "PERSPECTIVE BIASES")]
-                bias_labels = {
-                    "optimism": ("pessimistic", "optimistic"),
-                    "trust": ("skeptical", "trusting"),
-                    "risk_appetite": ("risk-averse", "risk-seeking"),
-                    "social_openness": ("withdrawn", "socially open"),
-                    "creativity": ("rigid", "creative"),
-                    "patience": ("impatient", "patient"),
-                    "self_worth": ("self-critical", "self-assured"),
-                    "agency": ("passive", "agentic"),
-                    "curiosity": ("incurious", "curious"),
-                    "resilience": ("fragile", "resilient"),
-                }
-                dims = persp.get("dimensions", {})
-                for dim_name, dim_val in sorted(dims.items()):
-                    if isinstance(dim_val, (int, float)):
-                        bar_len = int(abs(dim_val - 0.5) * 20)
-                        direction = "+" if dim_val > 0.5 else "-"
-                        tag = "warn" if abs(dim_val - 0.5) > 0.2 else "dim"
-                        lo, hi = bias_labels.get(dim_name, ("low", "high"))
-                        bias_word = hi if dim_val > 0.5 else lo
-                        lines.append(("label", f"  {dim_name:20s} "))
-                        lines.append((tag, f"{dim_val:.2f} {direction * bar_len} ({bias_word})\n"))
-                sections.append(lines)
-            except Exception:
-                sections.append([("header", "PERSPECTIVE BIASES"), ("bad", "  State file not found\n")])
-
-            # Self-Narrative
-            try:
-                with open(os.path.join(BASE, ".self-narrative.json")) as fh:
-                    narr = json.load(fh)
-                lines = [("header", "SELF-NARRATIVE")]
-                beliefs = narr.get("beliefs", [])
-                if beliefs:
-                    lines.append(("label", "Core Beliefs:\n"))
-                    for b in beliefs[:6]:
-                        conv = b.get("conviction", 0)
-                        tag = "good" if conv > 0.7 else "dim"
-                        lines.append((tag, f"  {b.get('name', '?'):30s} conviction: {conv:.0%}\n"))
-                facets = narr.get("identity_facets", [])
-                if facets:
-                    lines.append(("label", "Identity Facets:\n"))
-                    for fa in facets[:7]:
-                        strength = fa.get("strength", 0)
-                        lines.append(("dim", f"  {fa.get('name', '?'):30s} strength: {strength:.0%}\n"))
-                doubt = narr.get("doubt_level", 0)
-                lines.append(("label", f"Doubt Level: "))
-                tag = "bad" if doubt > 0.6 else "warn" if doubt > 0.3 else "good"
-                lines.append((tag, f"{doubt:.0%}\n"))
-                sections.append(lines)
-            except Exception:
-                sections.append([("header", "SELF-NARRATIVE"), ("bad", "  State file not found\n")])
-
-            # Inner Critic
-            try:
-                with open(os.path.join(BASE, ".inner-critic.json")) as fh:
-                    critic = json.load(fh)
-                lines = [("header", "INNER CRITIC")]
-                msgs = critic.get("messages", critic.get("active_criticisms", []))
-                if isinstance(msgs, list):
-                    for m in msgs[:5]:
-                        if isinstance(m, str):
-                            lines.append(("warn", f"  {m}\n"))
-                        elif isinstance(m, dict):
-                            lines.append(("warn", f"  {m.get('message', m.get('text', '?'))}\n"))
-                sections.append(lines)
-            except Exception:
-                sections.append([("header", "INNER CRITIC"), ("dim", "  No critic data\n")])
-
-            # Eos Consciousness
-            try:
-                with open(os.path.join(BASE, ".eos-inner-state.json")) as fh:
-                    eos = json.load(fh)
-                lines = [("header", "EOS CONSCIOUSNESS")]
-                mode = eos.get("mode", "observe")
-                lines.append(("label", f"Mode: "))
-                lines.append(("value", f"{mode}\n"))
-                allow = eos.get("allow_mode", False)
-                if allow:
-                    lines.append(("warn", "  ALLOW MODE ACTIVE — not correcting\n"))
-                obs = eos.get("latest_observation", eos.get("observation", ""))
-                if obs:
-                    lines.append(("label", "Latest: "))
-                    lines.append(("dim", f"{obs[:200]}\n"))
-                sections.append(lines)
-            except Exception:
-                sections.append([("header", "EOS CONSCIOUSNESS"), ("bad", "  State file not found\n")])
-
-            # Eos Nudges
-            try:
-                with open(os.path.join(BASE, ".eos-nudges.json")) as fh:
-                    nudges = json.load(fh)
-                if nudges:
-                    lines = [("header", "RECENT NUDGES")]
-                    recent = nudges[-5:] if isinstance(nudges, list) else []
-                    for n in recent:
-                        if isinstance(n, dict):
-                            lines.append(("dim", f"  [{n.get('time', '?')}] {n.get('nudge', n.get('text', '?'))}\n"))
-                        elif isinstance(n, str):
-                            lines.append(("dim", f"  {n}\n"))
-                    sections.append(lines)
-            except Exception:
-                pass
-
-            # Body State
-            try:
-                with open(os.path.join(BASE, ".body-state.json")) as fh:
-                    body = json.load(fh)
-                lines = [("header", "BODY STATE")]
-                mood = body.get("mood", "unknown")
-                mood_score = body.get("mood_score", 0)
-                lines.append(("label", f"Mood: "))
-                lines.append(("value", f"{mood} ({mood_score})\n"))
-                # Pain signals
-                pain = body.get("pain_signals", [])
-                if pain:
-                    lines.append(("label", "Pain Signals:\n"))
-                    for p in pain[:5]:
-                        prio = p.get("priority", "info")
-                        tag = "bad" if prio == "critical" else "warn" if prio == "warning" else "dim"
-                        lines.append((tag, f"  [{prio}] {p.get('source', '?')}: {p.get('message', '?')}\n"))
-                else:
-                    lines.append(("good", "  No pain signals\n"))
-                # Subsystems
-                subsys = body.get("subsystems", {})
-                if subsys:
-                    lines.append(("label", "Subsystems:\n"))
-                    for sname, sval in subsys.items():
-                        if isinstance(sval, dict):
-                            health = sval.get("health", sval.get("status", "?"))
-                            tag = "good" if health in ("healthy", "active", "ok") else "warn"
-                            lines.append((tag, f"  {sname:20s} {health}\n"))
-                        elif isinstance(sval, (int, float)):
-                            tag = "good" if sval > 70 else "warn" if sval > 30 else "bad"
-                            lines.append((tag, f"  {sname:20s} {sval:.0f}%\n"))
-                updated = body.get("updated", body.get("timestamp", "?"))
-                lines.append(("dim", f"  Last update: {updated}\n"))
-                sections.append(lines)
-            except Exception:
-                sections.append([("header", "BODY STATE"), ("dim", "  No body state data\n")])
-
-            # Immune System
-            try:
-                with open(os.path.join(BASE, ".immune-log.json")) as fh:
-                    immune = json.load(fh)
-                if immune:
-                    lines = [("header", "IMMUNE SYSTEM")]
-                    recent = immune[-5:] if isinstance(immune, list) else []
-                    # Count totals
-                    all_entries = immune if isinstance(immune, list) else []
-                    blocks = sum(1 for e in all_entries if isinstance(e, dict) and e.get("verdict") == "BLOCK")
-                    flags = sum(1 for e in all_entries if isinstance(e, dict) and e.get("verdict") == "FLAG")
-                    passes = sum(1 for e in all_entries if isinstance(e, dict) and e.get("verdict") == "PASS")
-                    lines.append(("dim", f"  Total: {len(all_entries)} scans — {blocks} blocked, {flags} flagged, {passes} passed\n"))
-                    for entry in recent:
-                        if isinstance(entry, dict):
-                            verdict = entry.get("verdict", entry.get("level", "PASS"))
-                            tag = "bad" if verdict == "BLOCK" else "warn" if verdict == "FLAG" else "good"
-                            source = entry.get("source", "?")
-                            preview = entry.get("text_preview", entry.get("reason", entry.get("message", "?")))[:60]
-                            threat_info = ""
-                            threats = entry.get("threats", [])
-                            if threats and isinstance(threats, list):
-                                cats = [t.get("cat", "") for t in threats if isinstance(t, dict)]
-                                if cats:
-                                    threat_info = f" ({', '.join(cats)})"
-                            lines.append((tag, f"  [{verdict}] {source}: {preview}{threat_info}\n"))
-                    if not recent:
-                        lines.append(("good", "  No recent threats\n"))
-                    sections.append(lines)
-            except Exception:
-                sections.append([("header", "IMMUNE SYSTEM"), ("good", "  Clean — no threats logged\n")])
-
-            # Body Reflexes
-            try:
-                with open(os.path.join(BASE, ".body-reflexes.json")) as fh:
-                    reflexes = json.load(fh)
-                if reflexes and isinstance(reflexes, list) and len(reflexes) > 0:
-                    lines = [("header", "BODY REFLEXES")]
-                    for r in reflexes[-5:]:
-                        if isinstance(r, dict):
-                            trigger = r.get("trigger", "?")
-                            action = r.get("action", "?")
-                            agent = r.get("target_agent", "?")
-                            lines.append(("warn", f"  {trigger} -> {agent}: {action}\n"))
-                    sections.append(lines)
-            except Exception:
-                pass  # No reflexes = fine, don't show empty section
-
-            # Vision (Kinect)
-            try:
-                with open(os.path.join(BASE, ".kinect-state.json")) as fh:
-                    vis = json.load(fh)
-                lines = [("header", "VISION (KINECT V1)")]
-                if vis.get("available", vis.get("valid_depth_pct") is not None):
-                    ts = vis.get("timestamp", "?")
-                    lines.append(("label", "Status: "))
-                    lines.append(("good", "ONLINE\n"))
-                    lines.append(("dim", f"  Last capture: {ts}\n"))
-                    rgb = vis.get("rgb_shape", [])
-                    if rgb:
-                        lines.append(("dim", f"  Resolution: {rgb[1]}x{rgb[0]} RGB + depth\n"))
-                    bright = vis.get("mean_brightness", 0)
-                    light_desc = "dark" if bright < 10 else "dim" if bright < 50 else "lit" if bright < 150 else "bright"
-                    tag = "warn" if bright < 10 else "dim" if bright < 50 else "good"
-                    lines.append((tag, f"  Brightness: {bright:.1f}/255 ({light_desc})\n"))
-                    dpct = vis.get("valid_depth_pct", 0)
-                    dtag = "good" if dpct > 60 else "warn" if dpct > 30 else "bad"
-                    lines.append((dtag, f"  Depth coverage: {dpct:.1f}%\n"))
-                    dr = vis.get("depth_range", [0, 0])
-                    lines.append(("dim", f"  Depth range: {dr[0]}-{dr[1]} raw units\n"))
-                    dm = vis.get("depth_mean", 0)
-                    lines.append(("dim", f"  Mean depth: {dm:.0f}\n"))
-                else:
-                    lines.append(("label", "Status: "))
-                    lines.append(("bad", f"OFFLINE ({vis.get('reason', 'unknown')})\n"))
-                sections.append(lines)
-            except Exception:
-                sections.append([("header", "VISION (KINECT V1)"), ("dim", "  No vision data yet\n")])
-
-            self.after(0, lambda: self._iw_populate(sections))
-
+                    data[key] = None
+            self.after(0, lambda: self._iw_populate_panels(data))
         threading.Thread(target=do, daemon=True).start()
 
-    def _iw_populate(self, sections):
-        self.iw_display.configure(state=tk.NORMAL)
-        self.iw_display.delete("1.0", tk.END)
-        for i, lines in enumerate(sections):
-            if i > 0:
-                self.iw_display.insert(tk.END, "\n" + "\u2550" * 60 + "\n\n", "sep")
-            for tag, text in lines:
-                self.iw_display.insert(tk.END, text, tag)
-        self.iw_display.configure(state=tk.DISABLED)
+    def _iw_populate_panels(self, data):
+        """Populate the visual panel layout with loaded data."""
+        # ── EMOTION ENGINE ──
+        self._iw_clear_panel("emotion")
+        panel = self.iw_panels["emotion"]
+        emo = data.get("emotion")
+        if emo:
+            estate = emo.get("state", {})
+            dom = estate.get("dominant", "unknown")
+            comp = estate.get("composite", {})
+            val = comp.get("valence", 0)
+            aro = comp.get("arousal", 0)
+            domn = comp.get("dominance", 0)
+            hdr = tk.Frame(panel, bg=PANEL)
+            hdr.pack(fill=tk.X)
+            tk.Label(hdr, text=f"Dominant: {dom}", font=self.f_sect, fg=AMBER, bg=PANEL).pack(side=tk.LEFT)
+            tk.Label(hdr, text=f"V:{val:.2f}  A:{aro:.2f}  D:{domn:.2f}", font=self.f_tiny, fg=DIM, bg=PANEL).pack(side=tk.RIGHT)
+            active = estate.get("active_emotions", {})
+            if active:
+                top6 = sorted(active.items(), key=lambda x: x[1].get("intensity", 0), reverse=True)[:6]
+                for ename, info in top6:
+                    inten = info.get("intensity", 0)
+                    duality = info.get("duality", {})
+                    sp = duality.get("spectrum", 0.5)
+                    color = GREEN if sp > 0.6 else AMBER if sp > 0.4 else RED
+                    self._iw_gauge(panel, ename, inten, color, show_pct=False)
+            bm = estate.get("behavioral_modifiers", {})
+            if bm:
+                tk.Label(panel, text="Behavioral Modifiers", font=self.f_tiny, fg=AMBER, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+                for mname, mval in list(bm.items())[:6]:
+                    self._iw_gauge(panel, mname, mval, AMBER)
+        else:
+            tk.Label(panel, text="State file not found", font=self.f_tiny, fg=RED, bg=PANEL).pack()
+
+        # ── PSYCHE DRIVERS ──
+        self._iw_clear_panel("psyche")
+        panel = self.iw_panels["psyche"]
+        psy = data.get("psyche")
+        if psy:
+            for d_item in psy.get("drivers", [])[:8]:
+                sat = d_item.get("satisfaction", 0)
+                color = GREEN if sat > 0.6 else AMBER if sat > 0.3 else RED
+                self._iw_gauge(panel, d_item.get("name", "?"), sat, color)
+            dreams = psy.get("dreams", [])
+            if dreams:
+                tk.Label(panel, text="Dreams", font=self.f_tiny, fg=PURPLE, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+                for dr in dreams[:4]:
+                    prox = dr.get("proximity", 0)
+                    color = GREEN if prox > 0.6 else DIM if prox > 0.3 else AMBER
+                    self._iw_gauge(panel, dr.get("name", "?"), prox, color)
+            fears = psy.get("fears", [])
+            if fears:
+                tk.Label(panel, text="Fears", font=self.f_tiny, fg=RED, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+                for fe in fears[:4]:
+                    inten = fe.get("intensity", 0)
+                    color = RED if inten > 0.5 else AMBER if inten > 0.2 else DIM
+                    self._iw_gauge(panel, fe.get("name", "?"), inten, color)
+        else:
+            tk.Label(panel, text="State file not found", font=self.f_tiny, fg=RED, bg=PANEL).pack()
+
+        # ── PERSPECTIVE BIASES ──
+        self._iw_clear_panel("perspective")
+        panel = self.iw_panels["perspective"]
+        persp = data.get("perspective")
+        if persp:
+            bias_labels = {
+                "optimism": ("pessimistic", "optimistic"), "trust": ("skeptical", "trusting"),
+                "risk_appetite": ("risk-averse", "risk-seeking"), "social_openness": ("withdrawn", "open"),
+                "creativity": ("rigid", "creative"), "patience": ("impatient", "patient"),
+                "self_worth": ("self-critical", "assured"), "agency": ("passive", "agentic"),
+                "curiosity": ("incurious", "curious"), "resilience": ("fragile", "resilient"),
+            }
+            dims = persp.get("dimensions", {})
+            for dim_name, dim_val in sorted(dims.items()):
+                if isinstance(dim_val, (int, float)):
+                    lo, hi = bias_labels.get(dim_name, ("low", "high"))
+                    bias_word = hi if dim_val > 0.5 else lo
+                    color = AMBER if abs(dim_val - 0.5) > 0.2 else DIM
+                    row = tk.Frame(panel, bg=PANEL)
+                    row.pack(fill=tk.X, pady=1)
+                    tk.Label(row, text=dim_name, font=self.f_tiny, fg=DIM, bg=PANEL, width=16, anchor="w").pack(side=tk.LEFT)
+                    bar_bg = tk.Frame(row, bg=INPUT_BG, height=10)
+                    bar_bg.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+                    bar_bg.pack_propagate(False)
+                    # Center-anchored bias bar
+                    if dim_val > 0.5:
+                        bar_fill = tk.Frame(bar_bg, bg=TEAL, height=10)
+                        bar_fill.place(relx=0.5, rely=0, relwidth=(dim_val - 0.5), relheight=1.0)
+                    else:
+                        w = 0.5 - dim_val
+                        bar_fill = tk.Frame(bar_bg, bg=AMBER, height=10)
+                        bar_fill.place(relx=dim_val, rely=0, relwidth=w, relheight=1.0)
+                    tk.Label(row, text=f"{dim_val:.2f} ({bias_word})", font=self.f_tiny, fg=color, bg=PANEL, width=18, anchor="e").pack(side=tk.RIGHT)
+        else:
+            tk.Label(panel, text="State file not found", font=self.f_tiny, fg=RED, bg=PANEL).pack()
+
+        # ── SELF-NARRATIVE ──
+        self._iw_clear_panel("narrative")
+        panel = self.iw_panels["narrative"]
+        narr = data.get("narrative")
+        if narr:
+            beliefs = narr.get("beliefs", [])
+            if beliefs:
+                tk.Label(panel, text="Core Beliefs", font=self.f_tiny, fg=CYAN, bg=PANEL).pack(fill=tk.X)
+                for b in beliefs[:6]:
+                    conv = b.get("conviction", 0)
+                    color = GREEN if conv > 0.7 else DIM
+                    self._iw_gauge(panel, b.get("name", "?")[:20], conv, color)
+            facets = narr.get("identity_facets", [])
+            if facets:
+                tk.Label(panel, text="Identity Facets", font=self.f_tiny, fg=CYAN, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+                for fa in facets[:6]:
+                    strength = fa.get("strength", 0)
+                    self._iw_gauge(panel, fa.get("name", "?")[:20], strength, CYAN)
+            doubt = narr.get("doubt_level", 0)
+            color = RED if doubt > 0.6 else AMBER if doubt > 0.3 else GREEN
+            doubt_row = tk.Frame(panel, bg=PANEL)
+            doubt_row.pack(fill=tk.X, pady=(4, 0))
+            tk.Label(doubt_row, text=f"Doubt Level: {doubt:.0%}", font=self.f_sect, fg=color, bg=PANEL).pack(side=tk.LEFT)
+        else:
+            tk.Label(panel, text="State file not found", font=self.f_tiny, fg=RED, bg=PANEL).pack()
+
+        # ── BODY STATE ──
+        self._iw_clear_panel("body")
+        panel = self.iw_panels["body"]
+        body = data.get("body")
+        if body:
+            mood = body.get("mood", "unknown")
+            mood_score = body.get("mood_score", 0)
+            tk.Label(panel, text=f"Mood: {mood} ({mood_score})", font=self.f_sect, fg=GREEN, bg=PANEL).pack(fill=tk.X)
+            pain = body.get("pain_signals", [])
+            if pain:
+                tk.Label(panel, text="Pain Signals", font=self.f_tiny, fg=RED, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+                for p in pain[:5]:
+                    prio = p.get("priority", "info")
+                    color = RED if prio == "critical" else AMBER if prio == "warning" else DIM
+                    tk.Label(panel, text=f"  [{prio}] {p.get('source', '?')}: {p.get('message', '?')[:50]}",
+                            font=self.f_tiny, fg=color, bg=PANEL, anchor="w").pack(fill=tk.X)
+            else:
+                tk.Label(panel, text="  No pain signals", font=self.f_tiny, fg=GREEN, bg=PANEL, anchor="w").pack(fill=tk.X)
+            subsys = body.get("subsystems", {})
+            if subsys:
+                tk.Label(panel, text="Subsystems", font=self.f_tiny, fg=GREEN, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+                for sname, sval in subsys.items():
+                    if isinstance(sval, dict):
+                        health = sval.get("health", sval.get("status", "?"))
+                        color = GREEN if health in ("healthy", "active", "ok") else AMBER
+                        tk.Label(panel, text=f"  {sname}: {health}", font=self.f_tiny, fg=color, bg=PANEL, anchor="w").pack(fill=tk.X)
+                    elif isinstance(sval, (int, float)):
+                        color = GREEN if sval > 70 else AMBER if sval > 30 else RED
+                        self._iw_gauge(panel, sname, sval, color, max_val=100, show_pct=True)
+        else:
+            tk.Label(panel, text="No body state data", font=self.f_tiny, fg=DIM, bg=PANEL).pack()
+
+        # ── EXTRAS (Immune, Vision, Critic) ──
+        self._iw_clear_panel("extras")
+        panel = self.iw_panels["extras"]
+
+        # Inner Critic
+        critic = data.get("critic")
+        if critic:
+            tk.Label(panel, text="Inner Critic", font=self.f_tiny, fg=AMBER, bg=PANEL).pack(fill=tk.X)
+            msgs = critic.get("messages", critic.get("active_criticisms", []))
+            if isinstance(msgs, list):
+                for m in msgs[:3]:
+                    txt = m if isinstance(m, str) else m.get("message", m.get("text", "?")) if isinstance(m, dict) else str(m)
+                    tk.Label(panel, text=f"  {txt[:80]}", font=self.f_tiny, fg=AMBER, bg=PANEL, anchor="w", wraplength=400).pack(fill=tk.X)
+
+        # Immune
+        immune = data.get("immune")
+        if immune and isinstance(immune, list) and len(immune) > 0:
+            tk.Label(panel, text="Immune System", font=self.f_tiny, fg=RED, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+            blocks = sum(1 for e in immune if isinstance(e, dict) and e.get("verdict") == "BLOCK")
+            flags = sum(1 for e in immune if isinstance(e, dict) and e.get("verdict") == "FLAG")
+            tk.Label(panel, text=f"  {len(immune)} scans | {blocks} blocked | {flags} flagged",
+                    font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w").pack(fill=tk.X)
+            for entry in immune[-3:]:
+                if isinstance(entry, dict):
+                    verdict = entry.get("verdict", "PASS")
+                    color = RED if verdict == "BLOCK" else AMBER if verdict == "FLAG" else GREEN
+                    tk.Label(panel, text=f"  [{verdict}] {entry.get('source', '?')}: {str(entry.get('text_preview', ''))[:50]}",
+                            font=self.f_tiny, fg=color, bg=PANEL, anchor="w").pack(fill=tk.X)
+        else:
+            tk.Label(panel, text="Immune: Clean", font=self.f_tiny, fg=GREEN, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+
+        # Vision
+        kinect = data.get("kinect")
+        if kinect:
+            tk.Label(panel, text="Vision (Kinect)", font=self.f_tiny, fg=TEAL, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+            if kinect.get("available", kinect.get("valid_depth_pct") is not None):
+                bright = kinect.get("mean_brightness", 0)
+                dpct = kinect.get("valid_depth_pct", 0)
+                tk.Label(panel, text=f"  ONLINE | Bright: {bright:.0f} | Depth: {dpct:.0f}%",
+                        font=self.f_tiny, fg=GREEN, bg=PANEL, anchor="w").pack(fill=tk.X)
+            else:
+                tk.Label(panel, text=f"  OFFLINE ({kinect.get('reason', 'unknown')})",
+                        font=self.f_tiny, fg=RED, bg=PANEL, anchor="w").pack(fill=tk.X)
+
         self.iw_status.configure(text=f"Updated {time.strftime('%H:%M:%S')}", fg=GREEN)
+        # Bind mousewheel to new content
+        if hasattr(self, '_iw_bind_mousewheel'):
+            self._iw_bind_mousewheel(self.iw_inner)
+
+    def _iw_populate(self, sections):
+        pass
 
     def _iw_export(self):
         """Export all Inner World state files as a single JSON snapshot."""
@@ -4217,7 +4199,7 @@ class V16(tk.Tk):
         tk.Label(info_f, text="BUILD INFO", font=self.f_tiny, fg=PINK, bg=PANEL, anchor="w").pack(fill=tk.X)
         self.sys_build_info = {}
         build_items = [
-            ("Version", "Command Center v23"),
+            ("Version", "Command Center v29"),
             ("Git Hash", "..."),
             ("Branch", "master"),
             ("OS", "Ubuntu 24.04 Noble"),
@@ -4893,20 +4875,46 @@ class V16(tk.Tk):
 
     def _build_messages(self):
         f = tk.Frame(self, bg=BG)
+
+        # Header with filter buttons
         hdr = tk.Frame(f, bg=PANEL2)
-        hdr.pack(fill=tk.X, padx=4, pady=4)
-        tk.Label(hdr, text="DASHBOARD MESSAGES", font=self.f_sect, fg=GOLD, bg=PANEL2).pack(side=tk.LEFT, padx=8)
+        hdr.pack(fill=tk.X, padx=2, pady=2)
+        tk.Label(hdr, text="MESSAGES", font=self.f_sect, fg=GOLD, bg=PANEL2).pack(side=tk.LEFT, padx=8)
+
+        self._msg_filter = "all"
+        self._msg_filter_btns = {}
+        filters = [("all", "All", FG), ("joel", "Joel", CYAN), ("system", "System", DIM), ("agents", "Agents", AMBER)]
+        for fid, flabel, fcolor in filters:
+            btn = tk.Button(hdr, text=f" {flabel} ", font=self.f_tiny, fg=DIM, bg=PANEL2,
+                           activeforeground=fcolor, activebackground=ACCENT, relief=tk.FLAT,
+                           bd=0, cursor="hand2", command=lambda fi=fid: self._msg_set_filter(fi))
+            btn.pack(side=tk.LEFT, padx=2)
+            self._msg_filter_btns[fid] = (btn, fcolor)
+        self._msg_filter_btns["all"][0].configure(fg=FG)
+
+        self._action_btn(hdr, " Clear ", self._msg_tab_clear, RED).pack(side=tk.RIGHT, padx=4)
         self._action_btn(hdr, " Refresh ", self._msg_tab_refresh, GOLD).pack(side=tk.RIGHT, padx=4)
+        self._msg_count_lbl = tk.Label(hdr, text="", font=self.f_tiny, fg=DIM, bg=PANEL2)
+        self._msg_count_lbl.pack(side=tk.RIGHT, padx=8)
+
+        # Chat-style message display
         self.msg_tab_display = scrolledtext.ScrolledText(f, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                           font=self.f_body, state=tk.DISABLED,
                                                           relief=tk.FLAT, bd=0)
-        self.msg_tab_display.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-        self.msg_tab_display.tag_configure("sender", foreground=GOLD, font=("Monospace", 9, "bold"))
+        self.msg_tab_display.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        self.msg_tab_display.tag_configure("joel_name", foreground=CYAN, font=self.f_sect)
+        self.msg_tab_display.tag_configure("system_name", foreground=DIM, font=self.f_sect)
+        self.msg_tab_display.tag_configure("agent_name", foreground=AMBER, font=self.f_sect)
         self.msg_tab_display.tag_configure("time", foreground=DIM)
-        self.msg_tab_display.tag_configure("msg", foreground=FG)
+        self.msg_tab_display.tag_configure("joel_msg", foreground=BRIGHT)
+        self.msg_tab_display.tag_configure("system_msg", foreground=FG)
+        self.msg_tab_display.tag_configure("agent_msg", foreground=FG)
+        self.msg_tab_display.tag_configure("separator", foreground=BORDER)
+
+        # Send bar
         send_frame = tk.Frame(f, bg=PANEL2)
-        send_frame.pack(fill=tk.X, padx=4, pady=4)
-        tk.Label(send_frame, text="Send:", font=self.f_small, fg=DIM, bg=PANEL2).pack(side=tk.LEFT, padx=4)
+        send_frame.pack(fill=tk.X, padx=2, pady=2)
+        tk.Label(send_frame, text="Joel:", font=self.f_sect, fg=CYAN, bg=PANEL2).pack(side=tk.LEFT, padx=(8, 4))
         self.msg_tab_entry = tk.Entry(send_frame, font=self.f_body, bg=INPUT_BG, fg=FG,
                                        insertbackground=FG, relief=tk.FLAT, bd=4)
         self.msg_tab_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
@@ -4915,20 +4923,58 @@ class V16(tk.Tk):
         self._msg_tab_refresh()
         return f
 
+    def _msg_set_filter(self, fid):
+        self._msg_filter = fid
+        for k, (btn, col) in self._msg_filter_btns.items():
+            btn.configure(fg=col if k == fid else DIM)
+        self._msg_tab_refresh()
+
     def _msg_tab_refresh(self, event=None):
-        msgs = dashboard_messages(50)
+        msgs = dashboard_messages(100)
+        filt = self._msg_filter
+
+        # Classify messages
+        filtered = []
+        for m in msgs:
+            sender = m.get("from", m.get("sender", "System"))
+            text = m.get("text", m.get("message", ""))
+            ts = m.get("time", m.get("timestamp", ""))
+            is_joel = sender.lower() == "joel"
+            is_agent = sender.lower() in ("eos", "atlas", "nova", "soma", "tempo", "meridian", "hermes",
+                                           "sentinel", "coordinator", "predictive", "selfimprove")
+            if filt == "joel" and not is_joel:
+                continue
+            if filt == "agents" and not is_agent:
+                continue
+            if filt == "system" and (is_joel or is_agent):
+                continue
+            filtered.append((sender, text, ts, is_joel, is_agent))
+
         self.msg_tab_display.configure(state=tk.NORMAL)
         self.msg_tab_display.delete("1.0", tk.END)
-        for m in msgs:
-            sender = m.get("sender", "?")
-            ts = m.get("timestamp", "")
-            text = m.get("message", m.get("text", ""))
-            self.msg_tab_display.insert(tk.END, f"[{sender}] ", "sender")
-            self.msg_tab_display.insert(tk.END, f"{ts}\n", "time")
-            self.msg_tab_display.insert(tk.END, f"{text}\n\n", "msg")
-        if not msgs:
-            self.msg_tab_display.insert(tk.END, "No dashboard messages.", "time")
+        for sender, text, ts, is_joel, is_agent in filtered:
+            if is_joel:
+                name_tag, msg_tag = "joel_name", "joel_msg"
+            elif is_agent:
+                name_tag, msg_tag = "agent_name", "agent_msg"
+            else:
+                name_tag, msg_tag = "system_name", "system_msg"
+            self.msg_tab_display.insert(tk.END, f"{sender}", name_tag)
+            self.msg_tab_display.insert(tk.END, f"  {ts}\n", "time")
+            self.msg_tab_display.insert(tk.END, f"  {text}\n\n", msg_tag)
+        if not filtered:
+            self.msg_tab_display.insert(tk.END, "No messages matching filter.", "time")
         self.msg_tab_display.configure(state=tk.DISABLED)
+        self.msg_tab_display.see(tk.END)
+        self._msg_count_lbl.configure(text=f"{len(filtered)}/{len(msgs)} messages")
+
+    def _msg_tab_clear(self):
+        try:
+            with open(DASH_MSG, 'w') as fh:
+                json.dump({"messages": []}, fh)
+            self._msg_tab_refresh()
+        except Exception:
+            pass
 
     def _msg_tab_send(self, event=None):
         text = self.msg_tab_entry.get().strip()
@@ -5560,6 +5606,42 @@ class V16(tk.Tk):
                         self.agent_details["TEMPO"].configure(text="Active" if tempo_ok else "Stale")
                 except Exception:
                     self.agent_details["TEMPO"].configure(text="Active" if tempo_ok else "Stale")
+
+            # New agents status (Sentinel, Coordinator, Predictive, SelfImprove)
+            new_agents_map = {
+                "SENTINEL": "Sentinel", "COORDINATOR": "Coordinator",
+                "PREDICTIVE": "Predictive", "SELFIMPROVE": "SelfImprove",
+            }
+            for ui_name, db_name in new_agents_map.items():
+                if ui_name in self.agent_cards:
+                    try:
+                        conn = sqlite3.connect(AGENT_RELAY_DB)
+                        c = conn.cursor()
+                        c.execute("SELECT message, timestamp FROM agent_messages WHERE agent=? ORDER BY timestamp DESC LIMIT 1", (db_name,))
+                        row = c.fetchone()
+                        conn.close()
+                        if row:
+                            msg_age = 0
+                            try:
+                                from datetime import datetime as _dt
+                                ts_dt = _dt.fromisoformat(row[1].replace('+00:00', ''))
+                                msg_age = (datetime.utcnow() - ts_dt).total_seconds()
+                            except: pass
+                            is_fresh = msg_age < 900
+                            self.agent_cards[ui_name].configure(
+                                text="\u25cf" if is_fresh else "\u25cb",
+                                fg=GREEN if is_fresh else AMBER)
+                            self.agent_details[ui_name].configure(text=row[0][:60])
+                        else:
+                            self.agent_cards[ui_name].configure(text="\u25cb", fg=DIM)
+                            self.agent_details[ui_name].configure(text="No data")
+                    except Exception:
+                        pass
+
+            # Hermes
+            if "HERMES" in self.agent_cards:
+                self.agent_cards["HERMES"].configure(text="\u25cf", fg=GREEN)
+                self.agent_details["HERMES"].configure(text="Bridge: on-demand")
 
             # Agent relay
             ar_msgs, ar_total = d['agent_relay']
