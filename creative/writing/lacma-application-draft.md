@@ -171,8 +171,11 @@ STILL NEEDED before April 22:
 - [JOEL] Review and adjust voice/tone — your voice, not mine
 - [JOEL] Create Submittable account at lacma.submittable.com
 - [DONE] 5 images in JPEG format — all in assets/visuals/lacma-submission/
+- [JOEL] Retake website screenshot — currently shows ~5,640 loops, now 5,700+. Website numbers already corrected (3,400+ not 3,500+).
+- [JOEL] Retake archive screenshot — old one may show "965 pieces" CogCorp count. Corrected to ~650.
 - [JOEL] Confirm video links (body-of-work.html and cogcorp-crawler.html are live)
-- [JOEL] Retake website screenshot? Current shows ~5,640 loops — now 5,662+
-- [DONE] Numbers corrected: CogCorp 650 (was 1,027 — double-count fix), loops 5,670+, creative works 3,400+
+- [DONE] Numbers corrected everywhere: CogCorp 650, loops 5,680+, creative 3,400+, 873K words in DB
+- [DONE] Website index.html updated: 3,500+ → 3,400+ (Loop 5703)
+- [DONE] "Safe-to-fail" framing added
+- [DONE] Creative archive DB populated — 3,236 works queryable (Loop 5681)
 - Final proofread before submit
-- [DONE] "Safe-to-fail" framing added to Technology-Culture Dialogue — uses LACMA's own language naturally within the existing narrative.
