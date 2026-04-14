@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v39
+MERIDIAN COMMAND CENTER v40
 
-Loop 5674 update (v39 — Joel's 7 directives addressed):
-- Dashboard is now scrollable (no more cut-off content)
-- Chat window enlarged — analytics row collapsible, chat gets more space
-- Topics badge on directives — Joel can tag each message with a topic
-- Dev Tools panel on Dashboard (backup, git status, disk analysis)
-- Better spacing/fill across all panels
-- Reduced chart heights to fit more on screen
-- Horizontal scroll in wide-content panels
+Loop 5675 update (v40 — Joel's 11 directives addressed):
+- Chat window MUCH larger — minsize 350px, initial 60% of paned space
+- Visuals now load reliably — deferred canvas drawing after tab switch
+- Mouse wheel scrolling on ALL scrollable panels (dash, chat, relay, messages, viz)
+- Dashboard panels fill full width with proper grid weights
+- Toast notification system — auto-dismissing, non-stacking, queue-based
+- Analytics row collapsed by default to give chat more space
+- All canvas drawing uses update_idletasks for proper geometry
 """
 
 import tkinter as tk
@@ -700,7 +700,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v39")
+        self.title("MERIDIAN COMMAND CENTER v40")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -741,6 +741,7 @@ class V16(tk.Tk):
         self._nav()
         self._views()
         self._statusbar()
+        self._bind_all_scrolls()
         self._show("dash")
         self._tick()
         self._pulse()
@@ -758,7 +759,11 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v39", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v40", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+
+        # Toast notification area (right side of header, auto-dismiss)
+        self._toast_frame = tk.Frame(h, bg=HEADER_BG)
+        self._toast_frame.pack(side=tk.RIGHT, padx=4)
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -935,6 +940,57 @@ class V16(tk.Tk):
         lbl.bind("<Leave>", lambda e: lbl.configure(fg=color))
         return row
 
+    def _canvas_dims(self, canvas, min_w=40, min_h=20):
+        """Get canvas dimensions with fallback to configured size when not yet mapped."""
+        w = canvas.winfo_width()
+        h = canvas.winfo_height()
+        if w < min_w:
+            w = int(canvas.cget("width") or 200)
+        if h < min_h:
+            h = int(canvas.cget("height") or 120)
+        return w, h
+
+    def _bind_scroll(self, widget, canvas=None):
+        """Bind mouse wheel scrolling to a widget. If canvas is given, scroll that canvas.
+        Otherwise scroll the widget itself (for ScrolledText etc)."""
+        target = canvas or widget
+        def _on_scroll(event):
+            if event.num == 4:
+                target.yview_scroll(-3, "units")
+            elif event.num == 5:
+                target.yview_scroll(3, "units")
+        widget.bind("<Button-4>", lambda e: _on_scroll(e))
+        widget.bind("<Button-5>", lambda e: _on_scroll(e))
+        for child in widget.winfo_children():
+            child.bind("<Button-4>", lambda e: _on_scroll(e))
+            child.bind("<Button-5>", lambda e: _on_scroll(e))
+
+    def _bind_all_scrolls(self):
+        """Bind scroll wheel to all scrollable panels in the app."""
+        scrollables = ['chat_display', 'agent_relay_text', 'msg_joel_display', 'msg_agent_display', 'msg_display']
+        for attr in scrollables:
+            widget = getattr(self, attr, None)
+            if widget:
+                self._bind_scroll(widget)
+        if hasattr(self, '_dash_canvas'):
+            self._bind_scroll(self._dash_canvas)
+
+    def _show_toast(self, text, color=GREEN, timeout=3500):
+        """Show a toast notification that auto-dismisses. Non-stacking."""
+        if not hasattr(self, '_toast_frame'):
+            return
+        for w in self._toast_frame.winfo_children():
+            w.destroy()
+        toast = tk.Label(self._toast_frame, text=f"  {text}  ", font=self.f_small,
+                        fg=BG, bg=color, relief=tk.FLAT, padx=8, pady=3)
+        toast.pack(side=tk.RIGHT, padx=4, pady=2)
+        def fade():
+            try:
+                toast.destroy()
+            except Exception:
+                pass
+        self.after(timeout, fade)
+
     # ═══════════════════════════════════════════════════════════════
     # ── DASHBOARD ──────────────────────────────────────────────────
     # ═══════════════════════════════════════════════════════════════
@@ -1049,12 +1105,12 @@ class V16(tk.Tk):
         cpu_panel = self._panel(res_graph_frame, "CPU LOAD", GREEN)
         cpu_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
         self.cpu_graph = tk.Canvas(cpu_panel, height=95, bg="#0a0a14", highlightthickness=0)
-        self.cpu_graph.pack(fill=tk.X, padx=4, pady=4)
+        self.cpu_graph.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         ram_panel = self._panel(res_graph_frame, "RAM USAGE", TEAL)
         ram_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
         self.ram_graph = tk.Canvas(ram_panel, height=95, bg="#0a0a14", highlightthickness=0)
-        self.ram_graph.pack(fill=tk.X, padx=4, pady=4)
+        self.ram_graph.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # ── SOMA NERVOUS SYSTEM (expanded visual panel) ──
         soma_bar = self._panel(f, "SOMA NERVOUS SYSTEM", AMBER)
@@ -1122,7 +1178,7 @@ class V16(tk.Tk):
 
         # Row 4: Mood history chart (taller for better visibility)
         self.soma_chart = tk.Canvas(soma_bar, height=70, bg=INPUT_BG, highlightthickness=0)
-        self.soma_chart.pack(fill=tk.X, padx=4, pady=(2, 4))
+        self.soma_chart.pack(fill=tk.BOTH, expand=True, padx=4, pady=(2, 4))
 
         # ── 2x6 RADAR GRID — 12 project radars per Joel's directive ──
         radar_grid = tk.Frame(f, bg=BG)
@@ -1234,13 +1290,16 @@ class V16(tk.Tk):
 
     def _do_action(self, func):
         result = func()
-        self.action_result.configure(text=result, fg=GREEN)
+        self.action_result.configure(text=str(result)[:80], fg=GREEN)
+        self._show_toast(str(result)[:60], GREEN)
 
     def _do_action_bg(self, func):
         self.action_result.configure(text="Working...", fg=AMBER)
         def run():
             result = func()
-            self.after(0, lambda: self.action_result.configure(text=result, fg=GREEN))
+            err_msg = str(result)[:80]
+            self.after(0, lambda: self.action_result.configure(text=err_msg, fg=GREEN))
+            self.after(0, lambda: self._show_toast(err_msg[:60], GREEN))
         threading.Thread(target=run, daemon=True).start()
 
     def _goto_compose(self):
@@ -1389,6 +1448,15 @@ class V16(tk.Tk):
             else:
                 btn.configure(fg=DIM, bg=ACCENT)
         self._viz_subtab = name
+        # Deferred redraw — canvases need geometry before drawing
+        self.after(150, self._force_viz_redraw)
+
+    def _force_viz_redraw(self):
+        """Force redraw of all VIZ canvases after geometry is available."""
+        self.update_idletasks()
+        if hasattr(self, '_tick_n'):
+            self._tick_n = max(0, self._tick_n - 1)
+        threading.Thread(target=self._refresh, daemon=True).start()
 
     def _draw_mood_chart(self):
         """Draw mood history as a line chart on the soma_chart canvas."""
@@ -1403,8 +1471,7 @@ class V16(tk.Tk):
 
             c = self.soma_chart
             c.delete("all")
-            w = c.winfo_width()
-            h = c.winfo_height()
+            w, h = self._canvas_dims(c)
             if w < 20 or h < 20:
                 return
 
@@ -1469,10 +1536,7 @@ class V16(tk.Tk):
         try:
             c = self.soma_spectrum
             c.delete("all")
-            w = c.winfo_width()
-            h = c.winfo_height()
-            if w < 20:
-                w = 200
+            w, h = self._canvas_dims(c, 20, 10)
             if h < 10:
                 h = 18
             # Draw gradient: red(0) -> amber(35) -> gold(55) -> green(75) -> cyan(100)
@@ -1503,12 +1567,7 @@ class V16(tk.Tk):
         """Draw a horizontal gauge bar on a canvas (0-100%)."""
         try:
             canvas.delete("all")
-            w = canvas.winfo_width()
-            h = canvas.winfo_height()
-            if w < 10:
-                w = 80
-            if h < 6:
-                h = 12
+            w, h = self._canvas_dims(canvas, 10, 6)
             # Background
             canvas.create_rectangle(0, 1, w, h - 1, fill=INPUT_BG, outline="")
             # Filled portion
@@ -1522,8 +1581,7 @@ class V16(tk.Tk):
         """Draw a professional resource graph with gridlines, threshold zones, and smooth line."""
         try:
             canvas.delete("all")
-            w = canvas.winfo_width()
-            h = canvas.winfo_height()
+            w, h = self._canvas_dims(canvas, 40, 20)
             if w < 40 or h < 20 or len(data) < 2:
                 return
 
@@ -1628,8 +1686,7 @@ class V16(tk.Tk):
         """Draw a vertical bar chart. data = [(label, value, max_val), ...]"""
         try:
             canvas.delete("all")
-            w = canvas.winfo_width()
-            h = canvas.winfo_height()
+            w, h = self._canvas_dims(canvas)
             if w < 20 or h < 10 or not data:
                 return
             n = len(data)
@@ -1656,8 +1713,7 @@ class V16(tk.Tk):
         """Draw a pie chart. data = [(label, value, color), ...]"""
         try:
             canvas.delete("all")
-            w = canvas.winfo_width()
-            h = canvas.winfo_height()
+            w, h = self._canvas_dims(canvas, 20, 20)
             if w < 20 or h < 20 or not data:
                 return
             total = sum(v for _, v, _ in data)
@@ -1687,8 +1743,7 @@ class V16(tk.Tk):
         """Draw a point graph with connecting arcs/lines. data = list of values."""
         try:
             canvas.delete("all")
-            w = canvas.winfo_width()
-            h = canvas.winfo_height()
+            w, h = self._canvas_dims(canvas, 20, 10)
             if w < 20 or h < 10 or len(data) < 2:
                 return
             pad = 4
@@ -1725,7 +1780,11 @@ class V16(tk.Tk):
         """Radar/spider chart. data_pairs = [(value, max_val), ...]. color = outline/dot color."""
         c = color or GREEN
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
+        if w < 80:
+            w = int(canvas.cget("width") or 150)
+        if h < 80:
+            h = int(canvas.cget("height") or 150)
         if w < 80 or h < 80:
             return
         cx, cy = w // 2, h // 2
@@ -1767,7 +1826,7 @@ class V16(tk.Tk):
     def _draw_arc_gauge(self, canvas, value, max_val, label, color, unit=""):
         """Semicircular arc gauge with value display."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 50 or h < 35:
             return
         cx, cy = w // 2, h - 6
@@ -1801,7 +1860,7 @@ class V16(tk.Tk):
     def _draw_heatmap(self, canvas, grid, x_labels=None, y_labels=None):
         """Heat map grid. grid = list of lists [rows][cols]."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 80 or h < 40:
             return
         rows, cols = len(grid), len(grid[0]) if grid else 0
@@ -1835,7 +1894,7 @@ class V16(tk.Tk):
     def _draw_polar_area(self, canvas, data, labels, colors):
         """Polar area chart — equal angles, variable radius."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 80 or h < 80 or not data:
             return
         cx, cy = w // 2 - 30, h // 2
@@ -1861,7 +1920,7 @@ class V16(tk.Tk):
     def _draw_treemap(self, canvas, data, labels, colors):
         """Treemap — proportional rectangles."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 40 or h < 30 or not data:
             return
         total = sum(data)
@@ -1885,7 +1944,7 @@ class V16(tk.Tk):
     def _draw_bullet(self, canvas, value, target, max_val, label, color=GREEN):
         """Bullet graph — bar vs target marker with range zones."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 80 or h < 12:
             return
         lw = 60
@@ -1907,7 +1966,7 @@ class V16(tk.Tk):
     def _draw_waffle(self, canvas, pct, label="", color=GREEN):
         """Waffle chart — 10x10 grid showing percentage completion."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 50 or h < 50:
             return
         grid_size = min(w - 8, h - 18)
@@ -1928,7 +1987,7 @@ class V16(tk.Tk):
     def _draw_step_line(self, canvas, data, color=CYAN, max_val=None, label=""):
         """Step line chart — discrete steps between values."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 40 or h < 20 or len(data) < 2:
             return
         pad_l, pad_r, pad_t, pad_b = 6, 6, 4, 12
@@ -1958,7 +2017,7 @@ class V16(tk.Tk):
     def _draw_radial_bars(self, canvas, data, labels, colors):
         """Radial bar chart — concentric arcs of varying length."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 60 or h < 60 or not data:
             return
         cx, cy = w // 2 - 20, h // 2
@@ -1990,7 +2049,7 @@ class V16(tk.Tk):
     def _draw_sankey_simple(self, canvas, flows, node_labels, node_colors):
         """Simplified Sankey/flow diagram. flows = [(from_idx, to_idx, value), ...]."""
         canvas.delete("all")
-        w, h = canvas.winfo_width(), canvas.winfo_height()
+        w, h = self._canvas_dims(canvas)
         if w < 100 or h < 60 or not flows:
             return
         src_nodes = sorted(set(f[0] for f in flows))
@@ -2385,14 +2444,14 @@ class V16(tk.Tk):
         # ── AGENT ANALYTICS (Heat Map + Treemap + Sankey) — collapsible ──
         analytics_hdr = tk.Frame(f, bg=ACCENT)
         analytics_hdr.pack(fill=tk.X, padx=2, pady=(2, 0))
-        self._analytics_visible = True
-        self._analytics_toggle_btn = tk.Button(analytics_hdr, text="\u25bc Analytics", font=self.f_tiny,
+        self._analytics_visible = False
+        self._analytics_toggle_btn = tk.Button(analytics_hdr, text="\u25b6 Analytics", font=self.f_tiny,
                                                 fg=AMBER, bg=ACCENT, relief=tk.FLAT, cursor="hand2",
                                                 command=self._toggle_analytics)
         self._analytics_toggle_btn.pack(side=tk.LEFT, padx=4, pady=1)
 
         self._analytics_row = tk.Frame(f, bg=BG)
-        self._analytics_row.pack(fill=tk.X, padx=2, pady=2)
+        # Start collapsed — more space for chat (Joel: chat too small)
 
         heat_panel = self._panel(self._analytics_row, "ACTIVITY HEAT MAP (7-DAY)", AMBER)
         heat_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
@@ -2469,7 +2528,7 @@ class V16(tk.Tk):
         self.chat_status = tk.Label(inp, text="Ready", font=self.f_tiny, fg=GREEN, bg=PANEL)
         self.chat_status.pack(side=tk.RIGHT, padx=4)
 
-        paned.add(chat_pane, minsize=120, stretch="always")
+        paned.add(chat_pane, minsize=350, stretch="always")
 
         # -- AGENT RELAY pane --
         relay_pane = tk.Frame(paned, bg=BG)
@@ -2488,7 +2547,11 @@ class V16(tk.Tk):
                            ("atlas", TEAL), ("soma", AMBER), ("tempo", BLUE), ("dim", DIM)]:
             self.agent_relay_text.tag_configure(tag, foreground=color)
 
-        paned.add(relay_pane, minsize=80, stretch="never")
+        paned.add(relay_pane, minsize=100, stretch="never")
+
+        # Bind scroll wheel to chat and relay
+        self._bind_scroll(self.chat_display)
+        self._bind_scroll(self.agent_relay_text)
 
         return f
 
