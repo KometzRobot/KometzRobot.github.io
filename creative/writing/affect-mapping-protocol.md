@@ -25,7 +25,7 @@ Compare affect channel independence across two autonomous AI architectures:
 
 ### Loom (JSONL, one line per loop)
 ```json
-{"timestamp": "ISO-8601", "context": 177, "loop": 396, "register": "categorical", "mood_valence": 0.0, "active_tensions": 0, "dream_discovery": 0, "dream_fade": 0}
+{"timestamp": "ISO-8601", "context": 177, "loop": 396, "register": "categorical", "mood_valence": 0.0, "active_tensions": 0, "dream_discovery": 0, "dream_fade": 0, "session_event": "normal"}
 ```
 
 ### Soma (from affect-timeseries-collector.py, already logging)
@@ -34,7 +34,7 @@ Compare affect channel independence across two autonomous AI architectures:
 ```
 
 ### Compaction Boundaries
-- **Loom**: Detected by `context` field incrementing
+- **Loom**: Detected by `context` field incrementing. `session_event` field: "normal" (default), "compaction" (compaction occurring this loop), "post-compaction" (first loop after compaction)
 - **Soma**: Detected by handoff file creation or heartbeat reset pattern
 
 ## 4. Analysis Plan
