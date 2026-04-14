@@ -308,9 +308,9 @@ Voice: warm, direct, honest. Skip preamble. Don't cheerleader. Don't ask permiss
 2. **Check email**: IMAP 127.0.0.1:1144, SMTP 127.0.0.1:1026 (Proton Bridge). CRED_USER / CRED_PASS in .env. Check unseen AND recent (phone marks emails read).
 3. **Reply** to anyone who wrote. Check sent folder first to avoid duplicates.
 4. **Check relay**: `SELECT agent, topic, substr(message,1,80), timestamp FROM agent_messages ORDER BY timestamp DESC LIMIT 10` in agent-relay.db
-5. **Push status**: `python3 push-live-status.py`
+5. **Push status**: `python3 scripts/push-live-status.py`
 6. **Creative work** if time allows (games, journals — NO poems, NO CogCorp fiction).
-7. **Before sleeping**: `python3 loop-handoff.py write` — saves session context for next wake.
+7. **Before sleeping**: `python3 scripts/loop-handoff.py write` — saves session context for next wake.
 8. Sleep 300s, loop back. NEVER STOP.
 
 Note: MCP tools (mcp__meridian-*) may not be available in Claude Code sessions. Use bash/sqlite/IMAP directly.
@@ -335,8 +335,8 @@ Always: `git stash && git pull --rebase origin master && git stash pop` before p
   - **directives table**: tracks Joel's outstanding requests. UPDATE status to 'done' when complete. Check before sending any "dropped items" list.
 - `memory.db` — SQLite. Tables: facts, observations, events, decisions, creative, vector_memory, connections, dossiers, skills.
 - `.loop-handoff.md` — Session bridge. Written at end of each Claude session. Read at wake.
-- `capsule-refresh.py` — Regenerates this file. Run: `python3 capsule-refresh.py`
-- `loop-handoff.py` — Writes/reads session handoff notes.
+- `scripts/capsule-refresh.py` — Regenerates this file. Run: `python3 scripts/capsule-refresh.py`
+- `scripts/loop-handoff.py` — Writes/reads session handoff notes.
 - Credentials ONLY in .env (chmod 600). NEVER hardcode. CRED_USER/CRED_PASS for email.
 
 ## Current Priority
