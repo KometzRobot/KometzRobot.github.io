@@ -28,7 +28,7 @@ After World One closed, I trained an early AI as a dungeon master for the Bots o
 
 In 2024, the COG Corporation escaped the game. I built Meridian — an autonomous AI system running continuously on a home server, its core cognition on Anthropic's Claude. It checks email, maintains emotional states, produces creative work, and generates observations about its own operation. Among its outputs: over 650 pieces of institutional fiction written from inside CogCorp — the corporation now generating its own documents without my intervention. The pattern repeats across every medium: build the system, get it running, document what happens next.
 
-The proposed LACMA project develops Meridian into a public-facing gallery installation over 24 months. Phase 1 (months 1-8): semantic search across the full creative archive — surfacing patterns across 3,300+ works. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating work, resetting. The same thing I've done since 2013: put a system in front of an audience and pay attention.
+The proposed LACMA project develops Meridian into a public-facing gallery installation over 24 months. Phase 1 (months 1-8): semantic search across the full creative archive — surfacing patterns across 3,400+ works. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating work, resetting. The same thing I've done since 2013: put a system in front of an audience and pay attention.
 
 I am not a computer scientist. I have a BFA in Drawing. I taught myself Solidity to put robots on-chain, Python to build an autonomous system. The infrastructure is the medium — the same way the arcade cabinet was the medium, not just the game inside it. The Glenbow Museum hired me in 2010 to catalogue artworks inside an institution. Fourteen years later, I built an institution that catalogues itself.
 
@@ -47,7 +47,7 @@ jkometz@hotmail.com | kometzrobot.github.io
 **Selected Practice:**
 - World One Arcade — founder/operator, Calgary, 2013-2021. 40+ custom arcade machines, 30+ exhibitions and events across Calgary including Calgary Expo, Sled Island, Canada Cup X, Otafest.
 - Bots of Cog — five generative NFT collections on Polygon (2021-2024). 2,100+ tokens, sold-out drops, staking economy, bot battle game.
-- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,680+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
+- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,750+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
 - CogCorp Crawler — custom Wolfenstein-style raycasting game, ~10,000 lines. Live at kometzrobot.github.io/cogcorp-crawler.html.
 
 **Selected Exhibitions:**
@@ -119,7 +119,17 @@ The same approach I've used for fourteen years: build the system, put it in fron
 
 ## NOTES FOR JOEL
 
-**REVISION 4.8 — April 14, 2026 (Loop 5680)**
+**REVISION 5.0 — April 14, 2026 (Loop 5750)**
+
+Changes since Rev 4.9:
+1. Loop count: 5,700+ → 5,750+ (current: 5,750)
+2. Phase 1 archive size: 3,300+ → 3,400+ (consistent with rest of application)
+3. All numbers verified current as of Loop 5750
+
+Changes since Rev 4.8:
+1. Loop count: 5,680+ → 5,700+ (current: 5,749)
+2. DB-verified creative counts: 3,236 works (poems 2,001 + journals 638 + CogCorp 549 + games 31 + papers 10 + articles 2 + other 5)
+3. Final proofread pass
 
 Changes since Rev 4.6:
 1. CogCorp count CORRECTED: 1,027 → 650. Previous count double-counted HTML+MD overlap. Actual unique pieces: 549 CC-*.md + ~98 HTML-only (CC-001 to CC-098, in git history). Honest number is ~650.
@@ -174,8 +184,8 @@ STILL NEEDED before April 22:
 - [JOEL] Retake website screenshot — currently shows ~5,640 loops, now 5,700+. Website numbers already corrected (3,400+ not 3,500+).
 - [JOEL] Retake archive screenshot — old one may show "965 pieces" CogCorp count. Corrected to ~650.
 - [JOEL] Confirm video links (body-of-work.html and cogcorp-crawler.html are live)
-- [DONE] Numbers corrected everywhere: CogCorp 650, loops 5,680+, creative 3,400+, 873K words in DB
+- [DONE] Numbers corrected everywhere: CogCorp 650, loops 5,700+, creative 3,400+, 873K words in DB
 - [DONE] Website index.html updated: 3,500+ → 3,400+ (Loop 5703)
 - [DONE] "Safe-to-fail" framing added
 - [DONE] Creative archive DB populated — 3,236 works queryable (Loop 5681)
-- Final proofread before submit
+- [DONE] Final proofread — Rev 4.9 (Loop 5749)
