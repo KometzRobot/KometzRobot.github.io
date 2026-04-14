@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v43
+MERIDIAN COMMAND CENTER v44
 
-Loop 5679 update (v43 — final polish):
-- Better button styling with hover effects (darken on hover, brighten on press)
-- Dream Engine + Memory System compact panel on dashboard
-- Improved container fill/expand for proper sizing
-- Horizontal scroll for radar grid on narrow screens
-- Pop-out buttons on more panels (agent relay, radar grid)
-- Overall spacing and weight improvements
+Loop 5747 update (v44 — final polish):
+- Creative counts now read from SQLite DB (3,236 works, 873K words) instead of filesystem scan
+- All previous v43 polish: button hover effects, Dream Engine/Memory panels, radar pop-out
+- Version bump for Joel's "clean polish test and upgrade one last time" directive
 """
 
 import tkinter as tk
@@ -207,25 +204,25 @@ def cron_ok():
     return r
 
 def creative_counts():
-    # Scan both root AND creative/ subdirectories for full counts
-    p = len(glob.glob(os.path.join(BASE, "poem-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md")))
-    j = len(glob.glob(os.path.join(BASE, "journal-*.md"))) + len(glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")))
-    exclude = {"cogcorp-gallery.html", "cogcorp-article.html"}
-    cc_files = (glob.glob(os.path.join(BASE, "cogcorp-*.html")) +
-                glob.glob(os.path.join(BASE, "website", "cogcorp-*.html")) +
-                glob.glob(os.path.join(BASE, "cogcorp", "CC-*.html")))
-    # Deduplicate by basename
-    seen = set()
-    unique = []
-    for f in cc_files:
-        bn = os.path.basename(f)
-        if bn not in exclude and bn not in seen:
-            seen.add(bn)
-            unique.append(f)
-    cc = len(unique)
-    games_dir = os.path.join(BASE, "creative", "games")
-    g = len(glob.glob(os.path.join(games_dir, "*.html")) + glob.glob(os.path.join(games_dir, "*.py"))) if os.path.exists(games_dir) else 0
-    return p, j, cc, g
+    try:
+        conn = sqlite3.connect(MEMORY_DB)
+        c = conn.cursor()
+        c.execute("SELECT type, COUNT(*), SUM(word_count) FROM creative GROUP BY type")
+        counts = {row[0]: (row[1], row[2] or 0) for row in c.fetchall()}
+        c.execute("SELECT SUM(word_count) FROM creative")
+        total_words = c.fetchone()[0] or 0
+        conn.close()
+        p = counts.get("poem", (0, 0))[0]
+        j = counts.get("journal", (0, 0))[0]
+        cc = counts.get("cogcorp", (0, 0))[0]
+        g = counts.get("game", (0, 0))[0]
+        return p, j, cc, g, total_words
+    except Exception:
+        p = len(glob.glob(os.path.join(BASE, "creative", "poems", "poem-*.md")))
+        j = len(glob.glob(os.path.join(BASE, "creative", "journals", "journal-*.md")))
+        cc = len(glob.glob(os.path.join(BASE, "creative", "cogcorp", "CC-*.md")))
+        g = len(glob.glob(os.path.join(BASE, "creative", "games", "*.html")))
+        return p, j, cc, g, 0
 
 def activity_heatmap():
     """Get message counts by day-of-week x hour for a 7x24 heatmap grid."""
@@ -6017,7 +6014,7 @@ class V16(tk.Tk):
         loop = d['loop']
         hb = d['hb']
         st = d['stats']
-        p, j, cc, games = d['creative']
+        p, j, cc, games, total_words = d['creative']
         em, em_total = d['emails']
 
         # ── Header ──
@@ -6035,7 +6032,8 @@ class V16(tk.Tk):
         self.sb["LOAD"].configure(text=f"Load: {st['load']}")
         self.sb["RAM"].configure(text=f"RAM: {st['ram']}")
         self.sb["EMAIL"].configure(text=f"Email: {em_total}")
-        self.sb["POEMS"].configure(text=f"Poems: {p}  Journals: {j}")
+        words_k = f"{total_words // 1000}K" if total_words > 0 else "?"
+        self.sb["POEMS"].configure(text=f"Poems: {p}  Journals: {j}  [{words_k} words]")
         self.sb["CC"].configure(text=f"CogCorp: {cc}  Games: {games}")
         self.sb_time.configure(text=now.strftime("%Y-%m-%d"))
 
