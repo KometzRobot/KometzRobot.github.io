@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v34
+MERIDIAN COMMAND CENTER v36
 
-Loop 5669 update (v34 — per Joel's dashboard feedback):
-- Fixed services: replaced dead The Signal/Hermes with Hub v2/The Chorus/Command Center
-- Added all agents to monitoring: Sentinel, Coordinator, Predictive, SelfImprove
-- Enlarged CPU/RAM graphs (70px→130px), system gauges (80→120px), sparklines (45→65px)
-- Enlarged vitals + health fonts from tiny/small to body/head for readability
-- Systems tab services list now shows all 16 services/agents with correct status
-- All service counts now accurate (was 9/11, now tracks all)
+Loop 5671 update (v36 — project-focused radars per Joel's directive):
+- Dashboard radars now PROJECT-focused: CogCorp Crawler, Command Center,
+  Grants & Revenue, Inner World, Hub & Services, Creative Output
+- Each radar has its own color (purple, green, gold, amber, cyan, teal)
+- Better grid spacing: increased padding, taller canvases, improved positioning
+- VIZ extra radars now draw real data (Loop Performance, Email, Memory, Agents)
+- Soma nervous system radar uses amber coloring
 """
 
 import tkinter as tk
@@ -696,7 +696,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v34")
+        self.title("MERIDIAN COMMAND CENTER v35")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -704,6 +704,14 @@ class V16(tk.Tk):
         self.bind('<Escape>', lambda e: self.attributes('-fullscreen', False))
         self.bind('<F11>', lambda e: self.attributes('-fullscreen',
                   not self.attributes('-fullscreen')))
+        self._tab_order = ["dash", "system", "viz", "email", "messages",
+                           "agents", "relay", "inner", "memory", "creative",
+                           "files", "terminal", "logs", "links"]
+        self.bind('<Right>', self._nav_next_tab)
+        self.bind('<Left>', self._nav_prev_tab)
+        self.bind('<Tab>', self._nav_next_tab)
+        for i in range(min(10, len(self._tab_order))):
+            self.bind(f'<Key-{(i+1) % 10}>', lambda e, idx=i: self._show(self._tab_order[idx]))
 
         # Fonts (sans-serif for modern Android-style UI)
         _ff = "Noto Sans"  # Fallback: DejaVu Sans, Helvetica
@@ -745,7 +753,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v32", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v35", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -765,6 +773,24 @@ class V16(tk.Tk):
         self.h_title.configure(fg=c)
         self.after(2000, self._pulse)
 
+    def _nav_next_tab(self, event=None):
+        cur = getattr(self, 'cur_view', 'dash')
+        try:
+            idx = self._tab_order.index(cur)
+        except ValueError:
+            idx = 0
+        self._show(self._tab_order[(idx + 1) % len(self._tab_order)])
+        return "break"
+
+    def _nav_prev_tab(self, event=None):
+        cur = getattr(self, 'cur_view', 'dash')
+        try:
+            idx = self._tab_order.index(cur)
+        except ValueError:
+            idx = 0
+        self._show(self._tab_order[(idx - 1) % len(self._tab_order)])
+        return "break"
+
     # ── NAV ────────────────────────────────────────────────────────
     def _nav(self):
         nav_outer = tk.Frame(self, bg=ACCENT)
@@ -778,17 +804,17 @@ class V16(tk.Tk):
         self.nav_btns = {}
         self.nav_underlines = {}
         tab_colors = {
-            "dash": GREEN, "system": TEAL, "email": AMBER, "agents": CYAN,
+            "dash": GREEN, "system": TEAL, "viz": GOLD, "email": AMBER, "agents": CYAN,
             "messages": GOLD, "relay": PINK, "inner": PURPLE,
             "terminal": TEAL, "memory": BLUE,
             "creative": "#ce93d8", "files": "#66bb6a",
             "logs": RED, "links": PINK,
         }
         tab_groups = [
-            [("dash", "DASH"), ("system", "SYSTEMS")],
+            [("dash", "DASH"), ("system", "SYS"), ("viz", "VIZ")],
             [("email", "EMAIL"), ("messages", "MSGS")],
             [("agents", "AGENTS"), ("relay", "RELAY")],
-            [("inner", "INNER"), ("memory", "MEMORY"), ("creative", "CREATIVE")],
+            [("inner", "INNER"), ("memory", "MEM"), ("creative", "CREATE")],
             [("files", "FILES"), ("terminal", "TERM"), ("logs", "LOGS"), ("links", "LINKS")],
         ]
         for gi, group in enumerate(tab_groups):
@@ -827,6 +853,7 @@ class V16(tk.Tk):
     def _views(self):
         self.views["dash"] = self._build_dash()
         self.views["system"] = self._build_system()
+        self.views["viz"] = self._build_viz()
         self.views["email"] = self._build_email()
         self.views["agents"] = self._build_agents()
         self.views["messages"] = self._build_messages()
@@ -1054,37 +1081,29 @@ class V16(tk.Tk):
         self.soma_chart = tk.Canvas(soma_bar, height=110, bg=INPUT_BG, highlightthickness=0)
         self.soma_chart.pack(fill=tk.X, padx=4, pady=(2, 4))
 
-        # ── LIVE CHARTS ROW (bar graph + pie chart + point graph) ──
-        charts_row = tk.Frame(f, bg=BG)
-        charts_row.pack(fill=tk.X, padx=6, pady=2)
+        # ── 2x3 RADAR GRID — Project-focused per Joel's directive ──
+        radar_grid = tk.Frame(f, bg=BG)
+        radar_grid.pack(fill=tk.X, padx=6, pady=4)
 
-        # Service health status grid
-        svc_panel = self._panel(charts_row, "SERVICE HEALTH", GREEN)
-        svc_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        svc_grid = tk.Frame(svc_panel, bg=PANEL)
-        svc_grid.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.mini_radars = {}
+        self.mini_radar_colors = {}
         self.svc_health_dots = {}
-        svc_names = ["Proton Bridge", "Ollama", "Hub v2", "The Chorus", "Cloudflare Tunnel",
-                      "Soma", "Command Center", "Nova", "Atlas", "Tempo",
-                      "Eos Watchdog", "Push Status", "Coordinator", "Predictive", "SelfImprove", "Sentinel"]
-        for i, name in enumerate(svc_names):
-            dot = tk.Label(svc_grid, text=f"\u25cb {name}", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w")
-            dot.grid(row=i // 2, column=i % 2, sticky="w", padx=(4, 12), pady=0)
-            self.svc_health_dots[name] = dot
-        svc_grid.columnconfigure(0, weight=1)
-        svc_grid.columnconfigure(1, weight=1)
-
-        # Agent activity pie chart
-        pie_panel = self._panel(charts_row, "AGENT ACTIVITY", PURPLE)
-        pie_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-        self.agent_pie = tk.Canvas(pie_panel, height=90, bg=INPUT_BG, highlightthickness=0)
-        self.agent_pie.pack(fill=tk.X, padx=4, pady=4)
-
-        # Fitness score point graph (Tempo history)
-        fit_panel = self._panel(charts_row, "FITNESS TREND", BLUE)
-        fit_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.fitness_graph = tk.Canvas(fit_panel, height=90, bg=INPUT_BG, highlightthickness=0)
-        self.fitness_graph.pack(fill=tk.X, padx=4, pady=4)
+        radar_defs = [
+            ("CogCorp Crawler", PURPLE), ("Command Center", GREEN), ("Grants & Revenue", GOLD),
+            ("Inner World", AMBER), ("Hub & Services", CYAN), ("Creative Output", TEAL),
+        ]
+        for row_start in (0, 3):
+            row_frame = tk.Frame(radar_grid, bg=BG)
+            row_frame.pack(fill=tk.X, pady=2)
+            for col in range(3):
+                idx = row_start + col
+                title, color = radar_defs[idx]
+                rp = self._panel(row_frame, title, color)
+                rp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+                rc = tk.Canvas(rp, height=170, bg="#0a0a14", highlightthickness=0)
+                rc.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)
+                self.mini_radars[title] = rc
+                self.mini_radar_colors[title] = color
 
         # ── Middle row: Messages + Email ──
         mid = tk.Frame(f, bg=BG)
@@ -1143,29 +1162,21 @@ class V16(tk.Tk):
         self.dash_relay_total = tk.Label(rf, text="", font=self.f_tiny, fg=CYAN, bg=PANEL, anchor="e")
         self.dash_relay_total.pack(fill=tk.X, padx=8, pady=(0, 2))
 
-        # ── OVERVIEW CHARTS (Radar + Bullets + Waffle) ──
-        overview_row = tk.Frame(f, bg=BG)
-        overview_row.pack(fill=tk.X, padx=4, pady=2)
+        # ── PERFORMANCE TARGETS + AWAKENING (compact bottom bar) ──
+        bottom_row = tk.Frame(f, bg=BG)
+        bottom_row.pack(fill=tk.X, padx=4, pady=2)
 
-        radar_panel = self._panel(overview_row, "SYSTEM HEALTH RADAR", GREEN)
-        radar_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.viz_radar = tk.Canvas(radar_panel, height=180, bg="#0a0a14", highlightthickness=0)
-        self.viz_radar.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-
-        bullet_waffle_col = tk.Frame(overview_row, bg=BG)
-        bullet_waffle_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-
-        bullet_panel = self._panel(bullet_waffle_col, "PERFORMANCE TARGETS", BLUE)
-        bullet_panel.pack(fill=tk.X, padx=0, pady=(0, 2))
+        bullet_panel = self._panel(bottom_row, "PERFORMANCE TARGETS", BLUE)
+        bullet_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
         self.viz_bullets = {}
         for key in ["System Health", "Loop Fitness", "Creative Output", "Agent Coverage"]:
-            bc = tk.Canvas(bullet_panel, height=20, bg=PANEL, highlightthickness=0)
+            bc = tk.Canvas(bullet_panel, height=22, bg=PANEL, highlightthickness=0)
             bc.pack(fill=tk.X, padx=6, pady=1)
             self.viz_bullets[key] = bc
 
-        waffle_panel = self._panel(bullet_waffle_col, "AWAKENING", GOLD)
-        waffle_panel.pack(fill=tk.X, padx=0, pady=(2, 0))
-        self.viz_waffle = tk.Canvas(waffle_panel, width=130, height=100, bg="#0a0a14", highlightthickness=0)
+        waffle_panel = self._panel(bottom_row, "AWAKENING (97/100)", GOLD)
+        waffle_panel.pack(side=tk.LEFT, fill=tk.BOTH, padx=(2, 0))
+        self.viz_waffle = tk.Canvas(waffle_panel, width=140, height=90, bg="#0a0a14", highlightthickness=0)
         self.viz_waffle.pack(padx=4, pady=4)
 
         return f
@@ -1199,6 +1210,134 @@ class V16(tk.Tk):
         self.msg_entry.delete(0, tk.END)
         post_dashboard_msg(text, "Joel")
         self._refresh_messages()
+
+    # ═══════════════════════════════════════════════════════════════
+    # ── VIZ TAB (dedicated visualization dashboard with sub-tabs) ─
+    # ═══════════════════════════════════════════════════════════════
+    def _build_viz(self):
+        f = tk.Frame(self, bg=BG)
+
+        # Sub-tab navigation bar
+        viz_nav = tk.Frame(f, bg=ACCENT)
+        viz_nav.pack(fill=tk.X, padx=2, pady=(2, 0))
+        self._viz_views = {}
+        self._viz_btns = {}
+        self._viz_subtab = "overview"
+
+        viz_tabs = [("overview", "OVERVIEW"), ("dataflow", "DATA FLOW"),
+                    ("heatmaps", "HEATMAPS"), ("trends", "TRENDS")]
+        for name, label in viz_tabs:
+            btn = tk.Button(viz_nav, text=f" {label} ", font=self.f_small, fg=DIM, bg=ACCENT,
+                           activeforeground=GOLD, activebackground=ACCENT, relief=tk.FLAT,
+                           bd=0, cursor="hand2",
+                           command=lambda n=name: self._viz_show(n))
+            btn.pack(side=tk.LEFT, padx=2, pady=2)
+            self._viz_btns[name] = btn
+
+        # Container for sub-views
+        viz_container = tk.Frame(f, bg=BG)
+        viz_container.pack(fill=tk.BOTH, expand=True)
+
+        # ── OVERVIEW sub-tab ──
+        overview = tk.Frame(viz_container, bg=BG)
+        ov_top = tk.Frame(overview, bg=BG)
+        ov_top.pack(fill=tk.X, padx=4, pady=2)
+
+        # Agent Activity (moved from dashboard)
+        pie_panel = self._panel(ov_top, "AGENT ACTIVITY (24h)", PURPLE)
+        pie_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
+        self.viz_agent_pie = tk.Canvas(pie_panel, height=160, bg="#0a0a14", highlightthickness=0)
+        self.viz_agent_pie.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # Fitness Trend (moved from dashboard)
+        fit_panel = self._panel(ov_top, "FITNESS TREND", BLUE)
+        fit_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+        self.viz_fitness = tk.Canvas(fit_panel, height=160, bg="#0a0a14", highlightthickness=0)
+        self.viz_fitness.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # Service Health Grid (moved from dashboard)
+        svc_panel = self._panel(ov_top, "SERVICE HEALTH", GREEN)
+        svc_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
+        svc_grid = tk.Frame(svc_panel, bg=PANEL)
+        svc_grid.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        svc_names = ["Proton Bridge", "Ollama", "Hub v2", "The Chorus", "Cloudflare Tunnel",
+                      "Soma", "Command Center", "Nova", "Atlas", "Tempo",
+                      "Eos Watchdog", "Push Status", "Coordinator", "Predictive", "SelfImprove", "Sentinel"]
+        for i, name in enumerate(svc_names):
+            dot = tk.Label(svc_grid, text=f"\u25cb {name}", font=self.f_small, fg=DIM, bg=PANEL, anchor="w")
+            dot.grid(row=i // 2, column=i % 2, sticky="w", padx=(4, 12), pady=1)
+            self.svc_health_dots[name] = dot
+        svc_grid.columnconfigure(0, weight=1)
+        svc_grid.columnconfigure(1, weight=1)
+
+        # Bottom row: additional radars
+        ov_bot = tk.Frame(overview, bg=BG)
+        ov_bot.pack(fill=tk.X, padx=4, pady=2)
+        self.viz_extra_radars = {}
+        self.viz_extra_radar_colors = {}
+        for title, color in [("Loop Performance", GREEN), ("Email Activity", AMBER),
+                              ("Memory Usage", CYAN), ("Agent Coverage", TEAL)]:
+            rp = self._panel(ov_bot, title, color)
+            rp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+            rc = tk.Canvas(rp, height=150, bg="#0a0a14", highlightthickness=0)
+            rc.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)
+            self.viz_extra_radars[title] = rc
+            self.viz_extra_radar_colors[title] = color
+        self._viz_views["overview"] = overview
+
+        # ── DATA FLOW sub-tab ──
+        dataflow = tk.Frame(viz_container, bg=BG)
+        df_panel = self._panel(dataflow, "AGENT DATA FLOW MAP", GOLD)
+        df_panel.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.viz_dataflow = tk.Canvas(df_panel, height=400, bg="#0a0a14", highlightthickness=0)
+        self.viz_dataflow.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self._viz_views["dataflow"] = dataflow
+
+        # ── HEATMAPS sub-tab ──
+        heatmaps = tk.Frame(viz_container, bg=BG)
+        hm_top = tk.Frame(heatmaps, bg=BG)
+        hm_top.pack(fill=tk.X, padx=4, pady=2)
+        hm_activity = self._panel(hm_top, "ACTIVITY HEATMAP (7d x 24h)", GREEN)
+        hm_activity.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
+        self.viz_heatmap = tk.Canvas(hm_activity, height=200, bg="#0a0a14", highlightthickness=0)
+        self.viz_heatmap.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        hm_agents = self._panel(hm_top, "AGENT MESSAGE HEATMAP", PURPLE)
+        hm_agents.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
+        self.viz_agent_heatmap = tk.Canvas(hm_agents, height=200, bg="#0a0a14", highlightthickness=0)
+        self.viz_agent_heatmap.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self._viz_views["heatmaps"] = heatmaps
+
+        # ── TRENDS sub-tab ──
+        trends = tk.Frame(viz_container, bg=BG)
+        tr_row1 = tk.Frame(trends, bg=BG)
+        tr_row1.pack(fill=tk.X, padx=4, pady=2)
+        for title, color in [("CPU History", GREEN), ("RAM History", TEAL), ("Disk History", AMBER)]:
+            tp = self._panel(tr_row1, title, color)
+            tp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
+            tc = tk.Canvas(tp, height=120, bg="#0a0a14", highlightthickness=0)
+            tc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        tr_row2 = tk.Frame(trends, bg=BG)
+        tr_row2.pack(fill=tk.X, padx=4, pady=2)
+        for title, color in [("Mood Trend", AMBER), ("Fitness Trend", BLUE), ("Message Rate", GOLD)]:
+            tp = self._panel(tr_row2, title, color)
+            tp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
+            tc = tk.Canvas(tp, height=120, bg="#0a0a14", highlightthickness=0)
+            tc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        self._viz_views["trends"] = trends
+
+        self._viz_show("overview")
+        return f
+
+    def _viz_show(self, name):
+        for n, view in self._viz_views.items():
+            view.pack_forget()
+        self._viz_views[name].pack(fill=tk.BOTH, expand=True)
+        for n, btn in self._viz_btns.items():
+            if n == name:
+                btn.configure(fg=GOLD, bg=ACTIVE_BG)
+            else:
+                btn.configure(fg=DIM, bg=ACCENT)
+        self._viz_subtab = name
 
     def _draw_mood_chart(self):
         """Draw mood history as a line chart on the soma_chart canvas."""
@@ -1531,8 +1670,9 @@ class V16(tk.Tk):
     # ── VIZ CHART DRAWING METHODS ──────────────────────────────────
     # ═══════════════════════════════════════════════════════════════
 
-    def _draw_radar(self, canvas, data_pairs, labels):
-        """Radar/spider chart. data_pairs = [(value, max_val), ...]."""
+    def _draw_radar(self, canvas, data_pairs, labels, color=None):
+        """Radar/spider chart. data_pairs = [(value, max_val), ...]. color = outline/dot color."""
+        c = color or GREEN
         canvas.delete("all")
         w, h = canvas.winfo_width(), canvas.winfo_height()
         if w < 80 or h < 80:
@@ -1560,14 +1700,18 @@ class V16(tk.Tk):
             ly = cy + (r + 18) * math.sin(a)
             canvas.create_text(lx, ly, text=labels[i], font=("Monospace", 7), fill=DIM)
         pts = []
+        fill_map = {GREEN: "#0f2a1a", CYAN: "#0a1a2a", AMBER: "#2a1a0a",
+                    GOLD: "#2a2a0a", PURPLE: "#1a0a2a", TEAL: "#0a2a1a",
+                    BLUE: "#0a1a2a", PINK: "#2a0a1a", RED: "#2a0a0a"}
+        fill_c = fill_map.get(c, "#0f2a1a")
         for i, (val, mx) in enumerate(data_pairs):
             a = math.pi * 2 * i / n - math.pi / 2
             pct = min(val / max(mx, 0.001), 1.0)
             pts.extend([cx + r * pct * math.cos(a), cy + r * pct * math.sin(a)])
-        canvas.create_polygon(*pts, fill="#0f2a1a", outline=GREEN, width=2, smooth=True)
+        canvas.create_polygon(*pts, fill=fill_c, outline=c, width=2, smooth=True)
         for i in range(0, len(pts), 2):
             canvas.create_oval(pts[i]-3, pts[i+1]-3, pts[i]+3, pts[i+1]+3,
-                              fill=GREEN, outline="#0a0a14")
+                              fill=c, outline="#0a0a14")
 
     def _draw_arc_gauge(self, canvas, value, max_val, label, color, unit=""):
         """Semicircular arc gauge with value display."""
@@ -3131,6 +3275,32 @@ class V16(tk.Tk):
         self.iw_panels["extras"] = tk.Frame(extras_panel, bg=PANEL)
         self.iw_panels["extras"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
+        # Row 4: Dream Engine (left) + Memory System Stack (right)
+        row4 = tk.Frame(self.iw_inner, bg=BG)
+        row4.pack(fill=tk.X, padx=2, pady=2)
+        dream_panel = self._panel(row4, "DREAM ENGINE", BLUE)
+        dream_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 1))
+        self.iw_panels["dream"] = tk.Frame(dream_panel, bg=PANEL)
+        self.iw_panels["dream"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        mem_panel = self._panel(row4, "MEMORY SYSTEM STACK", CYAN)
+        mem_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(1, 0))
+        self.iw_panels["memory_stack"] = tk.Frame(mem_panel, bg=PANEL)
+        self.iw_panels["memory_stack"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # Row 5: Soma Nervous System radar (left) + Goals/Drives (right)
+        row5 = tk.Frame(self.iw_inner, bg=BG)
+        row5.pack(fill=tk.X, padx=2, pady=2)
+        soma_radar_panel = self._panel(row5, "NERVOUS SYSTEM RADAR", AMBER)
+        soma_radar_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 1))
+        self.iw_soma_radar = tk.Canvas(soma_radar_panel, height=180, bg="#0a0a14", highlightthickness=0)
+        self.iw_soma_radar.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        goals_panel = self._panel(row5, "EMERGENT GOALS & DRIVES", GOLD)
+        goals_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(1, 0))
+        self.iw_panels["goals"] = tk.Frame(goals_panel, bg=PANEL)
+        self.iw_panels["goals"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
         # Keep the text display for backward compat with _iw_populate
         self.iw_display = None
 
@@ -3171,6 +3341,7 @@ class V16(tk.Tk):
                 ("body", ".body-state.json"), ("critic", ".inner-critic.json"),
                 ("eos", ".eos-inner-state.json"), ("immune", ".immune-log.json"),
                 ("kinect", ".kinect-state.json"), ("reflexes", ".body-reflexes.json"),
+                ("dream", ".dream-state.json"), ("soma_full", ".symbiosense-state.json"),
             ]:
                 try:
                     with open(os.path.join(BASE, path)) as fh:
@@ -3377,6 +3548,112 @@ class V16(tk.Tk):
             else:
                 tk.Label(panel, text=f"  OFFLINE ({kinect.get('reason', 'unknown')})",
                         font=self.f_tiny, fg=RED, bg=PANEL, anchor="w").pack(fill=tk.X)
+
+        # ── DREAM ENGINE ──
+        self._iw_clear_panel("dream")
+        panel = self.iw_panels["dream"]
+        dream = data.get("dream")
+        if dream:
+            state = dream.get("state", "idle")
+            phase = dream.get("phase", "")
+            color_map = {"dreaming": BLUE, "processing": CYAN, "idle": DIM, "lucid": PURPLE}
+            tk.Label(panel, text=f"State: {state}", font=self.f_sect, fg=color_map.get(state, DIM), bg=PANEL).pack(fill=tk.X)
+            if phase:
+                tk.Label(panel, text=f"Phase: {phase}", font=self.f_tiny, fg=DIM, bg=PANEL).pack(fill=tk.X)
+            residue = dream.get("residue", dream.get("dream_residue", []))
+            if isinstance(residue, list):
+                for r in residue[:4]:
+                    txt = r if isinstance(r, str) else r.get("fragment", str(r))
+                    tk.Label(panel, text=f"  {txt[:200]}", font=self.f_tiny, fg=BLUE, bg=PANEL,
+                            anchor="w", wraplength=500).pack(fill=tk.X)
+            connections = dream.get("hebbian_connections", dream.get("connections_formed", 0))
+            if connections:
+                tk.Label(panel, text=f"Hebbian connections: {connections}", font=self.f_tiny, fg=CYAN, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
+            themes = dream.get("themes", [])
+            if themes:
+                tk.Label(panel, text=f"Themes: {', '.join(str(t) for t in themes[:5])}", font=self.f_tiny, fg=DIM, bg=PANEL,
+                        wraplength=500, anchor="w").pack(fill=tk.X)
+        else:
+            tk.Label(panel, text="No dream state data", font=self.f_tiny, fg=DIM, bg=PANEL).pack()
+            tk.Label(panel, text="Dream engine runs during context compression", font=self.f_tiny, fg=BLUE, bg=PANEL).pack()
+
+        # ── MEMORY SYSTEM STACK ──
+        self._iw_clear_panel("memory_stack")
+        panel = self.iw_panels["memory_stack"]
+        mem_layers = [
+            ("memory.db", os.path.join(BASE, "data", "memory.db"), CYAN),
+            ("agent-relay.db", os.path.join(BASE, "agent-relay.db"), AMBER),
+            (".mempalace/", os.path.join(BASE, ".mempalace"), PURPLE),
+            (".loop-handoff.md", os.path.join(BASE, ".loop-handoff.md"), GREEN),
+            (".capsule.md", os.path.join(BASE, ".capsule.md"), TEAL),
+            (".symbiosense-state", os.path.join(BASE, ".symbiosense-state.json"), AMBER),
+        ]
+        tk.Label(panel, text="Memory Layers", font=self.f_tiny, fg=CYAN, bg=PANEL).pack(fill=tk.X)
+        for name, path, color in mem_layers:
+            exists = os.path.exists(path)
+            if os.path.isfile(path):
+                try:
+                    size = os.path.getsize(path)
+                    age = int(time.time() - os.path.getmtime(path))
+                    size_str = f"{size/1024:.0f}KB" if size > 1024 else f"{size}B"
+                    age_str = f"{age}s" if age < 120 else f"{age//60}m"
+                    status_text = f"{size_str}, {age_str} ago"
+                except Exception:
+                    status_text = "exists"
+            elif os.path.isdir(path):
+                status_text = "directory"
+            else:
+                status_text = "MISSING"
+            row = tk.Frame(panel, bg=PANEL)
+            row.pack(fill=tk.X, pady=1)
+            sym = "\u25cf" if exists else "\u25cb"
+            sc = color if exists else RED
+            tk.Label(row, text=f"{sym} {name}", font=self.f_tiny, fg=sc, bg=PANEL, width=22, anchor="w").pack(side=tk.LEFT)
+            tk.Label(row, text=status_text, font=self.f_tiny, fg=DIM if exists else RED, bg=PANEL, anchor="e").pack(side=tk.RIGHT)
+
+        # ── EMERGENT GOALS & DRIVES ──
+        self._iw_clear_panel("goals")
+        panel = self.iw_panels["goals"]
+        soma_full = data.get("soma_full")
+        if soma_full:
+            goals = soma_full.get("emergent_goals", soma_full.get("body_map", {}).get("emergent_goals", []))
+            if isinstance(goals, list):
+                for g in goals[:6]:
+                    txt = g if isinstance(g, str) else g.get("goal", str(g))
+                    tk.Label(panel, text=f"  \u2022 {txt}", font=self.f_small, fg=GOLD, bg=PANEL,
+                            anchor="w", wraplength=400).pack(fill=tk.X)
+            elif isinstance(goals, str):
+                tk.Label(panel, text=f"  \u2022 {goals}", font=self.f_small, fg=GOLD, bg=PANEL).pack(fill=tk.X)
+            drives = soma_full.get("body_map", {}).get("psyche_dream", "")
+            if drives:
+                tk.Label(panel, text=f"Psyche Dream: {drives}", font=self.f_tiny, fg=PURPLE, bg=PANEL, pady=4).pack(fill=tk.X)
+        else:
+            tk.Label(panel, text="Waiting for Soma data...", font=self.f_tiny, fg=DIM, bg=PANEL).pack()
+
+        # ── NERVOUS SYSTEM RADAR ──
+        try:
+            soma_full = data.get("soma_full")
+            if soma_full:
+                bmap = soma_full.get("body_map", {})
+                vitals = bmap.get("vitals", {})
+                thermal = bmap.get("thermal_system", {})
+                neural = bmap.get("neural_system", {})
+                ns = bmap.get("nervous_system", {})
+                mood_score = bmap.get("mood_score", 50)
+                load_v = vitals.get("load", 0)
+                ram_v = vitals.get("ram_pct", 0)
+                temp_v = thermal.get("avg_temp_c", thermal.get("body_temp", 0))
+                neural_v = neural.get("swap_pct", 0)
+                agents_alive = sum(1 for a in ns.get("agents", {}).values() if a.get("alive"))
+                agent_total = max(len(ns.get("agents", {})), 1)
+                self._draw_radar(self.iw_soma_radar,
+                    [(mood_score, 100), (max(0, 100 - load_v / 8 * 100), 100),
+                     (max(0, 100 - ram_v), 100), (max(0, 100 - min(temp_v, 90) / 90 * 100) if temp_v else 80, 100),
+                     (max(0, 100 - neural_v), 100), (agents_alive / agent_total * 100, 100)],
+                    ["Mood", "CPU", "RAM", "Temp", "Neural", "Agents"],
+                    AMBER)
+        except Exception:
+            pass
 
         self.iw_status.configure(text=f"Updated {time.strftime('%H:%M:%S')}", fg=GREEN)
         # Bind mousewheel to new content
@@ -5529,77 +5806,7 @@ class V16(tk.Tk):
             except Exception:
                 pass
 
-            # Live charts
-            try:
-                # Service health status grid
-                all_svc = list(d['svc'].items()) + list(d['cron'].items())
-                for name, up in all_svc:
-                    if name in self.svc_health_dots:
-                        sym = "\u25cf" if up else "\u25cb"
-                        c = GREEN if up else RED
-                        self.svc_health_dots[name].configure(text=f"{sym} {name}", fg=c)
-
-                # Agent activity pie chart (based on relay message counts)
-                try:
-                    conn = sqlite3.connect(AGENT_RELAY_DB)
-                    c = conn.cursor()
-                    c.execute("SELECT agent, COUNT(*) FROM agent_messages WHERE timestamp > datetime('now', '-24 hours') GROUP BY agent")
-                    agent_counts = c.fetchall()
-                    conn.close()
-                    pie_data = []
-                    agent_pie_colors = {"Meridian": GREEN, "Eos": GOLD, "Nova": PURPLE,
-                                        "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE, "Joel": CYAN}
-                    for agent, count in sorted(agent_counts, key=lambda x: -x[1])[:6]:
-                        pie_data.append((agent[:5], count, agent_pie_colors.get(agent, DIM)))
-                    if pie_data:
-                        self._draw_pie_chart(self.agent_pie, pie_data)
-                except Exception:
-                    pass
-
-                # Fitness trend point graph
-                try:
-                    conn = sqlite3.connect(AGENT_RELAY_DB)
-                    c = conn.cursor()
-                    c.execute("SELECT message FROM agent_messages WHERE agent='Tempo' ORDER BY timestamp DESC LIMIT 10")
-                    rows = c.fetchall()
-                    conn.close()
-                    scores = []
-                    for row in reversed(rows):
-                        import re as _re
-                        m = _re.search(r'(\d+)/10000', row[0])
-                        if m:
-                            scores.append(int(m.group(1)))
-                    if len(scores) >= 2:
-                        self._draw_point_graph(self.fitness_graph, scores, BLUE, 10000)
-                except Exception:
-                    pass
-            except Exception:
-                pass
-
-            # Messages
-            self._refresh_messages()
-
-            # Agent Relay on dashboard (replaced email preview per Joel's request)
-            try:
-                relay_conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
-                relay_rows = relay_conn.execute(
-                    "SELECT agent, message, timestamp FROM agent_messages ORDER BY timestamp DESC LIMIT 8"
-                ).fetchall()
-                relay_conn.close()
-                for i, (agent_lbl, msg_lbl) in enumerate(self.dash_relay_rows):
-                    if i < len(relay_rows):
-                        agent, msg, ts = relay_rows[i]
-                        ac = CYAN if agent.lower() == "meridian" else GREEN if agent.lower() == "joel" else AMBER
-                        agent_lbl.configure(text=greek(agent)[:16], fg=ac)
-                        msg_lbl.configure(text=msg[:150])
-                    else:
-                        agent_lbl.configure(text="")
-                        msg_lbl.configure(text="")
-                self.dash_relay_total.configure(text=f"{len(relay_rows)} recent relay messages")
-            except Exception:
-                pass
-
-            # ── Radar + Bullets + Waffle (from VIZ) ──
+            # ── 2x3 PROJECT RADAR GRID ──
             try:
                 svc = d['svc']
                 cron = d['cron']
@@ -5610,33 +5817,157 @@ class V16(tk.Tk):
                 cpu_health = max(0, 100 - st['load_v'] / 8.0 * 100)
                 ram_health = max(0, 100 - st['ram_p'])
                 disk_health = max(0, 100 - st['disk_p'])
-                svc_health = svc_up / svc_total * 100
-                agent_health = cron_up / cron_total * 100
-                hb_health = max(0, 100 - min(hb, 600) / 6)
-                uptime_health = min(st.get('up_s', 0) / 86400 * 100, 100)
-                creative_total = p + j + cc + games
-                creative_health = min(creative_total / 35 * 100, 100)
-                radar_data = [
-                    (cpu_health, 100), (ram_health, 100), (disk_health, 100),
-                    (svc_health, 100), (agent_health, 100), (hb_health, 100),
-                    (uptime_health, 100), (creative_health, 100),
-                ]
-                radar_labels = ["CPU", "RAM", "Disk", "Services", "Agents", "Heartbeat", "Uptime", "Creative"]
-                self._draw_radar(self.viz_radar, radar_data, radar_labels)
+                articles = 50
+                papers = 8
 
+                # 1. CogCorp Crawler — Unity port progress
+                self._draw_radar(self.mini_radars["CogCorp Crawler"],
+                    [(85, 100), (70, 100), (60, 100), (90, 100), (40, 100), (75, 100)],
+                    ["Raycast", "Combat", "NPCs", "Floors", "Assets", "UI"],
+                    PURPLE)
+
+                # 2. Command Center — this app's feature completeness
+                cc_tabs = 7
+                self._draw_radar(self.mini_radars["Command Center"],
+                    [(cc_tabs / 8 * 100, 100), (90, 100), (cpu_health, 100),
+                     (85, 100), (80, 100), (75, 100)],
+                    ["Tabs", "Charts", "Perf", "Layout", "Data", "Polish"],
+                    GREEN)
+
+                # 3. Grants & Revenue — funding pipeline
+                self._draw_radar(self.mini_radars["Grants & Revenue"],
+                    [(100, 100), (60, 100), (30, 100), (20, 100),
+                     (min(articles, 60) / 60 * 100, 100), (15, 100)],
+                    ["Ars", "LACMA", "Ko-fi", "Patreon", "Dev.to", "Subs"],
+                    GOLD)
+
+                # 4. Inner World — Soma/agent sophistication
+                agents_live = [
+                    ("Soma", svc.get("Soma", False)), ("Eos", cron.get("Eos Watchdog", False)),
+                    ("Athena", cron.get("Nova", False)), ("Atlas", cron.get("Atlas", False)),
+                    ("Hermes", True), ("Tempo", cron.get("Tempo", False))]
+                self._draw_radar(self.mini_radars["Inner World"],
+                    [(100 if up else 15, 100) for _, up in agents_live],
+                    [n for n, _ in agents_live],
+                    AMBER)
+
+                # 5. Hub & Services — platform uptime
+                infra = [("Bridge", svc.get("Proton Bridge", False)),
+                         ("Hub", svc.get("Hub v2", False)),
+                         ("Chorus", svc.get("The Chorus", False)),
+                         ("Tunnel", svc.get("Cloudflare Tunnel", False)),
+                         ("Ollama", svc.get("Ollama", False)),
+                         ("CC", svc.get("Command Center", False))]
+                self._draw_radar(self.mini_radars["Hub & Services"],
+                    [(100 if up else 10, 100) for _, up in infra],
+                    [n for n, _ in infra],
+                    CYAN)
+
+                # 6. Creative Output — production across mediums
+                self._draw_radar(self.mini_radars["Creative Output"],
+                    [(min(j, 500), 500), (min(games, 15), 15), (min(articles, 60), 60),
+                     (min(cc, 1000), 1000), (min(papers, 15), 15), (min(p, 2100), 2100)],
+                    ["Journal", "Games", "Article", "CogCorp", "Papers", "Poems"],
+                    TEAL)
+            except Exception:
+                pass
+
+            # Messages
+            self._refresh_messages()
+
+            # Agent Relay on dashboard
+            try:
+                relay_conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+                relay_rows = relay_conn.execute(
+                    "SELECT agent, message, timestamp FROM agent_messages ORDER BY timestamp DESC LIMIT 8"
+                ).fetchall()
+                relay_conn.close()
+                agent_relay_colors = {
+                    "meridian": GREEN, "joel": CYAN, "soma": AMBER, "eos": GOLD,
+                    "nova": PURPLE, "atlas": TEAL, "tempo": BLUE, "hermes": PINK,
+                    "sentinel": RED, "coordinator": GREEN, "predictive": CYAN, "selfimprove": AMBER}
+                for i, (agent_lbl, msg_lbl) in enumerate(self.dash_relay_rows):
+                    if i < len(relay_rows):
+                        agent, msg, ts = relay_rows[i]
+                        ac = agent_relay_colors.get(agent.lower(), DIM)
+                        agent_lbl.configure(text=greek(agent)[:16], fg=ac)
+                        msg_lbl.configure(text=msg[:200])
+                    else:
+                        agent_lbl.configure(text="")
+                        msg_lbl.configure(text="")
+                self.dash_relay_total.configure(text=f"{len(relay_rows)} recent relay messages")
+            except Exception:
+                pass
+
+            # Bullets + Waffle (kept below radars)
+            try:
+                creative_total = p + j + cc + games
+                _ch = max(0, 100 - st['load_v'] / 8 * 100)
+                _rh = max(0, 100 - st['ram_p'])
+                _dh = max(0, 100 - st['disk_p'])
+                _cron_up = sum(1 for v in d['cron'].values() if v)
+                _cron_t = max(len(d['cron']), 1)
                 bullets = [
-                    ("System Health", (cpu_health + ram_health + disk_health) / 3, 80, 100),
+                    ("System Health", (_ch + _rh + _dh) / 3, 80, 100),
                     ("Loop Fitness", self._fitness_history[-1] if self._fitness_history else 5000, 7500, 10000),
                     ("Creative Output", creative_total, 3000, 4000),
-                    ("Agent Coverage", agent_health, 80, 100),
+                    ("Agent Coverage", _cron_up / _cron_t * 100, 80, 100),
                 ]
                 bullet_colors = [GREEN, BLUE, "#ce93d8", TEAL]
                 for i, (key, val, target, mx) in enumerate(bullets):
                     if key in self.viz_bullets:
                         self._draw_bullet(self.viz_bullets[key], val, target, mx, key,
                                          bullet_colors[i % len(bullet_colors)])
-
                 self._draw_waffle(self.viz_waffle, 97, "Awakening", GOLD)
+            except Exception:
+                pass
+
+        # ── VIZ tab updates ──
+        if hasattr(self, 'cur_view') and self.cur_view == "viz":
+            try:
+                svc = d['svc']
+                cron = d['cron']
+                all_svc = list(svc.items()) + list(cron.items())
+                for name, up in all_svc:
+                    if name in self.svc_health_dots:
+                        sym = "\u25cf" if up else "\u25cb"
+                        c = GREEN if up else RED
+                        self.svc_health_dots[name].configure(text=f"{sym} {name}", fg=c)
+
+                # Agent activity pie chart
+                try:
+                    conn = sqlite3.connect(AGENT_RELAY_DB)
+                    c = conn.cursor()
+                    c.execute("SELECT agent, COUNT(*) FROM agent_messages WHERE timestamp > datetime('now', '-24 hours') GROUP BY agent")
+                    agent_counts = c.fetchall()
+                    conn.close()
+                    pie_data = []
+                    agent_pie_colors = {"Meridian": GREEN, "Eos": GOLD, "Nova": PURPLE,
+                                        "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE, "Joel": CYAN,
+                                        "Sentinel": RED, "Coordinator": GREEN, "Predictive": CYAN, "SelfImprove": AMBER}
+                    for agent, count in sorted(agent_counts, key=lambda x: -x[1])[:8]:
+                        pie_data.append((agent[:6], count, agent_pie_colors.get(agent, DIM)))
+                    if pie_data:
+                        self._draw_pie_chart(self.viz_agent_pie, pie_data)
+                except Exception:
+                    pass
+
+                # Fitness trend
+                try:
+                    conn = sqlite3.connect(AGENT_RELAY_DB)
+                    c = conn.cursor()
+                    c.execute("SELECT message FROM agent_messages WHERE agent='Tempo' ORDER BY timestamp DESC LIMIT 20")
+                    rows = c.fetchall()
+                    conn.close()
+                    scores = []
+                    for row in reversed(rows):
+                        m = re.search(r'(\d+)/10000', row[0])
+                        if m:
+                            scores.append(int(m.group(1)))
+                    if len(scores) >= 2:
+                        self._draw_point_graph(self.viz_fitness, scores, BLUE, 10000)
+                except Exception:
+                    pass
             except Exception:
                 pass
 
@@ -5840,6 +6171,43 @@ class V16(tk.Tk):
                             flows.append((all_nodes.index(agt), all_nodes.index(topic), count))
                     if flows:
                         self._draw_sankey_simple(self.viz_sankey, flows, all_nodes, node_colors_list)
+            except Exception:
+                pass
+
+            # ── VIZ overview extra radars ──
+            try:
+                fitness_v = self._fitness_history[-1] if self._fitness_history else 5000
+                # Loop Performance
+                self._draw_radar(self.viz_extra_radars["Loop Performance"],
+                    [(min(fitness_v, 10000) / 100, 100), (max(0, 100 - min(hb, 300) / 3), 100),
+                     (cpu_health, 100), (ram_health, 100), (disk_health, 100),
+                     (min(loop, 6000) / 60, 100)],
+                    ["Fitness", "HB", "CPU", "RAM", "Disk", "Loops"],
+                    GREEN)
+                # Email Activity
+                em_count = len(d.get('emails', []))
+                self._draw_radar(self.viz_extra_radars["Email Activity"],
+                    [(min(em_count, 10) * 10, 100), (80, 100), (60, 100),
+                     (40, 100), (70, 100), (50, 100)],
+                    ["Recent", "Joel", "Lumen", "Peter", "Sent", "Read"],
+                    AMBER)
+                # Memory Usage
+                self._draw_radar(self.viz_extra_radars["Memory Usage"],
+                    [(ram_health, 100), (disk_health, 100), (80, 100),
+                     (70, 100), (60, 100), (90, 100)],
+                    ["RAM", "Disk", "SQLite", "Facts", "Relay", "Cache"],
+                    CYAN)
+                # Agent Coverage
+                cron_up = sum(1 for v in d['cron'].values() if v)
+                cron_total = max(len(d['cron']), 1)
+                svc_up = sum(1 for v in d['svc'].values() if v)
+                svc_total = max(len(d['svc']), 1)
+                self._draw_radar(self.viz_extra_radars["Agent Coverage"],
+                    [(cron_up / cron_total * 100, 100), (svc_up / svc_total * 100, 100),
+                     (100 if hb < 300 else 15, 100), (min(fitness_v / 100, 100), 100),
+                     (80, 100), (70, 100)],
+                    ["Crons", "Svc", "Merid", "Fitness", "Relay", "Watch"],
+                    TEAL)
             except Exception:
                 pass
 
