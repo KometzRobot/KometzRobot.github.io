@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v40
+MERIDIAN COMMAND CENTER v42
 
-Loop 5675 update (v40 — Joel's 11 directives addressed):
-- Chat window MUCH larger — minsize 350px, initial 60% of paned space
-- Visuals now load reliably — deferred canvas drawing after tab switch
-- Mouse wheel scrolling on ALL scrollable panels (dash, chat, relay, messages, viz)
-- Dashboard panels fill full width with proper grid weights
-- Toast notification system — auto-dismissing, non-stacking, queue-based
-- Analytics row collapsed by default to give chat more space
-- All canvas drawing uses update_idletasks for proper geometry
+Loop 5678 update (v42 — final polish):
+- Radar grid: switched to grid layout with uniform columns (fixes cutoff on smaller screens)
+- Fixed broken paths for capsule-refresh.py and push-live-status.py Quick Actions
+- Version bump and code cleanup
 """
 
 import tkinter as tk
@@ -399,7 +395,7 @@ def get_cross_references(filepath):
         pass
     # 3. Search awakening-plan.md for references
     try:
-        with open(os.path.join(BASE, "awakening-plan.md")) as f:
+        with open(os.path.join(BASE, "docs", "awakening-plan.md")) as f:
             plan = f.read()
         # Search for filename or common variations
         search_terms = [bn]
@@ -700,7 +696,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v40")
+        self.title("MERIDIAN COMMAND CENTER v42")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -759,7 +755,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v40", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v42", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         # Toast notification area (right side of header, auto-dismiss)
         self._toast_frame = tk.Frame(h, bg=HEADER_BG)
@@ -1060,10 +1056,10 @@ class V16(tk.Tk):
             ("Open Website", lambda: self._do_action(action_open_website), TEAL),
             ("Check Email", lambda: self._goto_inbox(), GOLD),
             ("Refresh Capsule", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['python3', os.path.join(BASE, 'capsule-refresh.py')],
+                ['python3', os.path.join(BASE, 'scripts', 'capsule-refresh.py')],
                 capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Refreshed"), PURPLE),
             ("Push Status", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['python3', os.path.join(BASE, 'push-live-status.py')],
+                ['python3', os.path.join(BASE, 'scripts', 'push-live-status.py')],
                 capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Pushed"), TEAL),
         ]
         for i, (label, cmd, color) in enumerate(buttons):
@@ -1180,9 +1176,9 @@ class V16(tk.Tk):
         self.soma_chart = tk.Canvas(soma_bar, height=70, bg=INPUT_BG, highlightthickness=0)
         self.soma_chart.pack(fill=tk.BOTH, expand=True, padx=4, pady=(2, 4))
 
-        # ── 2x6 RADAR GRID — 12 project radars per Joel's directive ──
+        # ── 3x4 RADAR GRID — 12 project radars (grid layout for proper sizing) ──
         radar_grid = tk.Frame(f, bg=BG)
-        radar_grid.pack(fill=tk.X, padx=4, pady=3)
+        radar_grid.pack(fill=tk.BOTH, padx=4, pady=3)
 
         self.mini_radars = {}
         self.mini_radar_colors = {}
@@ -1193,20 +1189,16 @@ class V16(tk.Tk):
             ("Website & Presence", BLUE), ("Cinder USB", PINK), ("Homecoming", PURPLE),
             ("Game Dev", GOLD), ("System Perf", RED), ("Network & Comms", CYAN),
         ]
-        for row_start in (0, 4, 8):
-            row_frame = tk.Frame(radar_grid, bg=BG)
-            row_frame.pack(fill=tk.X, pady=1)
-            for col in range(4):
-                idx = row_start + col
-                if idx >= len(radar_defs):
-                    break
-                title, color = radar_defs[idx]
-                rp = self._panel(row_frame, title, color)
-                rp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
-                rc = tk.Canvas(rp, height=100, bg="#0a0a14", highlightthickness=0)
-                rc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-                self.mini_radars[title] = rc
-                self.mini_radar_colors[title] = color
+        for col in range(4):
+            radar_grid.columnconfigure(col, weight=1, uniform="radar")
+        for idx, (title, color) in enumerate(radar_defs):
+            row, col = divmod(idx, 4)
+            rp = self._panel(radar_grid, title, color)
+            rp.grid(row=row, column=col, padx=1, pady=1, sticky="nsew")
+            rc = tk.Canvas(rp, height=100, bg="#0a0a14", highlightthickness=0)
+            rc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+            self.mini_radars[title] = rc
+            self.mini_radar_colors[title] = color
 
         # ── Middle row: Messages + Agent Relay ──
         mid = tk.Frame(f, bg=BG)
@@ -4871,7 +4863,7 @@ class V16(tk.Tk):
         """Parse wake-state.md and display with color-coded sections + AWAKENING progress."""
         wake = _read(WAKE)
         # Parse AWAKENING progress from awakening-plan.md
-        awaken = _read(os.path.join(BASE, "awakening-plan.md"))
+        awaken = _read(os.path.join(BASE, "docs", "awakening-plan.md"))
         done, total = 0, 0
         for line in awaken.split('\n'):
             if line.startswith('| **TOTAL**'):

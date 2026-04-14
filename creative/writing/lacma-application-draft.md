@@ -47,7 +47,7 @@ jkometz@hotmail.com | kometzrobot.github.io
 **Selected Practice:**
 - World One Arcade — founder/operator, Calgary, 2013-2021. 40+ custom arcade machines, 30+ exhibitions and events across Calgary including Calgary Expo, Sled Island, Canada Cup X, Otafest.
 - Bots of Cog — five generative NFT collections on Polygon (2021-2024). 2,100+ tokens, sold-out drops, staking economy, bot battle game.
-- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,660+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
+- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,670+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
 - CogCorp Crawler — custom Wolfenstein-style raycasting game, ~10,000 lines. Live at kometzrobot.github.io/cogcorp-crawler.html.
 
 **Selected Exhibitions:**
@@ -124,7 +124,7 @@ The same approach I've used for fourteen years: build the system, put it in fron
 Changes since Rev 4.6:
 1. CogCorp count CORRECTED: 1,027 → 650. Previous count double-counted HTML+MD overlap. Actual unique pieces: 549 CC-*.md + ~98 HTML-only (CC-001 to CC-098, in git history). Honest number is ~650.
 2. Total creative works: 3,700+ → 3,400+ (poems 2,005 + journals 645 + CogCorp ~650 + games ~9 + articles 50 + papers 8 = ~3,367)
-3. Loop count: 5,600+ → 5,660+
+3. Loop count: 5,600+ → 5,670+
 4. Telegram bot fixed (duplicate instance bug resolved)
 
 Changes since Rev 4.5:
@@ -173,6 +173,6 @@ STILL NEEDED before April 22:
 - [DONE] 5 images in JPEG format — all in assets/visuals/lacma-submission/
 - [JOEL] Confirm video links (body-of-work.html and cogcorp-crawler.html are live)
 - [JOEL] Retake website screenshot? Current shows ~5,640 loops — now 5,662+
-- [DONE] Numbers corrected: CogCorp 650 (was 1,027 — double-count fix), loops 5,660+, creative works 3,400+
+- [DONE] Numbers corrected: CogCorp 650 (was 1,027 — double-count fix), loops 5,670+, creative works 3,400+
 - Final proofread before submit
 - [DONE] "Safe-to-fail" framing added to Technology-Culture Dialogue — uses LACMA's own language naturally within the existing narrative.
