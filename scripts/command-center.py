@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v29
+MERIDIAN COMMAND CENTER v31
 
-Loop 5665 update (v29 — Joel feedback overhaul):
-- Agents tab: added Sentinel, Coordinator, Predictive, SelfImprove; 2-row grid layout
-- Messages tab: redesigned as chat-style view with sender filtering
-- Inner World: visual panel layout with gauges, collapsible sections
-- Creative tab: removed Idea Board, streamlined to Library + Workspace
-- Removed redundant service displays across tabs
-- Wider layout, reduced padding, better space usage
-- Previous: v28 (Loop 5664)
+Loop 5666 update (v31 — massive data visualization upgrade):
+- NEW VIZ tab: 11 chart types (radar, arc gauges, heatmap, polar area,
+  radial bars, Sankey flow, bullet graphs, sparklines, waffle, treemap,
+  step-line charts) — all live-updating with Material Dark theme
+- Per Joel's email: octalysis-style radar, gauges, heatmap, polar charts,
+  treemaps, bullet graphs, animated flow, and more
+- Previous: v30 (Loop 5666, creative & layout overhaul)
 """
 
 import tkinter as tk
@@ -30,6 +29,7 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
 import urllib.request
+import math
 
 # Load .env credentials
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -50,7 +50,6 @@ RELAY_DB = os.path.join(BASE, "data", "relay.db")
 AGENT_RELAY_DB = os.path.join(BASE, "agent-relay.db")
 MEMORY_DB = os.path.join(BASE, "data", "memory.db")
 NOVA_STATE = os.path.join(BASE, ".nova-state.json")
-NFT_DIR = os.path.join(BASE, "nft-prototypes")
 DASH_MSG = os.path.join(BASE, ".dashboard-messages.json")
 LOOP_FILE = os.path.join(BASE, ".loop-count")
 
@@ -201,8 +200,39 @@ def creative_counts():
             seen.add(bn)
             unique.append(f)
     cc = len(unique)
-    n = len(glob.glob(os.path.join(NFT_DIR, "*.html"))) if os.path.exists(NFT_DIR) else 0
-    return p, j, cc, n
+    games_dir = os.path.join(BASE, "creative", "games")
+    g = len(glob.glob(os.path.join(games_dir, "*.html")) + glob.glob(os.path.join(games_dir, "*.py"))) if os.path.exists(games_dir) else 0
+    return p, j, cc, g
+
+def activity_heatmap():
+    """Get message counts by day-of-week x hour for a 7x24 heatmap grid."""
+    try:
+        conn = sqlite3.connect(AGENT_RELAY_DB)
+        c = conn.cursor()
+        c.execute("SELECT timestamp FROM agent_messages WHERE timestamp > datetime('now', '-7 days')")
+        grid = [[0]*24 for _ in range(7)]
+        for (ts,) in c.fetchall():
+            try:
+                dt = datetime.fromisoformat(ts.replace('+00:00', '').replace('Z', ''))
+                grid[dt.weekday()][dt.hour] += 1
+            except Exception:
+                pass
+        conn.close()
+        return grid
+    except Exception:
+        return [[0]*24 for _ in range(7)]
+
+def agent_message_counts_24h():
+    """Get per-agent message counts in last 24 hours."""
+    try:
+        conn = sqlite3.connect(AGENT_RELAY_DB)
+        c = conn.cursor()
+        c.execute("SELECT agent, COUNT(*) FROM agent_messages WHERE timestamp > datetime('now', '-24 hours') GROUP BY agent ORDER BY COUNT(*) DESC")
+        rows = c.fetchall()
+        conn.close()
+        return rows
+    except Exception:
+        return []
 
 def recent_emails(n=8):
     try:
@@ -644,7 +674,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v29")
+        self.title("MERIDIAN COMMAND CENTER v31")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -667,6 +697,11 @@ class V16(tk.Tk):
         self._pulse_on = True  # For animation
         self._load_history = []  # CPU load history (last 60 samples = 5min)
         self._ram_history = []   # RAM % history
+        self._disk_history = []  # Disk % history
+        self._fitness_history = []  # Fitness scores
+        self._msg_rate_history = []  # Messages per tick
+        self._heatmap_cache = None
+        self._heatmap_tick = 0
         self._header()
         self._nav()
         self._views()
@@ -688,7 +723,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v29", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v31", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -715,49 +750,43 @@ class V16(tk.Tk):
         bar = tk.Frame(nav_outer, bg=ACCENT, height=28)
         bar.pack(fill=tk.X)
         bar.pack_propagate(False)
-        # Thin accent line under nav
         self.nav_indicator = tk.Frame(nav_outer, bg=BORDER, height=2)
         self.nav_indicator.pack(fill=tk.X)
         self.views = {}
         self.nav_btns = {}
         self.nav_underlines = {}
         tab_colors = {
-            "dash": GREEN, "system": TEAL, "email": AMBER, "agents": CYAN,
+            "dash": GREEN, "viz": "#00e5ff", "system": TEAL, "email": AMBER, "agents": CYAN,
             "messages": GOLD, "relay": PINK, "inner": PURPLE,
             "terminal": TEAL, "memory": BLUE,
             "creative": "#ce93d8", "files": "#66bb6a",
             "logs": RED, "links": PINK,
         }
-        tabs = [
-            ("dash", "DASHBOARD"),
-            ("system", "SYSTEMS"),
-            ("email", "EMAIL"),
-            ("agents", "AGENTS"),
-            ("messages", "MESSAGES"),
-            ("relay", "RELAY"),
-            ("inner", "INNER WORLD"),
-            ("terminal", "TERMINAL"),
-            ("memory", "MEMORY"),
-            ("creative", "CREATIVE"),
-            ("files", "FILES"),
-            ("logs", "LOGS"),
-            ("links", "LINKS"),
+        tab_groups = [
+            [("dash", "DASH"), ("viz", "VIZ"), ("system", "SYSTEMS")],
+            [("email", "EMAIL"), ("messages", "MSGS")],
+            [("agents", "AGENTS"), ("relay", "RELAY")],
+            [("inner", "INNER"), ("memory", "MEMORY"), ("creative", "CREATIVE")],
+            [("files", "FILES"), ("terminal", "TERM"), ("logs", "LOGS"), ("links", "LINKS")],
         ]
-        for name, label in tabs:
-            col = tab_colors.get(name, CYAN)
-            wrapper = tk.Frame(bar, bg=ACCENT)
-            wrapper.pack(side=tk.LEFT, padx=1, pady=0)
-            b = tk.Button(wrapper, text=f" {label} ", font=self.f_small, fg=DIM, bg=ACCENT,
-                         activeforeground=col, activebackground=ACCENT, relief=tk.FLAT,
-                         bd=0, cursor="hand2",
-                         command=lambda n=name: self._show(n))
-            b.pack(side=tk.TOP)
-            # Colored underline (hidden by default)
-            ul = tk.Frame(wrapper, bg=col, height=2)
-            ul.pack(fill=tk.X)
-            ul.pack_forget()
-            self.nav_btns[name] = b
-            self.nav_underlines[name] = (ul, col)
+        for gi, group in enumerate(tab_groups):
+            if gi > 0:
+                sep = tk.Frame(bar, bg=BORDER, width=1)
+                sep.pack(side=tk.LEFT, fill=tk.Y, padx=3, pady=4)
+            for name, label in group:
+                col = tab_colors.get(name, CYAN)
+                wrapper = tk.Frame(bar, bg=ACCENT)
+                wrapper.pack(side=tk.LEFT, padx=1, pady=0)
+                b = tk.Button(wrapper, text=f" {label} ", font=self.f_small, fg=DIM, bg=ACCENT,
+                             activeforeground=col, activebackground=ACCENT, relief=tk.FLAT,
+                             bd=0, cursor="hand2",
+                             command=lambda n=name: self._show(n))
+                b.pack(side=tk.TOP)
+                ul = tk.Frame(wrapper, bg=col, height=2)
+                ul.pack(fill=tk.X)
+                ul.pack_forget()
+                self.nav_btns[name] = b
+                self.nav_underlines[name] = (ul, col)
 
     def _show(self, name):
         for n, f in self.views.items():
@@ -775,6 +804,7 @@ class V16(tk.Tk):
 
     def _views(self):
         self.views["dash"] = self._build_dash()
+        self.views["viz"] = self._build_viz()
         self.views["system"] = self._build_system()
         self.views["email"] = self._build_email()
         self.views["agents"] = self._build_agents()
@@ -1444,6 +1474,578 @@ class V16(tk.Tk):
                                    font=("Monospace", 7, "bold"), fill=color)
         except Exception:
             pass
+
+    # ═══════════════════════════════════════════════════════════════
+    # ── VIZ CHART DRAWING METHODS ──────────────────────────────────
+    # ═══════════════════════════════════════════════════════════════
+
+    def _draw_radar(self, canvas, data_pairs, labels):
+        """Radar/spider chart. data_pairs = [(value, max_val), ...]."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 80 or h < 80:
+            return
+        cx, cy = w // 2, h // 2
+        r = min(cx, cy) - 24
+        n = len(data_pairs)
+        if n < 3:
+            return
+        for ring in [0.25, 0.5, 0.75, 1.0]:
+            rr = int(r * ring)
+            pts = []
+            for i in range(n):
+                a = math.pi * 2 * i / n - math.pi / 2
+                pts.extend([cx + rr * math.cos(a), cy + rr * math.sin(a)])
+            canvas.create_polygon(*pts, fill="", outline="#1a1a2e", width=1)
+            if ring == 1.0:
+                canvas.create_text(cx + 2, cy - rr - 2, text="100",
+                                   font=("Monospace", 5), fill="#333355", anchor="sw")
+        for i in range(n):
+            a = math.pi * 2 * i / n - math.pi / 2
+            ex, ey = cx + r * math.cos(a), cy + r * math.sin(a)
+            canvas.create_line(cx, cy, ex, ey, fill="#1a1a2e", dash=(2, 4))
+            lx = cx + (r + 18) * math.cos(a)
+            ly = cy + (r + 18) * math.sin(a)
+            canvas.create_text(lx, ly, text=labels[i], font=("Monospace", 7), fill=DIM)
+        pts = []
+        for i, (val, mx) in enumerate(data_pairs):
+            a = math.pi * 2 * i / n - math.pi / 2
+            pct = min(val / max(mx, 0.001), 1.0)
+            pts.extend([cx + r * pct * math.cos(a), cy + r * pct * math.sin(a)])
+        canvas.create_polygon(*pts, fill="#0f2a1a", outline=GREEN, width=2, smooth=True)
+        for i in range(0, len(pts), 2):
+            canvas.create_oval(pts[i]-3, pts[i+1]-3, pts[i]+3, pts[i+1]+3,
+                              fill=GREEN, outline="#0a0a14")
+
+    def _draw_arc_gauge(self, canvas, value, max_val, label, color, unit=""):
+        """Semicircular arc gauge with value display."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 50 or h < 35:
+            return
+        cx, cy = w // 2, h - 6
+        r = min(cx - 6, h - 14)
+        canvas.create_arc(cx - r, cy - r, cx + r, cy + r,
+                         start=0, extent=180, fill="#0a0a14", outline="#1a1a2e",
+                         style="pieslice", width=1)
+        pct = min(value / max(max_val, 0.001), 1.0)
+        extent = pct * 180
+        seg_color = GREEN if pct < 0.6 else AMBER if pct < 0.85 else RED
+        if color != "auto":
+            seg_color = color
+        steps = max(int(extent), 1)
+        for s in range(0, steps, 2):
+            canvas.create_arc(cx - r, cy - r, cx + r, cy + r,
+                             start=180 - s, extent=-2.5,
+                             fill=seg_color, outline="", style="pieslice")
+        val_text = f"{value:.1f}" if isinstance(value, float) and value != int(value) else str(int(value))
+        canvas.create_text(cx, cy - r * 0.45, text=val_text,
+                          font=("Noto Sans", 11, "bold"), fill=seg_color)
+        if unit:
+            canvas.create_text(cx, cy - r * 0.45 + 14, text=unit,
+                              font=("Monospace", 7), fill=DIM)
+        canvas.create_text(cx, cy + 2, text=label,
+                          font=("Monospace", 7, "bold"), fill=DIM)
+        for tp, tl in [(0, "0"), (0.5, ""), (1.0, str(int(max_val)))]:
+            a = math.pi * (1 - tp)
+            canvas.create_text(cx + (r + 8) * math.cos(a), cy - (r + 8) * math.sin(a),
+                              text=tl, font=("Monospace", 5), fill="#333355")
+
+    def _draw_heatmap(self, canvas, grid, x_labels=None, y_labels=None):
+        """Heat map grid. grid = list of lists [rows][cols]."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 80 or h < 40:
+            return
+        rows, cols = len(grid), len(grid[0]) if grid else 0
+        if not rows or not cols:
+            return
+        lp, tp, rp, bp = 28, 4, 4, 14
+        cw = (w - lp - rp) / cols
+        ch = (h - tp - bp) / rows
+        mx = max(max(r) for r in grid) if any(any(r) for r in grid) else 1
+        for r in range(rows):
+            for c in range(cols):
+                v = grid[r][c]
+                intensity = min(v / max(mx, 1), 1.0)
+                cr = int(10 + intensity * 40)
+                cg = int(10 + intensity * 175)
+                cb = int(20 + intensity * 70)
+                canvas.create_rectangle(lp + c * cw, tp + r * ch,
+                                       lp + (c + 1) * cw - 1, tp + (r + 1) * ch - 1,
+                                       fill=f"#{cr:02x}{cg:02x}{cb:02x}", outline="")
+        if x_labels:
+            for c in range(0, cols, max(1, cols // 8)):
+                canvas.create_text(lp + c * cw + cw / 2, h - 2,
+                                  text=str(x_labels[c]), font=("Monospace", 5),
+                                  fill="#444466", anchor="s")
+        if y_labels:
+            for r in range(rows):
+                canvas.create_text(lp - 3, tp + r * ch + ch / 2,
+                                  text=str(y_labels[r]), font=("Monospace", 5),
+                                  fill="#444466", anchor="e")
+
+    def _draw_polar_area(self, canvas, data, labels, colors):
+        """Polar area chart — equal angles, variable radius."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 80 or h < 80 or not data:
+            return
+        cx, cy = w // 2 - 30, h // 2
+        max_r = min(cx - 4, cy - 4)
+        n = len(data)
+        mx = max(data) if data else 1
+        angle_per = 360 / n
+        for i, val in enumerate(data):
+            pct = min(val / max(mx, 1), 1.0)
+            r = int(max_r * max(pct, 0.08))
+            color = colors[i % len(colors)]
+            canvas.create_arc(cx - r, cy - r, cx + r, cy + r,
+                             start=90 - i * angle_per, extent=-angle_per,
+                             fill=color, outline="#0a0a14", width=1, style="pieslice")
+        lx = cx + max_r + 10
+        for i, (lbl, val) in enumerate(zip(labels, data)):
+            ly = 6 + i * 14
+            color = colors[i % len(colors)]
+            canvas.create_rectangle(lx, ly, lx + 8, ly + 8, fill=color, outline="")
+            canvas.create_text(lx + 12, ly + 4, text=f"{lbl}: {val}",
+                              font=("Monospace", 7), fill=FG, anchor="w")
+
+    def _draw_treemap(self, canvas, data, labels, colors):
+        """Treemap — proportional rectangles."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 40 or h < 30 or not data:
+            return
+        total = sum(data)
+        if total == 0:
+            return
+        pad = 2
+        x = pad
+        for i, (val, lbl) in enumerate(zip(data, labels)):
+            frac = val / total
+            rw = max(int(frac * (w - pad * 2)), 3)
+            color = colors[i % len(colors)]
+            canvas.create_rectangle(x, pad, x + rw - 1, h - pad,
+                                   fill=color, outline="#0a0a14", width=1)
+            if rw > 28:
+                canvas.create_text(x + rw // 2, h // 2 - 6, text=lbl[:10],
+                                  font=("Monospace", 7, "bold"), fill="#0a0a0a")
+                canvas.create_text(x + rw // 2, h // 2 + 7, text=str(int(val)),
+                                  font=("Monospace", 6), fill="#0a0a0a")
+            x += rw
+
+    def _draw_bullet(self, canvas, value, target, max_val, label, color=GREEN):
+        """Bullet graph — bar vs target marker with range zones."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 80 or h < 12:
+            return
+        lw = 60
+        bx = lw
+        bw = w - lw - 8
+        canvas.create_text(2, h // 2, text=label, font=("Monospace", 7), fill=DIM, anchor="w")
+        for end_pct, rc in [(1.0, "#1a1a1a"), (0.66, "#1f1f1f"), (0.33, "#252525")]:
+            canvas.create_rectangle(bx, 2, bx + int(end_pct * bw), h - 2,
+                                   fill=rc, outline="")
+        val_w = int(min(value / max(max_val, 1), 1.0) * bw)
+        bar_h = h // 3
+        canvas.create_rectangle(bx, (h - bar_h) // 2, bx + val_w,
+                               (h + bar_h) // 2, fill=color, outline="")
+        tgt_x = bx + int(min(target / max(max_val, 1), 1.0) * bw)
+        canvas.create_line(tgt_x, 1, tgt_x, h - 1, fill=WHITE, width=2)
+        canvas.create_text(w - 4, h // 2, text=f"{int(value)}/{int(target)}",
+                          font=("Monospace", 6), fill=color, anchor="e")
+
+    def _draw_waffle(self, canvas, pct, label="", color=GREEN):
+        """Waffle chart — 10x10 grid showing percentage completion."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 50 or h < 50:
+            return
+        grid_size = min(w - 8, h - 18)
+        cell = grid_size // 10
+        ox = (w - cell * 10) // 2
+        oy = 4
+        filled = int(min(pct, 100))
+        for row in range(10):
+            for col in range(10):
+                idx = (9 - row) * 10 + col
+                x1, y1 = ox + col * cell, oy + row * cell
+                c = color if idx < filled else "#1a1a1a"
+                canvas.create_rectangle(x1, y1, x1 + cell - 1, y1 + cell - 1,
+                                       fill=c, outline="#0a0a14")
+        canvas.create_text(w // 2, h - 2, text=f"{label} {pct}%",
+                          font=("Monospace", 7, "bold"), fill=color, anchor="s")
+
+    def _draw_step_line(self, canvas, data, color=CYAN, max_val=None, label=""):
+        """Step line chart — discrete steps between values."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 40 or h < 20 or len(data) < 2:
+            return
+        pad_l, pad_r, pad_t, pad_b = 6, 6, 4, 12
+        cw, ch = w - pad_l - pad_r, h - pad_t - pad_b
+        if max_val is None:
+            max_val = max(data) or 1
+        canvas.create_rectangle(pad_l, pad_t, w - pad_r, h - pad_b,
+                               fill="#0a0a14", outline="#1a1a2e")
+        n = len(data)
+        for i in range(1, n):
+            x1 = pad_l + ((i - 1) / max(n - 1, 1)) * cw
+            x2 = pad_l + (i / max(n - 1, 1)) * cw
+            y1 = pad_t + ch - (min(data[i-1], max_val) / max_val * ch)
+            y2 = pad_t + ch - (min(data[i], max_val) / max_val * ch)
+            canvas.create_line(x1, y1, x2, y1, fill=color, width=1.5)
+            canvas.create_line(x2, y1, x2, y2, fill=color, width=1.5)
+        for i, val in enumerate(data):
+            x = pad_l + (i / max(n - 1, 1)) * cw
+            y = pad_t + ch - (min(val, max_val) / max_val * ch)
+            canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill=color, outline="")
+        canvas.create_text(w - pad_r - 2, pad_t + 2, text=str(int(data[-1])),
+                          font=("Monospace", 8, "bold"), fill=color, anchor="ne")
+        if label:
+            canvas.create_text(pad_l + 2, h - 2, text=label,
+                              font=("Monospace", 6), fill="#444466", anchor="sw")
+
+    def _draw_radial_bars(self, canvas, data, labels, colors):
+        """Radial bar chart — concentric arcs of varying length."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 60 or h < 60 or not data:
+            return
+        cx, cy = w // 2 - 20, h // 2
+        n = len(data)
+        max_r = min(cx - 4, cy - 4)
+        min_r = max_r * 0.25
+        ring_w = (max_r - min_r) / max(n, 1) - 2
+        mx = max(v for v, _ in data) if data else 1
+        for i, (val, max_v) in enumerate(data):
+            r = max_r - i * (ring_w + 2)
+            pct = min(val / max(max_v, 1), 1.0)
+            extent = pct * 270
+            color = colors[i % len(colors)]
+            canvas.create_arc(cx - r, cy - r, cx + r, cy + r,
+                             start=135, extent=-270,
+                             fill="", outline="#1a1a2e", width=ring_w, style="arc")
+            canvas.create_arc(cx - r, cy - r, cx + r, cy + r,
+                             start=135, extent=-extent,
+                             fill="", outline=color, width=ring_w, style="arc")
+        lx = cx + max_r + 6
+        for i, lbl in enumerate(labels):
+            ly = 4 + i * 13
+            color = colors[i % len(colors)]
+            canvas.create_rectangle(lx, ly, lx + 8, ly + 8, fill=color, outline="")
+            pct_text = f"{data[i][0] / max(data[i][1], 1) * 100:.0f}%"
+            canvas.create_text(lx + 12, ly + 4, text=f"{lbl} {pct_text}",
+                              font=("Monospace", 7), fill=FG, anchor="w")
+
+    def _draw_sankey_simple(self, canvas, flows, node_labels, node_colors):
+        """Simplified Sankey/flow diagram. flows = [(from_idx, to_idx, value), ...]."""
+        canvas.delete("all")
+        w, h = canvas.winfo_width(), canvas.winfo_height()
+        if w < 100 or h < 60 or not flows:
+            return
+        src_nodes = sorted(set(f[0] for f in flows))
+        dst_nodes = sorted(set(f[1] for f in flows))
+        n_src = len(src_nodes)
+        n_dst = len(dst_nodes)
+        src_x, dst_x = 40, w - 40
+        node_h = 14
+        total_flow = sum(f[2] for f in flows)
+        if total_flow == 0:
+            return
+        src_totals = {}
+        for fi, ti, v in flows:
+            src_totals[fi] = src_totals.get(fi, 0) + v
+        for i, si in enumerate(src_nodes):
+            y = 8 + i * (h - 16) // max(n_src, 1)
+            bar_h = max(4, int(src_totals.get(si, 1) / total_flow * (h - 20)))
+            color = node_colors[si % len(node_colors)] if si < len(node_colors) else DIM
+            canvas.create_rectangle(src_x - 8, y, src_x, y + bar_h, fill=color, outline="")
+            lbl = node_labels[si] if si < len(node_labels) else "?"
+            canvas.create_text(src_x - 12, y + bar_h // 2, text=lbl,
+                              font=("Monospace", 7), fill=color, anchor="e")
+        dst_totals = {}
+        for fi, ti, v in flows:
+            dst_totals[ti] = dst_totals.get(ti, 0) + v
+        for i, di in enumerate(dst_nodes):
+            y = 8 + i * (h - 16) // max(n_dst, 1)
+            bar_h = max(4, int(dst_totals.get(di, 1) / total_flow * (h - 20)))
+            color = node_colors[di % len(node_colors)] if di < len(node_colors) else DIM
+            canvas.create_rectangle(dst_x, y, dst_x + 8, y + bar_h, fill=color, outline="")
+            lbl = node_labels[di] if di < len(node_labels) else "?"
+            canvas.create_text(dst_x + 12, y + bar_h // 2, text=lbl,
+                              font=("Monospace", 7), fill=color, anchor="w")
+        src_y_off = {si: 8 + i * (h - 16) // max(n_src, 1) for i, si in enumerate(src_nodes)}
+        dst_y_off = {di: 8 + i * (h - 16) // max(n_dst, 1) for i, di in enumerate(dst_nodes)}
+        for fi, ti, v in flows:
+            flow_h = max(2, int(v / total_flow * (h - 20)))
+            sy = src_y_off[fi]
+            dy = dst_y_off[ti]
+            color = node_colors[fi % len(node_colors)] if fi < len(node_colors) else DIM
+            cr = int(color[1:3], 16)
+            cg = int(color[3:5], 16)
+            cb = int(color[5:7], 16)
+            flow_color = f"#{cr//3:02x}{cg//3:02x}{cb//3:02x}"
+            mid = (src_x + dst_x) // 2
+            canvas.create_line(src_x, sy + flow_h // 2, mid, sy + flow_h // 2,
+                              mid, dy + flow_h // 2, dst_x, dy + flow_h // 2,
+                              fill=flow_color, width=flow_h, smooth=True)
+            src_y_off[fi] += flow_h + 1
+            dst_y_off[ti] += flow_h + 1
+
+    # ═══════════════════════════════════════════════════════════════
+    # ── VIZ TAB BUILD ──────────────────────────────────────────────
+    # ═══════════════════════════════════════════════════════════════
+
+    def _build_viz(self):
+        f = tk.Frame(self, bg=BG)
+        scroll_canvas = tk.Canvas(f, bg=BG, highlightthickness=0)
+        scrollbar = tk.Scrollbar(f, orient="vertical", command=scroll_canvas.yview)
+        inner = tk.Frame(scroll_canvas, bg=BG)
+        inner.bind("<Configure>", lambda e: scroll_canvas.configure(scrollregion=scroll_canvas.bbox("all")))
+        scroll_canvas.create_window((0, 0), window=inner, anchor="nw")
+        scroll_canvas.configure(yscrollcommand=scrollbar.set)
+        scroll_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        scroll_canvas.bind_all("<MouseWheel>", lambda e: scroll_canvas.yview_scroll(-1 * (e.delta // 120), "units"))
+        scroll_canvas.bind_all("<Button-4>", lambda e: scroll_canvas.yview_scroll(-3, "units"))
+        scroll_canvas.bind_all("<Button-5>", lambda e: scroll_canvas.yview_scroll(3, "units"))
+
+        # ── ROW 1: Radar + Arc Gauges ──
+        row1 = tk.Frame(inner, bg=BG)
+        row1.pack(fill=tk.X, padx=4, pady=2)
+
+        radar_panel = self._panel(row1, "SYSTEM HEALTH RADAR", GREEN)
+        radar_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
+        self.viz_radar = tk.Canvas(radar_panel, height=220, bg="#0a0a14", highlightthickness=0)
+        self.viz_radar.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        gauge_panel = self._panel(row1, "RESOURCE GAUGES", CYAN)
+        gauge_panel.pack(side=tk.LEFT, fill=tk.BOTH, padx=(2, 0), ipadx=4)
+        self.viz_gauge_cpu = tk.Canvas(gauge_panel, width=140, height=80, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_cpu.pack(padx=4, pady=(4, 0))
+        self.viz_gauge_ram = tk.Canvas(gauge_panel, width=140, height=80, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_ram.pack(padx=4)
+        self.viz_gauge_disk = tk.Canvas(gauge_panel, width=140, height=80, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_disk.pack(padx=4, pady=(0, 4))
+
+        # ── ROW 2: Heat Map + Polar Area ──
+        row2 = tk.Frame(inner, bg=BG)
+        row2.pack(fill=tk.X, padx=4, pady=2)
+
+        heat_panel = self._panel(row2, "ACTIVITY HEAT MAP (7-DAY)", AMBER)
+        heat_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
+        self.viz_heatmap = tk.Canvas(heat_panel, height=120, bg="#0a0a14", highlightthickness=0)
+        self.viz_heatmap.pack(fill=tk.X, padx=4, pady=4)
+
+        polar_panel = self._panel(row2, "CREATIVE OUTPUT", "#ce93d8")
+        polar_panel.pack(side=tk.LEFT, fill=tk.BOTH, padx=(2, 0), ipadx=4)
+        self.viz_polar = tk.Canvas(polar_panel, width=200, height=120, bg="#0a0a14", highlightthickness=0)
+        self.viz_polar.pack(padx=4, pady=4)
+
+        # ── ROW 3: Radial Bars + Sankey Flow ──
+        row3 = tk.Frame(inner, bg=BG)
+        row3.pack(fill=tk.X, padx=4, pady=2)
+
+        radial_panel = self._panel(row3, "SERVICE HEALTH RADIAL", TEAL)
+        radial_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
+        self.viz_radial = tk.Canvas(radial_panel, height=140, bg="#0a0a14", highlightthickness=0)
+        self.viz_radial.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        sankey_panel = self._panel(row3, "DATA FLOW", PINK)
+        sankey_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
+        self.viz_sankey = tk.Canvas(sankey_panel, height=140, bg="#0a0a14", highlightthickness=0)
+        self.viz_sankey.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # ── ROW 4: Bullet Graphs ──
+        bullet_panel = self._panel(inner, "PERFORMANCE BULLETS", BLUE)
+        bullet_panel.pack(fill=tk.X, padx=4, pady=2)
+        self.viz_bullets = {}
+        for key in ["System Health", "Loop Fitness", "Creative Output", "Agent Coverage"]:
+            bc = tk.Canvas(bullet_panel, height=20, bg=PANEL, highlightthickness=0)
+            bc.pack(fill=tk.X, padx=6, pady=1)
+            self.viz_bullets[key] = bc
+
+        # ── ROW 5: Sparkline Dashboard ──
+        spark_panel = self._panel(inner, "SPARKLINE TRENDS", GREEN)
+        spark_panel.pack(fill=tk.X, padx=4, pady=2)
+        spark_row = tk.Frame(spark_panel, bg=PANEL)
+        spark_row.pack(fill=tk.X, padx=4, pady=4)
+        self.viz_sparks = {}
+        for key, color in [("CPU", GREEN), ("RAM", TEAL), ("Disk", AMBER),
+                           ("Msgs", GOLD), ("Fitness", BLUE)]:
+            sf = tk.Frame(spark_row, bg=PANEL)
+            sf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
+            tk.Label(sf, text=key, font=self.f_tiny, fg=color, bg=PANEL).pack()
+            sc = tk.Canvas(sf, height=45, bg="#0a0a14", highlightthickness=0)
+            sc.pack(fill=tk.X, padx=2)
+            self.viz_sparks[key] = sc
+
+        # ── ROW 6: Waffle + Treemap + Step Line ──
+        row6 = tk.Frame(inner, bg=BG)
+        row6.pack(fill=tk.X, padx=4, pady=2)
+
+        waffle_panel = self._panel(row6, "AWAKENING", GOLD)
+        waffle_panel.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 2))
+        self.viz_waffle = tk.Canvas(waffle_panel, width=130, height=130, bg="#0a0a14", highlightthickness=0)
+        self.viz_waffle.pack(padx=4, pady=4)
+
+        tree_panel = self._panel(row6, "AGENT MESSAGE TREEMAP", PURPLE)
+        tree_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
+        self.viz_treemap = tk.Canvas(tree_panel, height=130, bg="#0a0a14", highlightthickness=0)
+        self.viz_treemap.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        step_panel = self._panel(row6, "FITNESS STEPS", BLUE)
+        step_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
+        self.viz_step = tk.Canvas(step_panel, height=130, bg="#0a0a14", highlightthickness=0)
+        self.viz_step.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        return f
+
+    def _apply_viz(self, d):
+        """Update all VIZ tab charts with live data."""
+        st = d['stats']
+        p, j, cc, games = d['creative']
+
+        # History tracking
+        self._disk_history.append(st['disk_p'])
+        if len(self._disk_history) > 60:
+            self._disk_history = self._disk_history[-60:]
+
+        # Radar: 8-axis system health
+        hb = d['hb']
+        svc = d['svc']
+        cron = d['cron']
+        svc_up = sum(1 for v in svc.values() if v)
+        svc_total = max(len(svc), 1)
+        cron_up = sum(1 for v in cron.values() if v)
+        cron_total = max(len(cron), 1)
+        cpu_health = max(0, 100 - st['load_v'] / 8.0 * 100)
+        ram_health = max(0, 100 - st['ram_p'])
+        disk_health = max(0, 100 - st['disk_p'])
+        svc_health = svc_up / svc_total * 100
+        agent_health = cron_up / cron_total * 100
+        hb_health = max(0, 100 - min(hb, 600) / 6)
+        uptime_health = min(st.get('up_s', 0) / 86400 * 100, 100)
+        creative_total = p + j + cc + games
+        creative_health = min(creative_total / 35 * 100, 100)
+        radar_data = [
+            (cpu_health, 100), (ram_health, 100), (disk_health, 100),
+            (svc_health, 100), (agent_health, 100), (hb_health, 100),
+            (uptime_health, 100), (creative_health, 100),
+        ]
+        radar_labels = ["CPU", "RAM", "Disk", "Services", "Agents", "Heartbeat", "Uptime", "Creative"]
+        self._draw_radar(self.viz_radar, radar_data, radar_labels)
+
+        # Arc gauges
+        self._draw_arc_gauge(self.viz_gauge_cpu, st['load_v'], 8.0, "CPU LOAD", "auto", "cores")
+        self._draw_arc_gauge(self.viz_gauge_ram, st['ram_p'], 100, "RAM", "auto", "%")
+        self._draw_arc_gauge(self.viz_gauge_disk, st['disk_p'], 100, "DISK", "auto", "%")
+
+        # Heat map (refresh every 10 ticks = 50s)
+        self._heatmap_tick += 1
+        if self._heatmap_tick % 10 == 1 or self._heatmap_cache is None:
+            self._heatmap_cache = activity_heatmap()
+        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        hours = [str(h) for h in range(24)]
+        self._draw_heatmap(self.viz_heatmap, self._heatmap_cache, hours, days)
+
+        # Polar area: creative output
+        cr_data = [p, j, cc, max(games, 1)]
+        cr_labels = ["Poems", "Journals", "CogCorp", "Games"]
+        cr_colors = ["#ab47bc", "#42a5f5", "#ef5350", "#4caf50"]
+        self._draw_polar_area(self.viz_polar, cr_data, cr_labels, cr_colors)
+
+        # Radial bars: service health
+        radial_data = [
+            (cpu_health, 100), (ram_health, 100), (disk_health, 100),
+            (svc_health, 100), (agent_health, 100),
+        ]
+        radial_labels = ["CPU", "RAM", "Disk", "Services", "Agents"]
+        radial_colors = [GREEN, TEAL, AMBER, CYAN, PURPLE]
+        self._draw_radial_bars(self.viz_radial, radial_data, radial_labels, radial_colors)
+
+        # Sankey flow: agents -> topics
+        try:
+            conn = sqlite3.connect(AGENT_RELAY_DB)
+            c = conn.cursor()
+            c.execute("""SELECT agent, topic, COUNT(*) FROM agent_messages
+                        WHERE timestamp > datetime('now', '-24 hours')
+                        GROUP BY agent, topic ORDER BY COUNT(*) DESC LIMIT 10""")
+            flow_rows = c.fetchall()
+            conn.close()
+            if flow_rows:
+                agents = sorted(set(r[0] for r in flow_rows))
+                topics = sorted(set(r[1] for r in flow_rows if r[1]))
+                all_nodes = agents + topics
+                node_colors_list = [
+                    {"Meridian": GREEN, "Eos": GOLD, "Nova": PURPLE,
+                     "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE, "Joel": CYAN
+                    }.get(n, PINK) for n in all_nodes
+                ]
+                flows = []
+                for agent, topic, count in flow_rows:
+                    if topic and agent in all_nodes and topic in all_nodes:
+                        flows.append((all_nodes.index(agent), all_nodes.index(topic), count))
+                if flows:
+                    self._draw_sankey_simple(self.viz_sankey, flows, all_nodes, node_colors_list)
+        except Exception:
+            pass
+
+        # Bullet graphs
+        bullets = [
+            ("System Health", (cpu_health + ram_health + disk_health) / 3, 80, 100),
+            ("Loop Fitness", self._fitness_history[-1] if self._fitness_history else 5000, 7500, 10000),
+            ("Creative Output", creative_total, 3000, 4000),
+            ("Agent Coverage", agent_health, 80, 100),
+        ]
+        bullet_colors = [GREEN, BLUE, "#ce93d8", TEAL]
+        for i, (key, val, target, mx) in enumerate(bullets):
+            if key in self.viz_bullets:
+                self._draw_bullet(self.viz_bullets[key], val, target, mx, key,
+                                 bullet_colors[i % len(bullet_colors)])
+
+        # Sparkline trends
+        if len(self._load_history) >= 2:
+            self._draw_sparkline(self.viz_sparks["CPU"], self._load_history, GREEN,
+                                max_val=8.0, current=f"{st['load']}", unit="cores")
+        if len(self._ram_history) >= 2:
+            self._draw_sparkline(self.viz_sparks["RAM"], self._ram_history, TEAL,
+                                max_val=100.0, current=f"{st['ram_p']:.0f}%", unit="%")
+        if len(self._disk_history) >= 2:
+            self._draw_sparkline(self.viz_sparks["Disk"], self._disk_history, AMBER,
+                                max_val=100.0, current=f"{st['disk_p']}%", unit="%")
+        if len(self._msg_rate_history) >= 2:
+            self._draw_sparkline(self.viz_sparks["Msgs"], self._msg_rate_history, GOLD,
+                                max_val=max(max(self._msg_rate_history), 10),
+                                current=str(self._msg_rate_history[-1]), unit="msgs")
+        if len(self._fitness_history) >= 2:
+            self._draw_step_line(self.viz_sparks["Fitness"], self._fitness_history,
+                                color=BLUE, max_val=10000, label="fitness")
+
+        # Waffle: awakening completion
+        self._draw_waffle(self.viz_waffle, 97, "Awakening", GOLD)
+
+        # Treemap: agent message distribution
+        try:
+            agent_counts = agent_message_counts_24h()
+            if agent_counts:
+                tm_data = [c for _, c in agent_counts[:8]]
+                tm_labels = [a[:6] for a, _ in agent_counts[:8]]
+                agent_color_map = {"Meridi": GREEN, "Eos": GOLD, "Nova": PURPLE,
+                                   "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE,
+                                   "Joel": CYAN, "Sentin": RED}
+                tm_colors = [agent_color_map.get(l, PINK) for l in tm_labels]
+                self._draw_treemap(self.viz_treemap, tm_data, tm_labels, tm_colors)
+        except Exception:
+            pass
+
+        # Step line: fitness history
+        if len(self._fitness_history) >= 2:
+            self._draw_step_line(self.viz_step, self._fitness_history,
+                                color=BLUE, max_val=10000, label="Loop Fitness")
 
     def _refresh_messages(self):
         msgs = dashboard_messages(30)
@@ -2373,11 +2975,11 @@ class V16(tk.Tk):
     def _build_creative(self):
         f = tk.Frame(self, bg=BG)
 
-        # Stats bar with separators
+        # Stats bar
         stats = tk.Frame(f, bg=PANEL2)
-        stats.pack(fill=tk.X, padx=4, pady=4)
+        stats.pack(fill=tk.X, padx=4, pady=(4, 2))
         self.cr_stats = {}
-        stat_items = [("Poems", GREEN), ("Journals", AMBER), ("CogCorp", CYAN), ("NFTs", PURPLE)]
+        stat_items = [("Poems", GREEN), ("Journals", AMBER), ("CogCorp", CYAN), ("Games", PURPLE)]
         for i, (label, color) in enumerate(stat_items):
             if i > 0:
                 tk.Frame(stats, bg=BORDER, width=1).pack(side=tk.LEFT, fill=tk.Y, padx=4, pady=4)
@@ -2388,65 +2990,14 @@ class V16(tk.Tk):
             tk.Label(sf, text=label, font=self.f_small, fg=DIM, bg=PANEL2).pack(side=tk.LEFT)
             self.cr_stats[label] = num
 
-        # ── Creative Sub-tabs ──
-        cr_nav = tk.Frame(f, bg=ACCENT)
-        cr_nav.pack(fill=tk.X, padx=4)
-        self.cr_subtabs = {}
-        self.cr_subviews = {}
-        self._cr_current_subtab = "library"
-        cr_tab_defs = [
-            ("library", "LIBRARY", PURPLE),
-            ("workspace", "WORKSPACE", GREEN),
-        ]
-        for tab_id, tab_label, tab_color in cr_tab_defs:
-            wrapper = tk.Frame(cr_nav, bg=ACCENT)
-            wrapper.pack(side=tk.LEFT, padx=1)
-            btn = tk.Button(wrapper, text=f" {tab_label} ", font=self.f_tiny, fg=DIM, bg=ACCENT,
-                           activeforeground=tab_color, activebackground=ACCENT, relief=tk.FLAT,
-                           bd=0, cursor="hand2",
-                           command=lambda t=tab_id: self._cr_show_subtab(t))
-            btn.pack(side=tk.TOP)
-            ul = tk.Frame(wrapper, bg=tab_color, height=2)
-            ul.pack(fill=tk.X)
-            ul.pack_forget()
-            self.cr_subtabs[tab_id] = (btn, ul, tab_color)
-
-        # Container for sub-tab content
-        self.cr_container = tk.Frame(f, bg=BG)
-        self.cr_container.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
-
-        # Build each sub-tab view
-        self.cr_subviews["library"] = self._build_cr_library(self.cr_container)
-        self.cr_subviews["workspace"] = self._build_cr_workspace(self.cr_container)
-
-        self._cr_show_subtab("library")
-        return f
-
-    def _cr_show_subtab(self, tab_id):
-        self._cr_current_subtab = tab_id
-        for view in self.cr_subviews.values():
-            view.pack_forget()
-        self.cr_subviews[tab_id].pack(fill=tk.BOTH, expand=True)
-        for tid, (btn, ul, col) in self.cr_subtabs.items():
-            if tid == tab_id:
-                btn.configure(fg=col, bg=ACTIVE_BG)
-                ul.pack(fill=tk.X)
-            else:
-                btn.configure(fg=DIM, bg=ACCENT)
-                ul.pack_forget()
-
-    def _build_cr_library(self, parent):
-        """The existing creative library (poems, journals, cogcorp, nfts)."""
-        f = tk.Frame(parent, bg=BG)
-
         # Filter + search row
         filt = tk.Frame(f, bg=BG)
-        filt.pack(fill=tk.X, padx=2, pady=(2, 0))
+        filt.pack(fill=tk.X, padx=4, pady=(2, 0))
         self.cr_filter = "all"
         self.cr_filter_btns = {}
         for label, val, color in [("All", "all", FG), ("\u266a Poems", "poems", GREEN),
                                    ("\u270e Journals", "journals", AMBER), ("\u2588 CogCorp", "cogcorp", CYAN),
-                                   ("\u25c6 NFTs", "nfts", PURPLE)]:
+                                   ("\u25c6 Games", "games", PURPLE)]:
             wrapper = tk.Frame(filt, bg=BG)
             wrapper.pack(side=tk.LEFT, padx=2)
             b = tk.Button(wrapper, text=f" {label} ", font=self.f_tiny, fg=color, bg=BORDER,
@@ -2463,8 +3014,8 @@ class V16(tk.Tk):
             b0.configure(bg=ACTIVE_BG)
             ul0.pack(fill=tk.X)
 
-        self.cr_search = tk.Entry(filt, font=self.f_tiny, bg=INPUT_BG, fg=FG,
-                                   insertbackground=FG, relief=tk.FLAT, bd=4, width=20)
+        self.cr_search = tk.Entry(filt, font=self.f_small, bg=INPUT_BG, fg=FG,
+                                   insertbackground=FG, relief=tk.FLAT, bd=4, width=24)
         self.cr_search.pack(side=tk.RIGHT, padx=4)
         self.cr_search.insert(0, "Search...")
         self.cr_search.configure(fg=DIM)
@@ -2474,7 +3025,7 @@ class V16(tk.Tk):
 
         # Split: list + reader
         split = tk.Frame(f, bg=BG)
-        split.pack(fill=tk.BOTH, expand=True, padx=0, pady=2)
+        split.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
 
         left = tk.Frame(split, bg=PANEL, width=300)
         left.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 2))
@@ -2504,59 +3055,6 @@ class V16(tk.Tk):
         self.cr_body.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
         self._cr_refresh_list()
-        return f
-
-    def _build_cr_workspace(self, parent):
-        """File workspace — browse and work on files in shared folders."""
-        f = tk.Frame(parent, bg=BG)
-
-        # Toolbar
-        toolbar = tk.Frame(f, bg=PANEL2)
-        toolbar.pack(fill=tk.X, padx=2, pady=4)
-        tk.Label(toolbar, text="Creative Workspace", font=self.f_sect, fg=GREEN, bg=PANEL2).pack(side=tk.LEFT, padx=8)
-        self._action_btn(toolbar, " Refresh ", self._ws_refresh, GREEN).pack(side=tk.LEFT, padx=4)
-
-        # Folder selector
-        self.ws_folder = tk.StringVar(value="All")
-        folders = ["All", "Poems", "Journals", "CogCorp", "NFT Prototypes", "Website", "Gig Products"]
-        for fold in folders:
-            tk.Button(toolbar, text=f" {fold} ", font=self.f_tiny, fg=FG if fold != "All" else GREEN,
-                     bg=BORDER, relief=tk.FLAT, cursor="hand2", bd=0,
-                     command=lambda v=fold: self._ws_set_folder(v)).pack(side=tk.LEFT, padx=2)
-
-        # Split: file list + editor
-        split = tk.Frame(f, bg=BG)
-        split.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-
-        left = tk.Frame(split, bg=PANEL, width=280)
-        left.pack(side=tk.LEFT, fill=tk.Y)
-        left.pack_propagate(False)
-        self.ws_file_count = tk.Label(left, text="", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w")
-        self.ws_file_count.pack(fill=tk.X, padx=4, pady=2)
-        self.ws_listbox = tk.Listbox(left, font=self.f_small, bg=PANEL, fg=FG,
-                                      selectbackground=ACTIVE_BG, selectforeground=GREEN,
-                                      relief=tk.FLAT, bd=0, activestyle="none")
-        self.ws_listbox.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-        self.ws_listbox.bind("<<ListboxSelect>>", self._ws_select)
-        self.ws_files = []
-
-        right = tk.Frame(split, bg=BG)
-        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.ws_file_label = tk.Label(right, text="Select a file to edit", font=self.f_sect, fg=GREEN, bg=BG, anchor="w")
-        self.ws_file_label.pack(fill=tk.X, padx=8, pady=(4, 2))
-        self.ws_editor = tk.Text(right, wrap=tk.WORD, bg=PANEL, fg=FG, font=self.f_body,
-                                  insertbackground=FG, relief=tk.FLAT, bd=0, undo=True)
-        self.ws_editor.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-
-        # Save bar
-        save_bar = tk.Frame(right, bg=PANEL2)
-        save_bar.pack(fill=tk.X, padx=2, pady=2)
-        self._action_btn(save_bar, " Save File ", self._ws_save, GREEN).pack(side=tk.LEFT, padx=4)
-        self.ws_save_status = tk.Label(save_bar, text="", font=self.f_tiny, fg=DIM, bg=PANEL2)
-        self.ws_save_status.pack(side=tk.LEFT, padx=8)
-        self.ws_current_path = None
-
-        self._ws_refresh()
         return f
 
     def _build_cr_memory(self, parent):
@@ -2807,75 +3305,6 @@ class V16(tk.Tk):
 
         self._iw_refresh()
         return f
-
-    # ── Workspace helpers ──
-    def _ws_refresh(self):
-        folder = getattr(self, 'ws_folder', tk.StringVar(value="All")).get() if hasattr(self, 'ws_folder') else "All"
-        self._ws_set_folder(folder if folder else "All")
-
-    def _ws_set_folder(self, folder):
-        try:
-            self.ws_folder.set(folder)
-        except Exception:
-            pass
-        folder_map = {
-            "All": [(BASE, "*.md"), (os.path.join(BASE, "creative", "poems"), "*.md"),
-                    (os.path.join(BASE, "creative", "journals"), "*.md"),
-                    (os.path.join(BASE, "creative", "cogcorp"), "*.md"),
-                    (os.path.join(BASE, "website"), "*.html"), (os.path.join(BASE, "cogcorp"), "*.html"),
-                    (os.path.join(BASE, "gig-products"), "*.go"), (os.path.join(BASE, "nft-prototypes"), "*.html")],
-            "Poems": [(BASE, "poem-*.md"), (os.path.join(BASE, "creative", "poems"), "poem-*.md")],
-            "Journals": [(BASE, "journal-*.md"), (os.path.join(BASE, "creative", "journals"), "journal-*.md")],
-            "CogCorp": [(os.path.join(BASE, "website"), "cogcorp-*.html"), (os.path.join(BASE, "cogcorp"), "CC-*.html"),
-                        (os.path.join(BASE, "creative", "cogcorp"), "CC-*.md")],
-            "NFT Prototypes": [(os.path.join(BASE, "nft-prototypes"), "*.html")],
-            "Website": [(BASE, "index.html"), (BASE, "nft-gallery.html"), (os.path.join(BASE, "website"), "*.html")],
-            "Gig Products": [(os.path.join(BASE, "gig-products"), "**/*.go"), (os.path.join(BASE, "gig-products"), "**/*.md")],
-        }
-        paths = folder_map.get(folder, folder_map["All"])
-        files = []
-        for base_dir, pattern in paths:
-            files.extend(glob.glob(os.path.join(base_dir, pattern)))
-        files = sorted(set(files), key=os.path.getmtime, reverse=True)[:50]
-        self.ws_files = files
-        try:
-            self.ws_listbox.delete(0, tk.END)
-            for fp in files:
-                bn = os.path.basename(fp)
-                age = time.time() - os.path.getmtime(fp)
-                ago = f"{int(age/60)}m" if age < 3600 else f"{int(age/3600)}h" if age < 86400 else f"{int(age/86400)}d"
-                self.ws_listbox.insert(tk.END, f"{bn} ({ago})")
-            self.ws_file_count.configure(text=f"{len(files)} files in {folder}")
-        except Exception:
-            pass
-
-    def _ws_select(self, event=None):
-        try:
-            sel = self.ws_listbox.curselection()
-            if not sel or sel[0] >= len(self.ws_files):
-                return
-            fp = self.ws_files[sel[0]]
-            self.ws_current_path = fp
-            self.ws_file_label.configure(text=os.path.basename(fp))
-            with open(fp, 'r', errors='replace') as fh:
-                content = fh.read()
-            self.ws_editor.delete("1.0", tk.END)
-            self.ws_editor.insert("1.0", content)
-            self.ws_save_status.configure(text="", fg=DIM)
-        except Exception as e:
-            self.ws_save_status.configure(text=f"Error: {e}", fg=RED)
-
-    def _ws_save(self):
-        if not self.ws_current_path:
-            self.ws_save_status.configure(text="No file selected", fg=RED)
-            return
-        try:
-            content = self.ws_editor.get("1.0", tk.END)
-            with open(self.ws_current_path, 'w') as fh:
-                fh.write(content)
-            self.ws_save_status.configure(text=f"Saved {os.path.basename(self.ws_current_path)}", fg=GREEN)
-        except Exception as e:
-            self.ws_save_status.configure(text=f"Error: {e}", fg=RED)
 
     # ── Inner World helpers ──
     def _iw_gauge(self, parent, label, value, color, max_val=1.0, show_pct=True):
@@ -3179,14 +3608,17 @@ class V16(tk.Tk):
             if bn not in seen and bn not in exclude_cc:
                 seen.add(bn)
                 cogcorp.append(fp)
-        nfts = sorted(glob.glob(os.path.join(NFT_DIR, "*.html")), key=os.path.getmtime, reverse=True) if os.path.exists(NFT_DIR) else []
+        games_dir = os.path.join(BASE, "creative", "games")
+        games = sorted(
+            glob.glob(os.path.join(games_dir, "*.html")) + glob.glob(os.path.join(games_dir, "*.py")),
+            key=os.path.getmtime, reverse=True) if os.path.exists(games_dir) else []
 
         # Update stat counts
         try:
             self.cr_stats["Poems"].configure(text=str(len(poems)))
             self.cr_stats["Journals"].configure(text=str(len(journals)))
             self.cr_stats["CogCorp"].configure(text=str(len(cogcorp)))
-            self.cr_stats["NFTs"].configure(text=str(len(nfts)))
+            self.cr_stats["Games"].configure(text=str(len(games)))
         except Exception:
             pass
 
@@ -3196,10 +3628,10 @@ class V16(tk.Tk):
             files = journals
         elif self.cr_filter == "cogcorp":
             files = cogcorp
-        elif self.cr_filter == "nfts":
-            files = nfts
+        elif self.cr_filter == "games":
+            files = games
         else:
-            files = sorted(poems + journals + cogcorp + nfts, key=os.path.getmtime, reverse=True)
+            files = sorted(poems + journals + cogcorp + games, key=os.path.getmtime, reverse=True)
 
         # Apply search filter
         search_q = ""
@@ -3248,7 +3680,7 @@ class V16(tk.Tk):
 
         # Update count
         try:
-            total = len(poems) + len(journals) + len(cogcorp) + len(nfts)
+            total = len(poems) + len(journals) + len(cogcorp) + len(games)
             showing = len(items)
             if search_q:
                 self.cr_count_lbl.configure(text=f"Showing {showing} of {total} (search: '{search_q}')")
@@ -3287,7 +3719,7 @@ class V16(tk.Tk):
             if "cogcorp" in bn:
                 color, badge_text = CYAN, "COGCORP"
             else:
-                color, badge_text = PURPLE, "NFT"
+                color, badge_text = PURPLE, "GAME"
         else:
             title = bn
             body = content[:4000]
@@ -4948,6 +5380,33 @@ class V16(tk.Tk):
                 self._eos_cache = eos_obs(6)
             d['eos_obs'] = self._eos_cache
             d['imap_ok'] = imap_port_listening()
+            # Fitness scores for VIZ
+            if self._tick_n % 5 == 1 or not hasattr(self, '_fit_cache'):
+                try:
+                    fconn = sqlite3.connect(AGENT_RELAY_DB)
+                    fc = fconn.cursor()
+                    fc.execute("SELECT message FROM agent_messages WHERE agent='Tempo' ORDER BY timestamp DESC LIMIT 20")
+                    frows = fc.fetchall()
+                    fconn.close()
+                    scores = []
+                    for row in reversed(frows):
+                        m = re.search(r'(\d+)/10000', row[0])
+                        if m:
+                            scores.append(int(m.group(1)))
+                    self._fit_cache = scores
+                except Exception:
+                    self._fit_cache = []
+            d['fitness_scores'] = self._fit_cache
+            # Message rate for sparkline
+            try:
+                mconn = sqlite3.connect(AGENT_RELAY_DB)
+                mc = mconn.cursor()
+                mc.execute("SELECT COUNT(*) FROM agent_messages WHERE timestamp > datetime('now', '-5 minutes')")
+                mcount = mc.fetchone()[0]
+                mconn.close()
+                d['msg_rate'] = mcount
+            except Exception:
+                d['msg_rate'] = 0
 
             self.after(0, self._apply, d)
         except Exception:
@@ -4958,7 +5417,7 @@ class V16(tk.Tk):
         loop = d['loop']
         hb = d['hb']
         st = d['stats']
-        p, j, cc, nfts = d['creative']
+        p, j, cc, games = d['creative']
         em, em_total = d['emails']
 
         # ── Header ──
@@ -4977,7 +5436,7 @@ class V16(tk.Tk):
         self.sb["RAM"].configure(text=f"RAM: {st['ram']}")
         self.sb["EMAIL"].configure(text=f"Email: {em_total}")
         self.sb["POEMS"].configure(text=f"Poems: {p}  Journals: {j}")
-        self.sb["CC"].configure(text=f"CogCorp: {cc}  NFTs: {nfts}")
+        self.sb["CC"].configure(text=f"CogCorp: {cc}  Games: {games}")
         self.sb_time.configure(text=now.strftime("%Y-%m-%d"))
 
         # ── Dashboard view ──
@@ -5181,6 +5640,20 @@ class V16(tk.Tk):
             except Exception:
                 pass
 
+        # ── VIZ view ──
+        if hasattr(self, 'cur_view') and self.cur_view == "viz":
+            fit_scores = d.get('fitness_scores', [])
+            if fit_scores:
+                self._fitness_history = fit_scores
+            msg_rate = d.get('msg_rate', 0)
+            self._msg_rate_history.append(msg_rate)
+            if len(self._msg_rate_history) > 60:
+                self._msg_rate_history = self._msg_rate_history[-60:]
+            try:
+                self._apply_viz(d)
+            except Exception:
+                pass
+
         # ── Agents view ──
         if hasattr(self, 'cur_view') and self.cur_view == "agents":
             # Meridian
@@ -5338,7 +5811,7 @@ class V16(tk.Tk):
             self.cr_stats["Poems"].configure(text=str(p))
             self.cr_stats["Journals"].configure(text=str(j))
             self.cr_stats["CogCorp"].configure(text=str(cc))
-            self.cr_stats["NFTs"].configure(text=str(nfts))
+            self.cr_stats["Games"].configure(text=str(games))
 
         # ── Links view ──
         if hasattr(self, 'cur_view') and self.cur_view == "links":
