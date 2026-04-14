@@ -730,7 +730,7 @@ class V16(tk.Tk):
         self.nav_btns = {}
         self.nav_underlines = {}
         tab_colors = {
-            "dash": GREEN, "email": AMBER, "agents": CYAN,
+            "dash": GREEN, "system": TEAL, "email": AMBER, "agents": CYAN,
             "messages": GOLD, "relay": PINK, "inner": PURPLE,
             "terminal": TEAL, "memory": BLUE,
             "creative": "#ce93d8", "files": "#66bb6a",
@@ -738,6 +738,7 @@ class V16(tk.Tk):
         }
         tabs = [
             ("dash", "DASHBOARD"),
+            ("system", "SYSTEMS"),
             ("email", "EMAIL"),
             ("agents", "AGENTS"),
             ("messages", "MESSAGES"),
@@ -782,6 +783,7 @@ class V16(tk.Tk):
 
     def _views(self):
         self.views["dash"] = self._build_dash()
+        self.views["system"] = self._build_system()
         self.views["email"] = self._build_email()
         self.views["agents"] = self._build_agents()
         self.views["messages"] = self._build_messages()
@@ -905,7 +907,7 @@ class V16(tk.Tk):
             ("Touch Heartbeat", lambda: self._do_action(action_touch_heartbeat), GREEN),
             ("Deploy Website", lambda: self._do_action_bg(action_deploy_website), CYAN),
             ("Restart Signal", lambda: self._do_action_bg(lambda: action_restart_service("signal")), TEAL),
-            ("Compose Email", lambda: self._show("email"), AMBER),
+            ("Compose Email", lambda: self._goto_compose(), AMBER),
             ("Restart Bridge", lambda: self._do_action_bg(lambda: action_restart_service("bridge")), PURPLE),
             ("Restart Hub", lambda: self._do_action_bg(lambda: action_restart_service("hub")), BLUE),
             ("Restart Soma", lambda: self._do_action_bg(lambda: action_restart_service("soma")), AMBER),
@@ -913,7 +915,7 @@ class V16(tk.Tk):
             ("Run Fitness", lambda: self._do_action_bg(action_run_fitness), BLUE),
             ("Git Pull", lambda: self._do_action_bg(action_git_pull), GREEN),
             ("Open Website", lambda: self._do_action(action_open_website), TEAL),
-            ("Check Email", lambda: self._show("email"), GOLD),
+            ("Check Email", lambda: self._goto_inbox(), GOLD),
         ]
         for i, (label, cmd, color) in enumerate(buttons):
             b = self._action_btn(btn_grid, label, cmd, color, width=14)
@@ -1008,11 +1010,20 @@ class V16(tk.Tk):
         charts_row = tk.Frame(f, bg=BG)
         charts_row.pack(fill=tk.X, padx=6, pady=2)
 
-        # Service health bar graph
+        # Service health status grid
         svc_panel = self._panel(charts_row, "SERVICE HEALTH", GREEN)
         svc_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.svc_bar_chart = tk.Canvas(svc_panel, height=60, bg=INPUT_BG, highlightthickness=0)
-        self.svc_bar_chart.pack(fill=tk.X, padx=4, pady=4)
+        svc_grid = tk.Frame(svc_panel, bg=PANEL)
+        svc_grid.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.svc_health_dots = {}
+        svc_names = ["Proton Bridge", "Ollama", "Soma", "Nova", "Atlas",
+                      "Tempo", "Hermes", "Eos Watchdog", "Push Status", "The Signal"]
+        for i, name in enumerate(svc_names):
+            dot = tk.Label(svc_grid, text=f"\u25cb {name}", font=self.f_tiny, fg=DIM, bg=PANEL, anchor="w")
+            dot.grid(row=i // 2, column=i % 2, sticky="w", padx=(4, 12), pady=0)
+            self.svc_health_dots[name] = dot
+        svc_grid.columnconfigure(0, weight=1)
+        svc_grid.columnconfigure(1, weight=1)
 
         # Agent activity pie chart
         pie_panel = self._panel(charts_row, "AGENT ACTIVITY", PURPLE)
@@ -1095,6 +1106,17 @@ class V16(tk.Tk):
             result = func()
             self.after(0, lambda: self.action_result.configure(text=result, fg=GREEN))
         threading.Thread(target=run, daemon=True).start()
+
+    def _goto_compose(self):
+        self._show("email")
+        self.email_to.delete(0, tk.END)
+        self.email_subj.delete(0, tk.END)
+        self.email_body.delete("1.0", tk.END)
+        self.email_to.focus_set()
+
+    def _goto_inbox(self):
+        self._show("email")
+        self._email_refresh_inbox()
 
     def _send_dash_msg(self, event=None):
         text = self.msg_entry.get().strip()
@@ -3898,58 +3920,9 @@ class V16(tk.Tk):
     # ═══════════════════════════════════════════════════════════════
     def _build_system(self):
         f = tk.Frame(self, bg=BG)
-
-        # ── System Sub-tabs: OVERVIEW, MEMORY DB, INNER WORLD ──
-        sys_nav = tk.Frame(f, bg=ACCENT)
-        sys_nav.pack(fill=tk.X, padx=4)
-        self.sys_subtabs = {}
-        self.sys_subviews = {}
-        self._sys_current_subtab = "overview"
-        sys_tab_defs = [
-            ("overview", "OVERVIEW", GREEN),
-            ("relay", "AGENT RELAY", AMBER),
-            ("memory", "MEMORY DB", TEAL),
-            ("inner_world", "INNER WORLD", CYAN),
-        ]
-        for tab_id, tab_label, tab_color in sys_tab_defs:
-            wrapper = tk.Frame(sys_nav, bg=ACCENT)
-            wrapper.pack(side=tk.LEFT, padx=1)
-            btn = tk.Button(wrapper, text=f" {tab_label} ", font=self.f_tiny, fg=DIM, bg=ACCENT,
-                           activeforeground=tab_color, activebackground=ACCENT, relief=tk.FLAT,
-                           bd=0, cursor="hand2",
-                           command=lambda t=tab_id: self._sys_show_subtab(t))
-            btn.pack(side=tk.TOP)
-            ul = tk.Frame(wrapper, bg=tab_color, height=2)
-            ul.pack(fill=tk.X)
-            ul.pack_forget()
-            self.sys_subtabs[tab_id] = (btn, ul, tab_color)
-
-        self.sys_container = tk.Frame(f, bg=BG)
-        self.sys_container.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
-
-        # Build overview (original system content)
-        self.sys_subviews["overview"] = self._build_sys_overview(self.sys_container)
-        # Agent Relay dedicated panel (Joel's accountability item)
-        self.sys_subviews["relay"] = self._build_sys_relay(self.sys_container)
-        # Reuse creative sub-tab builders for Memory DB and Inner World
-        self.sys_subviews["memory"] = self._build_cr_memory(self.sys_container)
-        self.sys_subviews["inner_world"] = self._build_cr_inner_world(self.sys_container)
-
-        self._sys_show_subtab("overview")
+        overview = self._build_sys_overview(f)
+        overview.pack(fill=tk.BOTH, expand=True)
         return f
-
-    def _sys_show_subtab(self, tab_id):
-        self._sys_current_subtab = tab_id
-        for view in self.sys_subviews.values():
-            view.pack_forget()
-        self.sys_subviews[tab_id].pack(fill=tk.BOTH, expand=True)
-        for tid, (btn, ul, col) in self.sys_subtabs.items():
-            if tid == tab_id:
-                btn.configure(fg=col, bg=ACTIVE_BG)
-                ul.pack(fill=tk.X)
-            else:
-                btn.configure(fg=DIM, bg=ACCENT)
-                ul.pack_forget()
 
     def _build_sys_relay(self, parent):
         """Dedicated Agent Relay panel — full history with agent filtering."""
@@ -5416,14 +5389,13 @@ class V16(tk.Tk):
 
             # Live charts
             try:
-                # Service health bar chart
+                # Service health status grid
                 all_svc = list(d['svc'].items()) + list(d['cron'].items())
-                svc_data = []
-                svc_colors = []
                 for name, up in all_svc:
-                    svc_data.append((name[:6], 1 if up else 0, 1))
-                    svc_colors.append(GREEN if up else RED)
-                self._draw_bar_chart(self.svc_bar_chart, svc_data, svc_colors)
+                    if name in self.svc_health_dots:
+                        sym = "\u25cf" if up else "\u25cb"
+                        c = GREEN if up else RED
+                        self.svc_health_dots[name].configure(text=f"{sym} {name}", fg=c)
 
                 # Agent activity pie chart (based on relay message counts)
                 try:
