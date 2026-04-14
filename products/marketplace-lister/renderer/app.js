@@ -122,13 +122,15 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
     if (val) features.push(val);
   });
 
+  const platform = document.getElementById('platform').value;
   const details = {
     itemName,
     category: document.getElementById('category').value,
     condition: document.getElementById('condition').value,
     price: document.getElementById('price').value,
     description: document.getElementById('description').value.trim(),
-    features
+    features,
+    platform
   };
 
   const result = await window.api.generateListing(details);
@@ -228,7 +230,8 @@ document.getElementById('btn-ai-generate').addEventListener('click', async () =>
     condition: document.getElementById('condition').value,
     price: document.getElementById('price').value,
     description: document.getElementById('description').value.trim(),
-    features
+    features,
+    platform: document.getElementById('platform').value
   };
 
   const result = await window.api.aiGenerate(details);

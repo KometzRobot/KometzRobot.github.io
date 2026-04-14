@@ -164,10 +164,19 @@ ipcMain.handle('check-ollama', async () => {
 
 // AI-generate a listing description via Ollama
 ipcMain.handle('ai-generate', async (event, details) => {
-  const { itemName, category, condition, price, description, features } = details;
+  const { itemName, category, condition, price, description, features, platform } = details;
   const http = require('http');
 
-  const prompt = `Write a Facebook Marketplace listing for this item. Be concise, compelling, and honest. No emojis. No hashtags. Include a short title (under 80 chars) and a description (under 200 words).
+  const platformGuides = {
+    facebook: 'Write a Facebook Marketplace listing. Be concise, casual, and honest. No emojis. No hashtags.',
+    kijiji: 'Write a Kijiji listing. Be clear and descriptive. Include condition details. Canadian spelling.',
+    ebay: 'Write an eBay listing. Be professional and detailed. Include item specifics, shipping info, and return policy mention.',
+    craigslist: 'Write a Craigslist listing. Be brief and direct. Include the key facts only.'
+  };
+
+  const guide = platformGuides[platform] || platformGuides.facebook;
+
+  const prompt = `${guide} Include a short title (under 80 chars) and a description (under 200 words).
 
 Item: ${itemName}
 Category: ${category || 'General'}
@@ -272,7 +281,7 @@ ipcMain.handle('ai-vision-analyze', async (event, imagePath) => {
 
 // Generate listing text from item details (template-based fallback)
 ipcMain.handle('generate-listing', async (event, details) => {
-  const { itemName, category, condition, price, description, features } = details;
+  const { itemName, category, condition, price, description, features, platform } = details;
 
   const conditionMap = {
     'new': 'Brand New',
@@ -308,8 +317,14 @@ ipcMain.handle('generate-listing', async (event, details) => {
     body += `Price: $${price}\n`;
   }
 
-  body += '\nPickup in Calgary. Cash or e-transfer.\n';
-  body += 'Message me if interested — serious buyers only.\n';
+  const closings = {
+    facebook: '\nPickup in Calgary. Cash or e-transfer.\nMessage me if interested — serious buyers only.\n',
+    kijiji: '\nPickup in Calgary, AB. Cash or e-transfer accepted.\nPlease include your offer in your message.\n',
+    ebay: '\nShipping available — message for rates.\nReturns accepted within 14 days if item is not as described.\n',
+    craigslist: '\nCalgary pickup only. Cash.\n'
+  };
+
+  body += closings[platform] || closings.facebook;
 
   return { title, body, price };
 });
