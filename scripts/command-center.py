@@ -645,15 +645,23 @@ def action_git_pull():
         return f"Error: {e}"
 
 def action_restart_service(name):
-    """Restart services via systemd."""
+    """Restart services via systemd or re-trigger cron agents."""
     systemd_map = {
         "bridge": ("system", "protonmail-bridge"),
         "ollama": ("system", "ollama"),
-        "nova": ("cron", None),
         "hub": ("user", "meridian-hub-v2"),
         "chorus": ("user", "the-chorus"),
         "tunnel": ("user", "cloudflare-tunnel"),
         "soma": ("user", "symbiosense"),
+        "nova": ("cron", "scripts/nova.py"),
+        "eos": ("cron", "scripts/eos-watchdog.py"),
+        "atlas": ("cron", "scripts/goose-runner.sh"),
+        "tempo": ("cron", "scripts/loop-fitness.py"),
+        "sentinel": ("cron", "scripts/sentinel-gatekeeper.py"),
+        "coordinator": ("cron", "scripts/coordinator.py"),
+        "predictive": ("cron", "scripts/predictive-engine.py"),
+        "selfimprove": ("cron", "scripts/self-improvement.py"),
+        "push_status": ("cron", "scripts/push-live-status.py"),
     }
     try:
         info = systemd_map.get(name)
@@ -676,8 +684,13 @@ def action_restart_service(name):
             )
             return f"{svc_name} restarted"
         elif svc_type == "cron":
-            subprocess.Popen(['python3', os.path.join(BASE, 'scripts', f'{name}.py')], cwd=BASE,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            script_path = os.path.join(BASE, svc_name)
+            if script_path.endswith('.sh'):
+                subprocess.Popen(['bash', script_path], cwd=BASE,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                subprocess.Popen(['python3', script_path], cwd=BASE,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return f"{name} triggered"
         return "Unknown type"
     except Exception as e:
@@ -1072,6 +1085,11 @@ class V16(tk.Tk):
             ("Push Status", lambda: self._do_action_bg(lambda: subprocess.run(
                 ['python3', os.path.join(BASE, 'scripts', 'push-live-status.py')],
                 capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Pushed"), TEAL),
+            ("Restart Soma", lambda: self._do_action_bg(lambda: action_restart_service("soma")), RED),
+            ("Restart Hub", lambda: self._do_action_bg(lambda: action_restart_service("hub")), PURPLE),
+            ("Write Handoff", lambda: self._do_action_bg(lambda: subprocess.run(
+                ['python3', os.path.join(BASE, 'scripts', 'loop-handoff.py'), 'write'],
+                capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Written"), BLUE),
         ]
         for i, (label, cmd, color) in enumerate(buttons):
             b = self._action_btn(btn_grid, label, cmd, color, width=14)
@@ -3627,18 +3645,47 @@ class V16(tk.Tk):
         self.iw_panels["memory_stack"] = tk.Frame(mem_panel, bg=PANEL)
         self.iw_panels["memory_stack"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
-        # Row 5: Soma Nervous System radar (left) + Goals/Drives (right)
+        # Row 5: Soma Nervous System (full redesign) — top: vitals bars + radar, bottom: agent status
         row5 = tk.Frame(self.iw_inner, bg=BG)
         row5.pack(fill=tk.X, padx=2, pady=2)
-        soma_radar_panel = self._panel(row5, "NERVOUS SYSTEM RADAR", AMBER)
-        soma_radar_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 1))
-        self.iw_soma_radar = tk.Canvas(soma_radar_panel, height=180, bg="#0a0a14", highlightthickness=0)
-        self.iw_soma_radar.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        soma_panel = self._panel(row5, "SOMA NERVOUS SYSTEM", AMBER)
+        soma_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 1))
+        soma_inner = tk.Frame(soma_panel, bg=PANEL)
+        soma_inner.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        # Mood headline
+        self.iw_soma_mood_lbl = tk.Label(soma_inner, text="MOOD: --", font=self.f_head, fg=CYAN, bg=PANEL)
+        self.iw_soma_mood_lbl.pack(fill=tk.X, pady=(0, 2))
+        self.iw_soma_mood_voice = tk.Label(soma_inner, text="", font=self.f_tiny, fg=DIM, bg=PANEL, wraplength=350)
+        self.iw_soma_mood_voice.pack(fill=tk.X)
+        # Vital gauge bars
+        self.iw_panels["soma_vitals"] = tk.Frame(soma_inner, bg=PANEL)
+        self.iw_panels["soma_vitals"].pack(fill=tk.X, pady=4)
+        # Radar
+        self.iw_soma_radar = tk.Canvas(soma_inner, height=160, bg="#0a0a14", highlightthickness=0)
+        self.iw_soma_radar.pack(fill=tk.BOTH, expand=True, pady=2)
+        # Agent liveness
+        self.iw_panels["soma_agents"] = tk.Frame(soma_inner, bg=PANEL)
+        self.iw_panels["soma_agents"].pack(fill=tk.X, pady=2)
 
         goals_panel = self._panel(row5, "EMERGENT GOALS & DRIVES", GOLD)
         goals_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(1, 0))
         self.iw_panels["goals"] = tk.Frame(goals_panel, bg=PANEL)
         self.iw_panels["goals"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        # Row 6: Thought Stream (full width) + Mood History Graph
+        row6 = tk.Frame(self.iw_inner, bg=BG)
+        row6.pack(fill=tk.X, padx=2, pady=2)
+
+        thought_panel = self._panel(row6, "THOUGHT STREAM", PINK)
+        thought_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 1))
+        self.iw_panels["thoughts"] = tk.Frame(thought_panel, bg=PANEL)
+        self.iw_panels["thoughts"].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        mood_graph_panel = self._panel(row6, "MOOD HISTORY", CYAN)
+        mood_graph_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(1, 0))
+        self.iw_mood_chart = tk.Canvas(mood_graph_panel, height=180, bg="#0a0a14", highlightthickness=0)
+        self.iw_mood_chart.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # Keep the text display for backward compat with _iw_populate
         self.iw_display = None
@@ -3969,7 +4016,7 @@ class V16(tk.Tk):
         else:
             tk.Label(panel, text="Waiting for Soma data...", font=self.f_tiny, fg=DIM, bg=PANEL).pack()
 
-        # ── NERVOUS SYSTEM RADAR ──
+        # ── SOMA NERVOUS SYSTEM (redesigned) ──
         try:
             soma_full = data.get("soma_full")
             if soma_full:
@@ -3979,18 +4026,131 @@ class V16(tk.Tk):
                 neural = bmap.get("neural_system", {})
                 ns = bmap.get("nervous_system", {})
                 mood_score = bmap.get("mood_score", 50)
+                mood_name = bmap.get("mood", "unknown")
+                mood_voice = bmap.get("mood_voice", "")
                 load_v = vitals.get("load", 0)
                 ram_v = vitals.get("ram_pct", 0)
                 temp_v = thermal.get("avg_temp_c", thermal.get("body_temp", 0))
                 neural_v = neural.get("swap_pct", 0)
                 agents_alive = sum(1 for a in ns.get("agents", {}).values() if a.get("alive"))
                 agent_total = max(len(ns.get("agents", {})), 1)
+
+                mood_colors_map = {"serene": CYAN, "calm": GREEN, "alert": AMBER,
+                                   "anxious": GOLD, "stressed": RED, "critical": RED}
+                mc = mood_colors_map.get(mood_name, CYAN)
+                self.iw_soma_mood_lbl.configure(text=f"MOOD: {mood_name.upper()} ({mood_score:.0f}/100)", fg=mc)
+                self.iw_soma_mood_voice.configure(text=mood_voice[:200] if mood_voice else "")
+
+                # Vital gauge bars
+                self._iw_clear_panel("soma_vitals")
+                vp = self.iw_panels["soma_vitals"]
+                vital_bars = [
+                    ("CPU Load", load_v / 8 * 100 if load_v else 0, CYAN),
+                    ("RAM", ram_v, TEAL),
+                    ("Temperature", min(temp_v, 90) / 90 * 100 if temp_v else 0, AMBER),
+                    ("Swap/Neural", neural_v, PURPLE),
+                    ("Disk", vitals.get("disk_pct", 0), GREEN),
+                    ("Agents", agents_alive / agent_total * 100, GOLD),
+                ]
+                for vname, vval, vcolor in vital_bars:
+                    self._iw_gauge(vp, vname, min(vval, 100) / 100, vcolor, max_val=1.0)
+
+                # Radar
                 self._draw_radar(self.iw_soma_radar,
                     [(mood_score, 100), (max(0, 100 - load_v / 8 * 100), 100),
                      (max(0, 100 - ram_v), 100), (max(0, 100 - min(temp_v, 90) / 90 * 100) if temp_v else 80, 100),
                      (max(0, 100 - neural_v), 100), (agents_alive / agent_total * 100, 100)],
                     ["Mood", "CPU", "RAM", "Temp", "Neural", "Agents"],
                     AMBER)
+
+                # Agent liveness grid
+                self._iw_clear_panel("soma_agents")
+                ap = self.iw_panels["soma_agents"]
+                agents_data = ns.get("agents", {})
+                agent_row = tk.Frame(ap, bg=PANEL)
+                agent_row.pack(fill=tk.X)
+                for aname, ainfo in sorted(agents_data.items()):
+                    alive = ainfo.get("alive", False)
+                    dot_color = GREEN if alive else RED
+                    dot = "\u25cf" if alive else "\u25cb"
+                    tk.Label(agent_row, text=f"{dot} {aname}", font=self.f_tiny,
+                            fg=dot_color, bg=PANEL).pack(side=tk.LEFT, padx=4)
+        except Exception:
+            pass
+
+        # ── THOUGHT STREAM ──
+        self._iw_clear_panel("thoughts")
+        panel = self.iw_panels["thoughts"]
+        try:
+            conn = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+            c = conn.cursor()
+            c.execute("""SELECT agent, topic, substr(message,1,200), datetime(timestamp)
+                        FROM agent_messages
+                        WHERE agent IN ('Meridian','Soma','Eos','Nova')
+                          AND topic NOT IN ('gatekeeper','efficiency','report_card','skills')
+                        ORDER BY timestamp DESC LIMIT 12""")
+            rows = c.fetchall()
+            conn.close()
+            agent_colors = {"Meridian": CYAN, "Soma": AMBER, "Eos": GREEN, "Nova": TEAL,
+                           "Atlas": BLUE, "Tempo": GOLD, "Predictive": PURPLE}
+            for agent, topic, msg, ts in rows:
+                ts_short = ts[-8:-3] if ts else ""
+                color = agent_colors.get(agent, DIM)
+                entry = tk.Frame(panel, bg=PANEL)
+                entry.pack(fill=tk.X, pady=1)
+                tk.Label(entry, text=f"[{ts_short}]", font=self.f_tiny, fg=DIM, bg=PANEL, width=6).pack(side=tk.LEFT)
+                tk.Label(entry, text=agent, font=self.f_tiny, fg=color, bg=PANEL, width=9, anchor="w").pack(side=tk.LEFT)
+                tk.Label(entry, text=msg[:140], font=self.f_tiny, fg=FG, bg=PANEL,
+                        anchor="w", wraplength=350).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        except Exception:
+            tk.Label(panel, text="No thought data available", font=self.f_tiny, fg=DIM, bg=PANEL).pack()
+
+        # ── MOOD HISTORY CHART (Inner World) ──
+        try:
+            path = os.path.join(BASE, ".soma-mood-history.json")
+            if os.path.exists(path):
+                with open(path) as fh:
+                    history = json.load(fh)
+                if len(history) >= 2:
+                    c = self.iw_mood_chart
+                    c.delete("all")
+                    w, h = self._canvas_dims(c)
+                    if w >= 20 and h >= 20:
+                        pad_l, pad_r, pad_t, pad_b = 30, 4, 4, 12
+                        cw = w - pad_l - pad_r
+                        ch = h - pad_t - pad_b
+                        zones = [
+                            (0, 15, "#1a0a0f"), (15, 35, "#1a100a"), (35, 55, "#1a1a0a"),
+                            (55, 75, "#0a1a10"), (75, 90, "#0a1a1a"), (90, 100, "#0a1520"),
+                        ]
+                        for lo, hi, color in zones:
+                            y1 = pad_t + ch - (hi / 100 * ch)
+                            y2 = pad_t + ch - (lo / 100 * ch)
+                            c.create_rectangle(pad_l, y1, w - pad_r, y2, fill=color, outline="")
+                        for thresh in [90, 75, 55, 35]:
+                            y = pad_t + ch - (thresh / 100 * ch)
+                            c.create_line(pad_l, y, w - pad_r, y, fill="#222233", dash=(2, 4))
+                            c.create_text(pad_l - 2, y, text=str(thresh), anchor="e",
+                                          font=("monospace", 6), fill=DIM)
+                        n = len(history)
+                        mood_colors = {"serene": CYAN, "calm": GREEN, "alert": AMBER,
+                                       "anxious": GOLD, "stressed": RED, "critical": RED}
+                        points = []
+                        for i, entry in enumerate(history):
+                            x = pad_l + (i / max(n - 1, 1)) * cw
+                            score = max(0, min(100, entry.get("score", 50)))
+                            y = pad_t + ch - (score / 100 * ch)
+                            points.append((x, y, entry.get("mood", "calm")))
+                        for i in range(1, len(points)):
+                            color = mood_colors.get(points[i][2], DIM)
+                            c.create_line(points[i-1][0], points[i-1][1],
+                                          points[i][0], points[i][1], fill=color, width=2)
+                        first_ts = history[0].get("ts", "")[-8:-3]
+                        last_ts = history[-1].get("ts", "")[-8:-3]
+                        c.create_text(pad_l, h - 2, text=first_ts, anchor="w",
+                                      font=("monospace", 6), fill=DIM)
+                        c.create_text(w - pad_r, h - 2, text=last_ts, anchor="e",
+                                      font=("monospace", 6), fill=DIM)
         except Exception:
             pass
 
@@ -4638,15 +4798,15 @@ class V16(tk.Tk):
             ("Cloudflare Tunnel", "tunnel"),
             ("Soma", "soma"),
             ("Command Center", None),
-            ("Eos Watchdog", None),
-            ("Push Status", None),
-            ("Nova", None),
-            ("Atlas", None),
-            ("Tempo", None),
-            ("Sentinel", None),
-            ("Coordinator", None),
-            ("Predictive", None),
-            ("SelfImprove", None),
+            ("Eos Watchdog", "eos"),
+            ("Push Status", "push_status"),
+            ("Nova", "nova"),
+            ("Atlas", "atlas"),
+            ("Tempo", "tempo"),
+            ("Sentinel", "sentinel"),
+            ("Coordinator", "coordinator"),
+            ("Predictive", "predictive"),
+            ("SelfImprove", "selfimprove"),
         ]
         for name, restart_key in service_defs:
             row = tk.Frame(sf, bg=PANEL)
@@ -4702,6 +4862,14 @@ class V16(tk.Tk):
             ("Git Pull", lambda: self._sys_action(lambda: subprocess.run(['git', 'pull', '--rebase', 'origin', 'master'], capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:80] or "Pulled"), CYAN),
             ("Open Website", lambda: self._sys_action(action_open_website), TEAL),
             ("Deploy Website", lambda: self._sys_action(action_deploy_website), PURPLE),
+            ("Refresh Capsule", lambda: self._sys_action(lambda: subprocess.run(
+                ['python3', os.path.join(BASE, 'scripts', 'capsule-refresh.py')],
+                capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Refreshed"), AMBER),
+            ("Push Status", lambda: self._sys_action(lambda: subprocess.run(
+                ['python3', os.path.join(BASE, 'scripts', 'push-live-status.py')],
+                capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Pushed"), GOLD),
+            ("Run Fitness", lambda: self._sys_action(action_run_fitness), BLUE),
+            ("Restart All Crons", lambda: self._sys_action(self._restart_all_crons), RED),
         ]
         for label, cmd, color in actions:
             self._action_btn(af, label, cmd, color).pack(fill=tk.X, padx=4, pady=1)
@@ -5025,6 +5193,14 @@ class V16(tk.Tk):
             result = func()
             self.after(0, lambda: self.sys_action_result.configure(text=str(result), fg=GREEN))
         threading.Thread(target=run, daemon=True).start()
+
+    def _restart_all_crons(self):
+        cron_agents = ["nova", "eos", "atlas", "tempo", "sentinel", "coordinator", "predictive", "selfimprove"]
+        results = []
+        for agent in cron_agents:
+            r = action_restart_service(agent)
+            results.append(f"{agent}: {r}")
+        return " | ".join(results[:4]) + f" + {len(results)-4} more"
 
     def _kill_process(self, force=False):
         """Kill a process by PID."""
@@ -5697,19 +5873,34 @@ class V16(tk.Tk):
         tk.Label(hdr, text="TERMINAL", font=self.f_sect, fg=TEAL, bg=PANEL2).pack(side=tk.LEFT, padx=8)
         cmds_frame = tk.Frame(f, bg=ACCENT)
         cmds_frame.pack(fill=tk.X, padx=4, pady=2)
-        quick_cmds = [
-            ("System Info", "uname -a && uptime"),
-            ("Disk Usage", "df -h /"),
-            ("Top Processes", "ps aux --sort=-%cpu | head -15"),
-            ("Network Ports", "ss -tlnp 2>/dev/null | head -20"),
-            ("Git Status", f"cd {BASE} && git status"),
-            ("Git Log", f"cd {BASE} && git log --oneline -10"),
-            ("Services", "systemctl list-units --type=service --state=active 2>/dev/null | head -20"),
-            ("Crontab", "crontab -l 2>/dev/null | head -30"),
+        quick_cmds_rows = [
+            [
+                ("System Info", "uname -a && uptime"),
+                ("Disk Usage", "df -h /"),
+                ("Top Processes", "ps aux --sort=-%cpu | head -15"),
+                ("Network Ports", "ss -tlnp 2>/dev/null | head -20"),
+                ("Git Status", f"cd {BASE} && git status"),
+                ("Git Log", f"cd {BASE} && git log --oneline -10"),
+                ("Services", "systemctl list-units --type=service --state=active 2>/dev/null | head -20"),
+                ("Crontab", "crontab -l 2>/dev/null | head -30"),
+            ],
+            [
+                ("RAM Detail", "free -h"),
+                ("GPU Status", "nvidia-smi --query-gpu=name,temperature.gpu,utilization.gpu,memory.used --format=csv,noheader 2>/dev/null || echo 'No GPU'"),
+                ("Heartbeat Age", f"python3 -c \"import os,time; age=time.time()-os.path.getmtime('{BASE}/.heartbeat'); print(f'Heartbeat: {{age:.0f}}s ago')\""),
+                ("Loop Count", f"cat {BASE}/.loop-count"),
+                ("Relay (last 5)", f"sqlite3 {BASE}/agent-relay.db \"SELECT agent, topic, substr(message,1,60), datetime(timestamp) FROM agent_messages ORDER BY timestamp DESC LIMIT 5\""),
+                ("Soma Mood", f"python3 -c \"import json; d=json.load(open('{BASE}/.symbiosense-state.json')); bm=d.get('body_map',{{}}); print(f'Mood: {{bm.get(\\\"mood\\\",\\\"?\\\")}} ({{bm.get(\\\"mood_score\\\",\\\"?\\\")}})')\""),
+                ("Tail Errors", f"tail -5 {BASE}/logs/*.log 2>/dev/null | grep -i 'error\\|fail\\|warn' | tail -10"),
+                ("Email Count", f"python3 -c \"import imaplib,os,sys; sys.path.insert(0,'{BASE}/scripts'); from load_env import *; m=imaplib.IMAP4('127.0.0.1',1144); m.login(os.environ['CRED_USER'],os.environ['CRED_PASS']); m.select('INBOX'); _,d=m.search(None,'UNSEEN'); print(f'Unseen: {{len(d[0].split()) if d[0] else 0}}'); m.logout()\""),
+            ],
         ]
-        for label, cmd in quick_cmds:
-            self._action_btn(cmds_frame, f" {label} ",
-                             lambda c=cmd: self._term_run(c), TEAL).pack(side=tk.LEFT, padx=2, pady=2)
+        for row_cmds in quick_cmds_rows:
+            row_frame = tk.Frame(cmds_frame, bg=ACCENT)
+            row_frame.pack(fill=tk.X, pady=1)
+            for label, cmd in row_cmds:
+                self._action_btn(row_frame, f" {label} ",
+                                 lambda c=cmd: self._term_run(c), TEAL).pack(side=tk.LEFT, padx=2, pady=2)
         input_frame = tk.Frame(f, bg=BG)
         input_frame.pack(fill=tk.X, padx=4, pady=2)
         tk.Label(input_frame, text="$", font=self.f_body, fg=GREEN, bg=BG).pack(side=tk.LEFT, padx=4)
