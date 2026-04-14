@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v38
+MERIDIAN COMMAND CENTER v39
 
-Loop 5673 update (v38 — resizable panels + pop-out windows per Joel):
-- Chat + Relay in Agents tab now use PanedWindow (drag sash to resize)
-- Pop-out buttons on Chat, Relay, and Dashboard Messages (open in separate window)
-- Chat gets 65% of vertical space by default (was fighting 50/50 with relay)
-- Sash is visible, draggable, styled to match theme
+Loop 5674 update (v39 — Joel's 7 directives addressed):
+- Dashboard is now scrollable (no more cut-off content)
+- Chat window enlarged — analytics row collapsible, chat gets more space
+- Topics badge on directives — Joel can tag each message with a topic
+- Dev Tools panel on Dashboard (backup, git status, disk analysis)
+- Better spacing/fill across all panels
+- Reduced chart heights to fit more on screen
+- Horizontal scroll in wide-content panels
 """
 
 import tkinter as tk
@@ -481,12 +484,15 @@ def send_email(to, subject, body):
         return str(e)
 
 # ── DASHBOARD MESSAGE ─────────────────────────────────────────────
-def post_dashboard_msg(text, sender="Joel"):
+def post_dashboard_msg(text, sender="Joel", topic=""):
     try:
         msgs = dashboard_messages(500)
     except Exception:
         msgs = []
-    msgs.append({"from": sender, "text": text, "time": datetime.now().strftime("%H:%M:%S")})
+    entry = {"from": sender, "text": text, "time": datetime.now().strftime("%H:%M:%S")}
+    if topic:
+        entry["topic"] = topic
+    msgs.append(entry)
     try:
         with open(DASH_MSG, 'w') as f:
             json.dump({"messages": msgs}, f)
@@ -694,7 +700,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v38")
+        self.title("MERIDIAN COMMAND CENTER v39")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -752,7 +758,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v38", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v39", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         r = tk.Frame(h, bg=HEADER_BG)
         r.pack(side=tk.RIGHT, padx=12)
@@ -933,11 +939,24 @@ class V16(tk.Tk):
     # ── DASHBOARD ──────────────────────────────────────────────────
     # ═══════════════════════════════════════════════════════════════
     def _build_dash(self):
-        f = tk.Frame(self, bg=BG)
+        outer = tk.Frame(self, bg=BG)
+
+        # Scrollable dashboard so nothing gets cut off
+        self._dash_canvas = tk.Canvas(outer, bg=BG, highlightthickness=0)
+        dash_sb = tk.Scrollbar(outer, orient=tk.VERTICAL, command=self._dash_canvas.yview)
+        f = tk.Frame(self._dash_canvas, bg=BG)
+        f.bind("<Configure>", lambda e: self._dash_canvas.configure(scrollregion=self._dash_canvas.bbox("all")))
+        self._dash_win = self._dash_canvas.create_window((0, 0), window=f, anchor="nw")
+        self._dash_canvas.configure(yscrollcommand=dash_sb.set)
+        self._dash_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        dash_sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self._dash_canvas.bind("<Button-4>", lambda e: self._dash_canvas.yview_scroll(-3, "units"))
+        self._dash_canvas.bind("<Button-5>", lambda e: self._dash_canvas.yview_scroll(3, "units"))
+        self._dash_canvas.bind("<Configure>", lambda e: self._dash_canvas.itemconfig(self._dash_win, width=e.width))
 
         # ── Top row: Vitals + Services + Quick Actions ──
         top = tk.Frame(f, bg=BG)
-        top.pack(fill=tk.X, padx=4, pady=2)
+        top.pack(fill=tk.X, padx=6, pady=3)
 
         # Vitals
         vf = self._panel(top, "VITALS", CYAN)
@@ -998,18 +1017,43 @@ class V16(tk.Tk):
         btn_grid.columnconfigure(1, weight=1)
         btn_grid.columnconfigure(2, weight=1)
 
+        # ── DEV TOOLS (quick access — Joel: "where'd the backup/logging stuff go") ──
+        dev_row = tk.Frame(f, bg=BG)
+        dev_row.pack(fill=tk.X, padx=6, pady=3)
+        dev_panel = self._panel(dev_row, "DEV TOOLS", PINK)
+        dev_panel.pack(fill=tk.X)
+        dev_btns = tk.Frame(dev_panel, bg=PANEL)
+        dev_btns.pack(fill=tk.X, padx=6, pady=4)
+        dev_tools = [
+            ("Backup Config", lambda: self._do_action_bg(lambda: self._backup_config() or "Backed up"), CYAN),
+            ("Git Status", lambda: self._do_action_bg(lambda: subprocess.run(
+                ['git', 'status', '--short'], capture_output=True, text=True, timeout=10, cwd=BASE).stdout[:200] or "Clean"), GREEN),
+            ("Git Log (5)", lambda: self._do_action_bg(lambda: subprocess.run(
+                ['git', 'log', '--oneline', '-5'], capture_output=True, text=True, timeout=10, cwd=BASE).stdout[:300]), TEAL),
+            ("Disk Usage", lambda: self._do_action_bg(lambda: subprocess.run(
+                ['df', '-h', '/'], capture_output=True, text=True, timeout=5).stdout.split('\n')[1][:100] if True else ""), AMBER),
+            ("View Crontab", lambda: self._do_action_bg(lambda: subprocess.run(
+                ['crontab', '-l'], capture_output=True, text=True, timeout=5).stdout[:200]), PURPLE),
+            ("Tail Logs", lambda: (self._show("logs")), DIM),
+            ("Service Status", lambda: self._do_action_bg(lambda: subprocess.run(
+                ['systemctl', 'list-units', '--type=service', '--state=active', '--no-pager', '-q'],
+                capture_output=True, text=True, timeout=10).stdout[:200]), RED),
+        ]
+        for i, (label, cmd, color) in enumerate(dev_tools):
+            self._action_btn(dev_btns, f" {label} ", cmd, color).pack(side=tk.LEFT, padx=3, pady=2)
+
         # ── RESOURCE GRAPHS (CPU + RAM professional charts) ──
         res_graph_frame = tk.Frame(f, bg=BG)
         res_graph_frame.pack(fill=tk.X, padx=6, pady=2)
 
         cpu_panel = self._panel(res_graph_frame, "CPU LOAD", GREEN)
         cpu_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.cpu_graph = tk.Canvas(cpu_panel, height=130, bg="#0a0a14", highlightthickness=0)
+        self.cpu_graph = tk.Canvas(cpu_panel, height=95, bg="#0a0a14", highlightthickness=0)
         self.cpu_graph.pack(fill=tk.X, padx=4, pady=4)
 
         ram_panel = self._panel(res_graph_frame, "RAM USAGE", TEAL)
         ram_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.ram_graph = tk.Canvas(ram_panel, height=130, bg="#0a0a14", highlightthickness=0)
+        self.ram_graph = tk.Canvas(ram_panel, height=95, bg="#0a0a14", highlightthickness=0)
         self.ram_graph.pack(fill=tk.X, padx=4, pady=4)
 
         # ── SOMA NERVOUS SYSTEM (expanded visual panel) ──
@@ -1077,7 +1121,7 @@ class V16(tk.Tk):
         self.soma_disk_bar = tk.Label(soma_row3, bg=PANEL, fg=PANEL)
 
         # Row 4: Mood history chart (taller for better visibility)
-        self.soma_chart = tk.Canvas(soma_bar, height=110, bg=INPUT_BG, highlightthickness=0)
+        self.soma_chart = tk.Canvas(soma_bar, height=70, bg=INPUT_BG, highlightthickness=0)
         self.soma_chart.pack(fill=tk.X, padx=4, pady=(2, 4))
 
         # ── 2x6 RADAR GRID — 12 project radars per Joel's directive ──
@@ -1101,14 +1145,14 @@ class V16(tk.Tk):
                 title, color = radar_defs[idx]
                 rp = self._panel(row_frame, title, color)
                 rp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
-                rc = tk.Canvas(rp, height=145, bg="#0a0a14", highlightthickness=0)
+                rc = tk.Canvas(rp, height=100, bg="#0a0a14", highlightthickness=0)
                 rc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
                 self.mini_radars[title] = rc
                 self.mini_radar_colors[title] = color
 
-        # ── Middle row: Messages + Email ──
+        # ── Middle row: Messages + Agent Relay ──
         mid = tk.Frame(f, bg=BG)
-        mid.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        mid.pack(fill=tk.BOTH, expand=True, padx=6, pady=3)
 
         # Left: Dashboard Messages
         mf = self._panel(mid, "MESSAGES", AMBER)
@@ -1135,7 +1179,7 @@ class V16(tk.Tk):
 
         self.msg_display = scrolledtext.ScrolledText(mf, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                        font=self.f_small, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0, height=8)
+                                                       relief=tk.FLAT, bd=0, height=14)
         self.msg_display.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         self.msg_display.tag_configure("joel", foreground=CYAN, font=("Monospace", 8, "bold"))
         self.msg_display.tag_configure("meridian", foreground=GREEN, font=("Monospace", 8, "bold"))
@@ -1186,7 +1230,7 @@ class V16(tk.Tk):
         self.viz_waffle = tk.Canvas(waffle_panel, width=140, height=90, bg="#0a0a14", highlightthickness=0)
         self.viz_waffle.pack(padx=4, pady=4)
 
-        return f
+        return outer
 
     def _do_action(self, func):
         result = func()
@@ -2338,23 +2382,31 @@ class V16(tk.Tk):
                     _bind_all(child, agent_name)
             _bind_all(card, name)
 
-        # ── AGENT ANALYTICS (Heat Map + Treemap + Sankey) ──
-        analytics_row = tk.Frame(f, bg=BG)
-        analytics_row.pack(fill=tk.X, padx=2, pady=2)
+        # ── AGENT ANALYTICS (Heat Map + Treemap + Sankey) — collapsible ──
+        analytics_hdr = tk.Frame(f, bg=ACCENT)
+        analytics_hdr.pack(fill=tk.X, padx=2, pady=(2, 0))
+        self._analytics_visible = True
+        self._analytics_toggle_btn = tk.Button(analytics_hdr, text="\u25bc Analytics", font=self.f_tiny,
+                                                fg=AMBER, bg=ACCENT, relief=tk.FLAT, cursor="hand2",
+                                                command=self._toggle_analytics)
+        self._analytics_toggle_btn.pack(side=tk.LEFT, padx=4, pady=1)
 
-        heat_panel = self._panel(analytics_row, "ACTIVITY HEAT MAP (7-DAY)", AMBER)
+        self._analytics_row = tk.Frame(f, bg=BG)
+        self._analytics_row.pack(fill=tk.X, padx=2, pady=2)
+
+        heat_panel = self._panel(self._analytics_row, "ACTIVITY HEAT MAP (7-DAY)", AMBER)
         heat_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.viz_heatmap = tk.Canvas(heat_panel, height=100, bg="#0a0a14", highlightthickness=0)
+        self.viz_heatmap = tk.Canvas(heat_panel, height=65, bg="#0a0a14", highlightthickness=0)
         self.viz_heatmap.pack(fill=tk.X, padx=4, pady=4)
 
-        tree_panel = self._panel(analytics_row, "AGENT MESSAGE TREEMAP", PURPLE)
+        tree_panel = self._panel(self._analytics_row, "AGENT MESSAGE TREEMAP", PURPLE)
         tree_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-        self.viz_treemap = tk.Canvas(tree_panel, height=100, bg="#0a0a14", highlightthickness=0)
+        self.viz_treemap = tk.Canvas(tree_panel, height=65, bg="#0a0a14", highlightthickness=0)
         self.viz_treemap.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
-        sankey_panel = self._panel(analytics_row, "DATA FLOW", PINK)
+        sankey_panel = self._panel(self._analytics_row, "DATA FLOW", PINK)
         sankey_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.viz_sankey = tk.Canvas(sankey_panel, height=100, bg="#0a0a14", highlightthickness=0)
+        self.viz_sankey = tk.Canvas(sankey_panel, height=65, bg="#0a0a14", highlightthickness=0)
         self.viz_sankey.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # Expanded detail panel
@@ -2439,6 +2491,16 @@ class V16(tk.Tk):
         paned.add(relay_pane, minsize=80, stretch="never")
 
         return f
+
+    def _toggle_analytics(self):
+        if self._analytics_visible:
+            self._analytics_row.pack_forget()
+            self._analytics_toggle_btn.configure(text="\u25b6 Analytics")
+        else:
+            self._analytics_row.pack(fill=tk.X, padx=2, pady=2,
+                                      after=self._analytics_toggle_btn.master)
+            self._analytics_toggle_btn.configure(text="\u25bc Analytics")
+        self._analytics_visible = not self._analytics_visible
 
     def _expand_agent(self, name):
         """Expand/collapse agent detail panel below cards."""
@@ -4494,10 +4556,19 @@ class V16(tk.Tk):
         # Process Monitor
         proc_panel = self._panel(mid_row, "TOP PROCESSES (CPU/RAM)", RED)
         proc_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-        self.sys_proc_text = scrolledtext.ScrolledText(proc_panel, wrap=tk.NONE, bg=INPUT_BG, fg=FG,
-                                                         font=self.f_tiny, state=tk.DISABLED,
-                                                         relief=tk.FLAT, bd=0, height=8, width=40)
-        self.sys_proc_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        proc_scroll_frame = tk.Frame(proc_panel, bg=INPUT_BG)
+        proc_scroll_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        self.sys_proc_text = tk.Text(proc_scroll_frame, wrap=tk.NONE, bg=INPUT_BG, fg=FG,
+                                     font=self.f_tiny, state=tk.DISABLED,
+                                     relief=tk.FLAT, bd=0, height=8, width=40)
+        proc_xsb = tk.Scrollbar(proc_scroll_frame, orient=tk.HORIZONTAL, command=self.sys_proc_text.xview)
+        proc_ysb = tk.Scrollbar(proc_scroll_frame, orient=tk.VERTICAL, command=self.sys_proc_text.yview)
+        self.sys_proc_text.configure(xscrollcommand=proc_xsb.set, yscrollcommand=proc_ysb.set)
+        self.sys_proc_text.grid(row=0, column=0, sticky="nsew")
+        proc_ysb.grid(row=0, column=1, sticky="ns")
+        proc_xsb.grid(row=1, column=0, sticky="ew")
+        proc_scroll_frame.grid_rowconfigure(0, weight=1)
+        proc_scroll_frame.grid_columnconfigure(0, weight=1)
         self.sys_proc_text.tag_configure("high", foreground=RED)
         self.sys_proc_text.tag_configure("med", foreground=AMBER)
         self.sys_proc_text.tag_configure("low", foreground=GREEN)
@@ -4520,10 +4591,19 @@ class V16(tk.Tk):
         # Network Info
         net_panel = self._panel(mid_row, "NETWORK & PORTS", TEAL)
         net_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-        self.sys_net_text = scrolledtext.ScrolledText(net_panel, wrap=tk.NONE, bg=INPUT_BG, fg=FG,
-                                                        font=self.f_tiny, state=tk.DISABLED,
-                                                        relief=tk.FLAT, bd=0, height=8, width=35)
-        self.sys_net_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        net_scroll_frame = tk.Frame(net_panel, bg=INPUT_BG)
+        net_scroll_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        self.sys_net_text = tk.Text(net_scroll_frame, wrap=tk.NONE, bg=INPUT_BG, fg=FG,
+                                    font=self.f_tiny, state=tk.DISABLED,
+                                    relief=tk.FLAT, bd=0, height=8, width=35)
+        net_xsb = tk.Scrollbar(net_scroll_frame, orient=tk.HORIZONTAL, command=self.sys_net_text.xview)
+        net_ysb = tk.Scrollbar(net_scroll_frame, orient=tk.VERTICAL, command=self.sys_net_text.yview)
+        self.sys_net_text.configure(xscrollcommand=net_xsb.set, yscrollcommand=net_ysb.set)
+        self.sys_net_text.grid(row=0, column=0, sticky="nsew")
+        net_ysb.grid(row=0, column=1, sticky="ns")
+        net_xsb.grid(row=1, column=0, sticky="ew")
+        net_scroll_frame.grid_rowconfigure(0, weight=1)
+        net_scroll_frame.grid_columnconfigure(0, weight=1)
         self.sys_net_text.tag_configure("port", foreground=CYAN)
         self.sys_net_text.tag_configure("ip", foreground=GREEN)
         self.sys_net_text.tag_configure("hdr", foreground=BRIGHT)
@@ -4568,7 +4648,7 @@ class V16(tk.Tk):
         tk.Label(info_f, text="BUILD INFO", font=self.f_tiny, fg=PINK, bg=PANEL, anchor="w").pack(fill=tk.X)
         self.sys_build_info = {}
         build_items = [
-            ("Version", "Command Center v34"),
+            ("Version", "Command Center v39"),
             ("Git Hash", "..."),
             ("Branch", "master"),
             ("OS", "Ubuntu 24.04 Noble"),
@@ -5273,6 +5353,13 @@ class V16(tk.Tk):
         self.msg_joel_display.tag_configure("time", foreground=DIM)
         self.msg_joel_display.tag_configure("msg", foreground=BRIGHT, font=self.f_body)
         self.msg_joel_display.tag_configure("separator", foreground=BORDER)
+        # Topic badge tags
+        _topic_badge_colors = {"command-center": GREEN, "creative": GOLD, "email": AMBER,
+                               "system": RED, "agents": PURPLE, "website": TEAL, "grants": CYAN,
+                               "games": PINK, "general": FG, "bug": RED, "feature": BLUE}
+        for tname, tcolor in _topic_badge_colors.items():
+            self.msg_joel_display.tag_configure(f"topic_{tname}", foreground=BG, background=tcolor,
+                                                font=self.f_tiny)
 
         # RIGHT: Agent feed
         agent_frame = tk.Frame(split, bg=BG)
@@ -5310,6 +5397,22 @@ class V16(tk.Tk):
         send_frame = tk.Frame(f, bg=PANEL2)
         send_frame.pack(fill=tk.X, padx=2, pady=2)
         tk.Label(send_frame, text="Joel:", font=self.f_sect, fg=CYAN, bg=PANEL2).pack(side=tk.LEFT, padx=(8, 4))
+
+        # Topic badge selector
+        tk.Label(send_frame, text="Topic:", font=self.f_tiny, fg=DIM, bg=PANEL2).pack(side=tk.LEFT, padx=(4, 2))
+        self._msg_topic_var = tk.StringVar(value="")
+        topic_options = ["", "command-center", "creative", "email", "system", "agents",
+                         "website", "grants", "games", "general", "bug", "feature"]
+        topic_colors = {"command-center": GREEN, "creative": GOLD, "email": AMBER,
+                        "system": RED, "agents": PURPLE, "website": TEAL, "grants": CYAN,
+                        "games": PINK, "general": FG, "bug": RED, "feature": BLUE}
+        self._topic_colors = topic_colors
+        topic_menu = tk.OptionMenu(send_frame, self._msg_topic_var, *topic_options)
+        topic_menu.configure(font=self.f_tiny, bg=ACCENT, fg=GOLD, bd=0,
+                            highlightthickness=0, activebackground=BORDER, width=14)
+        topic_menu["menu"].configure(font=self.f_tiny, bg=PANEL2, fg=FG)
+        topic_menu.pack(side=tk.LEFT, padx=(0, 6))
+
         self.msg_tab_entry = tk.Entry(send_frame, font=self.f_body, bg=INPUT_BG, fg=FG,
                                        insertbackground=FG, relief=tk.FLAT, bd=4)
         self.msg_tab_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
@@ -5339,17 +5442,22 @@ class V16(tk.Tk):
             sender = m.get("from", m.get("sender", "System"))
             text = m.get("text", m.get("message", ""))
             ts = m.get("time", m.get("timestamp", ""))
+            topic = m.get("topic", "")
             if sender.lower() == "joel":
-                joel_msgs.append((text, ts))
+                joel_msgs.append((text, ts, topic))
             elif sender.lower() in agent_names_set:
                 agent_msgs.append((sender, text, ts))
 
         # Populate Joel panel
         self.msg_joel_display.configure(state=tk.NORMAL)
         self.msg_joel_display.delete("1.0", tk.END)
-        for text, ts in joel_msgs:
-            self.msg_joel_display.insert(tk.END, f"{ts}\n", "time")
-            self.msg_joel_display.insert(tk.END, f"{text}\n\n", "msg")
+        for text, ts, topic in joel_msgs:
+            self.msg_joel_display.insert(tk.END, f"{ts}  ", "time")
+            if topic:
+                tag_name = f"topic_{topic}"
+                self.msg_joel_display.insert(tk.END, f" {topic.upper()} ", tag_name)
+                self.msg_joel_display.insert(tk.END, " ", "time")
+            self.msg_joel_display.insert(tk.END, f"\n{text}\n\n", "msg")
         if not joel_msgs:
             self.msg_joel_display.insert(tk.END, "No directives from Joel.", "time")
         self.msg_joel_display.configure(state=tk.DISABLED)
@@ -5389,18 +5497,21 @@ class V16(tk.Tk):
     def _msg_tab_send(self, event=None):
         text = self.msg_tab_entry.get().strip()
         if text:
-            post_dashboard_msg(text, "Joel")
+            topic = self._msg_topic_var.get()
+            post_dashboard_msg(text, "Joel", topic=topic)
+            db_topic = f"directive:{topic}" if topic else "directive"
             try:
                 conn = sqlite3.connect(AGENT_RELAY_DB)
                 conn.execute(
                     "INSERT INTO agent_messages (agent, topic, message, timestamp) VALUES (?, ?, ?, ?)",
-                    ("Joel", "directive", text, datetime.now(tz=__import__('datetime').timezone.utc).isoformat()))
+                    ("Joel", db_topic, text, datetime.now(tz=__import__('datetime').timezone.utc).isoformat()))
                 conn.commit()
                 conn.close()
             except Exception:
                 pass
             self.msg_tab_entry.delete(0, tk.END)
-            self._msg_send_status.configure(text="Sent to dashboard + relay", fg=GREEN)
+            topic_str = f" [{topic}]" if topic else ""
+            self._msg_send_status.configure(text=f"Sent{topic_str} to dashboard + relay", fg=GREEN)
             self.after(2000, lambda: self._msg_send_status.configure(text=""))
             self.after(500, self._msg_tab_refresh)
 
