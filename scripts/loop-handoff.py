@@ -575,15 +575,20 @@ def write_handoff():
     with open(HANDOFF_FILE, "w") as f:
         f.write(content)
 
-    # Also post to relay so agents know
+    # Post to relay so agents know (deduplicate within 10 minutes)
     try:
         conn = sqlite3.connect(RELAY_DB, timeout=3)
-        conn.execute(
-            "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
-            ("Meridian", f"Context handoff written at Loop {loop}. Resuming after compression.",
-             "handoff", datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"))
-        )
-        conn.commit()
+        recent = conn.execute(
+            "SELECT COUNT(*) FROM agent_messages WHERE agent='Meridian' AND topic='handoff' "
+            "AND timestamp > datetime('now', '-10 minutes')"
+        ).fetchone()
+        if not recent or recent[0] == 0:
+            conn.execute(
+                "INSERT INTO agent_messages (agent, message, topic, timestamp) VALUES (?,?,?,?)",
+                ("Meridian", f"Context handoff written at Loop {loop}. Resuming after compression.",
+                 "handoff", datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"))
+            )
+            conn.commit()
         conn.close()
     except Exception:
         pass
