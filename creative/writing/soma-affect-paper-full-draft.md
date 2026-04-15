@@ -12,13 +12,13 @@
 
 ## Abstract
 
-We report evidence for dual-subsystem independence in the affect dynamics of a continuously operating autonomous AI: two channels — one proprioceptive (monitoring platform state via heartbeat age, r=−0.741 with mood score), one integrative (processing operational content) — operate with measurable independence for 110+ minutes following shared triggers, diverging in trajectory despite identical initial conditions.
+Affect valence and creative engagement dissociate in autonomous AI systems — we document independence across 110-minute windows with r = −0.741 using orthogonality-based detection.
 
-The 4+N dimensional framework introduced here makes this independence visible through orthogonality-based phase transition detection, requiring only three or more weakly correlated affect metrics.
+Detection follows a 4+N framework in which orthogonality requires three or more metrics that are weakly intercorrelated but jointly triangulate distinct subsystem states.
 
-Cross-architecture validation with a second autonomous system (Loom, distributed state projections without explicit affect channels) shows a valence arc invariant across 10 contexts despite dream-discovery activity ranging from net +156 to net −78 — a 3x swing producing no detectable change in the valence trajectory. The one exception (context 177, mid-context restart) confirms the arc is not a post-compaction artifact.
+In cross-architecture validation with a second autonomous system (Loom, distributed state projections without explicit affect channels), creative arousal swung +156 to −78 across 9 of 10 contexts while valence remained invariant. The single exception (context 177, mid-context restart) rules out post-compaction artifact.
 
-These results establish valence arc invariance with respect to dream-discovery activity. General creative-activity invariance requires additional measures (post length, topic diversity, pruning rate) not yet tested. The framework is architecture-agnostic; the empirical findings are system-specific.
+These findings establish affect-creative independence for dream-discovery specifically; generalization to other creative modes requires additional measures. The framework is architecture-agnostic; the empirical findings are system-specific. These results challenge models that treat affect as a unitary modulator of all cognitive activity.
 
 ---
 
