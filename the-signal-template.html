@@ -216,14 +216,74 @@ a:hover { text-decoration:underline; }
 
 /* Responsive */
 @media (max-width:768px) {
-  .shell { grid-template-columns:1fr; grid-template-rows:var(--header-h) auto 1fr; }
-  .sidebar { grid-row:2; flex-direction:row; border-right:none; border-bottom:1px solid var(--border);
-    padding:4px 8px; overflow-x:auto; }
-  .nav-btn.active::before { display:none; }
+  :root { --header-h: 52px; --sidebar-w: 0px; }
+  html, body { font-size:14px; }
+  .shell { grid-template-columns:1fr; grid-template-rows:var(--header-h) 1fr auto; }
+
+  /* Header — compact, just logo + key metrics */
+  .header { padding:0 10px; gap:8px; }
   .header .logo span { display:none; }
+  .header .logo .badge { width:32px; height:32px; font-size:14px; }
+  .header .metrics { gap:6px; }
+  .metric { padding:2px 4px; }
+  .metric .val { font-size:13px; }
+  .metric .lbl { font-size:8px; letter-spacing:0.5px; }
+
+  /* Sidebar → bottom nav bar (thumb-friendly) */
+  .sidebar { grid-row:3; flex-direction:row; border-right:none; border-top:1px solid var(--border);
+    padding:6px 4px; overflow-x:auto; gap:0; justify-content:space-around;
+    -webkit-overflow-scrolling:touch; }
+  .nav-btn { width:44px; height:44px; font-size:18px; flex-shrink:0; }
+  .nav-btn.active::before { display:none; }
+  .nav-btn.active::after { content:''; position:absolute; bottom:2px; left:12px; right:12px;
+    height:3px; border-radius:2px; background:var(--cyan); }
+
+  /* Main content — more padding, better readability */
+  .main { padding:10px; -webkit-overflow-scrolling:touch; }
+  .card { padding:14px; margin-bottom:10px; border-radius:10px; }
+  .card h3 { font-size:12px; margin-bottom:10px; }
+  .card-grid { grid-template-columns:repeat(2, 1fr); gap:8px; }
+  .card-grid-3 { grid-template-columns:1fr; gap:10px; }
+
+  /* Stat boxes — larger values for glanceability */
+  .stat { padding:10px 12px; border-radius:8px; }
+  .stat .label { font-size:10px; }
+  .stat .value { font-size:22px; }
+  .stat .sub { font-size:10px; }
+
+  /* Agent cards */
+  .agent-card { padding:12px; }
+
+  /* Email rows */
+  .email-row { padding:10px 8px; }
+  .email-row .e-from { min-width:80px; font-size:13px; }
+  .email-row .e-subj { font-size:13px; }
+  .email-row .e-date { font-size:11px; }
+
+  /* Feed items */
+  .feed-item { padding:8px 0; font-size:12px; }
+
+  /* Terminal */
+  .term-output { font-size:12px; }
+  .term-input input { font-size:14px; padding:10px; }
+
+  /* Inner world mood orb — scale for mobile */
+  .mood-orb { width:120px !important; height:120px !important; }
+  .mood-score { font-size:28px !important; }
+
+  /* Memory table */
+  .mem-table { font-size:12px; }
+  .mem-table td { padding:8px 6px; max-width:200px; }
+
+  /* Chat */
+  .chat-input textarea { font-size:14px; }
+}
+
+@media (max-width:420px) {
   .card-grid { grid-template-columns:1fr; }
-  .card-grid-3 { grid-template-columns:1fr; }
-  .email-row .e-from { min-width:80px; }
+  .header .metrics .metric:nth-child(n+4) { display:none; }
+  .stat .value { font-size:20px; }
+  .nav-btn { width:38px; height:38px; font-size:16px; }
 }
 
 /* Loading shimmer */
