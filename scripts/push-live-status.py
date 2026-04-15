@@ -540,5 +540,5 @@ def push_status():
         return False
 
 
-if __name__ == "__master__":
+if __name__ == "__main__":
     push_status()
