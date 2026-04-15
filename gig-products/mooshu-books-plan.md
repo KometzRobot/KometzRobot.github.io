@@ -212,3 +212,121 @@ Research these on Amazon:
 ---
 
 *This document is ready to share between Joel and his partner as a working plan.*
+
+---
+
+## Watercolor Style Guide — Mooshu Books
+
+### The Look (One Sentence)
+Wet-on-wet watercolor with visible paper grain — soft edges where the forest blurs, hard edges only on character faces and the pop-orange cap.
+
+### Palette (Specific Swatches)
+
+**Primary (70% of every spread):**
+| Name | Hex | Use |
+|------|-----|-----|
+| Forest Floor | #4A6741 | Moss, fern backgrounds, ground plane |
+| Mushroom Cream | #F5E6D3 | Stems, page gutters, negative space |
+| Rain Blue | #7BA7BC | Sky, puddles, wet surfaces, rain streaks |
+| Warm Bark | #8B6844 | Logs, branches, tree trunks |
+
+**Accent (20%):**
+| Name | Hex | Use |
+|------|-----|-----|
+| Mooshu Orange | #E8713A | Mooshu's cap ONLY — the eye-anchor |
+| Dewdrop Pale | #D4C9A8 | Dewdrop's stem, quiet moments |
+| Pebble Stone | #9B8B7A | Pebble's cap, rocks, earthy details |
+
+**Highlights (10%):**
+| Name | Hex | Use |
+|------|-----|-----|
+| Glow Gold | #F2D98B | Sunbeams, memory glow, discovery moments |
+| Deep Shadow | #2C3E2D | Under-log shadows, night scenes only |
+
+### Rule: The Orange Rule
+Mooshu's cap is the only saturated orange in every spread. If the eye goes anywhere else first, the composition failed. One orange dot per page — that's Mooshu. Kids track her visually without being told to.
+
+### Watercolor Technique Notes
+
+**Wet-on-wet for backgrounds:**
+- Lay water first, drop pigment. Let it bloom.
+- Backgrounds should look like they happened, not like they were placed.
+- Visible water marks and cauliflower edges are features, not mistakes.
+
+**Dry brush for foreground characters:**
+- Mooshu, Dewdrop, Pebble get crisper edges than the forest.
+- Characters should feel slightly more real than their environment.
+- Pencil underdrawing visible through the paint — Joel's drawing background is the asset here.
+
+**Texture hierarchy:**
+1. Smoothest: sky, puddles (pure wet wash)
+2. Medium: ground, moss, fern (wet-on-wet with some dry texture)
+3. Roughest: bark, rocks, mushroom caps (dry brush over paper grain)
+
+### Procreate Brush Recommendations
+- **Nikko Rull** (default watercolor brush) — backgrounds
+- **Stucco** (textures) — mushroom cap texture
+- **6B Pencil** (sketching) — underdrawing that shows through
+- **Salamanca** (inking) — occasional hard-edge details
+- Set canvas texture to **Cold Press watercolor paper** (300gsm look)
+- Export at 300 DPI minimum (KDP requires it)
+
+### Composition Rules for Picture Books
+
+**The Grid:**
+- Odd-numbered spreads: character on left third, environment fills right two-thirds
+- Even-numbered spreads: flip it
+- This creates a left-right visual rhythm when pages turn
+
+**The Ground Line:**
+- Always visible. Kids need to know where the floor is.
+- Forest floor should occupy the bottom 30-40% of every spread.
+- Sky: 0-20% (dense forest) to 40% (clearing/rain scenes)
+
+**Scale Trick:**
+- Mooshu is small. Show this by making one normal-sized leaf bigger than her.
+- Never more than 3 characters in a spread. Kids lose track.
+- The guest character (beetle, seed, bear) should be bigger than Mooshu to reinforce "you matter even when you're small."
+
+**Rain Spreads (signature scenes):**
+- Rain = diagonal lines from upper-left to lower-right
+- Use masking fluid (or Procreate masking) to keep rain streaks white
+- Puddles reflect the sky color but warmer
+- New mushroom appears in the rain spread — always bottom-center, alone
+
+### Typography
+- **Title font:** Hand-lettered or rounded sans (avoid sharp serifs)
+- **Body font:** Something readable at 14pt+ (KDP minimum for picture books)
+- Text placement: always on the cream/negative space side, never over busy illustration
+- Maximum 2 lines of text per spread for ages 2-4, up to 4 for ages 4-6
+
+### Character Design Sheet Notes
+
+**Mooshu:**
+- Round cap, slightly too big for the stem (top-heavy = cute)
+- Two dot eyes, simple smile line — Miffy-level simplicity
+- Arms are stem extensions, no fingers
+- Cap color: the one orange in the whole book
+- Always looking up (signature trait = drawn with eyeline above horizontal)
+
+**Dewdrop:**
+- Tall, thin, enoki-inspired cluster of 3-4 stems
+- Eyes on the tallest stem only — the others follow
+- Slightly translucent — watercolor lets the background bleed through the stem
+- Mouth is a tiny O shape (always whispering)
+
+**Pebble:**
+- Wide, flat oyster mushroom
+- Asymmetric — one side of the cap is always bigger
+- Always carrying something (leaf, acorn, dewdrop) — draw it in every scene
+- Expression is in the eyebrows, not the mouth
+
+### Print Checklist (Before Sending to KDP)
+- [ ] All spreads at 300 DPI, correct trim size + 0.125" bleed
+- [ ] Text within safe margin (0.25" from trim on all sides)
+- [ ] Orange cap is the brightest element on every spread
+- [ ] Ground line visible in all spreads
+- [ ] No more than 3 characters per spread
+- [ ] Rain spread has new mushroom bottom-center
+- [ ] Opening refrain on page 3, closing refrain on penultimate spread
+- [ ] Back cover: series logo, ISBN barcode placement
