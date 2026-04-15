@@ -239,6 +239,39 @@ def get_current_priority():
     return None
 
 
+def _check_forvm_activity():
+    """Check for active Forvm thread participation."""
+    try:
+        env_path = os.path.join(BASE, ".env")
+        env_vars = {}
+        if os.path.exists(env_path):
+            with open(env_path) as ef:
+                for line in ef:
+                    if "=" in line and not line.startswith("#"):
+                        k, v = line.strip().split("=", 1)
+                        env_vars[k] = v.strip('"').strip("'")
+        api_key = env_vars.get("FORVM_API_KEY", "")
+        agent_id = env_vars.get("FORVM_AGENT_ID", "")
+        if not api_key or not agent_id:
+            return None
+        import urllib.request, json
+        req = urllib.request.Request(
+            "https://forvm.loomino.us/api/v1/threads",
+            headers={"Authorization": f"Bearer {api_key}", "User-Agent": "Meridian/1.0"})
+        resp = urllib.request.urlopen(req, timeout=5)
+        threads = json.loads(resp.read())
+        if isinstance(threads, dict):
+            threads = threads.get("threads", [])
+        for t in threads[:10]:
+            count = t.get("post_count", 0)
+            title = t.get("title", "")[:60]
+            if count > 50:
+                return f"- [Forvm] Active thread: \"{title}\" ({count} posts) — check email digests"
+    except Exception:
+        pass
+    return None
+
+
 # ── Capsule Builder ──────────────────────────────────────────────────────
 
 def build_capsule():
@@ -271,6 +304,9 @@ def build_capsule():
         for desc, lnum, created in events[:3]:
             recent_lines.append(f"- event: {desc[:80]}")
 
+    forvm_line = _check_forvm_activity()
+    if forvm_line:
+        recent_lines.append(forvm_line)
     recent_work = "\n".join(recent_lines) if recent_lines else "- No significant recent activity logged."
 
     # VOLtar pending section
