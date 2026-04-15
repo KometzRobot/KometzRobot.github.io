@@ -62,12 +62,11 @@ CRON_LOGS=(
     ["eos-creative"]="logs/eos-creative.log:900"
     ["nova"]="logs/nova.log:1200"
     ["eos-react"]="logs/eos-react.log:900"
-    ["goose"]="goose.log:900"
+    ["atlas"]="logs/atlas-runner.log:900"
     ["loop-fitness"]="logs/loop-fitness.log:2400"
     # daily-log REMOVED — cron was deleted (file doesn't exist)
     ["eos-briefing"]="logs/eos-briefing.log:130000"
     ["sentinel-gatekeeper"]="logs/sentinel-gatekeeper.log:400"
-    ["hermes"]="logs/hermes.log:1800"
     ["memory-dossier"]="logs/memory-dossier.log:15000"
     # morning-summary DISABLED (duplicate of eos-briefing) — removed from stale check
 )
