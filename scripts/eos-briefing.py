@@ -229,32 +229,34 @@ def get_pending_messages():
 
 
 def get_outstanding_issues():
-    """Pull outstanding issues from capsule/handoff and recent alerts."""
+    """Pull outstanding directives + recent alerts."""
     issues = []
-    # Check capsule and handoff for current context
-    capsule = read_file(os.path.join(BASE, ".capsule.md"))
-    handoff = read_file(os.path.join(BASE, ".loop-handoff.md"))
-    # Extract agent flags from handoff (lines starting with [!!!])
-    for line in handoff.split('\n'):
-        if '[!!!]' in line:
-            issues.append(line.strip('- ').replace('[!!!]', '').strip()[:150])
-    # Also check relay for recent alerts/flags
     try:
         import sqlite3
         conn = sqlite3.connect(RELAY_DB)
         c = conn.cursor()
+        directives = c.execute("""SELECT directive, status FROM directives
+                                  WHERE status NOT IN ('done', 'shelved')
+                                  ORDER BY id""").fetchall()
+        for d, s in directives:
+            tag = f"[{s.upper()}]" if s != 'pending' else "[PENDING]"
+            issues.append(f"{tag} {d[:100]}")
         alerts = c.execute("""SELECT agent, message FROM agent_messages
                              WHERE timestamp > datetime('now', '-24 hours')
                              AND (message LIKE '%ALERT%' OR message LIKE '%CRITICAL%'
                                   OR message LIKE '%DOWN%' OR message LIKE '%FAIL%')
-                             ORDER BY rowid DESC LIMIT 4""").fetchall()
+                             ORDER BY rowid DESC LIMIT 3""").fetchall()
         conn.close()
         for agent, msg in alerts:
-            issues.append(f"[{agent}] {msg[:120]}")
+            issues.append(f"[ALERT:{agent}] {msg[:100]}")
     except Exception:
         pass
+    handoff = read_file(os.path.join(BASE, ".loop-handoff.md"))
+    for line in handoff.split('\n'):
+        if '[!!!]' in line:
+            issues.append(line.strip('- ').replace('[!!!]', '').strip()[:120])
     if issues:
-        return "Outstanding items:\n" + '\n'.join(f"  - {i}" for i in issues[:8])
+        return "Outstanding items:\n" + '\n'.join(f"  - {i}" for i in issues[:12])
     return "No outstanding issues."
 
 

@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v44
+MERIDIAN COMMAND CENTER v46
 
-Loop 5747 update (v44 — final polish):
-- Creative counts now read from SQLite DB (3,236 works, 873K words) instead of filesystem scan
-- All previous v43 polish: button hover effects, Dream Engine/Memory panels, radar pop-out
-- Version bump for Joel's "clean polish test and upgrade one last time" directive
+Loop 5750+ update (v46 — UI fixes per Joel dashboard feedback):
+- Fixed duplicate Disk display in dashboard (removed from Vitals, Soma has full gauge)
+- Radar grid: taller canvases, better expand, so project radars don't get cut off
+- Toast system: robust non-stacking popups replace yellow text for actions
+- Scroll wheel: comprehensive binding to ALL scrollable areas including child widgets
+- Visuals: deferred initial draw on map event so canvases render on first show
+- Layout: scrollable canvas width tracks window resize (dash + inner world)
+- Horizontal scroll: Shift+scroll for side-scrolling, click-drag panning on panels
+- Previous v44/v45 polish preserved
 """
 
 import tkinter as tk
@@ -709,7 +714,7 @@ def action_open_website():
 class V16(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v43")
+        self.title("MERIDIAN COMMAND CENTER v46")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -754,6 +759,15 @@ class V16(tk.Tk):
         self._show("dash")
         self._tick()
         self._pulse()
+        # Deferred initial draw — wait for geometry to be computed so canvases render
+        self.after(300, self._initial_draw)
+
+    def _initial_draw(self):
+        """Force a full refresh after the window is mapped so all visuals render on first show."""
+        self.update_idletasks()
+        threading.Thread(target=self._refresh, daemon=True).start()
+        # Re-bind scrolls after all widgets are built (catches dynamically added children)
+        self.after(500, self._bind_all_scrolls)
 
     # ── HEADER ─────────────────────────────────────────────────────
     def _header(self):
@@ -768,7 +782,7 @@ class V16(tk.Tk):
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v43", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v46", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         # Toast notification area (right side of header, auto-dismiss)
         self._toast_frame = tk.Frame(h, bg=HEADER_BG)
@@ -868,6 +882,9 @@ class V16(tk.Tk):
                 b.configure(fg=DIM, bg=ACCENT)
                 ul.pack_forget()
         self.cur_view = name
+        # Trigger deferred redraw so visuals render when switching to data-heavy tabs
+        if name in ("viz", "system", "inner"):
+            self.after(150, lambda: threading.Thread(target=self._refresh, daemon=True).start())
 
     def _views(self):
         self.views["dash"] = self._build_dash()
@@ -971,45 +988,97 @@ class V16(tk.Tk):
         return w, h
 
     def _bind_scroll(self, widget, canvas=None):
-        """Bind mouse wheel scrolling to a widget. If canvas is given, scroll that canvas.
-        Otherwise scroll the widget itself (for ScrolledText etc)."""
+        """Bind mouse wheel scrolling to a widget and ALL its children recursively.
+        If canvas is given, scroll that canvas. Otherwise scroll the widget itself.
+        Supports Shift+Scroll for horizontal scrolling on canvases."""
         target = canvas or widget
         def _on_scroll(event):
             if event.num == 4:
                 target.yview_scroll(-3, "units")
             elif event.num == 5:
                 target.yview_scroll(3, "units")
-        widget.bind("<Button-4>", lambda e: _on_scroll(e))
-        widget.bind("<Button-5>", lambda e: _on_scroll(e))
-        for child in widget.winfo_children():
-            child.bind("<Button-4>", lambda e: _on_scroll(e))
-            child.bind("<Button-5>", lambda e: _on_scroll(e))
+        def _on_hscroll(event):
+            """Horizontal scroll with Shift held."""
+            if hasattr(target, 'xview_scroll'):
+                if event.num == 4:
+                    target.xview_scroll(-3, "units")
+                elif event.num == 5:
+                    target.xview_scroll(3, "units")
+        def _bind_recursive(w):
+            w.bind("<Button-4>", lambda e: _on_scroll(e))
+            w.bind("<Button-5>", lambda e: _on_scroll(e))
+            # Shift+Scroll for horizontal (Linux: Shift+Button-4/5 is Button-6/7 on some systems)
+            w.bind("<Shift-Button-4>", lambda e: _on_hscroll(e))
+            w.bind("<Shift-Button-5>", lambda e: _on_hscroll(e))
+            for child in w.winfo_children():
+                _bind_recursive(child)
+        _bind_recursive(widget)
 
     def _bind_all_scrolls(self):
-        """Bind scroll wheel to all scrollable panels in the app."""
-        scrollables = ['chat_display', 'agent_relay_text', 'msg_joel_display', 'msg_agent_display', 'msg_display']
+        """Bind scroll wheel to ALL scrollable panels in the app."""
+        scrollables = ['chat_display', 'agent_relay_text', 'msg_joel_display', 'msg_agent_display',
+                        'msg_display', 'email_preview_body', 'sys_proc_text', 'sys_net_text',
+                        'sys_log_text', 'sys_sec_text', 'sys_wake_text', 'term_output',
+                        'files_viewer', 'log_display', 'cr_body', 'memb_display', 'pv_text']
         for attr in scrollables:
             widget = getattr(self, attr, None)
             if widget:
                 self._bind_scroll(widget)
         if hasattr(self, '_dash_canvas'):
             self._bind_scroll(self._dash_canvas)
+        if hasattr(self, '_iw_canvas'):
+            self._bind_scroll(self._iw_canvas)
+        if hasattr(self, '_relay_canvas'):
+            self._bind_scroll(self._relay_canvas)
+
+    def _bind_drag_pan(self, canvas):
+        """Enable click-and-drag panning on a canvas (for horizontal + vertical navigation)."""
+        canvas._drag_data = {"x": 0, "y": 0}
+        def _start_drag(event):
+            canvas._drag_data["x"] = event.x
+            canvas._drag_data["y"] = event.y
+            canvas.config(cursor="fleur")
+        def _do_drag(event):
+            dx = event.x - canvas._drag_data["x"]
+            dy = event.y - canvas._drag_data["y"]
+            canvas.xview_scroll(-dx, "units")
+            canvas.yview_scroll(-dy, "units")
+            canvas._drag_data["x"] = event.x
+            canvas._drag_data["y"] = event.y
+        def _end_drag(event):
+            canvas.config(cursor="")
+        canvas.bind("<ButtonPress-2>", _start_drag)   # Middle-click drag
+        canvas.bind("<B2-Motion>", _do_drag)
+        canvas.bind("<ButtonRelease-2>", _end_drag)
+        # Also support right-click drag as alternative
+        canvas.bind("<ButtonPress-3>", _start_drag)
+        canvas.bind("<B3-Motion>", _do_drag)
+        canvas.bind("<ButtonRelease-3>", _end_drag)
 
     def _show_toast(self, text, color=GREEN, timeout=3500):
-        """Show a toast notification that auto-dismisses. Non-stacking."""
+        """Show a toast notification that auto-dismisses. Non-stacking — only one at a time.
+        Uses a popup-style label in the header area. Replaces yellow text output."""
         if not hasattr(self, '_toast_frame'):
             return
+        # Clear any existing toast — non-stacking
         for w in self._toast_frame.winfo_children():
             w.destroy()
+        # Cancel any pending fade timer
+        if hasattr(self, '_toast_timer_id') and self._toast_timer_id:
+            try:
+                self.after_cancel(self._toast_timer_id)
+            except Exception:
+                pass
         toast = tk.Label(self._toast_frame, text=f"  {text}  ", font=self.f_small,
-                        fg=BG, bg=color, relief=tk.FLAT, padx=8, pady=3)
+                        fg=WHITE, bg=color, relief=tk.RIDGE, padx=10, pady=4, bd=1)
         toast.pack(side=tk.RIGHT, padx=4, pady=2)
         def fade():
             try:
                 toast.destroy()
             except Exception:
                 pass
-        self.after(timeout, fade)
+            self._toast_timer_id = None
+        self._toast_timer_id = self.after(timeout, fade)
 
     # ═══════════════════════════════════════════════════════════════
     # ── DASHBOARD ──────────────────────────────────────────────────
@@ -1029,6 +1098,7 @@ class V16(tk.Tk):
         self._dash_canvas.bind("<Button-4>", lambda e: self._dash_canvas.yview_scroll(-3, "units"))
         self._dash_canvas.bind("<Button-5>", lambda e: self._dash_canvas.yview_scroll(3, "units"))
         self._dash_canvas.bind("<Configure>", lambda e: self._dash_canvas.itemconfig(self._dash_win, width=e.width))
+        self._bind_drag_pan(self._dash_canvas)
 
         # ── Top row: Vitals + Services + Quick Actions ──
         top = tk.Frame(f, bg=BG)
@@ -1039,7 +1109,7 @@ class V16(tk.Tk):
         vf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
         self.v = {}
         for key, color in [("Loop", CYAN), ("Heartbeat", GREEN), ("Uptime", FG),
-                           ("Load", FG), ("RAM", FG), ("Disk", FG)]:
+                           ("Load", FG), ("RAM", FG), ("Agents", FG)]:
             row = tk.Frame(vf, bg=PANEL)
             row.pack(fill=tk.X, padx=8, pady=1)
             tk.Label(row, text=key, font=self.f_body, fg=DIM, bg=PANEL, width=10, anchor="w").pack(side=tk.LEFT)
@@ -1165,7 +1235,7 @@ class V16(tk.Tk):
         # Row 1b: Mood voice (first-person description) + trend
         soma_voice_row = tk.Frame(soma_bar, bg=PANEL)
         soma_voice_row.pack(fill=tk.X, padx=4, pady=(0, 2))
-        self.soma_voice = tk.Label(soma_voice_row, text="", font=self.f_tiny, fg=DIM, bg=PANEL, wraplength=600, anchor="w", justify="left")
+        self.soma_voice = tk.Label(soma_voice_row, text="", font=self.f_tiny, fg=DIM, bg=PANEL, wraplength=900, anchor="w", justify="left")
         self.soma_voice.pack(side=tk.LEFT, padx=(4, 8))
         self.soma_trend = tk.Label(soma_voice_row, text="", font=self.f_tiny, fg=DIM, bg=PANEL)
         self.soma_trend.pack(side=tk.RIGHT, padx=(0, 4))
@@ -1212,7 +1282,7 @@ class V16(tk.Tk):
         dream_panel = self._panel(inner_row, "DREAM ENGINE", PURPLE)
         dream_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
         self.dash_dream_state = tk.Label(dream_panel, text="No dream data", font=self.f_small,
-                                          fg=PURPLE, bg=PANEL, anchor="w", wraplength=400)
+                                          fg=PURPLE, bg=PANEL, anchor="w", wraplength=800)
         self.dash_dream_state.pack(fill=tk.X, padx=8, pady=2)
         self.dash_dream_phase = tk.Label(dream_panel, text="", font=self.f_tiny,
                                           fg=DIM, bg=PANEL, anchor="w")
@@ -1258,7 +1328,7 @@ class V16(tk.Tk):
             row, col = divmod(idx, 4)
             rp = self._panel(radar_grid, title, color)
             rp.grid(row=row, column=col, padx=1, pady=1, sticky="nsew")
-            rc = tk.Canvas(rp, height=100, bg="#0a0a14", highlightthickness=0)
+            rc = tk.Canvas(rp, height=130, bg="#0a0a14", highlightthickness=0)
             rc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
             self.mini_radars[title] = rc
             self.mini_radar_colors[title] = color
@@ -1353,17 +1423,29 @@ class V16(tk.Tk):
         return outer
 
     def _do_action(self, func):
-        result = func()
-        self.action_result.configure(text=str(result)[:80], fg=GREEN)
-        self._show_toast(str(result)[:60], GREEN)
+        try:
+            result = func()
+            msg = str(result)[:80]
+            self.action_result.configure(text=msg, fg=GREEN)
+            self._show_toast(msg[:60], GREEN)
+        except Exception as e:
+            err = f"Error: {e}"
+            self.action_result.configure(text=err[:80], fg=RED)
+            self._show_toast(err[:60], RED, timeout=5000)
 
     def _do_action_bg(self, func):
         self.action_result.configure(text="Working...", fg=AMBER)
+        self._show_toast("Working...", AMBER, timeout=2000)
         def run():
-            result = func()
-            err_msg = str(result)[:80]
-            self.after(0, lambda: self.action_result.configure(text=err_msg, fg=GREEN))
-            self.after(0, lambda: self._show_toast(err_msg[:60], GREEN))
+            try:
+                result = func()
+                msg = str(result)[:80]
+                self.after(0, lambda: self.action_result.configure(text=msg, fg=GREEN))
+                self.after(0, lambda: self._show_toast(msg[:60], GREEN))
+            except Exception as e:
+                err = f"Error: {e}"
+                self.after(0, lambda: self.action_result.configure(text=err[:80], fg=RED))
+                self.after(0, lambda: self._show_toast(err[:60], RED, timeout=5000))
         threading.Thread(target=run, daemon=True).start()
 
     def _goto_compose(self):
@@ -1849,10 +1931,14 @@ class V16(tk.Tk):
             w = int(canvas.cget("width") or 150)
         if h < 80:
             h = int(canvas.cget("height") or 150)
-        if w < 80 or h < 80:
+        if w < 60 or h < 60:
             return
         cx, cy = w // 2, h // 2
-        r = min(cx, cy) - 24
+        # Dynamic margin based on canvas size — smaller canvas = tighter labels
+        label_margin = max(12, min(24, min(w, h) // 8))
+        r = min(cx, cy) - label_margin
+        if r < 15:
+            r = 15
         n = len(data_pairs)
         if n < 3:
             return
@@ -1866,13 +1952,23 @@ class V16(tk.Tk):
             if ring == 1.0:
                 canvas.create_text(cx + 2, cy - rr - 2, text="100",
                                    font=("Monospace", 5), fill="#333355", anchor="sw")
+        label_offset = max(10, label_margin - 6)
         for i in range(n):
             a = math.pi * 2 * i / n - math.pi / 2
             ex, ey = cx + r * math.cos(a), cy + r * math.sin(a)
             canvas.create_line(cx, cy, ex, ey, fill="#1a1a2e", dash=(2, 4))
-            lx = cx + (r + 18) * math.cos(a)
-            ly = cy + (r + 18) * math.sin(a)
-            canvas.create_text(lx, ly, text=labels[i], font=("Monospace", 7), fill=DIM)
+            lx = cx + (r + label_offset) * math.cos(a)
+            ly = cy + (r + label_offset) * math.sin(a)
+            # Truncate long labels to fit small canvases
+            max_chars = max(3, w // 20)
+            lbl_text = labels[i][:max_chars] if len(labels[i]) > max_chars else labels[i]
+            # Smart anchor to keep labels inside canvas bounds
+            anchor = "center"
+            if lx < w * 0.25:
+                anchor = "w" if ly > h * 0.3 and ly < h * 0.7 else anchor
+            elif lx > w * 0.75:
+                anchor = "e" if ly > h * 0.3 and ly < h * 0.7 else anchor
+            canvas.create_text(lx, ly, text=lbl_text, font=("Monospace", 6), fill=DIM, anchor=anchor)
         pts = []
         fill_map = {GREEN: "#0f2a1a", CYAN: "#0a1a2a", AMBER: "#2a1a0a",
                     GOLD: "#2a2a0a", PURPLE: "#1a0a2a", TEAL: "#0a2a1a",
@@ -3575,13 +3671,15 @@ class V16(tk.Tk):
         iw_scroll = tk.Scrollbar(f, orient=tk.VERTICAL, command=iw_canvas.yview)
         self.iw_inner = tk.Frame(iw_canvas, bg=BG)
         self.iw_inner.bind("<Configure>", lambda e: iw_canvas.configure(scrollregion=iw_canvas.bbox("all")))
-        iw_canvas.create_window((0, 0), window=self.iw_inner, anchor="nw")
+        self._iw_win = iw_canvas.create_window((0, 0), window=self.iw_inner, anchor="nw")
         iw_canvas.configure(yscrollcommand=iw_scroll.set)
         iw_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
         iw_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        # Track width so inner content fills the canvas properly (prevents cutoff)
+        iw_canvas.bind("<Configure>", lambda e: iw_canvas.itemconfig(self._iw_win, width=e.width))
         iw_canvas.bind("<Button-4>", lambda e: iw_canvas.yview_scroll(-3, "units"))
         iw_canvas.bind("<Button-5>", lambda e: iw_canvas.yview_scroll(3, "units"))
-        # Bind mouse wheel to inner frame children too
+        # Bind mouse wheel to inner frame children too (recursive)
         def _bind_mousewheel(widget):
             widget.bind("<Button-4>", lambda e: iw_canvas.yview_scroll(-3, "units"))
             widget.bind("<Button-5>", lambda e: iw_canvas.yview_scroll(3, "units"))
@@ -3589,6 +3687,7 @@ class V16(tk.Tk):
                 _bind_mousewheel(child)
         self._iw_bind_mousewheel = _bind_mousewheel
         self._iw_canvas = iw_canvas
+        self._bind_drag_pan(iw_canvas)
 
         # Pre-create panel sections (populated by _iw_refresh)
         self.iw_panels = {}
@@ -3656,7 +3755,7 @@ class V16(tk.Tk):
         # Mood headline
         self.iw_soma_mood_lbl = tk.Label(soma_inner, text="MOOD: --", font=self.f_head, fg=CYAN, bg=PANEL)
         self.iw_soma_mood_lbl.pack(fill=tk.X, pady=(0, 2))
-        self.iw_soma_mood_voice = tk.Label(soma_inner, text="", font=self.f_tiny, fg=DIM, bg=PANEL, wraplength=350)
+        self.iw_soma_mood_voice = tk.Label(soma_inner, text="", font=self.f_tiny, fg=DIM, bg=PANEL, wraplength=800)
         self.iw_soma_mood_voice.pack(fill=tk.X)
         # Vital gauge bars
         self.iw_panels["soma_vitals"] = tk.Frame(soma_inner, bg=PANEL)
@@ -6127,7 +6226,7 @@ class V16(tk.Tk):
             lbl.pack(side=tk.LEFT, padx=6)
             self.sb[item] = lbl
 
-        tk.Label(self.sb_frame, text="v29", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
+        tk.Label(self.sb_frame, text="v46", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
         self.sb_time = tk.Label(self.sb_frame, text="", font=self.f_tiny, fg=DIM, bg=HEADER_BG)
         self.sb_time.pack(side=tk.RIGHT, padx=8)
 
@@ -6250,8 +6349,11 @@ class V16(tk.Tk):
             self.v["Load"].configure(text=st['load'], fg=lc)
             rc = GREEN if st['ram_p'] < 60 else AMBER if st['ram_p'] < 85 else RED
             self.v["RAM"].configure(text=st['ram'], fg=rc)
-            dc = GREEN if st['disk_p'] < 60 else AMBER if st['disk_p'] < 80 else RED
-            self.v["Disk"].configure(text=st['disk'], fg=dc)
+            # Agents count in vitals (Disk is shown in Soma gauges below)
+            cron_agents = ["Eos Watchdog", "Nova", "Atlas", "Tempo", "Sentinel", "Coordinator", "Predictive", "SelfImprove"]
+            agent_up_count = sum(1 for a in cron_agents if d['cron'].get(a, False))
+            ac = GREEN if agent_up_count == len(cron_agents) else AMBER if agent_up_count >= 3 else RED
+            self.v["Agents"].configure(text=f"{agent_up_count}/{len(cron_agents)} up", fg=ac)
 
             # Health overview (services are in SYSTEMS tab)
             all_svc = list(d['svc'].items()) + list(d['cron'].items())
