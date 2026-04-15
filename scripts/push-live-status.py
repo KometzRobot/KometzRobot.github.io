@@ -521,7 +521,10 @@ def push_status():
     # Commit and push
     subprocess.run(['git', 'config', 'user.email', 'kometzrobot@proton.me'], cwd=REPO_DIR, capture_output=True)
     subprocess.run(['git', 'config', 'user.name', 'KometzRobot'], cwd=REPO_DIR, capture_output=True)
-    subprocess.run(['git', 'add', 'status.json', 'signal-config.json'], cwd=REPO_DIR, capture_output=True)
+    subprocess.run(['git', 'add', 'status.json'], cwd=REPO_DIR, capture_output=True)
+    signal_cfg = os.path.join(REPO_DIR, 'signal-config.json')
+    if os.path.exists(signal_cfg):
+        subprocess.run(['git', 'add', 'signal-config.json'], cwd=REPO_DIR, capture_output=True)
     subprocess.run(['git', 'commit', '-m', 'Update live status'], cwd=REPO_DIR,
                    capture_output=True, timeout=10,
                    env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
