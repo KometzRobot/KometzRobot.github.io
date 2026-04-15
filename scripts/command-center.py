@@ -348,7 +348,7 @@ AGENT_FILE_PATTERNS = {
                  "mcp-tools", "mcp-email", "start-claude", "index.html", "nft-gallery"],
     "Eos": ["eos-", "eos_"],
     "Nova": ["nova", "watchdog-status"],
-    "Atlas": ["goose-runner", "goose.log"],
+    "Atlas": ["atlas-runner", "atlas-runner.log"],
     "Soma": ["symbiosense", "symbio"],
     "Tempo": ["loop-fitness", "loop-optimizer"],
 }
@@ -660,7 +660,7 @@ def action_restart_service(name):
         "soma": ("user", "symbiosense"),
         "nova": ("cron", "scripts/nova.py"),
         "eos": ("cron", "scripts/eos-watchdog.py"),
-        "atlas": ("cron", "scripts/goose-runner.sh"),
+        "atlas": ("cron", "scripts/atlas-runner.sh"),
         "tempo": ("cron", "scripts/loop-fitness.py"),
         "sentinel": ("cron", "scripts/sentinel-gatekeeper.py"),
         "coordinator": ("cron", "scripts/coordinator.py"),
@@ -2977,7 +2977,7 @@ class V16(tk.Tk):
             def _do_atlas():
                 try:
                     r = subprocess.run(
-                        ['bash', os.path.join(BASE, 'scripts', 'goose-runner.sh')],
+                        ['bash', os.path.join(BASE, 'scripts', 'atlas-runner.sh')],
                         capture_output=True, text=True, timeout=90, cwd=BASE)
                     out = (r.stdout.strip() or r.stderr.strip() or "Audit complete")[-300:]
                     self.after(0, lambda: self._chat_append(f"[Atlas] {out}\n", "atlas"))
@@ -5152,7 +5152,7 @@ class V16(tk.Tk):
             "push-status": os.path.join("logs", "push-live-status.log"),
             "eos-creative": os.path.join("logs", "eos-creative.log"),
             "loop-fitness": os.path.join("logs", "loop-fitness.log"),
-            "hermes-bridge": os.path.join("logs", "hermes-bridge.log"),
+            "atlas-runner": os.path.join("logs", "atlas-runner.log"),
             "daily-log": os.path.join("logs", "daily-log.log"),
         }
         self._log_var = tk.StringVar(value="eos-watchdog")

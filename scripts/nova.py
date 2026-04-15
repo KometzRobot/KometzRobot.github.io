@@ -244,7 +244,7 @@ def check_stale_python_processes():
         "hub-v2.py", "symbiosense.py", "the-chorus.py",
         "nova.py", "eos-watchdog.py", "loop-fitness.py",
         "push-live-status.py", "meridian-loop.py", "cascade.py",
-        "goose-runner.py", "sentinel-gatekeeper.py",
+        "atlas-runner.sh", "sentinel-gatekeeper.py",
     }
     try:
         result = subprocess.run(

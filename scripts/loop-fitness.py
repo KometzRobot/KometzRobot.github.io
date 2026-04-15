@@ -671,7 +671,7 @@ def _cron_log_check(logfile, max_age):
 def check_cron_push_status(): return _cron_log_check("logs/push-live-status.log", 400)
 def check_cron_watchdog(): return _cron_log_check("logs/eos-watchdog.log", 600)
 def check_cron_nova(): return _cron_log_check("logs/nova.log", 1800)
-def check_cron_atlas(): return _cron_log_check("goose.log", 1200)
+def check_cron_atlas(): return _cron_log_check("logs/atlas-runner.log", 1200)
 def check_cron_eos_react(): return _cron_log_check("logs/eos-react.log", 1200)
 def check_cron_eos_watchdog(): return _cron_log_check("logs/eos-watchdog.log", 600)
 def check_cron_tempo():

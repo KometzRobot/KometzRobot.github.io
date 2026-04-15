@@ -99,10 +99,9 @@ SAFE_COMMANDS = {
 LOG_FILES = {
     "watchdog": "logs/eos-watchdog.log",
     "nova": "logs/nova.log",
-    "atlas": "logs/goose-runner.log",
+    "atlas": "logs/atlas-runner.log",
     "push-status": "logs/push-live-status.log",
     "symbiosense": "logs/symbiosense.log",
-    "hermes": "logs/hermes-bridge.log",
     "loop-fitness": "logs/loop-fitness.log",
     "eos-react": "logs/eos-react.log",
     "meridian-loop": "logs/meridian-loop.log",

@@ -92,19 +92,18 @@ EXPECTED_CRONS = [
     "loop-optimizer.py",
     "startup.sh",
     "nova.py",
-    "goose-runner.sh",
+    "atlas-runner.sh",
     "loop-fitness.py",
     "supabase-sync.py",
-    "hermes-bridge.py",
 ]
 
 # Log files to monitor for size (prevent bloat — max 5MB each)
 LOG_SIZE_LIMIT = 5 * 1024 * 1024  # 5MB
 MONITORED_LOGS = [
     "eos-watchdog.log", "push-live-status.log", "watchdog.log",
-    "nova.log", "goose-runner.log", "loop-fitness.log",
+    "nova.log", "atlas-runner.log", "loop-fitness.log",
     "eos-briefing.log", "eos-react.log", "eos-creative.log",
-    "loop-optimizer.log", "supabase-sync.log", "hermes-bridge.log",
+    "loop-optimizer.log", "supabase-sync.log",
 ]
 
 
@@ -307,11 +306,10 @@ def scan_logs_for_errors():
         ("startup.log", 30),
         ("watchdog.log", 30),
         ("nova.log", 30),
-        ("goose-runner.log", 30),
+        ("atlas-runner.log", 30),
         ("loop-fitness.log", 30),
         ("eos-briefing.log", 30),
         ("supabase-sync.log", 20),
-        ("hermes-bridge.log", 20),
     ]
     error_patterns = re.compile(
         r'(Traceback|ERROR|CRITICAL|Exception|FAILED|permission denied|No space|killed|OperationalError)',

@@ -18,8 +18,8 @@
 #   7. External platform reachability — Linktree, GitHub, Ko-fi
 
 GOOSE="/home/joel/.local/bin/goose"
-LOG="/home/joel/autonomous-ai/goose.log"
-LOCK="/tmp/goose-runner.lock"
+LOG="/home/joel/autonomous-ai/logs/atlas-runner.log"
+LOCK="/tmp/atlas-runner.lock"
 WORKING_DIR="/home/joel/autonomous-ai"
 RELAY_DB="/home/joel/autonomous-ai/agent-relay.db"
 DASH_FILE="/home/joel/autonomous-ai/.dashboard-messages.json"
