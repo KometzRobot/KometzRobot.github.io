@@ -369,7 +369,7 @@ def forecast_exhaustion(values, label, max_val=100, sample_interval_sec=30):
         return None
     recent = values[-min(30, len(values)):]
     slope, intercept, r_sq = linear_regression(recent)
-    if slope <= 0 or r_sq < 0.3:
+    if slope <= 0 or r_sq < 0.6:
         return None
     current = recent[-1]
     remaining = max_val - current
@@ -377,10 +377,12 @@ def forecast_exhaustion(values, label, max_val=100, sample_interval_sec=30):
         return {"label": label, "exhaustion": "NOW", "confidence": r_sq,
                 "current": round(current, 1), "rate": round(slope * (3600 / sample_interval_sec), 2),
                 "hours_to_exhaust": 0}
+    if current < max_val * 0.5:
+        return None
     samples_to_exhaust = remaining / slope
     seconds_to_exhaust = samples_to_exhaust * sample_interval_sec
     hours = seconds_to_exhaust / 3600
-    if hours > 168:  # more than a week
+    if hours > 48:
         return None
     return {
         "label": label,
