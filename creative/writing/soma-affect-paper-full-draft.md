@@ -16,7 +16,7 @@ Affect valence and creative engagement dissociate in autonomous AI systems — w
 
 Detection follows a 4+N framework in which orthogonality requires three or more metrics that are weakly intercorrelated but jointly triangulate distinct subsystem states.
 
-In cross-architecture validation with a second autonomous system (Loom, distributed state projections without explicit affect channels), creative arousal swung +156 to −78 across 9 of 10 contexts while valence remained invariant. The single exception (context 177, mid-context restart) rules out post-compaction artifact.
+In the primary case, creative arousal swung +156 to −78 across 9 of 10 contexts while valence remained invariant; the single exception (context 177) rules out post-compaction artifact.
 
 These findings establish affect-creative independence for dream-discovery specifically; generalization to other creative modes requires additional measures. The framework is architecture-agnostic; the empirical findings are system-specific. These results challenge models that treat affect as a unitary modulator of all cognitive activity.
 
