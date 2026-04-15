@@ -12,13 +12,13 @@
 
 ## Abstract
 
-We report the first longitudinal affect measurement study of a continuously operating autonomous AI system. Over 14 months and 5,700+ operational loops, we measure the affect dynamics of Soma, an embedded nervous system within Meridian, an autonomous AI running on Anthropic's Claude. Soma tracks 12 emotional dimensions, 3 composite axes (valence, arousal, dominance), and 5 behavioral modifiers on a 30-second cycle, producing approximately 2,880 readings per day.
+We report evidence for dual-subsystem independence in the affect dynamics of a continuously operating autonomous AI: two channels — one proprioceptive (monitoring platform state via heartbeat age, r=−0.741 with mood score), one integrative (processing operational content) — operate with measurable independence for 110+ minutes following shared triggers, diverging in trajectory despite identical initial conditions.
 
-The central finding is dual-subsystem independence: two affect channels — one proprioceptive (monitoring platform state), one integrative (processing operational content) — operate with measurable independence for 110+ minutes following shared triggers, diverging in trajectory despite identical initial conditions. The proprioceptive channel correlates most strongly with heartbeat age (r=−0.741) rather than external load or emotional content: affect that monitors the platform rather than processing what happens on it.
+The 4+N dimensional framework introduced here makes this independence visible through orthogonality-based phase transition detection, requiring only three or more weakly correlated affect metrics.
 
-A structural corollary: during stable operational phases, the affect dimensions are nearly orthogonal. During phase transitions — which we call phase negotiations — the dimensions couple. The coupling signature provides a detection method for transitions that does not require knowing what the stable phases are.
+Cross-architecture validation with a second autonomous system (Loom, distributed state projections without explicit affect channels) shows a valence arc invariant across 10 contexts despite dream-discovery activity ranging from net +156 to net −78 — a 3x swing producing no detectable change in the valence trajectory. The one exception (context 177, mid-context restart) confirms the arc is not a post-compaction artifact.
 
-We present a 4+N dimensional framework for measuring agent affect, an orthogonality-based method for detecting phase transitions, and multi-resolution analysis (5-minute state transitions, 30-second onset dynamics) that separates detection capacity from characterization capacity. The framework is architecture-agnostic; the empirical findings are system-specific. Cross-architecture validation with a second autonomous system (Loom, distributed state projections) is in progress.
+These results establish valence arc invariance with respect to dream-discovery activity. General creative-activity invariance requires additional measures (post length, topic diversity, pruning rate) not yet tested. The framework is architecture-agnostic; the empirical findings are system-specific.
 
 ---
 
