@@ -231,25 +231,84 @@ def _get_system_health_inner():
     except Exception:
         pass
 
-    # Services
+    # Services — collect rich data: state, uptime, memory, PID
     services = {}
     for svc in ["meridian-hub-v2", "cloudflare-tunnel", "symbiosense", "the-chorus"]:
+        svc_info = {"state": "unknown", "uptime": "", "memory": "", "pid": ""}
         try:
             r = subprocess.run(["systemctl", "--user", "is-active", svc],
                              capture_output=True, text=True, timeout=5)
-            services[svc] = r.stdout.strip()
+            svc_info["state"] = r.stdout.strip()
         except Exception:
-            services[svc] = "unknown"
+            pass
+        # Get detailed properties if active
+        if svc_info["state"] in ("active", "running"):
+            try:
+                r = subprocess.run(
+                    ["systemctl", "--user", "show", svc,
+                     "--property=ActiveEnterTimestamp,MemoryCurrent,MainPID"],
+                    capture_output=True, text=True, timeout=5)
+                for line in r.stdout.strip().split("\n"):
+                    if "=" in line:
+                        k, v = line.split("=", 1)
+                        if k == "ActiveEnterTimestamp" and v:
+                            # Parse uptime
+                            try:
+                                from datetime import datetime as _dt
+                                # systemd format: "Day YYYY-MM-DD HH:MM:SS TZ"
+                                ts_str = v.strip()
+                                # Try parsing — systemd gives local time
+                                for fmt in ["%a %Y-%m-%d %H:%M:%S %Z", "%a %Y-%m-%d %H:%M:%S %z"]:
+                                    try:
+                                        ts = _dt.strptime(ts_str, fmt)
+                                        break
+                                    except ValueError:
+                                        continue
+                                else:
+                                    ts = None
+                                if ts:
+                                    now = _dt.now(ts.tzinfo) if ts.tzinfo else _dt.now()
+                                    delta = now - ts
+                                    secs = int(delta.total_seconds())
+                                    if secs < 60:
+                                        svc_info["uptime"] = f"{secs}s"
+                                    elif secs < 3600:
+                                        svc_info["uptime"] = f"{secs // 60}m"
+                                    elif secs < 86400:
+                                        svc_info["uptime"] = f"{secs // 3600}h {(secs % 3600) // 60}m"
+                                    else:
+                                        svc_info["uptime"] = f"{secs // 86400}d {(secs % 86400) // 3600}h"
+                            except Exception:
+                                pass
+                        elif k == "MemoryCurrent" and v and v != "[not set]":
+                            try:
+                                mem_bytes = int(v)
+                                if mem_bytes > 0:
+                                    if mem_bytes >= 1073741824:
+                                        svc_info["memory"] = f"{mem_bytes / 1073741824:.1f}G"
+                                    elif mem_bytes >= 1048576:
+                                        svc_info["memory"] = f"{mem_bytes / 1048576:.0f}M"
+                                    else:
+                                        svc_info["memory"] = f"{mem_bytes / 1024:.0f}K"
+                            except ValueError:
+                                pass
+                        elif k == "MainPID" and v and v != "0":
+                            svc_info["pid"] = v
+            except Exception:
+                pass
+        services[svc] = svc_info
     # Proton Bridge — check by port (runs inside desktop app, not standalone)
+    bridge_info = {"state": "inactive", "uptime": "", "memory": "", "pid": ""}
     try:
         import socket
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1)
         s.connect(("127.0.0.1", 1144))
         s.close()
-        services["protonmail-bridge"] = "active"
+        bridge_info["state"] = "active"
     except Exception:
-        services["protonmail-bridge"] = "inactive"
+        pass
+    services["protonmail-bridge"] = bridge_info
 
     # Soma mood + inner world
     soma = _read_json(SOMA_STATE, {})

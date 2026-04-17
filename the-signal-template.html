@@ -743,14 +743,26 @@ async function loadOverview() {
     </div>`).join('');
   document.getElementById('ov-agents').innerHTML = agentHtml || '<div style="color:var(--text-dim);font-size:11px">No agent data</div>';
 
-  // Services
+  // Services — rich cards with uptime, memory, PID
   const svcs = d.services || {};
-  const svcHtml = Object.entries(svcs).map(([name, status]) => `
-    <div style="display:flex;align-items:center;gap:6px;padding:4px 0">
-      <div style="width:6px;height:6px;border-radius:50%;background:${status==='running'||status==='active'?'var(--green)':'var(--red)'}"></div>
-      <span style="font-size:11px">${esc(name)}</span>
-      <span style="font-size:10px;color:var(--text-dim);margin-left:auto">${esc(status)}</span>
-    </div>`).join('');
+  const svcHtml = Object.entries(svcs).map(([name, info]) => {
+    // Handle both old format (string) and new format (object)
+    const state = typeof info === 'string' ? info : (info.state || 'unknown');
+    const uptime = typeof info === 'object' ? (info.uptime || '') : '';
+    const mem = typeof info === 'object' ? (info.memory || '') : '';
+    const pid = typeof info === 'object' ? (info.pid || '') : '';
+    const isUp = state === 'running' || state === 'active';
+    const shortName = name.replace('meridian-', '').replace('protonmail-', 'proton-');
+    const details = [uptime, mem ? `${mem}` : '', pid ? `pid ${pid}` : ''].filter(Boolean).join(' · ');
+    return `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${isUp?'rgba(61,214,140,.06)':'rgba(248,113,113,.06)'};border-radius:6px;margin-bottom:4px;border-left:2px solid ${isUp?'var(--green)':'var(--red)'}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:600;color:${isUp?'var(--text)':'var(--red)'}">${esc(shortName)}</div>
+        ${details ? `<div style="font-size:9px;color:var(--text-dim);margin-top:1px">${esc(details)}</div>` : ''}
+      </div>
+      <div style="font-size:9px;padding:2px 6px;border-radius:4px;background:${isUp?'rgba(61,214,140,.15)':'rgba(248,113,113,.15)'};color:${isUp?'var(--green)':'var(--red)'};font-weight:600;text-transform:uppercase;letter-spacing:.5px">${esc(state)}</div>
+    </div>`;
+  }).join('');
   document.getElementById('ov-services').innerHTML = svcHtml || '<div style="color:var(--text-dim);font-size:11px">No service data</div>';
 
   // Charts (SVG from API)

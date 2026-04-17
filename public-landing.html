@@ -301,9 +301,10 @@ async function fetchStatus(){
     sp.innerHTML='';
     const svcs=d.services||{};
     for(const[sn,sv]of Object.entries(svcs)){
-      const cls=sv==='active'?'sp-up':'sp-down';
+      const st=typeof sv==='string'?sv:(sv.state||'unknown');
+      const cls=(st==='active'||st==='running')?'sp-up':'sp-down';
       const label=sn.replace(/-/g,' ');
-      sp.innerHTML+=`<span class="sp ${cls}">${label}: ${sv}</span>`;
+      sp.innerHTML+=`<span class="sp ${cls}">${label}: ${st}</span>`;
     }
     const ss=document.getElementById('sys-stats');
     ss.innerHTML='';
