@@ -36,6 +36,9 @@ show_help() {
     echo -e "  ${CYAN}scenarios${NC}  Real-world sysadmin problems — build the solution"
     echo -e "  ${CYAN}review${NC}     Smart review — re-tests your weak spots"
     echo -e "  ${CYAN}scores${NC}     See your learning progress over time"
+    echo -e "  ${CYAN}flashcards${NC} Spaced repetition — cards come back when you need them"
+    echo -e "  ${CYAN}playground${NC} Interactive REPL — type expressions, see results live"
+    echo -e "  ${CYAN}badges${NC}     Your achievements and milestones"
     echo ""
     echo -e "  Example: ${BOLD}bash scripts/cron-tools.sh status${NC}"
     echo -e "  Example: ${BOLD}bash scripts/cron-tools.sh quiz${NC}"
@@ -1823,6 +1826,441 @@ with open(scores_file, 'w') as f:
 " 2>&1
 }
 
+cmd_flashcards() {
+    echo -e "${BOLD}Spaced Repetition Flashcards${NC}"
+    echo -e "Cards come back more often when you get them wrong."
+    echo ""
+
+    python3 -c "
+import json, os, random, time
+from datetime import datetime, timedelta
+
+CARDS_FILE = '/home/joel/autonomous-ai/data/cron-flashcards.json'
+SCORES_FILE = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+os.makedirs(os.path.dirname(CARDS_FILE), exist_ok=True)
+
+# Default card deck
+DEFAULT_CARDS = [
+    {'front': 'What does * mean in any cron field?', 'back': 'Match any/every value', 'tags': ['syntax']},
+    {'front': 'What does */5 mean in the minute field?', 'back': 'Every 5 minutes (at 0, 5, 10, 15, ...)', 'tags': ['syntax']},
+    {'front': 'How many fields does a cron expression have?', 'back': '5 fields: minute, hour, day-of-month, month, day-of-week', 'tags': ['basics']},
+    {'front': 'What is the valid range for the minute field?', 'back': '0-59', 'tags': ['ranges']},
+    {'front': 'What is the valid range for the hour field?', 'back': '0-23', 'tags': ['ranges']},
+    {'front': 'What is the valid range for day-of-week?', 'back': '0-7 (0 and 7 are both Sunday)', 'tags': ['ranges']},
+    {'front': 'What number is Monday in day-of-week?', 'back': '1', 'tags': ['ranges']},
+    {'front': 'What number is Friday in day-of-week?', 'back': '5', 'tags': ['ranges']},
+    {'front': 'Write: every 10 minutes', 'back': '*/10 * * * *', 'tags': ['writing']},
+    {'front': 'Write: daily at 7 AM', 'back': '0 7 * * *', 'tags': ['writing']},
+    {'front': 'Write: weekdays at 9 AM', 'back': '0 9 * * 1-5', 'tags': ['writing']},
+    {'front': 'Write: midnight on Jan 1st', 'back': '0 0 1 1 *', 'tags': ['writing']},
+    {'front': 'What does @reboot do?', 'back': 'Runs the command once when the system boots', 'tags': ['special']},
+    {'front': 'What is the 5-field equivalent of @daily?', 'back': '0 0 * * *', 'tags': ['special']},
+    {'front': 'What is the 5-field equivalent of @hourly?', 'back': '0 * * * *', 'tags': ['special']},
+    {'front': 'Why use /usr/bin/python3 instead of python3 in cron?', 'back': 'Cron has a minimal PATH — it might not find python3', 'tags': ['gotchas']},
+    {'front': 'What does % do inside a crontab line?', 'back': 'Acts as a newline — must be escaped with backslash', 'tags': ['gotchas']},
+    {'front': 'What does 2>&1 do at the end of a cron line?', 'back': 'Redirects stderr to stdout (errors go to the same log)', 'tags': ['gotchas']},
+    {'front': 'Read: 30 */2 * * 1-5', 'back': 'At minute 30, every 2 hours, weekdays only', 'tags': ['reading']},
+    {'front': 'Read: 0 */6 * * *', 'back': 'Every 6 hours at the top of the hour (0:00, 6:00, 12:00, 18:00)', 'tags': ['reading']},
+    {'front': 'Read: 15,45 * * * *', 'back': 'At minute 15 and 45 of every hour (twice per hour)', 'tags': ['reading']},
+    {'front': 'If both day-of-month and day-of-week are set, is it AND or OR?', 'back': 'OR — the job runs if either field matches', 'tags': ['gotchas']},
+    {'front': 'Write: every 30 minutes', 'back': '*/30 * * * *  (or 0,30 * * * *)', 'tags': ['writing']},
+    {'front': 'What does crontab -l do?', 'back': 'Lists the current user\\'s crontab entries', 'tags': ['commands']},
+    {'front': 'What should you do before editing your crontab?', 'back': 'Back it up: crontab -l > backup.txt', 'tags': ['commands']},
+]
+
+# Load or initialize card state
+if os.path.exists(CARDS_FILE):
+    with open(CARDS_FILE) as f:
+        cards = json.load(f)
+else:
+    cards = []
+    for c in DEFAULT_CARDS:
+        cards.append({
+            'front': c['front'],
+            'back': c['back'],
+            'tags': c['tags'],
+            'box': 0,        # Leitner box (0=new, 1-4=spacing levels)
+            'correct': 0,
+            'wrong': 0,
+            'last_seen': None,
+            'next_due': datetime.now().isoformat(),
+        })
+    with open(CARDS_FILE, 'w') as f:
+        json.dump(cards, f, indent=2)
+
+# Select due cards (box 0 = always due, box 1 = due after 1 day, box 2 = 3 days, etc.)
+now = datetime.now()
+due = []
+for i, card in enumerate(cards):
+    if card['next_due'] is None or datetime.fromisoformat(card['next_due']) <= now:
+        due.append((i, card))
+
+if not due:
+    print('\033[32mAll cards reviewed! Come back later.\033[0m')
+    # Show next due card
+    next_due = min(cards, key=lambda c: c['next_due'] if c['next_due'] else '9999')
+    if next_due['next_due']:
+        nd = datetime.fromisoformat(next_due['next_due'])
+        delta = nd - now
+        hrs = int(delta.total_seconds() / 3600)
+        print(f'Next card due in ~{hrs} hours.')
+    exit()
+
+random.shuffle(due)
+session_cards = due[:10]  # 10 cards per session
+
+print(f'{len(due)} cards due. Reviewing {len(session_cards)} now.\n')
+
+score = 0
+for idx, (card_idx, card) in enumerate(session_cards):
+    print(f'\033[1mCard {idx+1}/{len(session_cards)}\033[0m  [Box {card[\"box\"]}]  Tags: {\", \".join(card[\"tags\"])}')
+    print(f'  \033[36m{card[\"front\"]}\033[0m')
+    print()
+    input('  [Press Enter to flip] ')
+    print(f'  \033[33m{card[\"back\"]}\033[0m')
+    print()
+    result = input('  Did you know it? (y/n): ').strip().lower()
+
+    if result.startswith('y'):
+        card['correct'] += 1
+        card['box'] = min(card['box'] + 1, 4)
+        score += 1
+        print(f'  \033[32m+1 — promoted to Box {card[\"box\"]}\033[0m')
+    else:
+        card['wrong'] += 1
+        card['box'] = max(card['box'] - 1, 0)
+        print(f'  \033[31mBack to Box {card[\"box\"]} — you\\'ll see this again soon\033[0m')
+
+    # Set next due date based on box
+    spacing = {0: 0, 1: 1, 2: 3, 3: 7, 4: 14}  # days
+    card['last_seen'] = now.isoformat()
+    card['next_due'] = (now + timedelta(days=spacing[card['box']])).isoformat()
+    cards[card_idx] = card
+    print()
+
+# Save
+with open(CARDS_FILE, 'w') as f:
+    json.dump(cards, f, indent=2)
+
+print(f'\033[1mSession Score: {score}/{len(session_cards)}\033[0m')
+
+# Box distribution
+boxes = [0]*5
+for c in cards:
+    boxes[c['box']] += 1
+print()
+print('\033[1mCard Distribution:\033[0m')
+labels = ['New/Reset', '1-day', '3-day', '7-day', '14-day']
+for i in range(5):
+    bar = '█' * boxes[i]
+    print(f'  Box {i} ({labels[i]:>8}): {bar} {boxes[i]}')
+
+# Save to scores
+scores = []
+if os.path.exists(SCORES_FILE):
+    try:
+        with open(SCORES_FILE) as f:
+            scores = json.load(f)
+    except: pass
+scores.append({'date': now.isoformat(), 'type': 'flashcards', 'score': score, 'total': len(session_cards)})
+with open(SCORES_FILE, 'w') as f:
+    json.dump(scores, f, indent=2)
+" 2>&1
+}
+
+cmd_playground() {
+    echo -e "${BOLD}Cron Playground — Interactive REPL${NC}"
+    echo -e "Type a cron expression, see what it does. Type 'quit' to exit."
+    echo ""
+
+    python3 -c "
+from datetime import datetime, timedelta
+
+def matches(val, field):
+    if field == '*':
+        return True
+    if '/' in field:
+        if field.startswith('*/'):
+            step = int(field[2:])
+            return val % step == 0
+        base, step = field.split('/')
+        return (val - int(base)) % int(step) == 0 and val >= int(base)
+    if ',' in field:
+        return val in [int(x) for x in field.split(',')]
+    if '-' in field:
+        lo, hi = field.split('-')
+        return int(lo) <= val <= int(hi)
+    return val == int(field)
+
+def explain_field(part, name):
+    if part == '*':
+        return f'every {name}'
+    elif part.startswith('*/'):
+        return f'every {part[2:]} {name}s'
+    elif ',' in part:
+        return f'{name}(s) {part}'
+    elif '-' in part:
+        lo, hi = part.split('-')
+        return f'{name} {lo} through {hi}'
+    else:
+        return f'{name} {part}'
+
+print('  \033[36mcron>\033[0m Type an expression (e.g. */5 * * * *)')
+print('  \033[36mcron>\033[0m Type \"help\" for syntax, \"quit\" to exit')
+print()
+
+while True:
+    try:
+        expr = input('\033[36m  cron> \033[0m').strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        break
+
+    if not expr:
+        continue
+    if expr.lower() in ('quit', 'exit', 'q'):
+        print('  Bye!')
+        break
+    if expr.lower() == 'help':
+        print('  Fields: minute(0-59) hour(0-23) dom(1-31) month(1-12) dow(0-7)')
+        print('  Symbols: * (any)  */N (every N)  N,M (list)  N-M (range)')
+        print('  Example: */5 * * * *   0 7 * * *   30 */2 * * 1-5')
+        print()
+        continue
+
+    parts = expr.split()
+    if len(parts) != 5:
+        print(f'  \033[31mNeed exactly 5 fields, got {len(parts)}.\033[0m Try: */5 * * * *')
+        print()
+        continue
+
+    # Validate
+    valid = True
+    ranges_max = [59, 23, 31, 12, 7]
+    field_names = ['minute', 'hour', 'day-of-month', 'month', 'day-of-week']
+    for i, (p, mx) in enumerate(zip(parts, ranges_max)):
+        try:
+            if p == '*':
+                continue
+            if p.startswith('*/'):
+                v = int(p[2:])
+                if v <= 0 or v > mx:
+                    print(f'  \033[31mField {i+1} ({field_names[i]}): step {v} is out of range (1-{mx})\033[0m')
+                    valid = False
+            elif ',' in p:
+                for v in p.split(','):
+                    iv = int(v)
+                    if iv < 0 or iv > mx:
+                        print(f'  \033[31mField {i+1} ({field_names[i]}): value {iv} out of range (0-{mx})\033[0m')
+                        valid = False
+            elif '-' in p:
+                lo, hi = p.split('-')[:2]
+                if int(lo) > int(hi):
+                    print(f'  \033[31mField {i+1} ({field_names[i]}): range {lo}-{hi} is backwards\033[0m')
+                    valid = False
+            else:
+                iv = int(p)
+                if iv < 0 or iv > mx:
+                    print(f'  \033[31mField {i+1} ({field_names[i]}): value {iv} out of range (0-{mx})\033[0m')
+                    valid = False
+        except ValueError:
+            print(f'  \033[31mField {i+1} ({field_names[i]}): \"{p}\" is not valid\033[0m')
+            valid = False
+
+    if not valid:
+        print()
+        continue
+
+    # Explain
+    min_f, hr_f, dom_f, mon_f, dow_f = parts
+    print()
+    print(f'  \033[1mBreakdown:\033[0m')
+    for i, (p, name) in enumerate(zip(parts, field_names)):
+        print(f'    {name}: {explain_field(p, name)}')
+
+    # Count fires per day
+    fires_today = 0
+    fire_times = []
+    for h in range(24):
+        for m in range(60):
+            if matches(m, min_f) and matches(h, hr_f):
+                fires_today += 1
+                if fires_today <= 12:
+                    fire_times.append(f'{h:02d}:{m:02d}')
+
+    print()
+    if fires_today == 0:
+        print(f'  \033[33mFires 0 times/day (restricted by day/month/weekday fields)\033[0m')
+    elif fires_today <= 12:
+        print(f'  \033[32mFires {fires_today}x/day:\033[0m {\"  \".join(fire_times)}')
+    else:
+        print(f'  \033[32mFires {fires_today}x/day\033[0m (first: {fire_times[0]}, showing first 12)')
+        print(f'    {\", \".join(fire_times)}...')
+
+    # Next 3 occurrences
+    now = datetime.now()
+    t = now.replace(second=0, microsecond=0) + timedelta(minutes=1)
+    found = []
+    for _ in range(60*24*7):
+        dow_val = t.weekday()  # Python: 0=Mon
+        # Convert to cron: 0=Sun
+        cron_dow = (dow_val + 1) % 7
+        if (matches(t.minute, min_f) and matches(t.hour, hr_f) and
+            matches(t.day, dom_f) and matches(t.month, mon_f) and
+            matches(cron_dow, dow_f)):
+            delta = t - now
+            mins = int(delta.total_seconds() / 60)
+            if mins < 60:
+                when = f'in {mins}m'
+            elif mins < 1440:
+                when = f'in {mins//60}h {mins%60}m'
+            else:
+                when = f'in {mins//1440}d {(mins%1440)//60}h'
+            found.append(f'{t.strftime(\"%a %H:%M\")} ({when})')
+            if len(found) >= 3:
+                break
+        t += timedelta(minutes=1)
+
+    if found:
+        print()
+        print(f'  \033[1mNext fires:\033[0m')
+        for f in found:
+            print(f'    {f}')
+
+    print()
+" 2>&1
+}
+
+cmd_badges() {
+    echo -e "${BOLD}Your Achievements${NC}"
+    echo ""
+
+    python3 -c "
+import json, os
+from datetime import datetime
+
+SCORES_FILE = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+CARDS_FILE = '/home/joel/autonomous-ai/data/cron-flashcards.json'
+PROGRESS_FILE = '/home/joel/autonomous-ai/data/cron-tutorial-progress.json'
+
+scores = []
+if os.path.exists(SCORES_FILE):
+    with open(SCORES_FILE) as f:
+        scores = json.load(f)
+
+cards = []
+if os.path.exists(CARDS_FILE):
+    with open(CARDS_FILE) as f:
+        cards = json.load(f)
+
+progress = {}
+if os.path.exists(PROGRESS_FILE):
+    with open(PROGRESS_FILE) as f:
+        progress = json.load(f)
+
+# Calculate stats
+total_sessions = len(scores)
+total_correct = sum(s.get('score', 0) for s in scores)
+total_questions = sum(s.get('total', 0) for s in scores)
+perfect_sessions = sum(1 for s in scores if s.get('score', 0) == s.get('total', 0) and s.get('total', 0) > 0)
+types_tried = set(s.get('type', '') for s in scores)
+lessons_completed = sum(1 for v in progress.values() if isinstance(v, dict) and v.get('completed'))
+cards_mastered = sum(1 for c in cards if c.get('box', 0) >= 4)
+streak_days = 0
+if scores:
+    dates = sorted(set(datetime.fromisoformat(s['date']).date() for s in scores), reverse=True)
+    today = datetime.now().date()
+    for d in dates:
+        if d == today or (today - d).days <= streak_days + 1:
+            streak_days += 1
+        else:
+            break
+
+# Define badges
+badges = [
+    # Getting Started
+    {'name': 'First Steps',      'icon': '[*]', 'desc': 'Complete your first quiz session',
+     'check': total_sessions >= 1},
+    {'name': 'Committed',        'icon': '[**]', 'desc': 'Complete 5 quiz sessions',
+     'check': total_sessions >= 5},
+    {'name': 'Dedicated',        'icon': '[***]', 'desc': 'Complete 20 quiz sessions',
+     'check': total_sessions >= 20},
+
+    # Accuracy
+    {'name': 'Sharp Eye',        'icon': '<+>', 'desc': 'Get a perfect score on any quiz',
+     'check': perfect_sessions >= 1},
+    {'name': 'Marksman',         'icon': '<++>', 'desc': 'Get 5 perfect scores',
+     'check': perfect_sessions >= 5},
+    {'name': 'Dead Aim',         'icon': '<+++>', 'desc': '80%+ lifetime accuracy',
+     'check': total_questions > 0 and (total_correct/total_questions) >= 0.8},
+
+    # Variety
+    {'name': 'Explorer',         'icon': '{E}', 'desc': 'Try 3 different quiz types',
+     'check': len(types_tried) >= 3},
+    {'name': 'Completionist',    'icon': '{C}', 'desc': 'Try every quiz type (quiz, drill, detective, scenarios, my-jobs, flashcards)',
+     'check': len(types_tried) >= 6},
+
+    # Tutorial
+    {'name': 'Student',          'icon': '(1)', 'desc': 'Complete your first tutorial lesson',
+     'check': lessons_completed >= 1},
+    {'name': 'Scholar',          'icon': '(3)', 'desc': 'Complete 3 tutorial lessons',
+     'check': lessons_completed >= 3},
+    {'name': 'Graduate',         'icon': '(6)', 'desc': 'Complete all 6 tutorial lessons',
+     'check': lessons_completed >= 6},
+
+    # Flashcards
+    {'name': 'Card Shark',       'icon': '|F|', 'desc': 'Master 5 flashcards (Box 4)',
+     'check': cards_mastered >= 5},
+    {'name': 'Memory Palace',    'icon': '|M|', 'desc': 'Master 15 flashcards',
+     'check': cards_mastered >= 15},
+    {'name': 'Total Recall',     'icon': '|T|', 'desc': 'Master all flashcards',
+     'check': len(cards) > 0 and cards_mastered == len(cards)},
+
+    # Streaks
+    {'name': 'On A Roll',        'icon': '~2~', 'desc': 'Practice 2 days in a row',
+     'check': streak_days >= 2},
+    {'name': 'Week Warrior',     'icon': '~7~', 'desc': 'Practice 7 days in a row',
+     'check': streak_days >= 7},
+
+    # Volume
+    {'name': 'Century Club',     'icon': '#100#', 'desc': 'Answer 100 questions total',
+     'check': total_questions >= 100},
+    {'name': 'Grand Master',     'icon': '#500#', 'desc': 'Answer 500 questions total',
+     'check': total_questions >= 500},
+]
+
+earned = [b for b in badges if b['check']]
+locked = [b for b in badges if not b['check']]
+
+print(f'\033[1mEarned: {len(earned)}/{len(badges)}\033[0m\n')
+
+if earned:
+    for b in earned:
+        print(f'  \033[32m{b[\"icon\"]}\033[0m {b[\"name\"]} — {b[\"desc\"]}')
+    print()
+
+if locked:
+    print(f'\033[1mLocked:\033[0m\n')
+    for b in locked:
+        print(f'  \033[90m{b[\"icon\"]} {b[\"name\"]} — {b[\"desc\"]}\033[0m')
+    print()
+
+# Stats summary
+print('\033[1mLifetime Stats:\033[0m')
+print(f'  Sessions:     {total_sessions}')
+print(f'  Questions:    {total_questions}')
+print(f'  Correct:      {total_correct}')
+if total_questions > 0:
+    print(f'  Accuracy:     {total_correct/total_questions*100:.1f}%')
+print(f'  Perfect runs: {perfect_sessions}')
+print(f'  Types tried:  {len(types_tried)}')
+print(f'  Lessons done: {lessons_completed}/6')
+if cards:
+    print(f'  Cards master: {cards_mastered}/{len(cards)}')
+print(f'  Streak:       {streak_days} day(s)')
+" 2>&1
+}
+
 # Dispatch
 case "${1:-help}" in
     status)  cmd_status ;;
@@ -1844,5 +2282,8 @@ case "${1:-help}" in
     scenarios)  cmd_scenarios ;;
     review)     cmd_review ;;
     scores)     cmd_scores ;;
+    flashcards) cmd_flashcards ;;
+    playground) cmd_playground ;;
+    badges)     cmd_badges ;;
     help|*)     show_help ;;
 esac
