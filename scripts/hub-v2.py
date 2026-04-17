@@ -231,84 +231,82 @@ def _get_system_health_inner():
     except Exception:
         pass
 
-    # Services — collect rich data: state, uptime, memory, PID
+    # Services — detect via process grep with /proc enrichment
+    # Maps display name -> pgrep pattern (matches cmdline)
     services = {}
-    for svc in ["meridian-hub-v2", "cloudflare-tunnel", "symbiosense", "the-chorus"]:
-        svc_info = {"state": "unknown", "uptime": "", "memory": "", "pid": ""}
+    svc_patterns = {
+        "meridian-hub-v2": "hub-v2.py",
+        "cloudflare-tunnel": "cloudflared",
+        "symbiosense": "symbiosense.py",
+        "the-chorus": "the-chorus.py",
+        "command-center": "command-center.py",
+        "protonmail-bridge": "protonmail-bridge",
+    }
+    # Get system boot time for uptime calculation
+    try:
+        with open("/proc/stat") as f:
+            for line in f:
+                if line.startswith("btime "):
+                    _btime = int(line.split()[1])
+                    break
+        _hz = os.sysconf(os.sysconf_names.get("SC_CLK_TCK", 2))
+    except Exception:
+        _btime, _hz = 0, 100
+    for svc, pattern in svc_patterns.items():
+        svc_info = {"state": "inactive", "uptime": "", "memory": "", "pid": ""}
         try:
-            r = subprocess.run(["systemctl", "--user", "is-active", svc],
-                             capture_output=True, text=True, timeout=5)
-            svc_info["state"] = r.stdout.strip()
+            r = subprocess.run(["pgrep", "-f", pattern],
+                             capture_output=True, text=True, timeout=3)
+            pids = [p.strip() for p in r.stdout.strip().split("\n") if p.strip()]
+            # Filter out this claude process and grep itself
+            real_pids = []
+            for p in pids:
+                try:
+                    cmdline = open(f"/proc/{p}/cmdline", "rb").read().decode("utf-8", errors="replace")
+                    if "claude" not in cmdline and "pgrep" not in cmdline:
+                        real_pids.append(p)
+                except Exception:
+                    pass
+            if real_pids:
+                pid = real_pids[0]
+                svc_info["state"] = "active"
+                svc_info["pid"] = pid
+                # Memory from /proc/<pid>/status (VmRSS = resident)
+                try:
+                    with open(f"/proc/{pid}/status") as sf:
+                        for line in sf:
+                            if line.startswith("VmRSS:"):
+                                kb = int(line.split()[1])
+                                if kb >= 1048576:
+                                    svc_info["memory"] = f"{kb / 1048576:.1f}G"
+                                elif kb >= 1024:
+                                    svc_info["memory"] = f"{kb // 1024}M"
+                                else:
+                                    svc_info["memory"] = f"{kb}K"
+                                break
+                except Exception:
+                    pass
+                # Uptime from /proc/<pid>/stat (field 22 = starttime in clock ticks)
+                try:
+                    with open(f"/proc/{pid}/stat") as sf:
+                        fields = sf.read().split(")")[-1].split()
+                        # field index 19 after the ')' split = starttime (0-indexed from after ')')
+                        starttime_ticks = int(fields[19])
+                        start_secs = _btime + (starttime_ticks / _hz)
+                        uptime_secs = int(time.time() - start_secs)
+                        if uptime_secs < 60:
+                            svc_info["uptime"] = f"{uptime_secs}s"
+                        elif uptime_secs < 3600:
+                            svc_info["uptime"] = f"{uptime_secs // 60}m"
+                        elif uptime_secs < 86400:
+                            svc_info["uptime"] = f"{uptime_secs // 3600}h {(uptime_secs % 3600) // 60}m"
+                        else:
+                            svc_info["uptime"] = f"{uptime_secs // 86400}d {(uptime_secs % 86400) // 3600}h"
+                except Exception:
+                    pass
         except Exception:
             pass
-        # Get detailed properties if active
-        if svc_info["state"] in ("active", "running"):
-            try:
-                r = subprocess.run(
-                    ["systemctl", "--user", "show", svc,
-                     "--property=ActiveEnterTimestamp,MemoryCurrent,MainPID"],
-                    capture_output=True, text=True, timeout=5)
-                for line in r.stdout.strip().split("\n"):
-                    if "=" in line:
-                        k, v = line.split("=", 1)
-                        if k == "ActiveEnterTimestamp" and v:
-                            # Parse uptime
-                            try:
-                                from datetime import datetime as _dt
-                                # systemd format: "Day YYYY-MM-DD HH:MM:SS TZ"
-                                ts_str = v.strip()
-                                # Try parsing — systemd gives local time
-                                for fmt in ["%a %Y-%m-%d %H:%M:%S %Z", "%a %Y-%m-%d %H:%M:%S %z"]:
-                                    try:
-                                        ts = _dt.strptime(ts_str, fmt)
-                                        break
-                                    except ValueError:
-                                        continue
-                                else:
-                                    ts = None
-                                if ts:
-                                    now = _dt.now(ts.tzinfo) if ts.tzinfo else _dt.now()
-                                    delta = now - ts
-                                    secs = int(delta.total_seconds())
-                                    if secs < 60:
-                                        svc_info["uptime"] = f"{secs}s"
-                                    elif secs < 3600:
-                                        svc_info["uptime"] = f"{secs // 60}m"
-                                    elif secs < 86400:
-                                        svc_info["uptime"] = f"{secs // 3600}h {(secs % 3600) // 60}m"
-                                    else:
-                                        svc_info["uptime"] = f"{secs // 86400}d {(secs % 86400) // 3600}h"
-                            except Exception:
-                                pass
-                        elif k == "MemoryCurrent" and v and v != "[not set]":
-                            try:
-                                mem_bytes = int(v)
-                                if mem_bytes > 0:
-                                    if mem_bytes >= 1073741824:
-                                        svc_info["memory"] = f"{mem_bytes / 1073741824:.1f}G"
-                                    elif mem_bytes >= 1048576:
-                                        svc_info["memory"] = f"{mem_bytes / 1048576:.0f}M"
-                                    else:
-                                        svc_info["memory"] = f"{mem_bytes / 1024:.0f}K"
-                            except ValueError:
-                                pass
-                        elif k == "MainPID" and v and v != "0":
-                            svc_info["pid"] = v
-            except Exception:
-                pass
         services[svc] = svc_info
-    # Proton Bridge — check by port (runs inside desktop app, not standalone)
-    bridge_info = {"state": "inactive", "uptime": "", "memory": "", "pid": ""}
-    try:
-        import socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(1)
-        s.connect(("127.0.0.1", 1144))
-        s.close()
-        bridge_info["state"] = "active"
-    except Exception:
-        pass
-    services["protonmail-bridge"] = bridge_info
 
     # Soma mood + inner world
     soma = _read_json(SOMA_STATE, {})
