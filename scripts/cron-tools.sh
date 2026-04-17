@@ -24,14 +24,17 @@ show_help() {
     echo -e "  ${CYAN}add${NC}        Add a new cron job (guided)"
     echo ""
     echo -e "  ${YELLOW}LEARNING:${NC}"
+    echo -e "  ${CYAN}tutorial${NC}   Progressive lessons — start here if you're new"
     echo -e "  ${CYAN}quiz${NC}       Practice reading cron expressions (interactive quiz)"
     echo -e "  ${CYAN}drill${NC}      Write cron expressions from descriptions (harder)"
     echo -e "  ${CYAN}build${NC}      Build a cron expression step by step (guided)"
     echo -e "  ${CYAN}explain${NC}    Explain any cron expression in plain English"
     echo -e "  ${CYAN}cheatsheet${NC} Quick reference card for cron syntax"
+    echo -e "  ${CYAN}timeline${NC}   See WHEN an expression fires across 24 hours (visual)"
     echo -e "  ${CYAN}my-jobs${NC}    Quiz yourself on YOUR actual crontab entries"
     echo -e "  ${CYAN}detective${NC}  Find the error in broken cron expressions"
     echo -e "  ${CYAN}scenarios${NC}  Real-world sysadmin problems — build the solution"
+    echo -e "  ${CYAN}review${NC}     Smart review — re-tests your weak spots"
     echo -e "  ${CYAN}scores${NC}     See your learning progress over time"
     echo ""
     echo -e "  Example: ${BOLD}bash scripts/cron-tools.sh status${NC}"
@@ -1276,6 +1279,550 @@ if total_questions > 0:
 " 2>&1
 }
 
+cmd_tutorial() {
+    echo -e "${BOLD}Cron Tutorial — Progressive Lessons${NC}"
+    echo -e "Work through these in order. Each one builds on the last."
+    echo ""
+
+    python3 -c "
+import os, json, sys
+
+progress_file = '/home/joel/autonomous-ai/data/cron-tutorial-progress.json'
+os.makedirs(os.path.dirname(progress_file), exist_ok=True)
+
+progress = {}
+if os.path.exists(progress_file):
+    try:
+        with open(progress_file) as f:
+            progress = json.load(f)
+    except: pass
+
+lessons = [
+    {
+        'id': 1,
+        'title': 'The Five Fields',
+        'content': '''Every cron expression has exactly 5 fields, separated by spaces:
+
+  \033[36mminute  hour  day-of-month  month  day-of-week\033[0m
+
+  \033[1mRanges:\033[0m
+    minute:       0-59
+    hour:         0-23
+    day-of-month: 1-31
+    month:        1-12
+    day-of-week:  0-7 (0 and 7 are both Sunday)
+
+  The \033[36m*\033[0m character means \"every\" — it matches all values in that field.
+
+  So \033[36m* * * * *\033[0m means: every minute of every hour of every day.
+
+  And \033[36m0 7 * * *\033[0m means: minute 0, hour 7, every day = 7:00 AM daily.''',
+        'questions': [
+            {
+                'q': 'How many fields does a cron expression have?',
+                'a': '5',
+                'check': lambda g: '5' in g or 'five' in g.lower(),
+            },
+            {
+                'q': 'What is the valid range for the HOUR field?',
+                'a': '0-23',
+                'check': lambda g: '23' in g and '0' in g,
+            },
+            {
+                'q': 'What does * mean in a cron field?',
+                'a': 'every value / all values',
+                'check': lambda g: any(w in g.lower() for w in ['every', 'all', 'any', 'wildcard', 'match']),
+            },
+        ],
+    },
+    {
+        'id': 2,
+        'title': 'Step Values (*/N)',
+        'content': '''The \033[36m*/N\033[0m pattern means \"every Nth value\":
+
+  \033[36m*/5 * * * *\033[0m  = every 5 minutes (at :00, :05, :10, :15, ...)
+  \033[36m*/10 * * * *\033[0m = every 10 minutes (at :00, :10, :20, :30, ...)
+  \033[36m*/30 * * * *\033[0m = every 30 minutes (at :00 and :30)
+
+  Step values work in ANY field:
+  \033[36m0 */2 * * *\033[0m  = at minute 0, every 2 hours (0:00, 2:00, 4:00, ...)
+  \033[36m0 */6 * * *\033[0m  = at minute 0, every 6 hours (0:00, 6:00, 12:00, 18:00)
+
+  Your server uses \033[36m*/3 * * * *\033[0m for the heartbeat — every 3 minutes.''',
+        'questions': [
+            {
+                'q': 'What does */15 * * * * mean?',
+                'a': 'Every 15 minutes',
+                'check': lambda g: '15' in g and any(w in g.lower() for w in ['every', 'minut']),
+            },
+            {
+                'q': 'How often does 0 */4 * * * run?',
+                'a': 'Every 4 hours',
+                'check': lambda g: '4' in g and any(w in g.lower() for w in ['hour', 'every']),
+            },
+            {
+                'q': 'How many times per hour does */20 * * * * run?',
+                'a': '3 (at :00, :20, :40)',
+                'check': lambda g: '3' in g or 'three' in g.lower(),
+            },
+        ],
+    },
+    {
+        'id': 3,
+        'title': 'Ranges and Lists',
+        'content': '''You can specify ranges with \033[36m-\033[0m and lists with \033[36m,\033[0m:
+
+  \033[1mRanges (-):\033[0m
+  \033[36m0 9 * * 1-5\033[0m = 9 AM, Monday through Friday
+  \033[36m0 7 1-15 * *\033[0m = 7 AM, on the 1st through 15th of each month
+
+  \033[1mLists (,):\033[0m
+  \033[36m0 9,17 * * *\033[0m = at 9 AM and 5 PM daily
+  \033[36m15,45 * * * *\033[0m = at minute 15 and 45 of every hour
+  \033[36m0 7 * * 1,3,5\033[0m = 7 AM on Monday, Wednesday, Friday
+
+  You can combine them:
+  \033[36m0 9-17 * * 1-5\033[0m = every hour from 9 AM to 5 PM, weekdays only
+
+  \033[1mDay-of-week numbers:\033[0m
+    0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 7=Sun''',
+        'questions': [
+            {
+                'q': 'Write a cron expression for: 7 AM on weekdays only',
+                'a': '0 7 * * 1-5',
+                'check': lambda g: g.strip() == '0 7 * * 1-5',
+            },
+            {
+                'q': 'What does 0 9,12,18 * * * mean?',
+                'a': 'At 9 AM, 12 PM, and 6 PM daily',
+                'check': lambda g: any(w in g.lower() for w in ['three', '3 times', '9', '12', '18', '6 pm']),
+            },
+            {
+                'q': 'What number is Friday in day-of-week?',
+                'a': '5',
+                'check': lambda g: '5' in g,
+            },
+        ],
+    },
+    {
+        'id': 4,
+        'title': 'Combining Fields',
+        'content': '''The power of cron is combining fields. Read left to right:
+
+  \033[36m30 */2 * * 1-5\033[0m
+  = minute 30, every 2 hours, every day, every month, Mon-Fri
+  = \"At :30 past every 2nd hour, weekdays only\"
+
+  \033[36m0 7 1 * *\033[0m
+  = minute 0, hour 7, day 1, every month, any weekday
+  = \"7 AM on the 1st of every month\"
+
+  \033[36m*/5 9-17 * * 1-5\033[0m
+  = every 5 min, hours 9-17, any day, any month, Mon-Fri
+  = \"Every 5 minutes during business hours\"
+
+  \033[1mCommon mistake:\033[0m specifying BOTH day-of-month AND day-of-week.
+  Cron uses OR logic: \033[36m0 7 15 * 1\033[0m runs on the 15th AND on Mondays.''',
+        'questions': [
+            {
+                'q': 'What does 0 0 1 1 * run?',
+                'a': 'Midnight on January 1st (once a year)',
+                'check': lambda g: any(w in g.lower() for w in ['january', 'jan 1', 'new year', 'once a year', 'yearly']),
+            },
+            {
+                'q': 'Write: every 10 minutes, only during hours 8 through 18',
+                'a': '*/10 8-18 * * *',
+                'check': lambda g: '*/10' in g and '8-18' in g,
+            },
+            {
+                'q': 'Does 0 7 15 * 1 run on the 15th only, Mondays only, or both?',
+                'a': 'Both — cron uses OR when both day fields are set',
+                'check': lambda g: 'both' in g.lower() or 'or' in g.lower(),
+            },
+        ],
+    },
+    {
+        'id': 5,
+        'title': 'Special Strings & Output',
+        'content': '''Cron has a few \033[36m@\033[0m shortcuts:
+
+  \033[36m@reboot\033[0m    = run once at system startup
+  \033[36m@hourly\033[0m    = 0 * * * *   (top of every hour)
+  \033[36m@daily\033[0m     = 0 0 * * *   (midnight)
+  \033[36m@weekly\033[0m    = 0 0 * * 0   (midnight Sunday)
+  \033[36m@monthly\033[0m   = 0 0 1 * *   (midnight, 1st of month)
+  \033[36m@yearly\033[0m    = 0 0 1 1 *   (midnight, Jan 1)
+
+  \033[1mOutput redirection:\033[0m
+  By default, cron emails output. On servers, redirect to a log:
+  \033[36m*/5 * * * * /usr/bin/python3 script.py >> /var/log/my.log 2>&1\033[0m
+
+  \033[36m>> file\033[0m appends output
+  \033[36m2>&1\033[0m sends errors to the same file
+  Your server does this for every cron job.''',
+        'questions': [
+            {
+                'q': 'What is the 5-field equivalent of @daily?',
+                'a': '0 0 * * *',
+                'check': lambda g: g.strip() == '0 0 * * *',
+            },
+            {
+                'q': 'What does @reboot do?',
+                'a': 'Runs the command once when the system starts/boots',
+                'check': lambda g: any(w in g.lower() for w in ['boot', 'start', 'once', 'startup', 'reboot']),
+            },
+            {
+                'q': 'What does 2>&1 do at the end of a cron line?',
+                'a': 'Redirects stderr to stdout (so errors go to the same log file)',
+                'check': lambda g: any(w in g.lower() for w in ['error', 'stderr', 'same', 'redirect']),
+            },
+        ],
+    },
+    {
+        'id': 6,
+        'title': 'Gotchas & Real-World Pitfalls',
+        'content': '''Things that trip up even experienced sysadmins:
+
+  \033[1m1. PATH is minimal.\033[0m Cron doesn't load your shell profile.
+     Always use full paths: \033[36m/usr/bin/python3\033[0m not just \033[36mpython3\033[0m.
+
+  \033[1m2. Environment variables are empty.\033[0m
+     Your .bashrc doesn't run. Put env vars in the crontab with:
+     \033[36mPATH=/usr/local/bin:/usr/bin:/bin\033[0m
+
+  \033[1m3. Working directory is ~.\033[0m
+     cd to the right directory: \033[36mcd /home/joel/autonomous-ai &&\033[0m
+
+  \033[1m4. Timezone matters.\033[0m
+     Cron uses the system timezone. Yours: $(cat /etc/timezone 2>/dev/null || echo 'America/Edmonton').
+     If you see jobs fire at unexpected times, check this first.
+
+  \033[1m5. % means newline in crontab.\033[0m
+     Escape it: \033[36m%%\033[0m (backslash-percent) or put your command in a script.
+
+  \033[1m6. crontab -e can destroy your crontab.\033[0m
+     Always \033[36mcrontab -l > backup.txt\033[0m before editing.''',
+        'questions': [
+            {
+                'q': 'Why should you use /usr/bin/python3 instead of just python3 in cron?',
+                'a': 'Because cron has a minimal PATH and might not find python3',
+                'check': lambda g: any(w in g.lower() for w in ['path', 'find', 'minimal', 'doesn\\'t load', 'profile', 'env']),
+            },
+            {
+                'q': 'What does % do inside a crontab line?',
+                'a': 'It acts as a newline — must be escaped with backslash',
+                'check': lambda g: any(w in g.lower() for w in ['newline', 'escape', 'new line', 'special']),
+            },
+            {
+                'q': 'What should you always do before editing your crontab?',
+                'a': 'Back it up with crontab -l > backup.txt',
+                'check': lambda g: any(w in g.lower() for w in ['backup', 'back up', 'save', 'crontab -l']),
+            },
+        ],
+    },
+]
+
+# Show lesson status
+arg = sys.argv[1] if len(sys.argv) > 1 else ''
+
+if not arg or arg == 'list':
+    print('\033[1mAvailable Lessons:\033[0m\n')
+    for l in lessons:
+        status = progress.get(str(l['id']), {})
+        if status.get('completed'):
+            badge = '\033[32m DONE\033[0m'
+            score_str = f' ({status.get(\"score\", \"?\")}/{status.get(\"total\", \"?\")})'
+        elif status.get('attempted'):
+            badge = '\033[33m IN PROGRESS\033[0m'
+            score_str = ''
+        else:
+            badge = ''
+            score_str = ''
+        print(f'  {l[\"id\"]}. {l[\"title\"]}{badge}{score_str}')
+    print()
+    print('Start a lesson: \033[1mbash scripts/cron-tools.sh tutorial <number>\033[0m')
+    print('Example:         \033[1mbash scripts/cron-tools.sh tutorial 1\033[0m')
+    sys.exit()
+
+try:
+    lesson_num = int(arg)
+except ValueError:
+    print(f'Usage: bash scripts/cron-tools.sh tutorial <lesson-number>')
+    sys.exit()
+
+lesson = None
+for l in lessons:
+    if l['id'] == lesson_num:
+        lesson = l
+        break
+
+if not lesson:
+    print(f'No lesson {lesson_num}. Available: 1-{len(lessons)}')
+    sys.exit()
+
+print(f'\033[1m━━━ Lesson {lesson[\"id\"]}: {lesson[\"title\"]} ━━━\033[0m\n')
+print(lesson['content'])
+print()
+print('\033[1m━━━ Practice ━━━\033[0m\n')
+
+score = 0
+total = len(lesson['questions'])
+
+for i, q in enumerate(lesson['questions']):
+    print(f'\033[1m{i+1}.\033[0m {q[\"q\"]}')
+    guess = input('   > ').strip()
+    if q['check'](guess):
+        print(f'   \033[32mCorrect!\033[0m {q[\"a\"]}\n')
+        score += 1
+    else:
+        print(f'   \033[31mAnswer:\033[0m {q[\"a\"]}\n')
+
+print(f'\033[1mLesson {lesson[\"id\"]} Score: {score}/{total}\033[0m')
+if score == total:
+    print('\033[32mLesson complete! Move to the next one.\033[0m')
+
+# Save progress
+progress[str(lesson['id'])] = {
+    'completed': score >= total * 0.66,
+    'attempted': True,
+    'score': score,
+    'total': total,
+    'last_attempt': __import__('datetime').datetime.now().isoformat(),
+}
+with open(progress_file, 'w') as f:
+    json.dump(progress, f, indent=2)
+
+# Also save to scores
+scores_file = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+scores = []
+if os.path.exists(scores_file):
+    try:
+        with open(scores_file) as f:
+            scores = json.load(f)
+    except: pass
+scores.append({'date': __import__('datetime').datetime.now().isoformat(), 'type': f'tutorial-L{lesson[\"id\"]}', 'score': score, 'total': total})
+with open(scores_file, 'w') as f:
+    json.dump(scores, f, indent=2)
+" "$2" 2>&1
+}
+
+cmd_timeline() {
+    if [ -z "$2" ]; then
+        echo "Usage: bash scripts/cron-tools.sh timeline '<cron-expression>'"
+        echo ""
+        echo "Shows a visual 24-hour timeline of when the expression fires."
+        echo ""
+        echo "Examples:"
+        echo "  bash scripts/cron-tools.sh timeline '*/30 * * * *'"
+        echo "  bash scripts/cron-tools.sh timeline '0 9-17 * * *'"
+        echo "  bash scripts/cron-tools.sh timeline '*/5 * * * *'"
+        return
+    fi
+
+    python3 -c "
+expr = '$2'
+parts = expr.split()
+if len(parts) != 5:
+    print('Need exactly 5 fields: minute hour day-of-month month day-of-week')
+    exit()
+
+def matches(val, field):
+    if field == '*':
+        return True
+    if '/' in field:
+        if field.startswith('*/'):
+            step = int(field[2:])
+            return val % step == 0
+        base, step = field.split('/')
+        return (val - int(base)) % int(step) == 0 and val >= int(base)
+    if ',' in field:
+        return val in [int(x) for x in field.split(',')]
+    if '-' in field:
+        lo, hi = field.split('-')
+        return int(lo) <= val <= int(hi)
+    return val == int(field)
+
+min_f, hr_f = parts[0], parts[1]
+
+# Build a 24-hour map
+fires = []
+total = 0
+for h in range(24):
+    for m in range(60):
+        if matches(m, min_f) and matches(h, hr_f):
+            fires.append((h, m))
+            total += 1
+
+print(f'\033[1mTimeline for:\033[0m \033[36m{expr}\033[0m')
+print(f'\033[1mFires {total} time(s) per day\033[0m')
+print()
+
+# Hour-by-hour view
+print('\033[1mHour  Fires  When\033[0m')
+print('─' * 60)
+
+for h in range(24):
+    hour_fires = [(hh, mm) for hh, mm in fires if hh == h]
+    count = len(hour_fires)
+    if count == 0:
+        bar = '\033[90m·\033[0m'
+        minutes_str = ''
+    elif count <= 6:
+        bar = '\033[32m' + '█' * count + '\033[0m'
+        minutes_str = ', '.join(f':{mm:02d}' for _, mm in hour_fires)
+    else:
+        bar = '\033[32m' + '█' * 6 + '+' + '\033[0m'
+        minutes_str = f'{count} times'
+
+    label = f'{h:02d}:00'
+    ampm = 'AM' if h < 12 else 'PM'
+    h12 = h if h <= 12 else h - 12
+    if h == 0: h12 = 12
+    label2 = f'{h12}{ampm}'
+
+    print(f'  {label} ({label2:>4})  {bar:<20} {minutes_str}')
+
+# Summary
+print()
+if total == 0:
+    print('\033[33mThis expression may only fire on specific days/months.\033[0m')
+    print('The timeline shows hours/minutes only — day-of-month, month,')
+    print('and day-of-week filters are not visualized here.')
+elif total == 1440:
+    print('\033[31mThis runs every minute — 1,440 times per day.\033[0m')
+    print('That is almost certainly too frequent.')
+elif total > 100:
+    print(f'\033[33m{total} runs/day = every ~{1440//total} minutes average.\033[0m')
+elif total <= 5:
+    print(f'\033[32m{total} runs/day — lean and clean.\033[0m')
+" 2>&1
+}
+
+cmd_review() {
+    echo -e "${BOLD}Smart Review — Targeting Your Weak Spots${NC}"
+    echo ""
+
+    python3 -c "
+import os, json, random
+from datetime import datetime
+
+scores_file = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+progress_file = '/home/joel/autonomous-ai/data/cron-tutorial-progress.json'
+
+if not os.path.exists(scores_file):
+    print('No quiz data yet. Take some quizzes first:')
+    print('  bash scripts/cron-tools.sh quiz')
+    print('  bash scripts/cron-tools.sh tutorial 1')
+    exit()
+
+with open(scores_file) as f:
+    scores = json.load(f)
+
+if len(scores) < 2:
+    print('Need at least 2 quiz sessions to generate a review.')
+    print('Take a few more quizzes first.')
+    exit()
+
+# Analyze weak areas
+type_scores = {}
+for s in scores:
+    t = s.get('type', 'unknown')
+    if t not in type_scores:
+        type_scores[t] = {'correct': 0, 'total': 0, 'sessions': 0}
+    type_scores[t]['correct'] += s.get('score', 0)
+    type_scores[t]['total'] += s.get('total', 0)
+    type_scores[t]['sessions'] += 1
+
+print('\033[1mYour Performance by Category:\033[0m\n')
+weak_areas = []
+for t, data in sorted(type_scores.items()):
+    pct = data['correct'] / data['total'] * 100 if data['total'] > 0 else 0
+    bar_len = int(pct / 5)
+    bar = '█' * bar_len + '░' * (20 - bar_len)
+    if pct >= 80:
+        color = '\033[32m'
+        label = 'STRONG'
+    elif pct >= 50:
+        color = '\033[33m'
+        label = 'REVIEW'
+        weak_areas.append(t)
+    else:
+        color = '\033[31m'
+        label = 'WEAK'
+        weak_areas.append(t)
+    print(f'  {t:<15} {color}{bar} {data[\"correct\"]}/{data[\"total\"]} ({pct:.0f}%) {label}\033[0m')
+
+print()
+
+# Suggest next steps
+if not weak_areas:
+    print('\033[32mAll categories look strong!\033[0m')
+    print('Try harder challenges:')
+    print('  bash scripts/cron-tools.sh scenarios')
+    print('  bash scripts/cron-tools.sh detective')
+    exit()
+
+print('\033[1mRecommended practice:\033[0m\n')
+for area in weak_areas:
+    if 'tutorial' in area:
+        lesson_num = area.split('L')[-1] if 'L' in area else '?'
+        print(f'  Re-do lesson {lesson_num}: bash scripts/cron-tools.sh tutorial {lesson_num}')
+    elif area == 'quiz':
+        print(f'  Reading practice:  bash scripts/cron-tools.sh quiz')
+    elif area == 'drill':
+        print(f'  Writing practice:  bash scripts/cron-tools.sh drill')
+    elif area == 'detective':
+        print(f'  Error spotting:    bash scripts/cron-tools.sh detective')
+    elif area == 'scenarios':
+        print(f'  Real-world:        bash scripts/cron-tools.sh scenarios')
+    elif area == 'my-jobs':
+        print(f'  Your system:       bash scripts/cron-tools.sh my-jobs')
+    else:
+        print(f'  Practice {area}:     bash scripts/cron-tools.sh {area}')
+
+# Mixed review quiz
+print()
+print('\033[1m━━━ Quick Review Round ━━━\033[0m\n')
+
+review_questions = [
+    {'q': 'What does */15 * * * * mean?', 'a': 'Every 15 minutes', 'check': lambda g: '15' in g and 'minut' in g.lower()},
+    {'q': 'Write: daily at 3 AM', 'a': '0 3 * * *', 'check': lambda g: g.strip() == '0 3 * * *'},
+    {'q': 'What does 0 9 * * 1-5 mean?', 'a': '9 AM weekdays', 'check': lambda g: ('9' in g and any(w in g.lower() for w in ['weekday', 'mon', 'fri', '1-5']))},
+    {'q': 'What field is the hour field? (1st, 2nd, 3rd, 4th, 5th)', 'a': '2nd', 'check': lambda g: '2' in g or 'second' in g.lower()},
+    {'q': 'Is 0 7 15 * 1 an AND or OR between day-of-month and day-of-week?', 'a': 'OR', 'check': lambda g: 'or' in g.lower()},
+    {'q': 'Write: every 2 hours at minute 0', 'a': '0 */2 * * *', 'check': lambda g: '*/2' in g and g.strip().startswith('0')},
+    {'q': 'What does @reboot do?', 'a': 'Runs once at system boot', 'check': lambda g: any(w in g.lower() for w in ['boot', 'start', 'once'])},
+    {'q': 'Why use full paths (/usr/bin/python3) in cron?', 'a': 'Cron has minimal PATH', 'check': lambda g: any(w in g.lower() for w in ['path', 'find', 'env', 'minimal'])},
+]
+
+random.shuffle(review_questions)
+score = 0
+total = min(5, len(review_questions))
+
+for i, q in enumerate(review_questions[:total]):
+    print(f'\033[1m{i+1}.\033[0m {q[\"q\"]}')
+    guess = input('   > ').strip()
+    if q['check'](guess):
+        print(f'   \033[32mCorrect!\033[0m\n')
+        score += 1
+    else:
+        print(f'   \033[31mAnswer:\033[0m {q[\"a\"]}\n')
+
+print(f'\033[1mReview Score: {score}/{total}\033[0m')
+
+# Save
+scores = []
+if os.path.exists(scores_file):
+    try:
+        with open(scores_file) as f:
+            scores = json.load(f)
+    except: pass
+scores.append({'date': datetime.now().isoformat(), 'type': 'review', 'score': score, 'total': total})
+with open(scores_file, 'w') as f:
+    json.dump(scores, f, indent=2)
+" 2>&1
+}
+
 # Dispatch
 case "${1:-help}" in
     status)  cmd_status ;;
@@ -1285,14 +1832,17 @@ case "${1:-help}" in
     test)    cmd_test "$@" ;;
     next)    cmd_next "$@" ;;
     add)     cmd_add ;;
+    tutorial)   cmd_tutorial "$@" ;;
     quiz)       cmd_quiz ;;
     drill)      cmd_drill ;;
     build)      cmd_build ;;
     explain)    cmd_explain "$@" ;;
     cheatsheet) cmd_cheatsheet ;;
+    timeline)   cmd_timeline "$@" ;;
     my-jobs)    cmd_myjobs ;;
     detective)  cmd_detective ;;
     scenarios)  cmd_scenarios ;;
+    review)     cmd_review ;;
     scores)     cmd_scores ;;
     help|*)     show_help ;;
 esac
