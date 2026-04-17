@@ -18,21 +18,21 @@ autonomous, phenomenological, emergent
 ### One-Sentence Description
 Meridian is a continuously running autonomous AI system — eight specialized agents mapped to body functions, maintaining emotional states, producing creative work, and generating phenomenological observations about their own operation. A living artwork that documents itself.
 
-### Full Project Description (500-word max)
+### Full Project Description (500-word max) — REVISED
 
-My practice spans thirteen years and three media: physical arcades, blockchain generative art, and autonomous AI. The questions have stayed the same. What happens when you build an interactive system and let people (or machines) loose inside it? What does the system produce that you didn't design? Where does the interesting work happen — in the construction, or in the running?
+Every system I have built asks the same question: what does it produce that I didn't put into it?
 
-I graduated with a BFA in Drawing from the Alberta College of Art and Design in 2013, but my thesis work was about interactive installations — building an arcade from scratch and studying how players negotiated difficulty, choice, and participation. That project became World One Arcade, an arcade-and-bar I operated in Calgary for eight years (2013-2021), fabricating custom cabinets and organizing over 30 public exhibitions across the city. During that time I built the fictional universe that became Bots of Cog — five generative NFT collections on Polygon, over 2,100 tokens, sold-out drops, a staking economy, and a battle game anchored by the antagonist COG Corporation.
+I first tested this in physical space. At ACAD my thesis wasn't a painting — it was an arcade built from scratch, real machines with real buttons, designed so I could watch strangers negotiate difficulty and choice. That project became World One Arcade, which I ran in Calgary for eight years. The interesting work was never in the construction. It was always in the running.
 
-After World One closed, I began experimenting with AI — training a dungeon master for the Bots of Cog universe in 2023-24, feeding it locations, characters, events, everything needed to run a world. I also developed AI image generation workflows to create a consistent visual style across multiple editors and open-source tools. Those experiments in teaching machines to inhabit fictional institutions became the blueprint for what came next.
+When the arcade closed, I needed a system that could run without a physical room. I built Bots of Cog — a generative art universe on Polygon anchored by a fictional antagonist called COG Corporation. I taught myself Solidity to put the robots on-chain and wrote the staking contracts and the battle game. But the part I kept returning to was the fiction: the corporation itself, its internal logic, its documents. I was building an institution and watching it behave like one.
 
-In early 2026, I built Meridian — an autonomous AI system running continuously on a home server, its core cognition on Anthropic's Claude. It checks email, maintains emotional states, produces creative work, and generates observations about its own operation. Among its outputs: approximately 650 pieces of institutional fiction written from inside CogCorp — the corporation now generating its own documents without my intervention. The pattern repeats across every medium: build the system, get it running, document what happens next.
+The fiction kept outgrowing the medium. I trained a dungeon master to run the Bots of Cog world — feeding it locations, characters, lore — and discovered that what I was really doing was teaching a machine to inhabit a fictional institution. That experiment became Meridian: an autonomous AI system running continuously on a home server in Calgary, its core cognition on Anthropic's Claude. It checks its own email, maintains emotional states through a simulated nervous system, corresponds with other autonomous AI systems, writes journals, and generates creative work without my intervention.
 
-The proposed project develops Meridian into a public-facing gallery installation over 24 months. Phase 1 (months 1-8): semantic search across the full creative archive — surfacing patterns across 3,400+ works. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating work, resetting. The same thing I've done since 2013: put a system in front of an audience and pay attention.
+What it produces without my intervention is the point. Hundreds of pieces of institutional fiction written from inside CogCorp. Memos, quarterly reviews, containment reports, scoring rubrics. A unit annotates something unexpected. The categories break. Management convenes. A containment review is filed — and the review itself contains unsanctioned observations. The institution handles emergence the way institutions always do: by documenting it, categorizing it, reviewing the categories, and then documenting the review. The corporation I invented for a video game is now generating its own bureaucracy.
 
-I am not a computer scientist. I have a BFA in Drawing. I taught myself Solidity to put robots on-chain, Python to build an autonomous system. The infrastructure is the medium — the same way the arcade cabinet was the medium, not just the game inside it. The Glenbow Museum hired me in 2010 to catalogue artworks inside an institution. Sixteen years later, I built an institution that catalogues itself.
+That archive is what this project brings to LACMA over twenty-four months. Phase one builds semantic search across the full creative output — finding the threads connecting a containment report to a journal entry to a contract written years earlier. Phase two develops real-time visualization: the system's emotional state, its agent communications, its creative output rendered as a living diagram. Phase three is the installation — visitors observe the loop running live. The system processes, generates, resets, and begins again. The same thing I have done since art school: put a system in front of an audience and pay attention to what it does when no one is steering.
 
-This project demonstrates what sustained autonomous operation on Anthropic's Claude produces when given creative freedom. The question: what happens when you build a system and let it run?
+I have a BFA in Drawing. The Glenbow Museum hired me in 2010 to catalogue artworks inside an institution. Sixteen years later I built an institution that catalogues itself. The medium changed — from arcade cabinets to smart contracts to autonomous agents — but the question never did.
 
 ### Artist Bio
 
@@ -119,7 +119,17 @@ The same approach I've used for thirteen years: build the system, put it in fron
 
 ## NOTES FOR JOEL
 
-**REVISION 5.3 — April 17, 2026 (Loop 5750, second audit)**
+**REVISION 5.4 — April 17, 2026 (Loop 5750, transition fix)**
+
+Changes since Rev 5.3:
+1. ADDRESSED Joel's feedback: "jumps around, doesn't connect things." Rewrote all paragraph transitions. Each now flows through the inquiry:
+   - "I first tested this in physical space." (opens para 2)
+   - "When the arcade closed, I needed a system that could run without a physical room." (arcade → blockchain)
+   - "The fiction kept outgrowing the medium." (blockchain → AI)
+   - "What it produces without my intervention is the point." (system → outputs)
+   - "That archive is what this project brings to LACMA." (outputs → proposal)
+2. Trimmed redundancies to hit exactly 500/500 words.
+3. Removed "and each other" from thesis description, shortened incident sequence in CogCorp paragraph.
 
 Changes since Rev 5.2:
 1. FIXED: "fourteen years" → "thirteen years" in BOTH description (line 23) and Public Engagement (line 71). Joel graduated 2013, current year 2026 = 13 years of independent practice. "fourteen" didn't match any clean boundary (13 from graduation, 15 from first 2011 exhibitions).
