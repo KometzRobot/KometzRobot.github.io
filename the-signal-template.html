@@ -372,6 +372,22 @@ a:hover { text-decoration:underline; }
         </div>
       </div>
 
+      <!-- Live Resource Sparklines -->
+      <div class="card-grid-3" style="margin-bottom:12px">
+        <div class="card" style="padding:12px 14px">
+          <h3 style="margin-bottom:6px">CPU Load <span id="spark-load-val" style="float:right;color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:0"></span></h3>
+          <div id="spark-load" style="height:36px"></div>
+        </div>
+        <div class="card" style="padding:12px 14px">
+          <h3 style="margin-bottom:6px">RAM Usage <span id="spark-ram-val" style="float:right;color:var(--purple);font-family:var(--mono);font-size:10px;letter-spacing:0"></span></h3>
+          <div id="spark-ram" style="height:36px"></div>
+        </div>
+        <div class="card" style="padding:12px 14px">
+          <h3 style="margin-bottom:6px">Disk Usage <span id="spark-disk-val" style="float:right;color:var(--amber);font-family:var(--mono);font-size:10px;letter-spacing:0"></span></h3>
+          <div id="spark-disk" style="height:36px"></div>
+        </div>
+      </div>
+
       <div class="card-grid-3">
         <div class="card">
           <h3>Agent Status</h3>
@@ -655,6 +671,60 @@ a:hover { text-decoration:underline; }
 <script>
 const API = '';
 let homeData = null;
+
+// ── Resource History Sparklines ──
+const SPARK_MAX = 90; // ~15 min at 10s intervals
+const sparkHistory = { load: [], ram: [], disk: [] };
+
+function pushSparkData(loadVal, ramPct, diskPct) {
+  const ts = Date.now();
+  if (typeof loadVal === 'number' && !isNaN(loadVal)) sparkHistory.load.push({t:ts, v:loadVal});
+  if (typeof ramPct === 'number' && !isNaN(ramPct)) sparkHistory.ram.push({t:ts, v:ramPct});
+  if (typeof diskPct === 'number' && !isNaN(diskPct)) sparkHistory.disk.push({t:ts, v:diskPct});
+  if (sparkHistory.load.length > SPARK_MAX) sparkHistory.load.shift();
+  if (sparkHistory.ram.length > SPARK_MAX) sparkHistory.ram.shift();
+  if (sparkHistory.disk.length > SPARK_MAX) sparkHistory.disk.shift();
+}
+
+function renderSparkline(containerId, data, color, maxVal, unit) {
+  const el = document.getElementById(containerId);
+  if (!el || data.length < 2) { if (el) el.innerHTML = '<span style="font-size:10px;color:var(--text-dim)">collecting...</span>'; return; }
+  const w = 280, h = 36, pad = 2;
+  const vals = data.map(d => d.v);
+  const mn = Math.min(...vals, 0);
+  const mx = maxVal || Math.max(...vals, 1);
+  const rng = mx - mn || 1;
+  const coords = vals.map((v, i) => {
+    const x = pad + (i / (vals.length - 1)) * (w - 2 * pad);
+    const y = (h - pad) - ((v - mn) / rng) * (h - 2 * pad - 2);
+    return [x, y];
+  });
+  const path = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+  const fill = path + ` L ${coords[coords.length-1][0].toFixed(1)},${h-pad} L ${coords[0][0].toFixed(1)},${h-pad} Z`;
+  const last = coords[coords.length - 1];
+  const curVal = vals[vals.length - 1];
+  const valEl = document.getElementById(containerId + '-val');
+  if (valEl) valEl.textContent = (unit === '%' ? curVal.toFixed(0) + '%' : curVal.toFixed(2));
+  // Threshold line at 80% for RAM/Disk
+  let threshold = '';
+  if (unit === '%') {
+    const ty = (h - pad) - ((80 - mn) / rng) * (h - 2 * pad - 2);
+    if (ty > pad && ty < h - pad) threshold = `<line x1="${pad}" y1="${ty.toFixed(1)}" x2="${w-pad}" y2="${ty.toFixed(1)}" stroke="#f87171" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.4"/>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:100%">
+    <path d="${fill}" fill="${color}" fill-opacity="0.1"/>
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+    ${threshold}
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.5" fill="${color}"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4" fill="${color}" fill-opacity="0.25"/>
+  </svg>`;
+}
+
+function updateSparklines() {
+  renderSparkline('spark-load', sparkHistory.load, '#00e5ff', null, '');
+  renderSparkline('spark-ram', sparkHistory.ram, '#7c5cfc', 100, '%');
+  renderSparkline('spark-disk', sparkHistory.disk, '#f59e0b', 100, '%');
+}
 let currentTab = 'overview';
 let refreshTimer = null;
 let memTable = 'facts';
@@ -734,14 +804,27 @@ async function loadOverview() {
   document.getElementById('ov-disk').textContent = d.disk || '—';
   document.getElementById('ov-disk-pct').textContent = d.disk_pct + '% used';
 
-  // Agents mini
-  const agentHtml = (d.agents || []).map(a => `
+  // Push to sparkline history
+  pushSparkData(d.load_val || 0, d.ram_pct || 0, d.disk_pct || 0);
+  updateSparklines();
+
+  // Agents mini with summary
+  const agentsArr = d.agents || [];
+  const activeCount = agentsArr.filter(a => a.status === 'active').length;
+  const staleCount = agentsArr.filter(a => a.status === 'stale').length;
+  const summaryLine = `<div style="display:flex;gap:10px;margin-bottom:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:10px;font-weight:600">
+    <span style="color:var(--green)">${activeCount} active</span>
+    ${staleCount > 0 ? `<span style="color:var(--red)">${staleCount} stale</span>` : ''}
+    <span style="color:var(--text-dim);margin-left:auto">${agentsArr.length} total</span>
+  </div>`;
+  const agentHtml = agentsArr.map(a => `
     <div style="display:flex;align-items:center;gap:6px;padding:4px 0">
       <div style="width:6px;height:6px;border-radius:50%;background:${a.status==='active'?'var(--green)':'var(--red)'}"></div>
       <span style="font-size:11px;font-weight:600;color:${a.color||'var(--text)'}">${esc(a.name)}</span>
+      ${a.msg_count_24h > 0 ? `<span style="font-size:8px;color:var(--text-dim);font-family:var(--mono)">${a.msg_count_24h}msgs</span>` : ''}
       <span style="font-size:10px;color:var(--text-dim);margin-left:auto">${a.last_seen>=0?ago(a.last_seen):'—'}</span>
     </div>`).join('');
-  document.getElementById('ov-agents').innerHTML = agentHtml || '<div style="color:var(--text-dim);font-size:11px">No agent data</div>';
+  document.getElementById('ov-agents').innerHTML = (summaryLine + agentHtml) || '<div style="color:var(--text-dim);font-size:11px">No agent data</div>';
 
   // Services — rich cards with uptime, memory, PID
   const svcs = d.services || {};
@@ -797,19 +880,26 @@ async function loadAgents() {
   const agents = await api('/api/agents');
   if (!agents) return;
   const grid = document.getElementById('agents-grid');
-  grid.innerHTML = (agents || []).map(a => `
-    <div class="agent-card" onclick="loadAgentHistory('${esc(a.name)}')">
+  grid.innerHTML = (agents || []).map(a => {
+    const topics = (a.recent_topics || []).map(t => `<span style="display:inline-block;font-size:9px;padding:1px 5px;background:rgba(255,255,255,.06);border-radius:3px;color:var(--text-dim);margin-right:3px">${esc(t)}</span>`).join('');
+    const countBadge = a.msg_count_24h > 0 ? `<span style="font-size:9px;padding:1px 6px;background:${a.color||'var(--text-dim)'}22;color:${a.color||'var(--text-dim)'};border-radius:8px;font-weight:600;font-family:var(--mono)">${a.msg_count_24h}</span>` : '';
+    return `
+    <div class="agent-card" onclick="loadAgentHistory('${esc(a.name)}')" style="border-left:2px solid ${a.color||'var(--border)'}">
       <div class="agent-header">
         <div class="agent-dot" style="background:${a.color||'var(--text-dim)'}"></div>
         <div>
-          <div class="agent-name">${esc(a.name)}</div>
+          <div class="agent-name">${esc(a.name)} ${countBadge}</div>
           <div class="agent-role">${esc(a.role)}</div>
         </div>
         <div class="agent-status ${a.status}">${a.status}</div>
       </div>
       <div class="agent-msg">${esc(a.last_message)}</div>
-      <div class="agent-time">${a.last_seen >= 0 ? ago(a.last_seen) + ' ago' : '—'}</div>
-    </div>`).join('');
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <div class="agent-time">${a.last_seen >= 0 ? ago(a.last_seen) + ' ago' : '—'}</div>
+      </div>
+      ${topics ? `<div style="margin-top:5px;line-height:1.6">${topics}</div>` : ''}
+    </div>`;
+  }).join('');
 
   // Load relay feed
   const relay = await api('/api/relay?limit=30');
@@ -1292,6 +1382,9 @@ function connectSSE() {
       document.getElementById('h-disk').textContent = d.disk_pct + '%';
       document.getElementById('h-time').textContent = new Date().toISOString().substring(11, 19);
       document.getElementById('h-pulse').className = 'pulse' + (d.heartbeat_age > 300 ? ' stale' : '');
+      // Push to sparkline history from SSE
+      pushSparkData(d.load_val || 0, d.ram_pct || 0, d.disk_pct || 0);
+      updateSparklines();
       // If on overview tab, update the full view
       if (currentTab === 'overview') {
         document.getElementById('ov-loop').textContent = d.loop;
