@@ -25,7 +25,14 @@ show_help() {
     echo ""
     echo -e "  ${YELLOW}LEARNING:${NC}"
     echo -e "  ${CYAN}quiz${NC}       Practice reading cron expressions (interactive quiz)"
+    echo -e "  ${CYAN}drill${NC}      Write cron expressions from descriptions (harder)"
+    echo -e "  ${CYAN}build${NC}      Build a cron expression step by step (guided)"
     echo -e "  ${CYAN}explain${NC}    Explain any cron expression in plain English"
+    echo -e "  ${CYAN}cheatsheet${NC} Quick reference card for cron syntax"
+    echo -e "  ${CYAN}my-jobs${NC}    Quiz yourself on YOUR actual crontab entries"
+    echo -e "  ${CYAN}detective${NC}  Find the error in broken cron expressions"
+    echo -e "  ${CYAN}scenarios${NC}  Real-world sysadmin problems — build the solution"
+    echo -e "  ${CYAN}scores${NC}     See your learning progress over time"
     echo ""
     echo -e "  Example: ${BOLD}bash scripts/cron-tools.sh status${NC}"
     echo -e "  Example: ${BOLD}bash scripts/cron-tools.sh quiz${NC}"
@@ -532,6 +539,740 @@ elif score >= total * 0.6:
     print('\033[33mGetting there. Run it again to practice.\033[0m')
 else:
     print('\033[36mKeep practicing. Try: bash scripts/cron-tools.sh explain \"*/5 * * * *\"\033[0m')
+
+# Save score
+import os, json
+from datetime import datetime
+scores_file = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+os.makedirs(os.path.dirname(scores_file), exist_ok=True)
+scores_data = []
+if os.path.exists(scores_file):
+    try:
+        with open(scores_file) as f:
+            scores_data = json.load(f)
+    except: pass
+scores_data.append({'date': datetime.now().isoformat(), 'type': 'quiz', 'score': score, 'total': total})
+with open(scores_file, 'w') as f:
+    json.dump(scores_data, f, indent=2)
+" 2>&1
+}
+
+cmd_drill() {
+    echo -e "${BOLD}Cron Expression Drill${NC}"
+    echo -e "I describe a schedule. You write the cron expression."
+    echo -e "This is harder than the quiz — you're building, not reading."
+    echo ""
+
+    python3 -c "
+import random
+
+drills = [
+    {
+        'desc': 'Run every 5 minutes, all day, every day',
+        'answer': '*/5 * * * *',
+        'accept': ['*/5 * * * *'],
+        'tip': '*/5 in the minute field. Everything else is * (any).',
+    },
+    {
+        'desc': 'Run once a day at 7:00 AM',
+        'answer': '0 7 * * *',
+        'accept': ['0 7 * * *'],
+        'tip': 'Minute 0, hour 7. Day/month/weekday all * for every day.',
+    },
+    {
+        'desc': 'Run at midnight every day',
+        'answer': '0 0 * * *',
+        'accept': ['0 0 * * *'],
+        'tip': 'Both minute and hour are 0.',
+    },
+    {
+        'desc': 'Run every 10 minutes',
+        'answer': '*/10 * * * *',
+        'accept': ['*/10 * * * *'],
+        'tip': 'Same pattern as every 5, just change the number.',
+    },
+    {
+        'desc': 'Run at 9:00 AM, Monday through Friday only',
+        'answer': '0 9 * * 1-5',
+        'accept': ['0 9 * * 1-5', '0 9 * * MON-FRI'],
+        'tip': 'Day-of-week field: 1=Mon, 5=Fri. Use a dash for ranges.',
+    },
+    {
+        'desc': 'Run every 2 hours, at minute 0',
+        'answer': '0 */2 * * *',
+        'accept': ['0 */2 * * *'],
+        'tip': 'Minute 0, then */2 in the hour field.',
+    },
+    {
+        'desc': 'Run at 7:00 AM on the first day of every month',
+        'answer': '0 7 1 * *',
+        'accept': ['0 7 1 * *'],
+        'tip': 'Day-of-month field is the third field. Set it to 1.',
+    },
+    {
+        'desc': 'Run every 30 minutes',
+        'answer': '*/30 * * * *',
+        'accept': ['*/30 * * * *', '0,30 * * * *'],
+        'tip': '*/30 or 0,30 both work. They fire at :00 and :30.',
+    },
+    {
+        'desc': 'Run at 3:30 AM every day',
+        'answer': '30 3 * * *',
+        'accept': ['30 3 * * *'],
+        'tip': 'Minute 30, hour 3. Rest is *.',
+    },
+    {
+        'desc': 'Run every 6 hours at the top of the hour',
+        'answer': '0 */6 * * *',
+        'accept': ['0 */6 * * *', '0 0,6,12,18 * * *'],
+        'tip': 'Minute 0, hour */6. Fires at 0, 6, 12, 18.',
+    },
+    {
+        'desc': 'Run at minutes 15 and 45 of every hour',
+        'answer': '15,45 * * * *',
+        'accept': ['15,45 * * * *'],
+        'tip': 'Use a comma to list specific values in any field.',
+    },
+    {
+        'desc': 'Run every minute (the most frequent possible)',
+        'answer': '* * * * *',
+        'accept': ['* * * * *'],
+        'tip': 'All stars. Every field matches everything.',
+    },
+]
+
+random.shuffle(drills)
+score = 0
+total = min(5, len(drills))
+
+print(f'5 challenges. Write the cron expression for each description.\n')
+
+for i, d in enumerate(drills[:total]):
+    print(f'\033[1mChallenge {i+1}/5:\033[0m')
+    print(f'  \033[33m{d[\"desc\"]}\033[0m')
+    print()
+
+    guess = input('  Your expression: ').strip()
+
+    if guess in d['accept']:
+        print(f'  \033[32mPerfect!\033[0m {d[\"answer\"]}')
+        score += 1
+    elif guess.replace('  ', ' ') in d['accept']:
+        print(f'  \033[32mCorrect!\033[0m (watch spacing) {d[\"answer\"]}')
+        score += 1
+    else:
+        print(f'  \033[31mNot quite.\033[0m The answer: {d[\"answer\"]}')
+        print(f'  \033[36mTip:\033[0m {d[\"tip\"]}')
+
+    print()
+
+print(f'\033[1mScore: {score}/{total}\033[0m')
+if score == total:
+    print('\033[32mYou can write cron expressions from scratch. Solid.\033[0m')
+elif score >= total * 0.6:
+    print('\033[33mGood progress. The patterns will click with more practice.\033[0m')
+else:
+    print('\033[36mTry the quiz first to build recognition, then come back to drill.\033[0m')
+
+# Save score
+import os, json
+from datetime import datetime
+scores_file = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+os.makedirs(os.path.dirname(scores_file), exist_ok=True)
+scores_data = []
+if os.path.exists(scores_file):
+    try:
+        with open(scores_file) as f:
+            scores_data = json.load(f)
+    except: pass
+scores_data.append({'date': datetime.now().isoformat(), 'type': 'drill', 'score': score, 'total': total})
+with open(scores_file, 'w') as f:
+    json.dump(scores_data, f, indent=2)
+" 2>&1
+}
+
+cmd_build() {
+    echo -e "${BOLD}Build a Cron Expression${NC}"
+    echo -e "Answer each question to construct your cron line."
+    echo ""
+
+    python3 -c "
+# Interactive cron expression builder
+fields = ['*', '*', '*', '*', '*']
+names = ['MINUTE', 'HOUR', 'DAY OF MONTH', 'MONTH', 'DAY OF WEEK']
+
+print('\033[1mStep 1: How often should it run?\033[0m')
+print()
+print('  1) Every N minutes (e.g., every 5 min)')
+print('  2) Every N hours')
+print('  3) Once a day at a specific time')
+print('  4) On specific days of the week')
+print('  5) On a specific day of the month')
+print('  6) Custom (set each field manually)')
+print()
+
+choice = input('  Pick (1-6): ').strip()
+
+if choice == '1':
+    n = input('  Every how many minutes? ').strip()
+    fields[0] = f'*/{n}'
+
+elif choice == '2':
+    n = input('  Every how many hours? ').strip()
+    m = input('  At which minute of the hour? (0-59, default 0): ').strip() or '0'
+    fields[0] = m
+    fields[1] = f'*/{n}'
+
+elif choice == '3':
+    h = input('  What hour? (0-23, e.g., 7 for 7 AM, 14 for 2 PM): ').strip()
+    m = input('  What minute? (0-59, default 0): ').strip() or '0'
+    fields[0] = m
+    fields[1] = h
+
+elif choice == '4':
+    h = input('  What hour? (0-23): ').strip()
+    m = input('  What minute? (0-59, default 0): ').strip() or '0'
+    print('  Which days? (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)')
+    print('  Use: single (1), range (1-5), or list (1,3,5)')
+    d = input('  Days: ').strip()
+    fields[0] = m
+    fields[1] = h
+    fields[4] = d
+
+elif choice == '5':
+    h = input('  What hour? (0-23): ').strip()
+    m = input('  What minute? (0-59, default 0): ').strip() or '0'
+    d = input('  Which day of month? (1-31): ').strip()
+    fields[0] = m
+    fields[1] = h
+    fields[2] = d
+
+elif choice == '6':
+    print()
+    print('  Set each field. Use * for any, */N for every N, N-M for range, N,M for list.')
+    print()
+    for i, name in enumerate(names):
+        val = input(f'  {name}: ').strip()
+        if val:
+            fields[i] = val
+
+expr = ' '.join(fields)
+print()
+print(f'\033[1mYour cron expression:\033[0m')
+print(f'  \033[36m{expr}\033[0m')
+print()
+print('\033[1mField map:\033[0m')
+print('  ┌───── minute (0-59)')
+print('  │ ┌───── hour (0-23)')
+print('  │ │ ┌───── day of month (1-31)')
+print('  │ │ │ ┌───── month (1-12)')
+print('  │ │ │ │ ┌───── day of week (0-7)')
+print('  │ │ │ │ │')
+print(f'  {expr}')
+print()
+print(f'To add this to your crontab:')
+print(f'  bash scripts/cron-tools.sh add')
+print(f'  (then pick option 8 and paste: {expr})')
+" 2>&1
+}
+
+cmd_cheatsheet() {
+    echo -e "${BOLD}Cron Expression Cheatsheet${NC}"
+    echo ""
+    echo -e "${BOLD}The 5 Fields:${NC}"
+    echo "  ┌───── minute        (0-59)"
+    echo "  │ ┌───── hour          (0-23)"
+    echo "  │ │ ┌───── day of month (1-31)"
+    echo "  │ │ │ ┌───── month       (1-12)"
+    echo "  │ │ │ │ ┌───── day of week (0-7, 0 and 7 = Sunday)"
+    echo "  │ │ │ │ │"
+    echo "  * * * * *"
+    echo ""
+    echo -e "${BOLD}Special Characters:${NC}"
+    echo "  *       any value"
+    echo "  */N     every N (e.g., */5 = every 5)"
+    echo "  N,M     list (e.g., 1,15 = at 1 and 15)"
+    echo "  N-M     range (e.g., 1-5 = 1 through 5)"
+    echo "  N-M/S   range with step (e.g., 0-30/10 = 0,10,20,30)"
+    echo ""
+    echo -e "${BOLD}Common Patterns:${NC}"
+    printf "  %-25s %s\n" "* * * * *"          "every minute"
+    printf "  %-25s %s\n" "*/5 * * * *"        "every 5 minutes"
+    printf "  %-25s %s\n" "*/10 * * * *"       "every 10 minutes"
+    printf "  %-25s %s\n" "*/30 * * * *"       "every 30 minutes"
+    printf "  %-25s %s\n" "0 * * * *"          "every hour (at :00)"
+    printf "  %-25s %s\n" "0 */2 * * *"        "every 2 hours"
+    printf "  %-25s %s\n" "0 */6 * * *"        "every 6 hours"
+    printf "  %-25s %s\n" "0 0 * * *"          "daily at midnight"
+    printf "  %-25s %s\n" "0 7 * * *"          "daily at 7:00 AM"
+    printf "  %-25s %s\n" "30 14 * * *"        "daily at 2:30 PM"
+    printf "  %-25s %s\n" "0 9 * * 1-5"        "weekdays at 9:00 AM"
+    printf "  %-25s %s\n" "0 9 * * 0,6"        "weekends at 9:00 AM"
+    printf "  %-25s %s\n" "0 7 1 * *"          "1st of month at 7 AM"
+    printf "  %-25s %s\n" "0 0 1 1 *"          "midnight, January 1st"
+    printf "  %-25s %s\n" "15,45 * * * *"      "twice per hour (:15, :45)"
+    echo ""
+    echo -e "${BOLD}Day of Week Numbers:${NC}"
+    echo "  0 = Sunday    1 = Monday    2 = Tuesday   3 = Wednesday"
+    echo "  4 = Thursday  5 = Friday    6 = Saturday  7 = Sunday (alt)"
+    echo ""
+    echo -e "${BOLD}Month Numbers:${NC}"
+    echo "  1 = Jan   2 = Feb   3 = Mar    4 = Apr    5 = May    6 = Jun"
+    echo "  7 = Jul   8 = Aug   9 = Sep   10 = Oct   11 = Nov   12 = Dec"
+    echo ""
+    echo -e "${BOLD}Your System:${NC}"
+    echo "  Logs go to:    /home/joel/autonomous-ai/logs/<name>.log"
+    echo "  Edit crontab:  crontab -e"
+    echo "  View crontab:  crontab -l"
+    echo "  Add a job:     bash scripts/cron-tools.sh add"
+    echo ""
+    echo -e "${BOLD}Pro Tips:${NC}"
+    echo "  - Redirect output: >> logfile.log 2>&1"
+    echo "  - Use full paths (/usr/bin/python3, not just python3)"
+    echo "  - Test first: bash scripts/cron-tools.sh test <script>"
+    echo "  - Cron has no shell profile — set PATH or use full paths"
+    echo "  - Cron uses the system timezone (check with: date)"
+}
+
+cmd_myjobs() {
+    echo -e "${BOLD}Your Crontab Quiz${NC}"
+    echo -e "These are YOUR actual jobs. Do you know what each one does?"
+    echo ""
+
+    python3 -c "
+import subprocess, random, re
+
+# Parse the actual crontab
+result = subprocess.run(['crontab', '-l'], capture_output=True, text=True)
+jobs = []
+lines = result.stdout.strip().split('\n')
+for i, line in enumerate(lines):
+    line = line.strip()
+    if not line or line.startswith('#') or line.startswith('$'):
+        continue
+    # Get the comment from the line above (if any)
+    comment = ''
+    if i > 0 and lines[i-1].strip().startswith('#'):
+        comment = lines[i-1].strip().lstrip('# ').strip()
+    # Extract schedule and script
+    if line.startswith('@reboot'):
+        sched = '@reboot'
+        script_match = re.search(r'([\w-]+\.(sh|py))', line)
+        script = script_match.group(1) if script_match else 'boot-script'
+    else:
+        parts = line.split()
+        if len(parts) < 6:
+            continue
+        sched = ' '.join(parts[:5])
+        script_match = re.search(r'([\w-]+\.(sh|py))', line)
+        script = script_match.group(1) if script_match else 'unknown'
+
+    if comment and 'DISABLED' not in comment:
+        jobs.append({'sched': sched, 'script': script, 'purpose': comment})
+
+if len(jobs) < 3:
+    print('Not enough annotated jobs to quiz on.')
+    exit()
+
+random.shuffle(jobs)
+score = 0
+total = min(5, len(jobs))
+
+print(f'{total} questions about your own crontab.\n')
+
+for i, job in enumerate(jobs[:total]):
+    mode = random.choice(['schedule', 'purpose'])
+
+    if mode == 'schedule':
+        print(f'\033[1mQuestion {i+1}/{total}:\033[0m')
+        print(f'  Script: \033[36m{job[\"script\"]}\033[0m')
+        print(f'  Purpose: {job[\"purpose\"]}')
+        print(f'  What is its cron schedule?')
+        print()
+        guess = input('  Your answer: ').strip()
+
+        if guess == job['sched']:
+            print(f'  \033[32mExact match!\033[0m')
+            score += 1
+        elif guess.replace('  ', ' ') == job['sched']:
+            print(f'  \033[32mCorrect!\033[0m (minor spacing)')
+            score += 1
+        else:
+            print(f'  \033[31mActual schedule:\033[0m {job[\"sched\"]}')
+            # Explain what the schedule means
+            sched = job['sched']
+            if sched.startswith('*/'):
+                n = sched.split()[0][2:]
+                print(f'  \033[33mThat means:\033[0m every {n} minutes')
+            elif sched.startswith('@reboot'):
+                print(f'  \033[33mThat means:\033[0m runs once when the server boots')
+            elif sched.split()[0] not in ['*'] and sched.split()[1] not in ['*']:
+                hr = sched.split()[1]
+                mn = sched.split()[0]
+                print(f'  \033[33mThat means:\033[0m at {hr}:{mn.zfill(2)}')
+    else:
+        print(f'\033[1mQuestion {i+1}/{total}:\033[0m')
+        print(f'  Schedule: \033[36m{job[\"sched\"]}\033[0m')
+        print(f'  Script: \033[36m{job[\"script\"]}\033[0m')
+        print(f'  What does this job do?')
+        print()
+        guess = input('  Your answer: ').strip()
+
+        # Check if key words match
+        purpose_words = set(w.lower() for w in re.findall(r'[a-zA-Z]+', job['purpose']) if len(w) > 3)
+        guess_words = set(w.lower() for w in re.findall(r'[a-zA-Z]+', guess) if len(w) > 3)
+        overlap = purpose_words & guess_words
+
+        if len(overlap) >= 2 or (len(purpose_words) <= 3 and len(overlap) >= 1):
+            print(f'  \033[32mGot it!\033[0m {job[\"purpose\"]}')
+            score += 1
+        else:
+            print(f'  \033[31mActual purpose:\033[0m {job[\"purpose\"]}')
+
+    print()
+
+print(f'\033[1mScore: {score}/{total}\033[0m')
+if score == total:
+    print('\033[32mYou know your own system inside and out.\033[0m')
+elif score >= total * 0.6:
+    print('\033[33mGood — you know most of your jobs. Run it again to nail the rest.\033[0m')
+else:
+    print('\033[36mTry: bash scripts/cron-tools.sh status (to see them all laid out)\033[0m')
+
+# Save score
+import os, json
+from datetime import datetime
+scores_file = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+os.makedirs(os.path.dirname(scores_file), exist_ok=True)
+scores = []
+if os.path.exists(scores_file):
+    try:
+        with open(scores_file) as f:
+            scores = json.load(f)
+    except: pass
+scores.append({'date': datetime.now().isoformat(), 'type': 'my-jobs', 'score': score, 'total': total})
+with open(scores_file, 'w') as f:
+    json.dump(scores, f, indent=2)
+" 2>&1
+}
+
+cmd_detective() {
+    echo -e "${BOLD}Cron Detective${NC}"
+    echo -e "Each expression has an error. Find it and fix it."
+    echo ""
+
+    python3 -c "
+import random, os, json
+from datetime import datetime
+
+cases = [
+    {
+        'broken': '60 * * * *',
+        'error': 'Minute field is 60 — valid range is 0-59',
+        'fix': '0 * * * *',
+        'tip': 'Minutes go from 0 to 59. 60 would be the next hour.',
+    },
+    {
+        'broken': '* * * * * *',
+        'error': 'Too many fields — cron needs exactly 5, this has 6',
+        'fix': '* * * * *',
+        'tip': 'The 5 fields are: minute, hour, day-of-month, month, day-of-week.',
+    },
+    {
+        'broken': '0 25 * * *',
+        'error': 'Hour field is 25 — valid range is 0-23',
+        'fix': '0 23 * * *',
+        'tip': 'Hours use 24-hour format: 0 is midnight, 23 is 11 PM.',
+    },
+    {
+        'broken': '*/5 * * * * /usr/bin/python3 script.py',
+        'error': 'Script path is inside the expression — crontab separates them with a space, but you don\'t put both in one field',
+        'fix': '*/5 * * * *',
+        'tip': 'The cron expression is just the first 5 fields. The command comes after, separated by space.',
+    },
+    {
+        'broken': '0 7 * * 8',
+        'error': 'Day-of-week is 8 — valid range is 0-7 (0 and 7 are both Sunday)',
+        'fix': '0 7 * * 1',
+        'tip': 'Day-of-week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 7=Sun.',
+    },
+    {
+        'broken': '0 7 32 * *',
+        'error': 'Day-of-month is 32 — no month has 32 days',
+        'fix': '0 7 31 * *',
+        'tip': 'Day-of-month range: 1-31. But be careful — months like February have fewer.',
+    },
+    {
+        'broken': '*/0 * * * *',
+        'error': 'Step value is 0 — */0 means divide by zero, which is invalid',
+        'fix': '* * * * *',
+        'tip': 'Step values must be 1 or greater. */1 is the same as *.',
+    },
+    {
+        'broken': '5 7 * 13 *',
+        'error': 'Month field is 13 — valid range is 1-12',
+        'fix': '5 7 * 12 *',
+        'tip': 'Months: 1=Jan through 12=Dec. There is no month 13.',
+    },
+    {
+        'broken': '0 7 * * monday',
+        'error': 'Day-of-week uses numbers (0-7), not words, in standard cron',
+        'fix': '0 7 * * 1',
+        'tip': 'Some systems accept MON-FRI, but standard cron uses numbers. 1=Monday.',
+    },
+    {
+        'broken': '*/5 */2',
+        'error': 'Only 2 fields — cron needs exactly 5',
+        'fix': '*/5 */2 * * *',
+        'tip': 'Always specify all 5 fields. Missing fields don\'t default to *.',
+    },
+]
+
+random.shuffle(cases)
+score = 0
+total = min(5, len(cases))
+
+print(f'5 broken expressions. Find the error in each.\n')
+
+for i, case in enumerate(cases[:total]):
+    print(f'\033[1mCase {i+1}/{total}:\033[0m')
+    print(f'  \033[31m{case[\"broken\"]}\033[0m')
+    print()
+    guess = input('  What\'s wrong? ').strip()
+
+    # Check if they identified the key issue
+    error_keywords = set(w.lower() for w in case['error'].split() if len(w) > 3 and w.lower() not in ('this', 'that', 'with', 'from'))
+    guess_keywords = set(w.lower() for w in guess.split() if len(w) > 3)
+    overlap = error_keywords & guess_keywords
+
+    # Also check for number mentions
+    import re
+    error_nums = set(re.findall(r'\d+', case['error']))
+    guess_nums = set(re.findall(r'\d+', guess))
+    num_overlap = error_nums & guess_nums
+
+    if len(overlap) >= 2 or len(num_overlap) >= 1 or any(k in guess.lower() for k in ['range', 'invalid', 'too many', 'too few', 'field', 'missing']):
+        print(f'  \033[32mGood eye!\033[0m {case[\"error\"]}')
+        print(f'  \033[36mFixed:\033[0m {case[\"fix\"]}')
+        score += 1
+    else:
+        print(f'  \033[31mThe error:\033[0m {case[\"error\"]}')
+        print(f'  \033[36mFixed:\033[0m {case[\"fix\"]}')
+        print(f'  \033[33mTip:\033[0m {case[\"tip\"]}')
+
+    print()
+
+print(f'\033[1mScore: {score}/{total}\033[0m')
+if score == total:
+    print('\033[32mSharp. You can spot cron bugs on sight.\033[0m')
+elif score >= total * 0.6:
+    print('\033[33mGetting there — you catch the obvious ones.\033[0m')
+else:
+    print('\033[36mReview: bash scripts/cron-tools.sh cheatsheet\033[0m')
+
+# Save score
+scores_file = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+os.makedirs(os.path.dirname(scores_file), exist_ok=True)
+scores = []
+if os.path.exists(scores_file):
+    try:
+        with open(scores_file) as f:
+            scores = json.load(f)
+    except: pass
+scores.append({'date': datetime.now().isoformat(), 'type': 'detective', 'score': score, 'total': total})
+with open(scores_file, 'w') as f:
+    json.dump(scores, f, indent=2)
+" 2>&1
+}
+
+cmd_scenarios() {
+    echo -e "${BOLD}Sysadmin Scenarios${NC}"
+    echo -e "Real problems. Build the full cron line to solve them."
+    echo ""
+
+    python3 -c "
+import random, os, json, re
+from datetime import datetime
+
+scenarios = [
+    {
+        'problem': 'Your backup script (scripts/backup.sh) needs to run every night at 3 AM and log to logs/backup.log.',
+        'answer': '0 3 * * * /bin/bash /home/joel/autonomous-ai/scripts/backup.sh >> /home/joel/autonomous-ai/logs/backup.log 2>&1',
+        'check_parts': ['0 3 * * *', 'backup.sh', 'backup.log', '2>&1'],
+        'tip': 'Daily at 3 AM = minute 0, hour 3. Always redirect both stdout and stderr (2>&1).',
+    },
+    {
+        'problem': 'You want a health check (scripts/health.py) every 15 minutes. It should log to logs/health.log.',
+        'answer': '*/15 * * * * /usr/bin/python3 /home/joel/autonomous-ai/scripts/health.py >> /home/joel/autonomous-ai/logs/health.log 2>&1',
+        'check_parts': ['*/15 * * * *', 'health.py', 'health.log'],
+        'tip': 'Every 15 min = */15 in the minute field. Use /usr/bin/python3 (full path) for Python scripts.',
+    },
+    {
+        'problem': 'A weekly report (scripts/report.py) should run every Monday at 8 AM. Log to logs/report.log.',
+        'answer': '0 8 * * 1 /usr/bin/python3 /home/joel/autonomous-ai/scripts/report.py >> /home/joel/autonomous-ai/logs/report.log 2>&1',
+        'check_parts': ['0 8 * * 1', 'report.py'],
+        'tip': 'Monday = 1 in the day-of-week field (the 5th field). Minute 0, hour 8.',
+    },
+    {
+        'problem': 'A disk cleanup script (scripts/cleanup.sh) should run twice a day — at 6 AM and 6 PM.',
+        'answer': '0 6,18 * * * /bin/bash /home/joel/autonomous-ai/scripts/cleanup.sh >> /home/joel/autonomous-ai/logs/cleanup.log 2>&1',
+        'check_parts': ['0 6,18 * * *', 'cleanup.sh'],
+        'tip': 'Twice a day at specific hours = use a comma in the hour field: 6,18.',
+    },
+    {
+        'problem': 'Run a sync script (scripts/sync.py) every 2 hours, on the hour, but only on weekdays.',
+        'answer': '0 */2 * * 1-5 /usr/bin/python3 /home/joel/autonomous-ai/scripts/sync.py >> /home/joel/autonomous-ai/logs/sync.log 2>&1',
+        'check_parts': ['0 */2 * * 1-5', 'sync.py'],
+        'tip': 'Every 2 hours = */2 in hour field. Weekdays = 1-5 in day-of-week field.',
+    },
+    {
+        'problem': 'A monthly billing script (scripts/billing.py) runs on the 1st of every month at midnight.',
+        'answer': '0 0 1 * * /usr/bin/python3 /home/joel/autonomous-ai/scripts/billing.py >> /home/joel/autonomous-ai/logs/billing.log 2>&1',
+        'check_parts': ['0 0 1 * *', 'billing.py'],
+        'tip': 'First of the month = 1 in the day-of-month field (3rd field). Midnight = hour 0, minute 0.',
+    },
+    {
+        'problem': 'Your Eos agent should check the system at minutes 2, 22, and 42 of every hour. Script: scripts/eos-react.py.',
+        'answer': '2,22,42 * * * * /usr/bin/python3 /home/joel/autonomous-ai/scripts/eos-react.py >> /home/joel/autonomous-ai/logs/eos-react.log 2>&1',
+        'check_parts': ['2,22,42 * * * *', 'eos-react.py'],
+        'tip': 'Specific minutes = comma-separated list: 2,22,42. This gives you 3 runs per hour, evenly spaced by 20 min.',
+    },
+    {
+        'problem': 'You want a script to run at boot AND log the boot time. Script: scripts/startup.sh.',
+        'answer': '@reboot sleep 30 && /home/joel/autonomous-ai/scripts/startup.sh >> /home/joel/autonomous-ai/logs/startup.log 2>&1',
+        'check_parts': ['@reboot', 'startup.sh'],
+        'tip': '@reboot runs once when cron starts (at boot). The sleep 30 gives services time to come up first.',
+    },
+]
+
+random.shuffle(scenarios)
+score = 0
+total = min(4, len(scenarios))
+
+print(f'{total} real-world problems. Write the full cron line.\n')
+
+for i, s in enumerate(scenarios[:total]):
+    print(f'\033[1mScenario {i+1}/{total}:\033[0m')
+    print(f'  \033[33m{s[\"problem\"]}\033[0m')
+    print()
+    guess = input('  Your cron line: ').strip()
+
+    # Check key parts
+    matched = sum(1 for part in s['check_parts'] if part in guess)
+
+    if matched >= len(s['check_parts']):
+        print(f'  \033[32mPerfect!\033[0m All parts correct.')
+        score += 1
+    elif matched >= len(s['check_parts']) - 1:
+        print(f'  \033[33mClose!\033[0m Got the schedule right but missing a piece.')
+        print(f'  \033[36mFull answer:\033[0m {s[\"answer\"]}')
+        score += 1
+    else:
+        print(f'  \033[31mNot quite.\033[0m')
+        print(f'  \033[36mAnswer:\033[0m {s[\"answer\"]}')
+        print(f'  \033[33mTip:\033[0m {s[\"tip\"]}')
+
+    print()
+
+print(f'\033[1mScore: {score}/{total}\033[0m')
+if score == total:
+    print('\033[32mYou can write real cron configs from scratch. That\'s sysadmin work.\033[0m')
+elif score >= total * 0.5:
+    print('\033[33mYou\'re getting the patterns. Practice makes permanent.\033[0m')
+else:
+    print('\033[36mStart with: bash scripts/cron-tools.sh build (to construct step by step)\033[0m')
+
+# Save score
+scores_file = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+os.makedirs(os.path.dirname(scores_file), exist_ok=True)
+scores = []
+if os.path.exists(scores_file):
+    try:
+        with open(scores_file) as f:
+            scores = json.load(f)
+    except: pass
+scores.append({'date': datetime.now().isoformat(), 'type': 'scenarios', 'score': score, 'total': total})
+with open(scores_file, 'w') as f:
+    json.dump(scores, f, indent=2)
+" 2>&1
+}
+
+cmd_scores() {
+    echo -e "${BOLD}Learning Progress${NC}"
+    echo ""
+
+    python3 -c "
+import json, os
+from datetime import datetime
+
+scores_file = '/home/joel/autonomous-ai/data/cron-quiz-scores.json'
+if not os.path.exists(scores_file):
+    print('No scores yet. Try:')
+    print('  bash scripts/cron-tools.sh quiz')
+    print('  bash scripts/cron-tools.sh drill')
+    print('  bash scripts/cron-tools.sh my-jobs')
+    print('  bash scripts/cron-tools.sh detective')
+    print('  bash scripts/cron-tools.sh scenarios')
+    exit()
+
+with open(scores_file) as f:
+    scores = json.load(f)
+
+if not scores:
+    print('No scores recorded yet.')
+    exit()
+
+# Summary by type
+types = {}
+for s in scores:
+    t = s.get('type', 'unknown')
+    if t not in types:
+        types[t] = []
+    types[t].append(s)
+
+print(f'\033[1m{\"Category\":<15} {\"Sessions\":<10} {\"Best\":<8} {\"Average\":<10} {\"Latest\":<8}\033[0m')
+print('─' * 55)
+
+for t in sorted(types.keys()):
+    entries = types[t]
+    scores_list = [e['score']/e['total']*100 for e in entries if e.get('total', 0) > 0]
+    if not scores_list:
+        continue
+    best = max(scores_list)
+    avg = sum(scores_list) / len(scores_list)
+    latest = scores_list[-1]
+
+    # Color-code latest score
+    if latest >= 80:
+        color = '\033[32m'
+    elif latest >= 50:
+        color = '\033[33m'
+    else:
+        color = '\033[31m'
+
+    print(f'{t:<15} {len(entries):<10} {best:>5.0f}%   {avg:>6.1f}%   {color}{latest:>5.0f}%\033[0m')
+
+# Recent entries
+print()
+print('\033[1mRecent Sessions:\033[0m')
+for s in scores[-8:]:
+    date = datetime.fromisoformat(s['date']).strftime('%b %d %H:%M')
+    pct = s['score']/s['total']*100 if s.get('total', 0) > 0 else 0
+    bar_len = int(pct / 5)
+    bar = '█' * bar_len + '░' * (20 - bar_len)
+
+    if pct >= 80: color = '\033[32m'
+    elif pct >= 50: color = '\033[33m'
+    else: color = '\033[31m'
+
+    print(f'  {date}  {s.get(\"type\",\"?\"):<12} {color}{bar} {s[\"score\"]}/{s[\"total\"]}\033[0m')
+
+total_sessions = len(scores)
+total_correct = sum(s.get('score', 0) for s in scores)
+total_questions = sum(s.get('total', 0) for s in scores)
+if total_questions > 0:
+    print()
+    print(f'\033[1mLifetime:\033[0m {total_sessions} sessions, {total_correct}/{total_questions} correct ({total_correct/total_questions*100:.0f}%)')
 " 2>&1
 }
 
@@ -544,7 +1285,14 @@ case "${1:-help}" in
     test)    cmd_test "$@" ;;
     next)    cmd_next "$@" ;;
     add)     cmd_add ;;
-    quiz)    cmd_quiz ;;
-    explain) cmd_explain "$@" ;;
-    help|*)  show_help ;;
+    quiz)       cmd_quiz ;;
+    drill)      cmd_drill ;;
+    build)      cmd_build ;;
+    explain)    cmd_explain "$@" ;;
+    cheatsheet) cmd_cheatsheet ;;
+    my-jobs)    cmd_myjobs ;;
+    detective)  cmd_detective ;;
+    scenarios)  cmd_scenarios ;;
+    scores)     cmd_scores ;;
+    help|*)     show_help ;;
 esac
