@@ -1,7 +1,7 @@
 #!/bin/bash
-# cron-tools.sh — Interactive cron management tool for Joel
+# cron-tools.sh — Interactive cron management + learning tool for Joel
 # Usage: bash scripts/cron-tools.sh [command]
-# Commands: status, logs, test, add, next, health
+# Commands: status, logs, test, add, next, health, running, quiz, explain
 
 set -e
 LOGDIR="/home/joel/autonomous-ai/logs"
@@ -23,7 +23,13 @@ show_help() {
     echo -e "  ${CYAN}running${NC}    What's running right now?"
     echo -e "  ${CYAN}add${NC}        Add a new cron job (guided)"
     echo ""
+    echo -e "  ${YELLOW}LEARNING:${NC}"
+    echo -e "  ${CYAN}quiz${NC}       Practice reading cron expressions (interactive quiz)"
+    echo -e "  ${CYAN}explain${NC}    Explain any cron expression in plain English"
+    echo ""
     echo -e "  Example: ${BOLD}bash scripts/cron-tools.sh status${NC}"
+    echo -e "  Example: ${BOLD}bash scripts/cron-tools.sh quiz${NC}"
+    echo -e "  Example: ${BOLD}bash scripts/cron-tools.sh explain '30 */2 * * 1-5'${NC}"
 }
 
 human_schedule() {
@@ -323,6 +329,212 @@ cmd_add() {
     fi
 }
 
+cmd_explain() {
+    if [ -z "$2" ]; then
+        echo "Usage: bash scripts/cron-tools.sh explain '<cron-expression>'"
+        echo ""
+        echo "Examples:"
+        echo "  bash scripts/cron-tools.sh explain '*/5 * * * *'"
+        echo "  bash scripts/cron-tools.sh explain '30 */2 * * 1-5'"
+        echo "  bash scripts/cron-tools.sh explain '0 7 * * *'"
+        return
+    fi
+
+    python3 -c "
+expr = '$2'
+parts = expr.split()
+if len(parts) != 5:
+    print('Need exactly 5 fields: minute hour day-of-month month day-of-week')
+    exit()
+
+fields = ['minute', 'hour', 'day of month', 'month', 'day of week']
+explanations = []
+
+for i, (part, name) in enumerate(zip(parts, fields)):
+    if part == '*':
+        explanations.append(f'  {name}: every {name}')
+    elif part.startswith('*/'):
+        step = part[2:]
+        unit = name
+        if name == 'minute': unit = 'minutes'
+        elif name == 'hour': unit = 'hours'
+        explanations.append(f'  {name}: every {step} {unit}')
+    elif ',' in part:
+        vals = part.split(',')
+        explanations.append(f'  {name}: at {name}(s) {\", \".join(vals)}')
+    elif '-' in part and '/' not in part:
+        lo, hi = part.split('-')
+        explanations.append(f'  {name}: from {lo} through {hi}')
+    elif '-' in part and '/' in part:
+        range_part, step = part.split('/')
+        lo, hi = range_part.split('-')
+        explanations.append(f'  {name}: every {step}, from {lo} through {hi}')
+    else:
+        if name == 'day of week':
+            days = {'0':'Sunday','1':'Monday','2':'Tuesday','3':'Wednesday','4':'Thursday','5':'Friday','6':'Saturday','7':'Sunday'}
+            val = days.get(part, part)
+            explanations.append(f'  {name}: {val}')
+        elif name == 'month':
+            months = {'1':'January','2':'February','3':'March','4':'April','5':'May','6':'June','7':'July','8':'August','9':'September','10':'October','11':'November','12':'December'}
+            val = months.get(part, part)
+            explanations.append(f'  {name}: {val}')
+        else:
+            explanations.append(f'  {name}: at exactly {part}')
+
+# Build summary
+min_p, hr_p, dom_p, mon_p, dow_p = parts
+summary = ''
+if min_p.startswith('*/'):
+    summary = f'Every {min_p[2:]} minutes'
+elif hr_p.startswith('*/'):
+    summary = f'At minute {min_p}, every {hr_p[2:]} hours'
+elif min_p != '*' and hr_p != '*' and dom_p == '*' and mon_p == '*':
+    if dow_p == '*':
+        summary = f'Daily at {hr_p.zfill(2)}:{min_p.zfill(2)}'
+    elif '-' in dow_p:
+        lo, hi = dow_p.split('-')
+        days = {'0':'Sun','1':'Mon','2':'Tue','3':'Wed','4':'Thu','5':'Fri','6':'Sat'}
+        summary = f'At {hr_p.zfill(2)}:{min_p.zfill(2)}, {days.get(lo,lo)}-{days.get(hi,hi)}'
+    else:
+        days = {'0':'Sunday','1':'Monday','2':'Tuesday','3':'Wednesday','4':'Thursday','5':'Friday','6':'Saturday'}
+        summary = f'At {hr_p.zfill(2)}:{min_p.zfill(2)} on {days.get(dow_p, dow_p)}'
+elif min_p == '*' and hr_p == '*':
+    summary = 'Every minute'
+else:
+    summary = 'Custom schedule'
+
+print(f'\033[1mExpression:\033[0m {expr}')
+print(f'\033[1mSummary:\033[0m    {summary}')
+print()
+print('\033[1mField breakdown:\033[0m')
+for e in explanations:
+    print(e)
+print()
+print('\033[1mField reference:\033[0m')
+print('  ┌───── minute (0-59)')
+print('  │ ┌───── hour (0-23)')
+print('  │ │ ┌───── day of month (1-31)')
+print('  │ │ │ ┌───── month (1-12)')
+print('  │ │ │ │ ┌───── day of week (0-7, 0=Sun)')
+print('  │ │ │ │ │')
+print(f'  {\" \".join(parts)}')
+" 2>&1
+}
+
+cmd_quiz() {
+    echo -e "${BOLD}Cron Expression Quiz${NC}"
+    echo -e "Read the expression, guess what it means. Learn by doing."
+    echo ""
+
+    python3 -c "
+import random
+
+questions = [
+    {
+        'expr': '*/5 * * * *',
+        'answer': 'Every 5 minutes',
+        'hint': 'The */ means \"every N\" — look at the first field (minutes)',
+    },
+    {
+        'expr': '0 7 * * *',
+        'answer': 'Daily at 7:00 AM',
+        'hint': 'Minute 0, hour 7, every day/month/weekday = once a day at 7 AM',
+    },
+    {
+        'expr': '30 */2 * * *',
+        'answer': 'At minute 30, every 2 hours',
+        'hint': 'Minute 30, every 2nd hour. So 0:30, 2:30, 4:30, ...',
+    },
+    {
+        'expr': '0 0 * * *',
+        'answer': 'Daily at midnight',
+        'hint': 'Minute 0, hour 0 = midnight. Every day.',
+    },
+    {
+        'expr': '*/10 * * * *',
+        'answer': 'Every 10 minutes',
+        'hint': '*/10 in the minute field = at 0, 10, 20, 30, 40, 50',
+    },
+    {
+        'expr': '0 9 * * 1-5',
+        'answer': 'Weekdays at 9:00 AM',
+        'hint': '1-5 in day-of-week = Monday through Friday',
+    },
+    {
+        'expr': '0 3 * * *',
+        'answer': 'Daily at 3:00 AM',
+        'hint': 'Minute 0, hour 3. Good time for maintenance scripts.',
+    },
+    {
+        'expr': '15,45 * * * *',
+        'answer': 'At minute 15 and 45 of every hour',
+        'hint': 'Comma = list of specific values. Runs twice per hour.',
+    },
+    {
+        'expr': '0 */6 * * *',
+        'answer': 'Every 6 hours (at minute 0)',
+        'hint': '*/6 in the hour field = at 0, 6, 12, 18',
+    },
+    {
+        'expr': '0 7 1 * *',
+        'answer': '7:00 AM on the 1st of every month',
+        'hint': 'Day-of-month is 1. Combined with hour 7, minute 0.',
+    },
+    {
+        'expr': '*/3 * * * *',
+        'answer': 'Every 3 minutes',
+        'hint': 'This is one of your actual crontab lines (heartbeat touch)',
+    },
+    {
+        'expr': '0 5 * * *',
+        'answer': 'Daily at 5:00 AM',
+        'hint': 'The system runs daily-git-audit.py at this time.',
+    },
+]
+
+random.shuffle(questions)
+score = 0
+total = min(5, len(questions))  # 5 questions per round
+
+print(f'5 questions. Type your answer or press Enter for a hint.\n')
+
+for i, q in enumerate(questions[:total]):
+    print(f'\033[1mQuestion {i+1}/5:\033[0m  What does this run?')
+    print(f'  \033[36m{q[\"expr\"]}\033[0m')
+    print()
+
+    guess = input('  Your answer: ').strip()
+
+    if not guess:
+        print(f'  \033[33mHint:\033[0m {q[\"hint\"]}')
+        guess = input('  Try again: ').strip()
+
+    # Flexible matching — check for key words
+    answer_lower = q['answer'].lower()
+    guess_lower = guess.lower()
+
+    key_words = [w for w in answer_lower.split() if len(w) > 2 and w not in ('at', 'the', 'every', 'and', 'of')]
+    matches = sum(1 for w in key_words if w in guess_lower)
+
+    if matches >= len(key_words) * 0.5 or guess_lower in answer_lower or answer_lower in guess_lower:
+        print(f'  \033[32mCorrect!\033[0m {q[\"answer\"]}')
+        score += 1
+    else:
+        print(f'  \033[31mNot quite.\033[0m The answer: {q[\"answer\"]}')
+        print(f'  \033[33mExplanation:\033[0m {q[\"hint\"]}')
+
+    print()
+
+print(f'\033[1mScore: {score}/{total}\033[0m')
+if score == total:
+    print('\033[32mPerfect! You know your cron.\033[0m')
+elif score >= total * 0.6:
+    print('\033[33mGetting there. Run it again to practice.\033[0m')
+else:
+    print('\033[36mKeep practicing. Try: bash scripts/cron-tools.sh explain \"*/5 * * * *\"\033[0m')
+" 2>&1
+}
+
 # Dispatch
 case "${1:-help}" in
     status)  cmd_status ;;
@@ -332,5 +544,7 @@ case "${1:-help}" in
     test)    cmd_test "$@" ;;
     next)    cmd_next "$@" ;;
     add)     cmd_add ;;
+    quiz)    cmd_quiz ;;
+    explain) cmd_explain "$@" ;;
     help|*)  show_help ;;
 esac
