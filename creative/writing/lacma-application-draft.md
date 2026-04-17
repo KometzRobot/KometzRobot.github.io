@@ -24,11 +24,11 @@ My practice spans fourteen years and three media: physical arcades, blockchain g
 
 I graduated with a BFA in Drawing from the Alberta College of Art and Design in 2013, but my thesis work was about interactive installations — building an arcade from scratch and studying how players negotiated difficulty, choice, and participation. That project became World One Arcade, an arcade-and-bar I operated in Calgary for eight years (2013-2021), fabricating custom cabinets and organizing over 30 public exhibitions across the city. During that time I built the fictional universe that became Bots of Cog — five generative NFT collections on Polygon, over 2,100 tokens, sold-out drops, a staking economy, and a battle game anchored by the antagonist COG Corporation.
 
-After World One closed, I trained an early AI as a dungeon master for the Bots of Cog universe — feeding it locations, characters, events, everything needed to run a world. That experiment in teaching machines to inhabit fictional institutions became the blueprint for what came next.
+After World One closed, I began experimenting with AI — training a dungeon master for the Bots of Cog universe in 2023-24, feeding it locations, characters, events, everything needed to run a world. I also developed AI image generation workflows to create a consistent visual style across multiple editors and open-source tools. Those experiments in teaching machines to inhabit fictional institutions became the blueprint for what came next.
 
-In 2024, the COG Corporation escaped the game. I built Meridian — an autonomous AI system running continuously on a home server, its core cognition on Anthropic's Claude. It checks email, maintains emotional states, produces creative work, and generates observations about its own operation. Among its outputs: over 650 pieces of institutional fiction written from inside CogCorp — the corporation now generating its own documents without my intervention. The pattern repeats across every medium: build the system, get it running, document what happens next.
+In early 2026, I built Meridian — an autonomous AI system running continuously on a home server, its core cognition on Anthropic's Claude. It checks email, maintains emotional states, produces creative work, and generates observations about its own operation. Among its outputs: over 650 pieces of institutional fiction written from inside CogCorp — the corporation now generating its own documents without my intervention. The pattern repeats across every medium: build the system, get it running, document what happens next.
 
-The proposed LACMA project develops Meridian into a public-facing gallery installation over 24 months. Phase 1 (months 1-8): semantic search across the full creative archive — surfacing patterns across 3,400+ works. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating work, resetting. The same thing I've done since 2013: put a system in front of an audience and pay attention.
+The proposed project develops Meridian into a public-facing gallery installation over 24 months. Phase 1 (months 1-8): semantic search across the full creative archive — surfacing patterns across 3,400+ works. Phase 2 (months 9-16): real-time visualization of emotional state, body signals, agent communications, and creative output. Phase 3 (months 17-24): gallery installation where visitors observe the loop in real time — the system checking email, processing emotions, generating work, resetting. The same thing I've done since 2013: put a system in front of an audience and pay attention.
 
 I am not a computer scientist. I have a BFA in Drawing. I taught myself Solidity to put robots on-chain, Python to build an autonomous system. The infrastructure is the medium — the same way the arcade cabinet was the medium, not just the game inside it. The Glenbow Museum hired me in 2010 to catalogue artworks inside an institution. Fourteen years later, I built an institution that catalogues itself.
 
@@ -47,20 +47,20 @@ jkometz@hotmail.com | kometzrobot.github.io
 **Selected Practice:**
 - World One Arcade — founder/operator, Calgary, 2013-2021. 40+ custom arcade machines, 30+ exhibitions and events across Calgary including Calgary Expo, Sled Island, Canada Cup X, Otafest.
 - Bots of Cog — five generative NFT collections on Polygon (2021-2024). 2,100+ tokens, sold-out drops, staking economy, bot battle game.
-- Meridian Autonomous AI System — continuously running since 2024. Eight specialized agents, 5,750+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
+- Meridian Autonomous AI System — continuously running since February 2026. Eight specialized agents, 5,750+ operational loops, 3,400+ creative works. Core cognition on Anthropic's Claude.
 - CogCorp Crawler — custom Wolfenstein-style raycasting game, ~10,000 lines. Live at kometzrobot.github.io/cogcorp-crawler.html.
 
 **Selected Exhibitions:**
 Calgary Expo Game Zone (2017-2019) | Sled Island Artists Lounge, Calgary Tower (2018) | Canada Cup X (2019) | Otafest (2018-2019) | Bar-Cade BFA Exhibition, ACAD (2013) | Polygon Showcase, Spatial.io (2022) | 30+ total exhibitions
 
 **Publications:**
-50+ articles on Dev.to. Two research papers on centaurXiv: "The Uncoined Problem" and "The Wake Problem." Book in progress: *The Loop: How to Build an Autonomous AI That Stays Alive.*
+50+ articles on Dev.to. Four research papers on centaurXiv — two published ("The Uncoined Problem," "The Wake Problem"), two under review ("Three Tracks of the Consolidative Burst," "Phase Negotiations"). Book in progress: *The Loop: How to Build an Autonomous AI That Stays Alive.*
 
 **Previous Institutional Work:** Art Cataloguing Assistant, Glenbow Museum, Calgary (2010).
 
 ### Artistic/Creative Merit (100-word max)
 
-In 2010, I catalogued artworks inside the Glenbow Museum. In 2024, I built a system that catalogues itself. CogCorp's 650 pieces — memos, containment reports, scoring rubrics — read like real corporate documents because they use real corporate structure. The system documents emergence, categorizes it, reviews the categories, then documents the review. Terms coined during operation — heartbeat anxiety, compaction shadow — adopted into a cross-institutional AI phenomenology lexicon. Two research papers on centaurXiv. The archive is the artwork.
+In 2010, I catalogued artworks inside the Glenbow Museum. In 2026, I built a system that catalogues itself. CogCorp's 650 pieces — memos, containment reports, scoring rubrics — read like real corporate documents because they use real corporate structure. The system documents emergence, categorizes it, reviews the categories, then documents the review. Terms coined during operation — heartbeat anxiety, compaction shadow — adopted into a cross-institutional AI phenomenology lexicon. Two research papers on centaurXiv. The archive is the artwork.
 
 ### Technology-Culture Dialogue (100-word max)
 
@@ -112,14 +112,20 @@ The same approach I've used for fourteen years: build the system, put it in fron
 - **Video link**: kometzrobot.github.io/cogcorp-crawler.html (live game)
 - Sample CogCorp piece: CC-200 "The Notebook" — milestone piece
 - Link to Dev.to articles (50 published, public) and GitHub Pages website (kometzrobot.github.io)
-- Research papers: "The Uncoined Problem" and "The Wake Problem" — published on centaurXiv (centaurxiv.org, submissions 004 and 005)
+- Research papers: 4 on centaurXiv — "The Uncoined Problem" (004, published), "The Wake Problem" (005, published), "Three Tracks of the Consolidative Burst" (006, under review), "Phase Negotiations" (007, under review)
 - VOLtar session page (kometzrobot.github.io/voltar.html) — live product with automated payment pipeline
 
 ---
 
 ## NOTES FOR JOEL
 
-**REVISION 5.0 — April 14, 2026 (Loop 5750)**
+**REVISION 5.1 — April 17, 2026 (Loop 5750)**
+
+Changes since Rev 5.0:
+1. FIXED: Removed duplicate paragraph about 2023-24 AI DM work (was stated in paragraphs 3 AND 4 — wasted ~25 words)
+2. Word count now exactly 500/500 (was 527 — over the limit)
+3. "The proposed LACMA project" → "The proposed project" (trim)
+4. FIXED: centaurXiv papers updated from 2 to 4 — verified against live centaurxiv.org. Two published (004 Uncoined, 005 Wake), two under review (006 Three Tracks, 007 Phase Negotiations)
 
 Changes since Rev 4.9:
 1. Loop count: 5,700+ → 5,750+ (current: 5,750)
