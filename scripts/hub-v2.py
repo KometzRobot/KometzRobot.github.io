@@ -550,10 +550,12 @@ def _svg_radar_chart(axes, w=280, h=280, color="#7b5cf5", bg="#0e0e1a", grid="#1
             + ''.join(parts) + '</svg>')
 
 
-def _svg_bar_chart(values, w=280, h=56, color="#7b5cf5", bg="#0e0e1a", dim="#4a4a6a"):
-    """Generate a minimal SVG bar chart. values is a list of numbers."""
+def _svg_bar_chart(values, w=280, h=56, color="#7b5cf5", bg="#0e0e1a", dim="#4a4a6a", labels=None):
+    """Generate a minimal SVG bar chart with optional time labels."""
+    label_h = 14 if labels else 0
+    total_h = h + label_h
     if not values or max(values) == 0:
-        return f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg"><text x="{w//2}" y="{h//2+4}" fill="{dim}" font-size="10" text-anchor="middle">no data</text></svg>'
+        return f'<svg viewBox="0 0 {w} {total_h}" xmlns="http://www.w3.org/2000/svg"><text x="{w//2}" y="{total_h//2+4}" fill="{dim}" font-size="10" text-anchor="middle">no data</text></svg>'
     n = len(values)
     max_v = max(values)
     bar_w = max(1, (w - 4) / n - 1)
@@ -562,17 +564,28 @@ def _svg_bar_chart(values, w=280, h=56, color="#7b5cf5", bg="#0e0e1a", dim="#4a4
         bh = max(2, int((v / max_v) * (h - 4))) if v > 0 else 0
         x = 2 + i * ((w - 4) / n)
         y = h - 2 - bh
-        bars.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh}" fill="{color}" rx="1"/>')
-    return (f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">'
-            f'<rect width="{w}" height="{h}" fill="{bg}" rx="4"/>'
-            + ''.join(bars) + '</svg>')
+        opacity = "0.5" if v == 0 else "1"
+        bars.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh}" fill="{color}" fill-opacity="{opacity}" rx="1"><title>{v} events</title></rect>')
+    label_svg = ""
+    if labels and len(labels) == n:
+        # Show every 6th label for 24 bars
+        step = max(1, n // 4)
+        for i in range(0, n, step):
+            x = 2 + i * ((w - 4) / n) + bar_w / 2
+            label_svg += f'<text x="{x:.1f}" y="{h + 11}" fill="{dim}" font-size="8" text-anchor="middle" font-family="monospace">{labels[i]}</text>'
+    return (f'<svg viewBox="0 0 {w} {total_h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">'
+            f'<rect width="{w}" height="{total_h}" fill="{bg}" rx="4"/>'
+            + ''.join(bars) + label_svg + '</svg>')
 
 
-def _svg_sparkline(points, w=280, h=50, color="#4ade80", bg="#0e0e1a", dot_r=2.5):
-    """Generate an SVG sparkline from list of (x_norm 0-1, y_norm 0-1) or just y values."""
+def _svg_sparkline(points, w=280, h=50, color="#4ade80", bg="#0e0e1a", dot_r=2.5, labels=None, value_fmt="{:.0f}"):
+    """Generate an SVG sparkline with tooltips and optional time labels."""
+    label_h = 14 if labels else 0
+    total_h = h + label_h
     if not points or len(points) < 2:
-        return f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg"><text x="{w//2}" y="{h//2+4}" fill="#4a4a6a" font-size="10" text-anchor="middle">insufficient data</text></svg>'
+        return f'<svg viewBox="0 0 {w} {total_h}" xmlns="http://www.w3.org/2000/svg"><text x="{w//2}" y="{total_h//2+4}" fill="#4a4a6a" font-size="10" text-anchor="middle">insufficient data</text></svg>'
     pad = 8
+    raw_vals = points if isinstance(points[0], (int, float)) else [p[1] for p in points]
     if isinstance(points[0], (int, float)):
         mn, mx = min(points), max(points)
         rng = mx - mn if mx != mn else 1
@@ -583,12 +596,29 @@ def _svg_sparkline(points, w=280, h=50, color="#4ade80", bg="#0e0e1a", dot_r=2.5
         coords = [(pad + p[0] * (w - 2*pad), (h - pad) - p[1] * (h - 2*pad)) for p in points]
     path = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
     fill_path = path + f" L {coords[-1][0]:.1f},{h-pad} L {coords[0][0]:.1f},{h-pad} Z"
-    dots = ''.join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{dot_r}" fill="{color}"/>' for x, y in coords)
-    return (f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">'
-            f'<rect width="{w}" height="{h}" fill="{bg}" rx="4"/>'
+    # Dots with tooltips showing value and optional label
+    dots = []
+    for i, (x, y) in enumerate(coords):
+        val = raw_vals[i] if i < len(raw_vals) else 0
+        lbl = labels[i] if labels and i < len(labels) else ""
+        title = f"{lbl} — {value_fmt.format(val)}" if lbl else value_fmt.format(val)
+        dots.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{dot_r}" fill="{color}"><title>{title}</title></circle>')
+    # Highlight last point (current value)
+    if coords:
+        lx, ly = coords[-1]
+        dots.append(f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="{dot_r + 1.5}" fill="{color}" fill-opacity="0.3"/>')
+    # Time labels
+    label_svg = ""
+    if labels and len(labels) >= 2:
+        step = max(1, len(labels) // 4)
+        for i in range(0, len(labels), step):
+            if i < len(coords):
+                label_svg += f'<text x="{coords[i][0]:.1f}" y="{h + 11}" fill="#4a4a6a" font-size="8" text-anchor="middle" font-family="monospace">{labels[i]}</text>'
+    return (f'<svg viewBox="0 0 {w} {total_h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">'
+            f'<rect width="{w}" height="{total_h}" fill="{bg}" rx="4"/>'
             f'<path d="{fill_path}" fill="{color}" fill-opacity="0.12"/>'
             f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.5" stroke-linejoin="round"/>'
-            + dots + '</svg>')
+            + ''.join(dots) + label_svg + '</svg>')
 
 
 def _get_today_summary():
@@ -725,7 +755,8 @@ def _get_today_summary_inner():
         # Ordered from (now_h+1) % 24 to now_h so latest is rightmost
         ordered_hours = [(now_h + 1 + i) % 24 for i in range(24)]
         activity_vals = [hour_map.get(h, 0) for h in ordered_hours]
-        result["activity_chart"] = _svg_bar_chart(activity_vals, w=300, h=60, color="#7b5cf5")
+        hour_labels = [f"{h:02d}" for h in ordered_hours]
+        result["activity_chart"] = _svg_bar_chart(activity_vals, w=300, h=60, color="#7b5cf5", labels=hour_labels)
         result["activity_peak"] = max(activity_vals) if activity_vals else 0
         result["activity_total"] = sum(activity_vals)
 
@@ -747,12 +778,13 @@ def _get_today_summary_inner():
         # Append current score
         curr_score = float(soma.get("mood_score", 50))
         mood_scores.append(curr_score)
-        # Normalize 0-100 → 0-1 for sparkline
+        mood_labels.append("now")
+        # Sparkline with time labels and score tooltips
         if len(mood_scores) >= 2:
             score_color = "#4ade80" if curr_score > 60 else "#fbbf24" if curr_score > 35 else "#f87171"
-            result["mood_chart"] = _svg_sparkline(mood_scores, w=300, h=50, color=score_color)
+            result["mood_chart"] = _svg_sparkline(mood_scores, w=300, h=50, color=score_color, labels=mood_labels)
         else:
-            result["mood_chart"] = _svg_sparkline([50, curr_score], w=300, h=50)
+            result["mood_chart"] = _svg_sparkline([50, curr_score], w=300, h=50, labels=["prev", "now"])
     except Exception:
         result["activity_chart"] = ""
         result["mood_chart"] = ""
@@ -951,6 +983,21 @@ def _get_agents_direct_inner():
                     status = "active" if age < 900 else "stale"
                 except Exception:
                     pass
+            # Message count and recent topics (last 24h)
+            msg_count_24h = 0
+            recent_topics = []
+            for sname in search_names:
+                row24 = db.execute(
+                    "SELECT COUNT(*) FROM agent_messages WHERE agent=? AND timestamp > datetime('now', '-1 day')",
+                    (sname,)
+                ).fetchone()
+                if row24:
+                    msg_count_24h += row24[0]
+                topics_rows = db.execute(
+                    "SELECT DISTINCT topic FROM agent_messages WHERE agent=? AND topic IS NOT NULL AND topic != '' AND timestamp > datetime('now', '-1 day') LIMIT 5",
+                    (sname,)
+                ).fetchall()
+                recent_topics.extend(t[0] for t in topics_rows if t[0])
             results.append({
                 "name": name,
                 "role": cfg["role"],
@@ -959,6 +1006,8 @@ def _get_agents_direct_inner():
                 "last_seen": last_seen,
                 "last_message": last_message,
                 "topic": topic,
+                "msg_count_24h": msg_count_24h,
+                "recent_topics": list(set(recent_topics))[:5],
             })
         db.close()
     except Exception:
