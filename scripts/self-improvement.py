@@ -160,12 +160,13 @@ def get_recent_outcomes(hours=6):
     """Retrieve recent outcomes from the journal."""
     ensure_journal_table()
     try:
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
         db = sqlite3.connect(RELAY_DB, timeout=3)
         rows = db.execute(
             """SELECT id, timestamp, event_type, description, expected_outcome,
                       actual_outcome, effectiveness, agent, lesson
-               FROM improvement_journal WHERE timestamp > ?
+               FROM improvement_journal
+               WHERE REPLACE(SUBSTR(timestamp, 1, 19), 'T', ' ') > ?
                ORDER BY timestamp DESC""",
             (cutoff,),
         ).fetchall()
@@ -300,11 +301,12 @@ def analyze_thresholds(state):
 def get_recent_messages(hours=6):
     """Get relay messages from the last N hours."""
     try:
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
         db = sqlite3.connect(RELAY_DB, timeout=3)
         rows = db.execute(
             """SELECT id, agent, message, topic, timestamp
-               FROM agent_messages WHERE timestamp > ?
+               FROM agent_messages
+               WHERE REPLACE(SUBSTR(timestamp, 1, 19), 'T', ' ') > ?
                ORDER BY timestamp DESC""",
             (cutoff,),
         ).fetchall()

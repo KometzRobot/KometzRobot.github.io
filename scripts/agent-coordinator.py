@@ -226,11 +226,15 @@ def jaccard_similarity(set_a, set_b):
 
 def get_recent_messages(hours=1):
     try:
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        # Use space-separated format and normalize stored timestamps to match,
+        # fixing the bug where 'T'-separated cutoffs cause SQLite text comparison
+        # to miss space-separated timestamps (space < 'T' in ASCII).
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
         db = sqlite3.connect(RELAY_DB, timeout=3)
         rows = db.execute(
             "SELECT id, agent, message, topic, timestamp FROM agent_messages "
-            "WHERE timestamp > ? ORDER BY timestamp DESC", (cutoff,)).fetchall()
+            "WHERE REPLACE(SUBSTR(timestamp, 1, 19), 'T', ' ') > ? "
+            "ORDER BY timestamp DESC", (cutoff,)).fetchall()
         db.close()
         return [{"id": r[0], "agent": r[1], "message": r[2],
                  "topic": r[3], "timestamp": r[4]} for r in rows]
@@ -485,13 +489,14 @@ def create_tasks_from_incidents(incidents, correlations):
 def expire_stale_tasks(hours=24):
     """Mark tasks older than N hours as failed if still pending."""
     ensure_task_table()
-    cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
     now = datetime.now(timezone.utc).isoformat()
     try:
         db = sqlite3.connect(RELAY_DB, timeout=5)
         db.execute("""UPDATE coordinator_tasks SET status='failed',
                       outcome='expired — no agent picked up', updated_at=?
-                      WHERE status IN ('pending','assigned') AND created_at < ?""", (now, cutoff))
+                      WHERE status IN ('pending','assigned')
+                      AND REPLACE(SUBSTR(created_at, 1, 19), 'T', ' ') < ?""", (now, cutoff))
         db.commit()
         db.close()
     except Exception as e:

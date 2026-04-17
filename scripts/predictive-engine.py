@@ -194,10 +194,11 @@ def get_soma_history():
 def get_relay_frequency(hours=6):
     """Count relay messages per agent in recent hours."""
     try:
-        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
         db = sqlite3.connect(RELAY_DB, timeout=3)
         rows = db.execute(
-            "SELECT agent, COUNT(*) FROM agent_messages WHERE timestamp > ? GROUP BY agent",
+            "SELECT agent, COUNT(*) FROM agent_messages "
+            "WHERE REPLACE(SUBSTR(timestamp, 1, 19), 'T', ' ') > ? GROUP BY agent",
             (cutoff,)
         ).fetchall()
         db.close()
