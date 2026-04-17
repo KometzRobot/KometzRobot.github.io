@@ -753,30 +753,40 @@ def compute_efficiency_metrics(state):
     detections.sort()
     resolutions.sort()
 
-    # MTBI: Mean Time Between Incidents
+    # Cluster incidents within 300s windows — cross-agent cascades from the
+    # same root event (heartbeat gap -> STALE + CRITICAL + ALERT + DOWN)
+    # should count as one incident, not four.
+    clustered = []
+    if incidents:
+        cluster_start = incidents[0]
+        for i in range(1, len(incidents)):
+            if (incidents[i] - cluster_start).total_seconds() > 300:
+                clustered.append(cluster_start)
+                cluster_start = incidents[i]
+        clustered.append(cluster_start)
+
+    # MTBI: Mean Time Between Incidents (using clustered events)
     mtbi = None
-    if len(incidents) >= 2:
-        gaps = [(incidents[i + 1] - incidents[i]).total_seconds()
-                for i in range(len(incidents) - 1)]
-        # Filter out sub-minute gaps (probably same incident)
-        gaps = [g for g in gaps if g > 60]
+    if len(clustered) >= 2:
+        gaps = [(clustered[i + 1] - clustered[i]).total_seconds()
+                for i in range(len(clustered) - 1)]
         if gaps:
             mtbi = round(sum(gaps) / len(gaps))
 
-    # MTTD: Mean Time To Detect (incident -> detection)
+    # MTTD: Mean Time To Detect (clustered incident -> detection)
     mttd = None
     detect_times = []
-    for inc_ts in incidents:
+    for inc_ts in clustered:
         later_detections = [d for d in detections if d >= inc_ts and (d - inc_ts).total_seconds() < 3600]
         if later_detections:
             detect_times.append((later_detections[0] - inc_ts).total_seconds())
     if detect_times:
         mttd = round(sum(detect_times) / len(detect_times))
 
-    # MTTR: Mean Time To Resolve (incident -> resolution)
+    # MTTR: Mean Time To Resolve (clustered incident -> resolution)
     mttr = None
     resolve_times = []
-    for inc_ts in incidents:
+    for inc_ts in clustered:
         later_res = [r for r in resolutions if r >= inc_ts and (r - inc_ts).total_seconds() < 7200]
         if later_res:
             resolve_times.append((later_res[0] - inc_ts).total_seconds())
@@ -787,7 +797,7 @@ def compute_efficiency_metrics(state):
     eff = state.get("efficiency", {"incidents": [], "mtbi_history": [],
                                      "mttd_history": [], "mttr_history": []})
     now = datetime.now(timezone.utc).isoformat()
-    eff["incidents"].append({"timestamp": now, "count": len(incidents)})
+    eff["incidents"].append({"timestamp": now, "count": len(clustered)})
     eff["incidents"] = eff["incidents"][-48:]
 
     if mtbi is not None:
@@ -819,7 +829,8 @@ def compute_efficiency_metrics(state):
 
     metrics = {
         "timestamp": now,
-        "incidents_24h": len(incidents),
+        "incidents_24h": len(clustered),
+        "raw_events_24h": len(incidents),
         "mtbi_sec": mtbi,
         "mttd_sec": mttd,
         "mttr_sec": mttr,
@@ -827,7 +838,7 @@ def compute_efficiency_metrics(state):
     }
 
     # Post summary
-    parts = [f"Efficiency: {len(incidents)} incidents/24h"]
+    parts = [f"Efficiency: {len(clustered)} incidents/24h ({len(incidents)} raw events)"]
     if mtbi:
         parts.append(f"MTBI={mtbi}s")
     if mttd:
@@ -841,7 +852,7 @@ def compute_efficiency_metrics(state):
         log_outcome("incident", warn, "Stable efficiency", "Degraded",
                      3, "SelfImprove", "Efficiency regression detected")
 
-    log(f"Efficiency: incidents={len(incidents)} MTBI={mtbi} MTTD={mttd} MTTR={mttr}")
+    log(f"Efficiency: incidents={len(clustered)} (raw={len(incidents)}) MTBI={mtbi} MTTD={mttd} MTTR={mttr}")
     return metrics
 
 
