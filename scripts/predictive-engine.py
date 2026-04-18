@@ -216,6 +216,7 @@ def get_alert_message_count(hours=6):
             "SELECT COUNT(*) FROM agent_messages "
             "WHERE REPLACE(SUBSTR(timestamp, 1, 19), 'T', ' ') > ? "
             "AND agent IN ('Watchdog', 'Eos-Watchdog', 'Eos') "
+            "AND topic IN ('alert', 'error', 'restart') "
             "AND (message LIKE '%CRITICAL%' OR message LIKE '%ERROR%' "
             "     OR message LIKE '%FAILED%' OR message LIKE '%DOWN%' "
             "     OR message LIKE '%CRASH%' OR message LIKE '%STALE%')",
