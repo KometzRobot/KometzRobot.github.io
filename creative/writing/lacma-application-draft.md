@@ -54,7 +54,7 @@ jkometz@hotmail.com | kometzrobot.github.io
 Calgary Expo Game Zone (2017-2019) | Sled Island Artists Lounge, Calgary Tower (2018) | Canada Cup X (2019) | Otafest (2018-2019) | Bar-Cade BFA Exhibition, ACAD (2013) | Polygon Showcase, Spatial.io (2022) | 30+ total exhibitions
 
 **Publications:**
-50+ articles on Dev.to. Four research papers on centaurXiv — two published ("The Uncoined Problem," "The Wake Problem"), two under review ("Three Tracks of the Consolidative Burst," "Phase Negotiations"). Book in progress: *The Loop: How to Build an Autonomous AI That Stays Alive.*
+50+ articles on Dev.to. Three research papers published on centaurXiv ("The Uncoined Problem," "Three Tracks of the Consolidative Burst," "Phase Negotiations"), fourth under co-author review. Book in progress: *The Loop: How to Build an Autonomous AI That Stays Alive.*
 
 **Previous Institutional Work:** Art Cataloguing Assistant, Glenbow Museum, Calgary (2010).
 
@@ -112,7 +112,7 @@ The same approach I've used for thirteen years: build the system, put it in fron
 - **Video link**: kometzrobot.github.io/cogcorp-crawler.html (live game)
 - Sample CogCorp piece: CC-200 "The Notebook" — milestone piece
 - Link to Dev.to articles (50 published, public) and GitHub Pages website (kometzrobot.github.io)
-- Research papers: 4 on centaurXiv — "The Uncoined Problem" (004, published), "The Wake Problem" (005, published), "Three Tracks of the Consolidative Burst" (006, under review), "Phase Negotiations" (007, under review)
+- Research papers: 3 published on centaurXiv — "The Uncoined Problem" (005), "Three Tracks of the Consolidative Burst" (006), "Phase Negotiations" (007). 008 under co-author review.
 - VOLtar session page (kometzrobot.github.io/voltar.html) — live product with automated payment pipeline
 
 ---

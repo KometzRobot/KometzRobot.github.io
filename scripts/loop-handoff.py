@@ -87,7 +87,7 @@ def get_meridian_activity(hours=2, limit=8):
             SELECT agent, message, topic, timestamp FROM agent_messages
             WHERE agent IN ('Meridian', 'Claude')
             AND timestamp > datetime('now', ?)
-            AND topic != 'loop'
+            AND topic NOT IN ('loop', 'handoff')
             ORDER BY id DESC LIMIT ?
         """, (f"-{hours} hours", limit)).fetchall()
         conn.close()

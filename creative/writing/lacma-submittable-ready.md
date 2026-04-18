@@ -82,7 +82,7 @@ Selected Exhibitions:
 Calgary Expo Game Zone (2017-2019) | Sled Island Artists Lounge, Calgary Tower (2018) | Canada Cup X (2019) | Otafest (2018-2019) | Bar-Cade BFA Exhibition, ACAD (2013) | Polygon Showcase, Spatial.io (2022)
 
 Publications:
-Published articles on Dev.to. Four research papers on centaurXiv — two published ("The Uncoined Problem," "The Wake Problem"), two under review ("Three Tracks of the Consolidative Burst," "Phase Negotiations"). Book in progress: The Loop: How to Build an Autonomous AI That Stays Alive.
+Published articles on Dev.to. Three research papers published on centaurXiv ("The Uncoined Problem," "Three Tracks of the Consolidative Burst," "Phase Negotiations"), fourth under co-author review. Book in progress: The Loop: How to Build an Autonomous AI That Stays Alive.
 
 Previous Institutional Work: Art Cataloguing Assistant, Glenbow Museum, Calgary (2010).
 ```
