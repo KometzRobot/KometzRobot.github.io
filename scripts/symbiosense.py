@@ -20,6 +20,7 @@ Stores state in .symbiosense-state.json. Posts to relay/dashboard
 only when something meaningful changes.
 """
 
+import fcntl
 import json
 import os
 import time
@@ -29,6 +30,7 @@ import glob as _glob_module
 from datetime import datetime, timezone
 
 BASE = "/home/joel/autonomous-ai"
+PID_FILE = os.path.join(BASE, ".soma.pid")
 STATE_FILE = os.path.join(BASE, ".symbiosense-state.json")
 RELAY_DB = os.path.join(BASE, "agent-relay.db")
 DASH_FILE = os.path.join(BASE, ".dashboard-messages.json")
@@ -963,18 +965,23 @@ def get_emotional_memory(state, mood, mood_score):
     """
     memory_file = os.path.join(BASE, ".soma-emotional-memory.json")
     try:
+        defaults = {
+            "daily_profile": {str(h): {"avg": 75, "count": 0} for h in range(24)},
+            "stress_events": [],
+            "recovery_times": [],
+            "volatility_7d": 0,
+            "dominant_mood_today": {},
+            "last_stress_start": None,
+        }
         if os.path.exists(memory_file):
             with open(memory_file) as f:
                 memory = json.load(f)
+            # Backfill missing keys from defaults
+            for k, v in defaults.items():
+                if k not in memory:
+                    memory[k] = v
         else:
-            memory = {
-                "daily_profile": {str(h): {"avg": 75, "count": 0} for h in range(24)},
-                "stress_events": [],
-                "recovery_times": [],
-                "volatility_7d": 0,
-                "dominant_mood_today": {},
-                "last_stress_start": None,
-            }
+            memory = defaults
 
         hour = int(time.strftime("%H"))
         today = time.strftime("%Y-%m-%d")
@@ -2060,7 +2067,53 @@ def _soma_cascade_response(event_type, emotion, intensity, mood, mood_score):
     return responses.get(event_type, default)
 
 
+_lock_fd = None  # held open for process lifetime
+
+def acquire_lock():
+    """Singleton check — prevent duplicate Soma instances.
+    Uses flock() for atomic, crash-safe locking. The lock is held for the
+    entire process lifetime and auto-released on exit (even on crash/kill).
+    PID is written inside the locked file for diagnostics only."""
+    global _lock_fd
+    my_pid = os.getpid()
+    _lock_fd = open(PID_FILE, "w")
+    try:
+        fcntl.flock(_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (IOError, OSError):
+        # Another Soma holds the lock — it's genuinely alive
+        print(f"Soma already running (lock held on {PID_FILE}). Exiting.")
+        log(f"SINGLETON: Refused to start — flock held by another process")
+        raise SystemExit(1)
+    # Lock acquired — write PID for diagnostics
+    _lock_fd.write(str(my_pid))
+    _lock_fd.flush()
+    log(f"SINGLETON: flock acquired, PID {my_pid}")
+
+
+def release_lock():
+    """Release flock and remove PID file on clean shutdown."""
+    global _lock_fd
+    if _lock_fd:
+        try:
+            fcntl.flock(_lock_fd, fcntl.LOCK_UN)
+            _lock_fd.close()
+        except OSError:
+            pass
+    try:
+        os.remove(PID_FILE)
+    except OSError:
+        pass
+
+
 def main():
+    acquire_lock()
+    try:
+        _main_loop()
+    finally:
+        release_lock()
+
+
+def _main_loop():
     log("Soma starting — proprioception daemon online")
     post_relay("Soma online. Continuous body-awareness active.")
 

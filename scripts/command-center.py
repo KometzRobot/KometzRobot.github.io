@@ -15,6 +15,7 @@ Loop 5750+ update (v46 — UI fixes per Joel dashboard feedback):
 
 import tkinter as tk
 from tkinter import scrolledtext, font as tkfont, filedialog
+import fcntl
 import threading
 import json
 import os
@@ -7110,6 +7111,22 @@ class V16(tk.Tk):
                 self._refresh_memdb()
 
 
+def _acquire_singleton():
+    """Prevent duplicate Command Center instances via flock."""
+    lock_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             ".command-center.pid")
+    fd = open(lock_path, "w")
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (IOError, OSError):
+        print(f"Command Center already running (lock held on {lock_path}). Exiting.")
+        raise SystemExit(1)
+    fd.write(str(os.getpid()))
+    fd.flush()
+    return fd  # must stay open for process lifetime
+
+
 if __name__ == "__main__":
+    _lock_fd = _acquire_singleton()
     app = V16()
     app.mainloop()
