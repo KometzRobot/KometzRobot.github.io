@@ -87,6 +87,40 @@ function createWindow() {
   });
 }
 
+// ── Startup Dependency Check ─────────────────────────────
+// Verify Ollama and Python are available before launch.
+// Missing deps get reported to the renderer via IPC.
+
+async function checkDependencies() {
+  const deps = { ollama: false, python: false, ollamaRunning: false, cinderModel: false };
+
+  // Check Python3
+  const pyResult = await runCmd('python3', ['--version'], 5000);
+  deps.python = pyResult.ok;
+
+  // Check Ollama binary
+  const ollamaResult = await runCmd('ollama', ['--version'], 5000);
+  deps.ollama = ollamaResult.ok || ollamaResult.stdout.includes('ollama');
+
+  // Check Ollama API is responding
+  if (deps.ollama) {
+    try {
+      const data = await httpGet(`${OLLAMA_BASE}/api/tags`);
+      const parsed = JSON.parse(data);
+      deps.ollamaRunning = true;
+      deps.cinderModel = (parsed.models || []).some(m => m.name.startsWith('cinder'));
+    } catch {
+      deps.ollamaRunning = false;
+    }
+  }
+
+  return deps;
+}
+
+ipcMain.handle('deps:check', async () => {
+  return checkDependencies();
+});
+
 app.whenReady().then(async () => {
   await initSession();
   createWindow();

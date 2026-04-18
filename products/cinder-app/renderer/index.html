@@ -1211,7 +1211,16 @@ async function runLauncherChecks() {
   try {
     if (window.cinder && window.cinder.getStats) {
       const stats = await window.cinder.getStats();
-      if (stats.error) throw new Error(stats.error);
+      if (stats.error) {
+        // Diagnose: check if Python is the problem
+        if (window.cinder.checkDeps) {
+          const deps = await window.cinder.checkDeps();
+          if (!deps.python) {
+            throw new Error('Python 3 not found. Install from python.org');
+          }
+        }
+        throw new Error(stats.error);
+      }
       memIcon.className = 'check-icon ok';
       memIcon.textContent = '\u2713';
       memDetail.textContent = stats.total_sessions + ' sessions, ' + stats.total_messages + ' messages, ' + stats.total_memories + ' memories';
@@ -1226,7 +1235,7 @@ async function runLauncherChecks() {
   } catch(e) {
     memIcon.className = 'check-icon fail';
     memIcon.textContent = '\u2717';
-    memDetail.textContent = 'unavailable';
+    memDetail.textContent = e.message || 'unavailable';
   }
 
   // Check Ollama

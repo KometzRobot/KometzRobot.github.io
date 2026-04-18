@@ -161,12 +161,14 @@ else
     log "OK: The Chorus is responding on port 8091."
 fi
 
-# ── Check Command Center (systemd) ─────────────────────────────
-if ! systemctl --user is-active command-center > /dev/null 2>&1; then
-    log "WARNING: Command Center service is not active."
-    FAILURES="${FAILURES}Command Center service inactive\n"
-else
+# ── Check Command Center (process or systemd) ────────────────────
+if pgrep -f 'command-center.py' > /dev/null 2>&1; then
+    log "OK: Command Center is running (process)."
+elif systemctl --user is-active command-center > /dev/null 2>&1; then
     log "OK: Command Center service is active."
+else
+    log "WARNING: Command Center is not running."
+    FAILURES="${FAILURES}Command Center not running\n"
 fi
 
 # ── Send alert if there are failures ─────────────────────────────

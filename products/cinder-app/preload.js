@@ -43,6 +43,9 @@ contextBridge.exposeInMainWorld('cinder', {
   lockGold: () => ipcRenderer.invoke('xp:lockGold'),
   onEvolution: (callback) => ipcRenderer.on('xp:evolution', (_, data) => callback(data)),
 
+  // Dependency check
+  checkDeps: () => ipcRenderer.invoke('deps:check'),
+
   // Legacy aliases (keep for backwards compat during transition)
   saveMemory: (role, content) => ipcRenderer.invoke('memory:save', { role, content }),
   loadMemory: () => ipcRenderer.invoke('memory:load', {})
