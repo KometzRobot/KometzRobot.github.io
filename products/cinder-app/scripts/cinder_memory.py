@@ -379,6 +379,45 @@ def distill_session(conn, session_id):
     return count
 
 
+def recall(conn, query=None, limit=8):
+    """Recall relevant memories for context injection into conversations.
+    If query provided, uses TF-IDF search. Otherwise returns recent high-importance memories.
+    Returns a list of memory dicts suitable for system prompt injection."""
+    results = []
+
+    if query:
+        # Search for query-relevant memories first
+        search_results = search(conn, query, limit=limit)
+        for r in search_results:
+            if r["type"] == "memory":
+                results.append({
+                    "type": r["memory_type"],
+                    "content": r["content"],
+                    "score": r["score"]
+                })
+
+    # Always include high-importance memories (facts and preferences)
+    seen_content = {r["content"] for r in results}
+    important = conn.execute(
+        "SELECT type, content, importance FROM memories "
+        "WHERE importance >= 0.5 AND type IN ('fact', 'preference') "
+        "ORDER BY importance DESC, created_at DESC LIMIT ?",
+        (limit,)
+    ).fetchall()
+
+    for m in important:
+        if m["content"] not in seen_content:
+            results.append({
+                "type": m["type"],
+                "content": m["content"],
+                "score": m["importance"]
+            })
+            seen_content.add(m["content"])
+
+    # Cap total results
+    return results[:limit]
+
+
 def import_jsonl(conn, filepath):
     """Import from JSONL conversation log (migration from Electron's basic format)."""
     if not os.path.exists(filepath):
@@ -574,6 +613,25 @@ def main():
             print(json.dumps({"ok": True, "type": mem_type}))
         else:
             print(f"Saved [{mem_type}] memory")
+
+    elif cmd == "recall":
+        query = " ".join(args[2:]) if len(args) > 2 else None
+        limit = 8
+        # Parse --limit flag
+        if "--limit" in args:
+            idx = args.index("--limit")
+            if idx + 1 < len(args):
+                limit = int(args[idx + 1])
+                query_parts = [a for a in args[2:] if a not in ("--limit", args[idx + 1])]
+                query = " ".join(query_parts) if query_parts else None
+        results = recall(conn, query, limit)
+        if use_json:
+            print(json.dumps(results))
+        else:
+            if not results:
+                print("No memories to recall.")
+            for r in results:
+                print(f"[{r['type']}] {r['content'][:160]}")
 
     else:
         print(__doc__)

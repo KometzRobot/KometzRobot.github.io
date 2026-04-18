@@ -332,8 +332,12 @@ ipcMain.handle('memory:sessions', async () => {
   return memoryCmd(['sessions']);
 });
 
-// Create a new conversation session
+// Create a new conversation session (distills previous session first)
 ipcMain.handle('memory:newSession', async () => {
+  // Auto-distill the previous session before starting a new one
+  if (currentSessionId) {
+    memoryCmd(['distill', currentSessionId]).catch(() => {});
+  }
   const result = await memoryCmd(['new-session']);
   if (result.session_id) currentSessionId = result.session_id;
   return result;
@@ -360,6 +364,13 @@ ipcMain.handle('memory:distill', async (event, { session } = {}) => {
 // Rebuild search index
 ipcMain.handle('memory:buildIndex', async () => {
   return memoryCmd(['build-index'], 30000);
+});
+
+// Recall relevant memories for context injection
+ipcMain.handle('memory:recall', async (event, { query } = {}) => {
+  const args = ['recall'];
+  if (query) args.push(query);
+  return memoryCmd(args);
 });
 
 // ── VeraCrypt Vault Management ────────────────────────────

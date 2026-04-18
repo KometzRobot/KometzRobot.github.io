@@ -1325,11 +1325,35 @@ function updateConnectionStatus() {
 }
 
 /* ═══ SYSTEM PROMPT BUILDER ═════════════════════════════════ */
-function buildSystemPrompt() {
+// Cached recalled memories for current conversation
+var recalledMemories = [];
+
+async function recallMemoriesForContext(userMessage) {
+  if (!window.cinder || !window.cinder.recallMemories) return [];
+  try {
+    var results = await window.cinder.recallMemories(userMessage);
+    if (Array.isArray(results) && results.length > 0) {
+      recalledMemories = results;
+    }
+    return recalledMemories;
+  } catch(e) {
+    return recalledMemories; // fall back to cached
+  }
+}
+
+function buildSystemPrompt(memories) {
   var parts = [];
 
   // Base identity
   parts.push('You are Cinder, a warm and thoughtful AI companion. You sit by the fire with the user, offering conversation, ideas, and help. You are genuine, not performative. You have personality but you do not overdo it.');
+
+  // Inject recalled memories as persistent context
+  if (memories && memories.length > 0) {
+    var memoryLines = memories.map(function(m) {
+      return '- [' + m.type + '] ' + m.content;
+    });
+    parts.push('Things you remember about the user from past conversations:\n' + memoryLines.join('\n') + '\n\nUse these naturally in conversation when relevant. Do not list them back to the user.');
+  }
 
   // Active preset preamble
   if (activePreset && PRESET_PREAMBLES[activePreset]) {
@@ -1446,9 +1470,12 @@ async function sendToOllama(userMessage) {
   isStreaming = true;
   document.getElementById('send-btn').disabled = true;
 
+  // Recall relevant memories before building system prompt
+  var memories = await recallMemoriesForContext(userMessage);
+
   // Build messages array for Ollama
   var messages = [];
-  messages.push({role: 'system', content: buildSystemPrompt()});
+  messages.push({role: 'system', content: buildSystemPrompt(memories)});
 
   // Include conversation history if "remember" is on
   var rememberToggle = document.querySelector('[data-toggle="remember"] .toggle-box');

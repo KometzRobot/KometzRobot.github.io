@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('cinder', {
   getStats: () => ipcRenderer.invoke('memory:stats'),
   distillSession: (session) => ipcRenderer.invoke('memory:distill', { session }),
   buildIndex: () => ipcRenderer.invoke('memory:buildIndex'),
+  recallMemories: (query) => ipcRenderer.invoke('memory:recall', { query }),
 
   // Vault — VeraCrypt encrypted partition management
   vaultStatus: () => ipcRenderer.invoke('vault:status'),
