@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cinder — First Run</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Merriweather:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#1a1210;
+  color:#e4d8c8;
+  font-family:'DM Sans',system-ui,sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse at 30% 20%,rgba(196,90,42,.08) 0%,transparent 60%),
+    radial-gradient(ellipse at 70% 80%,rgba(160,80,30,.05) 0%,transparent 50%);
+}
+.setup{
+  background:rgba(40,28,20,.7);
+  border:1px solid rgba(196,90,42,.2);
+  border-radius:20px;
+  padding:40px 36px;
+  width:min(90vw,380px);
+  text-align:center;
+  backdrop-filter:blur(12px);
+}
+.ember-mark{
+  width:60px;height:60px;border-radius:50%;
+  background:radial-gradient(circle,#c45a2a 0%,#8a3a2a 70%);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;
+  font-family:'Merriweather',serif;font-size:1.6rem;font-weight:700;color:#f0e8d8;
+  box-shadow:0 0 20px rgba(196,90,42,.4);
+}
+h1{font-family:'Merriweather',serif;font-size:1.2rem;color:#e4d8c8;margin-bottom:4px}
+.sub{color:#8a7a68;font-size:.8rem;margin-bottom:28px}
+label{display:block;text-align:left;font-size:.75rem;color:#8a7a68;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+input{
+  width:100%;padding:12px 16px;
+  background:rgba(30,20,14,.8);
+  border:1px solid rgba(196,90,42,.15);
+  border-radius:12px;color:#e4d8c8;
+  font-family:inherit;font-size:.95rem;
+  margin-bottom:16px;
+}
+input:focus{outline:none;border-color:#c45a2a;box-shadow:0 0 0 2px rgba(196,90,42,.15)}
+.btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,#c45a2a,#a04020);
+  color:#f0e8d8;border:none;border-radius:12px;
+  font-family:inherit;font-size:.95rem;font-weight:700;
+  cursor:pointer;letter-spacing:.5px;
+  transition:all .2s;
+}
+.btn:hover{background:linear-gradient(135deg,#d87a40,#c45a2a);transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.err{color:#d87a40;font-size:.8rem;margin-top:8px;min-height:20px}
+.note{color:#6a5a48;font-size:.7rem;margin-top:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="setup">
+  <div class="ember-mark">C</div>
+  <h1>Welcome to Cinder</h1>
+  <p class="sub">Set a password to protect your companion</p>
+
+  <label>Choose a password</label>
+  <input type="password" id="pw1" placeholder="Enter password" autofocus>
+
+  <label>Confirm password</label>
+  <input type="password" id="pw2" placeholder="Confirm password">
+
+  <button class="btn" id="setup-btn" onclick="doSetup()">Activate Cinder</button>
+  <div class="err" id="err"></div>
+
+  <p class="note">This password protects your Cinder memory, conversations, and encrypted vault.<br>It stays on this drive. There is no recovery — choose wisely.</p>
+
+  <div id="vault-info" class="vault-info" style="display:none"></div>
+</div>
+
+<style>
+.vault-info{
+  margin-top:16px;padding:12px 16px;
+  background:rgba(30,20,14,.6);border:1px solid rgba(196,90,42,.15);
+  border-radius:10px;font-size:.78rem;color:#8a7a68;text-align:left;
+  line-height:1.6;
+}
+.vault-info .ok{color:#6b9a5a}
+.vault-info .warn{color:#d8a040}
+.vault-info .step{color:#c4a882;font-weight:500}
+.progress-bar{
+  width:100%;height:4px;background:rgba(196,90,42,.15);border-radius:2px;margin-top:8px;overflow:hidden;
+}
+.progress-bar .fill{
+  height:100%;width:0%;background:linear-gradient(90deg,#c45a2a,#d87a40);
+  border-radius:2px;transition:width .3s;
+}
+</style>
+
+<script>
+let vaultAvailable = false;
+
+// Check vault status on load
+(async function checkVault() {
+  const info = document.getElementById('vault-info');
+  try {
+    const status = await window.cinder.vaultStatus();
+    if (status.available && status.device) {
+      vaultAvailable = true;
+      info.style.display = 'block';
+      info.innerHTML = '<span class="ok">&#x1f512;</span> <span class="step">Vault detected</span> — your password will also initialize the encrypted vault on this USB.';
+    } else if (!status.available) {
+      info.style.display = 'block';
+      info.innerHTML = '<span class="warn">&#x26a0;</span> VeraCrypt not installed. Vault encryption will be skipped. Install from <strong>veracrypt.fr</strong> for full protection.';
+    }
+  } catch {}
+})();
+
+async function doSetup() {
+  const pw1 = document.getElementById('pw1').value;
+  const pw2 = document.getElementById('pw2').value;
+  const err = document.getElementById('err');
+  const btn = document.getElementById('setup-btn');
+  const info = document.getElementById('vault-info');
+
+  if (!pw1 || pw1.length < 4) {
+    err.textContent = 'Password must be at least 4 characters.';
+    return;
+  }
+  if (pw1 !== pw2) {
+    err.textContent = 'Passwords do not match.';
+    return;
+  }
+
+  btn.disabled = true;
+
+  // Step 1: Set app password (don't navigate yet if vault is available)
+  btn.textContent = 'Setting up password...';
+  const result = await window.cinder.setup(pw1, !vaultAvailable);
+  if (!result.ok) {
+    err.textContent = result.error || 'Setup failed.';
+    btn.disabled = false;
+    btn.textContent = 'Activate Cinder';
+    return;
+  }
+
+  // Step 2: Initialize vault if available
+  if (vaultAvailable) {
+    btn.textContent = 'Initializing vault...';
+    info.style.display = 'block';
+    info.innerHTML = '<span class="step">Creating encrypted vault...</span> This may take a minute.' +
+      '<div class="progress-bar"><div class="fill" id="vault-progress"></div></div>';
+
+    // Animate progress bar
+    const fill = document.getElementById('vault-progress');
+    let pct = 0;
+    const ticker = setInterval(() => { pct = Math.min(pct + 2, 90); fill.style.width = pct + '%'; }, 1000);
+
+    try {
+      const vaultResult = await window.cinder.vaultInit(pw1);
+      clearInterval(ticker);
+      if (vaultResult.ok) {
+        fill.style.width = '100%';
+        info.innerHTML = '<span class="ok">&#x2713;</span> <span class="step">Vault ready.</span> Encrypted storage is active.';
+      } else {
+        info.innerHTML = '<span class="warn">&#x26a0;</span> Vault setup skipped: ' + (vaultResult.error || 'unknown error') +
+          '<br>You can set it up later from Settings.';
+      }
+    } catch (e) {
+      clearInterval(ticker);
+      info.innerHTML = '<span class="warn">&#x26a0;</span> Vault setup skipped. You can configure it later.';
+    }
+  }
+
+  // Navigate to main page (vault flow prevented auto-navigate)
+  if (vaultAvailable) {
+    await new Promise(r => setTimeout(r, 1200)); // Brief pause to show vault status
+    await window.cinder.goMain();
+  }
+  // If no vault, auth:setup already navigated
+}
+
+document.getElementById('pw2').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doSetup();
+});
+</script>
+</body>
+</html>
