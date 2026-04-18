@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="gg" cx="50%" cy="40%" r="45%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#fff4cc"/>
+      <stop offset="50%" stop-color="#ffd700"/>
+      <stop offset="80%" stop-color="#daa520"/>
+      <stop offset="100%" stop-color="#996515"/>
+    </radialGradient>
+    <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd700"/>
+      <stop offset="50%" stop-color="#ffec8b"/>
+      <stop offset="100%" stop-color="#daa520"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- Outer golden aura -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#ffd700" stroke-width="1.5" opacity="0.3" filter="url(#glow)"/>
+  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffec8b" stroke-width="1" opacity="0.2"/>
+  <!-- Crown -->
+  <path d="M18,24 L22,14 L27,20 L32,10 L37,20 L42,14 L46,24 Z" fill="url(#cg)" stroke="#b8860b" stroke-width="0.8"/>
+  <!-- Crown jewels -->
+  <circle cx="22" cy="17" r="1.5" fill="#ff4444" opacity="0.8"/>
+  <circle cx="32" cy="13" r="2" fill="#ff4444"/>
+  <circle cx="42" cy="17" r="1.5" fill="#ff4444" opacity="0.8"/>
+  <!-- Crown base -->
+  <rect x="18" y="22" width="28" height="4" rx="1" fill="url(#cg)" stroke="#b8860b" stroke-width="0.5"/>
+  <!-- Golden ember body -->
+  <ellipse cx="32" cy="40" rx="16" ry="14" fill="url(#gg)" filter="url(#glow)"/>
+  <!-- Surface shimmer -->
+  <ellipse cx="28" cy="36" rx="4" ry="3" fill="#ffffff" opacity="0.3"/>
+  <!-- Inner fire -->
+  <path d="M32,48 Q26,42 28,34 Q30,38 32,30 Q34,38 36,34 Q38,42 32,48 Z" fill="#ffd700" opacity="0.6"/>
+  <!-- Sparkle points -->
+  <polygon points="10,10 11,12 13,12 11.5,13.5 12,16 10,14.5 8,16 8.5,13.5 7,12 9,12" fill="#ffd700" opacity="0.6"/>
+  <polygon points="52,8 53,10 55,10 53.5,11.5 54,14 52,12.5 50,14 50.5,11.5 49,10 51,10" fill="#ffd700" opacity="0.5"/>
+  <polygon points="8,48 9,50 11,50 9.5,51.5 10,54 8,52.5 6,54 6.5,51.5 5,50 7,50" fill="#ffec8b" opacity="0.4"/>
+  <polygon points="54,50 55,52 57,52 55.5,53.5 56,56 54,54.5 52,56 52.5,53.5 51,52 53,52" fill="#ffec8b" opacity="0.4"/>
+</svg>

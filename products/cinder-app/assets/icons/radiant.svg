@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="rg" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#fff4cc"/>
+      <stop offset="60%" stop-color="#ffcc44"/>
+      <stop offset="100%" stop-color="#ff8800"/>
+    </radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- Light rays -->
+  <g opacity="0.5" stroke="#ffcc44" stroke-width="1.5" filter="url(#glow)">
+    <line x1="32" y1="32" x2="32" y2="2"/>
+    <line x1="32" y1="32" x2="56" y2="8"/>
+    <line x1="32" y1="32" x2="62" y2="32"/>
+    <line x1="32" y1="32" x2="56" y2="56"/>
+    <line x1="32" y1="32" x2="32" y2="62"/>
+    <line x1="32" y1="32" x2="8" y2="56"/>
+    <line x1="32" y1="32" x2="2" y2="32"/>
+    <line x1="32" y1="32" x2="8" y2="8"/>
+  </g>
+  <!-- Secondary rays -->
+  <g opacity="0.3" stroke="#ffe066" stroke-width="1">
+    <line x1="32" y1="32" x2="46" y2="4"/>
+    <line x1="32" y1="32" x2="60" y2="18"/>
+    <line x1="32" y1="32" x2="60" y2="46"/>
+    <line x1="32" y1="32" x2="46" y2="60"/>
+    <line x1="32" y1="32" x2="18" y2="60"/>
+    <line x1="32" y1="32" x2="4" y2="46"/>
+    <line x1="32" y1="32" x2="4" y2="18"/>
+    <line x1="32" y1="32" x2="18" y2="4"/>
+  </g>
+  <!-- Central orb -->
+  <circle cx="32" cy="32" r="12" fill="url(#rg)" filter="url(#glow)"/>
+  <!-- Inner glow -->
+  <circle cx="32" cy="32" r="6" fill="#ffffff" opacity="0.9"/>
+  <!-- Flame wisps around orb -->
+  <path d="M22,28 Q18,22 22,18" fill="none" stroke="#ff8800" stroke-width="1.5" opacity="0.6"/>
+  <path d="M42,28 Q46,22 42,18" fill="none" stroke="#ff8800" stroke-width="1.5" opacity="0.6"/>
+</svg>

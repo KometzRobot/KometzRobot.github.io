@@ -721,6 +721,12 @@ input[type=range]::-moz-range-thumb{
 .evo-question.show{animation:evo-type .6s ease-out forwards}
 @keyframes evo-type{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
 
+/* Evolution icon */
+.evo-icon{width:96px;height:96px;margin:16px auto;display:block;opacity:0;transform:scale(0.4);transition:none;filter:drop-shadow(0 0 20px rgba(196,90,42,.6))}
+.evo-icon.show{animation:evo-icon-in .8s cubic-bezier(.2,0,.2,1) forwards}
+@keyframes evo-icon-in{0%{opacity:0;transform:scale(0.4) rotate(-20deg)}50%{opacity:1;transform:scale(1.15) rotate(5deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}
+.evo-gold .evo-icon{filter:drop-shadow(0 0 30px rgba(255,215,0,.8))}
+
 /* Old form name (fades/shrinks out) */
 .evo-old-name{font:700 28px/1 'DM Sans',sans-serif;color:var(--text-mid);margin-bottom:12px;opacity:0}
 .evo-old-name.show{animation:evo-old-in .5s ease-out forwards}
@@ -942,6 +948,7 @@ input[type=range]::-moz-range-thumb{
       <span id="status-text">Active</span>
     </div>
     <div class="xp-bar-wrap" id="xp-bar" onclick="showXPDetails()" title="Cinder XP">
+      <img class="xp-evo-icon" id="xp-evo-icon" src="assets/icons/ember.svg" alt="" style="width:20px;height:20px;vertical-align:middle;margin-right:4px" />
       <span class="xp-level" id="xp-level">Lv 0</span>
       <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
       <span class="xp-evolution-name" id="xp-evo-name">Ember</span>
@@ -961,6 +968,7 @@ input[type=range]::-moz-range-thumb{
     <div class="evo-ring" id="evo-ring"></div>
     <div class="evo-particles" id="evo-particles"></div>
     <div class="evo-question" id="evo-question">What? CINDER is evolving!</div>
+    <img class="evo-icon" id="evo-icon" src="" alt="" />
     <div class="evo-old-name" id="evo-old-name">—</div>
     <div class="evo-name" id="evo-name">—</div>
     <div class="evo-level" id="evo-level-display">Level —</div>
@@ -2799,9 +2807,12 @@ function updateXPDisplay(data) {
   var fillEl = document.getElementById('xp-fill');
   var nameEl = document.getElementById('xp-evo-name');
   var prestigeEl = document.getElementById('xp-prestige');
+  var iconEl = document.getElementById('xp-evo-icon');
 
   if (levelEl) levelEl.textContent = 'Lv ' + data.level;
-  if (nameEl) nameEl.textContent = data.currentEvolution || 'Ember';
+  var evoName = data.currentEvolution || 'Ember';
+  if (nameEl) nameEl.textContent = evoName;
+  if (iconEl && EVOLUTION_ICONS[evoName]) iconEl.src = EVOLUTION_ICONS[evoName];
 
   // XP progress to next level
   if (fillEl && data.xpForNext > 0) {
@@ -2845,6 +2856,22 @@ var EVOLUTION_ORDER = [
   {lv:90,name:'Stellar'},{lv:100,name:'Gold Cinder'}
 ];
 
+// Evolution icon paths
+var EVOLUTION_ICONS = {
+  'Ember': 'assets/icons/ember.svg',
+  'Spark': 'assets/icons/spark.svg',
+  'Kindling': 'assets/icons/kindling.svg',
+  'Flicker': 'assets/icons/flicker.svg',
+  'Blaze': 'assets/icons/blaze.svg',
+  'Furnace': 'assets/icons/furnace.svg',
+  'Inferno': 'assets/icons/inferno.svg',
+  'Radiant': 'assets/icons/radiant.svg',
+  'Solar': 'assets/icons/solar.svg',
+  'Nova': 'assets/icons/nova.svg',
+  'Stellar': 'assets/icons/stellar.svg',
+  'Gold Cinder': 'assets/icons/gold-cinder.svg'
+};
+
 function getPreviousEvolution(level) {
   var prev = 'Ember';
   for (var i = 0; i < EVOLUTION_ORDER.length; i++) {
@@ -2859,6 +2886,7 @@ function showEvolution(name, level) {
   var card = document.getElementById('evo-card');
   var flash = document.getElementById('evo-flash');
   var questionEl = document.getElementById('evo-question');
+  var iconEl = document.getElementById('evo-icon');
   var oldNameEl = document.getElementById('evo-old-name');
   var nameEl = document.getElementById('evo-name');
   var levelEl = document.getElementById('evo-level-display');
@@ -2871,6 +2899,7 @@ function showEvolution(name, level) {
   // Reset all states
   card.className = 'evo-card';
   questionEl.className = 'evo-question';
+  if (iconEl) iconEl.className = 'evo-icon';
   oldNameEl.className = 'evo-old-name';
   nameEl.className = 'evo-name';
   levelEl.className = 'evo-level';
@@ -2883,6 +2912,12 @@ function showEvolution(name, level) {
   oldNameEl.textContent = prevName;
   nameEl.textContent = name;
   levelEl.textContent = 'Level ' + level;
+
+  // Set evolution icon
+  if (iconEl && EVOLUTION_ICONS[name]) {
+    iconEl.src = EVOLUTION_ICONS[name];
+    iconEl.alt = name;
+  }
 
   // Gold Cinder special
   if (name === 'Gold Cinder') {
@@ -2944,8 +2979,9 @@ function showEvolution(name, level) {
       particlesEl.appendChild(p);
     }
 
-    // Reveal new name
+    // Reveal new name + icon
     nameEl.classList.add('reveal');
+    if (iconEl) iconEl.classList.add('show');
   }, 3000);
 
   // ── PHASE 5: Level + dismiss button ──
@@ -2977,12 +3013,15 @@ function showXPDetails() {
     html += '<div style="display:flex;flex-direction:column;gap:8px">';
 
     // Current status
-    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px">';
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px">';
+    var curIcon = EVOLUTION_ICONS[data.currentEvolution] || EVOLUTION_ICONS['Ember'];
+    html += '<img src="' + curIcon + '" style="width:48px;height:48px;flex-shrink:0" />';
+    html += '<div>';
     html += '<div style="font-size:18px;font-weight:700;color:var(--ember)">' + escapeHtml(data.currentEvolution) + '</div>';
     html += '<div style="font-size:13px;color:var(--text-mid);margin-top:4px">Level ' + data.level + ' &middot; ' + data.totalXP + ' XP total</div>';
     if (data.prestige > 0) html += '<div style="font-size:12px;color:var(--yellow);margin-top:4px">Prestige ' + data.prestige + '</div>';
     if (data.xpToNext > 0) html += '<div style="font-size:11px;color:var(--text-light);margin-top:4px">' + data.xpToNext + ' XP to next level</div>';
-    html += '</div>';
+    html += '</div></div>';
 
     // Evolution milestones
     var milestones = [
@@ -2998,7 +3037,11 @@ function showXPDetails() {
       var borderColor = reached ? 'var(--ember)' : 'var(--border)';
       var textColor = reached ? 'var(--ember)' : 'var(--text-faint)';
       var bg = reached ? 'var(--ember-soft)' : 'var(--surface)';
+      var iconPath = EVOLUTION_ICONS[m.name] || '';
+      var iconOpacity = reached ? '1' : '0.3';
+      var iconFilter = reached ? 'none' : 'grayscale(1)';
       html += '<div style="background:' + bg + ';border:1px solid ' + borderColor + ';border-radius:6px;padding:8px;text-align:center">';
+      if (iconPath) html += '<img src="' + iconPath + '" style="width:36px;height:36px;margin:0 auto 4px;display:block;opacity:' + iconOpacity + ';filter:' + iconFilter + '" />';
       html += '<div style="font-size:11px;font-weight:700;color:' + textColor + '">' + escapeHtml(m.name) + '</div>';
       html += '<div style="font-size:10px;color:var(--text-light)">Lv ' + m.lv + '</div>';
       if (reached) html += '<div style="font-size:9px;color:var(--sage);margin-top:2px">&#10003;</div>';

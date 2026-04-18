@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="stg" cx="50%" cy="50%" r="35%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#aaccff"/>
+      <stop offset="100%" stop-color="#4466cc"/>
+    </radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- Background stars / constellation -->
+  <circle cx="8" cy="12" r="1" fill="#aabbdd" opacity="0.6"/>
+  <circle cx="52" cy="8" r="0.8" fill="#bbccee" opacity="0.5"/>
+  <circle cx="56" cy="44" r="1" fill="#aabbdd" opacity="0.6"/>
+  <circle cx="4" cy="52" r="0.8" fill="#99aacc" opacity="0.5"/>
+  <circle cx="22" cy="6" r="0.6" fill="#bbccee" opacity="0.4"/>
+  <circle cx="48" cy="56" r="0.7" fill="#aabbdd" opacity="0.4"/>
+  <circle cx="12" cy="38" r="0.8" fill="#bbccee" opacity="0.5"/>
+  <circle cx="42" cy="22" r="0.6" fill="#aabbdd" opacity="0.4"/>
+  <!-- Constellation lines -->
+  <g stroke="#6688bb" stroke-width="0.5" opacity="0.3">
+    <line x1="8" y1="12" x2="22" y2="6"/>
+    <line x1="22" y1="6" x2="42" y2="22"/>
+    <line x1="42" y1="22" x2="52" y2="8"/>
+    <line x1="56" y1="44" x2="48" y2="56"/>
+    <line x1="4" y1="52" x2="12" y2="38"/>
+  </g>
+  <!-- Central stellar object -->
+  <circle cx="32" cy="32" r="14" fill="url(#stg)" filter="url(#glow)" opacity="0.9"/>
+  <!-- Six-pointed star overlay -->
+  <polygon points="32,14 36,26 48,26 38,34 42,46 32,38 22,46 26,34 16,26 28,26" fill="#ffffff" opacity="0.6" filter="url(#glow)"/>
+  <!-- Core -->
+  <circle cx="32" cy="32" r="5" fill="#ffffff" opacity="0.95"/>
+  <!-- Orbiting particles -->
+  <circle cx="18" cy="20" r="2" fill="#88aaff" opacity="0.5" filter="url(#glow)"/>
+  <circle cx="46" cy="44" r="1.5" fill="#88aaff" opacity="0.4" filter="url(#glow)"/>
+</svg>
