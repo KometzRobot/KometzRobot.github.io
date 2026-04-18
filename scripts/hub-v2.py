@@ -1675,6 +1675,32 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(svg)
             return
 
+        # Brothers Fab demo — public, no auth (temporary for Glenna)
+        if path.path.startswith("/brofab/") or path.path == "/brofab":
+            BROFAB_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "brothers-fab")
+            rel = path.path[len("/brofab"):].lstrip("/") or "index.html"
+            # Security: prevent directory traversal
+            safe = os.path.normpath(os.path.join(BROFAB_ROOT, rel))
+            if not safe.startswith(BROFAB_ROOT) or not os.path.isfile(safe):
+                self._send(404, "Not found", "text/plain")
+                return
+            ext = os.path.splitext(safe)[1].lower()
+            mimes = {".html": "text/html", ".css": "text/css", ".js": "application/javascript",
+                     ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                     ".svg": "image/svg+xml", ".json": "application/json", ".pdf": "application/pdf",
+                     ".md": "text/plain", ".zip": "application/zip", ".gif": "image/gif",
+                     ".woff2": "font/woff2", ".woff": "font/woff", ".ico": "image/x-icon"}
+            ctype = mimes.get(ext, "application/octet-stream")
+            with open(safe, "rb") as f:
+                data = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            self.wfile.write(data)
+            return
+
         # Auth check for everything else
         if not self._authed():
             self.send_response(302)
