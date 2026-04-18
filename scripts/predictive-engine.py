@@ -207,6 +207,26 @@ def get_relay_frequency(hours=6):
         return {}
 
 
+def get_alert_message_count(hours=6):
+    """Count actual alert messages (not routine status) from monitoring agents."""
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
+        db = sqlite3.connect(RELAY_DB, timeout=3)
+        rows = db.execute(
+            "SELECT COUNT(*) FROM agent_messages "
+            "WHERE REPLACE(SUBSTR(timestamp, 1, 19), 'T', ' ') > ? "
+            "AND agent IN ('Watchdog', 'Eos-Watchdog', 'Eos') "
+            "AND (message LIKE '%CRITICAL%' OR message LIKE '%ERROR%' "
+            "     OR message LIKE '%FAILED%' OR message LIKE '%DOWN%' "
+            "     OR message LIKE '%CRASH%' OR message LIKE '%STALE%')",
+            (cutoff,)
+        ).fetchone()
+        db.close()
+        return rows[0] if rows else 0
+    except Exception:
+        return 0
+
+
 def coerce_numeric(values):
     """Extract numeric values from a mixed list."""
     nums = []
@@ -525,9 +545,11 @@ def detect_relay_anomalies():
     for agent, count in freq.items():
         if count > total * 0.7 and total > 10:
             findings.append(f"DOMINANCE: {agent} has {count}/{total} messages ({count * 100 // total}%) — possible alert loop")
-    alert_agents = ["Watchdog", "Eos-Watchdog", "Eos"]
-    alert_count = sum(freq.get(a, 0) for a in alert_agents)
-    if alert_count > 20:
+    # Count only actual alert/error messages, not routine status updates.
+    # Previous logic counted ALL messages from monitoring agents, triggering
+    # false alert storms from normal operational chatter.
+    alert_count = get_alert_message_count(hours=6)
+    if alert_count > 10:
         findings.append(f"ALERT_STORM: {alert_count} alert messages in 6h — possible cascading failure")
     return findings
 

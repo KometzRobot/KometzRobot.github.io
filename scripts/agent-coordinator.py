@@ -283,13 +283,20 @@ def detect_incidents(messages):
     # creates a cycle where each report triggers the next.
     source_messages = [m for m in messages if m["agent"] != "Coordinator"]
 
+    # For alert keyword counting, also exclude routine audit/analysis agents whose
+    # messages contain alert keywords in non-alert contexts (e.g., Atlas "Stale crons"
+    # is an informational audit, Eos "critical services running" is a positive status,
+    # Predictive reports analysis not incidents).
+    alert_excluded_agents = {"Coordinator", "Atlas", "Predictive", "SelfImprove"}
+    alert_source = [m for m in messages if m["agent"] not in alert_excluded_agents]
+
     alert_keywords = {
         "critical": ["CRITICAL", "EMERGENCY", "DOWN", "FAILED", "CRASH"],
         "warning": ["STALE", "WARNING", "HIGH", "SPIKE", "ELEVATED"],
         "info": ["RESTART", "RECOVERED", "BACK", "RESOLVED"],
     }
     keyword_counts = {"critical": 0, "warning": 0, "info": 0}
-    for msg in source_messages:
+    for msg in alert_source:
         text = msg["message"].upper()
         for severity, keywords in alert_keywords.items():
             if any(kw in text for kw in keywords):
