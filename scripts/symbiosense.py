@@ -70,6 +70,7 @@ HB_STALE_SEC = 600           # heartbeat stale threshold
 SERVICE_CHECK_INTERVAL = 60  # check services every N seconds
 DASHBOARD_COOLDOWN = 900     # suppress same alert type on dashboard for 15 min
 RELAY_COOLDOWN = 300         # suppress same event type on relay for 5 min
+RELAY_COOLDOWN_LONG = 1800   # suppress low-value repetitive events (psyche dreams, emergent goals) for 30 min
 
 
 def log(msg):
@@ -2105,10 +2106,13 @@ def main():
                 # Post events to relay (with cooldown to reduce noise)
                 now_relay = time.time()
                 relay_fresh = []
+                # Low-value internal state events get longer cooldown
+                long_cooldown_types = {"PSYCHE DREAM", "EMERGENT GOALS", "PREDICTION"}
                 for evt in events:
                     etype = evt.split(":")[0].strip()
                     last_t = last_relay_alert.get(etype, 0)
-                    if now_relay - last_t > RELAY_COOLDOWN:
+                    cooldown = RELAY_COOLDOWN_LONG if etype in long_cooldown_types else RELAY_COOLDOWN
+                    if now_relay - last_t > cooldown:
                         relay_fresh.append(evt)
                         last_relay_alert[etype] = now_relay
                 if relay_fresh:

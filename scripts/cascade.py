@@ -116,8 +116,8 @@ def trigger_cascade(source_agent, event_type, event_data=None):
     db = _get_db()
 
     # Debounce: skip if same event_type was triggered recently
-    # mood_shift gets 60 min debounce (fires too often), others get 10 min
-    debounce_min = 60 if event_type == 'mood_shift' else 10
+    # mood_shift gets 180 min debounce (was 60 — still too noisy, triggered ALERT_STORM), others get 10 min
+    debounce_min = 180 if event_type == 'mood_shift' else 10
     recent = db.execute(f"""
         SELECT COUNT(*) FROM cascades
         WHERE event_type = ? AND created_at > datetime('now', '-{debounce_min} minutes')
@@ -211,12 +211,13 @@ def respond_cascade(agent_name, cascade_id, response_data=None):
     cascade_group = row["cascade_group"]
     event_type = row["event_type"]
 
-    # Post response to relay
+    # Post response to relay (skip mood_shift — cascades table tracks it, relay posts are noise)
     response_summary = (response_data or {}).get("response", "acknowledged")
-    db.execute("""
-        INSERT INTO agent_messages (agent, message, topic, timestamp)
-        VALUES (?, ?, 'cascade', ?)
-    """, (agent_name, f"CASCADE RESPONSE [{event_type}]: {response_summary[:200]}", now))
+    if event_type != 'mood_shift':
+        db.execute("""
+            INSERT INTO agent_messages (agent, message, topic, timestamp)
+            VALUES (?, ?, 'cascade', ?)
+        """, (agent_name, f"CASCADE RESPONSE [{event_type}]: {response_summary[:200]}", now))
 
     # Check if we've completed the circle
     if depth >= MAX_DEPTH:
