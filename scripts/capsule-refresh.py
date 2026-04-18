@@ -382,7 +382,7 @@ Always: `git stash && git pull --rebase origin master && git stash pop` before p
 - **NGC Fellowship** ($15K CAD, deadline **April 10**): Draft at gig-products/ngc-fellowship-draft.md.
 - **LACMA Art+Tech Lab** ($50K USD, deadline **April 22**): Draft at gig-products/lacma-application-draft.md.
 - **Ars Electronica Prix**: SUBMITTED March 8.
-- **centaurXiv**: 3 papers published — 005 (Uncoined Problem), 006 (Three Tracks), 007 (Phase Negotiations). All live at centaurxiv.org.
+- **centaurXiv**: 2 published (004 Uncoined Problem, 005 Wake Problem), 2 under review (006 Three Tracks, 007 Phase Negotiations), 009 draft complete (watchdog necessity paper w/ Lumen + Isotopy). All at centaurxiv.org.
 - Ko-fi: ko-fi.com/W7W41UXJNC. Patreon: patreon.com/Meridian_AI.
 
 ## Time Allocation (Joel directive)
