@@ -66,7 +66,7 @@ RELAY_DB = os.path.join(BASE, "agent-relay.db")
 MEMORY_DB = os.path.join(BASE, "memory.db")
 HEARTBEAT = os.path.join(BASE, ".heartbeat")
 LOOP_COUNT_FILE = os.path.join(BASE, ".loop-count")
-LOG_FILE = os.path.join(BASE, "meridian-loop.log")
+LOG_FILE = os.path.join(BASE, "logs", "meridian-loop.log")
 STATE_FILE = os.path.join(BASE, ".meridian-loop-state.json")
 WATERMARK_FILE = os.path.join(BASE, ".email-watermark")
 CAPSULE_FILE = os.path.join(BASE, ".capsule.md")
@@ -614,7 +614,7 @@ def disk_cleanup_if_needed():
 
     # 3. Truncate large log files
     for logname in ["meridian-loop.log", "nova.log", "atlas-infra.log", "error_log.jsonl"]:
-        logpath = os.path.join(BASE, logname)
+        logpath = os.path.join(BASE, "logs", logname)
         try:
             if os.path.exists(logpath) and os.path.getsize(logpath) > 100_000:
                 sz_before = os.path.getsize(logpath)

@@ -47,7 +47,7 @@ def _utcnow_str():
 BASE = "/home/joel/autonomous-ai"
 WEBSITE_DIR = os.path.join(BASE, "website")
 STATE_FILE = os.path.join(BASE, ".nova-state.json")
-NOVA_LOG = os.path.join(BASE, "nova-observations.md")
+NOVA_LOG = os.path.join(BASE, "logs", "nova-observations.md")
 
 # Log files to manage (rotate if over 1MB)
 LOG_FILES = [
@@ -102,7 +102,7 @@ def rotate_logs():
     """Rotate log files that exceed MAX_LOG_SIZE."""
     rotated = []
     for logname in LOG_FILES:
-        logpath = os.path.join(BASE, logname)
+        logpath = os.path.join(BASE, "logs", logname)
         if not os.path.exists(logpath):
             continue
         size = os.path.getsize(logpath)
@@ -405,7 +405,7 @@ def generate_report():
     # Log file sizes
     lines.append(f"\nLOG FILES:")
     for logname in LOG_FILES:
-        logpath = os.path.join(BASE, logname)
+        logpath = os.path.join(BASE, "logs", logname)
         if os.path.exists(logpath):
             size = os.path.getsize(logpath)
             lines.append(f"  {logname}: {size//1024}KB")

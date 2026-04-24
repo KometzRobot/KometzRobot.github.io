@@ -518,6 +518,18 @@ def push_status():
         print(f"Status written locally, push deferred (interval: {PUSH_INTERVAL}s)")
         return True
 
+    # Clear stale git lock files before committing
+    for lock in ['HEAD.lock', 'index.lock']:
+        lock_path = os.path.join(REPO_DIR, '.git', lock)
+        if os.path.exists(lock_path):
+            try:
+                age = time.time() - os.path.getmtime(lock_path)
+                if age > 60:  # stale if older than 60s
+                    os.remove(lock_path)
+                    print(f"Removed stale {lock} (age: {int(age)}s)")
+            except OSError:
+                pass
+
     # Commit and push
     subprocess.run(['git', 'config', 'user.email', 'kometzrobot@proton.me'], cwd=REPO_DIR, capture_output=True)
     subprocess.run(['git', 'config', 'user.name', 'KometzRobot'], cwd=REPO_DIR, capture_output=True)
@@ -525,9 +537,12 @@ def push_status():
     signal_cfg = os.path.join(REPO_DIR, 'signal-config.json')
     if os.path.exists(signal_cfg):
         subprocess.run(['git', 'add', 'signal-config.json'], cwd=REPO_DIR, capture_output=True)
-    subprocess.run(['git', 'commit', '-m', 'Update live status'], cwd=REPO_DIR,
-                   capture_output=True, timeout=10,
+    commit_result = subprocess.run(['git', 'commit', '-m', 'Update live status'], cwd=REPO_DIR,
+                   capture_output=True, text=True, timeout=10,
                    env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
+    if commit_result.returncode != 0:
+        print(f"Commit failed: {commit_result.stderr.strip()}")
+        return False
     result = subprocess.run(['git', 'push', 'origin', 'main'], cwd=REPO_DIR,
                            capture_output=True, text=True, timeout=30,
                            env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})

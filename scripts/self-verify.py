@@ -23,7 +23,7 @@ from pathlib import Path
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(SCRIPT_DIR)
-LOG_FILE = os.path.join(BASE, "self-verify.log")
+LOG_FILE = os.path.join(BASE, "logs", "self-verify.log")
 DRY_RUN = "--dry-run" in sys.argv
 AS_JSON = "--json" in sys.argv
 CRON_MODE = "--cron" in sys.argv
