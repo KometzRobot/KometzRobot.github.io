@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layout Planner | Brothers Fabrication</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:14px}
+    body{font-family:'Inter',sans-serif;background:#0a1628;color:#c8cdd5;height:100vh;overflow:hidden}
+
+    .topbar{background:#070d18;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:48px;flex-shrink:0}
+    .topbar-brand{display:flex;align-items:center;gap:.6rem}
+    .topbar-logo{width:36px;height:36px;background:#0a6e8a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.8rem;color:#fff}
+    .topbar-name{font-family:'Space Grotesk',sans-serif;font-weight:700;color:#fff;font-size:.9rem}
+    .topbar-name small{display:block;font-size:.6rem;color:#4ecdc4;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:'Inter',sans-serif}
+    .topbar-right{display:flex;align-items:center;gap:1rem;font-size:.8rem}
+    .topbar-right a{color:#4ecdc4;font-weight:600;text-decoration:none}
+
+    .app{display:grid;grid-template-columns:220px 1fr 260px;height:calc(100vh - 48px)}
+
+    /* Left palette */
+    .palette{background:#0e1726;border-right:1px solid rgba(255,255,255,0.06);overflow-y:auto;display:flex;flex-direction:column}
+    .pal-header{padding:.8rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .pal-header h3{font-family:'Space Grotesk',sans-serif;font-size:.9rem;color:#fff}
+    .pal-header p{font-size:.7rem;color:#556;margin-top:.15rem}
+
+    .pal-controls{padding:.6rem .8rem;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .pal-controls label{font-size:.65rem;color:#556;font-weight:700;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.3rem}
+    .pal-controls select,.pal-controls input[type="range"]{width:100%;background:#151f2e;color:#bbb;border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:.35rem .5rem;font-size:.78rem;font-family:inherit}
+    .pal-controls input[type="range"]{padding:0;accent-color:#4ecdc4;margin-top:.2rem}
+    .size-display{font-family:'Space Grotesk',sans-serif;font-size:.85rem;color:#4ecdc4;font-weight:700;text-align:center;margin-top:.3rem}
+
+    .pal-section{padding:.4rem .8rem}
+    .pal-cat{font-size:.6rem;text-transform:uppercase;letter-spacing:.07em;color:#445;font-weight:700;margin:.6rem 0 .3rem;padding-bottom:.2rem;border-bottom:1px solid rgba(255,255,255,0.04)}
+    .pal-item{display:flex;align-items:center;gap:.5rem;padding:.4rem .5rem;margin-bottom:.25rem;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:5px;cursor:grab;transition:all .12s;user-select:none;-webkit-user-select:none}
+    .pal-item:hover{border-color:rgba(78,205,196,0.25);background:rgba(78,205,196,0.02)}
+    .pal-item:active{cursor:grabbing}
+    .pal-swatch{width:24px;height:18px;border-radius:3px;flex-shrink:0}
+    .pal-name{font-size:.75rem;font-weight:500;color:#aaa;flex:1}
+    .pal-dims{font-size:.6rem;color:#445}
+
+    /* Center canvas */
+    .canvas-area{background:#0a1628;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+    .floor-info{position:absolute;top:.8rem;left:1rem;z-index:5}
+    .floor-info span{font-family:'Space Grotesk',sans-serif;font-size:.8rem;color:#4ecdc4;font-weight:600}
+    .floor-tools{position:absolute;top:.8rem;right:1rem;display:flex;gap:.3rem;z-index:5}
+    .floor-tools button{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:5px;color:#667;padding:.3rem .6rem;font-size:.7rem;cursor:pointer;font-family:inherit;transition:all .12s}
+    .floor-tools button:hover{border-color:rgba(78,205,196,0.3);color:#aaa}
+
+    #floor{
+      border:2px solid rgba(78,205,196,0.15);border-radius:6px;position:relative;overflow:hidden;
+      background:
+        repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(78,205,196,0.035) 39px,rgba(78,205,196,0.035) 40px),
+        repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(78,205,196,0.035) 39px,rgba(78,205,196,0.035) 40px),
+        rgba(255,255,255,0.008);
+    }
+    /* Fixtures */
+    .fixture{position:absolute;z-index:1;font-size:.5rem;color:#445;text-transform:uppercase;letter-spacing:.08em;font-weight:700;display:flex;align-items:center;gap:2px}
+    .fix-bar{border-radius:2px}
+
+    /* Placed blocks */
+    .eq{position:absolute;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:move;user-select:none;-webkit-user-select:none;z-index:2;border:1px solid rgba(255,255,255,0.12);transition:box-shadow .12s}
+    .eq:hover{box-shadow:0 0 0 2px rgba(78,205,196,0.4);z-index:10}
+    .eq .eq-icon{font-size:.9rem;line-height:1;pointer-events:none}
+    .eq .eq-lbl{font-size:.48rem;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;letter-spacing:.02em;text-align:center;line-height:1.1;pointer-events:none;margin-top:1px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+    .eq .eq-x{position:absolute;top:-5px;right:-5px;width:14px;height:14px;border-radius:50%;background:#e74c3c;color:#fff;font-size:.55rem;display:none;align-items:center;justify-content:center;cursor:pointer;border:2px solid #0a1628;font-weight:700;line-height:1;z-index:20}
+    .eq:hover .eq-x{display:flex}
+
+    .ahs{position:absolute;bottom:.8rem;left:1rem;display:flex;align-items:center;gap:.4rem;background:rgba(46,204,113,0.07);border:1px solid rgba(46,204,113,0.15);padding:.25rem .6rem;border-radius:5px;font-size:.65rem;color:#2ecc71;font-weight:600;z-index:5}
+    .ahs-dot{width:6px;height:6px;border-radius:50%;background:#2ecc71;animation:p 2s infinite}
+    @keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* Right summary */
+    .summary{background:#0e1726;border-left:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;overflow:hidden}
+    .sum-head{padding:.8rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .sum-head h3{font-family:'Space Grotesk',sans-serif;font-size:.9rem;color:#fff}
+    .sum-body{flex:1;overflow-y:auto;padding:.6rem .8rem}
+    .sg{margin-bottom:.6rem}
+    .sg-title{font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;color:#445;font-weight:700;margin-bottom:.25rem}
+    .sl{display:flex;justify-content:space-between;padding:.15rem 0;font-size:.78rem}
+    .sl .sn{color:#889}.sl .sv{font-family:'Space Grotesk',sans-serif;font-weight:600;color:#ccc}
+    .sl.inc .sv{color:#2ecc71;font-size:.72rem}
+    .sum-empty{font-size:.72rem;color:#334;font-style:italic;padding:.2rem 0}
+    .sum-foot{padding:.8rem 1rem;border-top:1px solid rgba(255,255,255,0.05)}
+    .t-row{display:flex;justify-content:space-between;align-items:baseline}
+    .t-lbl{font-size:.8rem;color:#667}
+    .t-amt{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:800;color:#4ecdc4}
+    .t-note{font-size:.62rem;color:#445;margin:.2rem 0 .6rem}
+    .cta{display:block;width:100%;padding:.65rem;border:none;background:#0a6e8a;color:#fff;font-family:'Inter',sans-serif;font-weight:700;font-size:.82rem;border-radius:6px;cursor:pointer;text-align:center;transition:all .12s}
+    .cta:hover{background:#0c829e}
+    .cta2{display:block;width:100%;padding:.45rem;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#556;font-family:'Inter',sans-serif;font-weight:600;font-size:.72rem;border-radius:6px;cursor:pointer;text-align:center;margin-top:.35rem}
+    .vb{background:rgba(255,255,255,0.025);border-radius:5px;padding:.5rem;margin-top:.5rem;font-size:.65rem;color:#445;text-align:center;line-height:1.5}
+    .vb strong{color:#4ecdc4}
+
+    @media(max-width:900px){
+      .app{grid-template-columns:1fr;height:auto}
+      body{overflow:auto}
+      .palette{max-height:35vh}
+      .canvas-area{min-height:350px}
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">BF</div>
+    <div class="topbar-name">Brothers Fabrication<small>Layout Planner</small></div>
+  </div>
+  <div class="topbar-right">
+    <span style="color:#556">403-814-0543</span>
+    <a href="hub.html">Back to Hub</a>
+  </div>
+</div>
+
+<div class="app">
+  <!-- LEFT -->
+  <div class="palette">
+    <div class="pal-controls">
+      <label>Project Type</label>
+      <select id="projType" onchange="recalc()">
+        <option value="truck">Food Truck</option>
+        <option value="trailer">Trailer</option>
+        <option value="seacan">Seacan / Container</option>
+        <option value="kitchen">Commercial Kitchen</option>
+        <option value="bar">Bar / Beverage</option>
+        <option value="other">Other / Custom</option>
+      </select>
+    </div>
+    <div class="pal-controls">
+      <label>Length: <span id="sizeLabel">18 ft</span></label>
+      <input type="range" min="8" max="40" step="2" value="18" id="sizeRange" oninput="setSize(this.value)">
+    </div>
+
+    <div class="pal-header">
+      <h3>Equipment</h3>
+      <p>Drag stuff onto the layout</p>
+    </div>
+
+    <div class="pal-section" id="palItems"></div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="canvas-area">
+    <div class="floor-info"><span id="dimLabel">18 ft x 7 ft</span></div>
+    <div class="floor-tools">
+      <button onclick="clearFloor()">Clear</button>
+      <button onclick="window.print()">Print</button>
+    </div>
+    <div style="position:relative">
+      <div id="floor"></div>
+      <div class="fixture" style="right:-12px;top:20%;writing-mode:vertical-rl;color:#4ecdc4">
+        <div class="fix-bar" style="width:3px;height:70px;background:#4ecdc4;margin-bottom:3px"></div>Window
+      </div>
+      <div class="fixture" style="left:-12px;bottom:10%;writing-mode:vertical-rl;color:#f5a623">
+        <div class="fix-bar" style="width:3px;height:50px;background:#f5a623;margin-bottom:3px"></div>Entry
+      </div>
+    </div>
+    <div class="ahs"><div class="ahs-dot"></div> AHS Compliant</div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="summary">
+    <div class="sum-head"><h3>Build Summary</h3></div>
+    <div class="sum-body" id="sumBody"></div>
+    <div class="sum-foot">
+      <div class="t-row">
+        <span class="t-lbl">Estimate</span>
+        <span class="t-amt" id="totalAmt">$0</span>
+      </div>
+      <div class="t-note">CAD + tax &bull; Rough starting estimate</div>
+      <button class="cta" onclick="alert('Demo: Your layout and selections would be sent to Brothers Fabrication for a detailed custom quote.')">Send My Layout &rarr;</button>
+      <button class="cta2" onclick="window.print()">Save as PDF</button>
+      <div class="vb">Every build comes with <strong>plumbing, gas, electrical, and AHS inspection</strong> &mdash; all done by our guys.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const C = 40; // cell size px
+
+// General equipment — kept broad, not prescriptive
+const ITEMS = [
+  // Cooking
+  { id:'grill-sm', cat:'Cooking', name:'Flat Grill (Small)', w:2,h:2, color:'#c0392b', icon:'&#x1F525;' },
+  { id:'grill-lg', cat:'Cooking', name:'Flat Grill (Large)', w:4,h:2, color:'#c0392b', icon:'&#x1F525;' },
+  { id:'char',     cat:'Cooking', name:'Char Grill', w:3,h:2, color:'#e74c3c', icon:'&#x1F356;' },
+  { id:'fryer',    cat:'Cooking', name:'Fryer', w:2,h:2, color:'#d35400', icon:'&#x1F35F;' },
+  { id:'stove',    cat:'Cooking', name:'Stove / Range', w:3,h:2, color:'#9b59b6', icon:'&#x1F373;' },
+  { id:'oven',     cat:'Cooking', name:'Oven', w:3,h:2, color:'#8e44ad', icon:'&#x1F373;' },
+  { id:'wok',      cat:'Cooking', name:'Wok Burner', w:2,h:2, color:'#e74c3c', icon:'&#x1F959;' },
+  // Hot Holding
+  { id:'bainmarie',cat:'Hot Holding', name:'Bain-Marie', w:3,h:2, color:'#e74c3c', icon:'&#x1F372;' },
+  { id:'warmer',   cat:'Hot Holding', name:'Heat Lamp', w:2,h:1, color:'#f39c12', icon:'&#x1F506;' },
+  // Cold Storage
+  { id:'fridge',   cat:'Cold Storage', name:'Fridge', w:2,h:3, color:'#2980b9', icon:'&#x2744;' },
+  { id:'freezer',  cat:'Cold Storage', name:'Freezer', w:2,h:3, color:'#1a5276', icon:'&#x2744;' },
+  { id:'underctr', cat:'Cold Storage', name:'Under-Counter Cold', w:3,h:2, color:'#3498db', icon:'&#x2744;' },
+  { id:'cooler',   cat:'Cold Storage', name:'Display Cooler', w:3,h:2, color:'#2471a3', icon:'&#x1F9CA;' },
+  // Prep & Surfaces
+  { id:'prep-sm',  cat:'Prep & Surfaces', name:'Prep Table (Small)', w:3,h:2, color:'#7f8c8d', icon:'&#x1F52A;' },
+  { id:'prep-lg',  cat:'Prep & Surfaces', name:'Prep Table (Large)', w:5,h:2, color:'#95a5a6', icon:'&#x1F52A;' },
+  { id:'counter',  cat:'Prep & Surfaces', name:'Counter / Pass', w:4,h:1, color:'#bdc3c7', icon:'&#x1F6D2;' },
+  { id:'shelf',    cat:'Prep & Surfaces', name:'Shelving', w:4,h:1, color:'#7f8c8d', icon:'&#x1F4E6;' },
+  // Sinks & Water
+  { id:'sink',     cat:'Sinks & Water', name:'Sink (3-Comp)', w:4,h:2, color:'#1abc9c', icon:'&#x1F6B0;' },
+  { id:'handwash', cat:'Sinks & Water', name:'Handwash', w:1,h:1, color:'#16a085', icon:'&#x1F6B0;' },
+  { id:'tanks',    cat:'Sinks & Water', name:'Water Tanks', w:3,h:2, color:'#148f77', icon:'&#x1F4A7;' },
+  // Power
+  { id:'gen',      cat:'Power', name:'Generator', w:3,h:2, color:'#f1c40f', icon:'&#x26A1;' },
+  { id:'panel',    cat:'Power', name:'Electrical Panel', w:1,h:2, color:'#d4ac0d', icon:'&#x26A1;' },
+  // Ventilation
+  { id:'hood',     cat:'Ventilation', name:'Exhaust Hood', w:5,h:1, color:'#566573', icon:'&#x1F4A8;' },
+  // Storage
+  { id:'storage',  cat:'Storage', name:'Storage Cabinet', w:2,h:3, color:'#5d6d7e', icon:'&#x1F4E6;' },
+  { id:'propane',  cat:'Storage', name:'Propane Bay', w:2,h:2, color:'#f5a623', icon:'&#x1F525;' },
+];
+
+let floorSize = 18;
+let placed = [];
+
+function init() {
+  buildPal();
+  resizeFloor();
+  recalc();
+}
+
+function buildPal() {
+  let html = '', last = '';
+  ITEMS.forEach(it => {
+    if (it.cat !== last) { html += `<div class="pal-cat">${it.cat}</div>`; last = it.cat; }
+    html += `<div class="pal-item" onpointerdown="startDrag(event,'${it.id}')">
+      <div class="pal-swatch" style="background:${it.color}"></div>
+      <span class="pal-name">${it.name}</span>
+      <span class="pal-dims">${it.w}x${it.h}</span>
+    </div>`;
+  });
+  document.getElementById('palItems').innerHTML = html;
+}
+
+function setSize(v) {
+  floorSize = parseInt(v);
+  document.getElementById('sizeLabel').textContent = v + ' ft';
+  resizeFloor();
+  recalc();
+}
+
+function resizeFloor() {
+  const f = document.getElementById('floor');
+  const cols = Math.round(floorSize / 1.5);
+  f.style.width = (cols * C) + 'px';
+  f.style.height = (8 * C) + 'px';
+  document.getElementById('dimLabel').textContent = `${floorSize} ft x 7 ft`;
+}
+
+// Drag from palette
+function startDrag(e, id) {
+  e.preventDefault();
+  const it = ITEMS.find(x => x.id === id);
+  if (!it) return;
+  const ghost = document.createElement('div');
+  ghost.className = 'eq';
+  ghost.style.width = (it.w * C) + 'px';
+  ghost.style.height = (it.h * C) + 'px';
+  ghost.style.background = it.color;
+  ghost.style.position = 'fixed';
+  ghost.style.zIndex = '9999';
+  ghost.style.opacity = '0.8';
+  ghost.style.pointerEvents = 'none';
+  ghost.innerHTML = `<span class="eq-icon">${it.icon}</span><span class="eq-lbl">${it.name}</span>`;
+  document.body.appendChild(ghost);
+  const hw = (it.w * C) / 2, hh = (it.h * C) / 2;
+  ghost.style.left = (e.clientX - hw) + 'px';
+  ghost.style.top = (e.clientY - hh) + 'px';
+
+  function mv(ev) { ghost.style.left = (ev.clientX - hw) + 'px'; ghost.style.top = (ev.clientY - hh) + 'px'; }
+  function up(ev) {
+    document.removeEventListener('pointermove', mv);
+    document.removeEventListener('pointerup', up);
+    ghost.remove();
+    const f = document.getElementById('floor');
+    const r = f.getBoundingClientRect();
+    const cx = ev.clientX - r.left - hw, cy = ev.clientY - r.top - hh;
+    if (cx > -C && cy > -C && cx < r.width && cy < r.height) {
+      place(it, Math.max(0, Math.round(cx / C) * C), Math.max(0, Math.round(cy / C) * C));
+    }
+  }
+  document.addEventListener('pointermove', mv);
+  document.addEventListener('pointerup', up);
+}
+
+function place(it, x, y) {
+  const uid = it.id + '_' + Date.now();
+  const f = document.getElementById('floor');
+  const b = document.createElement('div');
+  b.className = 'eq';
+  b.dataset.uid = uid;
+  b.style.width = (it.w * C) + 'px';
+  b.style.height = (it.h * C) + 'px';
+  b.style.background = it.color;
+  b.style.left = x + 'px';
+  b.style.top = y + 'px';
+  b.innerHTML = `<span class="eq-icon">${it.icon}</span><span class="eq-lbl">${it.name}</span><div class="eq-x" onclick="rm('${uid}')">x</div>`;
+
+  b.addEventListener('pointerdown', function(e) {
+    if (e.target.classList.contains('eq-x')) return;
+    e.preventDefault();
+    const sx = e.clientX - b.offsetLeft, sy = e.clientY - b.offsetTop;
+    b.style.zIndex = '10';
+    function mv(ev) {
+      let nx = Math.round((ev.clientX - sx) / C) * C;
+      let ny = Math.round((ev.clientY - sy) / C) * C;
+      nx = Math.max(0, Math.min(nx, f.offsetWidth - b.offsetWidth));
+      ny = Math.max(0, Math.min(ny, f.offsetHeight - b.offsetHeight));
+      b.style.left = nx + 'px'; b.style.top = ny + 'px';
+    }
+    function up() { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); b.style.zIndex = '2'; }
+    document.addEventListener('pointermove', mv);
+    document.addEventListener('pointerup', up);
+  });
+
+  f.appendChild(b);
+  placed.push({ uid, name: it.name, cat: it.cat });
+  recalc();
+}
+
+function rm(uid) {
+  const el = document.querySelector(`[data-uid="${uid}"]`);
+  if (el) el.remove();
+  placed = placed.filter(i => i.uid !== uid);
+  recalc();
+}
+
+function clearFloor() {
+  document.querySelectorAll('.eq').forEach(b => b.remove());
+  placed = [];
+  recalc();
+}
+
+function recalc() {
+  const type = document.getElementById('projType').value;
+  const tNames = { truck:'Food Truck', trailer:'Trailer', seacan:'Seacan', kitchen:'Commercial Kitchen', bar:'Bar / Beverage', other:'Custom Build' };
+
+  // Summary
+  let html = `<div class="sg"><div class="sg-title">Project</div>`;
+  html += `<div class="sl"><span class="sn">${tNames[type] || 'Custom'} &mdash; ${floorSize} ft</span></div></div>`;
+
+  if (placed.length) {
+    // Group by category
+    const groups = {};
+    placed.forEach(p => {
+      if (!groups[p.cat]) groups[p.cat] = [];
+      groups[p.cat].push(p.name);
+    });
+    Object.keys(groups).forEach(cat => {
+      html += `<div class="sg"><div class="sg-title">${cat}</div>`;
+      groups[cat].forEach(name => {
+        html += `<div class="sl"><span class="sn">${name}</span></div>`;
+      });
+      html += `</div>`;
+    });
+  } else {
+    html += `<div class="sg"><div class="sg-title">Equipment</div><div class="sum-empty">Drag items onto the floor plan</div></div>`;
+  }
+
+  html += `<div class="sg"><div class="sg-title">Included in Every Build</div>`;
+  ['Stainless interior','Plumbing & gas','Electrical','AHS inspection'].forEach(s => {
+    html += `<div class="sl inc"><span class="sn">${s}</span><span class="sv">Included</span></div>`;
+  });
+  html += `</div>`;
+
+  document.getElementById('sumBody').innerHTML = html;
+  document.getElementById('totalAmt').textContent = placed.length ? 'Quote on request' : '$0';
+}
+
+init();
+</script>
+</body>
+</html>

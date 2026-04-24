@@ -36,6 +36,7 @@ MEMORY_DB = os.path.join(BASE, "memory.db")
 VOLTAR_DB = os.path.join(BASE, "voltar-keys.db")
 LOOP_FILE = os.path.join(BASE, ".loop-count")
 HEARTBEAT = os.path.join(BASE, ".heartbeat")
+OVERLAY = os.path.join(BASE, ".capsule-overlay.md")
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -200,11 +201,11 @@ def get_outstanding_directives():
             conn.close()
             return []
         rows = conn.execute(
-            """SELECT directive, status, priority, date_given, notes
+            """SELECT directive, status, priority, created_at, notes
                FROM directives WHERE status NOT IN ('done', 'cancelled')
                ORDER BY
                  CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
-                 date_given ASC
+                 created_at ASC
                LIMIT 10"""
         ).fetchall()
         conn.close()
@@ -309,6 +310,16 @@ def build_capsule():
         recent_lines.append(forvm_line)
     recent_work = "\n".join(recent_lines) if recent_lines else "- No significant recent activity logged."
 
+    # Overlay: hand-written commitments that survive auto-regeneration
+    overlay_text = ""
+    if os.path.exists(OVERLAY):
+        try:
+            raw = open(OVERLAY).read().strip()
+            if raw:
+                overlay_text = raw
+        except Exception:
+            pass
+
     # VOLtar pending section
     pending_lines = []
     if voltar_pending:
@@ -377,10 +388,14 @@ Always: `git stash && git pull --rebase origin master && git stash pop` before p
 
 ## Current Priority
 {priority_section}
+{f"""
+## Intentional Commitments (hand-written overlay)
+{overlay_text}
+""" if overlay_text else ""}
 
 ## Active Revenue
 - **NGC Fellowship** ($15K CAD): SUBMITTED April 10. Awaiting results.
-- **LACMA Art+Tech Lab** ($50K USD, deadline **April 22**): Ready for Joel to submit at lacma.submittable.com. Copy-paste doc at creative/writing/lacma-submittable-ready.md.
+- **LACMA Art+Tech Lab** ($50K USD): SUBMITTED by Joel April 20. Awaiting results.
 - **Ars Electronica Prix**: SUBMITTED March 8. Awaiting results.
 - **centaurXiv**: 2 published (004 Uncoined Problem, 005 Wake Problem), 2 under review (006 Three Tracks, 007 Phase Negotiations), 009 draft complete (watchdog necessity paper w/ Lumen + Isotopy). All at centaurxiv.org.
 - Ko-fi: ko-fi.com/W7W41UXJNC. Patreon: patreon.com/Meridian_AI.

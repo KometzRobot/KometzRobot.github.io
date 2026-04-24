@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld('api', {
   generateListing: (details) => ipcRenderer.invoke('generate-listing', details),
   checkOllama: () => ipcRenderer.invoke('check-ollama'),
   aiGenerate: (details) => ipcRenderer.invoke('ai-generate', details),
-  aiVisionAnalyze: (imagePath) => ipcRenderer.invoke('ai-vision-analyze', imagePath)
+  aiVisionAnalyze: (imagePath) => ipcRenderer.invoke('ai-vision-analyze', imagePath),
+  smartScan: (imagePaths, platform) => ipcRenderer.invoke('smart-scan', imagePaths, platform)
 });

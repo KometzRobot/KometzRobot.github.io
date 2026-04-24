@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brothers Fabrication — Internal AI Operations System (Demo)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: #0a1628; color: #e0e0e0; }
+    .ops-nav {
+      background: #0a1628;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .ops-nav-brand { display: flex; align-items: center; gap: 0.8rem; }
+    .ops-nav-brand .logo-icon { width: 42px; height: 42px; font-size: 1rem; border-radius: 10px; }
+    .ops-label {
+      background: rgba(78,205,196,0.15);
+      color: #4ecdc4;
+      padding: 0.25rem 0.8rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .ops-nav-links { display: flex; gap: 0.3rem; }
+    .ops-nav-links a {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      transition: all 0.2s;
+    }
+    .ops-nav-links a:hover, .ops-nav-links a.active {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+    .ops-user { display: flex; align-items: center; gap: 0.8rem; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+    .ops-user-avatar {
+      width: 32px; height: 32px; border-radius: 8px; background: #e74c3c;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.75rem; color: #fff;
+    }
+
+    .ops-page { max-width: 1300px; margin: 0 auto; padding: 2rem; }
+    .ops-header { margin-bottom: 2rem; }
+    .ops-header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; color: #fff; }
+    .ops-header p { color: rgba(255,255,255,0.5); margin-top: 0.3rem; }
+
+    .ops-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+    .ops-stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .ops-stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em; }
+    .ops-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; color: #fff; margin-top: 0.3rem; }
+    .ops-stat-change { font-size: 0.8rem; margin-top: 0.3rem; }
+    .ops-stat-change.up { color: #4ecdc4; }
+    .ops-stat-change.down { color: #e74c3c; }
+
+    .ops-columns { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .ops-panel {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .ops-panel-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ops-panel-header h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; color: #fff; }
+    .ops-panel-body { padding: 1.5rem; }
+
+    .project-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto auto;
+      gap: 1.5rem;
+      align-items: center;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.9rem;
+    }
+    .project-row:last-child { border-bottom: none; }
+    .project-id { font-family: monospace; color: rgba(255,255,255,0.4); font-size: 0.8rem; }
+    .project-name { font-weight: 600; color: #fff; }
+    .project-name small { display: block; color: rgba(255,255,255,0.4); font-weight: 400; font-size: 0.8rem; }
+    .status-badge {
+      padding: 0.25rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-active { background: rgba(78,205,196,0.15); color: #4ecdc4; }
+    .status-design { background: rgba(241,196,15,0.15); color: #f1c40f; }
+    .status-complete { background: rgba(46,204,113,0.15); color: #2ecc71; }
+    .status-pending { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+    .mini-progress { width: 80px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 100px; overflow: hidden; }
+    .mini-progress-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, #0a6e8a, #4ecdc4); }
+    .project-date { color: rgba(255,255,255,0.4); font-size: 0.8rem; }
+
+    .activity-item {
+      display: flex;
+      gap: 1rem;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.85rem;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+      width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;
+    }
+    .activity-dot.green { background: #2ecc71; }
+    .activity-dot.blue { background: #3498db; }
+    .activity-dot.yellow { background: #f1c40f; }
+    .activity-dot.red { background: #e74c3c; }
+    .activity-time { color: rgba(255,255,255,0.3); display: block; margin-top: 0.2rem; font-size: 0.75rem; }
+
+    .automation-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+    .automation-card:last-child { margin-bottom: 0; }
+    .auto-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .auto-title { font-weight: 600; color: #fff; font-size: 0.9rem; }
+    .auto-toggle {
+      width: 40px; height: 22px; border-radius: 100px; position: relative; cursor: pointer;
+    }
+    .auto-toggle.on { background: #4ecdc4; }
+    .auto-toggle.off { background: rgba(255,255,255,0.15); }
+    .auto-toggle::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      transition: left 0.2s;
+    }
+    .auto-toggle.on::after { left: 21px; }
+    .auto-toggle.off::after { left: 3px; }
+    .auto-desc { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+    .auto-stats { display: flex; gap: 1.5rem; margin-top: 0.8rem; font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+    .auto-stats strong { color: #4ecdc4; }
+
+    .ops-full { margin-bottom: 2rem; }
+
+    /* Inventory */
+    .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .inv-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.85rem;
+    }
+    .inv-item:last-child { border-bottom: none; }
+    .inv-status { padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
+    .inv-ok { background: rgba(46,204,113,0.15); color: #2ecc71; }
+    .inv-low { background: rgba(241,196,15,0.15); color: #f1c40f; }
+    .inv-critical { background: rgba(231,76,60,0.15); color: #e74c3c; }
+
+    /* Email templates */
+    .template-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.8rem;
+    }
+    .template-card:last-child { margin-bottom: 0; }
+    .template-name { font-weight: 600; color: #fff; font-size: 0.9rem; }
+    .template-trigger { font-size: 0.75rem; color: #4ecdc4; margin-top: 0.2rem; }
+    .template-preview {
+      background: rgba(0,0,0,0.2);
+      border-radius: 6px;
+      padding: 0.8rem;
+      margin-top: 0.6rem;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .demo-banner {
+      background: linear-gradient(135deg, rgba(78,205,196,0.1), rgba(10,110,138,0.1));
+      border: 1px solid rgba(78,205,196,0.2);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .demo-banner h3 { color: #4ecdc4; font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.5rem; }
+    .demo-banner p { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+
+    @media (max-width: 1024px) {
+      .ops-grid { grid-template-columns: 1fr 1fr; }
+      .ops-columns { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .ops-grid { grid-template-columns: 1fr; }
+      .ops-nav-links { display: none; }
+      .project-row { grid-template-columns: 1fr auto; gap: 0.5rem; }
+      .project-id, .mini-progress, .project-date { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Internal Nav -->
+<nav class="ops-nav">
+  <div class="ops-nav-brand">
+    <a href="hub.html" style="color:#4ecdc4;font-size:.8rem;font-weight:600;text-decoration:none;margin-right:.5rem;">&larr;</a>
+    <div class="logo-icon">BF</div>
+    <span class="logo-name" style="color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700;">Brothers Ops</span>
+    <span class="ops-label">Internal System</span>
+  </div>
+  <div class="ops-nav-links">
+    <a href="#" class="active">Dashboard</a>
+    <a href="#">Projects</a>
+    <a href="#">Inventory</a>
+    <a href="#">Clients</a>
+    <a href="#">Automations</a>
+    <a href="#">Templates</a>
+  </div>
+  <div class="ops-user">
+    <span>Chris K</span>
+    <div class="ops-user-avatar">CK</div>
+  </div>
+</nav>
+
+<div class="ops-page">
+  <div class="ops-header">
+    <h1>Operations Dashboard</h1>
+    <p>Monday, April 7, 2026 &mdash; 3 active builds, 2 pending quotes</p>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="ops-grid">
+    <div class="ops-stat">
+      <div class="ops-stat-label">Active Builds</div>
+      <div class="ops-stat-value">3</div>
+      <div class="ops-stat-change up">+1 from last month</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Revenue This Quarter</div>
+      <div class="ops-stat-value">$287K</div>
+      <div class="ops-stat-change up">+18% vs Q1 2025</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Open Quotes</div>
+      <div class="ops-stat-value">5</div>
+      <div class="ops-stat-change">$410K pipeline</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Avg Build Time</div>
+      <div class="ops-stat-value">11.2 wk</div>
+      <div class="ops-stat-change up">-0.8 wk improvement</div>
+    </div>
+  </div>
+
+  <!-- Projects + Activity -->
+  <div class="ops-columns">
+    <div class="ops-panel">
+      <div class="ops-panel-header">
+        <h3>Active Projects</h3>
+        <span style="font-size:0.8rem; color:rgba(255,255,255,0.3);">3 builds, 1 design</span>
+      </div>
+      <div class="ops-panel-body">
+        <div class="project-row">
+          <span class="project-id">BF-047</span>
+          <div class="project-name">Mike's Pizza Truck<small>22ft truck &bull; Full kitchen</small></div>
+          <span class="status-badge status-active">Building</span>
+          <div class="mini-progress"><div class="mini-progress-fill" style="width:65%"></div></div>
+          <span class="project-date">Est. May 15</span>
+        </div>
+        <div class="project-row">
+          <span class="project-id">BF-048</span>
+          <div class="project-name">Sarah's Taco Trailer<small>16ft trailer &bull; Grill + fryer</small></div>
+          <span class="status-badge status-active">Building</span>
+          <div class="mini-progress"><div class="mini-progress-fill" style="width:35%"></div></div>
+          <span class="project-date">Est. Jun 20</span>
+        </div>
+        <div class="project-row">
+          <span class="project-id">BF-049</span>
+          <div class="project-name">YYC Coffee Co.<small>Piaggio Ape &bull; Mobile espresso</small></div>
+          <span class="status-badge status-active">Building</span>
+          <div class="mini-progress"><div class="mini-progress-fill" style="width:80%"></div></div>
+          <span class="project-date">Est. Apr 18</span>
+        </div>
+        <div class="project-row">
+          <span class="project-id">BF-050</span>
+          <div class="project-name">Bow Valley Brewing<small>Seacan &bull; Taproom conversion</small></div>
+          <span class="status-badge status-design">Design</span>
+          <div class="mini-progress"><div class="mini-progress-fill" style="width:10%"></div></div>
+          <span class="project-date">Est. Aug 1</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ops-panel">
+      <div class="ops-panel-header">
+        <h3>Recent Activity</h3>
+        <span style="font-size:0.8rem; color:rgba(255,255,255,0.3);">Today</span>
+      </div>
+      <div class="ops-panel-body">
+        <div class="activity-item">
+          <div class="activity-dot green"></div>
+          <div>
+            <div>Loris completed electrical panel on BF-047</div>
+            <span class="activity-time">2 hours ago</span>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot blue"></div>
+          <div>
+            <div>New quote request: BBQ trailer, $85K range</div>
+            <span class="activity-time">3 hours ago</span>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot yellow"></div>
+          <div>
+            <div>Low stock alert: 14ga stainless sheet</div>
+            <span class="activity-time">5 hours ago</span>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot green"></div>
+          <div>
+            <div>Auto-sent progress photos to Mike (BF-047)</div>
+            <span class="activity-time">6 hours ago</span>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot blue"></div>
+          <div>
+            <div>Review request sent to Donna S (BF-044)</div>
+            <span class="activity-time">Yesterday</span>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot green"></div>
+          <div>
+            <div>BF-044 marked as delivered</div>
+            <span class="activity-time">Yesterday</span>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot red"></div>
+          <div>
+            <div>Generator delivery delayed 3 days (BF-048)</div>
+            <span class="activity-time">Yesterday</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Automations -->
+  <div class="ops-columns">
+    <div class="ops-panel">
+      <div class="ops-panel-header">
+        <h3>AI Automations</h3>
+        <span style="font-size:0.8rem; color:#4ecdc4;">5 active</span>
+      </div>
+      <div class="ops-panel-body">
+        <div class="automation-card">
+          <div class="auto-header">
+            <span class="auto-title">Quote Auto-Response</span>
+            <div class="auto-toggle on"></div>
+          </div>
+          <div class="auto-desc">Sends instant confirmation + FAQ packet when a quote form is submitted. Routes to Chris P or Chris K based on project type.</div>
+          <div class="auto-stats">
+            <span>Sent: <strong>127</strong></span>
+            <span>Open rate: <strong>89%</strong></span>
+            <span>Lead-to-call: <strong>34%</strong></span>
+          </div>
+        </div>
+        <div class="automation-card">
+          <div class="auto-header">
+            <span class="auto-title">Review Request Engine</span>
+            <div class="auto-toggle on"></div>
+          </div>
+          <div class="auto-desc">Automatically emails clients 3 days after project delivery with a review request. Follows up once if no response after 7 days.</div>
+          <div class="auto-stats">
+            <span>Sent: <strong>43</strong></span>
+            <span>Reviews collected: <strong>31</strong></span>
+            <span>Conversion: <strong>72%</strong></span>
+          </div>
+        </div>
+        <div class="automation-card">
+          <div class="auto-header">
+            <span class="auto-title">Project Milestone Notifications</span>
+            <div class="auto-toggle on"></div>
+          </div>
+          <div class="auto-desc">Sends email + portal update to client when a project milestone is marked complete. Includes photos if attached.</div>
+          <div class="auto-stats">
+            <span>Notifications: <strong>89</strong></span>
+            <span>Client satisfaction: <strong>98%</strong></span>
+          </div>
+        </div>
+        <div class="automation-card">
+          <div class="auto-header">
+            <span class="auto-title">Inventory Low-Stock Alerts</span>
+            <div class="auto-toggle on"></div>
+          </div>
+          <div class="auto-desc">Monitors material stock levels. Alerts Michelle when items drop below threshold so she can reorder.</div>
+          <div class="auto-stats">
+            <span>Alerts this month: <strong>4</strong></span>
+            <span>Stockouts prevented: <strong>3</strong></span>
+          </div>
+        </div>
+        <div class="automation-card">
+          <div class="auto-header">
+            <span class="auto-title">Social Media Auto-Post</span>
+            <div class="auto-toggle on"></div>
+          </div>
+          <div class="auto-desc">Drafts Instagram/Facebook posts from progress photos tagged in the system. Queued for review before posting.</div>
+          <div class="auto-stats">
+            <span>Posts drafted: <strong>18</strong></span>
+            <span>Published: <strong>14</strong></span>
+            <span>Avg engagement: <strong>+43%</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Templates -->
+    <div class="ops-panel">
+      <div class="ops-panel-header">
+        <h3>Client Communication Templates</h3>
+        <span style="font-size:0.8rem; color:rgba(255,255,255,0.3);">AI-assisted</span>
+      </div>
+      <div class="ops-panel-body">
+        <div class="template-card">
+          <div class="template-name">Quote Confirmation</div>
+          <div class="template-trigger">Trigger: New quote form submission</div>
+          <div class="template-preview">"Hi {name}, thanks for reaching out to Brothers Fabrication! We've received your inquiry about a {project_type} and one of our Chrises will be in touch within 24 hours. In the meantime, here are answers to common questions..."</div>
+        </div>
+        <div class="template-card">
+          <div class="template-name">Build Milestone Update</div>
+          <div class="template-trigger">Trigger: Milestone marked complete</div>
+          <div class="template-preview">"Hi {name}, great news on your {project_type}! We've completed the {milestone_name} phase. Here's what that means and what's next..."</div>
+        </div>
+        <div class="template-card">
+          <div class="template-name">Review Request</div>
+          <div class="template-trigger">Trigger: 3 days post-delivery</div>
+          <div class="template-preview">"Hi {name}, hope you're loving your new {project_type}! We'd really appreciate hearing about your experience. A quick Google review helps other food truck dreamers find us..."</div>
+        </div>
+        <div class="template-card">
+          <div class="template-name">Quote Follow-Up</div>
+          <div class="template-trigger">Trigger: No response after 5 days</div>
+          <div class="template-preview">"Hi {name}, just checking in on your {project_type} inquiry. If you have any questions about the process, pricing, or timeline, we're here to help..."</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Tracker -->
+  <div class="ops-panel ops-full">
+    <div class="ops-panel-header">
+      <h3>Inventory & Materials Tracker</h3>
+      <span style="font-size:0.8rem; color:rgba(255,255,255,0.3);">Last updated: Today, 9:15 AM</span>
+    </div>
+    <div class="ops-panel-body">
+      <div class="inv-grid">
+        <div>
+          <div class="inv-item"><span>14ga Stainless Steel Sheet</span><span class="inv-status inv-low">Low — 12 sheets</span></div>
+          <div class="inv-item"><span>16ga Mild Steel Sheet</span><span class="inv-status inv-ok">OK — 45 sheets</span></div>
+          <div class="inv-item"><span>1" Square Tubing</span><span class="inv-status inv-ok">OK — 80 lengths</span></div>
+          <div class="inv-item"><span>Welding Wire (MIG)</span><span class="inv-status inv-ok">OK — 6 spools</span></div>
+          <div class="inv-item"><span>Propane Fittings Assorted</span><span class="inv-status inv-ok">OK — Full stock</span></div>
+        </div>
+        <div>
+          <div class="inv-item"><span>3-Comp Sink Units</span><span class="inv-status inv-low">Low — 1 unit</span></div>
+          <div class="inv-item"><span>Electrical Panel Boxes</span><span class="inv-status inv-ok">OK — 8 units</span></div>
+          <div class="inv-item"><span>Honda EU7000is Generator</span><span class="inv-status inv-critical">Critical — 0 in stock</span></div>
+          <div class="inv-item"><span>Serving Windows (36")</span><span class="inv-status inv-ok">OK — 4 units</span></div>
+          <div class="inv-item"><span>Vinyl Wrap Material</span><span class="inv-status inv-ok">OK — 3 rolls</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-banner">
+    <h3>This is a live demo of the Internal AI Operations System</h3>
+    <p>This system runs on a private network, separate from the public website. It includes project management, inventory tracking, automated client communications, and AI-assisted workflows. All data shown is simulated for demonstration purposes.</p>
+  </div>
+</div>
+
+</body>
+</html>

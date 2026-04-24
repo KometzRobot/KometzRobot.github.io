@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BROTHERS FABRICATION — TRUCK CONFIGURATOR + BUILDER</title>
+  <link rel="icon" type="image/png" href="assets/brofab-eagle.jpg">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0">
+  <link rel="stylesheet" href="css/styles.css?v=4">
+</head>
+<body data-mode="internal">
+  <!-- Loading splash — shows while app initializes -->
+  <div id="loader">
+    <div class="loader-inner">
+      <img src="assets/brofab-truck.png" alt="BRO FAB" class="loader-truck">
+      <div class="loader-text">LOADING TRUCK BUILDER</div>
+      <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Error display -->
+  <div id="error-overlay" class="hidden">
+    <div class="error-inner">
+      <div class="error-icon">⚠</div>
+      <div class="error-title">Something went wrong</div>
+      <div class="error-msg" id="error-msg"></div>
+      <button id="error-reload" class="btn-submit">Reload App</button>
+    </div>
+  </div>
+  <!-- ================== TOP BAR ================== -->
+  <header id="topbar">
+    <div class="brand">
+      <div class="brand-text">
+        <img class="brofab-wordmark" src="assets/brofab-wordmark.png" alt="BROTHERS fabrication">
+        <div class="brand-sub">Truck Configurator + Builder</div>
+      </div>
+    </div>
+
+    <div class="mode-switch">
+      <button class="mode-btn" data-mode="customer">Customer</button>
+      <button class="mode-btn active" data-mode="internal">Internal</button>
+    </div>
+
+    <div class="top-actions">
+      <button id="btn-toggle-sidebar" class="top-btn icon-btn mobile-only" title="Show equipment catalog">☰</button>
+      <button id="btn-toggle-panel" class="top-btn icon-btn mobile-only" title="Show layout info and tools">ℹ</button>
+      <div class="topbar-menu-wrap">
+        <button id="btn-file" class="top-btn" title="File operations">File ▾</button>
+        <div id="file-menu" class="topbar-dropdown hidden">
+          <button id="btn-new" class="dropdown-item">New Layout</button>
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-heading">Save</div>
+          <button id="btn-save" class="dropdown-item">Save</button>
+          <button id="btn-screenshot" class="dropdown-item">Save as PNG</button>
+          <button id="btn-screenshot-jpg" class="dropdown-item">Save as JPG</button>
+          <button id="btn-export" class="dropdown-item">Save as JSON</button>
+          <button id="btn-print" class="dropdown-item">Print / PDF</button>
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-heading">Open</div>
+          <button id="btn-load" class="dropdown-item">Load</button>
+          <button id="btn-templates" class="dropdown-item">Templates</button>
+          <button id="btn-import" class="dropdown-item">Import JSON</button>
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-heading">Client Package</div>
+          <button id="btn-portfolio" class="dropdown-item">Generate Portfolio ZIP</button>
+          <button id="btn-record-video" class="dropdown-item">Record 360° Video</button>
+        </div>
+      </div>
+      <div class="topbar-menu-wrap internal-only">
+        <button id="btn-edit-menu" class="top-btn" title="Edit &amp; reports">Edit ▾</button>
+        <div id="edit-menu" class="topbar-dropdown hidden">
+          <button id="btn-show-notes" class="dropdown-item">Internal Notes</button>
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-heading">Reports</div>
+          <button id="btn-show-costs" class="dropdown-item">Cost Breakdown</button>
+          <button id="btn-show-compliance" class="dropdown-item">Compliance Checks</button>
+          <button id="btn-show-bom" class="dropdown-item">Bill of Materials</button>
+          <button id="btn-show-checklist" class="dropdown-item">Build Checklist</button>
+          <div class="dropdown-sep"></div>
+          <button id="btn-copy-bom" class="dropdown-item">Copy BOM to Clipboard</button>
+          <button id="btn-download-bom" class="dropdown-item">Download BOM</button>
+          <button id="btn-save-checklist" class="dropdown-item">Download Checklist</button>
+        </div>
+      </div>
+      <button id="btn-quote" class="top-btn primary" title="Request a quote and download a full materials list">QUOTE</button>
+      <button id="btn-exit" class="top-btn" title="Exit application">EXIT</button>
+    </div>
+  </header>
+
+  <div id="mobile-backdrop"></div>
+
+  <!-- ================== MAIN LAYOUT ================== -->
+  <div id="main-layout">
+    <!-- Left: Equipment Catalog -->
+    <aside id="sidebar">
+      <div class="sidebar-section sidebar-equip" id="equipment-panel">
+        <p class="sidebar-tip">Click an item to place it in the truck. Expand a category to browse.</p>
+        <div class="sidebar-search">
+          <input type="text" id="equip-search" placeholder="Search equipment...">
+        </div>
+        <div id="equipment-list"></div>
+      </div>
+
+      <!-- Utility tool panel — shows when ELEC/H2O/GAS mode active -->
+      <div class="sidebar-section" id="utility-panel" style="display:none;">
+        <h2 id="utility-panel-title">WIRING</h2>
+        <div class="utility-tools" id="utility-tools"></div>
+        <div class="utility-stats" id="utility-stats"></div>
+        <div class="utility-help">
+          <div class="help-group">
+            <div class="help-group-title">How To</div>
+            <div class="help-row">1. Click a glowing node</div>
+            <div class="help-row">2. Click another node to connect</div>
+            <div class="help-row">3. Right-click a line to remove it</div>
+            <div class="help-row">Click EQUIP. to exit</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section sidebar-surfaces">
+        <div class="surface-label">Floor</div>
+        <div class="surface-swatches" id="floor-swatches">
+          <button class="swatch active" data-floor="bare" title="Bare stainless">
+            <div class="swatch-color" style="background:linear-gradient(180deg,#e8e8e8,#d0d0d0)"></div>
+            <span>Bare</span>
+          </button>
+          <button class="swatch" data-floor="diamond" title="Diamond plate">
+            <div class="swatch-color swatch-diamond"></div>
+            <span>Diamond</span>
+          </button>
+          <button class="swatch" data-floor="vinyl" title="Vinyl plank">
+            <div class="swatch-color swatch-vinyl"></div>
+            <span>Vinyl</span>
+          </button>
+          <button class="swatch" data-floor="rubber" title="Rubber mat">
+            <div class="swatch-color" style="background:radial-gradient(circle at 30% 30%,#555 1px,#3a3a3a 2px)"></div>
+            <span>Rubber</span>
+          </button>
+        </div>
+        <div class="surface-label">Walls</div>
+        <div class="surface-swatches" id="wall-swatches">
+          <button class="swatch active" data-wall="default" title="Default painted">
+            <div class="swatch-color" style="background:#f0f0f0"></div>
+            <span>Default</span>
+          </button>
+          <button class="swatch" data-wall="stainless" title="Stainless steel">
+            <div class="swatch-color" style="background:linear-gradient(90deg,#b8b8b8,#d0d0d0,#b8b8b8)"></div>
+            <span>Steel</span>
+          </button>
+          <button class="swatch" data-wall="aluminum" title="White aluminum">
+            <div class="swatch-color" style="background:#f5f5f5;border-right:2px solid #ddd"></div>
+            <span>Alum.</span>
+          </button>
+          <button class="swatch" data-wall="frp" title="FRP panel">
+            <div class="swatch-color" style="background:#e8e2d4"></div>
+            <span>FRP</span>
+          </button>
+          <button class="swatch" data-wall="pvc" title="PVC panel">
+            <div class="swatch-color" style="background:repeating-linear-gradient(90deg,#e4e4ec 0px,#e4e4ec 3px,#d8d8e2 3px,#d8d8e2 4px)"></div>
+            <span>PVC</span>
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Center: 3D Viewport -->
+    <main id="viewport">
+      <canvas id="canvas"></canvas>
+      <div id="utility-mode-overlay"></div>
+      <div id="utility-mode-hint">CLICK TO DRAW A LINE · RIGHT-CLICK TO EXIT</div>
+      <!-- Photoshop-style rulers (visible when ruler mode is on) -->
+      <div id="ruler-top"></div>
+      <div id="ruler-left"></div>
+      <div id="ruler-corner">ft</div>
+      <div id="ruler-cursor-x"></div>
+      <div id="ruler-cursor-y"></div>
+      <div id="dim-overlay"></div>
+      <img src="assets/brofab-truck.png" class="viewport-watermark" alt="">
+      <div id="toast-container"></div>
+
+      <!-- Floating view preset buttons — 3 grouped sections -->
+      <div id="view-presets">
+        <div class="vp-group" data-label="Camera">
+          <button class="view-btn active" data-view="iso" title="Isometric">ISO</button>
+          <button class="view-btn" data-view="top" title="Top view">TOP</button>
+          <button class="view-btn" data-view="front" title="Front view">FR</button>
+          <button class="view-btn" data-view="side" title="Side view">SD</button>
+        </div>
+        <div class="vp-group" data-label="Display">
+          <div class="view-btn-group">
+            <button id="btn-walls-cycle" class="view-btn" title="Cycle wall visibility (auto / full / low / off)">WALLS</button>
+            <div id="walls-slider-dropdown" class="view-dropdown">
+              <label>
+                <span>Opacity</span>
+                <span id="front-wall-label">15%</span>
+              </label>
+              <input type="range" id="front-wall-slider" min="0" max="100" value="15">
+            </div>
+          </div>
+          <button id="btn-roof-toggle" class="view-btn" title="Toggle roof / ceiling">ROOF</button>
+          <button id="btn-wheels-toggle" class="view-btn" title="Toggle wheel wells">WHEELS</button>
+          <button id="btn-color-toggle" class="view-btn" title="Color items by category">COLOR</button>
+          <button id="btn-lights-toggle" class="view-btn" title="Toggle equipment lights">LIGHTS</button>
+        </div>
+        <div class="vp-group" data-label="Utilities">
+          <button id="btn-util-equip" class="view-btn util-btn active" title="Return to normal build mode">EQUIP.</button>
+          <button id="btn-util-elec" class="view-btn util-btn" title="Show electrical wire routing + total length needed">ELEC</button>
+          <button id="btn-util-water" class="view-btn util-btn" title="Show water line routing + total PEX needed">H₂O</button>
+          <button id="btn-util-gas" class="view-btn util-btn" title="Show gas line routing + total length needed">GAS</button>
+        </div>
+      </div>
+
+      <!-- Height adjust — visible when placing elevated/wall items -->
+      <div id="height-adjust" style="display:none;">
+        <button id="btn-height-up" title="Raise item">▲</button>
+        <div id="height-track">
+          <div id="height-ceil-mark" class="height-mark"><span>ceiling</span></div>
+          <div id="height-item-bar"></div>
+          <div id="height-counter-mark" class="height-mark"><span>counter</span></div>
+          <div id="height-floor-mark" class="height-mark"><span>floor</span></div>
+        </div>
+        <span id="height-display">2.0 ft</span>
+        <button id="btn-height-down" title="Lower item">▼</button>
+      </div>
+
+      <!-- Controls help overlay — bottom of viewport -->
+      <div id="controls-help-overlay">
+        <div class="controls-help-row">
+          <span><kbd>Click</kbd> place</span>
+          <span><kbd>R</kbd> rotate/spin</span>
+          <span><kbd>F</kbd> flip</span>
+          <span><kbd>V</kbd> variant</span>
+          <span><kbd>RClick</kbd> delete</span>
+          <span><kbd>Scroll</kbd> zoom</span>
+          <span><kbd>RDrag</kbd> orbit</span>
+          <span><kbd>MDrag</kbd> pan</span>
+          <span><kbd>Ctrl+Z</kbd> undo</span>
+        </div>
+      </div>
+      <div id="viewport-bottom-btns">
+        <button id="btn-help-toggle" title="Toggle controls (H)">?</button>
+        <button id="btn-fullscreen" title="Fullscreen (F11)">⛶</button>
+        <button id="btn-sound-toggle" title="Toggle sound effects">🔊</button>
+      </div>
+      <div id="viewport-bottom-right-btns">
+        <div class="vp-btn-cluster">
+          <div id="zoom-slider-wrap">
+            <input type="range" id="zoom-slider" min="10" max="200" value="100" title="Zoom">
+            <span id="zoom-label">100%</span>
+          </div>
+          <button id="btn-center-view" title="Center view on truck">⊙</button>
+          <button id="btn-reset-camera" title="Reset camera to default">↺</button>
+        </div>
+        <div class="vp-btn-cluster">
+          <button id="btn-measure-tool" title="Measure tool (M)">📐</button>
+          <button id="btn-dims-toggle" title="Toggle ruler">📏</button>
+          <button id="btn-pen-tool" title="Pen tool (P) — fade/solid cycle">┈</button>
+        </div>
+        <div class="vp-btn-cluster">
+          <button id="btn-bg-cycle" title="Cycle background">BG</button>
+        </div>
+      </div>
+      <div id="measure-overlay" style="display:none;">
+        <div id="measure-label"></div>
+      </div>
+
+      <div id="pen-overlay" style="display:none;">
+        <canvas id="pen-canvas"></canvas>
+      </div>
+      <div id="draw-overlay">
+        <canvas id="draw-canvas"></canvas>
+      </div>
+
+      <button id="btn-clear-guides" title="Clear all guide lines">Clear Guides</button>
+
+      <div id="status-bar">
+        <span id="status-text">Select equipment to begin</span>
+        <span id="dimensions-info" class="internal-only"></span>
+        <span id="item-count">Items: 0</span>
+      </div>
+    </main>
+
+    <!-- Right: Context panel (properties + internal tools) -->
+    <aside id="panel">
+      <!-- Properties (shown when item selected) -->
+      <div id="properties-panel" class="panel-section" style="display:none;">
+        <h2>PROPERTIES</h2>
+        <div id="prop-name" class="prop-row"></div>
+        <div class="prop-row">
+          <label>Position</label>
+          <span id="prop-position">--</span>
+        </div>
+        <div class="prop-row">
+          <label>Size</label>
+          <span id="prop-size">--</span>
+        </div>
+        <div class="prop-row">
+          <label>Rotation</label>
+          <span id="prop-rotation">0&deg;</span>
+        </div>
+        <div class="prop-row internal-only">
+          <label>Variant</label>
+          <span id="prop-variant">1/3</span>
+        </div>
+        <div class="prop-row internal-only">
+          <label>Est. Cost</label>
+          <span id="prop-cost">--</span>
+        </div>
+        <div class="prop-actions">
+          <button id="btn-move" class="btn-action">Move</button>
+          <button id="btn-rotate" class="btn-action">Rotate</button>
+          <button id="btn-cycle-variant" class="btn-action internal-only">Variant</button>
+          <button id="btn-duplicate" class="btn-action">Duplicate</button>
+          <button id="btn-delete" class="btn-action btn-danger">Remove</button>
+        </div>
+      </div>
+
+      <div id="no-selection" class="panel-section">
+        <p class="muted" style="margin-bottom:8px;">Select a placed item to view details</p>
+        <div class="panel-tools">
+          <button id="btn-undo-panel" class="panel-tool-btn" title="Undo (Ctrl+Z)">↩ Undo</button>
+          <button id="btn-redo-panel" class="panel-tool-btn" title="Redo (Ctrl+Y)">↪ Redo</button>
+        </div>
+        <div class="panel-tools" style="margin-top:3px;">
+          <button id="btn-clear-all" class="panel-tool-btn btn-danger" title="Remove all equipment">Clear Items</button>
+          <button id="btn-clear-pen" class="panel-tool-btn" title="Clear all pen/draw marks">Clear Pen</button>
+        </div>
+      </div>
+
+      <!-- Layout Summary (always visible) -->
+      <div class="panel-section">
+        <h2>LAYOUT SUMMARY</h2>
+        <div id="layout-summary">
+          <p class="muted">Place equipment to see summary</p>
+        </div>
+        <div class="summary-stats">
+          <div class="stat-row">
+            <span>Items</span>
+            <span id="stat-items">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Floor Used</span>
+            <span id="stat-floor">0%</span>
+          </div>
+          <div class="stat-row">
+            <span>Volume Used</span>
+            <span id="stat-volume">0 / 0 ft³</span>
+          </div>
+          <div class="stat-row">
+            <span>Usable Space</span>
+            <span id="stat-remaining">0 ft³</span>
+          </div>
+          <div class="stat-row internal-only">
+            <span>Est. Total</span>
+            <span id="stat-cost">$0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Internal-only: Truck config -->
+      <div class="panel-section internal-only">
+        <h2 class="collapsible-header" data-collapse="truck-config">TRUCK CONFIG <span class="collapse-arrow">▼</span></h2>
+        <div class="form-group" style="margin-bottom:4px;">
+          <label>Chassis</label>
+          <select id="truck-type-select" style="padding:5px 8px;">
+            <option value="step-van" selected>Step Van</option>
+            <option value="box-truck">Box Truck</option>
+            <option value="ups-style">UPS Style</option>
+            <option value="flatbed">Flatbed</option>
+          </select>
+        </div>
+        <div class="truck-dims-row" style="margin-bottom:4px;">
+          <div class="truck-dim">
+            <label>Length</label>
+            <div class="dim-stepper">
+              <button class="dim-step-btn" data-dim="length" data-dir="-1">−</button>
+              <span id="truck-length-display">20 ft</span>
+              <button class="dim-step-btn" data-dim="length" data-dir="1">+</button>
+            </div>
+            <select id="truck-length-select" style="display:none;">
+              <option value="14">14 ft</option>
+              <option value="16">16 ft</option>
+              <option value="18">18 ft</option>
+              <option value="20" selected>20 ft</option>
+              <option value="22">22 ft</option>
+              <option value="24">24 ft</option>
+              <option value="26">26 ft</option>
+            </select>
+          </div>
+          <div class="truck-dim">
+            <label>Width</label>
+            <div class="dim-stepper">
+              <button class="dim-step-btn" data-dim="width" data-dir="-1">−</button>
+              <span id="truck-width-display">8 ft</span>
+              <button class="dim-step-btn" data-dim="width" data-dir="1">+</button>
+            </div>
+            <select id="truck-width-select" style="display:none;">
+              <option value="7">7 ft</option>
+              <option value="7.5">7.5 ft</option>
+              <option value="8" selected>8 ft</option>
+              <option value="8.5">8.5 ft</option>
+            </select>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="wheel-wells-toggle" class="pill-toggle" checked>
+          <label for="wheel-wells-toggle">Wells</label>
+          <div class="mini-stepper">
+            <button class="mini-step-btn" id="well-color-prev">‹</button>
+            <span id="well-color-label">Dark</span>
+            <button class="mini-step-btn" id="well-color-next">›</button>
+          </div>
+          <div class="mini-stepper">
+            <button class="mini-step-btn" id="well-size-prev">‹</button>
+            <span id="well-size-label">Std</span>
+            <button class="mini-step-btn" id="well-size-next">›</button>
+          </div>
+          <select id="wheel-well-color" style="display:none;">
+            <option value="dark" selected>Dark</option>
+            <option value="light">Light</option>
+            <option value="match">Match</option>
+          </select>
+          <select id="wheel-well-size" style="display:none;">
+            <option value="small">Sm</option>
+            <option value="standard" selected>Std</option>
+            <option value="large">Lg</option>
+            <option value="dually">Dual</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="wheel-well-adjust" class="pill-toggle">
+          <label for="wheel-well-adjust">Adjust position</label>
+        </div>
+        <div id="wheel-well-slider-wrap" class="form-group" style="margin-bottom:2px;margin-top:2px;display:none;">
+          <label style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span>Position</span>
+            <span id="wheel-well-pos-label" style="color:var(--accent);font-family:monospace;">72%</span>
+          </label>
+          <input type="range" id="wheel-well-pos" min="10" max="90" value="72" style="width:100%;accent-color:var(--accent);">
+        </div>
+        <div class="toggle-row" style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border);">
+          <span style="font-size:10px;color:var(--text-secondary);">Rear</span>
+          <div class="mini-stepper">
+            <button class="mini-step-btn" id="rear-door-prev">‹</button>
+            <span id="rear-door-label">Double</span>
+            <button class="mini-step-btn" id="rear-door-next">›</button>
+          </div>
+          <select id="rear-door-type" style="display:none;">
+            <option value="double" selected>Double</option>
+            <option value="single">Single</option>
+            <option value="roll-up">Roll-Up</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <span style="font-size:10px;color:var(--text-secondary);">Man</span>
+          <div class="mini-stepper">
+            <button class="mini-step-btn" id="man-door-prev">‹</button>
+            <span id="man-door-label">Slide</span>
+            <button class="mini-step-btn" id="man-door-next">›</button>
+          </div>
+          <div class="mini-stepper">
+            <button class="mini-step-btn" id="man-door-size-prev">‹</button>
+            <span id="man-door-size-label">Std</span>
+            <button class="mini-step-btn" id="man-door-size-next">›</button>
+          </div>
+          <div class="mini-stepper">
+            <button class="mini-step-btn" id="man-door-wall-prev">‹</button>
+            <span id="man-door-wall-label">Front</span>
+            <button class="mini-step-btn" id="man-door-wall-next">›</button>
+          </div>
+          <select id="man-door-type" style="display:none;">
+            <option value="slide" selected>Slide</option>
+            <option value="swing">Swing</option>
+            <option value="none">None</option>
+          </select>
+          <select id="man-door-size" style="display:none;">
+            <option value="narrow">Narrow</option>
+            <option value="standard" selected>Std</option>
+            <option value="wide">Wide</option>
+          </select>
+          <select id="man-door-wall" style="display:none;">
+            <option value="front" selected>Front</option>
+            <option value="left-rear">L-Rear</option>
+            <option value="left-front">L-Frt</option>
+            <option value="right-rear">R-Rear</option>
+            <option value="right-front">R-Frt</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="doors-open-toggle" class="pill-toggle">
+          <label for="doors-open-toggle" id="doors-state" style="font-size:10px;">Doors shut</label>
+        </div>
+      </div>
+
+      <!-- Compact power/water status bar -->
+      <div class="panel-section internal-only">
+        <h2>STATUS</h2>
+        <div class="compact-status">
+          <div class="compact-stat">
+            <span>Power</span>
+            <span id="power-status">—</span>
+          </div>
+          <div class="compact-stat">
+            <span>Fresh H₂O</span>
+            <span id="water-fresh">0 gal</span>
+          </div>
+          <div class="compact-stat">
+            <span>Grey H₂O</span>
+            <span id="water-grey">0 gal</span>
+          </div>
+        </div>
+        <div class="power-bar-wrap" style="margin-top:4px;">
+          <div class="power-bar"><div class="power-bar-fill" id="power-bar-fill" style="width:0"></div></div>
+        </div>
+      </div>
+
+      <!-- Hidden: full power/utility data still populated by JS -->
+      <div style="display:none;">
+        <span id="power-load"></span>
+        <span id="power-peak"></span>
+        <span id="power-supply"></span>
+        <span id="wire-est"></span>
+        <span id="pex-est"></span>
+        <span id="gas-est"></span>
+        <span id="wall-sqft"></span>
+        <span id="floor-sqft"></span>
+      </div>
+
+      <!-- Hidden containers for report data (populated by JS, shown in slide-in panel) -->
+      <div style="display:none;">
+        <div id="cost-breakdown"></div>
+        <div id="cost-equipment"></div>
+        <div id="cost-labor"></div>
+        <div id="cost-materials"></div>
+        <div id="cost-total"></div>
+        <div id="compliance-checks">
+          <div class="check-row" id="check-handwash"><span class="check-icon">○</span><span>Hand wash sink</span></div>
+          <div class="check-row" id="check-3comp"><span class="check-icon">○</span><span>3-comp sink</span></div>
+          <div class="check-row" id="check-hood"><span class="check-icon">○</span><span>Exhaust hood</span></div>
+          <div class="check-row" id="check-fire"><span class="check-icon">○</span><span>Fire suppression</span></div>
+          <div class="check-row" id="check-fridge"><span class="check-icon">○</span><span>Cold storage</span></div>
+          <div class="check-row" id="check-service"><span class="check-icon">○</span><span>Service window</span></div>
+        </div>
+        <div id="bom-list"></div>
+        <div id="build-checklist"></div>
+        <textarea id="internal-notes" rows="4" placeholder="Design notes, specs, customer requirements..."></textarea>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- ================== SLIDE-IN QUOTE PANEL ================== -->
+  <div id="quote-overlay" class="hidden">
+    <div id="quote-backdrop"></div>
+    <div id="quote-panel">
+      <div class="quote-header">
+        <div class="quote-header-brand">
+          <img src="assets/brofab-truck.png" class="quote-header-truck" alt="Brothers Fab">
+          <h2>REQUEST A QUOTE</h2>
+        </div>
+        <button id="btn-close-quote" class="close-btn">&times;</button>
+      </div>
+      <div class="quote-body">
+        <p class="quote-intro">
+          Tell us about your project and we'll send you a custom quote based on your layout.
+        </p>
+        <form id="quote-form">
+          <div class="form-group">
+            <label for="q-name">Your Name *</label>
+            <input type="text" id="q-name" required placeholder="John Smith">
+          </div>
+          <div class="form-group">
+            <label for="q-email">Email *</label>
+            <input type="email" id="q-email" required placeholder="john@example.com">
+          </div>
+          <div class="form-group">
+            <label for="q-phone">Phone</label>
+            <input type="tel" id="q-phone" placeholder="(555) 123-4567">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="q-truck-length">Truck Length</label>
+              <select id="q-truck-length">
+                <option value="14">14 ft</option>
+                <option value="16">16 ft</option>
+                <option value="18">18 ft</option>
+                <option value="20" selected>20 ft</option>
+                <option value="22">22 ft</option>
+                <option value="24">24 ft</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="q-timeline">Timeline</label>
+              <select id="q-timeline">
+                <option value="asap">ASAP</option>
+                <option value="1-3mo">1-3 months</option>
+                <option value="3-6mo" selected>3-6 months</option>
+                <option value="6mo+">6+ months</option>
+                <option value="exploring">Just exploring</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="q-budget">Budget Range</label>
+            <select id="q-budget">
+              <option value="">Prefer not to say</option>
+              <option value="under-50k">Under $50,000</option>
+              <option value="50-100k">$50,000 – $100,000</option>
+              <option value="100-150k">$100,000 – $150,000</option>
+              <option value="150k+">$150,000+</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="q-notes">Notes / Special Requests</label>
+            <textarea id="q-notes" rows="4" placeholder="Tell us about your concept, required equipment, brand style..."></textarea>
+          </div>
+          <div class="quote-layout-preview">
+            <div class="preview-label">LAYOUT INCLUDED</div>
+            <div id="quote-layout-items"></div>
+          </div>
+          <button type="submit" class="btn-submit">Submit Request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================== SLIDE-IN TEMPLATES PANEL ================== -->
+  <div id="templates-overlay" class="hidden">
+    <div id="templates-backdrop"></div>
+    <div id="templates-panel">
+      <div class="quote-header">
+        <div class="quote-header-brand">
+          <h2>TEMPLATES</h2>
+        </div>
+        <button id="btn-close-templates" class="close-btn">&times;</button>
+      </div>
+      <div class="quote-body">
+        <p class="quote-intro">Pick a starting point. Loading a template replaces your current layout.</p>
+        <div class="templates-section">
+          <h3 class="templates-section-title">Built-in Templates</h3>
+          <div id="builtin-templates-list"></div>
+        </div>
+        <div class="templates-section">
+          <h3 class="templates-section-title">Your Saved Templates</h3>
+          <div id="user-templates-list">
+            <p class="muted">Saved layouts marked as templates will appear here</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================== SLIDE-IN SAVE/LOAD PANEL ================== -->
+  <div id="saveload-overlay" class="hidden">
+    <div id="saveload-backdrop"></div>
+    <div id="saveload-panel">
+      <div class="quote-header">
+        <h2 id="saveload-title">SAVE LAYOUT</h2>
+        <button id="btn-close-saveload" class="close-btn">&times;</button>
+      </div>
+      <div class="quote-body">
+        <div id="save-section">
+          <div class="form-group">
+            <label for="save-name">Layout Name</label>
+            <input type="text" id="save-name" placeholder="e.g. Rodriguez Food Truck v2">
+          </div>
+          <div class="form-group">
+            <label for="save-tags">Tags / Description (comma-separated)</label>
+            <input type="text" id="save-tags" placeholder="taco, small, BBQ">
+          </div>
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+            <input type="checkbox" id="save-as-template" class="pill-toggle">
+            <label for="save-as-template" style="margin:0;text-transform:none;letter-spacing:0;font-size:12px;">
+              Save as reusable template
+            </label>
+          </div>
+          <button id="btn-do-save" class="btn-submit">Save Layout</button>
+        </div>
+        <div id="load-section" style="display:none;">
+          <div class="load-list" id="load-list">
+            <p class="muted">Loading saved layouts...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================== WELCOME POPUP ================== -->
+  <div id="welcome-overlay" class="hidden">
+    <div id="welcome-backdrop"></div>
+    <div id="welcome-dialog">
+      <h2>Brothers Fabrication — Truck Configurator</h2>
+      <p class="welcome-note">This is an early draft that's evolved from a demo build. Things may be rough around the edges — that's expected.</p>
+      <div class="welcome-section">
+        <h3>Quick Start</h3>
+        <ul>
+          <li><strong>Click</strong> an equipment item in the sidebar to start placing it</li>
+          <li><strong>Click</strong> inside the truck to place — <strong>R</strong> to rotate, <strong>V</strong> to cycle variant</li>
+          <li><strong>Right-click</strong> an item to remove it</li>
+          <li><strong>Scroll</strong> to zoom, <strong>right-drag</strong> to orbit, <strong>middle-drag</strong> to pan</li>
+        </ul>
+      </div>
+      <div class="welcome-section">
+        <h3>Two Modes</h3>
+        <ul>
+          <li><strong>Internal</strong> — Full toolset: cost breakdowns, compliance checks, BOM, power tracking, utility routing, build checklists. For the shop.</li>
+          <li><strong>Customer</strong> — Simplified view: layout, equipment list, and quote request. What the customer sees.</li>
+        </ul>
+        <p class="welcome-hint">Toggle modes with the button in the top bar.</p>
+      </div>
+      <div class="welcome-footer">
+        <label class="welcome-dismiss">
+          <input type="checkbox" id="welcome-dismiss-check" class="pill-toggle">
+          <span>Don't show this again</span>
+        </label>
+        <button id="welcome-close-btn" class="btn-submit">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase Config -->
+  <script>
+    window.SUPABASE_URL = 'https://temeejecxabhkmzpqzuj.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbWVlamVjeGFiaGttenBxenVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNDE5MTEsImV4cCI6MjA4NzcxNzkxMX0.DSzu8CnzLZG02LFQTFotlqsbjc_5JC-ci_kYztjfTa8';
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="js/templates.js?v=13"></script>
+  <script src="js/equipment.js?v=13"></script>
+  <script src="js/ui.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
+</body>
+</html>

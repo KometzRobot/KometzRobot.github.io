@@ -49,7 +49,8 @@ DASH_FILE = os.path.join(BASE, ".dashboard-messages.json")
 GATE_STATE = os.path.join(BASE, ".gatekeeper-state.json")
 
 # How old (seconds) can the heartbeat be before it's stale?
-HEARTBEAT_STALE_THRESHOLD = 400
+# Sentinel runs every 2 min — stale after 5 min means Claude missed 2+ cycles
+HEARTBEAT_STALE_THRESHOLD = 300
 
 # Contacts whose emails always escalate
 ESCALATE_SENDERS = [
@@ -62,7 +63,7 @@ ESCALATE_SENDERS = [
 ]
 
 # Cron interval in seconds — used to check for "new" messages
-CRON_INTERVAL = 300  # 5 minutes
+CRON_INTERVAL = 120  # 2 minutes (sentinel is now primary loop manager)
 
 # ═══════════════════════════════════════════
 # STATE MANAGEMENT

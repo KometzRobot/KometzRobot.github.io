@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brothers Fabrication — Monthly Analytics Report | April 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f5f6fa; color: #1a1a2e; line-height: 1.6; }
+
+    .report-page { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    /* Header */
+    .report-header {
+      background: linear-gradient(135deg, #0a1628, #0a6e8a);
+      border-radius: 20px;
+      padding: 2.5rem 3rem;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .report-header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; }
+    .report-header p { color: rgba(255,255,255,0.6); margin-top: 0.3rem; font-size: 0.9rem; }
+    .report-period {
+      text-align: right;
+      background: rgba(255,255,255,0.08);
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+    }
+    .report-period .period-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; }
+    .report-period .period-date { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 700; }
+
+    /* KPI Cards */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .kpi-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1.5rem;
+      border: 1px solid #eee;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .kpi-card.kpi-blue::before { background: #0a6e8a; }
+    .kpi-card.kpi-green::before { background: #2ecc71; }
+    .kpi-card.kpi-gold::before { background: #f5a623; }
+    .kpi-card.kpi-teal::before { background: #4ecdc4; }
+    .kpi-label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; }
+    .kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; margin: 0.3rem 0; }
+    .kpi-change { font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.3rem; }
+    .kpi-change.up { color: #2ecc71; }
+    .kpi-change.down { color: #e74c3c; }
+    .kpi-change .arrow-up::before { content: "^"; }
+    .kpi-change .arrow-down::before { content: "v"; }
+    .kpi-sub { font-size: 0.75rem; color: #aaa; margin-top: 0.3rem; }
+
+    /* Sections */
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #eee;
+    }
+    .report-section { margin-bottom: 2.5rem; }
+
+    /* Charts (CSS-only bar charts) */
+    .chart-panel {
+      background: #fff;
+      border-radius: 14px;
+      padding: 2rem;
+      border: 1px solid #eee;
+    }
+    .chart-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.3rem; }
+    .chart-sub { font-size: 0.8rem; color: #888; margin-bottom: 1.5rem; }
+
+    .bar-chart { display: flex; align-items: flex-end; gap: 0.8rem; height: 200px; padding-bottom: 2rem; position: relative; border-bottom: 1px solid #eee; }
+    .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; height: 100%; justify-content: flex-end; }
+    .bar {
+      width: 100%;
+      max-width: 50px;
+      border-radius: 6px 6px 0 0;
+      position: relative;
+      transition: height 1s ease;
+      min-height: 4px;
+    }
+    .bar-label { font-size: 0.7rem; color: #888; text-align: center; position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+    .bar-value { font-size: 0.7rem; font-weight: 700; color: #333; text-align: center; margin-bottom: 2px; }
+    .bar.blue { background: linear-gradient(180deg, #0a6e8a, #4ecdc4); }
+    .bar.light { background: rgba(10,110,138,0.15); }
+
+    /* Columns */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
+
+    /* Traffic Sources */
+    .source-row {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .source-row:last-child { border-bottom: none; }
+    .source-name { flex: 1; font-size: 0.9rem; font-weight: 500; }
+    .source-bar-bg { flex: 2; height: 8px; background: #f0f0f0; border-radius: 100px; overflow: hidden; }
+    .source-bar-fill { height: 100%; border-radius: 100px; }
+    .source-pct { font-size: 0.85rem; font-weight: 700; width: 50px; text-align: right; }
+
+    /* Donut chart CSS */
+    .donut-wrap { display: flex; align-items: center; gap: 2rem; }
+    .donut {
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .donut-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .donut-center .big { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; display: block; }
+    .donut-center .small { font-size: 0.75rem; color: #888; }
+    .donut-legend { display: flex; flex-direction: column; gap: 0.6rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* Social metrics */
+    .social-platform {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1.5rem;
+      border: 1px solid #eee;
+      text-align: center;
+    }
+    .social-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .social-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.8rem; }
+    .social-stat { margin-bottom: 0.5rem; }
+    .social-stat .num { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700; display: block; }
+    .social-stat .lbl { font-size: 0.75rem; color: #888; }
+    .social-change { font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 100px; display: inline-block; }
+    .social-change.up { background: rgba(46,204,113,0.1); color: #2ecc71; }
+
+    /* Review tracker */
+    .review-metric {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .review-metric:last-child { border-bottom: none; }
+    .review-metric .label { font-size: 0.9rem; }
+    .review-metric .value { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem; }
+
+    /* SEO rankings */
+    .seo-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 1rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 0.9rem;
+      align-items: center;
+    }
+    .seo-row:last-child { border-bottom: none; }
+    .seo-keyword { font-weight: 500; }
+    .seo-pos { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+    .seo-pos.top3 { color: #2ecc71; }
+    .seo-pos.top10 { color: #f5a623; }
+    .seo-vol { color: #888; font-size: 0.8rem; }
+    .seo-trend { font-size: 0.8rem; font-weight: 600; }
+    .seo-trend.up { color: #2ecc71; }
+    .seo-trend.same { color: #888; }
+
+    /* Recommendations */
+    .rec-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #eee;
+      border-left: 4px solid;
+    }
+    .rec-card.high { border-left-color: #e74c3c; }
+    .rec-card.med { border-left-color: #f5a623; }
+    .rec-card.low { border-left-color: #2ecc71; }
+    .rec-priority { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+    .rec-card.high .rec-priority { color: #e74c3c; }
+    .rec-card.med .rec-priority { color: #f5a623; }
+    .rec-card.low .rec-priority { color: #2ecc71; }
+    .rec-title { font-weight: 700; margin-bottom: 0.3rem; }
+    .rec-desc { font-size: 0.85rem; color: #666; }
+    .rec-impact { font-size: 0.8rem; font-weight: 600; color: #0a6e8a; margin-top: 0.5rem; }
+
+    /* Footer */
+    .report-footer {
+      text-align: center;
+      padding: 2rem;
+      color: #aaa;
+      font-size: 0.85rem;
+      border-top: 1px solid #eee;
+      margin-top: 2rem;
+    }
+    .report-footer strong { color: #0a6e8a; }
+
+    @media (max-width: 768px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .two-col, .three-col { grid-template-columns: 1fr; }
+      .report-header { flex-direction: column; text-align: center; gap: 1rem; }
+      .report-period { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+<div class="report-page">
+  <a href="hub.html" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;color:#0a6e8a;font-weight:600;text-decoration:none;margin-bottom:1rem;">&larr; Back to Hub</a>
+
+  <!-- Header -->
+  <div class="report-header">
+    <div>
+      <h1>Monthly Analytics Report</h1>
+      <p>Brothers Fabrication &mdash; Digital Performance Summary</p>
+    </div>
+    <div class="report-period">
+      <div class="period-label">Reporting Period</div>
+      <div class="period-date">March 2026</div>
+      <div style="font-size:0.8rem; color:rgba(255,255,255,0.4); margin-top:0.3rem;">Prepared by Joel Kometz</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-label">Website Visitors</div>
+      <div class="kpi-value">2,847</div>
+      <div class="kpi-change up"><span class="arrow-up"></span> +34% vs Feb</div>
+      <div class="kpi-sub">1,912 unique visitors</div>
+    </div>
+    <div class="kpi-card kpi-green">
+      <div class="kpi-label">Quote Requests</div>
+      <div class="kpi-value">18</div>
+      <div class="kpi-change up"><span class="arrow-up"></span> +125% vs Feb</div>
+      <div class="kpi-sub">$1.4M total pipeline</div>
+    </div>
+    <div class="kpi-card kpi-gold">
+      <div class="kpi-label">Google Reviews</div>
+      <div class="kpi-value">54</div>
+      <div class="kpi-change up"><span class="arrow-up"></span> +5 new this month</div>
+      <div class="kpi-sub">5.0 avg rating maintained</div>
+    </div>
+    <div class="kpi-card kpi-teal">
+      <div class="kpi-label">Social Followers</div>
+      <div class="kpi-value">1,240</div>
+      <div class="kpi-change up"><span class="arrow-up"></span> +18% combined</div>
+      <div class="kpi-sub">IG: 820 | FB: 420</div>
+    </div>
+  </div>
+
+  <!-- Website Traffic -->
+  <div class="report-section">
+    <h2 class="section-title">Website Traffic</h2>
+    <div class="two-col">
+      <div class="chart-panel">
+        <div class="chart-title">Daily Visitors (March)</div>
+        <div class="chart-sub">Average 92/day, up from 68/day in February</div>
+        <div class="bar-chart">
+          <div class="bar-group"><div class="bar-value">68</div><div class="bar blue" style="height:34%"></div><span class="bar-label">W1</span></div>
+          <div class="bar-group"><div class="bar-value">82</div><div class="bar blue" style="height:41%"></div><span class="bar-label">W2</span></div>
+          <div class="bar-group"><div class="bar-value">105</div><div class="bar blue" style="height:53%"></div><span class="bar-label">W3</span></div>
+          <div class="bar-group"><div class="bar-value">112</div><div class="bar blue" style="height:56%"></div><span class="bar-label">W4</span></div>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-title">Traffic Sources</div>
+        <div class="chart-sub">Where your visitors are coming from</div>
+        <div class="source-row">
+          <span class="source-name">Google Search</span>
+          <div class="source-bar-bg"><div class="source-bar-fill" style="width:45%; background:#0a6e8a;"></div></div>
+          <span class="source-pct">45%</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Instagram</span>
+          <div class="source-bar-bg"><div class="source-bar-fill" style="width:22%; background:#e91e63;"></div></div>
+          <span class="source-pct">22%</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Facebook</span>
+          <div class="source-bar-bg"><div class="source-bar-fill" style="width:15%; background:#1877f2;"></div></div>
+          <span class="source-pct">15%</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Direct</span>
+          <div class="source-bar-bg"><div class="source-bar-fill" style="width:12%; background:#4ecdc4;"></div></div>
+          <span class="source-pct">12%</span>
+        </div>
+        <div class="source-row">
+          <span class="source-name">Referral</span>
+          <div class="source-bar-bg"><div class="source-bar-fill" style="width:6%; background:#f5a623;"></div></div>
+          <span class="source-pct">6%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lead Generation -->
+  <div class="report-section">
+    <h2 class="section-title">Lead Generation & Conversion</h2>
+    <div class="two-col">
+      <div class="chart-panel">
+        <div class="chart-title">Quote Funnel</div>
+        <div class="chart-sub">From visitor to qualified lead</div>
+        <div style="padding: 1rem 0;">
+          <div style="margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.3rem;"><span>Website Visitors</span><strong>2,847</strong></div>
+            <div style="height:24px;background:#e8f4f8;border-radius:6px;overflow:hidden;"><div style="height:100%;width:100%;background:#0a6e8a;border-radius:6px;"></div></div>
+          </div>
+          <div style="margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.3rem;"><span>Configurator Users</span><strong>342</strong></div>
+            <div style="height:24px;background:#e8f4f8;border-radius:6px;overflow:hidden;"><div style="height:100%;width:12%;background:#0a6e8a;border-radius:6px;"></div></div>
+          </div>
+          <div style="margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.3rem;"><span>Quote Form Submitted</span><strong>18</strong></div>
+            <div style="height:24px;background:#e8f4f8;border-radius:6px;overflow:hidden;"><div style="height:100%;width:0.63%;background:#2ecc71;border-radius:6px;min-width:20px;"></div></div>
+          </div>
+          <div style="margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.3rem;"><span>Consultation Booked</span><strong>11</strong></div>
+            <div style="height:24px;background:#e8f4f8;border-radius:6px;overflow:hidden;"><div style="height:100%;width:0.39%;background:#f5a623;border-radius:6px;min-width:14px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.3rem;"><span>Signed Contracts</span><strong>3</strong></div>
+            <div style="height:24px;background:#e8f4f8;border-radius:6px;overflow:hidden;"><div style="height:100%;width:0.1%;background:#e74c3c;border-radius:6px;min-width:8px;"></div></div>
+          </div>
+        </div>
+        <div style="font-size:0.85rem;color:#888;margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;">
+          Conversion rate: <strong style="color:#2ecc71;">0.63%</strong> visitor-to-quote (industry avg: 0.4%)
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-title">Lead Sources</div>
+        <div class="chart-sub">Where your 18 quote requests came from</div>
+        <div class="donut-wrap">
+          <div class="donut" style="background: conic-gradient(#0a6e8a 0deg 155deg, #4ecdc4 155deg 230deg, #f5a623 230deg 290deg, #e91e63 290deg 330deg, #aaa 330deg 360deg);">
+            <div class="donut-center">
+              <span class="big">18</span>
+              <span class="small">Total Leads</span>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#0a6e8a;"></div> Website Form (8)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#4ecdc4;"></div> Configurator (4)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f5a623;"></div> AI Chatbot (3)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e91e63;"></div> Instagram DM (2)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#aaa;"></div> Phone (1)</div>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;font-size:0.85rem;color:#666;">
+          <strong style="color:#0a6e8a;">Key insight:</strong> The configurator + chatbot generated 7 leads that would have been missed without these tools. That's <strong>$560K+ in potential pipeline</strong> from features that didn't exist last month.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Social Media -->
+  <div class="report-section">
+    <h2 class="section-title">Social Media Performance</h2>
+    <div class="three-col">
+      <div class="social-platform">
+        <div class="social-icon">&#128247;</div>
+        <div class="social-name">Instagram</div>
+        <div class="social-stat"><span class="num">820</span><span class="lbl">Followers</span></div>
+        <div class="social-change up">+127 this month</div>
+        <div style="margin-top:1rem;font-size:0.85rem;text-align:left;">
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Posts</span><strong>14</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Reels</span><strong>4</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Stories</span><strong>22</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Avg Engagement</span><strong>6.8%</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Best Post</span><strong>Build timelapse</strong></div>
+        </div>
+      </div>
+      <div class="social-platform">
+        <div class="social-icon">&#128077;</div>
+        <div class="social-name">Facebook</div>
+        <div class="social-stat"><span class="num">420</span><span class="lbl">Followers</span></div>
+        <div class="social-change up">+58 this month</div>
+        <div style="margin-top:1rem;font-size:0.85rem;text-align:left;">
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Posts</span><strong>12</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Reach</span><strong>4,200</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Engagement</span><strong>4.2%</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Messages</span><strong>8</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Best Post</span><strong>Client spotlight</strong></div>
+        </div>
+      </div>
+      <div class="social-platform">
+        <div class="social-icon">&#11088;</div>
+        <div class="social-name">Google Business</div>
+        <div class="social-stat"><span class="num">5.0</span><span class="lbl">Rating (54 reviews)</span></div>
+        <div class="social-change up">+5 reviews this month</div>
+        <div style="margin-top:1rem;font-size:0.85rem;text-align:left;">
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Profile Views</span><strong>1,840</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Direction Requests</span><strong>42</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Phone Calls</span><strong>31</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Website Clicks</span><strong>287</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span>Photo Views</span><strong>3,100</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEO -->
+  <div class="report-section">
+    <h2 class="section-title">SEO Rankings</h2>
+    <div class="chart-panel">
+      <div class="chart-title">Target Keyword Positions</div>
+      <div class="chart-sub">Google Search positions for high-intent keywords</div>
+      <div class="seo-row" style="font-weight:700;font-size:0.8rem;color:#888;border-bottom:2px solid #eee;">
+        <span>Keyword</span>
+        <span>Position</span>
+        <span>Search Vol</span>
+        <span>Trend</span>
+      </div>
+      <div class="seo-row">
+        <span class="seo-keyword">food truck builder calgary</span>
+        <span class="seo-pos top3">#2</span>
+        <span class="seo-vol">320/mo</span>
+        <span class="seo-trend up">+3 positions</span>
+      </div>
+      <div class="seo-row">
+        <span class="seo-keyword">custom food truck canada</span>
+        <span class="seo-pos top10">#7</span>
+        <span class="seo-vol">880/mo</span>
+        <span class="seo-trend up">+5 positions</span>
+      </div>
+      <div class="seo-row">
+        <span class="seo-keyword">food truck fabrication alberta</span>
+        <span class="seo-pos top3">#1</span>
+        <span class="seo-vol">140/mo</span>
+        <span class="seo-trend same">Holding #1</span>
+      </div>
+      <div class="seo-row">
+        <span class="seo-keyword">calgary metal fabrication</span>
+        <span class="seo-pos top10">#8</span>
+        <span class="seo-vol">590/mo</span>
+        <span class="seo-trend up">+2 positions</span>
+      </div>
+      <div class="seo-row">
+        <span class="seo-keyword">food truck for sale calgary</span>
+        <span class="seo-pos top3">#3</span>
+        <span class="seo-vol">480/mo</span>
+        <span class="seo-trend up">+4 positions</span>
+      </div>
+      <div class="seo-row">
+        <span class="seo-keyword">commercial kitchen install calgary</span>
+        <span class="seo-pos top10">#5</span>
+        <span class="seo-vol">210/mo</span>
+        <span class="seo-trend up">New entry</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Tools Performance -->
+  <div class="report-section">
+    <h2 class="section-title">AI Tools Performance</h2>
+    <div class="two-col">
+      <div class="chart-panel">
+        <div class="chart-title">Chatbot</div>
+        <div class="chart-sub">24/7 automated customer engagement</div>
+        <div class="review-metric"><span class="label">Total Conversations</span><span class="value">147</span></div>
+        <div class="review-metric"><span class="label">Questions Answered</span><span class="value">89%</span></div>
+        <div class="review-metric"><span class="label">Leads Captured</span><span class="value">3</span></div>
+        <div class="review-metric"><span class="label">After-Hours Conversations</span><span class="value">62 (42%)</span></div>
+        <div class="review-metric"><span class="label">Avg Response Time</span><span class="value">< 2 sec</span></div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;font-size:0.85rem;color:#666;">
+          <strong style="color:#0a6e8a;">Insight:</strong> 42% of chatbot conversations happen after business hours. Without the chatbot, these visitors would have bounced.
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-title">Automated Emails</div>
+        <div class="chart-sub">Quote confirmations, follow-ups, review requests</div>
+        <div class="review-metric"><span class="label">Emails Sent</span><span class="value">47</span></div>
+        <div class="review-metric"><span class="label">Open Rate</span><span class="value">89%</span></div>
+        <div class="review-metric"><span class="label">Click-Through Rate</span><span class="value">34%</span></div>
+        <div class="review-metric"><span class="label">Reviews Generated</span><span class="value">5</span></div>
+        <div class="review-metric"><span class="label">Time Saved (est.)</span><span class="value">~8 hrs</span></div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee;font-size:0.85rem;color:#666;">
+          <strong style="color:#0a6e8a;">Insight:</strong> Automated review requests converted at 72%. Manual requests averaged ~15%.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="report-section">
+    <h2 class="section-title">Recommendations for April</h2>
+    <div class="three-col">
+      <div class="rec-card high">
+        <div class="rec-priority">High Priority</div>
+        <div class="rec-title">Launch Google Ads Campaign</div>
+        <div class="rec-desc">Target "food truck builder" and "custom food truck" keywords. $500/month budget could generate 8-12 additional quote requests based on current conversion rates.</div>
+        <div class="rec-impact">Projected impact: +$640K pipeline/month</div>
+      </div>
+      <div class="rec-card med">
+        <div class="rec-priority">Medium Priority</div>
+        <div class="rec-title">Publish 2 Blog Articles</div>
+        <div class="rec-desc">"How to Start a Food Truck Business in Alberta" and "Food Truck vs. Trailer: Which is Right for You?" — both target high-volume keywords.</div>
+        <div class="rec-impact">Projected impact: +200 organic visitors/month</div>
+      </div>
+      <div class="rec-card low">
+        <div class="rec-priority">Opportunity</div>
+        <div class="rec-title">TikTok Build Timelapse</div>
+        <div class="rec-desc">The Instagram build reel got 6.8% engagement. Repurposing for TikTok could tap into a massive food truck enthusiast audience at zero additional cost.</div>
+        <div class="rec-impact">Projected impact: Brand awareness expansion</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROI Summary -->
+  <div class="report-section">
+    <div class="chart-panel" style="background:linear-gradient(135deg, #0a1628, #0a3d5c); color:#fff; border:none;">
+      <div style="text-align:center; padding: 1rem 0;">
+        <div style="font-size:0.8rem; color:#4ecdc4; text-transform:uppercase; letter-spacing:0.05em; font-weight:600;">Bottom Line</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; margin:0.5rem 0;">March ROI Summary</div>
+        <div style="display:flex; justify-content:center; gap:3rem; margin:2rem 0; flex-wrap:wrap;">
+          <div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:2.5rem; font-weight:700; color:#4ecdc4;">$1,200</div>
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Monthly Investment</div>
+          </div>
+          <div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:2.5rem; font-weight:700; color:#4ecdc4;">7</div>
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Leads From New Tools</div>
+          </div>
+          <div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:2.5rem; font-weight:700; color:#4ecdc4;">$560K+</div>
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Pipeline From Those Leads</div>
+          </div>
+          <div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:2.5rem; font-weight:700; color:#2ecc71;">42%</div>
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Leads Were After-Hours</div>
+          </div>
+        </div>
+        <div style="font-size:0.9rem; color:rgba(255,255,255,0.5); max-width:600px; margin:0 auto;">
+          The configurator and chatbot generated 7 leads that wouldn't have existed without these tools &mdash; $560K+ in pipeline from people who would have bounced. 42% of chatbot conversations happened after business hours.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-footer">
+    <p>Prepared by <strong>Joel Kometz</strong> for Brothers Fabrication &mdash; Confidential</p>
+    <p style="margin-top:0.5rem;">This is a sample of the monthly analytics report included with ongoing digital management services.</p>
+  </div>
+</div>
+</body>
+</html>

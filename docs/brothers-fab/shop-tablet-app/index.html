@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>BroFab Shop Floor — Brothers Fabrication</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Brand Tokens (matches demo site exactly) ── */
+:root {
+  --bf-dark:        #0a1628;
+  --bf-dark-mid:    #0d1f35;
+  --bf-dark-card:   #0f2239;
+  --bf-accent:      #4ecdc4;
+  --bf-accent-dim:  rgba(78,205,196,0.12);
+  --bf-charcoal:    #32373c;
+  --bf-success:     #2ecc71;
+  --bf-danger:      #e74c3c;
+  --bf-warning:     #f5a623;
+  --bf-blue:        #2196F3;
+  --bf-border:      rgba(255,255,255,0.08);
+  --bf-border-mid:  rgba(255,255,255,0.13);
+  --bf-text:        #e8eaf0;
+  --bf-text-dim:    rgba(255,255,255,0.45);
+  --bf-font-display: 'Space Grotesk', sans-serif;
+  --bf-font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--bf-font-body);
+  background: var(--bf-dark);
+  color: var(--bf-text);
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(90deg, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.30) 100%);
+  border-bottom: 1px solid var(--bf-border);
+  padding: 0 20px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-logo-mark {
+  width: 34px;
+  height: 34px;
+  background: var(--bf-accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--bf-font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #000;
+  flex-shrink: 0;
+}
+.header-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.header-brand-name {
+  font-family: var(--bf-font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+.header-brand-sub {
+  font-size: 0.65rem;
+  color: var(--bf-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.header-worker {
+  font-size: 0.82rem;
+  color: var(--bf-text-dim);
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--bf-border);
+  transition: all 0.2s;
+}
+.header-worker:hover { border-color: var(--bf-accent); color: var(--bf-accent); }
+.header-worker.signed-in { color: var(--bf-accent); border-color: rgba(78,205,196,0.3); }
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bf-success);
+  display: inline-block;
+  margin-right: 5px;
+}
+.clock {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bf-text-dim);
+  font-family: var(--bf-font-display);
+  min-width: 52px;
+  text-align: right;
+}
+
+/* ── Tab Bar ── */
+.tab-bar {
+  display: flex;
+  background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid var(--bf-border);
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1;
+  padding: 11px 6px 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--bf-text-dim);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+}
+.tab.active {
+  color: var(--bf-accent);
+  border-bottom-color: var(--bf-accent);
+  background: var(--bf-accent-dim);
+  box-shadow: 0 -2px 8px rgba(78,205,196,0.08) inset;
+}
+.tab:hover:not(.active) { color: var(--bf-text); }
+.tab-icon {
+  font-size: 1.25rem;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* ── Content Area ── */
+.content { flex: 1; overflow-y: auto; padding: 16px; }
+.panel { display: none; }
+.panel.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Cards ── */
+.card {
+  background: var(--bf-dark-card);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--bf-border);
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: var(--bf-border-mid); }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-family: var(--bf-font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+/* ── Stat Grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: center;
+  border-top: 3px solid var(--bf-border-mid);
+  transition: border-color 0.2s, transform 0.15s;
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-card:nth-child(1) { border-top-color: var(--bf-accent); }
+.stat-card:nth-child(2) { border-top-color: var(--bf-warning); }
+.stat-card:nth-child(3) { border-top-color: var(--bf-danger); }
+.stat-card:nth-child(4) { border-top-color: var(--bf-success); }
+.stat-number {
+  font-family: var(--bf-font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--bf-accent);
+  line-height: 1;
+}
+.stat-label {
+  font-size: 0.68rem;
+  color: var(--bf-text-dim);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+/* ── Badges ── */
+.badge {
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-active  { background: rgba(46,204,113,0.15); color: var(--bf-success); }
+.badge-pending { background: rgba(245,166,35,0.15); color: var(--bf-warning); }
+.badge-review  { background: var(--bf-accent-dim); color: var(--bf-accent); }
+.badge-done    { background: rgba(255,255,255,0.07); color: var(--bf-text-dim); }
+.badge-new     { background: var(--bf-accent-dim); color: var(--bf-accent); }
+
+/* ── Job Items ── */
+.job-item {
+  background: var(--bf-dark-card);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--bf-border);
+  border-left: 3px solid var(--bf-accent);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.job-item:hover { border-left-color: var(--bf-accent); border-color: var(--bf-border-mid); box-shadow: 0 2px 12px rgba(78,205,196,0.06); }
+.job-item:active { transform: scale(0.99); }
+.job-item.status-pending { border-left-color: var(--bf-warning); }
+.job-item.status-done    { border-left-color: var(--bf-success); opacity: 0.7; }
+.job-name {
+  font-family: var(--bf-font-display);
+  font-weight: 700;
+  font-size: 0.93rem;
+}
+.job-meta {
+  font-size: 0.78rem;
+  color: var(--bf-text-dim);
+  margin-top: 3px;
+}
+.job-tasks {
+  font-size: 0.77rem;
+  color: var(--bf-text-dim);
+  margin-top: 6px;
+}
+
+/* ── Progress Bar ── */
+.progress-bar {
+  height: 5px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 100px;
+  margin-top: 9px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--bf-accent), #3dbdb5);
+  border-radius: 100px;
+  transition: width 0.4s ease;
+}
+
+/* ── Task List ── */
+.task-list { list-style: none; }
+.task-item {
+  display: flex;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--bf-border);
+  gap: 12px;
+}
+.task-item:last-child { border-bottom: none; }
+.task-check {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--bf-border-mid);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.task-check.done {
+  background: var(--bf-success);
+  border-color: var(--bf-success);
+  color: #fff;
+}
+.task-text { flex: 1; font-size: 0.88rem; }
+.task-text.done { text-decoration: line-through; color: var(--bf-text-dim); }
+
+/* ── Upload Zone ── */
+.upload-zone {
+  border: 2px dashed var(--bf-border-mid);
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 12px;
+}
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: var(--bf-accent);
+  background: var(--bf-accent-dim);
+}
+.upload-zone .icon { font-size: 2.2rem; margin-bottom: 8px; }
+.upload-zone p { color: var(--bf-text-dim); font-size: 0.83rem; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.photo-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(255,255,255,0.05);
+}
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-thumb .remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ── Timeline ── */
+.status-timeline { position: relative; padding-left: 22px; }
+.status-timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--bf-border);
+}
+.timeline-item { position: relative; padding-bottom: 18px; }
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bf-accent);
+  border: 2px solid var(--bf-dark);
+}
+.timeline-item.complete::before { background: var(--bf-success); }
+.tl-title { font-weight: 600; font-size: 0.88rem; }
+.tl-date  { font-size: 0.75rem; color: var(--bf-text-dim); margin-top: 1px; }
+.tl-note  { font-size: 0.78rem; color: var(--bf-text-dim); margin-top: 3px; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 22px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--bf-font-body);
+  border: none;
+}
+.btn-primary {
+  background: var(--bf-charcoal);
+  color: #fff;
+  border: 2px solid var(--bf-charcoal);
+}
+.btn-primary:hover { background: #23272b; border-color: #23272b; }
+.btn-accent {
+  background: var(--bf-accent);
+  color: #000;
+  border: 2px solid var(--bf-accent);
+}
+.btn-accent:hover { opacity: 0.88; }
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--bf-border-mid);
+  color: var(--bf-text);
+}
+.btn-outline:hover { border-color: var(--bf-accent); color: var(--bf-accent); }
+.btn-sm { padding: 7px 14px; font-size: 0.78rem; }
+.btn-block { width: 100%; display: block; margin-top: 10px; text-align: center; }
+
+/* ── Forms ── */
+.form-group { margin-bottom: 13px; }
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--bf-text-dim);
+  margin-bottom: 5px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.form-input, .form-textarea, .form-select {
+  width: 100%;
+  padding: 10px 13px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--bf-border-mid);
+  border-radius: 8px;
+  color: var(--bf-text);
+  font-size: 0.88rem;
+  font-family: var(--bf-font-body);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus { border-color: var(--bf-accent); }
+.form-textarea { resize: vertical; min-height: 78px; }
+.form-select option { background: var(--bf-dark-mid); }
+
+/* ── Section divider label ── */
+.section-tag {
+  display: inline-block;
+  background: var(--bf-accent-dim);
+  color: var(--bf-accent);
+  font-size: 0.67rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+/* ── Portal link area ── */
+.portal-link-box {
+  background: rgba(78,205,196,0.06);
+  border: 1px solid rgba(78,205,196,0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+}
+.portal-link-text {
+  font-size: 0.78rem;
+  color: var(--bf-accent);
+  word-break: break-all;
+  margin-bottom: 10px;
+}
+.portal-link-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-overlay.show .modal { animation: modalSlideIn 0.25s ease; }
+@keyframes modalSlideIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal {
+  background: var(--bf-dark-mid);
+  border: 1px solid var(--bf-border-mid);
+  border-radius: 16px;
+  padding: 24px;
+  width: 92%;
+  max-width: 480px;
+  max-height: 82vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+}
+.modal-title {
+  font-family: var(--bf-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bf-border);
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.modal-actions .btn { flex: 1; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: var(--bf-charcoal);
+  border: 1px solid var(--bf-border-mid);
+  color: #fff;
+  padding: 11px 22px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  z-index: 200;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--bf-success); border-color: var(--bf-success); color: #000; }
+
+/* ── More panel: settings card ── */
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--bf-border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row .label { font-size: 0.88rem; font-weight: 600; }
+.settings-row .sublabel { font-size: 0.73rem; color: var(--bf-text-dim); margin-top: 2px; }
+
+/* ── QR area ── */
+.qr-box {
+  background: var(--bf-accent-dim);
+  border: 1px solid rgba(78,205,196,0.25);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 12px;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="header-brand">
+    <div class="header-logo-mark">BF</div>
+    <div class="header-brand-text">
+      <span class="header-brand-name">Brothers Fabrication</span>
+      <span class="header-brand-sub">Shop Floor</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="header-worker" onclick="showWorkerLogin()" id="worker-display">
+      <span class="status-dot"></span>Tap to sign in
+    </div>
+    <div class="clock" id="clock">--:--</div>
+  </div>
+</div>
+
+<!-- ── Tab Bar ── -->
+<div class="tab-bar">
+  <div class="tab active" data-tab="jobs"><span class="tab-icon">&#128736;</span>Jobs</div>
+  <div class="tab" data-tab="photos"><span class="tab-icon">&#128247;</span>Photos</div>
+  <div class="tab" data-tab="tasks"><span class="tab-icon">&#9745;</span>Tasks</div>
+  <div class="tab" data-tab="status"><span class="tab-icon">&#128100;</span>Portal</div>
+  <div class="tab" data-tab="more"><span class="tab-icon">&#9881;</span>More</div>
+</div>
+
+<!-- ── Content Panels ── -->
+<div class="content">
+
+  <!-- JOBS -->
+  <div class="panel active" id="panel-jobs">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-active">3</div>
+        <div class="stat-label">Active Jobs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-tasks">12</div>
+        <div class="stat-label">Open Tasks</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-week">2</div>
+        <div class="stat-label">Due This Week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-photos">0</div>
+        <div class="stat-label">Photos Today</div>
+      </div>
+    </div>
+    <div id="job-list"></div>
+  </div>
+
+  <!-- PHOTOS -->
+  <div class="panel" id="panel-photos">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Upload Work Photos</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select Job</label>
+        <select class="form-select" id="photo-job-select"></select>
+      </div>
+      <div class="upload-zone" id="upload-zone">
+        <div class="icon">&#128247;</div>
+        <p>Tap to take photo or pick from gallery</p>
+        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none">
+        <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="document.getElementById('camera-input').click()">Open Camera</button>
+        <p style="font-size:0.7rem;margin-top:6px;color:var(--bf-text-dim);">JPEG, PNG up to 10MB</p>
+      </div>
+      <input type="file" id="file-input" accept="image/*" capture="environment" multiple style="display:none;">
+      <div class="photo-grid" id="photo-grid"></div>
+      <div class="form-group" style="margin-top:12px;">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="photo-notes" placeholder="Describe the work shown..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="submitPhotos()">Submit Photos for Review</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Phone Upload</div>
+        <span class="badge badge-new">NEW</span>
+      </div>
+      <p style="font-size:0.83rem;color:var(--bf-text-dim);margin-bottom:12px;">Workers upload photos from their own phones — no app needed.</p>
+      <button class="btn btn-accent btn-block" onclick="showUploadQR()">Show Upload QR Code</button>
+      <p style="font-size:0.73rem;color:var(--bf-text-dim);margin-top:8px;">Worker scans QR, picks photos, they appear here instantly.</p>
+      <div id="phone-upload-area" style="display:none;">
+        <div class="qr-box">
+          <canvas id="qr-canvas" style="margin:0 auto;display:block;border-radius:8px;"></canvas>
+          <p style="font-size:0.8rem;margin-top:8px;color:var(--bf-accent);font-weight:600;">Scan with phone camera</p>
+        </div>
+        <div id="received-photos" class="photo-grid" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="panel" id="panel-tasks">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Today's Tasks</div>
+        <span class="badge badge-active" id="task-count">0 / 0</span>
+      </div>
+      <div class="form-group">
+        <select class="form-select" id="task-job-select" onchange="renderTasks()"></select>
+      </div>
+      <ul class="task-list" id="task-list"></ul>
+    </div>
+    <button class="btn btn-outline btn-block" onclick="openAddTask()">+ Add Task</button>
+  </div>
+
+  <!-- PORTAL -->
+  <div class="panel" id="panel-status">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Customer Job Status</div>
+        <button class="btn btn-outline btn-sm" onclick="openEditStatus()">Edit</button>
+      </div>
+      <div class="form-group">
+        <select class="form-select" id="status-job-select" onchange="renderStatus()"></select>
+      </div>
+      <div id="status-content"></div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="publishStatus()">Submit Status Update</button>
+    <p style="font-size:0.73rem;color:var(--bf-text-dim);text-align:center;margin-top:8px;">Requires Chris's approval before customer sees changes</p>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="card-header">
+        <div class="card-title">Customer Portal Link</div>
+        <span class="badge badge-new">SHARE</span>
+      </div>
+      <p style="font-size:0.83rem;color:var(--bf-text-dim);margin-bottom:12px;">Generate a private link customers can access from any device.</p>
+      <div class="form-group">
+        <select class="form-select" id="portal-job-select" onchange="generatePortalLink()"></select>
+      </div>
+      <div class="portal-link-box" id="portal-link-area" style="display:none;">
+        <div class="portal-link-text" id="portal-link-text"></div>
+        <div class="portal-link-actions">
+          <button class="btn btn-accent btn-sm" onclick="copyPortalLink()">Copy Link</button>
+          <button class="btn btn-outline btn-sm" onclick="sharePortalLink()">Share</button>
+          <button class="btn btn-outline btn-sm" onclick="emailPortalLink()">Email Customer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MORE -->
+  <div class="panel" id="panel-more">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">Quick Actions</div>
+      <button class="btn btn-primary btn-block" onclick="window.open('https://trello.com/u/7thcolumn/boards','_blank')">Open Trello Board</button>
+      <button class="btn btn-outline btn-block" onclick="showWorkerLogin()">Manage Workers</button>
+      <button class="btn btn-outline btn-block" onclick="openNewJob()">Create New Job</button>
+      <button class="btn btn-outline btn-block" onclick="exportReport()">Export Daily Report</button>
+      <a href="admin.html" class="btn btn-accent btn-block" style="margin-top:10px;">Open Admin Panel</a>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">Trello Sync</div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input class="form-input" type="text" id="trello-key" placeholder="Enter Trello API Key">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Token</label>
+        <input class="form-input" type="text" id="trello-token" placeholder="Enter Trello Token">
+      </div>
+      <button class="btn btn-accent btn-sm" onclick="syncTrello()">Sync with Trello</button>
+      <p style="font-size:0.7rem;color:var(--bf-text-dim);margin-top:6px;">Two-way sync: task and status changes push back to Trello automatically.</p>
+      <p id="trello-status" style="font-size:0.72rem;color:var(--bf-text-dim);margin-top:4px;">Not synced yet</p>
+    </div>
+
+    <div class="card" style="opacity:0.7;">
+      <div class="card-title" style="margin-bottom:6px;font-size:0.8rem;">System</div>
+      <p style="font-size:0.75rem;color:var(--bf-text-dim);">BroFab Shop Floor v2.1</p>
+      <p style="font-size:0.75rem;color:var(--bf-text-dim);">Built by Joel Kometz + Meridian AI</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Demo Data ──
+const JOBS = [
+  {
+    id: 'JOB-001',
+    name: 'Morrison Food Truck — 18ft',
+    customer: 'Dave Morrison',
+    email: 'dave.morrison@email.com',
+    type: 'Food Truck',
+    status: 'active',
+    dueDate: '2026-05-15',
+    tasks: [
+      { id: 1, text: 'Frame welding complete', done: true },
+      { id: 2, text: 'Electrical rough-in', done: true },
+      { id: 3, text: 'Plumbing rough-in', done: false },
+      { id: 4, text: 'Hood vent installation', done: false },
+      { id: 5, text: 'Stainless countertop fabrication', done: false },
+      { id: 6, text: 'Final electrical hookup', done: false },
+      { id: 7, text: 'Propane system install', done: false },
+      { id: 8, text: 'Final inspection', done: false },
+    ],
+    timeline: [
+      { title: 'Quote Accepted', date: '2026-03-20', note: 'Deposit received', complete: true },
+      { title: 'Frame & Welding', date: '2026-04-01', note: 'Main structure complete', complete: true },
+      { title: 'Electrical & Plumbing', date: '2026-04-15', note: 'Rough-in phase', complete: false },
+      { title: 'Interior Finishing', date: '2026-05-01', note: 'Counters, hood, trim', complete: false },
+      { title: 'Final Inspection', date: '2026-05-15', note: 'City inspection + handoff', complete: false },
+    ],
+    photos: []
+  },
+  {
+    id: 'JOB-002',
+    name: 'Patel Concession Trailer — 16ft',
+    customer: 'Anita Patel',
+    email: 'anita.patel@email.com',
+    type: 'Concession Trailer',
+    status: 'active',
+    dueDate: '2026-05-30',
+    tasks: [
+      { id: 1, text: 'Trailer base prep', done: true },
+      { id: 2, text: 'Wall framing', done: true },
+      { id: 3, text: 'Serving window cut', done: true },
+      { id: 4, text: 'Interior insulation', done: false },
+      { id: 5, text: 'Equipment mounting', done: false },
+    ],
+    timeline: [
+      { title: 'Quote Accepted', date: '2026-04-01', note: 'Rush job — festival season', complete: true },
+      { title: 'Base & Framing', date: '2026-04-10', note: 'Trailer prepped', complete: true },
+      { title: 'Interior Build', date: '2026-05-01', note: 'In progress', complete: false },
+      { title: 'Delivery', date: '2026-05-30', note: 'Target date', complete: false },
+    ],
+    photos: []
+  },
+  {
+    id: 'JOB-003',
+    name: 'Custom Kitchen Hood — Commercial',
+    customer: 'Riverbend Restaurant',
+    email: 'info@riverbendrest.ca',
+    type: 'Commercial Kitchen',
+    status: 'pending',
+    dueDate: '2026-06-01',
+    tasks: [
+      { id: 1, text: 'Site measurements', done: false },
+      { id: 2, text: 'Material order (stainless)', done: false },
+      { id: 3, text: 'Fabrication', done: false },
+      { id: 4, text: 'On-site installation', done: false },
+    ],
+    timeline: [
+      { title: 'Quote Sent', date: '2026-04-18', note: 'Awaiting approval', complete: false },
+    ],
+    photos: []
+  }
+];
+
+let uploadedPhotos = [];
+
+// ── Tab Navigation ──
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Clock ──
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Render Jobs ──
+function renderJobs() {
+  const list = document.getElementById('job-list');
+  list.innerHTML = '';
+  JOBS.forEach(job => {
+    const done = job.tasks.filter(t => t.done).length;
+    const total = job.tasks.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const badgeClass = job.status === 'active' ? 'badge-active' : job.status === 'pending' ? 'badge-pending' : 'badge-done';
+    const itemClass  = job.status === 'pending' ? 'status-pending' : job.status === 'done' ? 'status-done' : '';
+    list.innerHTML += `
+      <div class="job-item ${itemClass}" onclick="openJobDetail('${job.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div class="job-name">${job.name}</div>
+          <span class="badge ${badgeClass}">${job.status}</span>
+        </div>
+        <div class="job-meta">${job.customer} &bull; ${job.type} &bull; Due: ${job.dueDate}${job.trelloId ? ' &bull; <span style="color:var(--bf-accent);font-weight:600;">&#9670; Trello</span>' : ''}</div>
+        <div class="job-tasks">${done}/${total} tasks complete</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  });
+  document.getElementById('stat-active').textContent  = JOBS.filter(j => j.status === 'active').length;
+  document.getElementById('stat-tasks').textContent   = JOBS.reduce((s, j) => s + j.tasks.filter(t => !t.done).length, 0);
+  let totalPhotos = 0;
+  JOBS.forEach(j => totalPhotos += j.photos.length);
+  document.getElementById('stat-photos').textContent  = totalPhotos;
+}
+
+// ── Populate Selects ──
+function populateSelects() {
+  ['photo-job-select','task-job-select','status-job-select','portal-job-select'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel) sel.innerHTML = JOBS.map(j => `<option value="${j.id}">${j.name}</option>`).join('');
+  });
+}
+
+// ── Job Detail Modal ──
+function openJobDetail(jobId) {
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  const done = job.tasks.filter(t => t.done).length;
+  const total = job.tasks.length;
+  const pct = total > 0 ? Math.round(done/total*100) : 0;
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">${job.name}</div>
+    <p style="font-size:0.82rem;color:var(--bf-text-dim);margin-bottom:14px;">
+      ${job.customer} &bull; ${job.email}<br>${job.type} &bull; Due: ${job.dueDate}
+    </p>
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:600;font-size:0.83rem;">Progress</span>
+        <span style="font-size:0.83rem;color:var(--bf-accent);font-weight:700;">${pct}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:0.75rem;color:var(--bf-text-dim);margin-top:4px;">${done} of ${total} tasks complete</div>
+    </div>
+    <div style="font-weight:600;font-size:0.83rem;margin-bottom:8px;">Recent Photos (${job.photos.length})</div>
+    ${job.photos.length === 0
+      ? '<p style="font-size:0.8rem;color:var(--bf-text-dim);">No photos yet</p>'
+      : '<div class="photo-grid">' + job.photos.slice(-6).map(p => `<div class="photo-thumb"><img src="${p}"></div>`).join('') + '</div>'}
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+// ── Tasks ──
+function renderTasks() {
+  const jobId = document.getElementById('task-job-select').value;
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  const list = document.getElementById('task-list');
+  list.innerHTML = '';
+  job.tasks.forEach(task => {
+    list.innerHTML += `
+      <li class="task-item">
+        <div class="task-check ${task.done ? 'done' : ''}" onclick="toggleTask('${jobId}', ${task.id})">
+          ${task.done ? '&#10003;' : ''}
+        </div>
+        <span class="task-text ${task.done ? 'done' : ''}">${task.text}</span>
+      </li>`;
+  });
+  const done = job.tasks.filter(t => t.done).length;
+  document.getElementById('task-count').textContent = `${done} / ${job.tasks.length}`;
+}
+
+function toggleTask(jobId, taskId) {
+  const job = JOBS.find(j => j.id === jobId);
+  const task = job.tasks.find(t => t.id === taskId);
+  task.done = !task.done;
+  updateJobStatus(job);
+  pushTaskToTrello(job, task);
+  renderTasks();
+  renderJobs();
+  showToast(task.done ? 'Task completed!' : 'Task reopened', task.done ? 'success' : '');
+}
+
+function openAddTask() {
+  const jobId = document.getElementById('task-job-select').value;
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Add Task</div>
+    <div class="form-group">
+      <label class="form-label">Task Description</label>
+      <input class="form-input" type="text" id="new-task-text" placeholder="What needs to be done?">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="addTask('${jobId}')">Add Task</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('new-task-text').focus(), 100);
+}
+
+function addTask(jobId) {
+  const text = document.getElementById('new-task-text').value.trim();
+  if (!text) return;
+  const job = JOBS.find(j => j.id === jobId);
+  const maxId = Math.max(...job.tasks.map(t => t.id), 0);
+  job.tasks.push({ id: maxId + 1, text, done: false });
+  closeModal();
+  renderTasks();
+  renderJobs();
+  showToast('Task added');
+}
+
+// ── Status Portal ──
+function renderStatus() {
+  const jobId = document.getElementById('status-job-select').value;
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  const cont = document.getElementById('status-content');
+  cont.innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div style="font-weight:600;font-size:0.9rem;margin-bottom:2px;">${job.customer}</div>
+      <div style="font-size:0.8rem;color:var(--bf-text-dim);">${job.type} &bull; Due: ${job.dueDate}</div>
+    </div>
+    <div style="font-weight:600;font-size:0.82rem;margin-bottom:10px;color:var(--bf-text-dim);text-transform:uppercase;letter-spacing:0.06em;">Build Timeline</div>
+    <div class="status-timeline">
+      ${job.timeline.map(t => `
+        <div class="timeline-item ${t.complete ? 'complete' : ''}">
+          <div class="tl-title">${t.title}</div>
+          <div class="tl-date">${t.date}</div>
+          <div class="tl-note">${t.note}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function openEditStatus() {
+  const jobId = document.getElementById('status-job-select').value;
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Update Status — ${job.name}</div>
+    <div class="form-group">
+      <label class="form-label">Status Update Message</label>
+      <textarea class="form-textarea" id="status-message" placeholder="Describe current progress..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Milestone Reached</label>
+      <select class="form-select" id="status-milestone">
+        ${job.timeline.filter(t => !t.complete).map(t => `<option value="${t.title}">${t.title}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveStatus('${jobId}')">Submit for Approval</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function saveStatus(jobId) {
+  closeModal();
+  showToast('Status update submitted for approval');
+}
+
+function publishStatus() {
+  showToast('Update queued — Chris will review before publishing');
+}
+
+// ── Photo Upload ──
+const uploadZone = document.getElementById('upload-zone');
+const fileInput  = document.getElementById('file-input');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+document.getElementById('camera-input').addEventListener('change', e => handleFiles(e.target.files));
+
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => { uploadedPhotos.push(e.target.result); renderPhotoGrid(); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotoGrid() {
+  document.getElementById('photo-grid').innerHTML = uploadedPhotos.map((p, i) => `
+    <div class="photo-thumb">
+      <img src="${p}">
+      <button class="remove" onclick="removePhoto(${i})">&times;</button>
+    </div>
+  `).join('');
+}
+
+function removePhoto(i) {
+  uploadedPhotos.splice(i, 1);
+  renderPhotoGrid();
+}
+
+function submitPhotos() {
+  if (uploadedPhotos.length === 0) { showToast('No photos to submit'); return; }
+  const jobId = document.getElementById('photo-job-select').value;
+  const job = JOBS.find(j => j.id === jobId);
+  job.photos.push(...uploadedPhotos);
+  uploadedPhotos = [];
+  renderPhotoGrid();
+  renderJobs();
+  showToast(`${job.photos.length} photos submitted`, 'success');
+  document.getElementById('photo-notes').value = '';
+}
+
+// ── New Job ──
+function openNewJob() {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Create New Job</div>
+    <div class="form-group">
+      <label class="form-label">Job Name</label>
+      <input class="form-input" type="text" id="new-job-name" placeholder="e.g. Smith Food Truck — 20ft">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Customer Name</label>
+      <input class="form-input" type="text" id="new-job-customer" placeholder="Full name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Customer Email</label>
+      <input class="form-input" type="email" id="new-job-email" placeholder="email@example.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Build Type</label>
+      <select class="form-select" id="new-job-type">
+        <option>Food Truck</option>
+        <option>Food Trailer</option>
+        <option>Concession Trailer</option>
+        <option>Commercial Kitchen</option>
+        <option>Custom Fabrication</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Target Date</label>
+      <input class="form-input" type="date" id="new-job-date">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="createJob()">Create Job</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function createJob() {
+  const name = document.getElementById('new-job-name').value.trim();
+  const customer = document.getElementById('new-job-customer').value.trim();
+  if (!name || !customer) { showToast('Name and customer required'); return; }
+  const job = {
+    id: 'JOB-' + String(JOBS.length + 1).padStart(3, '0'),
+    name, customer,
+    email: document.getElementById('new-job-email').value,
+    type: document.getElementById('new-job-type').value,
+    status: 'pending',
+    dueDate: document.getElementById('new-job-date').value || 'TBD',
+    tasks: [],
+    timeline: [{ title: 'Job Created', date: new Date().toISOString().split('T')[0], note: 'Initial setup', complete: true }],
+    photos: []
+  };
+  JOBS.push(job);
+  createTrelloCard(job);
+  closeModal();
+  populateSelects();
+  renderJobs();
+  showToast('Job created: ' + name, 'success');
+}
+
+// ── Workers ──
+const WORKERS = JSON.parse(localStorage.getItem('brofab_workers') || '[]');
+let currentWorker = localStorage.getItem('brofab_current_worker') || null;
+
+function showWorkerLogin() {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Who's Working?</div>
+    <div style="margin-bottom:14px;">
+      ${WORKERS.length === 0 ? '<p style="font-size:0.83rem;color:var(--bf-text-dim);">No workers added yet — add one below.</p>' : ''}
+      ${WORKERS.map(w => `
+        <div style="background:rgba(255,255,255,0.04);padding:12px 14px;border-radius:8px;margin-bottom:8px;cursor:pointer;border:1px solid ${currentWorker===w.name?'var(--bf-accent)':'var(--bf-border)'};display:flex;align-items:center;gap:10px;transition:border-color 0.2s;"
+             onclick="loginWorker('${w.name}')">
+          <span style="font-size:1.2rem;">&#128736;</span>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:0.9rem;">${w.name}</div>
+            <div style="font-size:0.75rem;color:var(--bf-text-dim);">${w.role||'Fabricator'}</div>
+          </div>
+          ${currentWorker===w.name ? '<span style="font-size:0.7rem;color:var(--bf-accent);font-weight:700;">SIGNED IN</span>' : ''}
+        </div>
+      `).join('')}
+    </div>
+    <div style="border-top:1px solid var(--bf-border);padding-top:14px;">
+      <div style="font-size:0.75rem;font-weight:700;color:var(--bf-text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Add Worker</div>
+      <div class="form-group"><input class="form-input" id="new-worker-name" placeholder="Name"></div>
+      <div class="form-group">
+        <select class="form-select" id="new-worker-role">
+          <option>Fabricator</option><option>Welder</option><option>Electrician</option><option>Plumber</option><option>Lead</option>
+        </select>
+      </div>
+      <button class="btn btn-accent btn-sm" onclick="addWorker()">Add Worker</button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function loginWorker(name) {
+  currentWorker = name;
+  localStorage.setItem('brofab_current_worker', name);
+  const el = document.getElementById('worker-display');
+  el.innerHTML = `<span class="status-dot"></span>${name}`;
+  el.classList.add('signed-in');
+  closeModal();
+  showToast('Signed in as ' + name, 'success');
+}
+
+function addWorker() {
+  const name = document.getElementById('new-worker-name').value.trim();
+  if (!name) return;
+  const role = document.getElementById('new-worker-role').value;
+  WORKERS.push({ name, role });
+  localStorage.setItem('brofab_workers', JSON.stringify(WORKERS));
+  showWorkerLogin();
+}
+
+// ── Trello Sync (Bidirectional) ──
+const TRELLO_BOARD_ID = 'B5fEzIMj';
+let TRELLO_LISTS = [];  // cached list data: [{id, name, status}]
+let TRELLO_CHECKLIST_MAP = {};  // cardId -> [{checklistId, items: [{itemId, text}]}]
+
+function getTrelloCreds() {
+  const key   = (document.getElementById('trello-key')?.value?.trim())   || localStorage.getItem('trello_key');
+  const token = (document.getElementById('trello-token')?.value?.trim()) || localStorage.getItem('trello_token');
+  return (key && token) ? { key, token } : null;
+}
+
+function statusFromListName(name) {
+  const n = name.toLowerCase();
+  if (n.includes('done') || n.includes('complete')) return 'done';
+  if (n.includes('progress') || n.includes('active') || n.includes('doing')) return 'active';
+  if (n.includes('review')) return 'review';
+  return 'pending';
+}
+
+function listIdForStatus(status) {
+  const match = TRELLO_LISTS.find(l => l.status === status);
+  return match ? match.id : (TRELLO_LISTS[0]?.id || null);
+}
+
+async function syncTrello() {
+  const creds = getTrelloCreds();
+  if (!creds) { showToast('Enter Trello API key and token first'); return; }
+  localStorage.setItem('trello_key', creds.key);
+  localStorage.setItem('trello_token', creds.token);
+  try {
+    showToast('Syncing with Trello…');
+    const listsResp = await fetch(`https://api.trello.com/1/boards/${TRELLO_BOARD_ID}/lists?key=${creds.key}&token=${creds.token}`);
+    if (!listsResp.ok) throw new Error('Failed to fetch lists');
+    const lists = await listsResp.json();
+    TRELLO_LISTS = lists.map(l => ({ id: l.id, name: l.name, status: statusFromListName(l.name) }));
+
+    const cardsResp = await fetch(`https://api.trello.com/1/boards/${TRELLO_BOARD_ID}/cards?key=${creds.key}&token=${creds.token}&checklists=all`);
+    if (!cardsResp.ok) throw new Error('Failed to fetch cards');
+    const cards = await cardsResp.json();
+    const listStatus = {};
+    TRELLO_LISTS.forEach(l => { listStatus[l.id] = l.status; });
+
+    let synced = 0;
+    cards.forEach(card => {
+      const existing = JOBS.find(j => j.trelloId === card.id);
+      const tasks = [];
+      TRELLO_CHECKLIST_MAP[card.id] = [];
+      if (card.checklists && card.checklists.length > 0) {
+        card.checklists.forEach(cl => {
+          const items = [];
+          cl.checkItems.forEach((item, i) => {
+            tasks.push({ id: i + 1, text: item.name, done: item.state === 'complete', checkItemId: item.id });
+            items.push({ itemId: item.id, text: item.name });
+          });
+          TRELLO_CHECKLIST_MAP[card.id].push({ checklistId: cl.id, items });
+        });
+      }
+      const job = {
+        id: existing ? existing.id : 'TRL-' + String(synced + 1).padStart(3, '0'),
+        trelloId: card.id, trelloListId: card.idList, name: card.name,
+        customer: card.desc ? card.desc.split('\n')[0] : 'Trello Import',
+        email: '', type: 'Trello Card',
+        status: listStatus[card.idList] || 'pending',
+        dueDate: card.due ? card.due.split('T')[0] : 'TBD',
+        tasks: tasks.length > 0 ? tasks : [{ id: 1, text: card.name, done: listStatus[card.idList] === 'done' }],
+        timeline: existing?.timeline || [{ title: 'Imported from Trello', date: new Date().toISOString().split('T')[0], note: 'Synced via API', complete: true }],
+        photos: existing?.photos || []
+      };
+      if (existing) Object.assign(existing, job);
+      else JOBS.push(job);
+      synced++;
+    });
+    populateSelects();
+    renderJobs();
+    showToast(`Synced ${synced} card(s) from Trello (2-way enabled)`, 'success');
+    document.getElementById('trello-status').textContent = `Last sync: ${new Date().toLocaleTimeString()} — ${synced} cards (2-way)`;
+    document.getElementById('trello-status').style.color = 'var(--bf-success)';
+  } catch (e) {
+    showToast('Trello sync failed: ' + e.message);
+  }
+}
+
+// ── Reverse Sync: Push changes back to Trello ──
+
+async function pushStatusToTrello(job) {
+  if (!job.trelloId) return;
+  const creds = getTrelloCreds();
+  if (!creds) return;
+  const targetListId = listIdForStatus(job.status);
+  if (!targetListId || targetListId === job.trelloListId) return;
+  try {
+    const resp = await fetch(`https://api.trello.com/1/cards/${job.trelloId}?key=${creds.key}&token=${creds.token}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idList: targetListId })
+    });
+    if (resp.ok) {
+      job.trelloListId = targetListId;
+      showToast('Trello card moved to ' + (TRELLO_LISTS.find(l => l.id === targetListId)?.name || 'list'), 'success');
+    }
+  } catch (e) { /* silent fail — local state is source of truth */ }
+}
+
+async function pushTaskToTrello(job, task) {
+  if (!job.trelloId || !task.checkItemId) return;
+  const creds = getTrelloCreds();
+  if (!creds) return;
+  const checklists = TRELLO_CHECKLIST_MAP[job.trelloId];
+  if (!checklists) return;
+  for (const cl of checklists) {
+    const match = cl.items.find(i => i.itemId === task.checkItemId);
+    if (match) {
+      try {
+        await fetch(`https://api.trello.com/1/cards/${job.trelloId}/checkItem/${task.checkItemId}?key=${creds.key}&token=${creds.token}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: task.done ? 'complete' : 'incomplete' })
+        });
+      } catch (e) { /* silent */ }
+      break;
+    }
+  }
+}
+
+async function createTrelloCard(job) {
+  const creds = getTrelloCreds();
+  if (!creds || TRELLO_LISTS.length === 0) return;
+  const pendingList = listIdForStatus('pending');
+  if (!pendingList) return;
+  try {
+    const resp = await fetch(`https://api.trello.com/1/cards?key=${creds.key}&token=${creds.token}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idList: pendingList,
+        name: job.name,
+        desc: `${job.customer}\n${job.type}\nDue: ${job.dueDate}`,
+        due: job.dueDate !== 'TBD' ? job.dueDate : null
+      })
+    });
+    if (resp.ok) {
+      const card = await resp.json();
+      job.trelloId = card.id;
+      job.trelloListId = pendingList;
+      showToast('Card created in Trello', 'success');
+    }
+  } catch (e) { /* silent */ }
+}
+
+function updateJobStatus(job) {
+  const allDone = job.tasks.length > 0 && job.tasks.every(t => t.done);
+  const anyActive = job.tasks.some(t => t.done) && !allDone;
+  const oldStatus = job.status;
+  if (allDone) job.status = 'done';
+  else if (anyActive) job.status = 'active';
+  if (job.status !== oldStatus) pushStatusToTrello(job);
+}
+
+// ── Export Report ──
+function exportReport() {
+  let report = 'BROTHERS FABRICATION — DAILY SHOP REPORT\n';
+  report += '='.repeat(45) + '\n';
+  report += `Date: ${new Date().toLocaleDateString()}\n\n`;
+  JOBS.forEach(job => {
+    const done = job.tasks.filter(t => t.done).length;
+    report += `${job.name}\n`;
+    report += `  Customer: ${job.customer}\n`;
+    report += `  Status:   ${job.status}\n`;
+    report += `  Progress: ${done}/${job.tasks.length} tasks\n`;
+    report += `  Photos:   ${job.photos.length}\n\n`;
+  });
+  const blob = new Blob([report], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `brofab-report-${new Date().toISOString().split('T')[0]}.txt`;
+  a.click();
+  showToast('Report downloaded');
+}
+
+// ── Portal Link ──
+function generatePortalLink() {
+  const jobId = document.getElementById('portal-job-select').value;
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  const hash = btoa(job.id + '-' + Date.now()).replace(/=/g, '').substring(0, 12);
+  const link = `https://brofab.app/portal/${hash}`;
+  document.getElementById('portal-link-text').textContent = link;
+  const area = document.getElementById('portal-link-area');
+  area.style.display = 'block';
+  area.dataset.link  = link;
+  area.dataset.jobId = jobId;
+}
+
+function copyPortalLink() {
+  const link = document.getElementById('portal-link-area').dataset.link;
+  navigator.clipboard.writeText(link)
+    .then(() => showToast('Link copied!', 'success'))
+    .catch(() => showToast('Copy failed — select manually'));
+}
+
+function sharePortalLink() {
+  const link  = document.getElementById('portal-link-area').dataset.link;
+  const jobId = document.getElementById('portal-link-area').dataset.jobId;
+  const job   = JOBS.find(j => j.id === jobId);
+  if (navigator.share) {
+    navigator.share({
+      title: `${job.name} — Build Status`,
+      text: `Track the progress of your ${job.type} build with Brothers Fabrication.`,
+      url: link
+    }).catch(() => {});
+  } else {
+    copyPortalLink();
+  }
+}
+
+function emailPortalLink() {
+  const jobId = document.getElementById('portal-link-area').dataset.jobId;
+  const job   = JOBS.find(j => j.id === jobId);
+  const link  = document.getElementById('portal-link-area').dataset.link;
+  const done  = job.tasks.filter(t => t.done).length;
+  const total = job.tasks.length;
+  const subject = encodeURIComponent(`${job.name} — Build Progress Update`);
+  const body    = encodeURIComponent(
+    `Hi ${job.customer},\n\nHere's your private link to track your ${job.type} build:\n\n${link}\n\n` +
+    `Current status: ${done}/${total} tasks complete\nTarget completion: ${job.dueDate}\n\n— Brothers Fabrication`
+  );
+  window.open(`mailto:${job.email}?subject=${subject}&body=${body}`);
+}
+
+// ── QR Upload ──
+function showUploadQR() {
+  const area = document.getElementById('phone-upload-area');
+  area.style.display = area.style.display === 'none' ? 'block' : 'none';
+  if (area.style.display === 'block') generateUploadQR();
+}
+
+function generateUploadQR() {
+  const jobId = document.getElementById('photo-job-select').value;
+  const job   = JOBS.find(j => j.id === jobId);
+  const canvas = document.getElementById('qr-canvas');
+  const ctx    = canvas.getContext('2d');
+  canvas.width = canvas.height = 180;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 180, 180);
+  ctx.fillStyle = '#000';
+  drawQRCorner(ctx, 10, 10, 46);
+  drawQRCorner(ctx, 124, 10, 46);
+  drawQRCorner(ctx, 10, 124, 46);
+  for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) {
+    if (Math.random() > 0.5) ctx.fillRect(62 + j*6, 10 + i*6, 5, 5);
+  }
+  ctx.fillStyle = '#4ecdc4';
+  ctx.font = 'bold 9px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(job ? job.name.substring(0, 22) : 'BroFab Upload', 90, 172);
+  showToast('Production: scan to open phone upload page');
+}
+
+function drawQRCorner(ctx, x, y, size) {
+  ctx.fillRect(x, y, size, size);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x+6, y+6, size-12, size-12);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(x+12, y+12, size-24, size-24);
+}
+
+// ── Utilities ──
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ── Init ──
+populateSelects();
+renderJobs();
+renderTasks();
+renderStatus();
+
+const savedKey   = localStorage.getItem('trello_key');
+const savedToken = localStorage.getItem('trello_token');
+if (savedKey)   document.getElementById('trello-key').value   = savedKey;
+if (savedToken) document.getElementById('trello-token').value = savedToken;
+if (currentWorker) {
+  const el = document.getElementById('worker-display');
+  el.innerHTML = `<span class="status-dot"></span>${currentWorker}`;
+  el.classList.add('signed-in');
+}
+if (savedKey && savedToken) setTimeout(() => syncTrello(), 1200);
+</script>
+</body>
+</html>

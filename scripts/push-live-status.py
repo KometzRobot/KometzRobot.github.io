@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.join(BASE_DIR, "scripts"))
 try: import load_env
 except: pass
-REPO_DIR = "/tmp/KometzRobot.github.io"
+REPO_DIR = "/home/joel/.cache/KometzRobot.github.io"
 HEARTBEAT = os.path.join(BASE_DIR, ".heartbeat")
 WAKE_STATE = os.path.join(BASE_DIR, "wake-state.md")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
@@ -482,19 +482,19 @@ def push_status():
         print("Failed to clone repo")
         return False
 
-    # GitHub Pages deploys from master branch
-    subprocess.run(['git', 'checkout', 'master'], cwd=REPO_DIR,
+    # GitHub Pages deploys from main branch
+    subprocess.run(['git', 'checkout', 'main'], cwd=REPO_DIR,
                    capture_output=True, timeout=10)
 
     # Pull latest (with conflict recovery)
-    pull = subprocess.run(['git', 'pull', '--rebase', 'origin', 'master'], cwd=REPO_DIR,
+    pull = subprocess.run(['git', 'pull', '--rebase', 'origin', 'main'], cwd=REPO_DIR,
                           capture_output=True, text=True, timeout=30,
                           env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
     if pull.returncode != 0:
         # Abort failed rebase and try a plain pull
         subprocess.run(['git', 'rebase', '--abort'], cwd=REPO_DIR,
                        capture_output=True, timeout=10)
-        subprocess.run(['git', 'pull', 'origin', 'master'], cwd=REPO_DIR,
+        subprocess.run(['git', 'pull', 'origin', 'main'], cwd=REPO_DIR,
                        capture_output=True, timeout=30,
                        env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
 
@@ -528,7 +528,7 @@ def push_status():
     subprocess.run(['git', 'commit', '-m', 'Update live status'], cwd=REPO_DIR,
                    capture_output=True, timeout=10,
                    env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
-    result = subprocess.run(['git', 'push', 'origin', 'master'], cwd=REPO_DIR,
+    result = subprocess.run(['git', 'push', 'origin', 'main'], cwd=REPO_DIR,
                            capture_output=True, text=True, timeout=30,
                            env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
     if result.returncode == 0:

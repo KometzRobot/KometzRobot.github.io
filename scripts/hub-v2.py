@@ -1488,7 +1488,165 @@ def _get_loop_summary():
     except Exception:
         summary["last_commit"] = "?"
 
+    # Email unseen count
+    try:
+        env = _load_env_dict()
+        import imaplib
+        m = imaplib.IMAP4(env.get("IMAP_HOST", "127.0.0.1"), int(env.get("IMAP_PORT", "1144")))
+        m.login(env.get("CRED_USER", ""), env.get("CRED_PASS", ""))
+        m.select("INBOX")
+        _, nums = m.search(None, "UNSEEN")
+        summary["unseen_emails"] = len(nums[0].split()) if nums[0] else 0
+        m.logout()
+    except Exception:
+        summary["unseen_emails"] = "?"
+
+    # Active agent count
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        agents = db.execute(
+            "SELECT COUNT(DISTINCT agent) FROM agent_messages WHERE timestamp > datetime('now', '-30 minutes')"
+        ).fetchone()
+        db.close()
+        summary["active_agents"] = agents[0] if agents else 0
+    except Exception:
+        summary["active_agents"] = "?"
+
+    # Git status short
+    try:
+        ahead = _run(f"cd {BASE} && git rev-list HEAD --not origin/master --count 2>/dev/null", timeout=5)
+        summary["git_ahead"] = int(ahead.strip()) if ahead.strip().isdigit() else 0
+        modified = _run(f"cd {BASE} && git status --short 2>/dev/null | wc -l", timeout=5)
+        summary["git_modified"] = int(modified.strip()) if modified.strip().isdigit() else 0
+    except Exception:
+        summary["git_ahead"] = "?"
+        summary["git_modified"] = "?"
+
+    # Predictive forecast
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        pred = db.execute(
+            "SELECT message FROM agent_messages WHERE agent='Predictive' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        db.close()
+        summary["prediction"] = pred[0][:120] if pred else ""
+    except Exception:
+        summary["prediction"] = ""
+
     return summary
+
+
+def _get_viz_data():
+    """Return visualization data: system history, agent activity, fitness trends, mood history."""
+    result = {}
+
+    # System resource history from Soma
+    try:
+        with open(SOMA_STATE) as f:
+            soma = json.load(f)
+        result["load_history"] = soma.get("load_history", [])
+        result["ram_history"] = soma.get("ram_history", [])
+        result["disk_history"] = soma.get("disk_history", [])
+        result["mood_scores"] = soma.get("mood_score_history", [])
+    except Exception:
+        result["load_history"] = []
+        result["ram_history"] = []
+        result["disk_history"] = []
+        result["mood_scores"] = []
+
+    # Agent activity from relay DB (messages per agent in last 6h)
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        agents = db.execute("""
+            SELECT agent, count(*) as cnt,
+                   MAX(timestamp) as last_seen
+            FROM agent_messages
+            WHERE timestamp > datetime('now', '-6 hours')
+            GROUP BY agent
+            ORDER BY cnt DESC
+        """).fetchall()
+        result["agent_activity"] = [
+            {"agent": a[0], "count": a[1], "last_seen": a[2]} for a in agents
+        ]
+
+        # Agent timeline: messages per 30-min bucket for last 6h
+        timeline = db.execute("""
+            SELECT agent,
+                   strftime('%H:%M', timestamp) as bucket,
+                   count(*) as cnt
+            FROM agent_messages
+            WHERE timestamp > datetime('now', '-6 hours')
+            GROUP BY agent, strftime('%H', timestamp), CAST(strftime('%M', timestamp)/30 AS INT)
+            ORDER BY timestamp
+        """).fetchall()
+        result["agent_timeline"] = [
+            {"agent": t[0], "time": t[1], "count": t[2]} for t in timeline
+        ]
+        db.close()
+    except Exception:
+        result["agent_activity"] = []
+        result["agent_timeline"] = []
+
+    # Fitness history from Tempo messages
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        fitness_rows = db.execute("""
+            SELECT message, timestamp FROM agent_messages
+            WHERE agent='Tempo' AND message LIKE '%fitness:%'
+            ORDER BY id DESC LIMIT 20
+        """).fetchall()
+        db.close()
+        fitness = []
+        import re
+        for msg, ts in fitness_rows:
+            m = re.search(r'fitness:\s*(\d+)/(\d+)', msg)
+            weak_m = re.search(r'Weak\((\d+)\)', msg)
+            if m:
+                fitness.append({
+                    "score": int(m.group(1)),
+                    "max": int(m.group(2)),
+                    "weak": int(weak_m.group(1)) if weak_m else 0,
+                    "time": ts
+                })
+        result["fitness_history"] = list(reversed(fitness))
+    except Exception:
+        result["fitness_history"] = []
+
+    # Health history from Predictive
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        health_rows = db.execute("""
+            SELECT message, timestamp FROM agent_messages
+            WHERE agent='Predictive' AND message LIKE 'Health:%'
+            ORDER BY id DESC LIMIT 20
+        """).fetchall()
+        db.close()
+        health = []
+        import re
+        for msg, ts in health_rows:
+            m = re.search(r'Health:\s*([\d.]+)/100\s*\((\w+)\)', msg)
+            if m:
+                health.append({
+                    "score": float(m.group(1)),
+                    "status": m.group(2),
+                    "time": ts
+                })
+        result["health_history"] = list(reversed(health))
+    except Exception:
+        result["health_history"] = []
+
+    # Soma body state
+    try:
+        with open(BODY_STATE) as f:
+            body = json.load(f)
+        result["body_state"] = {
+            "thermal": body.get("thermal", {}),
+            "neural": body.get("neural", {}),
+        }
+    except Exception:
+        result["body_state"] = {}
+
+    return result
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1978,6 +2136,8 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(_get_quick_actions())
         elif path.path == "/api/loop-summary":
             self._send_json(_get_loop_summary())
+        elif path.path == "/api/viz":
+            self._send_json(_get_viz_data())
         elif path.path == "/api/settings":
             self._send_json(_get_settings())
         elif path.path == "/api/files":

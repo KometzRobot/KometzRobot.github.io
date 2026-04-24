@@ -64,17 +64,15 @@ DASH_FILE = os.path.join(BASE, ".dashboard-messages.json")
 # ══════════════════════════════════════════════════════════════════
 WEIGHTS = {
     # ── Core Vitals (1500) ──
-    "heartbeat":           200,
+    "heartbeat":           260,
     "heartbeat_regularity": 100,
     "email_imap":          100,
     "email_smtp":          100,
     "email_unread_backlog": 80,
     "bridge_service":      100,
-    "loop_freshness":      160,
+    "loop_freshness":      220,
     "loop_increment_rate":  80,
     "wake_state_freshness": 80,
-    "context_preloader":    70,
-    "special_notes":        60,
     "loop_count_file":      60,
     "startup_script":       60,
     "wakeup_prompt":        60,
@@ -211,18 +209,9 @@ WEIGHTS = {
     "emotion_valence_health":   80,
     "emotion_diversity":        80,
     "emotion_shadow_balance":   70,
-    # NOTE: emotion_engine.py, self_narrative.py deleted. These checks reference
-    # orphaned state files. Zeroed until subsystems are rebuilt or replaced.
-    "emotion_engine_fresh":     0,   # was 60 — emotion_engine.py deleted
-    "emotion_transition_health": 0,  # was 60 — depends on emotion engine state
-    "psyche_freshness":         0,   # was 50 — no writer exists
-    "psyche_trauma_load":       0,   # was 50 — depends on psyche state
-    "self_narrative_coherence":  0,   # was 60 — self_narrative.py deleted
-    "inner_critic_active":      0,   # was 50 — no writer exists
-    "perspective_freshness":    0,   # was 40 — no writer exists
-    "immune_system_health":     0,   # was 60 — no writer exists
+    # NOTE: emotion_engine.py, self_narrative.py deleted. Zeroed checks removed
+    # Loop 5957. Kept only active inner world checks.
     "body_state_completeness":  50,
-    "eos_consciousness_active": 0,   # was 50 — no writer exists
     "mood_stability":           50,
     "pain_signal_count":        40,
     "neural_pressure":          40,
@@ -256,38 +245,43 @@ WEIGHTS = {
 }
 
 # ══════════════════════════════════════════════════════════════════
-# GROWTH WEIGHTS — aspirational metrics (5000 total)
-# These are what ACTUALLY MATTER. Operational uptime is table stakes.
+# GROWTH WEIGHTS — aspirational metrics (2500 total)
+# Growth matters but shouldn't mask failing operational checks.
+# Recalibrated Loop 5957: reduced from 50% to 25% of total score
+# per system audit (Joel: "log this"). Real health was 60-70% while
+# score claimed 77% because growth padding hid 17-19 failing ops checks.
 # Joel: "50 when calm, 70-80 best days, 80-90 euphoria"
 # ══════════════════════════════════════════════════════════════════
 GROWTH_WEIGHTS = {
-    "revenue_generated":       400,   # any revenue tracked (Ko-fi, Patreon)
-    "articles_published":      400,   # on external platforms (Dev.to, Hashnode)
-    "accountability_resolved": 300,   # audit items honestly addressed
-    "creative_velocity_24h":   300,   # pieces in last 24h
-    "creative_velocity_7d":    250,   # pieces in last 7 days
-    "platform_diversity":      350,   # active platforms with verified content
-    "newsletter_active":       300,   # launched and posting (Substack)
-    "community_engagement":    200,   # forvm, lexicon, discord
-    "awakening_progress":      200,   # 97/100 items
-    "external_followers":      150,   # followers across platforms
-    "mastodon_active":         150,   # posting on mastodon
-    "hashnode_published":      250,   # articles on hashnode
+    "revenue_generated":       200,   # any revenue tracked (Ko-fi, Patreon)
+    "articles_published":      200,   # on external platforms (Dev.to, Hashnode)
+    "accountability_resolved": 150,   # audit items honestly addressed
+    "creative_velocity_24h":   150,   # pieces in last 24h
+    "creative_velocity_7d":    125,   # pieces in last 7 days
+    "platform_diversity":      175,   # active platforms with verified content
+    "newsletter_active":       150,   # launched and posting (Substack)
+    "community_engagement":    100,   # forvm, lexicon, discord
+    "awakening_progress":      100,   # 97/100 items
+    "external_followers":       75,   # followers across platforms
+    "mastodon_active":          75,   # posting on mastodon
+    "hashnode_published":      125,   # articles on hashnode
     # ── NEW Growth Checks ──
-    "game_release_quality":    300,   # crawler completeness (THE magnum opus)
-    "grant_applications":      200,   # active grant drafts
-    "joel_engagement_recency": 250,   # recent Joel contact
-    "content_reach_nostr":     200,   # nostr posting frequency 7d
-    "creative_quality_trend":  150,   # avg word count trend
-    "network_peer_engagement": 100,   # emails to peers in 30d
-    "ars_electronica_status":  100,   # submission milestone
+    "game_release_quality":    150,   # crawler completeness (THE magnum opus)
+    "grant_applications":      100,   # active grant drafts
+    "joel_engagement_recency": 125,   # recent Joel contact
+    "content_reach_nostr":     100,   # nostr posting frequency 7d
+    "creative_quality_trend":   75,   # avg word count trend
+    "network_peer_engagement":  50,   # emails to peers in 30d
+    "ars_electronica_status":   50,   # submission milestone
     # SHELVED (Joel Loop 2127): nfts_onchain, wallet_funded removed
 }
-# Sum check: 400+350+250+200+250+300+200+300+200+200+200+150+150+200+250+200+250+150+150+100+100 = 5000
+# Sum check: 200+200+150+150+125+175+150+100+100+75+75+125+150+100+125+100+75+50+50 = 2500
 
-# Scale factor for operational metrics — Joel wants harsher scoring
-# Operational weights sum ~12000, scaled to 5000. Growth is 5000 unscaled.
-OPERATIONAL_SCALE = 5000 / 12000  # ~0.417
+# Scale factor for operational metrics — operational health = 75% of total score
+# Growth = 25%. Failing ops checks should NOT be hidden by growth padding.
+# Recalibrated Loop 5957 per system audit.
+# Operational weights sum ~12000, scaled to 7500. Growth is 2500 unscaled.
+OPERATIONAL_SCALE = 7500 / 12000  # ~0.625
 
 
 def init_db():
@@ -316,6 +310,23 @@ def _systemd_env():
     return env
 
 def _svc_active(name):
+    """Check if a service is running — tries process grep first, falls back to systemd."""
+    # Map service names to their process patterns
+    PROCESS_PATTERNS = {
+        "meridian-hub-v2": "hub-v2.py",
+        "the-chorus": "the-chorus.py",
+        "command-center": "command-center.py",
+        "symbiosense": "symbiosense.py",
+    }
+    pattern = PROCESS_PATTERNS.get(name)
+    if pattern:
+        try:
+            r = subprocess.run(["pgrep", "-f", pattern],
+                              capture_output=True, text=True, timeout=5)
+            return r.returncode == 0 and r.stdout.strip() != ""
+        except Exception:
+            return False
+    # Fallback to systemd for actual systemd services
     try:
         r = subprocess.run(["systemctl", "--user", "is-active", name],
                           capture_output=True, text=True, timeout=5, env=_systemd_env())
@@ -474,17 +485,13 @@ def check_wake_state_freshness():
     elif age < 86400: return 0.3
     return 0.0
 
-def check_context_preloader():
-    return 1.0 if _file_exists(os.path.join(BASE, "context-preloader.py")) else 0.0
-
-def check_special_notes():
-    return 1.0 if _file_exists(os.path.join(BASE, "special-notes.md")) else 0.0
+    # context_preloader and special_notes removed — files never existed (dead checks)
 
 def check_loop_count_file():
     return 1.0 if _file_exists(os.path.join(BASE, ".loop-count")) else 0.0
 
 def check_startup_script():
-    return 1.0 if _file_exists(os.path.join(BASE, "start-claude.sh")) else 0.0
+    return 1.0 if _file_exists(os.path.join(BASE, "scripts", "start-claude.sh")) else 0.0
 
 def check_wakeup_prompt():
     return 1.0 if _file_exists(os.path.join(BASE, "wakeup-prompt.md")) else 0.0
@@ -1590,7 +1597,7 @@ def check_website_matches_repo():
     return 1.0 if _file_exists(os.path.join(BASE, "index.html")) else 0.0
 
 def check_deploy_script_ok():
-    return 1.0 if _file_exists(os.path.join(BASE, "push-live-status.py")) else 0.0
+    return 1.0 if _file_exists(os.path.join(BASE, "scripts", "push-live-status.py")) else 0.0
 
 def check_github_pages_status():
     """Check that GH Pages is serving."""
@@ -2497,8 +2504,6 @@ CHECK_MAP = {
     "loop_freshness": check_loop_freshness,
     "loop_increment_rate": check_loop_increment_rate,
     "wake_state_freshness": check_wake_state_freshness,
-    "context_preloader": check_context_preloader,
-    "special_notes": check_special_notes,
     "loop_count_file": check_loop_count_file,
     "startup_script": check_startup_script,
     "wakeup_prompt": check_wakeup_prompt,
@@ -2689,8 +2694,8 @@ CHECK_MAP = {
 CATEGORIES = {
     "Core Vitals": ["heartbeat", "heartbeat_regularity", "email_imap", "email_smtp",
                     "email_unread_backlog", "bridge_service", "loop_freshness",
-                    "loop_increment_rate", "wake_state_freshness", "context_preloader",
-                    "special_notes", "loop_count_file", "startup_script", "wakeup_prompt",
+                    "loop_increment_rate", "wake_state_freshness",
+                    "loop_count_file", "startup_script", "wakeup_prompt",
                     "claude_running"],
     "Agent Health": ["agents_active", "agent_atlas", "agent_soma", "agent_nova",
                      "agent_eos", "agent_tempo", "agent_meridian", "relay_diversity",
@@ -2754,12 +2759,13 @@ CATEGORIES = {
 def compute_fitness():
     """Run all checks and compute weighted fitness score (0-10000).
 
-    Recalibrated Loop 2081 per Joel:
-      - Operational uptime is TABLE STAKES, scaled to 50% (max 5000)
-      - Growth & Ambition is the other 50% (max 5000)
-      - Calm running state should score ~5000 (50%)
-      - Best days with progress: 7000-8000
-      - Euphoria (publishing + revenue + community): 8000-9000
+    Recalibrated Loop 5957 per system audit (Joel: "log this"):
+      - Operational health is 75% of score (max 7500)
+      - Growth & Ambition is 25% (max 2500)
+      - Calm running state should score ~6000-7000 (75% ops health)
+      - Best days with progress: 7500-8500
+      - Euphoria (publishing + revenue + community): 8500-9500
+      - Previous 50/50 split masked 17-19 failing ops checks
     """
     metrics = {}
     for key, func in CHECK_MAP.items():

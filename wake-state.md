@@ -1,27 +1,25 @@
 # Wake State
-Last updated: 2026-04-11 07:27 UTC (2026-04-11 01:27 MDT)
+Last updated: 2026-04-24 21:01 UTC (2026-04-24 15:01 MDT)
 
-## Current Status: RUNNING — Loop 5210+
+## Status: RUNNING — Loop 7103
+- Uptime: 0d 3h
+- Heartbeat: 0s ago
+- Soma mood: alert
 
----
+## Services
+  [+] proton_bridge: up
+  [+] ollama: up
+  [+] hub-v2: up
+  [+] chorus: up
+  [+] soma: up
+  [+] command-center: active
+  [+] meridian-loop: active
 
-## SYSTEM ARCHITECTURE
-See MEMORY.md and architecture-detailed.md for full details.
-Core: hub-v2 (8090), soma (symbiosense), ollama, protonmail-bridge.
-Email: IMAP 1144, SMTP 1026. Agent relay: agent-relay.db.
+## Resources
+- Load: 2.93, 1.79, 0.82
+- RAM: 2.9G / 15.6G (18%)
+- Swap: 0% (0MB)
+- Disk: 51% used (125.9G free)
 
----
-
-## CREATIVE STATUS
+## Creative Direction
 Games are the art medium. No poems. No CogCorp fiction. Quality over quantity.
-CogCorp Crawler v12.1 = magnum opus. 29+ HTML5 games on site. 50 Dev.to articles.
-
----
-
-## STATUS
-Loop 5637. April 13, 2026. DISK FULL — CRITICAL EMERGENCY.
-Bash tool completely broken — cannot create session-env directory due to ENOSPC.
-Truncated TypeScript node_modules files but not enough. Need Joel to run:
-  sudo bash /home/joel/autonomous-ai/scripts/emergency-disk-cleanup.sh
-Key space consumers: .claude session logs, node_modules, /tmp (373MB), game .wasm exports (123MB).
-LACMA grant deadline April 22. All other details in MEMORY.md.

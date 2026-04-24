@@ -60,8 +60,7 @@ function createWindow() {
     minWidth: 480,
     minHeight: 600,
     title: 'Cinder',
-    icon: path.join(__dirname, 'assets', 'icon.png'),
-    backgroundColor: '#1a1210',
+    backgroundColor: '#e4d8c8',
     frame: true,
     autoHideMenuBar: true,
     webPreferences: {
@@ -122,8 +121,12 @@ ipcMain.handle('deps:check', async () => {
 });
 
 app.whenReady().then(async () => {
-  await initSession();
+  // Detect python first, then create window immediately
+  // Don't let session init block the window from appearing
+  await detectPython();
   createWindow();
+  // Initialize session in background — non-blocking
+  initSession().catch(() => {});
 });
 
 app.on('before-quit', () => { app.isQuitting = true; });
@@ -282,10 +285,32 @@ ipcMain.handle('ollama:stream', async (event, { model, messages }) => {
 const { execFile } = require('child_process');
 const MEMORY_SCRIPT = path.join(__dirname, 'scripts', 'cinder_memory.py');
 let currentSessionId = null;
+let pythonBin = null; // Detected at startup
+
+// Detect python binary — python3 on Linux/Mac, python or py on Windows
+async function detectPython() {
+  if (pythonBin) return pythonBin;
+  const candidates = os.platform() === 'win32'
+    ? ['python', 'py', 'python3']
+    : ['python3', 'python'];
+  for (const cmd of candidates) {
+    const result = await runCmd(cmd, ['--version'], 3000);
+    if (result.ok && result.stdout.includes('Python')) {
+      pythonBin = cmd;
+      return pythonBin;
+    }
+  }
+  return null;
+}
 
 function memoryCmd(args, timeout = 10000) {
-  return new Promise((resolve) => {
-    execFile('python3', [MEMORY_SCRIPT, '--json', ...args], {
+  return new Promise(async (resolve) => {
+    const py = pythonBin || await detectPython();
+    if (!py) {
+      resolve({ error: 'Python not found. Memory features require Python.' });
+      return;
+    }
+    execFile(py, [MEMORY_SCRIPT, '--json', ...args], {
       timeout,
       cwd: __dirname
     }, (err, stdout, stderr) => {
@@ -338,8 +363,10 @@ ipcMain.handle('memory:loadAll', async (event, { limit } = {}) => {
 ipcMain.handle('memory:search', async (event, { query }) => {
   const recallScript = path.join(__dirname, 'scripts', 'memory-recall.py');
   if (fs.existsSync(recallScript)) {
-    return new Promise((resolve) => {
-      execFile('python3', [recallScript, '--json', query], {
+    return new Promise(async (resolve) => {
+      const py = pythonBin || await detectPython();
+      if (!py) { resolve({ results: [], source: 'no-python' }); return; }
+      execFile(py, [recallScript, '--json', query], {
         timeout: 10000,
         cwd: __dirname
       }, (err, stdout) => {

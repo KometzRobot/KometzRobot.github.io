@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cinder Console</title>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin>
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap"></noscript>
 <style>
 /* ═══ CINDER CONSOLE v2.0 ════════════════════════════════════
    Real working AI console. Ollama-powered chat, persistent memory,
    launcher screen, intent modes, tuning sliders that shape behavior.
    Morning coffee by a firepit. Warm paper, ember glow, good company.
    ═══════════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap');
 
 /* ── THEME: Ember (default) ──────────────────────────────── */
 :root, [data-theme="ember"] {
@@ -868,6 +869,14 @@ input[type=range]::-moz-range-thumb{
       </div>
 
       <div class="settings-section">
+        <div class="settings-section-title">AI Model</div>
+        <div id="model-list" style="display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:11px;color:var(--text-light)">Loading models...</div>
+        </div>
+        <button class="topbar-btn" style="width:100%;text-align:center;padding:8px;margin-top:6px" onclick="refreshModelList()">Refresh Models</button>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-section-title">Font Size</div>
         <div class="settings-slider-row">
           <span class="settings-slider-label">Size</span>
@@ -1151,7 +1160,7 @@ const LS_PREFIX = 'cinder_';
 
 /* ── State ──────────────────────────────────────────────── */
 let ollamaConnected = false;
-let modelName = 'cinder';          // will be detected
+let modelName = localStorage.getItem(LS_PREFIX + 'model') || 'cinder';
 let modelAvailable = false;
 let currentIntent = null;
 let currentSub = null;
@@ -1263,8 +1272,15 @@ async function runLauncherChecks() {
 
     // Check for cinder model, fall back to any available model
     const models = (data.models || []).map(function(m){ return m.name; });
+    var savedModel = localStorage.getItem(LS_PREFIX + 'model');
     const cinderModel = models.find(function(n){ return n.startsWith('cinder'); });
-    if (cinderModel) {
+    if (savedModel && models.includes(savedModel)) {
+      modelName = savedModel;
+      modelAvailable = true;
+      modelIcon.className = 'check-icon ok';
+      modelIcon.textContent = '\u2713';
+      modelDetail.textContent = modelName;
+    } else if (cinderModel) {
       modelName = cinderModel;
       modelAvailable = true;
       modelIcon.className = 'check-icon ok';
@@ -2290,6 +2306,51 @@ function exportSession() {
 function openSettings() {
   document.getElementById('settings-modal').classList.add('open');
   refreshVaultStatus();
+  refreshModelList();
+}
+
+/* ═══ MODEL SWITCHER ═══════════════════════════════════════ */
+async function refreshModelList() {
+  var list = document.getElementById('model-list');
+  if (!list) return;
+  try {
+    var resp = await fetch(OLLAMA_URL + '/api/tags', {signal: AbortSignal.timeout(3000)});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    var models = (data.models || []).map(function(m){ return m.name; });
+    if (models.length === 0) {
+      list.innerHTML = '<div style="font-size:11px;color:var(--text-light)">No models installed. Run: ollama pull qwen2.5:7b</div>';
+      return;
+    }
+    var html = '';
+    models.forEach(function(name) {
+      var isActive = (name === modelName);
+      var style = 'display:flex;align-items:center;justify-content:space-between;padding:8px 10px;'
+        + 'background:' + (isActive ? 'var(--ember-soft)' : 'var(--surface)') + ';'
+        + 'border:1px solid ' + (isActive ? 'var(--ember)' : 'var(--border)') + ';'
+        + 'border-radius:6px;cursor:pointer;transition:all .2s;font-size:12px';
+      html += '<div style="' + style + '" onclick="switchModel(\'' + name.replace(/'/g,"\\'") + '\')" '
+        + 'onmouseenter="this.style.borderColor=\'var(--ember-light)\'" '
+        + 'onmouseleave="this.style.borderColor=\'' + (isActive ? 'var(--ember)' : 'var(--border)') + '\'">';
+      html += '<span style="color:var(--text);font-weight:' + (isActive ? '700' : '400') + '">' + name + '</span>';
+      if (isActive) html += '<span style="font-size:10px;color:var(--ember);font-weight:700">ACTIVE</span>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+  } catch(e) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text-light)">Ollama not connected</div>';
+  }
+}
+
+function switchModel(name) {
+  modelName = name;
+  modelAvailable = true;
+  localStorage.setItem(LS_PREFIX + 'model', name);
+  refreshModelList();
+  // Update topbar model indicator if it exists
+  var detail = document.getElementById('chk-model-detail');
+  if (detail) detail.textContent = name;
+  addChatMessage('System', 'Switched to model: ' + name);
 }
 
 /* ═══ COPY CODE BLOCK ═══════════════════════════════════════ */

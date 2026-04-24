@@ -40,8 +40,7 @@ MOOD_HISTORY_FILE = os.path.join(BASE, ".soma-mood-history.json")
 BASELINES_FILE = os.path.join(BASE, ".soma-baselines.json")
 BODY_STATE_FILE = os.path.join(BASE, ".body-state.json")
 REFLEX_FILE = os.path.join(BASE, ".body-reflexes.json")
-KINECT_STATE_FILE = os.path.join(BASE, ".kinect-state.json")
-VISION_INTERVAL = 300  # seconds between Kinect captures (5 minutes)
+# Vision hardware: none connected (Kinect removed Loop 5957)
 INTERVAL = 30  # seconds between checks
 MOOD_HISTORY_MAX = 144  # 12 hours at 5-min intervals
 
@@ -266,58 +265,9 @@ def get_neural():
     return result
 
 
-_last_vision_time = 0
-_last_vision_data = None
-
 def get_vision():
-    """Vision sense — Kinect V1 depth + RGB capture. Runs every VISION_INTERVAL seconds."""
-    global _last_vision_time, _last_vision_data
-    now = time.time()
-    if now - _last_vision_time < VISION_INTERVAL and _last_vision_data is not None:
-        return _last_vision_data  # Return cached data between captures
-    try:
-        import freenect
-        import numpy as np
-    except ImportError:
-        return {"available": False, "reason": "freenect not installed"}
-    try:
-        # Capture depth frame
-        depth, _ = freenect.sync_get_depth()
-        if depth is None:
-            return {"available": False, "reason": "no depth data"}
-        # Capture RGB frame
-        rgb, _ = freenect.sync_get_video()
-        # Depth analysis
-        valid_mask = (depth > 0) & (depth < 2047)
-        valid_pct = float(np.sum(valid_mask)) / depth.size * 100
-        valid_depths = depth[valid_mask]
-        depth_min = int(np.min(valid_depths)) if len(valid_depths) > 0 else 0
-        depth_max = int(np.max(valid_depths)) if len(valid_depths) > 0 else 0
-        depth_mean = float(np.mean(valid_depths)) if len(valid_depths) > 0 else 0
-        # RGB analysis
-        brightness = float(np.mean(rgb)) if rgb is not None else 0
-        vision_data = {
-            "available": True,
-            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "rgb_shape": list(rgb.shape) if rgb is not None else None,
-            "depth_shape": list(depth.shape),
-            "mean_brightness": round(brightness, 2),
-            "valid_depth_pct": round(valid_pct, 2),
-            "depth_range": [depth_min, depth_max],
-            "depth_mean": round(depth_mean, 1),
-        }
-        # Save to kinect state file
-        with open(KINECT_STATE_FILE, 'w') as f:
-            json.dump(vision_data, f, indent=2)
-        # Stop Kinect to release USB
-        freenect.sync_stop()
-        _last_vision_time = now
-        _last_vision_data = vision_data
-        return vision_data
-    except Exception as e:
-        _last_vision_data = {"available": False, "reason": str(e)[:100]}
-        _last_vision_time = now
-        return _last_vision_data
+    """Vision sense — no hardware connected. Kinect V1 code removed."""
+    return {"available": False, "reason": "no hardware"}
 
 
 def get_organs():
@@ -1551,7 +1501,7 @@ def sense_cycle():
     # Body system readings
     thermal = get_thermal()
     neural = get_neural()
-    vision = get_vision()
+    vision = {"available": False, "reason": "no hardware"}  # Kinect removed — no hardware
 
     now = time.time()
     state = {

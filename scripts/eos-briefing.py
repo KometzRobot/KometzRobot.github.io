@@ -482,12 +482,79 @@ def build_briefing():
     return '\n'.join(sections)
 
 
+def format_html_briefing(plain_body):
+    """Convert plain text briefing to clean HTML for phone reading."""
+    lines = plain_body.split('\n')
+    html_parts = []
+    html_parts.append("""<html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#111;color:#eee;padding:16px;margin:0;font-size:15px;line-height:1.5;">""")
+
+    section_colors = {
+        '!! ALERTS': '#ff4444',
+        'DEADLINES': '#ff9800',
+        'MERIDIAN': '#4ecdc4',
+        'SYSTEM': '#888',
+        'OVERNIGHT': '#64b5f6',
+        'COMMS': '#ab47bc',
+        'CREATIVE': '#ffb74d',
+        'EOS': '#81c784',
+        'OUTSTANDING': '#ef5350',
+    }
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            html_parts.append('<div style="height:8px;"></div>')
+            continue
+
+        # Header line (greeting)
+        if stripped.startswith('Good morning'):
+            html_parts.append(f'<div style="font-size:18px;font-weight:700;margin-bottom:4px;">{stripped}</div>')
+            continue
+
+        # Date line
+        if any(day in stripped for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
+            html_parts.append(f'<div style="color:#888;font-size:13px;margin-bottom:12px;">{stripped}</div>')
+            continue
+
+        # Separator
+        if stripped.startswith('─'):
+            html_parts.append('<hr style="border:none;border-top:1px solid #333;margin:12px 0;">')
+            continue
+
+        # Section headers
+        matched_section = False
+        for section, color in section_colors.items():
+            if stripped == section:
+                html_parts.append(f'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:{color};margin-top:16px;margin-bottom:6px;border-bottom:1px solid {color}33;padding-bottom:4px;">{stripped}</div>')
+                matched_section = True
+                break
+        if matched_section:
+            continue
+
+        # Alert items
+        if any(kw in stripped.upper() for kw in ['DOWN', 'CRITICAL', 'FAIL', 'OVERDUE', 'TODAY']):
+            html_parts.append(f'<div style="color:#ff6b6b;font-weight:600;padding:4px 8px;background:#ff6b6b11;border-radius:4px;margin:2px 0;">{stripped}</div>')
+            continue
+
+        # Signature
+        if stripped == '-- Eos':
+            html_parts.append(f'<div style="color:#666;font-size:12px;margin-top:12px;">{stripped}</div>')
+            continue
+
+        # Normal content
+        html_parts.append(f'<div style="color:#ccc;padding:1px 0;">{stripped}</div>')
+
+    html_parts.append('</body></html>')
+    return '\n'.join(html_parts)
+
+
 def send_briefing():
     body = build_briefing()
     now = datetime.now()
     subject = f"Morning Briefing — {now.strftime('%b %d')} — Eos"
 
-    msg = MIMEText(body)
+    html_body = format_html_briefing(body)
+    msg = MIMEText(html_body, 'html')
     msg['Subject'] = subject
     msg['From'] = CRED_USER
     msg['To'] = JOEL

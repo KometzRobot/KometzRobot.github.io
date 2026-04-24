@@ -14,9 +14,9 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1100,
+    width: 1280,
     height: 800,
-    minWidth: 900,
+    minWidth: 1000,
     minHeight: 600,
     title: 'Marketplace Lister',
     webPreferences: {
@@ -279,7 +279,168 @@ ipcMain.handle('ai-vision-analyze', async (event, imagePath) => {
   });
 });
 
-// Generate listing text from item details (template-based fallback)
+// Smart Scan: vision analyze + auto-fill + generate listing in one shot
+ipcMain.handle('smart-scan', async (event, imagePaths, platform) => {
+  const http = require('http');
+
+  // Step 1: Vision analysis on the first photo
+  let imageBase64;
+  try {
+    const imageBuffer = fs.readFileSync(imagePaths[0]);
+    imageBase64 = imageBuffer.toString('base64');
+  } catch (err) {
+    return { success: false, error: `Cannot read image: ${err.message}`, step: 'vision' };
+  }
+
+  const visionPrompt = `You are helping create a marketplace listing for this item. Look at the photo carefully and respond with ONLY the following format, no extra text:
+
+ITEM_NAME: [what it is, include brand if visible]
+CATEGORY: [one of: electronics, furniture, clothing, home, sports, toys, auto, tools, collectibles, music, gaming, books, baby, appliances, other]
+CONDITION: [one of: new, like-new, good, fair, for-parts]
+SUGGESTED_PRICE: [estimated resale value in CAD, just the number]
+FEATURES: [comma-separated list of 3-5 key selling points you can see]
+DESCRIPTION: [one sentence about the item — what it is, what makes it worth buying]`;
+
+  const visionBody = JSON.stringify({
+    model: 'moondream:1.8b',
+    messages: [{
+      role: 'user',
+      content: visionPrompt,
+      images: [imageBase64]
+    }],
+    stream: false,
+    options: { temperature: 0.3, num_predict: 400 }
+  });
+
+  const visionResult = await new Promise((resolve) => {
+    const req = http.request({
+      hostname: 'localhost', port: 11434, path: '/api/chat',
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      timeout: 120000
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve({ success: true, text: (parsed.message?.content || '').trim() });
+        } catch {
+          resolve({ success: false, error: 'Failed to parse vision response' });
+        }
+      });
+    });
+    req.on('error', () => resolve({ success: false, error: 'Ollama not reachable' }));
+    req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Vision analysis timed out' }); });
+    req.write(visionBody);
+    req.end();
+  });
+
+  if (!visionResult.success) {
+    return { success: false, error: visionResult.error, step: 'vision' };
+  }
+
+  // Parse structured vision output
+  const visionText = visionResult.text;
+  const parseField = (label) => {
+    const match = visionText.match(new RegExp(`${label}:\\s*(.+?)(?:\\n|$)`, 'i'));
+    return match ? match[1].trim() : '';
+  };
+
+  const scannedData = {
+    itemName: parseField('ITEM_NAME') || 'Unknown Item',
+    category: parseField('CATEGORY') || 'other',
+    condition: parseField('CONDITION') || 'good',
+    suggestedPrice: parseField('SUGGESTED_PRICE') || '',
+    features: (parseField('FEATURES') || '').split(',').map(f => f.trim()).filter(Boolean),
+    visionDescription: parseField('DESCRIPTION') || visionText
+  };
+
+  // Step 2: Generate a sales-optimized listing using text model
+  const platformGuides = {
+    facebook: 'Facebook Marketplace listing. Casual, honest, no emojis, no hashtags. Calgary pickup.',
+    kijiji: 'Kijiji listing. Clear, descriptive. Canadian spelling. Calgary, AB.',
+    ebay: 'eBay listing. Professional, detailed. Mention shipping and condition.',
+    craigslist: 'Craigslist listing. Brief, direct, key facts only. Calgary.'
+  };
+
+  const guide = platformGuides[platform] || platformGuides.facebook;
+
+  const genPrompt = `Write a ${guide}
+
+The item has been identified from a photo:
+Item: ${scannedData.itemName}
+Category: ${scannedData.category}
+Condition: ${scannedData.condition}
+Price: $${scannedData.suggestedPrice || 'TBD'}
+Key features: ${scannedData.features.join(', ') || 'See photo'}
+Photo description: ${scannedData.visionDescription}
+
+Write a listing that will SELL this item. Make the buyer want it. Be honest but highlight what makes it worth the price.
+
+Format your response EXACTLY like this:
+TITLE: [catchy title under 80 chars]
+DESCRIPTION:
+[compelling description, 50-150 words, emphasizes value and condition]
+PRICE: [price as a number only]`;
+
+  const genBody = JSON.stringify({
+    model: 'qwen2.5:14b',
+    prompt: genPrompt,
+    stream: false,
+    options: { temperature: 0.7, num_predict: 500 }
+  });
+
+  const genResult = await new Promise((resolve) => {
+    const req = http.request({
+      hostname: 'localhost', port: 11434, path: '/api/generate',
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      timeout: 60000
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve({ success: true, text: (parsed.response || '').trim() });
+        } catch {
+          resolve({ success: false, error: 'Failed to parse generation response' });
+        }
+      });
+    });
+    req.on('error', () => resolve({ success: false, error: 'Ollama not reachable for generation' }));
+    req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Listing generation timed out' }); });
+    req.write(genBody);
+    req.end();
+  });
+
+  if (!genResult.success) {
+    // Return scanned data even if generation failed — user can still use the auto-filled fields
+    return {
+      success: true,
+      scanned: scannedData,
+      generated: null,
+      warning: genResult.error
+    };
+  }
+
+  // Parse generated listing
+  const genText = genResult.text;
+  const titleMatch = genText.match(/TITLE:\s*(.+)/i);
+  const descMatch = genText.match(/DESCRIPTION:\s*([\s\S]+?)(?:PRICE:|$)/i);
+  const priceMatch = genText.match(/PRICE:\s*\$?(\d+)/i);
+
+  return {
+    success: true,
+    scanned: scannedData,
+    generated: {
+      title: titleMatch ? titleMatch[1].trim() : scannedData.itemName,
+      body: descMatch ? descMatch[1].trim() : genText,
+      price: priceMatch ? priceMatch[1] : scannedData.suggestedPrice
+    }
+  };
+});
+
+// Generate listing text from item details (smart template — no AI needed)
 ipcMain.handle('generate-listing', async (event, details) => {
   const { itemName, category, condition, price, description, features, platform } = details;
 
@@ -287,41 +448,81 @@ ipcMain.handle('generate-listing', async (event, details) => {
     'new': 'Brand New',
     'like-new': 'Like New',
     'good': 'Good Condition',
-    'fair': 'Fair Condition',
-    'for-parts': 'For Parts/Not Working'
+    'fair': 'Fair — Priced Accordingly',
+    'for-parts': 'For Parts / Repair'
   };
 
   const conditionText = conditionMap[condition] || condition;
 
+  // Build a sales-optimized title based on platform
   let title = itemName;
-  if (conditionText && condition !== 'new') {
-    title += ` — ${conditionText}`;
+  if (platform === 'facebook' || platform === 'kijiji') {
+    // Short, punchy titles work best on FB/Kijiji
+    if (condition === 'new') title += ' — Brand New';
+    else if (condition === 'like-new') title += ' — Like New';
+    if (price && parseFloat(price) > 0) title += ` — $${price}`;
+  } else if (platform === 'ebay') {
+    // eBay titles should be descriptive for search
+    if (condition === 'new') title += ' NEW';
+    if (category) {
+      const catLabels = {
+        electronics: '', furniture: '', clothing: '', home: '',
+        sports: 'Sports', tools: 'Tools', auto: 'Auto',
+        gaming: 'Gaming', collectibles: 'Collectible', music: 'Musical'
+      };
+      const label = catLabels[category];
+      if (label) title = `${label} ${title}`;
+    }
   }
 
+  // Build body with sales psychology
   let body = '';
+
+  // Opening hook — what it is and why it's worth buying
   if (description) {
     body += description + '\n\n';
+  } else {
+    // Auto-generate an opening if none provided
+    const openers = {
+      'new': `${itemName} — brand new, never used.`,
+      'like-new': `${itemName} in excellent shape — barely used, looks and works like new.`,
+      'good': `${itemName} in solid working condition. Well taken care of.`,
+      'fair': `${itemName} — shows some wear but still fully functional. Priced to sell.`,
+      'for-parts': `${itemName} — selling as-is for parts or repair. May be fixable.`
+    };
+    body += (openers[condition] || `${itemName} for sale.`) + '\n\n';
   }
 
+  // Features section — formatted for easy scanning
   if (features && features.length > 0) {
-    body += 'Details:\n';
+    body += 'What You Get:\n';
     for (const f of features) {
-      body += `• ${f}\n`;
+      body += `  - ${f}\n`;
     }
     body += '\n';
   }
 
+  // Condition details
   body += `Condition: ${conditionText}\n`;
 
-  if (price) {
-    body += `Price: $${price}\n`;
+  // Price justification hint
+  if (price && parseFloat(price) > 0) {
+    body += `Asking: $${price}`;
+    if (condition === 'new' || condition === 'like-new') {
+      body += ' (well below retail)\n';
+    } else if (condition === 'fair' || condition === 'for-parts') {
+      body += ' (priced to move)\n';
+    } else {
+      body += ' (firm / OBO)\n';
+    }
   }
 
+  // Platform-specific closing — each reads naturally for that marketplace
   const closings = {
-    facebook: '\nPickup in Calgary. Cash or e-transfer.\nMessage me if interested — serious buyers only.\n',
-    kijiji: '\nPickup in Calgary, AB. Cash or e-transfer accepted.\nPlease include your offer in your message.\n',
-    ebay: '\nShipping available — message for rates.\nReturns accepted within 14 days if item is not as described.\n',
-    craigslist: '\nCalgary pickup only. Cash.\n'
+    facebook: `\nPickup in Calgary. Cash or e-transfer.\nMessage if interested — I respond quickly.\nCheck my other listings too!`,
+    kijiji: `\nPickup in Calgary, AB. Cash or e-transfer accepted.\nSerious inquiries please — include your offer when messaging.\nPriced to sell. Don't miss out.`,
+    ebay: `\nShipping available — message for a quote to your location.\nReturns accepted within 14 days if not as described.\nPositive feedback appreciated.`,
+    craigslist: `\nCalgary pickup only. Cash.\nText is preferred. Available evenings and weekends.`
   };
 
   body += closings[platform] || closings.facebook;

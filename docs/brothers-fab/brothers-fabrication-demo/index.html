@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brothers Fabrication | Calgary's Food Truck & Fabrication Specialists</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ========== NAVIGATION ========== -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="#hero" class="nav-logo">
+      <img src="assets/img/nav-logo.png" alt="Brothers Fabrication" style="height:42px; width:42px; border-radius:50%; object-fit:cover;">
+      <img src="assets/img/brothers-fabrication-logo.png" alt="Brothers Fabrication" style="height:28px; width:auto;">
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#about">About</a>
+      <a href="#quote">Quote</a>
+      <a href="#configurator">Build Planner</a>
+      <a href="#forsale">For Sale</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#team">Team</a>
+      <a href="#news">News</a>
+      <a href="#reviews">Reviews</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div class="nav-right">
+      <a href="tel:4038140543" class="nav-phone"><span class="phone-icon">&#9742;</span> 403-814-0543</a>
+      <a href="#" class="nav-social" style="font-size:0.85rem;font-weight:500;color:#444;">FB</a>
+      <a href="#" class="nav-social" style="font-size:0.85rem;font-weight:500;color:#444;">IG</a>
+      <a href="#quote" class="btn btn-primary btn-sm">Message Us!</a>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="hero">
+  <div class="hero-bg"><img src="assets/img/calgary-fabricators.jpg" alt="Brothers Fabrication shop"></div>
+  <div class="hero-content">
+    <h1>Calgary's food truck<br>&amp; fabrication<br>specialists.</h1>
+    <p class="hero-sub">Top quality fabricators of anything and everything metal. Our specialty is food trucks, but we have experience with all types of fabrication, including commercial/home kitchens, bars, seacans, signs, and much more.</p>
+    <div class="hero-ctas">
+      <a href="#quote" class="btn btn-primary btn-lg">Get a quote</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ABOUT ========== -->
+<section class="section" id="about">
+  <div class="container">
+    <div class="section-header">
+      <p style="font-size:1.1rem; max-width:800px; margin:0 auto;">We are top quality fabricators of anything and everything metal. Our specialty is food trucks, but we have experience with all types of fabrication, including commercial/home kitchens, bars, seacans, signs, and much more. Our team consists of certified electricians, plumbers, gasfitters, fabricators, and welders who are ready for any service, renovation, or new construction needs!</p>
+      <p style="margin-top:1.5rem; font-weight:600; font-size:1.1rem;">Let us know what you're dreaming about and we will make it a reality. No job too big or too small!</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== QUOTE FORM ========== -->
+<section class="section" id="quote">
+  <div class="container">
+    <div class="section-header">
+      <h2>Tell us about your project!</h2>
+    </div>
+    <div style="max-width:700px; margin:0 auto;">
+      <div class="quote-form-wrap">
+        <form class="quote-form" id="quoteForm" onsubmit="submitQuote(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" required class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" required class="form-input">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" required class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" class="form-input">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Project Type *</label>
+            <select required class="form-input">
+              <option value="">Select...</option>
+              <option>Mobile business (food/beverage/retail/etc)</option>
+              <option>Metal fabrication</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Project Scope</label>
+            <select class="form-input">
+              <option value="">Select...</option>
+              <option>Basic &mdash; Starting at $79K (small units, basic appliances, basic generator, decal branding)</option>
+              <option>Standard &mdash; Starting at $119K (small-med units, Honda generator, vinyl wrap, refrigeration)</option>
+              <option>Premium &mdash; Starting at $139K (med-XL units, Cummins Onan, vinyl wrap, commercial refrigeration)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Format</label>
+              <select class="form-input">
+                <option value="">Select...</option>
+                <option>Truck</option>
+                <option>Trailer</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Size</label>
+              <select class="form-input">
+                <option value="">Select...</option>
+                <option>Small (12 ft or less)</option>
+                <option>Medium (12-20 ft)</option>
+                <option>Large (20-30 ft)</option>
+                <option>XL (30+ ft)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>What will you be serving/selling?</label>
+            <input type="text" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Required appliances/amenities</label>
+            <textarea class="form-input" rows="3" placeholder="Grill, fryer, fridge, sink, generator, etc..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Upload photos &amp; files (optional)</label>
+            <div class="file-upload">
+              <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+              <p>Drop files here or click to upload<br><small>JPG, PNG, PDF, DOC &bull; Max 10MB each, up to 5 files</small></p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Additional comments, notes, or questions</label>
+            <textarea class="form-input" rows="4"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full">Submit Quote Request &rarr;</button>
+        </form>
+        <!-- Auto-response preview (NEW) -->
+        <div class="auto-response" id="autoResponse" style="display:none;">
+          <div class="auto-response-header">
+            <span class="auto-icon" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2rem;color:#4ecdc4;">Sent</span>
+            <h3>Quote Request Received!</h3>
+          </div>
+          <p>Here's what happens now:</p>
+          <div class="auto-steps">
+            <div class="auto-step">
+              <span class="auto-step-num">1</span>
+              <div>
+                <strong>You'll get a confirmation email</strong>
+                <p>Should hit your inbox in about a minute with a copy of what you sent.</p>
+              </div>
+            </div>
+            <div class="auto-step">
+              <span class="auto-step-num">2</span>
+              <div>
+                <strong>Chris &amp; Chris take a look</strong>
+                <p>They'll review your details and think through the approach. Usually within a day.</p>
+              </div>
+            </div>
+            <div class="auto-step">
+              <span class="auto-step-num">3</span>
+              <div>
+                <strong>We'll give you a call</strong>
+                <p>To talk through the project, answer questions, and figure out next steps together.</p>
+              </div>
+            </div>
+          </div>
+          <div class="auto-portfolio">
+            <p><strong>In the meantime:</strong></p>
+            <div class="auto-links">
+              <a href="#gallery">See our work</a>
+              <a href="#configurator">Play with the planner</a>
+              <a href="#reviews">Read some reviews</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== BUILD PLANNER (NEW) =========== -->
+<section class="section configurator-section" id="configurator">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Build Planner</span>
+      <h2>Plan your build.</h2>
+      <p>Pick a truck type, pick your gear, see where the price lands. No strings attached.</p>
+    </div>
+    <div class="configurator">
+      <div class="config-sidebar">
+        <div class="config-steps">
+          <div class="config-step active" data-step="1">
+            <span class="step-num">1</span> Vehicle Type
+          </div>
+          <div class="config-step" data-step="2">
+            <span class="step-num">2</span> Size & Layout
+          </div>
+          <div class="config-step" data-step="3">
+            <span class="step-num">3</span> Equipment
+          </div>
+          <div class="config-step" data-step="4">
+            <span class="step-num">4</span> Exterior
+          </div>
+          <div class="config-step" data-step="5">
+            <span class="step-num">5</span> Summary
+          </div>
+        </div>
+        <div class="config-estimate">
+          <div class="estimate-label">Estimated Total</div>
+          <div class="estimate-amount" id="estimateAmount">$79,000</div>
+          <div class="estimate-note">CAD + tax &bull; Starting estimate</div>
+        </div>
+      </div>
+      <div class="config-main">
+        <!-- Step 1: Vehicle Type -->
+        <div class="config-panel active" id="configStep1">
+          <h3>What type of vehicle?</h3>
+          <div class="config-options">
+            <label class="config-option selected">
+              <input type="radio" name="vehicle" value="truck" checked>
+              <div class="option-card">
+                <div class="option-icon" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:#0a1628;">FT</div>
+                <div class="option-name">Food Truck</div>
+                <div class="option-desc">Full-size truck chassis, maximum kitchen space</div>
+              </div>
+            </label>
+            <label class="config-option">
+              <input type="radio" name="vehicle" value="trailer">
+              <div class="option-card">
+                <div class="option-icon" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:#0a1628;">TR</div>
+                <div class="option-name">Trailer</div>
+                <div class="option-desc">Towable unit, flexible positioning</div>
+              </div>
+            </label>
+            <label class="config-option">
+              <input type="radio" name="vehicle" value="seacan">
+              <div class="option-card">
+                <div class="option-icon" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:#0a1628;">SC</div>
+                <div class="option-name">Seacan</div>
+                <div class="option-desc">Shipping container conversion, permanent or semi-permanent</div>
+              </div>
+            </label>
+            <label class="config-option">
+              <input type="radio" name="vehicle" value="compact">
+              <div class="option-card">
+                <div class="option-icon" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:#0a1628;">CC</div>
+                <div class="option-name">Compact / Cart</div>
+                <div class="option-desc">Piaggio Ape, cart, or small mobile unit</div>
+              </div>
+            </label>
+          </div>
+          <div class="config-nav">
+            <div></div>
+            <button class="btn btn-primary" onclick="nextStep(2)">Next: Size & Layout &rarr;</button>
+          </div>
+        </div>
+        <!-- Step 2: Size -->
+        <div class="config-panel" id="configStep2">
+          <h3>What size?</h3>
+          <div class="config-options">
+            <label class="config-option selected">
+              <input type="radio" name="size" value="small" checked>
+              <div class="option-card">
+                <div class="option-name">Small (10&ndash;14 ft)</div>
+                <div class="option-desc">Compact menu, 1&ndash;2 operators</div>
+                <div class="option-price">+$0</div>
+              </div>
+            </label>
+            <label class="config-option">
+              <input type="radio" name="size" value="medium">
+              <div class="option-card">
+                <div class="option-name">Medium (16&ndash;20 ft)</div>
+                <div class="option-desc">Full menu capability, 2&ndash;3 operators</div>
+                <div class="option-price">+$15,000</div>
+              </div>
+            </label>
+            <label class="config-option">
+              <input type="radio" name="size" value="large">
+              <div class="option-card">
+                <div class="option-name">Large (22&ndash;26 ft)</div>
+                <div class="option-desc">High-volume service, 3&ndash;4 operators</div>
+                <div class="option-price">+$30,000</div>
+              </div>
+            </label>
+          </div>
+          <div class="config-nav">
+            <button class="btn btn-outline" onclick="nextStep(1)">&larr; Back</button>
+            <button class="btn btn-primary" onclick="nextStep(3)">Next: Equipment &rarr;</button>
+          </div>
+        </div>
+        <!-- Step 3: Equipment -->
+        <div class="config-panel" id="configStep3">
+          <h3>Select your equipment</h3>
+          <div class="config-checkboxes">
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="grill" data-price="3500"><div class="check-card"><span class="check-name">Commercial Flat Grill</span><span class="check-price">+$3,500</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="fryer" data-price="2800"><div class="check-card"><span class="check-name">Deep Fryer (Double)</span><span class="check-price">+$2,800</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="hood" data-price="4500"><div class="check-card"><span class="check-name">Exhaust Hood & Fire Suppression</span><span class="check-price">+$4,500</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="fridge" data-price="3200"><div class="check-card"><span class="check-name">Commercial Refrigeration</span><span class="check-price">+$3,200</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="freezer" data-price="3800"><div class="check-card"><span class="check-name">Walk-in Freezer Unit</span><span class="check-price">+$3,800</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="sink" data-price="2200"><div class="check-card"><span class="check-name">3-Compartment Sink + Handwash</span><span class="check-price">+$2,200</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="generator" data-price="8500"><div class="check-card"><span class="check-name">Cummins Onan Generator</span><span class="check-price">+$8,500</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="honda" data-price="4500"><div class="check-card"><span class="check-name">Honda Generator</span><span class="check-price">+$4,500</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="water" data-price="1800"><div class="check-card"><span class="check-name">Fresh & Grey Water Tanks</span><span class="check-price">+$1,800</span></div></label>
+            <label class="config-checkbox"><input type="checkbox" name="equip" value="pos" data-price="1200"><div class="check-card"><span class="check-name">POS System + Electrical</span><span class="check-price">+$1,200</span></div></label>
+          </div>
+          <div class="config-nav">
+            <button class="btn btn-outline" onclick="nextStep(2)">&larr; Back</button>
+            <button class="btn btn-primary" onclick="nextStep(4)">Next: Exterior &rarr;</button>
+          </div>
+        </div>
+        <!-- Step 4: Exterior -->
+        <div class="config-panel" id="configStep4">
+          <h3>Exterior finish</h3>
+          <div class="config-options">
+            <label class="config-option selected">
+              <input type="radio" name="exterior" value="basic" checked>
+              <div class="option-card">
+                <div class="option-name">Standard Paint</div>
+                <div class="option-desc">Single color, professional finish</div>
+                <div class="option-price">Included</div>
+              </div>
+            </label>
+            <label class="config-option">
+              <input type="radio" name="exterior" value="wrap">
+              <div class="option-card">
+                <div class="option-name">Full Vinyl Wrap</div>
+                <div class="option-desc">Custom designed, full coverage</div>
+                <div class="option-price">+$6,500</div>
+              </div>
+            </label>
+            <label class="config-option">
+              <input type="radio" name="exterior" value="premium">
+              <div class="option-card">
+                <div class="option-name">Premium Custom</div>
+                <div class="option-desc">Multi-color, graphics, illuminated signage</div>
+                <div class="option-price">+$12,000</div>
+              </div>
+            </label>
+          </div>
+          <div class="config-nav">
+            <button class="btn btn-outline" onclick="nextStep(3)">&larr; Back</button>
+            <button class="btn btn-primary" onclick="nextStep(5)">View Summary &rarr;</button>
+          </div>
+        </div>
+        <!-- Step 5: Summary -->
+        <div class="config-panel" id="configStep5">
+          <h3>Your Build Summary</h3>
+          <div class="summary-box">
+            <div id="summaryContent"></div>
+            <div class="summary-total">
+              <span>Estimated Total:</span>
+              <span id="summaryTotal">$79,000 CAD</span>
+            </div>
+            <p class="summary-note">Ballpark numbers &mdash; actual cost depends on what you need, what vehicle we source, and current material prices. We'll nail it down once we talk.</p>
+          </div>
+          <div class="summary-cta">
+            <div class="summary-form">
+              <h4>Like what you see? Send it over and we'll follow up.</h4>
+              <div class="form-row">
+                <input type="text" placeholder="Your Name" class="form-input">
+                <input type="email" placeholder="Email" class="form-input">
+              </div>
+              <div class="form-row">
+                <input type="tel" placeholder="Phone" class="form-input">
+                <input type="text" placeholder="What will you be serving?" class="form-input">
+              </div>
+              <button class="btn btn-primary btn-lg btn-full" onclick="submitConfig()">Send My Configuration &rarr;</button>
+            </div>
+          </div>
+          <div class="config-nav">
+            <button class="btn btn-outline" onclick="nextStep(4)">&larr; Back</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOR SALE ========== -->
+<section class="section forsale-section" id="forsale">
+  <div class="container">
+    <div class="section-header">
+      <h2>For sale.</h2>
+    </div>
+    <div class="forsale-grid">
+      <div class="forsale-card">
+        <div class="forsale-image" style="position:relative; border-radius:12px 12px 0 0; overflow:hidden;">
+          <img src="assets/img/truck-sale-1.jpg" alt="Premium food truck for sale" style="width:100%;height:280px;object-fit:cover;display:block;">
+          <div style="position:absolute; top:1rem; right:1rem; background:#e74c3c; color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:0.75rem; padding:0.3rem 0.8rem; border-radius:6px;">PRICE DROP</div>
+        </div>
+        <div style="padding:1.5rem; border:1px solid #eee; border-top:none; border-radius:0 0 12px 12px; background:#fff;">
+          <h4 style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; margin-bottom:0.5rem;">Brand new, premium food truck</h4>
+          <div style="display:flex; gap:0.5rem; align-items:baseline; margin-bottom:0.8rem;">
+            <span style="font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:800; color:#1a1a2e;">$105,000</span>
+            <span style="font-size:0.9rem; color:#999; text-decoration:line-through;">$125,000</span>
+            <span style="font-size:0.8rem; color:#1a1a2e; font-weight:600;">CAD</span>
+          </div>
+          <a href="#quote" class="btn btn-primary btn-sm" style="width:100%;">More Info</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== GALLERY ========== -->
+<section class="section gallery-section" id="gallery">
+  <div class="container">
+    <div class="section-header">
+      <h2>Our work.</h2>
+    </div>
+    <div class="gallery-grid">
+      <div class="gallery-item gi-large">
+        <img src="assets/img/gallery-1.jpg" alt="Brothers Fabrication work" style="width:100%;height:100%;object-fit:cover;border-radius:12px;min-height:220px;">
+      </div>
+      <div class="gallery-item">
+        <img src="assets/img/gallery-2.jpg" alt="Brothers Fabrication work" style="width:100%;height:100%;object-fit:cover;border-radius:12px;min-height:220px;">
+      </div>
+      <div class="gallery-item">
+        <img src="assets/img/gallery-3.jpg" alt="Brothers Fabrication work" style="width:100%;height:100%;object-fit:cover;border-radius:12px;min-height:220px;">
+      </div>
+      <div class="gallery-item">
+        <img src="assets/img/gallery-4.jpg" alt="Brothers Fabrication work" style="width:100%;height:100%;object-fit:cover;border-radius:12px;min-height:220px;">
+      </div>
+      <div class="gallery-item">
+        <img src="assets/img/gallery-5.jpg" alt="Brothers Fabrication work" style="width:100%;height:100%;object-fit:cover;border-radius:12px;min-height:220px;">
+      </div>
+      <div class="gallery-item gi-large">
+        <img src="assets/img/gallery-6.jpg" alt="Brothers Fabrication work" style="width:100%;height:100%;object-fit:cover;border-radius:12px;min-height:220px;">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PROJECT TRACKER (NEW) ========== -->
+<section class="section portal-section" id="portal">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Project Tracker</span>
+      <h2>Check in on your build anytime.</h2>
+      <p>Log in, see what stage you're at, check out photos from the shop. No need to call and ask.</p>
+    </div>
+    <div class="portal-demo">
+      <div class="portal-header">
+        <div class="portal-project">
+          <div class="portal-avatar">MP</div>
+          <div>
+            <h4>Mike's Pizza Truck</h4>
+            <span class="portal-status status-active">&#9679; In Progress</span>
+          </div>
+        </div>
+        <div class="portal-meta">
+          <div><strong>Build #</strong> BF-2026-047</div>
+          <div><strong>Started</strong> Feb 12, 2026</div>
+          <div><strong>Est. Delivery</strong> May 15, 2026</div>
+        </div>
+      </div>
+      <div class="portal-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 65%"></div>
+        </div>
+        <div class="progress-label">65% Complete</div>
+      </div>
+      <div class="portal-milestones">
+        <div class="milestone completed">
+          <div class="milestone-dot"></div>
+          <div class="milestone-content">
+            <div class="milestone-title">Design Approved</div>
+            <div class="milestone-date">Feb 18, 2026</div>
+            <div class="milestone-note">Layout finalized. 22ft truck, dual service windows.</div>
+          </div>
+        </div>
+        <div class="milestone completed">
+          <div class="milestone-dot"></div>
+          <div class="milestone-content">
+            <div class="milestone-title">Frame & Chassis Complete</div>
+            <div class="milestone-date">Mar 5, 2026</div>
+            <div class="milestone-note">Steel frame welded and mounted. Passed structural inspection.</div>
+            <div class="milestone-photos">
+              <div class="photo-placeholder">Frame welding</div>
+              <div class="photo-placeholder">Chassis mount</div>
+            </div>
+          </div>
+        </div>
+        <div class="milestone completed">
+          <div class="milestone-dot"></div>
+          <div class="milestone-content">
+            <div class="milestone-title">Plumbing & Gas</div>
+            <div class="milestone-date">Mar 18, 2026</div>
+            <div class="milestone-note">3-compartment sink, handwash station, gas lines for grill and fryer. Tested and certified.</div>
+          </div>
+        </div>
+        <div class="milestone active">
+          <div class="milestone-dot"></div>
+          <div class="milestone-content">
+            <div class="milestone-title">Electrical & Equipment Install</div>
+            <div class="milestone-date">In progress</div>
+            <div class="milestone-note">Loris is running the electrical panel. Commercial fridge and freezer being installed this week.</div>
+            <div class="milestone-photos">
+              <div class="photo-placeholder">Electrical panel</div>
+              <div class="photo-placeholder">Equipment layout</div>
+              <div class="photo-placeholder">Interior progress</div>
+            </div>
+          </div>
+        </div>
+        <div class="milestone upcoming">
+          <div class="milestone-dot"></div>
+          <div class="milestone-content">
+            <div class="milestone-title">Interior Finishing</div>
+            <div class="milestone-date">Estimated Apr 10</div>
+          </div>
+        </div>
+        <div class="milestone upcoming">
+          <div class="milestone-dot"></div>
+          <div class="milestone-content">
+            <div class="milestone-title">Wrap & Exterior</div>
+            <div class="milestone-date">Estimated Apr 25</div>
+          </div>
+        </div>
+        <div class="milestone upcoming">
+          <div class="milestone-dot"></div>
+          <div class="milestone-content">
+            <div class="milestone-title">Final Inspection & Delivery</div>
+            <div class="milestone-date">Estimated May 15</div>
+          </div>
+        </div>
+      </div>
+      <div class="portal-footer">
+        <p class="portal-demo-note">&#9432; Demo view &mdash; real clients would get their own login to check on their build whenever they want.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TEAM ========== -->
+<section class="section team-section" id="team">
+  <div class="container">
+    <div class="section-header">
+      <h2>We're made of rad people.</h2>
+    </div>
+    <div class="team-grid">
+      <div class="team-card team-owner">
+        <img class="team-avatar" src="assets/img/Chris-p.png" alt="Chris P" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Chris P</h4>
+        <p class="team-role">Owner &bull; Designer</p>
+        <div class="team-certs">
+          <span class="cert">Red Seal Plumber</span>
+          <span class="cert">Gasfitter</span>
+        </div>
+      </div>
+      <div class="team-card team-owner">
+        <img class="team-avatar" src="assets/img/Chris-k.png" alt="Chris K" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Chris K</h4>
+        <p class="team-role">Owner &bull; Designer</p>
+        <div class="team-certs">
+          <span class="cert">Fabricator</span>
+          <span class="cert">Welder</span>
+        </div>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="assets/img/Jesse.png" alt="Jesse" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Jesse</h4>
+        <p class="team-role">Red Seal Welder / Fabricator</p>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="assets/img/Loris.png" alt="Loris" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Loris</h4>
+        <p class="team-role">Master Electrician</p>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="assets/img/Michelle.png" alt="Michelle" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Michelle</h4>
+        <p class="team-role">Admin Extraordinaire</p>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="assets/img/Andrew.png" alt="Andrew" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Andrew</h4>
+        <p class="team-role">Red Seal Plumber &bull; Gasfitter</p>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="assets/img/Tyler.png" alt="Tyler" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Tyler</h4>
+        <p class="team-role">Red Seal Welder &bull; Fabricator</p>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="assets/img/Kari.png" alt="Kari" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Kari</h4>
+        <p class="team-role">Human Resources</p>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="assets/img/Nick.png" alt="Nick" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;">
+        <h4>Nick</h4>
+        <p class="team-role">Web Dev &bull; Marketing</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== IN THE NEWS (NEW) ========== -->
+<section class="section news-section" id="news">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">In the News</span>
+      <h2>Brothers in the press.</h2>
+      <p>Features, mentions, and coverage from around Calgary and beyond.</p>
+    </div>
+    <div class="news-grid">
+      <a href="#" class="news-card">
+        <div class="news-source">Calgary Herald</div>
+        <h4>Calgary's food truck scene is booming &mdash; and these brothers are building them</h4>
+        <div class="news-date">March 2026</div>
+      </a>
+      <a href="#" class="news-card news-client">
+        <div class="news-source">Daily Hive Calgary</div>
+        <h4>This new pizza truck is already selling out at Stampede grounds</h4>
+        <div class="news-date">February 2026</div>
+        <div class="news-built-by">Built by Brothers Fabrication</div>
+      </a>
+      <a href="#" class="news-card">
+        <div class="news-source">CBC Calgary</div>
+        <h4>Local fabrication shop keeps every trade under one roof</h4>
+        <div class="news-date">January 2026</div>
+      </a>
+      <a href="#" class="news-card news-client">
+        <div class="news-source">Avenue Magazine</div>
+        <h4>10 food trucks you need to try in Calgary this summer</h4>
+        <div class="news-date">June 2025</div>
+        <div class="news-built-by">3 of 10 built by Brothers Fabrication</div>
+      </a>
+      <a href="#" class="news-card news-client">
+        <div class="news-source">YYC Food &amp; Drink</div>
+        <h4>How one couple turned a seacan into Calgary's coolest taproom</h4>
+        <div class="news-date">September 2025</div>
+        <div class="news-built-by">Built by Brothers Fabrication</div>
+      </a>
+      <a href="#" class="news-card">
+        <div class="news-source">Global News</div>
+        <h4>How Brothers Fabrication turned a side hustle into a 9-person shop</h4>
+        <div class="news-date">August 2025</div>
+      </a>
+    </div>
+    <p style="text-align:center; font-size:0.8rem; color:#999; margin-top:1.5rem; font-style:italic;">Sample entries &mdash; real version would link to actual articles. Client features included with permission.</p>
+  </div>
+</section>
+
+<!-- ========== REVIEWS ========== -->
+<section class="section reviews-section" id="reviews">
+  <div class="container">
+    <div class="section-header">
+      <h2>Our clients love us.</h2>
+      <div class="reviews-summary">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <span>5.0 / 5.0 &bull; 49+ Google Reviews</span>
+      </div>
+    </div>
+    <div class="reviews-carousel" id="reviewsCarousel">
+      <div class="review-card">
+        <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"HIGHLY RECOMMEND! Five Stars. They are truly experts at their craft. Brothers Fabrication offers AMAZING customer service and produce HIGH QUALITY work. Right from our initial conversations and all the way through to the final completion of the project, Chris, "Chrisko" and the entire team were extremely friendly, knowledgeable, creative, patient and easy to work with. They were able to take our vision of turning an Italian imported Piaggio Ap&eacute; into a mobile bar/ beverage cart that met all of Alberta Health &amp; Safety's Inspection guidelines while achieving our desired design. They are problem solvers who made the fabrication process fun, collaborative and stress-free. Worth every penny!"</p>
+        <div class="review-author">
+          <strong>Melissa Brown</strong>
+          <span>Google Review</span>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"One of the gentlemen from Brothers helped us out with a gas fitting in our home. He was an expert! A job very well done. They came prepared and knew exactly what needed to be done. Would 100% recommend these guys for all of your gas fitting and fabrication needs!"</p>
+        <div class="review-author">
+          <strong>LeeAnne Gates</strong>
+          <span>Google Review</span>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Thanks for all the love. The way you treated me through this process means a lot to me. You brought my dream to life. I love your company and the passion you guys have for things. I will bring you all the possible things my brain can dream up. You guys kill it."</p>
+        <div class="review-author">
+          <strong>Eric Feuerhelm</strong>
+          <span>Google Review</span>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Chris &amp; Chris are incredible to work with. When we needed emergency repair work on the food truck, they were able to make it happen under tight timelines. They helped replace our rubber gas hose with hard lined pipe. They were able to drive to our truck and provide a quote within a day. Excellent service! They can build anything, fix anything, and did a great job in sourcing out the parts/equipment I needed which saved me a lot of money. Can I also take a moment to point out the custom stainless steel speaker boxes they made for my truck? I absolutely love my truck, and am honored to have been their first catering truck. I can't recommend Brothers Fabrication enough."</p>
+        <div class="review-author">
+          <strong>Parker Morrison</strong>
+          <span>Google Review</span>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Chris and Chris take great pride in their work, and it shows. There are a lot of little details that go into making a food truck. These little details are what separate alright trucks that get the job done from great trucks that you love working in everyday. Chris and Chris will go through these details with you to ensure you get the perfect truck for you. They're not happy until you're happy. They can build anything, fix anything, and did a great job in sourcing out the parts/equipment I needed which saved me a lot of money. Can I also take a moment to point out the custom stainless steel speaker boxes they made for my truck? I absolutely love my truck, and am honored to have been their first catering truck. I can't recommend Brothers Fabrication enough."</p>
+        <div class="review-author">
+          <strong>Amy Dick</strong>
+          <span>Google Review</span>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"I have had a very positive experience with Chris and the rest of the staff. Super great to deal with, quick responses and a high level of professionalism. For those reasons, I highly recommend Brothers fabrication"</p>
+        <div class="review-author">
+          <strong>Donna S</strong>
+          <span>Google Review</span>
+        </div>
+      </div>
+    </div>
+    <div class="reviews-nav">
+      <button class="review-btn" onclick="scrollReviews(-1)">&#8592;</button>
+      <button class="review-btn" onclick="scrollReviews(1)">&#8594;</button>
+    </div>
+    <div style="text-align:center; margin-top:1rem;">
+      <a href="#" style="font-size:0.9rem; color:#0a6e8a; font-weight:600;">See more reviews on Google &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== CONTACT FORM ========== -->
+<section class="section" id="contact" style="background:#f8fafb;">
+  <div class="container">
+    <div class="section-header">
+      <h2>Hey, what's up?</h2>
+    </div>
+    <div style="max-width:600px; margin:0 auto;">
+      <form class="quote-form" style="background:#fff; border-radius:16px; padding:2.5rem; border:1px solid #eee;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name *</label>
+            <input type="text" required class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Last Name *</label>
+            <input type="text" required class="form-input">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" required class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Message *</label>
+          <textarea required class="form-input" rows="4"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-full">Send Message &rarr;</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div style="margin-bottom: 1rem;">
+          <img src="assets/img/brothers-fabrication-logo.png" alt="Brothers Fabrication" style="height:32px; width:auto; filter:invert(1);">
+        </div>
+        <p>Top quality fabricators of anything and everything metal. Calgary, AB.</p>
+        <div class="footer-social">
+          <a href="#" class="social-link">Facebook</a>
+          <a href="#" class="social-link">Instagram</a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <h4>Services</h4>
+        <a href="#about">Food Trucks</a>
+        <a href="#about">Commercial Kitchens</a>
+        <a href="#about">Bar Fabrication</a>
+        <a href="#about">Seacan Mods</a>
+        <a href="#about">Custom Metalwork</a>
+        <a href="#about">Plumbing & Gas</a>
+      </div>
+      <div class="footer-links">
+        <h4>Company</h4>
+        <a href="#team">Our Team</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#news">News</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#quote">Get a Quote</a>
+      </div>
+      <div class="footer-contact">
+        <h4>Get in Touch</h4>
+        <p>3633 16 St SE<br>Calgary, AB T2G 3R6</p>
+        <p><a href="tel:4038140543">403-814-0543</a></p>
+        <div class="footer-badges">
+          <span class="badge">Calgary Best Rated</span>
+          <span class="badge">&#9733; 5.0 Google</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Brothers Fabrication. All rights reserved. Calgary, Alberta.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ========== AI CHATBOT WIDGET (NEW) ========== -->
+<div class="chatbot-widget" id="chatbot">
+  <button class="chatbot-toggle" id="chatToggle" onclick="toggleChat()">
+    <span class="chat-icon" id="chatIcon" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;">BF</span>
+    <span class="chat-badge" id="chatBadge">1</span>
+  </button>
+  <div class="chatbot-window" id="chatWindow">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar">BF</div>
+        <div>
+          <strong>Brothers Fabrication</strong>
+          <span class="chat-status">&#9679; Online</span>
+        </div>
+      </div>
+      <button class="chat-close" onclick="toggleChat()">&times;</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg bot">
+        <div class="msg-content">Hey! Got questions about builds, pricing, or what we do? Fire away. If it's something I can't answer, I'll point you to the right Chris.</div>
+      </div>
+    </div>
+    <div class="chat-suggestions" id="chatSuggestions">
+      <button onclick="askBot('How much does a food truck cost?')">What does a truck cost?</button>
+      <button onclick="askBot('How long does a build take?')">How long's a build?</button>
+      <button onclick="askBot('What services do you offer?')">What do you guys do?</button>
+      <button onclick="askBot('Do you do repairs?')">Can you fix my truck?</button>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Ask us anything..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button onclick="sendChat()" class="chat-send">&#x27A4;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== REVIEW REQUEST MODAL (NEW) ========== -->
+<div class="modal-overlay" id="reviewModal" style="display:none;">
+  <div class="modal">
+    <button class="modal-close" onclick="closeReviewModal()">&times;</button>
+    <div class="modal-content" id="reviewModalContent">
+      <div class="review-request-step" id="reviewStep1">
+        <h3>&#9733; How was your experience?</h3>
+        <p>Hi! Now that your project is complete, we'd love to hear how we did.</p>
+        <div class="review-stars-input">
+          <span class="star-input" onclick="setRating(1)">&#9733;</span>
+          <span class="star-input" onclick="setRating(2)">&#9733;</span>
+          <span class="star-input" onclick="setRating(3)">&#9733;</span>
+          <span class="star-input" onclick="setRating(4)">&#9733;</span>
+          <span class="star-input" onclick="setRating(5)">&#9733;</span>
+        </div>
+        <textarea class="form-input" rows="3" placeholder="Tell us about your experience..." id="reviewText"></textarea>
+        <button class="btn btn-primary btn-full" onclick="submitReview()">Submit Review &rarr;</button>
+      </div>
+      <div class="review-request-step" id="reviewStep2" style="display:none;">
+        <div class="review-thanks">
+          <span class="review-thanks-icon" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2rem;color:#4ecdc4;">Thanks!</span>
+          <h3>Thank you!</h3>
+          <p>Your feedback means the world to us. Would you also leave a review on Google? It helps other customers find us.</p>
+          <a href="#" class="btn btn-primary btn-full">Leave a Google Review &rarr;</a>
+          <button class="btn btn-outline btn-full" onclick="closeReviewModal()" style="margin-top:0.5rem;">Maybe Later</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

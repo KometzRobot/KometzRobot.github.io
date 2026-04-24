@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brothers Fabrication — Digital Optimization Pitch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #0a1628; color: #fff; line-height: 1.6; }
+    .slide { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 4rem 2rem; position: relative; }
+    .slide-inner { max-width: 1000px; width: 100%; }
+    .slide:nth-child(even) { background: #0d1f35; }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 3.5rem; font-weight: 800; line-height: 1.1; }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 1.5rem; }
+    h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; margin-bottom: 1rem; }
+    .accent { color: #4ecdc4; }
+    .subtle { color: rgba(255,255,255,0.5); }
+    .tag {
+      display: inline-block; background: rgba(78,205,196,0.15); color: #4ecdc4;
+      padding: 0.3rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.5rem;
+    }
+
+    /* Slide 1: Hero */
+    .hero-slide h1 { font-size: 4rem; margin-bottom: 1.5rem; }
+    .hero-sub { font-size: 1.3rem; color: rgba(255,255,255,0.6); max-width: 700px; line-height: 1.7; }
+
+    /* Stats inline */
+    .stat-row { display: flex; gap: 3rem; margin: 2rem 0; flex-wrap: wrap; }
+    .stat-item .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; color: #4ecdc4; display: block; }
+    .stat-item .stat-label { font-size: 0.85rem; color: rgba(255,255,255,0.4); }
+
+    /* Problem/Solution cards */
+    .ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0; }
+    .ps-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 2rem;
+    }
+    .ps-card.problem { border-left: 4px solid #e74c3c; }
+    .ps-card.solution { border-left: 4px solid #2ecc71; }
+    .ps-card h4 {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 1rem; font-weight: 700;
+    }
+    .ps-card.problem h4 { color: #e74c3c; }
+    .ps-card.solution h4 { color: #2ecc71; }
+    .ps-card p { color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+    .ps-card ul { list-style: none; }
+    .ps-card ul li { padding: 0.4rem 0; font-size: 0.95rem; color: rgba(255,255,255,0.7); }
+    .ps-card.solution ul li::before { content: "~ "; color: #2ecc71; font-weight: 700; }
+    .ps-card.problem ul li::before { content: "x "; color: #e74c3c; font-weight: 700; }
+
+    /* Feature showcase */
+    .feature-row {
+      display: flex; align-items: center; gap: 3rem; margin: 3rem 0;
+      padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .feature-row:last-child { border-bottom: none; }
+    .feature-num {
+      font-family: 'Space Grotesk', sans-serif; font-size: 4rem; font-weight: 800;
+      color: rgba(78,205,196,0.2); flex-shrink: 0; width: 80px;
+    }
+    .feature-content h3 { margin-bottom: 0.5rem; }
+    .feature-content p { color: rgba(255,255,255,0.6); font-size: 0.95rem; }
+    .feature-tag {
+      display: inline-block; background: rgba(78,205,196,0.1); color: #4ecdc4;
+      padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+      margin-top: 0.5rem;
+    }
+
+    /* Timeline */
+    .timeline { position: relative; padding-left: 3rem; }
+    .timeline::before {
+      content: ''; position: absolute; left: 12px; top: 0; bottom: 0;
+      width: 2px; background: rgba(78,205,196,0.2);
+    }
+    .tl-item { margin-bottom: 2.5rem; position: relative; }
+    .tl-dot {
+      position: absolute; left: -3rem; top: 4px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #4ecdc4; display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; color: #0a1628;
+    }
+    .tl-item h4 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; }
+    .tl-item p { color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-top: 0.3rem; }
+    .tl-item .tl-deliverable {
+      display: inline-block; background: rgba(255,255,255,0.06);
+      padding: 0.2rem 0.8rem; border-radius: 6px; font-size: 0.8rem;
+      color: rgba(255,255,255,0.4); margin-top: 0.5rem;
+    }
+
+    /* CTA Slide */
+    .cta-slide { text-align: center; }
+    .cta-slide h2 { font-size: 3rem; }
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap; }
+    .cta-btn {
+      padding: 1rem 2.5rem; border-radius: 10px; font-weight: 700; font-size: 1rem;
+      text-decoration: none; transition: all 0.2s; display: inline-block;
+    }
+    .cta-btn.primary { background: #4ecdc4; color: #0a1628; }
+    .cta-btn.primary:hover { background: #3dbdb5; transform: translateY(-2px); }
+    .cta-btn.secondary { border: 2px solid rgba(255,255,255,0.3); color: #fff; }
+    .cta-btn.secondary:hover { border-color: #4ecdc4; color: #4ecdc4; }
+
+    .slide-nav {
+      position: fixed; right: 2rem; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 0.8rem; z-index: 100;
+    }
+    .slide-nav a {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); display: block; transition: all 0.3s;
+    }
+    .slide-nav a:hover, .slide-nav a.active { background: #4ecdc4; transform: scale(1.3); }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 2.5rem; }
+      h2 { font-size: 1.8rem; }
+      .hero-slide h1 { font-size: 2.5rem; }
+      .ps-grid { grid-template-columns: 1fr; }
+      .feature-row { flex-direction: column; gap: 1rem; }
+      .feature-num { font-size: 2.5rem; }
+      .stat-row { gap: 1.5rem; }
+      .cta-slide h2 { font-size: 2rem; }
+      .slide-nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<a href="hub.html" style="position:fixed;top:1.2rem;left:1.5rem;z-index:100;display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;color:#4ecdc4;font-weight:600;text-decoration:none;">&larr; Hub</a>
+
+<!-- Nav dots -->
+<div class="slide-nav">
+  <a href="#s1" title="Intro"></a>
+  <a href="#s2" title="The Growth Question"></a>
+  <a href="#s3" title="The Impact"></a>
+  <a href="#s4" title="What Gets Built"></a>
+  <a href="#s5" title="Timeline"></a>
+  <a href="#s6" title="The Investment"></a>
+  <a href="#s7" title="Let's Go"></a>
+</div>
+
+<!-- SLIDE 1: Hook -->
+<div class="slide hero-slide" id="s1">
+  <div class="slide-inner">
+    <div class="tag">For Chris & Chris</div>
+    <h1>You built something<br>that works.<br><span class="accent">Now build the systems<br>to keep up with it.</span></h1>
+    <p class="hero-sub">Booked for a year. 5.0 on Google. 9 people, every trade in-house. The work isn't the problem. The question is what happens when it's time to grow.</p>
+    <div class="stat-row">
+      <div class="stat-item"><span class="stat-num">9</span><span class="stat-label">crew members, all in-house</span></div>
+      <div class="stat-item"><span class="stat-num">3+</span><span class="stat-label">builds running at once</span></div>
+      <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">systems tracking any of it</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: The Growth Problem -->
+<div class="slide" id="s2">
+  <div class="slide-inner">
+    <div class="tag">The Growth Question</div>
+    <h2>What works at 3 builds<br><span class="accent">breaks at 7</span></h2>
+    <div class="ps-grid">
+      <div class="ps-card problem">
+        <h4>How It Works Now</h4>
+        <ul>
+          <li>Projects tracked in Chris's head, texts, and a whiteboard</li>
+          <li>Clients text Chris to ask "how's my truck?"</li>
+          <li>Inventory tracked by walking over and looking</li>
+          <li>Every quote is manual back-and-forth</li>
+          <li>New hires learn the process by shadowing</li>
+          <li>Posting on social when someone remembers</li>
+          <li>No way to know which efforts bring in work</li>
+        </ul>
+      </div>
+      <div class="ps-card solution">
+        <h4>How It Could Work</h4>
+        <ul>
+          <li>Every project tracked in one place, visible to the whole crew</li>
+          <li>Clients check their own build progress — fewer calls to Chris</li>
+          <li>Inventory alerts before you run out, not after</li>
+          <li>Quotes auto-respond so nobody waits over a weekend</li>
+          <li>Processes documented in a system, not in someone's memory</li>
+          <li>Social content goes out consistently without thinking about it</li>
+          <li>You know exactly what's bringing in work and what's not</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: What Changes -->
+<div class="slide" id="s3">
+  <div class="slide-inner">
+    <div class="tag">The Impact</div>
+    <h2>Built for where you're<br><span class="accent">going, not where you are</span></h2>
+    <div class="stat-row">
+      <div class="stat-item"><span class="stat-num">8+ hrs/mo</span><span class="stat-label">Admin time saved on automation</span></div>
+      <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">"How's my truck?" calls to Chris</span></div>
+      <div class="stat-item"><span class="stat-num">24/7</span><span class="stat-label">Online presence that works while you sleep</span></div>
+    </div>
+    <div class="ps-grid" style="margin-top:2rem;">
+      <div class="ps-card" style="border-left: 4px solid #4ecdc4;">
+        <h4 style="color:#4ecdc4;">Operations That Scale</h4>
+        <p>Project tracking, inventory alerts, automated client updates, milestone photos — everything in one system instead of scattered across texts and whiteboards. When you add a build or hire a person, the system already works.</p>
+      </div>
+      <div class="ps-card" style="border-left: 4px solid #f5a623;">
+        <h4 style="color:#f5a623;">Premium Presence = Premium Prices</h4>
+        <p>A customer project portal, milestone updates with photos, and professional communication at every stage. This is how $139K builds feel to clients. It's how you justify being the best &mdash; and how you raise prices when the time comes.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: The Tools -->
+<div class="slide" id="s4">
+  <div class="slide-inner">
+    <div class="tag">What I'm Building</div>
+    <h2>Six things that get built</h2>
+    <div class="feature-row">
+      <div class="feature-num">01</div>
+      <div class="feature-content">
+        <h3>Operations Dashboard</h3>
+        <p>Every build, every milestone, every material order — tracked in one place. The whole crew can see where things stand without asking Chris. This is the backbone.</p>
+        <span class="feature-tag">System Demo Available</span>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-num">02</div>
+      <div class="feature-content">
+        <h3>Customer Project Portal</h3>
+        <p>Clients log in and see their build progress: milestones, photos, estimated delivery. Kills the "how's my truck?" calls. Builds trust. Generates referrals.</p>
+        <span class="feature-tag">Live Demo Available</span>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-num">03</div>
+      <div class="feature-content">
+        <h3>Automation Engine</h3>
+        <p>Quote auto-responses, milestone notifications, review requests, follow-up emails. All triggered automatically. Michelle saves hours. Nothing falls through the cracks.</p>
+        <span class="feature-tag">System Demo Available</span>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-num">04</div>
+      <div class="feature-content">
+        <h3>Rebuilt Website</h3>
+        <p>A site that matches the quality of the work. Mobile-first, fast, SEO-optimized. When someone finds you online, it should feel like walking into the shop — professional, premium, real.</p>
+        <span class="feature-tag">Live Demo Available</span>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-num">05</div>
+      <div class="feature-content">
+        <h3>Food Truck Configurator</h3>
+        <p>Customers pick their truck type, size, equipment, and finish. Gets a rough estimate instantly. Pre-qualifies leads so Chris only talks to serious buyers. No other Calgary fabricator has this.</p>
+        <span class="feature-tag">Live Demo Available</span>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-num">06</div>
+      <div class="feature-content">
+        <h3>Content & Social</h3>
+        <p>Branded templates, content calendar, consistent posting. Your builds are content gold &mdash; the shop is full of it every day. We just need to capture and share it.</p>
+        <span class="feature-tag">Templates Ready</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: Timeline -->
+<div class="slide" id="s5">
+  <div class="slide-inner">
+    <div class="tag">Rollout Plan</div>
+    <h2>How fast this happens</h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot">1</div>
+        <h4>Weeks 1-3: Quick Wins</h4>
+        <p>Google Business optimized. Social templates delivered. Review collection system set up. You see a difference before the heavy lifting starts.</p>
+        <span class="tl-deliverable">Visible results fast</span>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot">2</div>
+        <h4>Weeks 4-8: The Core Build</h4>
+        <p>New website live with configurator and quote system. Chatbot deployed. Email automation running. Analytics tracking everything.</p>
+        <span class="tl-deliverable">Online lead capture is real and working</span>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot">3</div>
+        <h4>Months 3-6: Ongoing &amp; Measuring</h4>
+        <p>Monthly analytics reports. Social content going out consistently. SEO climbing. Chatbot getting smarter from real conversations. You can see what's working.</p>
+        <span class="tl-deliverable">Data-driven decisions, not guesses</span>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot">4</div>
+        <h4>6+ Months: Advanced Systems (If You Want Them)</h4>
+        <p>Customer project portal. Internal ops dashboard. AI-powered workflows. These are bigger software projects &mdash; they take real time to build right. Only makes sense once the core is proven.</p>
+        <span class="tl-deliverable">Built when you're ready, not before</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Pricing -->
+<div class="slide" id="s6">
+  <div class="slide-inner">
+    <div class="tag">The Investment</div>
+    <h2>What it costs</h2>
+    <div class="ps-grid" style="margin:2rem 0;">
+      <div class="ps-card" style="border-left: 4px solid #4ecdc4;">
+        <h4 style="color:#4ecdc4;">Core Build</h4>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; color:#4ecdc4; margin:0.5rem 0;">$8,000-10,000</div>
+        <p style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin-bottom:1rem;">~130 hours &bull; 2-3 months</p>
+        <ul style="list-style:none;">
+          <li style="padding:0.3rem 0; font-size:0.9rem; color:rgba(255,255,255,0.7);">~ Redesigned website with AI assistant</li>
+          <li style="padding:0.3rem 0; font-size:0.9rem; color:rgba(255,255,255,0.7);">~ Truck quote building tool</li>
+          <li style="padding:0.3rem 0; font-size:0.9rem; color:rgba(255,255,255,0.7);">~ Google, SEO, social templates</li>
+          <li style="padding:0.3rem 0; font-size:0.9rem; color:rgba(255,255,255,0.7);">~ Email automation &amp; analytics</li>
+        </ul>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.3); margin-top:1rem; border-top:1px solid rgba(255,255,255,0.08); padding-top:0.8rem;">$3-4K upfront &bull; $1,500-2K biweekly</p>
+      </div>
+      <div class="ps-card" style="border-left: 4px solid #f5a623;">
+        <h4 style="color:#f5a623;">Full System</h4>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; color:#f5a623; margin:0.5rem 0;">$35,000-45,000</div>
+        <p style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin-bottom:1rem;">~300-500 hours &bull; 10-12 months</p>
+        <ul style="list-style:none;">
+          <li style="padding:0.3rem 0; font-size:0.9rem; color:rgba(255,255,255,0.7);">~ Everything in Core Build</li>
+          <li style="padding:0.3rem 0; font-size:0.9rem; color:rgba(255,255,255,0.7);">~ Advanced configurator &amp; project portal</li>
+          <li style="padding:0.3rem 0; font-size:0.9rem; color:rgba(255,255,255,0.7);">~ Full ops dashboard &amp; inventory</li>
+          <li style="padding:0.3rem 0; font-size:0.9rem; color:rgba(255,255,255,0.7);">~ Product development for other shops</li>
+        </ul>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.3); margin-top:1rem; border-top:1px solid rgba(255,255,255,0.08); padding-top:0.8rem;">$6-8K upfront &bull; $2,500 biweekly</p>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:1.5rem;">
+      <p style="color:rgba(255,255,255,0.4); font-size:0.9rem; margin-bottom:0.5rem;">My rates: $35-45/hr marketing &bull; $50-60/hr dev &bull; $60-75/hr AI &amp; systems</p>
+      <p style="color:rgba(255,255,255,0.3); font-size:0.85rem;">Calgary agencies charge $100-200/hr. AI consultants charge $200-250/hr.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: CTA -->
+<div class="slide" id="s7">
+  <div class="slide-inner cta-slide">
+    <div class="tag">The Ask</div>
+    <h2>You handle the metal.<br><span class="accent">I'll build the systems.</span></h2>
+    <p style="color:rgba(255,255,255,0.5); max-width:600px; margin:1.5rem auto; font-size:1.1rem;">
+      You didn't get booked for a year by accident.<br>
+      The next step is making sure the business can keep up with where it's going.
+    </p>
+    <div class="cta-buttons">
+      <a href="pricing.html" class="cta-btn primary">See Full Pricing</a>
+      <a href="index.html" class="cta-btn secondary">View Website Demo</a>
+    </div>
+    <div style="margin-top:3rem; padding-top:2rem; border-top:1px solid rgba(255,255,255,0.1);">
+      <p style="color:rgba(255,255,255,0.3); font-size:0.85rem;">
+        Joel Kometz<br>
+        BFA (AUArts 2013) &bull; 8 years running World One Arcade &bull; Designer, developer, builder
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Smooth scroll for nav dots
+document.querySelectorAll('.slide-nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+  });
+});
+// Highlight active dot on scroll
+const slides = document.querySelectorAll('.slide');
+const dots = document.querySelectorAll('.slide-nav a');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      dots.forEach(d => d.classList.remove('active'));
+      const idx = [...slides].indexOf(entry.target);
+      if (dots[idx]) dots[idx].classList.add('active');
+    }
+  });
+}, { threshold: 0.5 });
+slides.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

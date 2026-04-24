@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client Journey — Brothers Fabrication</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif; background: #0a1628; color: #fff;
+      min-height: 100vh; padding: 2rem;
+    }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      color: #4ecdc4; text-decoration: none; font-size: 0.85rem; font-weight: 600;
+      margin-bottom: 2rem;
+    }
+    .back-link:hover { color: #fff; }
+    .header {
+      text-align: center; max-width: 700px; margin: 0 auto 3rem;
+    }
+    .header h1 {
+      font-family: 'Space Grotesk', sans-serif; font-size: 2rem; margin-bottom: 0.5rem;
+    }
+    .header p { color: rgba(255,255,255,0.5); font-size: 0.95rem; }
+
+    .flow { max-width: 800px; margin: 0 auto; position: relative; }
+
+    /* Vertical connector line */
+    .flow::before {
+      content: ''; position: absolute; left: 50%; top: 0; bottom: 0;
+      width: 2px; background: rgba(78,205,196,0.15); transform: translateX(-50%);
+    }
+
+    .stage { position: relative; margin-bottom: 1rem; }
+    .stage-node {
+      position: relative; z-index: 2;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 1.5rem 2rem;
+      max-width: 420px; margin: 0 auto;
+      text-align: center;
+    }
+    .stage-node h3 {
+      font-family: 'Space Grotesk', sans-serif; font-size: 1rem; margin-bottom: 0.4rem;
+    }
+    .stage-node p {
+      font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.5;
+    }
+    .stage-node .channel {
+      display: inline-block; margin-top: 0.6rem;
+      background: rgba(78,205,196,0.1); color: #4ecdc4;
+      padding: 0.15rem 0.6rem; border-radius: 6px;
+      font-size: 0.7rem; font-weight: 600;
+    }
+    .stage-dot {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 12px; height: 12px; border-radius: 50%; z-index: 1;
+    }
+
+    /* Stage colors */
+    .stage.discover .stage-node { border-color: rgba(78,205,196,0.3); }
+    .stage.discover .stage-dot { background: #4ecdc4; }
+    .stage.engage .stage-node { border-color: rgba(52,152,219,0.3); }
+    .stage.engage .stage-dot { background: #3498db; }
+    .stage.quote .stage-node { border-color: rgba(241,196,15,0.3); }
+    .stage.quote .stage-dot { background: #f1c40f; }
+    .stage.build .stage-node { border-color: rgba(231,76,60,0.3); }
+    .stage.build .stage-dot { background: #e74c3c; }
+    .stage.deliver .stage-node { border-color: rgba(46,204,113,0.3); }
+    .stage.deliver .stage-dot { background: #2ecc71; }
+    .stage.retain .stage-node { border-color: rgba(155,89,182,0.3); }
+    .stage.retain .stage-dot { background: #9b59b6; }
+
+    /* Arrow between stages */
+    .arrow {
+      text-align: center; padding: 0.6rem 0; position: relative; z-index: 2;
+      color: rgba(255,255,255,0.15); font-size: 1.2rem;
+    }
+
+    /* Side annotations */
+    .auto-badge {
+      display: inline-block; margin-top: 0.5rem;
+      background: rgba(46,204,113,0.12); color: #2ecc71;
+      padding: 0.15rem 0.5rem; border-radius: 4px;
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .section-label {
+      font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.2); text-align: center;
+      margin: 2rem 0 1rem; position: relative; z-index: 2;
+    }
+
+    .legend {
+      max-width: 600px; margin: 3rem auto 0;
+      display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;
+      padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.75rem; color: rgba(255,255,255,0.4);
+    }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+
+    .footer {
+      text-align: center; margin-top: 2rem; padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.8rem; color: rgba(255,255,255,0.25);
+    }
+
+    @media (max-width: 600px) {
+      .stage-node { max-width: 100%; padding: 1.2rem; }
+      .header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <a href="../" class="back-link">&larr; Back to Demos</a>
+
+  <div class="header">
+    <h1>Client Journey <span style="color:#4ecdc4;">Flowchart</span></h1>
+    <p>Every touchpoint from first visit to repeat customer — and what's automated vs. manual.</p>
+  </div>
+
+  <div class="flow">
+    <div class="section-label">Discovery</div>
+
+    <div class="stage discover">
+      <div class="stage-node">
+        <h3>Google Search / Social / Referral</h3>
+        <p>Customer finds Brothers Fabrication through search, Instagram, word-of-mouth, or Google Maps listing.</p>
+        <span class="channel">SEO + Social + GBP</span>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="stage discover">
+      <div class="stage-node">
+        <h3>Lands on Website</h3>
+        <p>Professional site with gallery, build planner, reviews, and team profiles. Immediately sees this is a premium operation.</p>
+        <span class="channel">Website</span>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="section-label">Engagement</div>
+
+    <div class="stage engage">
+      <div class="stage-node">
+        <h3>AI Chatbot Answers Questions</h3>
+        <p>24/7 chatbot handles "how much does a food truck cost?", "what's your timeline?", "do you do custom wraps?" — instantly, any time of day.</p>
+        <span class="channel">AI Chatbot</span>
+        <div><span class="auto-badge">Automated</span></div>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="stage engage">
+      <div class="stage-node">
+        <h3>Uses Truck Configurator</h3>
+        <p>Customer picks truck type, size, equipment, finishes. Gets a ballpark estimate. Pre-qualifies themselves — only serious buyers reach out.</p>
+        <span class="channel">Configurator</span>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="section-label">Quote &amp; Conversion</div>
+
+    <div class="stage quote">
+      <div class="stage-node">
+        <h3>Submits Quote Request</h3>
+        <p>Form captures build specs, budget range, and timeline. Automatically routed by complexity — simple quotes to Michelle, complex builds to Chris.</p>
+        <span class="channel">Quote Form</span>
+        <div><span class="auto-badge">Auto-Routed</span></div>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="stage quote">
+      <div class="stage-node">
+        <h3>Auto-Response + Follow-Up</h3>
+        <p>Immediate email confirmation with next steps. If no reply in 48 hours, automated follow-up. No lead falls through the cracks over a weekend.</p>
+        <span class="channel">Email Automation</span>
+        <div><span class="auto-badge">Automated</span></div>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="stage quote">
+      <div class="stage-node">
+        <h3>Chris Sends Detailed Quote</h3>
+        <p>Prepared quote with breakdown. Customer already understands ballpark from the configurator — this is confirmation, not sticker shock.</p>
+        <span class="channel">Manual</span>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="section-label">Build Phase</div>
+
+    <div class="stage build">
+      <div class="stage-node">
+        <h3>Project Logged in Dashboard</h3>
+        <p>Build enters the ops dashboard. Milestones set, materials tracked, crew assigned. Everyone knows what's happening without asking Chris.</p>
+        <span class="channel">Ops Dashboard</span>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="stage build">
+      <div class="stage-node">
+        <h3>Milestone Updates Sent to Client</h3>
+        <p>At each stage — chassis prep, framing, electrical, wrap, finishing — client gets an email with photos and status. "How's my truck?" calls drop to zero.</p>
+        <span class="channel">Customer Portal + Email</span>
+        <div><span class="auto-badge">Automated</span></div>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="section-label">Delivery &amp; Retention</div>
+
+    <div class="stage deliver">
+      <div class="stage-node">
+        <h3>Build Complete — Handoff</h3>
+        <p>Final walkthrough, keys in hand. Delivery confirmation email with care instructions, warranty info, and contact details.</p>
+        <span class="channel">In-Person + Email</span>
+        <div><span class="auto-badge">Email Automated</span></div>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="stage retain">
+      <div class="stage-node">
+        <h3>Review Request (7 days)</h3>
+        <p>Automated email asking for a Google review. Includes direct link — one tap. This is how you stay at 5.0 stars consistently.</p>
+        <span class="channel">Email Automation</span>
+        <div><span class="auto-badge">Automated</span></div>
+      </div>
+    </div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="stage retain">
+      <div class="stage-node">
+        <h3>6-Month Check-In</h3>
+        <p>Automated follow-up: how's the truck running? Need anything? Opens the door for referrals, add-ons, and the next build.</p>
+        <span class="channel">Email Automation</span>
+        <div><span class="auto-badge">Automated</span></div>
+      </div>
+    </div>
+    <div class="arrow" style="color:rgba(155,89,182,0.3);">&#8635;</div>
+
+    <div class="stage retain">
+      <div class="stage-node" style="border-color:rgba(155,89,182,0.3);">
+        <h3>Referral &amp; Repeat</h3>
+        <p>Happy customers refer friends. Social posts feature their build. The cycle starts again — but this time they already trust you.</p>
+        <span class="channel">Social + Word of Mouth</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#4ecdc4;"></div> Discovery</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3498db;"></div> Engagement</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f1c40f;"></div> Quote</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e74c3c;"></div> Build</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2ecc71;"></div> Delivery</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#9b59b6;"></div> Retention</div>
+  </div>
+
+  <div class="footer">
+    <p>Brothers Fabrication | Client Journey Map | April 2026</p>
+  </div>
+</body>
+</html>

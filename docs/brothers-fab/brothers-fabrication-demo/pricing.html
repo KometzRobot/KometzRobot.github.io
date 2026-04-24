@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joel Kometz — Service Packages & Pricing for Brothers Fabrication</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #fafafa; color: #1a1a2e; line-height: 1.6; }
+    .page { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #0a1628, #0a3d5c);
+      border-radius: 20px;
+      padding: 3rem;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .hero-banner h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; }
+    .hero-banner p { color: rgba(255,255,255,0.6); max-width: 650px; margin: 0 auto; }
+    .hero-banner .tag {
+      display: inline-block; background: rgba(78,205,196,0.15); color: #4ecdc4;
+      padding: 0.3rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;
+    }
+
+    .section { margin-bottom: 3rem; }
+    .section h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; margin-bottom: 0.5rem; }
+    .section > p.sub { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
+
+    /* Who I am */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .about-card {
+      background: #fff; border-radius: 14px; padding: 1.5rem; border: 1px solid #eee;
+      display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .about-icon {
+      width: 48px; height: 48px; border-radius: 12px; background: #e8f4f8;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; flex-shrink: 0;
+    }
+    .about-card h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .about-card p { font-size: 0.85rem; color: #666; }
+
+    /* Pricing cards */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+    .price-card {
+      background: #fff; border-radius: 16px; padding: 2rem; border: 1px solid #eee;
+      position: relative; transition: all 0.2s;
+    }
+    .price-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+    .price-card.featured { border: 2px solid #0a6e8a; }
+    .price-card.featured::before {
+      content: 'RECOMMENDED';
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: #0a6e8a; color: #fff; padding: 0.3rem 1rem; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;
+    }
+    .price-tier-name {
+      font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600;
+      color: #666; margin-bottom: 0.3rem;
+    }
+    .price-amount {
+      font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 800;
+    }
+    .price-amount .currency { font-size: 1rem; font-weight: 500; color: #999; }
+    .price-type { font-size: 0.8rem; color: #888; margin-bottom: 1.5rem; }
+    .price-desc { font-size: 0.9rem; color: #555; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f0f0f0; }
+    .feature-list { list-style: none; margin-bottom: 1.5rem; }
+    .feature-list li {
+      padding: 0.4rem 0; font-size: 0.9rem; color: #444;
+      display: flex; align-items: flex-start; gap: 0.5rem;
+    }
+    .feature-list li::before { content: "~"; color: #0a6e8a; font-weight: 700; flex-shrink: 0; }
+    .feature-list li.group-label {
+      font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: #0a6e8a; padding-top: 0.8rem; border-bottom: none; display: block;
+    }
+    .feature-list li.group-label::before { content: ""; }
+    .price-cta {
+      display: block; text-align: center; padding: 0.8rem; border-radius: 8px;
+      font-weight: 600; font-size: 0.9rem; transition: all 0.2s; text-decoration: none;
+    }
+    .price-cta.primary { background: #0a6e8a; color: #fff; }
+    .price-cta.primary:hover { background: #085a72; }
+    .price-cta.outline { border: 2px solid #0a6e8a; color: #0a6e8a; }
+    .price-cta.outline:hover { background: #0a6e8a; color: #fff; }
+
+    /* A-la-carte */
+    .ala-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .ala-item {
+      background: #fff; border-radius: 12px; padding: 1.2rem 1.5rem;
+      border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
+    }
+    .ala-name { font-weight: 600; font-size: 0.9rem; }
+    .ala-name small { display: block; font-weight: 400; color: #888; font-size: 0.8rem; }
+    .ala-price { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #0a6e8a; white-space: nowrap; }
+
+    /* Payment options */
+    .payment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .payment-card {
+      background: #fff; border-radius: 14px; padding: 1.5rem; border: 1px solid #eee;
+      text-align: center;
+    }
+    .payment-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+    .payment-card h4 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; margin-bottom: 0.5rem; }
+    .payment-card p { font-size: 0.85rem; color: #666; }
+    .payment-highlight {
+      margin-top: 0.8rem; font-size: 0.85rem; font-weight: 600; color: #0a6e8a;
+      background: #e8f4f8; padding: 0.4rem 0.8rem; border-radius: 8px; display: inline-block;
+    }
+
+    /* Comparison */
+    .compare-table {
+      width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px;
+      overflow: hidden; border: 1px solid #eee;
+    }
+    .compare-table th {
+      background: #0a1628; color: #fff; padding: 1rem; text-align: left; font-size: 0.85rem;
+    }
+    .compare-table td { padding: 0.8rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table .highlight { background: rgba(10,110,138,0.04); }
+    .compare-table .price-col { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #0a6e8a; text-align: right; }
+    .compare-table .agency-col { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #e74c3c; text-align: right; }
+
+    /* ROI box */
+    .roi-box {
+      background: linear-gradient(135deg, #0a1628, #0a3d5c);
+      border-radius: 16px; padding: 2.5rem; color: #fff; text-align: center;
+    }
+    .roi-box h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; margin-bottom: 1rem; }
+    .roi-grid { display: flex; justify-content: center; gap: 3rem; margin: 2rem 0; flex-wrap: wrap; }
+    .roi-item .num { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #4ecdc4; display: block; }
+    .roi-item .lbl { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+    .roi-note { font-size: 0.9rem; color: rgba(255,255,255,0.6); max-width: 600px; margin: 0 auto; }
+
+    /* Guarantee */
+    .guarantee {
+      background: #fff; border-radius: 14px; padding: 2rem; border: 2px solid #2ecc71;
+      text-align: center; margin-top: 2rem;
+    }
+    .guarantee h3 { font-family: 'Space Grotesk', sans-serif; color: #2ecc71; margin-bottom: 0.5rem; }
+    .guarantee p { color: #666; font-size: 0.9rem; max-width: 600px; margin: 0 auto; }
+
+    .footer-note {
+      text-align: center; padding: 2rem; color: #aaa; font-size: 0.85rem;
+      border-top: 1px solid #eee; margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .pricing-grid, .payment-grid, .about-grid { grid-template-columns: 1fr; }
+      .ala-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <a href="hub.html" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;color:#0a6e8a;font-weight:600;text-decoration:none;margin-bottom:1rem;">&larr; Back to Hub</a>
+
+  <div class="hero-banner">
+    <div class="tag">For Brothers Fabrication</div>
+    <h1>What I Could Do &amp; What It Would Cost</h1>
+    <p>This is all hypothetical &mdash; just showing what's possible and what it would look like if you wanted any of it.</p>
+  </div>
+
+  <!-- Background -->
+  <div class="section">
+    <h2>Background</h2>
+    <p class="sub">BFA from AUArts. 8 years running World One Arcade. Self-taught developer. I do design, web development, AI systems, and automation &mdash; all of it myself. My rates are $35-75/hr depending on the work, every hour tracked.</p>
+  </div>
+
+  <!-- The Full Picture -->
+  <div class="section">
+    <h2>The Work</h2>
+    <p class="sub">Here's what the different levels could look like.</p>
+
+    <div class="pricing-grid" style="grid-template-columns: 1fr 1fr;">
+
+      <!-- Core Build -->
+      <div class="price-card">
+        <div class="price-tier-name">Core Build</div>
+        <div class="price-amount">$8,000-10,000 <span class="currency">CAD</span></div>
+        <div class="price-type">~130 hours &bull; 2-3 months</div>
+        <div class="price-desc">The foundation &mdash; everything you need to start getting leads and looking professional.</div>
+        <ul class="feature-list">
+          <li>Fully redesigned website with AI assistant (answers customer questions 24/7)</li>
+          <li>Simple truck quote building tool for customers</li>
+          <li>Google Business profile optimization</li>
+          <li>SEO so people can find you</li>
+          <li>Social media templates &amp; content calendar</li>
+          <li>Email automation for follow-ups &amp; updates</li>
+          <li>Analytics so you can see what's working</li>
+        </ul>
+        <div style="font-size:0.8rem; color:#888; margin-top:1rem; padding-top:0.8rem; border-top:1px solid #f0f0f0;">
+          $3,000-4,000 upfront &bull; $1,500-2,000 biweekly until done
+        </div>
+      </div>
+
+      <!-- Full System -->
+      <div class="price-card featured">
+        <div class="price-tier-name">Full System</div>
+        <div class="price-amount">$35,000-45,000 <span class="currency">CAD</span></div>
+        <div class="price-type">~300-500 hours &bull; 10-12 months build + 3-6 months testing</div>
+        <div class="price-desc">The complete package. No other shop in Alberta will have anything like this.</div>
+        <ul class="feature-list">
+          <li>Everything in Core Build</li>
+          <li class="group-label">Advanced Tools</li>
+          <li>Advanced food truck configurator (layout, appliances, finishes, detailed estimates)</li>
+          <li>AI chatbot with deep knowledge of builds, timelines, materials</li>
+          <li>Customer project portal (progress photos, milestones, build stages)</li>
+          <li>Smart quote routing by type, urgency, and complexity</li>
+          <li>Automated milestone updates with photos at each stage</li>
+          <li class="group-label">Operations</li>
+          <li>Full operations dashboard (job tracking, scheduling, capacity)</li>
+          <li>Inventory &amp; materials tracking tied to active builds</li>
+          <li>Supplier integration for automated reordering or alerting</li>
+          <li>Accounting system &amp; Trello integration</li>
+        </ul>
+        <div style="font-size:0.8rem; color:#888; margin-top:1rem; padding-top:0.8rem; border-top:1px solid #f0f0f0;">
+          $6,000-8,000 upfront &bull; $2,500 biweekly until done<br>
+          After build: 3-6 months testing with real jobs, then 10-12 months developing into a sellable product for other shops. Close to a 2-year project from start to product launch.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- The Monthly -->
+  <div class="section">
+    <h2>Ongoing</h2>
+    <p class="sub">If any of this gets built, it needs someone keeping an eye on it. Here's what that could look like.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier-name">Basic Maintenance</div>
+        <div class="price-amount">$750 <span class="currency">/mo</span></div>
+        <div class="price-type">Updates and keeping things running</div>
+        <div class="price-desc">Updates and keeping things running.</div>
+        <ul class="feature-list">
+          <li>Website updates, fixes, security</li>
+          <li>System monitoring</li>
+          <li>Hosting &amp; domain management</li>
+          <li>1-2 social posts per week</li>
+          <li>Google Business kept current</li>
+          <li>Monthly check-in</li>
+          <li>Direct access to me</li>
+        </ul>
+      </div>
+      <div class="price-card featured">
+        <div class="price-tier-name">Active Growth</div>
+        <div class="price-amount">$1,200-1,500 <span class="currency">/mo</span></div>
+        <div class="price-type">New content and ongoing improvements</div>
+        <div class="price-desc">New content and ongoing improvements.</div>
+        <ul class="feature-list">
+          <li>Everything in Maintenance</li>
+          <li>3-4 social posts per week</li>
+          <li>SEO &amp; keyword targeting</li>
+          <li>Blog content &amp; landing pages</li>
+          <li>Monthly analytics report</li>
+          <li>System improvements &amp; tuning</li>
+          <li>Chatbot &amp; automation refinement</li>
+        </ul>
+      </div>
+      <div class="price-card">
+        <div class="price-tier-name">Full Service</div>
+        <div class="price-amount">$2,500 <span class="currency">/mo</span></div>
+        <div class="price-type">Full-time hands-on management</div>
+        <div class="price-desc">Hands-on management of everything, full time. Opens the door to expansion.</div>
+        <ul class="feature-list">
+          <li>Everything in Growth</li>
+          <li>Paid ad management</li>
+          <li>Ad creative &amp; targeting</li>
+          <li>Video content support</li>
+          <li>Ongoing development</li>
+          <li>Monthly strategy call</li>
+          <li>Same-day response</li>
+        </ul>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:1rem; font-size:0.85rem; color:#888;">Cancel anytime. No contracts.</div>
+  </div>
+
+  <!-- Add-ons removed — AI assistant, configurator, and chatbot now included in main tiers -->
+
+  <!-- Rates -->
+  <div class="section">
+    <h2>My Rates</h2>
+    <p class="sub">Pretty simple. Depends on what kind of work it is.</p>
+    <div class="ala-grid">
+      <div class="ala-item">
+        <div class="ala-name">Marketing &amp; Content Work<small>Social media, templates, GBP, content calendars, brand materials</small></div>
+        <div class="ala-price">$35-45/hr</div>
+      </div>
+      <div class="ala-item">
+        <div class="ala-name">Design &amp; Web Development<small>Website builds, UI/UX design, frontend &amp; backend development</small></div>
+        <div class="ala-price">$50-60/hr</div>
+      </div>
+      <div class="ala-item">
+        <div class="ala-name">Custom Systems &amp; AI<small>Portals, dashboards, automation, AI integration, database work</small></div>
+        <div class="ala-price">$60-75/hr</div>
+      </div>
+      <div class="ala-item">
+        <div class="ala-name">Ongoing Management<small>Monthly retainer &mdash; mix of content, maintenance, and improvements</small></div>
+        <div class="ala-price">$1,200/mo</div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:1.5rem; font-size:0.85rem; color:#888;">
+      If something takes less time than estimated, it costs less. I track everything.
+    </div>
+  </div>
+
+  <!-- Payment -->
+  <div class="section">
+    <h2>Payment</h2>
+    <p class="sub">Whatever works for you.</p>
+    <p class="sub">An upfront amount to get me started, then a monthly retainer until the work's done or hits the cap. Simple.</p>
+
+    <table class="compare-table" style="margin-bottom:1.5rem;">
+      <tr>
+        <th>Tier</th>
+        <th style="text-align:right;">Upfront</th>
+        <th style="text-align:right;">Biweekly</th>
+        <th style="text-align:right;">Until</th>
+      </tr>
+      <tr>
+        <td>Core Build</td>
+        <td class="price-col">$3,000-4,000</td>
+        <td class="price-col">$1,500-2,000</td>
+        <td style="text-align:right; font-size:0.85rem; color:#666;">~2-3 months or $10K cap</td>
+      </tr>
+      <tr class="highlight">
+        <td>Full System</td>
+        <td class="price-col">$6,000-8,000</td>
+        <td class="price-col">$2,500</td>
+        <td style="text-align:right; font-size:0.85rem; color:#666;">~10-12 months or $35K cap</td>
+      </tr>
+    </table>
+    <div style="font-size:0.85rem; color:#666; max-width:600px; margin:0 auto; line-height:1.6;">
+      The upfront covers initial setup and gives me runway to start. Monthly continues until the scope is done or hits the cap &mdash; whichever comes first. After that it shifts to whichever ongoing tier makes sense.
+    </div>
+    <div style="font-size:0.85rem; color:#666; max-width:600px; margin:0 auto; line-height:1.6; margin-top:1rem; padding-top:1rem; border-top:1px solid #eee;">
+      For smaller stuff we can keep it simple &mdash; cash, e-transfer, whatever works. If things scale into the bigger tiers we'd probably want a basic written agreement at some point, just so we're both clear on scope and expectations. Nothing crazy &mdash; just something on paper.
+    </div>
+  </div>
+
+  <!-- ROI -->
+  <div class="section">
+    <div class="roi-box">
+      <h3>The Range</h3>
+      <div class="roi-grid">
+        <div class="roi-item">
+          <span class="num">$8-10K</span>
+          <span class="lbl">Core Build</span>
+        </div>
+        <div class="roi-item">
+          <span class="num">$35-45K</span>
+          <span class="lbl">Full System</span>
+        </div>
+      </div>
+      <div class="roi-note">
+        For reference &mdash; one food truck build is $79,000-$139,000.
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison -->
+  <div class="section">
+    <h2>What This Would Actually Cost Elsewhere</h2>
+    <p class="sub">Not to compare myself to these guys &mdash; just so you have a sense of what this kind of work goes for.</p>
+    <table class="compare-table">
+      <tr>
+        <th>Work</th>
+        <th style="text-align:right;">Calgary Agency</th>
+        <th style="text-align:right;">Freelancer (Upwork, etc)</th>
+        <th style="text-align:right;">Me</th>
+      </tr>
+      <tr>
+        <td>Website upgrades &amp; new features</td>
+        <td class="agency-col">$5,000-15,000</td>
+        <td style="text-align:right; color:#888;">$2,000-6,000</td>
+        <td class="price-col">Included in Core ($8-10K)</td>
+      </tr>
+      <tr class="highlight">
+        <td>Custom web app (configurator)</td>
+        <td class="agency-col">$15,000-30,000</td>
+        <td style="text-align:right; color:#888;">$5,000-15,000</td>
+        <td class="price-col">Included in Full System</td>
+      </tr>
+      <tr>
+        <td>AI chatbot</td>
+        <td class="agency-col">$8,000-15,000</td>
+        <td style="text-align:right; color:#888;">$3,000-8,000</td>
+        <td class="price-col">Included in Core ($8-10K)</td>
+      </tr>
+      <tr class="highlight">
+        <td>Customer portal (auth, tracking)</td>
+        <td class="agency-col">$15,000-25,000</td>
+        <td style="text-align:right; color:#888;">$8,000-15,000</td>
+        <td class="price-col">Included in Full System</td>
+      </tr>
+      <tr>
+        <td>Internal ops dashboard</td>
+        <td class="agency-col">$20,000-40,000</td>
+        <td style="text-align:right; color:#888;">$10,000-25,000</td>
+        <td class="price-col">Included in Full System</td>
+      </tr>
+      <tr class="highlight">
+        <td>Social media management (monthly)</td>
+        <td class="agency-col">$1,500-3,000/mo</td>
+        <td style="text-align:right; color:#888;">$500-1,500/mo</td>
+        <td class="price-col">$750-1,500/mo</td>
+      </tr>
+      <tr>
+        <td>SEO &amp; content (monthly)</td>
+        <td class="agency-col">$1,000-3,000/mo</td>
+        <td style="text-align:right; color:#888;">$500-1,500/mo</td>
+        <td class="price-col">Included in Growth tier</td>
+      </tr>
+      <tr style="background:#f8fafb; font-weight:600;">
+        <td>Everything (year 1)</td>
+        <td class="agency-col">$80,000-150,000+</td>
+        <td style="text-align:right; color:#888;">$35,000-70,000</td>
+        <td class="price-col">$8K-45K + monthly</td>
+      </tr>
+    </table>
+    <div style="text-align:center; margin-top:1rem; font-size:0.85rem; color:#888;">
+      Agency rates are typical Calgary market pricing. Freelancer rates are mid-range from platforms like Upwork or Toptal. My rates are competitive because there's no agency overhead and I use AI tools to work faster &mdash; you get more done per dollar.
+    </div>
+  </div>
+
+  <!-- The Bigger Picture -->
+  <div class="section">
+    <h2>The Bigger Picture</h2>
+    <p class="sub">If we go with the Full System, here's where it could lead.</p>
+    <div style="background:#fff; border-radius:14px; padding:2rem; border:1px solid #eee; line-height:1.8;">
+      <p style="margin-bottom:1rem;">I'm forming an LLC this summer. Brothers Fabrication would be the founding client and partner. We start with your build this summer. Get your systems running by around September. After 2-3 months, if everything is working, we start turning what we built into a customized product we can sell to other fabrication shops across Alberta.</p>
+      <p style="margin-bottom:1rem;">Brothers gets an ownership stake in that product and service. You're in on the ground floor.</p>
+      <p style="margin-bottom:1rem;">Year one is Brothers plus a few early adopters. Year two we go Alberta-wide. Year three and beyond — BC expansion, then further into Canada, with potential for franchising five-plus years down the road.</p>
+      <p style="margin-bottom:1rem;">Simple structure. Peace of mind for everyone. If something doesn't work out, it's clean. No tangled mess — just a straightforward arrangement that protects both of us.</p>
+      <p style="font-size:0.9rem; color:#666;"><strong>Timeline:</strong> Summer-Fall &mdash; build core system at Brothers. Winter &mdash; test and refine with real jobs. Spring through the following winter &mdash; develop into a product. By early 2028, start approaching other shops across Alberta. Year one is Brothers plus 2-3 early adopters. Year two, Alberta-wide. Year three and beyond, Western Canada.</p>
+    </div>
+  </div>
+
+  <!-- Guarantee -->
+  <div class="guarantee">
+    <h3>How This Works Between Us</h3>
+    <p>If something's not working, we talk about it and fix it. If you want to pause, we pause. No contracts, no drama. We're family &mdash; I'm not going to take money for something that isn't helping.</p>
+  </div>
+
+  <div class="footer-note">
+    <p>Prepared by Joel Kometz | April 2026 | All prices in CAD</p>
+    <p style="margin-top:0.3rem;">E-transfer, cheque, or invoice &mdash; whatever works. GST applicable.</p>
+  </div>
+</div>
+</body>
+</html>

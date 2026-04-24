@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brothers Fabrication — Social Media Strategy & Templates</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: #fafafa; }
+    .sm-page { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .sm-hero {
+      background: linear-gradient(135deg, #0a1628, #0a6e8a);
+      border-radius: 20px;
+      padding: 3rem;
+      color: #fff;
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+    .sm-hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; margin-bottom: 1rem; }
+    .sm-hero p { color: rgba(255,255,255,0.7); max-width: 600px; margin: 0 auto; }
+
+    .sm-section { margin-bottom: 3rem; }
+    .sm-section h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: #1a1a2e;
+    }
+    .sm-section > p { color: #666; margin-bottom: 1.5rem; }
+
+    /* Content Calendar */
+    .calendar {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #eee;
+      overflow: hidden;
+    }
+    .cal-header {
+      display: grid;
+      grid-template-columns: 100px repeat(7, 1fr);
+      background: #0a1628;
+      color: #fff;
+    }
+    .cal-header div { padding: 0.8rem; text-align: center; font-size: 0.8rem; font-weight: 600; }
+    .cal-row {
+      display: grid;
+      grid-template-columns: 100px repeat(7, 1fr);
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cal-row:last-child { border-bottom: none; }
+    .cal-label {
+      padding: 1rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #333;
+      background: #f8f8f8;
+      border-right: 1px solid #eee;
+    }
+    .cal-cell { padding: 0.6rem; min-height: 80px; border-right: 1px solid #f5f5f5; }
+    .cal-cell:last-child { border-right: none; }
+    .cal-post {
+      background: #e8f4f8;
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.7rem;
+      margin-bottom: 0.3rem;
+      color: #0a6e8a;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .cal-post.ig { background: #fce4ec; color: #c62828; }
+    .cal-post.fb { background: #e3f2fd; color: #1565c0; }
+    .cal-post.reel { background: #f3e5f5; color: #7b1fa2; }
+    .cal-post.story { background: #fff3e0; color: #e65100; }
+
+    /* Post Templates */
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .post-template {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #eee;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .post-template:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+    .post-image {
+      height: 250px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+    }
+    .post-image .post-logo {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(0,0,0,0.3);
+      padding: 0.3rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .post-image .post-type {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .post-type.ig-tag { background: #e91e63; }
+    .post-type.fb-tag { background: #1877f2; }
+    .post-type.reel-tag { background: #7b1fa2; }
+    .post-image h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .post-image p { font-size: 0.85rem; opacity: 0.9; }
+    .post-body { padding: 1.5rem; }
+    .post-caption { font-size: 0.9rem; color: #333; line-height: 1.6; margin-bottom: 1rem; }
+    .post-hashtags { font-size: 0.8rem; color: #0a6e8a; line-height: 1.5; }
+    .post-meta {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.8rem 1.5rem;
+      border-top: 1px solid #f0f0f0;
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    /* Hashtag Strategy */
+    .hashtag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .hashtag-group {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #eee;
+    }
+    .hashtag-group h4 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.3rem; }
+    .hashtag-group .tag-desc { font-size: 0.8rem; color: #888; margin-bottom: 1rem; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .tag {
+      background: #e8f4f8;
+      color: #0a6e8a;
+      padding: 0.3rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Content Pillars */
+    .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .pillar {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #eee;
+      text-align: center;
+    }
+    .pillar-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+    .pillar h4 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; margin-bottom: 0.5rem; }
+    .pillar p { font-size: 0.85rem; color: #666; }
+    .pillar-pct { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700; color: #0a6e8a; margin-top: 0.5rem; }
+
+    .sm-note {
+      background: linear-gradient(135deg, rgba(10,110,138,0.05), rgba(78,205,196,0.05));
+      border: 1px solid rgba(10,110,138,0.15);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+    .sm-note h3 { font-family: 'Space Grotesk', sans-serif; color: #0a6e8a; margin-bottom: 0.5rem; }
+    .sm-note p { color: #666; font-size: 0.9rem; }
+
+    .visual-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 3rem; }
+    @media (max-width: 1024px) {
+      .visual-grid { grid-template-columns: 1fr 1fr; }
+      .template-grid { grid-template-columns: 1fr 1fr; }
+      .hashtag-grid { grid-template-columns: 1fr; }
+      .pillars { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .visual-grid { grid-template-columns: 1fr 1fr; }
+      .template-grid { grid-template-columns: 1fr; }
+      .pillars { grid-template-columns: 1fr; }
+      .cal-header, .cal-row { grid-template-columns: 80px repeat(7, 1fr); }
+      .cal-cell { padding: 0.3rem; min-height: 60px; }
+      .cal-post { font-size: 0.6rem; }
+      .sm-hero h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sm-page">
+  <a href="hub.html" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;color:#0a6e8a;font-weight:600;text-decoration:none;margin-bottom:1rem;">&larr; Back to Hub</a>
+  <div class="sm-hero">
+    <div class="section-tag" style="background:rgba(255,255,255,0.1); color:#4ecdc4;">Social Media Strategy</div>
+    <h1>Brothers Fabrication<br>Content & Social Plan</h1>
+    <p>A systematic approach to turning your incredible builds into a consistent stream of qualified leads.</p>
+  </div>
+
+  <!-- Content Pillars -->
+  <div class="sm-section">
+    <h2>Content Pillars</h2>
+    <p>Every post falls into one of four categories. This keeps content balanced and strategic.</p>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-icon" style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;color:#0a6e8a;">01</div>
+        <h4>Build Progress</h4>
+        <p>Behind-the-scenes of active builds. Raw, real, satisfying to watch.</p>
+        <div class="pillar-pct">40%</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;color:#0a6e8a;">02</div>
+        <h4>Client Spotlights</h4>
+        <p>Finished trucks in action. Client stories, reviews, grand openings.</p>
+        <div class="pillar-pct">25%</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;color:#0a6e8a;">03</div>
+        <h4>Team & Culture</h4>
+        <p>Meet the crew. Shop life, certifications, the two Chrises being rad.</p>
+        <div class="pillar-pct">20%</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;color:#0a6e8a;">04</div>
+        <h4>Education</h4>
+        <p>Food truck tips, AHS requirements, "how it's made" breakdowns.</p>
+        <div class="pillar-pct">15%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visual Samples -->
+  <div class="sm-section">
+    <h2>Visual Samples</h2>
+    <p>What branded posts could look like. These are mockups &mdash; real ones would use actual shop photos.</p>
+    <div class="visual-grid">
+
+      <!-- Sample 1: Build in Progress (dark, matches hero) -->
+      <div style="aspect-ratio:1; border-radius:12px; overflow:hidden; position:relative; background:linear-gradient(135deg, #0a1628, #0a3d5c, #0a6e8a);">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:space-between; padding:1.8rem;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <div style="width:28px; height:28px; background:#0a6e8a; border-radius:7px; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:0.6rem; color:#fff; border:1px solid rgba(255,255,255,0.15);">BF</div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:0.75rem; font-weight:700; color:rgba(255,255,255,0.6);">Brothers Fabrication</div>
+          </div>
+          <div>
+            <div style="width:40px; height:3px; background:#4ecdc4; margin-bottom:0.8rem;"></div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; color:#fff; line-height:1.2;">22ft build.<br>Week 6 of 12.</div>
+            <div style="font-size:0.75rem; color:rgba(255,255,255,0.5); margin-top:0.5rem;">Frame welded. Plumbing roughed in.<br>Walls going up this week.</div>
+          </div>
+        </div>
+        <div style="position:absolute; top:45%; left:50%; transform:translate(-50%,-50%); width:52px; height:52px; border:2px solid rgba(255,255,255,0.12); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+          <div style="width:0; height:0; border-left:14px solid rgba(255,255,255,0.25); border-top:9px solid transparent; border-bottom:9px solid transparent; margin-left:3px;"></div>
+        </div>
+      </div>
+
+      <!-- Sample 2: Before/After (light card, matches service cards) -->
+      <div style="aspect-ratio:1; border-radius:12px; overflow:hidden; position:relative; background:#fff; border:1px solid #eee; box-shadow:0 4px 20px rgba(0,0,0,0.06);">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; flex:1;">
+            <div style="background:#f0f0f0; display:flex; align-items:center; justify-content:center; border-right:1px solid #eee;">
+              <div style="font-family:'Space Grotesk',sans-serif; font-size:0.8rem; font-weight:600; color:#aaa;">BEFORE</div>
+            </div>
+            <div style="background:linear-gradient(135deg, #e8f4f8, #f0f9fc); display:flex; align-items:center; justify-content:center;">
+              <div style="font-family:'Space Grotesk',sans-serif; font-size:0.8rem; font-weight:600; color:#0a6e8a;">AFTER</div>
+            </div>
+          </div>
+          <div style="padding:1.2rem; border-top:1px solid #eee;">
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+              <div style="width:22px; height:22px; background:#0a6e8a; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:0.5rem; color:#fff;">BF</div>
+              <div style="font-family:'Space Grotesk',sans-serif; font-size:0.7rem; font-weight:700; color:#1a1a2e;">Brothers Fabrication</div>
+            </div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:0.95rem; font-weight:700; color:#1a1a2e;">Empty trailer &rarr; fully loaded kitchen.</div>
+            <div style="font-size:0.7rem; color:#888; margin-top:0.3rem;">16ft BBQ trailer &bull; 10 weeks &bull; Calgary, AB</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sample 3: Client Spotlight (light card with teal accent) -->
+      <div style="aspect-ratio:1; border-radius:12px; overflow:hidden; position:relative; background:#fff; border:2px solid #0a6e8a; box-shadow:0 4px 20px rgba(10,110,138,0.08);">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:space-between; padding:1.5rem;">
+          <div>
+            <div style="background:#e8f4f8; color:#0a6e8a; font-size:0.7rem; font-weight:600; padding:0.2rem 0.7rem; border-radius:100px; display:inline-block;">Client Spotlight</div>
+          </div>
+          <div style="text-align:center; flex:1; display:flex; flex-direction:column; justify-content:center; gap:0.4rem;">
+            <div style="width:52px; height:52px; border-radius:50%; background:#f8fafb; border:2px solid #eee; margin:0 auto; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:600; color:#aaa; font-size:0.7rem;">Photo</div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; color:#1a1a2e;">[Client Name]</div>
+            <div style="font-size:0.75rem; color:#888;">[Business Name] &mdash; Calgary, AB</div>
+            <div style="color:#f5a623; font-size:0.65rem; margin-top:0.2rem;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          </div>
+          <div>
+            <div style="font-style:italic; font-size:0.8rem; color:#555; line-height:1.5; text-align:center; padding-top:0.8rem; border-top:1px solid #eee;">"They understood exactly what we needed and built something better than we imagined."</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sample 4: Team Member (dark, matches portal/ops style) -->
+      <div style="aspect-ratio:1; border-radius:12px; overflow:hidden; position:relative; background:#0a1628; border:1px solid rgba(255,255,255,0.08);">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; padding:1.5rem;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <div style="width:22px; height:22px; background:#0a6e8a; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:0.5rem; color:#fff;">BF</div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:0.7rem; font-weight:700; color:rgba(255,255,255,0.5);">Meet the Crew</div>
+          </div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+            <div style="text-align:center;">
+              <div style="width:64px; height:64px; border-radius:50%; background:#e74c3c; margin:0 auto 0.8rem; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; color:#fff; font-size:1.1rem;">JE</div>
+              <div style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700; color:#fff;">Jesse</div>
+              <div style="font-size:0.8rem; color:rgba(255,255,255,0.4); margin-top:0.2rem;">Fabricator</div>
+              <div style="margin-top:0.6rem;">
+                <span style="background:rgba(78,205,196,0.15); color:#4ecdc4; padding:0.2rem 0.6rem; border-radius:100px; font-size:0.65rem; font-weight:600;">Red Seal Welder</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sample 5: Stat (teal gradient, matches hero CTA) -->
+      <div style="aspect-ratio:1; border-radius:12px; overflow:hidden; position:relative; background:linear-gradient(135deg, #0a6e8a, #4ecdc4);">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:2rem; text-align:center;">
+          <div style="font-family:'Space Grotesk',sans-serif; font-size:3.5rem; font-weight:800; color:#fff; line-height:1;">5.0</div>
+          <div style="width:40px; height:3px; background:rgba(255,255,255,0.4); margin:0.8rem 0;"></div>
+          <div style="font-size:0.9rem; color:rgba(255,255,255,0.85); line-height:1.5;">49+ five-star reviews<br>on Google</div>
+          <div style="display:flex; align-items:center; gap:0.4rem; margin-top:1.2rem;">
+            <div style="width:22px; height:22px; background:rgba(255,255,255,0.2); border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:0.5rem; color:#fff;">BF</div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:0.7rem; font-weight:700; color:rgba(255,255,255,0.6);">Brothers Fabrication</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sample 6: Education / Tip (light card, matches pricing cards) -->
+      <div style="aspect-ratio:1; border-radius:12px; overflow:hidden; position:relative; background:#f8fafb; border:1px solid #eee;">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:space-between; padding:1.5rem;">
+          <div>
+            <div style="background:#e8f4f8; color:#0a6e8a; font-size:0.7rem; font-weight:600; padding:0.2rem 0.7rem; border-radius:100px; display:inline-block;">Food Truck Tip</div>
+          </div>
+          <div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; color:#1a1a2e; line-height:1.2;">Your menu<br>determines<br>your layout.</div>
+            <div style="width:40px; height:3px; background:#0a6e8a; margin:0.8rem 0;"></div>
+            <div style="font-size:0.75rem; color:#666; line-height:1.6;">Figure out what you're serving, how fast, and to how many people. Then the kitchen gets designed around that.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <div style="width:22px; height:22px; background:#0a6e8a; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:0.5rem; color:#fff;">BF</div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:0.7rem; font-weight:700; color:#1a1a2e;">Brothers Fabrication</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sample Posts -->
+  <div class="sm-section">
+    <h2>Post Templates with Copy</h2>
+    <p>Same posts as above but with the caption text ready to customize.</p>
+    <div class="template-grid">
+
+      <!-- Build Progress Post -->
+      <div class="post-template">
+        <div class="post-image" style="background: linear-gradient(135deg, #1a1a2e, #0a6e8a);">
+          <div class="post-logo">BROTHERS FABRICATION</div>
+          <div class="post-type reel-tag">REEL</div>
+          <h3>From steel to service window</h3>
+          <p>Build progress timelapse</p>
+        </div>
+        <div class="post-body">
+          <div class="post-caption">
+            Frame. Walls. Plumbing. Electrical. Kitchen. Wrap. &#x1F69A;<br><br>
+            12 weeks of work in 30 seconds. This 22ft food truck went from raw steel to a fully loaded kitchen on wheels.<br><br>
+            Every weld, every pipe, every wire — done in-house by our certified crew.
+          </div>
+          <div class="post-hashtags">#FoodTruckBuild #CalgaryFoodTruck #BrothersFabrication #CustomBuild #Fabrication #WeldLife #FoodTruckLife #YYCFood #MadeInCalgary</div>
+        </div>
+        <div class="post-meta">
+          <span>Best time: Tue/Thu 11am</span>
+          <span>Type: Reel / Video</span>
+        </div>
+      </div>
+
+      <!-- Before/After Post -->
+      <div class="post-template">
+        <div class="post-image" style="background: linear-gradient(135deg, #2d3436, #636e72);">
+          <div class="post-logo">BROTHERS FABRICATION</div>
+          <div class="post-type ig-tag">CAROUSEL</div>
+          <h3>Before &rarr; After</h3>
+          <p>The transformation is unreal</p>
+        </div>
+        <div class="post-body">
+          <div class="post-caption">
+            Swipe to see the transformation &#x27A1;<br><br>
+            This [vehicle type] came to us as a [blank canvas / worn-out truck / empty trailer]. Now it's a fully equipped [cuisine type] kitchen serving up [food type] across Calgary.<br><br>
+            - Custom layout designed for [client name]'s workflow<br>
+            - Full plumbing, gas, and electrical<br>
+            - AHS compliant from day one<br><br>
+            Thinking about your own food truck? Link in bio.
+          </div>
+          <div class="post-hashtags">#Transformation #BeforeAndAfter #FoodTruck #CalgaryBusiness #CustomFabrication #BrothersFabrication #YYC</div>
+        </div>
+        <div class="post-meta">
+          <span>Best time: Wed 12pm</span>
+          <span>Type: Carousel (5-8 slides)</span>
+        </div>
+      </div>
+
+      <!-- Client Spotlight -->
+      <div class="post-template">
+        <div class="post-image" style="background: linear-gradient(135deg, #0c3547, #1a6985);">
+          <div class="post-logo">BROTHERS FABRICATION</div>
+          <div class="post-type fb-tag">POST</div>
+          <h3>Client Spotlight</h3>
+          <p>[Client Name]'s story</p>
+        </div>
+        <div class="post-body">
+          <div class="post-caption">
+            Meet [Client Name], owner of [Business Name].<br><br>
+            When they came to us, they had a dream: [brief story]. We worked together over [X] weeks to build a food truck that's as unique as their menu.<br><br>
+            "[Client quote about their experience]"<br><br>
+            You can find [Business Name] at [location/events]. Go try their [signature dish]!<br><br>
+            Ready to start your own food truck journey? DM us or call 403-814-0543.
+          </div>
+          <div class="post-hashtags">#ClientSpotlight #SmallBusiness #FoodTruckOwner #CalgaryEats #SupportLocal #BrothersFabrication</div>
+        </div>
+        <div class="post-meta">
+          <span>Best time: Fri 6pm</span>
+          <span>Type: Photo post</span>
+        </div>
+      </div>
+
+      <!-- Team Post -->
+      <div class="post-template">
+        <div class="post-image" style="background: linear-gradient(135deg, #4a2c6e, #9b59b6);">
+          <div class="post-logo">BROTHERS FABRICATION</div>
+          <div class="post-type ig-tag">STORY</div>
+          <h3>Meet the Crew</h3>
+          <p>The people behind the builds</p>
+        </div>
+        <div class="post-body">
+          <div class="post-caption">
+            Meet [Team Member Name]<br>
+            Role: [Title]<br>
+            Certifications: [Certs]<br>
+            Fun fact: [Something personal]<br><br>
+            Our team is the reason we have a 5.0 on Google with 49+ reviews. Every person in the shop is certified and cares about the work.<br><br>
+            5.0 on Google (49+ reviews)
+          </div>
+          <div class="post-hashtags">#MeetTheTeam #BrothersFab #RedSeal #CalgaryTrades #WelderLife #PlumberLife</div>
+        </div>
+        <div class="post-meta">
+          <span>Best time: Mon 10am</span>
+          <span>Type: Story series</span>
+        </div>
+      </div>
+
+      <!-- Education Post -->
+      <div class="post-template">
+        <div class="post-image" style="background: linear-gradient(135deg, #1a6985, #4ecdc4);">
+          <div class="post-logo">BROTHERS FABRICATION</div>
+          <div class="post-type fb-tag">ARTICLE</div>
+          <h3>5 Things to Know<br>Before Building a<br>Food Truck</h3>
+        </div>
+        <div class="post-body">
+          <div class="post-caption">
+            Thinking about starting a food truck business? Here's what most people don't know:<br><br>
+            1. AHS compliance isn't optional (and it's complex)<br>
+            2. Generator choice affects everything<br>
+            3. Your menu determines your layout<br>
+            4. Insurance requirements vary by municipality<br>
+            5. Budget for commissary kitchen costs<br><br>
+            Save this for later &#x1F4BE;<br><br>
+            Have questions? We've built food trucks for 8 years. DM us anytime.
+          </div>
+          <div class="post-hashtags">#FoodTruckTips #HowToStartAFoodTruck #FoodTruckBusiness #CalgaryFoodTruck #Entrepreneur</div>
+        </div>
+        <div class="post-meta">
+          <span>Best time: Sun 2pm</span>
+          <span>Type: Carousel / Blog</span>
+        </div>
+      </div>
+
+      <!-- Sale/Promo Post -->
+      <div class="post-template">
+        <div class="post-image" style="background: linear-gradient(135deg, #c0392b, #e74c3c);">
+          <div class="post-logo">BROTHERS FABRICATION</div>
+          <div class="post-type fb-tag">PROMO</div>
+          <h3>Ready-Built Truck<br>Available Now</h3>
+          <p>Was $125K — Now $105K</p>
+        </div>
+        <div class="post-body">
+          <div class="post-caption">
+            &#x1F6A8; JUST LISTED — Brand new premium food truck, ready to roll.<br><br>
+            Was $125,000 — now $105,000 CAD.<br><br>
+            This truck is built and ready for immediate pickup. No 12-week wait. Full kitchen, AHS compliant, vinyl wrap ready.<br><br>
+            First come, first served. DM or call 403-814-0543.<br><br>
+            Full specs on our website (link in bio).
+          </div>
+          <div class="post-hashtags">#FoodTruckForSale #ReadyToRoll #FoodTruckBusiness #CalgaryBusiness #DealAlert</div>
+        </div>
+        <div class="post-meta">
+          <span>Boost: $50-100 budget</span>
+          <span>Type: Boosted post</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Content Calendar -->
+  <div class="sm-section">
+    <h2>Sample Weekly Calendar</h2>
+    <p>3-4 posts per week, strategically timed for maximum reach.</p>
+    <div class="calendar">
+      <div class="cal-header">
+        <div></div>
+        <div>MON</div>
+        <div>TUE</div>
+        <div>WED</div>
+        <div>THU</div>
+        <div>FRI</div>
+        <div>SAT</div>
+        <div>SUN</div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-label">Week 1</div>
+        <div class="cal-cell">
+          <div class="cal-post story">Story: Shop Monday</div>
+        </div>
+        <div class="cal-cell">
+          <div class="cal-post reel">Reel: Build timelapse</div>
+        </div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell">
+          <div class="cal-post ig">Carousel: Before/After</div>
+        </div>
+        <div class="cal-cell">
+          <div class="cal-post story">Story: Weekend prep</div>
+        </div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell">
+          <div class="cal-post fb">Post: Education tip</div>
+        </div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-label">Week 2</div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell">
+          <div class="cal-post ig">Post: Team spotlight</div>
+        </div>
+        <div class="cal-cell">
+          <div class="cal-post reel">Reel: Welding close-up</div>
+        </div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell">
+          <div class="cal-post fb">Post: Client spotlight</div>
+        </div>
+        <div class="cal-cell">
+          <div class="cal-post story">Story: Saturday work</div>
+        </div>
+        <div class="cal-cell"></div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-label">Week 3</div>
+        <div class="cal-cell">
+          <div class="cal-post story">Story: New project kick-off</div>
+        </div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell">
+          <div class="cal-post ig">Carousel: 5 tips post</div>
+        </div>
+        <div class="cal-cell">
+          <div class="cal-post reel">Reel: Plumbing install</div>
+        </div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell">
+          <div class="cal-post fb">Post: Review highlight</div>
+        </div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-label">Week 4</div>
+        <div class="cal-cell">
+          <div class="cal-post ig">Post: Milestone update</div>
+        </div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell">
+          <div class="cal-post reel">Reel: Delivery day!</div>
+        </div>
+        <div class="cal-cell">
+          <div class="cal-post story">Story: BTS electrical</div>
+        </div>
+        <div class="cal-cell">
+          <div class="cal-post fb">Post: Grand opening</div>
+        </div>
+        <div class="cal-cell"></div>
+        <div class="cal-cell"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hashtag Strategy -->
+  <div class="sm-section">
+    <h2>Hashtag Strategy</h2>
+    <p>Mix of high-volume, medium, and niche tags for optimal reach.</p>
+    <div class="hashtag-grid">
+      <div class="hashtag-group">
+        <h4>Core Brand Tags</h4>
+        <div class="tag-desc">Use on every post</div>
+        <div class="tag-list">
+          <span class="tag">#BrothersFabrication</span>
+          <span class="tag">#BrothersFab</span>
+          <span class="tag">#BuiltByBrothers</span>
+          <span class="tag">#CalgaryFabrication</span>
+          <span class="tag">#ChrisAndChrisko</span>
+        </div>
+      </div>
+      <div class="hashtag-group">
+        <h4>Industry Tags</h4>
+        <div class="tag-desc">Food truck + fabrication community</div>
+        <div class="tag-list">
+          <span class="tag">#FoodTruckBuild</span>
+          <span class="tag">#FoodTruckLife</span>
+          <span class="tag">#CustomFoodTruck</span>
+          <span class="tag">#FoodTruckBusiness</span>
+          <span class="tag">#MetalFabrication</span>
+          <span class="tag">#WeldLife</span>
+          <span class="tag">#CustomFabrication</span>
+          <span class="tag">#RedSealWelder</span>
+        </div>
+      </div>
+      <div class="hashtag-group">
+        <h4>Local Calgary Tags</h4>
+        <div class="tag-desc">Capture local search traffic</div>
+        <div class="tag-list">
+          <span class="tag">#YYC</span>
+          <span class="tag">#YYCFood</span>
+          <span class="tag">#CalgaryEats</span>
+          <span class="tag">#CalgaryBusiness</span>
+          <span class="tag">#CalgaryFoodTruck</span>
+          <span class="tag">#SupportLocalYYC</span>
+          <span class="tag">#MadeInCalgary</span>
+          <span class="tag">#AlbertaBusiness</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sm-note">
+    <h3>How This Would Actually Work</h3>
+    <p>All templates are customizable &mdash; real photos from the shop would replace the placeholders. Content and posting would be part of the ongoing monthly management, overseen by Chris P. The system would also be set up to support other content and media creators as Brothers grows &mdash; so if you bring on a videographer or photographer down the road, they'd plug right into the same brand framework.</p>
+  </div>
+</div>
+
+</body>
+</html>

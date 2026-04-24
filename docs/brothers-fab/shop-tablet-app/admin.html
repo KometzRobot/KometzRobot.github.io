@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BroFab Admin — Brothers Fabrication</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Brand Tokens (matches shop floor + demo site) ── */
+:root {
+  --bf-dark:        #0a1628;
+  --bf-dark-mid:    #0d1f35;
+  --bf-dark-card:   #0f2239;
+  --bf-sidebar:     rgba(0,0,0,0.28);
+  --bf-accent:      #4ecdc4;
+  --bf-accent-dim:  rgba(78,205,196,0.12);
+  --bf-charcoal:    #32373c;
+  --bf-success:     #2ecc71;
+  --bf-danger:      #e74c3c;
+  --bf-warning:     #f5a623;
+  --bf-border:      rgba(255,255,255,0.08);
+  --bf-border-mid:  rgba(255,255,255,0.13);
+  --bf-text:        #e8eaf0;
+  --bf-text-dim:    rgba(255,255,255,0.45);
+  --bf-font-display: 'Space Grotesk', sans-serif;
+  --bf-font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--bf-font-body);
+  background: var(--bf-dark);
+  color: var(--bf-text);
+  display: flex;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* ── Login Screen ── */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bf-dark);
+  background-image:
+    radial-gradient(circle at 25% 85%, rgba(78,205,196,0.06) 0%, transparent 50%),
+    radial-gradient(circle at 75% 15%, rgba(78,205,196,0.04) 0%, transparent 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.login-wrap {
+  width: 100%;
+  max-width: 380px;
+  padding: 24px;
+}
+.login-brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo {
+  width: 52px;
+  height: 52px;
+  background: var(--bf-accent);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--bf-font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #000;
+  margin: 0 auto 14px;
+}
+.login-brand h1 {
+  font-family: var(--bf-font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.login-brand p {
+  font-size: 0.83rem;
+  color: var(--bf-text-dim);
+}
+.login-card {
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border-mid);
+  border-radius: 16px;
+  padding: 28px;
+}
+.login-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--bf-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  display: block;
+}
+.login-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--bf-border-mid);
+  border-radius: 8px;
+  color: var(--bf-text);
+  font-size: 0.95rem;
+  margin-bottom: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.login-input:focus { border-color: var(--bf-accent); }
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--bf-accent);
+  color: #000;
+  border: 2px solid var(--bf-accent);
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.login-btn:hover { background: #3dbdb5; border-color: #3dbdb5; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(78,205,196,0.3); }
+.login-error {
+  color: var(--bf-danger);
+  font-size: 0.8rem;
+  margin-top: 10px;
+  text-align: center;
+  display: none;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 228px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.22) 100%);
+  border-right: 1px solid var(--bf-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.nav-badge {
+  background: var(--bf-warning);
+  color: #000;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 100px;
+  min-width: 18px;
+  text-align: center;
+  margin-left: auto;
+}
+.sidebar-brand {
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--bf-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-logo {
+  width: 32px;
+  height: 32px;
+  background: var(--bf-accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--bf-font-display);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #000;
+  flex-shrink: 0;
+}
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.sidebar-brand-name {
+  font-family: var(--bf-font-display);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.sidebar-brand-sub {
+  font-size: 0.6rem;
+  color: var(--bf-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+.sidebar-nav { padding: 10px; flex: 1; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.87rem;
+  color: var(--bf-text-dim);
+  margin-bottom: 2px;
+  transition: all 0.15s;
+}
+.nav-item:hover { background: rgba(255,255,255,0.06); color: var(--bf-text); }
+.nav-item.active { background: var(--bf-accent-dim); color: var(--bf-accent); font-weight: 600; border-left: 3px solid var(--bf-accent); padding-left: 7px; }
+.nav-icon { font-size: 1.1rem; width: 22px; text-align: center; flex-shrink: 0; }
+.sidebar-shoplink {
+  margin: 10px;
+}
+.sidebar-shoplink a {
+  display: block;
+  padding: 9px 12px;
+  background: var(--bf-accent-dim);
+  border: 1px solid rgba(78,205,196,0.2);
+  border-radius: 8px;
+  color: var(--bf-accent);
+  font-size: 0.83rem;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.2s;
+}
+.sidebar-shoplink a:hover { background: rgba(78,205,196,0.2); }
+.sidebar-footer {
+  padding: 14px 16px;
+  border-top: 1px solid var(--bf-border);
+  font-size: 0.75rem;
+  color: var(--bf-text-dim);
+}
+.sidebar-footer strong { color: var(--bf-text); }
+
+/* ── Main ── */
+.main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.main-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--bf-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.06) 100%);
+}
+.main-header h2 {
+  font-family: var(--bf-font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.main-body { padding: 22px; }
+
+/* ── Stats Row ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.stat {
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border);
+  border-radius: 12px;
+  padding: 16px;
+  border-top: 3px solid var(--bf-border-mid);
+  transition: border-color 0.2s, transform 0.15s;
+}
+.stat:hover { transform: translateY(-2px); border-top-color: var(--bf-accent); }
+.stat:nth-child(1) { border-top-color: var(--bf-accent); }
+.stat:nth-child(2) { border-top-color: var(--bf-warning); }
+.stat:nth-child(3) { border-top-color: var(--bf-success); }
+.stat:nth-child(4) { border-top-color: #9b59b6; }
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--bf-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.stat-value {
+  font-family: var(--bf-font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 4px;
+  color: var(--bf-text);
+}
+.stat-value.teal { color: var(--bf-accent); }
+
+/* ── Table ── */
+.table-wrap {
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.table-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--bf-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.table-header h3 {
+  font-family: var(--bf-font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left;
+  padding: 9px 18px;
+  font-size: 0.7rem;
+  color: var(--bf-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  border-bottom: 1px solid var(--bf-border);
+}
+td { padding: 11px 18px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.88rem; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(78,205,196,0.03); }
+
+/* ── Badges ── */
+.badge {
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-active    { background: rgba(46,204,113,0.15);  color: var(--bf-success); }
+.badge-pending   { background: rgba(245,166,35,0.15);  color: var(--bf-warning); }
+.badge-review    { background: var(--bf-accent-dim);   color: var(--bf-accent); }
+.badge-done      { background: rgba(255,255,255,0.07); color: var(--bf-text-dim); }
+.badge-cancelled { background: rgba(231,76,60,0.12);   color: var(--bf-danger); }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--bf-font-body);
+  border: none;
+}
+.btn-primary { background: var(--bf-charcoal); color: #fff; border: 2px solid var(--bf-charcoal); }
+.btn-primary:hover { background: #23272b; }
+.btn-accent { background: var(--bf-accent); color: #000; }
+.btn-accent:hover { opacity: 0.88; }
+.btn-sm {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid var(--bf-border-mid);
+  background: transparent;
+  color: var(--bf-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--bf-font-body);
+}
+.btn-sm:hover { background: rgba(255,255,255,0.08); border-color: var(--bf-border-mid); }
+.btn-sm.danger { border-color: rgba(231,76,60,0.4); color: var(--bf-danger); }
+.btn-sm.danger:hover { background: rgba(231,76,60,0.1); }
+.btn-sm.success { border-color: rgba(46,204,113,0.4); color: var(--bf-success); }
+.btn-sm.success:hover { background: rgba(46,204,113,0.1); }
+
+/* ── Panels ── */
+.panel { display: none; }
+.panel.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Modal ── */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-bg.show { display: flex; }
+.modal-bg.show .modal { animation: modalSlideIn 0.25s ease; }
+@keyframes modalSlideIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal {
+  background: var(--bf-dark-mid);
+  border: 1px solid var(--bf-border-mid);
+  border-radius: 16px;
+  padding: 24px;
+  width: 460px;
+  max-height: 82vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+}
+.modal h3 {
+  font-family: var(--bf-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bf-border);
+}
+.form-group { margin-bottom: 13px; }
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--bf-text-dim);
+  margin-bottom: 5px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 10px 13px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--bf-border-mid);
+  border-radius: 8px;
+  color: var(--bf-text);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: var(--bf-font-body);
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--bf-accent); }
+.form-textarea { min-height: 80px; resize: vertical; }
+.form-select option { background: var(--bf-dark-mid); }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.modal-actions .btn { flex: 1; }
+
+/* ── Automation Toggles ── */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--bf-border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { font-weight: 600; font-size: 0.88rem; }
+.toggle-sub { font-size: 0.75rem; color: var(--bf-text-dim); margin-top: 3px; }
+/* Custom toggle switch */
+.toggle-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.12);
+  border-radius: 100px;
+  transition: background 0.25s;
+  cursor: pointer;
+  border: 1px solid var(--bf-border-mid);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 2px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.25s;
+}
+.toggle-switch input:checked + .toggle-track { background: var(--bf-accent); border-color: var(--bf-accent); }
+.toggle-switch input:checked + .toggle-track::after { transform: translateX(18px); }
+
+/* ── Approvals card ── */
+.approval-card {
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.approval-card:last-child { margin-bottom: 0; }
+.approval-info .job-name {
+  font-family: var(--bf-font-display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 3px;
+}
+.approval-info .job-sub { font-size: 0.8rem; color: var(--bf-text-dim); margin-bottom: 6px; }
+.approval-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── Section tag ── */
+.section-tag {
+  display: inline-block;
+  background: var(--bf-accent-dim);
+  color: var(--bf-accent);
+  font-size: 0.67rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Auto-approve indicator ── */
+.auto-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+.auto-label.on  { background: rgba(46,204,113,0.15); color: var(--bf-success); }
+.auto-label.off { background: rgba(255,255,255,0.07); color: var(--bf-text-dim); }
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div class="login-screen" id="login-screen">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="login-logo">BF</div>
+      <h1>Brothers Fabrication</h1>
+      <p>Admin Panel</p>
+    </div>
+    <div class="login-card">
+      <label class="login-label">Username</label>
+      <input class="login-input" type="text" id="login-user" placeholder="chris" value="chris">
+      <label class="login-label">PIN</label>
+      <input class="login-input" type="password" id="login-pass" placeholder="••••" autofocus>
+      <button class="login-btn" onclick="attemptLogin()">Sign In</button>
+      <div class="login-error" id="login-error">Invalid credentials. Try again.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sidebar ── -->
+<div class="sidebar" id="sidebar" style="display:none;">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">BF</div>
+    <div class="sidebar-brand-text">
+      <span class="sidebar-brand-name">Brothers Fab</span>
+      <span class="sidebar-brand-sub">Admin Panel</span>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" data-panel="dashboard" onclick="switchPanel(this)">
+      <span class="nav-icon">&#9632;</span> Dashboard
+    </div>
+    <div class="nav-item" data-panel="jobs" onclick="switchPanel(this)">
+      <span class="nav-icon">&#128736;</span> Jobs
+    </div>
+    <div class="nav-item" data-panel="customers" onclick="switchPanel(this)">
+      <span class="nav-icon">&#128100;</span> Customers
+    </div>
+    <div class="nav-item" data-panel="approvals" onclick="switchPanel(this)">
+      <span class="nav-icon">&#9745;</span> Approvals
+      <span class="nav-badge" id="nav-pending-badge" style="display:none;">0</span>
+    </div>
+    <div class="nav-item" data-panel="portal" onclick="switchPanel(this)">
+      <span class="nav-icon">&#128279;</span> Portal Links
+    </div>
+    <div class="nav-item" data-panel="settings" onclick="switchPanel(this)">
+      <span class="nav-icon">&#9881;</span> Settings
+    </div>
+  </div>
+  <div class="sidebar-shoplink">
+    <a href="index.html">&#128736; Open Shop Floor</a>
+  </div>
+  <div class="sidebar-footer">
+    Signed in as <strong id="admin-name">Chris</strong><br>
+    <span id="admin-clock" style="color:var(--bf-text-dim);"></span>
+  </div>
+</div>
+
+<!-- ── Main Content ── -->
+<div class="main" id="main-area" style="display:none;">
+
+  <!-- DASHBOARD -->
+  <div class="panel active" id="panel-dashboard">
+    <div class="main-header">
+      <h2>Dashboard</h2>
+      <button class="btn btn-accent" onclick="syncTrello()">Sync Trello</button>
+    </div>
+    <div class="main-body">
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label">Active Jobs</div>
+          <div class="stat-value teal" id="d-active">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Pending Approval</div>
+          <div class="stat-value" id="d-pending">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value" id="d-complete">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Revenue (Est.)</div>
+          <div class="stat-value" id="d-revenue">$0</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>Recent Activity</h3></div>
+        <table>
+          <thead><tr><th>Time</th><th>Event</th><th>Job</th><th>By</th></tr></thead>
+          <tbody id="activity-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOBS -->
+  <div class="panel" id="panel-jobs">
+    <div class="main-header">
+      <h2>Job Management</h2>
+      <button class="btn btn-accent" onclick="openNewJobModal()">+ New Job</button>
+    </div>
+    <div class="main-body">
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>All Jobs</h3>
+          <select class="form-select" style="width:140px;padding:6px 10px;font-size:0.82rem;" onchange="filterJobs(this.value)">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="review">In Review</option>
+            <option value="done">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Job Name</th><th>Customer</th><th>Status</th>
+              <th>Progress</th><th>Due</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS -->
+  <div class="panel" id="panel-customers">
+    <div class="main-header"><h2>Customers</h2></div>
+    <div class="main-body">
+      <div class="table-wrap">
+        <div class="table-header"><h3>Customer Directory</h3></div>
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Jobs</th><th>Status</th></tr></thead>
+          <tbody id="customers-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROVALS -->
+  <div class="panel" id="panel-approvals">
+    <div class="main-header">
+      <h2>Pending Approvals</h2>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="auto-label off" id="auto-approve-label">Auto-approve: OFF</span>
+        <button class="btn btn-primary" onclick="approveAllPending()">Approve All</button>
+      </div>
+    </div>
+    <div class="main-body" id="approvals-body"></div>
+  </div>
+
+  <!-- PORTAL LINKS -->
+  <div class="panel" id="panel-portal">
+    <div class="main-header"><h2>Customer Portal Links</h2></div>
+    <div class="main-body">
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>Active Links</h3>
+          <button class="btn btn-accent" onclick="generatePortalLinkPrompt()">+ Generate Link</button>
+        </div>
+        <table>
+          <thead><tr><th>Job</th><th>Customer</th><th>Link</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody id="portal-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="panel" id="panel-settings">
+    <div class="main-header"><h2>Settings</h2></div>
+    <div class="main-body">
+
+      <!-- Automation Toggles -->
+      <div class="table-wrap" style="padding:20px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <h3>Automation &amp; AI</h3>
+          <span class="section-tag">5 toggles</span>
+        </div>
+        <div>
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-label">Auto-Approve All</div>
+              <div class="toggle-sub">Skip manual approval — publish status updates immediately</div>
+            </div>
+            <div class="toggle-switch">
+              <input type="checkbox" id="s-auto-approve" onchange="saveAutoSettings()">
+              <div class="toggle-track"></div>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-label">Auto-Generate Portal Links</div>
+              <div class="toggle-sub">Create a customer portal link automatically when a new job starts</div>
+            </div>
+            <div class="toggle-switch">
+              <input type="checkbox" id="s-auto-portal" onchange="saveAutoSettings()">
+              <div class="toggle-track"></div>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-label">Auto-Email on Milestone</div>
+              <div class="toggle-sub">Email customer automatically when a milestone is marked complete</div>
+            </div>
+            <div class="toggle-switch">
+              <input type="checkbox" id="s-auto-email" onchange="saveAutoSettings()">
+              <div class="toggle-track"></div>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-label">Daily Summary Email</div>
+              <div class="toggle-sub">Send Chris a daily end-of-day summary of job progress</div>
+            </div>
+            <div class="toggle-switch">
+              <input type="checkbox" id="s-daily-summary" onchange="saveAutoSettings()">
+              <div class="toggle-track"></div>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-label">Auto-Archive Completed Jobs</div>
+              <div class="toggle-sub">Move jobs to archive 7 days after marking complete</div>
+            </div>
+            <div class="toggle-switch">
+              <input type="checkbox" id="s-auto-archive" onchange="saveAutoSettings()">
+              <div class="toggle-track"></div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Trello Integration -->
+      <div class="table-wrap" style="padding:20px;margin-bottom:16px;">
+        <h3 style="margin-bottom:16px;">Trello Integration</h3>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input class="form-input" id="s-trello-key" placeholder="Trello API Key">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Token</label>
+          <input class="form-input" id="s-trello-token" placeholder="Trello Token">
+        </div>
+        <button class="btn btn-accent" onclick="saveTrelloSettings()">Save &amp; Sync</button>
+        <p id="s-trello-status" style="font-size:0.78rem;color:var(--bf-text-dim);margin-top:10px;"></p>
+      </div>
+
+      <!-- Data Management -->
+      <div class="table-wrap" style="padding:20px;">
+        <h3 style="margin-bottom:16px;">Data Management</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="backupAllData()">Backup All Data</button>
+          <button class="btn-sm" onclick="document.getElementById('restore-file').click()">Restore from Backup</button>
+          <input type="file" id="restore-file" accept=".json" style="display:none;" onchange="restoreData(event)">
+          <button class="btn-sm danger" onclick="clearAllData()">Clear All Data</button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--bf-text-dim);margin-top:10px;">Backup downloads a JSON file with all jobs, customers, portal links, and settings.</p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ── Auth ──
+const ADMIN_USERS = {
+  'chris': { pin: '1234', name: 'Chris Kometz', role: 'Owner' },
+  'joel':  { pin: '5901', name: 'Joel Kometz',  role: 'Admin' },
+};
+let currentAdmin = null;
+
+function attemptLogin() {
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pin  = document.getElementById('login-pass').value;
+  if (ADMIN_USERS[user] && ADMIN_USERS[user].pin === pin) {
+    currentAdmin = ADMIN_USERS[user];
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('sidebar').style.display = 'flex';
+    document.getElementById('main-area').style.display = 'flex';
+    document.getElementById('admin-name').textContent = currentAdmin.name;
+    loadData();
+    logActivity('Login', '-', currentAdmin.name);
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+document.getElementById('login-pass').addEventListener('keypress', e => { if (e.key === 'Enter') attemptLogin(); });
+
+// ── Data ──
+let JOBS         = JSON.parse(localStorage.getItem('brofab_admin_jobs')   || '[]');
+let ACTIVITY     = JSON.parse(localStorage.getItem('brofab_activity')     || '[]');
+let PORTAL_LINKS = JSON.parse(localStorage.getItem('brofab_portal_links') || '[]');
+
+function saveData() {
+  localStorage.setItem('brofab_admin_jobs',   JSON.stringify(JOBS));
+  localStorage.setItem('brofab_activity',     JSON.stringify(ACTIVITY));
+  localStorage.setItem('brofab_portal_links', JSON.stringify(PORTAL_LINKS));
+}
+
+function loadData() {
+  const key   = localStorage.getItem('trello_key');
+  const token = localStorage.getItem('trello_token');
+  if (key)   document.getElementById('s-trello-key').value   = key;
+  if (token) document.getElementById('s-trello-token').value = token;
+
+  if (JOBS.length === 0) {
+    JOBS = [
+      { id: 'JOB-001', name: 'Morrison Food Truck — 18ft',       customer: 'Dave Morrison',      email: 'dave@email.com',    type: 'Food Truck',          status: 'active',  due: '2026-05-15', progress: 25, revenue: 35000 },
+      { id: 'JOB-002', name: 'Patel Concession Trailer — 16ft',  customer: 'Anita Patel',        email: 'anita@email.com',   type: 'Concession Trailer',  status: 'active',  due: '2026-05-30', progress: 60, revenue: 22000 },
+      { id: 'JOB-003', name: 'Custom Kitchen Hood — Commercial',  customer: 'Riverbend Restaurant', email: 'info@riverbend.ca', type: 'Commercial Kitchen', status: 'pending', due: '2026-06-01', progress: 0,  revenue: 8500  },
+    ];
+    saveData();
+  }
+  renderAll();
+  loadAutoSettings();
+  if (key && token) setTimeout(() => syncTrello(), 500);
+}
+
+// ── Navigation ──
+function switchPanel(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+}
+
+// ── Render All ──
+function renderAll() {
+  renderDashboard();
+  renderJobs();
+  renderCustomers();
+  renderApprovals();
+  renderPortal();
+}
+
+function renderDashboard() {
+  document.getElementById('d-active').textContent   = JOBS.filter(j => j.status === 'active').length;
+  document.getElementById('d-pending').textContent  = JOBS.filter(j => j.status === 'pending' || j.status === 'review').length;
+  document.getElementById('d-complete').textContent = JOBS.filter(j => j.status === 'done').length;
+  const rev = JOBS.filter(j => j.status !== 'done').reduce((s, j) => s + (j.revenue || 0), 0);
+  document.getElementById('d-revenue').textContent  = '$' + rev.toLocaleString();
+
+  const tbody = document.getElementById('activity-table');
+  tbody.innerHTML = ACTIVITY.slice(-10).reverse().map(a =>
+    `<tr>
+      <td style="color:var(--bf-text-dim);font-size:0.8rem;white-space:nowrap;">${a.time}</td>
+      <td>${a.event}</td>
+      <td style="color:var(--bf-text-dim);font-size:0.85rem;">${a.job}</td>
+      <td style="color:var(--bf-text-dim);font-size:0.8rem;">${a.by}</td>
+    </tr>`
+  ).join('') || '<tr><td colspan="4" style="color:var(--bf-text-dim);font-size:0.83rem;">No activity yet.</td></tr>';
+}
+
+function renderJobs(filter = 'all') {
+  const filtered = filter === 'all' ? JOBS : JOBS.filter(j => j.status === filter);
+  const tbody = document.getElementById('jobs-table');
+  tbody.innerHTML = filtered.map(j => `
+    <tr>
+      <td style="font-family:monospace;color:var(--bf-text-dim);font-size:0.78rem;">${j.id}</td>
+      <td style="font-weight:600;">${j.name}${j.trelloId ? ' <span style="color:var(--bf-accent);font-size:0.7rem;" title="Linked to Trello">&#9670;</span>' : ''}</td>
+      <td style="color:var(--bf-text-dim);font-size:0.85rem;">${j.customer}</td>
+      <td><span class="badge badge-${j.status}">${j.status}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="background:rgba(255,255,255,0.1);height:5px;border-radius:100px;width:72px;overflow:hidden;flex-shrink:0;">
+            <div style="background:${j.status==='done'?'var(--bf-success)':'var(--bf-accent)'};height:100%;width:${j.progress}%;border-radius:100px;"></div>
+          </div>
+          <span style="font-size:0.75rem;color:var(--bf-text-dim);">${j.progress}%</span>
+        </div>
+      </td>
+      <td style="font-size:0.83rem;color:var(--bf-text-dim);">${j.due}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn-sm" onclick="editJob('${j.id}')">Edit</button>
+          ${j.status !== 'done' && j.status !== 'cancelled' ? `<button class="btn-sm success" onclick="completeJob('${j.id}')">Complete</button>` : ''}
+          ${j.status === 'done' || j.status === 'cancelled' ? `<button class="btn-sm" onclick="reopenJob('${j.id}')">Reopen</button>` : ''}
+          ${j.status !== 'done' && j.status !== 'cancelled' ? `<button class="btn-sm" style="border-color:rgba(245,166,35,0.4);color:var(--bf-warning);" onclick="cancelJob('${j.id}')">Cancel</button>` : ''}
+          <button class="btn-sm" onclick="cloneJob('${j.id}')">Clone</button>
+          <button class="btn-sm danger" onclick="deleteJob('${j.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="color:var(--bf-text-dim);text-align:center;padding:20px;font-size:0.83rem;">No jobs match this filter.</td></tr>';
+}
+
+function filterJobs(val) { renderJobs(val); }
+
+function renderCustomers() {
+  const customers = {};
+  JOBS.forEach(j => {
+    if (!customers[j.customer]) customers[j.customer] = { email: j.email, jobs: 0, active: 0 };
+    customers[j.customer].jobs++;
+    if (j.status === 'active') customers[j.customer].active++;
+  });
+  const tbody = document.getElementById('customers-table');
+  tbody.innerHTML = Object.entries(customers).map(([name, c]) =>
+    `<tr>
+      <td style="font-weight:600;">${name}</td>
+      <td style="color:var(--bf-text-dim);font-size:0.85rem;">${c.email}</td>
+      <td style="font-size:0.83rem;">${c.jobs} total (${c.active} active)</td>
+      <td><span class="badge ${c.active > 0 ? 'badge-active' : 'badge-done'}">${c.active > 0 ? 'Active Build' : 'No Active Jobs'}</span></td>
+    </tr>`
+  ).join('') || '<tr><td colspan="4" style="color:var(--bf-text-dim);padding:20px;font-size:0.83rem;">No customers yet.</td></tr>';
+}
+
+function renderPortal() {
+  const tbody = document.getElementById('portal-table');
+  tbody.innerHTML = PORTAL_LINKS.map(p =>
+    `<tr>
+      <td style="font-weight:600;font-size:0.88rem;">${p.job}</td>
+      <td style="color:var(--bf-text-dim);font-size:0.85rem;">${p.customer}</td>
+      <td style="font-family:monospace;font-size:0.78rem;color:var(--bf-accent);">${p.link}</td>
+      <td style="font-size:0.78rem;color:var(--bf-text-dim);">${p.created}</td>
+      <td>
+        <div style="display:flex;gap:5px;">
+          <button class="btn-sm" onclick="copyText('${p.link}')">Copy</button>
+          <button class="btn-sm danger" onclick="revokeLink('${p.link}')">Revoke</button>
+        </div>
+      </td>
+    </tr>`
+  ).join('') || '<tr><td colspan="5" style="color:var(--bf-text-dim);text-align:center;padding:20px;font-size:0.83rem;">No portal links generated yet.</td></tr>';
+}
+
+function renderApprovals() {
+  const pending = JOBS.filter(j => j.status === 'pending' || j.status === 'review');
+  // Update sidebar badge
+  const badge = document.getElementById('nav-pending-badge');
+  if (badge) {
+    if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = ''; }
+    else { badge.style.display = 'none'; }
+  }
+  const body  = document.getElementById('approvals-body');
+  const label = document.getElementById('auto-approve-label');
+  if (AUTO_SETTINGS.autoApprove) {
+    label.textContent = 'Auto-approve: ON';
+    label.className = 'auto-label on';
+  } else {
+    label.textContent = 'Auto-approve: OFF';
+    label.className = 'auto-label off';
+  }
+  if (pending.length === 0) {
+    body.innerHTML = '<p style="color:var(--bf-text-dim);padding:20px 0;font-size:0.85rem;">No pending approvals — all jobs are active or complete.</p>';
+    return;
+  }
+  body.innerHTML = pending.map(j => `
+    <div class="approval-card">
+      <div class="approval-info">
+        <div class="job-name">${j.name}</div>
+        <div class="job-sub">${j.customer} &bull; ${j.type}</div>
+        <span class="badge badge-${j.status}">${j.status}</span>
+      </div>
+      <div class="approval-actions">
+        <button class="btn-sm success" onclick="approveJob('${j.id}')">Approve</button>
+        <button class="btn-sm danger" onclick="rejectJob('${j.id}')">Reject</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Job Actions ──
+function openNewJobModal() {
+  document.getElementById('modal-content').innerHTML = `
+    <h3>Create New Job</h3>
+    <div class="form-group"><label class="form-label">Job Name</label><input class="form-input" id="nj-name" placeholder="e.g. Smith Food Truck — 20ft"></div>
+    <div class="form-group"><label class="form-label">Customer</label><input class="form-input" id="nj-customer"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="nj-email" type="email"></div>
+    <div class="form-group"><label class="form-label">Build Type</label>
+      <select class="form-select" id="nj-type">
+        <option>Food Truck</option><option>Food Trailer</option><option>Concession Trailer</option>
+        <option>Commercial Kitchen</option><option>Custom Fabrication</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Estimated Revenue ($)</label><input class="form-input" id="nj-revenue" type="number" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="nj-due" type="date"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="createJob()">Create Job</button>
+      <button class="btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--bf-border-mid);color:var(--bf-text);" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function createJob() {
+  const name     = document.getElementById('nj-name').value.trim();
+  const customer = document.getElementById('nj-customer').value.trim();
+  if (!name || !customer) return;
+  const job = {
+    id: 'JOB-' + String(JOBS.length + 1).padStart(3, '0'),
+    name, customer,
+    email:    document.getElementById('nj-email').value,
+    type:     document.getElementById('nj-type').value,
+    status:   'pending',
+    due:      document.getElementById('nj-due').value || 'TBD',
+    progress: 0,
+    revenue:  parseInt(document.getElementById('nj-revenue').value) || 0,
+  };
+  JOBS.push(job);
+  logActivity('Job created', job.name, currentAdmin.name);
+  saveData(); renderAll(); closeModal();
+}
+
+function editJob(id) {
+  const job = JOBS.find(j => j.id === id);
+  if (!job) return;
+  document.getElementById('modal-content').innerHTML = `
+    <h3>Edit — ${job.name}</h3>
+    <div class="form-group"><label class="form-label">Job Name</label><input class="form-input" id="ej-name" value="${job.name}"></div>
+    <div class="form-group"><label class="form-label">Customer</label><input class="form-input" id="ej-customer" value="${job.customer}"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="ej-email" value="${job.email||''}"></div>
+    <div class="form-group"><label class="form-label">Build Type</label>
+      <select class="form-select" id="ej-type">
+        <option ${job.type==='Food Truck'?'selected':''}>Food Truck</option>
+        <option ${job.type==='Food Trailer'?'selected':''}>Food Trailer</option>
+        <option ${job.type==='Concession Trailer'?'selected':''}>Concession Trailer</option>
+        <option ${job.type==='Commercial Kitchen'?'selected':''}>Commercial Kitchen</option>
+        <option ${job.type==='Custom Fabrication'?'selected':''}>Custom Fabrication</option>
+        <option ${job.type==='Trello Card'?'selected':''}>Trello Card</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Status</label>
+      <select class="form-select" id="ej-status">
+        <option ${job.status==='pending'?'selected':''}>pending</option>
+        <option ${job.status==='active'?'selected':''}>active</option>
+        <option ${job.status==='review'?'selected':''}>review</option>
+        <option ${job.status==='done'?'selected':''}>done</option>
+        <option ${job.status==='cancelled'?'selected':''}>cancelled</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Progress (%)</label><input class="form-input" id="ej-progress" type="number" min="0" max="100" value="${job.progress}"></div>
+    <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="ej-due" type="date" value="${job.due}"></div>
+    <div class="form-group"><label class="form-label">Revenue ($)</label><input class="form-input" id="ej-revenue" type="number" value="${job.revenue}"></div>
+    <div class="form-group"><label class="form-label">Internal Notes</label><textarea class="form-textarea" id="ej-notes" placeholder="Notes for the team...">${job.notes||''}</textarea></div>
+    <div class="form-group">
+      <label class="form-label">Documents</label>
+      <div style="border:2px dashed var(--bf-border-mid);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--bf-accent)'" onmouseout="this.style.borderColor=''" onclick="document.getElementById('ej-file-input').click()">
+        <div style="font-size:1.4rem;margin-bottom:4px;">&#128206;</div>
+        <div style="font-size:0.78rem;color:var(--bf-text-dim);">Click to attach documents (PDF, images, etc.)</div>
+        <input type="file" id="ej-file-input" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" style="display:none" onchange="handleDocUpload(event,'${id}')">
+      </div>
+      <div id="ej-doc-list" style="margin-top:8px;">${(job.documents||[]).map(d => '<div style="font-size:0.78rem;color:var(--bf-accent);padding:4px 0;">&#128196; '+d.name+'</div>').join('')}</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveJobEdit('${id}')">Save Changes</button>
+      <button class="btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--bf-border-mid);color:var(--bf-text);" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function saveJobEdit(id) {
+  const job = JOBS.find(j => j.id === id);
+  job.name     = document.getElementById('ej-name').value.trim()     || job.name;
+  job.customer = document.getElementById('ej-customer').value.trim() || job.customer;
+  job.email    = document.getElementById('ej-email').value.trim();
+  job.type     = document.getElementById('ej-type').value;
+  job.status   = document.getElementById('ej-status').value;
+  job.progress = parseInt(document.getElementById('ej-progress').value) || 0;
+  job.due      = document.getElementById('ej-due').value;
+  job.revenue  = parseInt(document.getElementById('ej-revenue').value) || 0;
+  job.notes    = document.getElementById('ej-notes').value;
+  if (job.status === 'done') job.progress = 100;
+  pushStatusToTrello(job);
+  logActivity('Job updated', job.name, currentAdmin.name);
+  saveData(); renderAll(); closeModal();
+}
+
+function completeJob(id) {
+  const job = JOBS.find(j => j.id === id);
+  if (!job) return;
+  job.status = 'done'; job.progress = 100;
+  pushStatusToTrello(job);
+  logActivity('Job completed', job.name, currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function reopenJob(id) {
+  const job = JOBS.find(j => j.id === id);
+  if (!job) return;
+  job.status = 'active';
+  job.progress = Math.min(job.progress, 90);
+  pushStatusToTrello(job);
+  logActivity('Job reopened', job.name, currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function cloneJob(id) {
+  const orig  = JOBS.find(j => j.id === id);
+  if (!orig) return;
+  const clone = JSON.parse(JSON.stringify(orig));
+  clone.id     = 'JOB-' + String(JOBS.length + 1).padStart(3, '0');
+  clone.name   = orig.name + ' (Copy)';
+  clone.status = 'pending';
+  clone.progress = 0;
+  JOBS.push(clone);
+  logActivity('Job cloned from ' + orig.id, clone.name, currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function deleteJob(id) {
+  if (!confirm('Delete this job? This cannot be undone.')) return;
+  const job = JOBS.find(j => j.id === id);
+  JOBS = JOBS.filter(j => j.id !== id);
+  logActivity('Job deleted', job ? job.name : id, currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function cancelJob(id) {
+  const job = JOBS.find(j => j.id === id);
+  if (!job) return;
+  if (!confirm('Cancel this job? It will be marked as cancelled.')) return;
+  job.status = 'cancelled';
+  logActivity('Job cancelled', job.name, currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function handleDocUpload(event, jobId) {
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  if (!job.documents) job.documents = [];
+  Array.from(event.target.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      job.documents.push({ name: file.name, size: file.size, data: e.target.result, date: new Date().toISOString() });
+      saveData();
+      const list = document.getElementById('ej-doc-list');
+      if (list) list.innerHTML = job.documents.map(d => '<div style="font-size:0.78rem;color:var(--bf-accent);padding:4px 0;">&#128196; '+d.name+'</div>').join('');
+    };
+    reader.readAsDataURL(file);
+  });
+  logActivity('Document uploaded', job.name, currentAdmin.name);
+}
+
+// ── Approvals ──
+function approveJob(id) {
+  const job = JOBS.find(j => j.id === id);
+  if (!job) return;
+  job.status = 'active';
+  pushStatusToTrello(job);
+  logActivity('Job approved', job.name, currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function rejectJob(id) {
+  const job = JOBS.find(j => j.id === id);
+  if (!job) return;
+  job.status = 'cancelled';
+  pushStatusToTrello(job);
+  logActivity('Job rejected', job.name, currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function approveAllPending() {
+  const pending = JOBS.filter(j => j.status === 'pending' || j.status === 'review');
+  if (pending.length === 0) return;
+  pending.forEach(j => j.status = 'active');
+  logActivity('All pending approved', pending.length + ' jobs', currentAdmin.name);
+  saveData(); renderAll();
+}
+
+// ── Automation ──
+let AUTO_SETTINGS = JSON.parse(localStorage.getItem('brofab_auto_settings') || '{}');
+
+function loadAutoSettings() {
+  document.getElementById('s-auto-approve').checked   = AUTO_SETTINGS.autoApprove   || false;
+  document.getElementById('s-auto-portal').checked    = AUTO_SETTINGS.autoPortal    || false;
+  document.getElementById('s-auto-email').checked     = AUTO_SETTINGS.autoEmail     || false;
+  document.getElementById('s-daily-summary').checked  = AUTO_SETTINGS.dailySummary  || false;
+  document.getElementById('s-auto-archive').checked   = AUTO_SETTINGS.autoArchive   || false;
+}
+
+function saveAutoSettings() {
+  AUTO_SETTINGS = {
+    autoApprove:  document.getElementById('s-auto-approve').checked,
+    autoPortal:   document.getElementById('s-auto-portal').checked,
+    autoEmail:    document.getElementById('s-auto-email').checked,
+    dailySummary: document.getElementById('s-daily-summary').checked,
+    autoArchive:  document.getElementById('s-auto-archive').checked,
+  };
+  localStorage.setItem('brofab_auto_settings', JSON.stringify(AUTO_SETTINGS));
+  renderApprovals(); // refresh auto-approve label
+  logActivity('Settings updated', 'Automation', currentAdmin.name);
+}
+
+// ── Portal Links ──
+function generatePortalLinkPrompt() {
+  document.getElementById('modal-content').innerHTML = `
+    <h3>Generate Portal Link</h3>
+    <div class="form-group">
+      <label class="form-label">Select Job</label>
+      <select class="form-select" id="pl-job-select">
+        ${JOBS.map(j => `<option value="${j.id}">${j.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="createPortalLink()">Generate Link</button>
+      <button class="btn" style="background:rgba(255,255,255,0.06);border:1px solid var(--bf-border-mid);color:var(--bf-text);" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function createPortalLink() {
+  const jobId = document.getElementById('pl-job-select').value;
+  generatePortalLink(jobId);
+  closeModal();
+}
+
+function generatePortalLink(jobId) {
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  const hash = btoa(job.id + '-' + Date.now()).replace(/=/g, '').substring(0, 12);
+  const link = `https://brofab.app/portal/${hash}`;
+  PORTAL_LINKS.push({ job: job.name, customer: job.customer, link, created: new Date().toLocaleDateString() });
+  logActivity('Portal link created', job.name, currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function revokeLink(link) {
+  if (!confirm('Revoke this portal link? The customer will lose access.')) return;
+  PORTAL_LINKS = PORTAL_LINKS.filter(p => p.link !== link);
+  logActivity('Portal link revoked', '-', currentAdmin.name);
+  saveData(); renderAll();
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+
+// ── Trello (Bidirectional) ──
+const TRELLO_BOARD_ID = 'B5fEzIMj';
+let TRELLO_LISTS = [];
+
+function getTrelloCreds() {
+  const key   = (document.getElementById('s-trello-key')?.value?.trim())   || localStorage.getItem('trello_key');
+  const token = (document.getElementById('s-trello-token')?.value?.trim()) || localStorage.getItem('trello_token');
+  return (key && token) ? { key, token } : null;
+}
+
+function statusFromListName(name) {
+  const n = name.toLowerCase();
+  if (n.includes('done') || n.includes('complete')) return 'done';
+  if (n.includes('doing') || n.includes('active') || n.includes('progress')) return 'active';
+  if (n.includes('review')) return 'review';
+  return 'pending';
+}
+
+function listIdForStatus(status) {
+  const match = TRELLO_LISTS.find(l => l.status === status);
+  return match ? match.id : (TRELLO_LISTS[0]?.id || null);
+}
+
+async function syncTrello() {
+  const creds = getTrelloCreds();
+  if (!creds) return;
+  try {
+    const listsResp = await fetch(`https://api.trello.com/1/boards/${TRELLO_BOARD_ID}/lists?key=${creds.key}&token=${creds.token}`);
+    const lists = await listsResp.json();
+    TRELLO_LISTS = lists.map(l => ({ id: l.id, name: l.name, status: statusFromListName(l.name) }));
+
+    const cardsResp = await fetch(`https://api.trello.com/1/boards/${TRELLO_BOARD_ID}/cards?key=${creds.key}&token=${creds.token}`);
+    const cards = await cardsResp.json();
+    const listMap = {};
+    TRELLO_LISTS.forEach(l => { listMap[l.id] = l.status; });
+
+    cards.forEach(card => {
+      const existing = JOBS.find(j => j.trelloId === card.id);
+      if (existing) {
+        existing.status = listMap[card.idList] || existing.status;
+        existing.trelloListId = card.idList;
+      } else {
+        JOBS.push({
+          id: 'TRL-' + String(JOBS.length + 1).padStart(3, '0'),
+          trelloId: card.id, trelloListId: card.idList, name: card.name,
+          customer: card.desc ? card.desc.split('\n')[0] : 'Trello',
+          email: '', type: 'Trello Card',
+          status: listMap[card.idList] || 'pending',
+          due: card.due ? card.due.split('T')[0] : 'TBD',
+          progress: listMap[card.idList] === 'done' ? 100 : 0,
+          revenue: 0,
+        });
+      }
+    });
+    logActivity('Trello synced (2-way)', `${cards.length} cards`, currentAdmin.name);
+    saveData(); renderAll();
+    document.getElementById('s-trello-status').textContent = `Synced ${cards.length} cards at ${new Date().toLocaleTimeString()} (2-way enabled)`;
+    document.getElementById('s-trello-status').style.color = '#2ecc71';
+  } catch (e) {
+    document.getElementById('s-trello-status').textContent = 'Sync failed: ' + e.message;
+  }
+}
+
+async function pushStatusToTrello(job) {
+  if (!job.trelloId) return;
+  const creds = getTrelloCreds();
+  if (!creds || TRELLO_LISTS.length === 0) return;
+  const targetListId = listIdForStatus(job.status);
+  if (!targetListId || targetListId === job.trelloListId) return;
+  try {
+    const resp = await fetch(`https://api.trello.com/1/cards/${job.trelloId}?key=${creds.key}&token=${creds.token}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idList: targetListId })
+    });
+    if (resp.ok) {
+      job.trelloListId = targetListId;
+      logActivity('Trello card moved', `${job.name} → ${TRELLO_LISTS.find(l=>l.id===targetListId)?.name}`, currentAdmin.name);
+    }
+  } catch (e) { /* silent */ }
+}
+
+async function createTrelloCard(job) {
+  const creds = getTrelloCreds();
+  if (!creds || TRELLO_LISTS.length === 0) return;
+  const pendingList = listIdForStatus('pending');
+  if (!pendingList) return;
+  try {
+    const resp = await fetch(`https://api.trello.com/1/cards?key=${creds.key}&token=${creds.token}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idList: pendingList, name: job.name, desc: `${job.customer}\n${job.type}`, due: job.due !== 'TBD' ? job.due : null })
+    });
+    if (resp.ok) {
+      const card = await resp.json();
+      job.trelloId = card.id;
+      job.trelloListId = pendingList;
+      logActivity('Trello card created', job.name, currentAdmin.name);
+    }
+  } catch (e) { /* silent */ }
+}
+
+function saveTrelloSettings() {
+  localStorage.setItem('trello_key',   document.getElementById('s-trello-key').value);
+  localStorage.setItem('trello_token', document.getElementById('s-trello-token').value);
+  syncTrello();
+}
+
+// ── Backup / Restore ──
+function backupAllData() {
+  const backup = {
+    version: '2.1',
+    date: new Date().toISOString(),
+    jobs: JOBS, activity: ACTIVITY, portalLinks: PORTAL_LINKS,
+    autoSettings: AUTO_SETTINGS,
+    trelloKey: localStorage.getItem('trello_key') || '',
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'brofab-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  logActivity('Data backup downloaded', '-', currentAdmin.name);
+}
+
+function restoreData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.jobs) throw new Error('Invalid backup file');
+      if (!confirm('Restore from backup? This replaces all current data.')) return;
+      JOBS.length = 0;         backup.jobs.forEach(j => JOBS.push(j));
+      ACTIVITY.length = 0;     (backup.activity || []).forEach(a => ACTIVITY.push(a));
+      PORTAL_LINKS.length = 0; (backup.portalLinks || []).forEach(p => PORTAL_LINKS.push(p));
+      if (backup.autoSettings) {
+        AUTO_SETTINGS = backup.autoSettings;
+        localStorage.setItem('brofab_auto_settings', JSON.stringify(AUTO_SETTINGS));
+        loadAutoSettings();
+      }
+      logActivity('Data restored from backup', file.name, currentAdmin.name);
+      saveData(); renderAll();
+    } catch (err) { alert('Failed to restore: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if (!confirm('Delete ALL data? This cannot be undone.')) return;
+  if (!confirm('Are you absolutely sure?')) return;
+  JOBS.length = 0; ACTIVITY.length = 0; PORTAL_LINKS.length = 0;
+  saveData();
+  logActivity('All data cleared', '-', currentAdmin.name);
+  renderAll();
+}
+
+// ── Activity Log ──
+function logActivity(event, job, by) {
+  ACTIVITY.push({ time: new Date().toLocaleTimeString(), event, job, by });
+  if (ACTIVITY.length > 100) ACTIVITY = ACTIVITY.slice(-50);
+  saveData();
+}
+
+// ── Modal ──
+function closeModal() { document.getElementById('modal-bg').classList.remove('show'); }
+document.getElementById('modal-bg').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+// ── Clock ──
+function updateClock() {
+  const el = document.getElementById('admin-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+</script>
+</body>
+</html>

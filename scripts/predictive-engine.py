@@ -825,7 +825,7 @@ def run_full_analysis():
     for metric, label, max_val in [
         ("ram", "RAM", 100),
         ("disk", "Disk", 100),
-        ("load", "CPU Load", 4),
+        ("load", "CPU Load", 8),  # 2x cores — transient spikes are normal, only sustained overload matters
     ]:
         values = history.get(metric, [])
         nums = coerce_numeric(values)
@@ -942,7 +942,7 @@ def main():
 
     if mode == "forecast":
         history = get_soma_history()
-        for metric, label, max_val in [("ram", "RAM", 100), ("disk", "Disk", 100), ("load", "Load", 4)]:
+        for metric, label, max_val in [("ram", "RAM", 100), ("disk", "Disk", 100), ("load", "Load", 8)]:
             vals = coerce_numeric(history.get(metric, []))
             forecast = forecast_exhaustion(vals, label, max_val=max_val)
             if forecast:

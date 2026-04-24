@@ -10,11 +10,15 @@
   <div class="app">
     <header>
       <h1>Marketplace Lister</h1>
-      <p class="subtitle">Photos &rarr; Listing &rarr; Post</p>
+      <p class="subtitle">Photos &rarr; Smart Scan &rarr; Ready to Post</p>
+      <div id="ai-status" class="ai-status">
+        <span id="ai-status-dot" class="status-dot offline"></span>
+        <span id="ai-status-text">Checking AI...</span>
+      </div>
     </header>
 
     <div class="main-layout">
-      <!-- LEFT: Photos -->
+      <!-- LEFT: Photos + Smart Scan -->
       <div class="panel photos-panel">
         <h2>1. Photos</h2>
         <div class="photo-controls">
@@ -26,19 +30,42 @@
             <input type="checkbox" id="chk-square"> Square crop
           </label>
         </div>
-        <div id="photo-grid" class="photo-grid">
-          <div class="photo-placeholder">
-            Drop photos here or click "Add Photos"
+        <div id="photo-grid" class="photo-grid" tabindex="0">
+          <div class="photo-placeholder" id="drop-zone">
+            <div class="drop-icon">&#128247;</div>
+            <p>Drag &amp; drop photos here</p>
+            <p class="drop-hint">or click "Add Photos"</p>
           </div>
         </div>
         <div class="photo-actions" style="display:none" id="photo-actions">
-          <button id="btn-save-photos" class="btn-secondary">Save Processed Photos</button>
-          <button id="btn-analyze-photo" class="btn-ai" style="display:none">Analyze Photo (AI Vision)</button>
+          <button id="btn-save-photos" class="btn-secondary">Save Processed</button>
+          <button id="btn-analyze-photo" class="btn-ai" style="display:none">Analyze Photo</button>
           <span id="photo-count">0 photos</span>
+        </div>
+
+        <!-- Smart Scan — always visible -->
+        <div id="smart-scan-section" class="smart-scan-section">
+          <button id="btn-smart-scan" class="btn-smart-scan">
+            <span class="scan-icon">&#9881;</span>
+            Smart Scan &mdash; Auto-Write Listing
+          </button>
+          <div id="ai-scan-note" class="ai-scan-note"></div>
+          <div id="scan-status" class="scan-status" style="display:none">
+            <div class="scan-progress">
+              <div class="scan-spinner"></div>
+              <span id="scan-step">Analyzing photos...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sales Tips -->
+        <div id="sales-tips" class="sales-tips" style="display:none">
+          <h3>Sales Tips</h3>
+          <ul id="tips-list"></ul>
         </div>
       </div>
 
-      <!-- RIGHT: Item Details + Output -->
+      <!-- MIDDLE: Item Details -->
       <div class="panel details-panel">
         <h2>2. Item Details</h2>
         <div class="form-group">
@@ -95,8 +122,8 @@
         </div>
 
         <div class="form-group">
-          <label for="description">Description</label>
-          <textarea id="description" rows="3" placeholder="What is it? Why are you selling? Any flaws?"></textarea>
+          <label for="description">Description / Notes</label>
+          <textarea id="description" rows="3" placeholder="What is it? Why are you selling? Any flaws? The generator will use this."></textarea>
         </div>
 
         <div class="form-group">
@@ -110,25 +137,53 @@
 
         <div class="button-row">
           <button id="btn-generate" class="btn-primary btn-full">Generate Listing</button>
-          <button id="btn-ai-generate" class="btn-ai btn-full" style="display:none">AI Generate (Ollama)</button>
+          <button id="btn-ai-generate" class="btn-ai btn-full" style="display:none">AI Generate</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Listing Preview -->
+      <div class="panel preview-panel">
+        <h2>3. Listing Preview</h2>
+
+        <div id="preview-empty" class="preview-empty">
+          <div class="preview-empty-icon">&#128203;</div>
+          <p>Add photos and click <strong>Smart Scan</strong> to auto-generate your listing</p>
+          <p class="preview-hint">or fill in the details and click Generate</p>
         </div>
 
-        <!-- Output -->
-        <div id="output-section" style="display:none">
-          <h2>3. Your Listing</h2>
-          <div class="output-block">
-            <label>Title <button class="btn-copy" data-target="output-title">Copy</button></label>
-            <div id="output-title" class="output-text"></div>
+        <div id="listing-preview" class="listing-card" style="display:none">
+          <!-- Preview photo carousel -->
+          <div id="preview-photos" class="preview-photos">
+            <img id="preview-main-photo" class="preview-main-photo" src="" alt="Item photo">
+            <button id="btn-photo-prev" class="photo-nav photo-nav-prev" style="display:none">&#8249;</button>
+            <button id="btn-photo-next" class="photo-nav photo-nav-next" style="display:none">&#8250;</button>
+            <div id="preview-photo-dots" class="preview-photo-dots"></div>
           </div>
-          <div class="output-block">
-            <label>Description <button class="btn-copy" data-target="output-body">Copy</button></label>
-            <div id="output-body" class="output-text"></div>
+
+          <!-- Listing content — editable -->
+          <div class="listing-content">
+            <div class="listing-price" id="preview-price" contenteditable="true" title="Click to edit price">$0</div>
+            <div class="listing-title" id="preview-title" contenteditable="true" title="Click to edit title">Item Title</div>
+            <div class="listing-meta">
+              <span class="listing-location">Calgary, AB</span>
+              <span class="listing-condition" id="preview-condition">Good</span>
+              <span class="listing-platform-badge" id="preview-platform-badge">FB</span>
+            </div>
+            <div class="listing-description" id="preview-description" contenteditable="true" title="Click to edit description">Description will appear here...</div>
           </div>
-          <div class="output-block">
-            <label>Price</label>
-            <div id="output-price" class="output-text"></div>
+
+          <!-- Action buttons -->
+          <div class="listing-actions">
+            <button id="btn-copy-title" class="btn-copy-action" data-field="title">Copy Title</button>
+            <button id="btn-copy-desc" class="btn-copy-action" data-field="description">Copy Description</button>
+            <button id="btn-copy-all" class="btn-primary btn-full">Copy Full Listing</button>
           </div>
-          <button id="btn-copy-all" class="btn-primary btn-full">Copy All to Clipboard</button>
+        </div>
+
+        <!-- Re-generate options -->
+        <div id="regenerate-section" class="regenerate-section" style="display:none">
+          <button id="btn-regenerate" class="btn-secondary btn-full">Re-generate with Edits</button>
+          <button id="btn-rescan" class="btn-secondary btn-full">Re-scan Photos</button>
         </div>
       </div>
     </div>

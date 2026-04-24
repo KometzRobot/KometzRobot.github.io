@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brothers Fabrication — Digital Optimization Pitch | Joel Kometz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ---- Shared ---- */
+    body { font-family: 'Inter', sans-serif; background: #0a1628; color: #fff; line-height: 1.6; }
+    .accent { color: #4ecdc4; }
+    .subtle { color: rgba(255,255,255,0.5); }
+    .tag {
+      display: inline-block; background: rgba(78,205,196,0.15); color: #4ecdc4;
+      padding: 0.3rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.5rem;
+    }
+
+    /* ---- View switching ---- */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ---- Top nav ---- */
+    .top-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: rgba(10, 22, 40, 0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; padding: 0 1.5rem; height: 52px;
+    }
+    .top-nav a.back-link {
+      font-size: 0.8rem; color: rgba(255,255,255,0.4); text-decoration: none;
+      font-weight: 500; margin-right: 2rem; display: flex; align-items: center; gap: 0.3rem;
+    }
+    .top-nav a.back-link:hover { color: #4ecdc4; }
+    .top-nav .tabs { display: flex; gap: 0; }
+    .top-nav .tab {
+      padding: 0.9rem 1.5rem; font-size: 0.85rem; font-weight: 600;
+      color: rgba(255,255,255,0.4); cursor: pointer; border: none; background: none;
+      font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.02em;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .top-nav .tab:hover { color: rgba(255,255,255,0.7); }
+    .top-nav .tab.active { color: #4ecdc4; border-bottom-color: #4ecdc4; }
+
+    /* ========== PITCH VIEW ========== */
+    .slide { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 4rem 2rem; padding-top: 6rem; position: relative; }
+    .slide-inner { max-width: 1000px; width: 100%; }
+    .slide:nth-child(even) { background: #0d1f35; }
+    .slide:first-child { padding-top: 7rem; }
+
+    #pitch-view h1 { font-family: 'Space Grotesk', sans-serif; font-size: 3.5rem; font-weight: 800; line-height: 1.1; }
+    #pitch-view h2 { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 1.5rem; }
+    #pitch-view h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; margin-bottom: 1rem; }
+
+    .hero-slide h1 { font-size: 4rem; margin-bottom: 1.5rem; }
+    .hero-sub { font-size: 1.3rem; color: rgba(255,255,255,0.6); max-width: 700px; line-height: 1.7; }
+
+    .stat-row { display: flex; gap: 3rem; margin: 2rem 0; flex-wrap: wrap; }
+    .stat-item .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; color: #4ecdc4; display: block; }
+    .stat-item .stat-label { font-size: 0.85rem; color: rgba(255,255,255,0.4); }
+
+    .ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0; }
+    .ps-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 2rem;
+    }
+    .ps-card.problem { border-left: 4px solid #e74c3c; }
+    .ps-card.solution { border-left: 4px solid #2ecc71; }
+    .ps-card h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; font-weight: 700; }
+    .ps-card.problem h4 { color: #e74c3c; }
+    .ps-card.solution h4 { color: #2ecc71; }
+    .ps-card p { color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+    .ps-card ul { list-style: none; }
+    .ps-card ul li { padding: 0.4rem 0; font-size: 0.95rem; color: rgba(255,255,255,0.7); }
+    .ps-card.solution ul li::before { content: "~ "; color: #2ecc71; font-weight: 700; }
+    .ps-card.problem ul li::before { content: "x "; color: #e74c3c; font-weight: 700; }
+
+    .feature-row {
+      display: flex; align-items: center; gap: 3rem; margin: 3rem 0;
+      padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .feature-row:last-child { border-bottom: none; }
+    .feature-num {
+      font-family: 'Space Grotesk', sans-serif; font-size: 4rem; font-weight: 800;
+      color: rgba(78,205,196,0.2); flex-shrink: 0; width: 80px;
+    }
+    .feature-content h3 { margin-bottom: 0.5rem; }
+    .feature-content p { color: rgba(255,255,255,0.6); font-size: 0.95rem; }
+    .feature-tag {
+      display: inline-block; background: rgba(78,205,196,0.1); color: #4ecdc4;
+      padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+      margin-top: 0.5rem;
+    }
+
+    .timeline { position: relative; padding-left: 3rem; }
+    .timeline::before {
+      content: ''; position: absolute; left: 12px; top: 0; bottom: 0;
+      width: 2px; background: rgba(78,205,196,0.2);
+    }
+    .tl-item { margin-bottom: 2.5rem; position: relative; }
+    .tl-dot {
+      position: absolute; left: -3rem; top: 4px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #4ecdc4; display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; color: #0a1628;
+    }
+    .tl-item h4 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; }
+    .tl-item p { color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-top: 0.3rem; }
+    .tl-item .tl-deliverable {
+      display: inline-block; background: rgba(255,255,255,0.06);
+      padding: 0.2rem 0.8rem; border-radius: 6px; font-size: 0.8rem;
+      color: rgba(255,255,255,0.4); margin-top: 0.5rem;
+    }
+
+    .cta-slide { text-align: center; }
+    .cta-slide h2 { font-size: 3rem; }
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap; }
+    .cta-btn {
+      padding: 1rem 2.5rem; border-radius: 10px; font-weight: 700; font-size: 1rem;
+      text-decoration: none; transition: all 0.2s; display: inline-block;
+      cursor: pointer; border: none; font-family: 'Inter', sans-serif;
+    }
+    .cta-btn.primary { background: #4ecdc4; color: #0a1628; }
+    .cta-btn.primary:hover { background: #3dbdb5; transform: translateY(-2px); }
+    .cta-btn.secondary { border: 2px solid rgba(255,255,255,0.3); color: #fff; background: transparent; }
+    .cta-btn.secondary:hover { border-color: #4ecdc4; color: #4ecdc4; }
+
+    /* ========== PRICING VIEW ========== */
+    #pricing-view { background: #fafafa; color: #1a1a2e; }
+    .page { max-width: 1100px; margin: 0 auto; padding: 2rem; padding-top: 5rem; }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #0a1628, #0a3d5c);
+      border-radius: 20px; padding: 3rem; color: #fff; text-align: center; margin-bottom: 3rem;
+    }
+    .hero-banner h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; margin-bottom: 0.5rem; color: #fff; }
+    .hero-banner p { color: rgba(255,255,255,0.6); max-width: 650px; margin: 0 auto; }
+
+    .section { margin-bottom: 3rem; }
+    .section h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; margin-bottom: 0.5rem; color: #1a1a2e; }
+    .section > p.sub { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
+
+    .pricing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+    .price-card {
+      background: #fff; border-radius: 16px; padding: 2rem; border: 1px solid #eee;
+      position: relative; transition: all 0.2s;
+    }
+    .price-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+    .price-card.featured { border: 2px solid #0a6e8a; }
+    .price-card.featured::before {
+      content: 'RECOMMENDED'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: #0a6e8a; color: #fff; padding: 0.3rem 1rem; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;
+    }
+    .price-tier-name { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; color: #666; margin-bottom: 0.3rem; }
+    .price-amount { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 800; color: #1a1a2e; }
+    .price-amount .currency { font-size: 1rem; font-weight: 500; color: #999; }
+    .price-type { font-size: 0.8rem; color: #888; margin-bottom: 1.5rem; }
+    .price-desc { font-size: 0.9rem; color: #555; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f0f0f0; }
+    .feature-list { list-style: none; margin-bottom: 1.5rem; }
+    .feature-list li { padding: 0.4rem 0; font-size: 0.9rem; color: #444; display: flex; align-items: flex-start; gap: 0.5rem; }
+    .feature-list li::before { content: "~"; color: #0a6e8a; font-weight: 700; flex-shrink: 0; }
+
+    .retainer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+
+    .ala-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .ala-item {
+      background: #fff; border-radius: 12px; padding: 1.2rem 1.5rem;
+      border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
+    }
+    .ala-name { font-weight: 600; font-size: 0.9rem; color: #1a1a2e; }
+    .ala-name small { display: block; font-weight: 400; color: #888; font-size: 0.8rem; }
+    .ala-price { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #0a6e8a; white-space: nowrap; }
+
+    .compare-table {
+      width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px;
+      overflow: hidden; border: 1px solid #eee;
+    }
+    .compare-table th { background: #0a1628; color: #fff; padding: 1rem; text-align: left; font-size: 0.85rem; }
+    .compare-table td { padding: 0.8rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; color: #1a1a2e; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table .highlight { background: rgba(10,110,138,0.04); }
+    .compare-table .price-col { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #0a6e8a; text-align: right; }
+    .compare-table .agency-col { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #e74c3c; text-align: right; }
+
+    .roi-box {
+      background: linear-gradient(135deg, #0a1628, #0a3d5c);
+      border-radius: 16px; padding: 2.5rem; color: #fff; text-align: center;
+    }
+    .roi-box h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; margin-bottom: 1rem; color: #fff; }
+    .roi-grid { display: flex; justify-content: center; gap: 3rem; margin: 2rem 0; flex-wrap: wrap; }
+    .roi-item .num { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: #4ecdc4; display: block; }
+    .roi-item .lbl { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+    .roi-note { font-size: 0.9rem; color: rgba(255,255,255,0.6); max-width: 600px; margin: 0 auto; }
+
+    .guarantee {
+      background: #fff; border-radius: 14px; padding: 2rem; border: 2px solid #2ecc71;
+      text-align: center; margin-top: 2rem;
+    }
+    .guarantee h3 { font-family: 'Space Grotesk', sans-serif; color: #2ecc71; margin-bottom: 0.5rem; }
+    .guarantee p { color: #666; font-size: 0.9rem; max-width: 600px; margin: 0 auto; }
+
+    .footer-note {
+      text-align: center; padding: 2rem; color: #aaa; font-size: 0.85rem;
+      border-top: 1px solid #eee; margin-top: 2rem;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      #pitch-view h1, .hero-slide h1 { font-size: 2.5rem; }
+      #pitch-view h2 { font-size: 1.8rem; }
+      .ps-grid { grid-template-columns: 1fr; }
+      .feature-row { flex-direction: column; gap: 1rem; }
+      .feature-num { font-size: 2.5rem; }
+      .stat-row { gap: 1.5rem; }
+      .cta-slide h2 { font-size: 2rem; }
+      .pricing-grid, .retainer-grid, .ala-grid { grid-template-columns: 1fr; }
+      .compare-table { font-size: 0.8rem; }
+      .compare-table th, .compare-table td { padding: 0.5rem; }
+      .top-nav .tab { padding: 0.9rem 1rem; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== TOP NAV ==================== -->
+<nav class="top-nav">
+  <a href="./" class="back-link">&larr; All Demos</a>
+  <div class="tabs">
+    <button class="tab active" onclick="showView('pitch-view')">Pitch Deck</button>
+    <button class="tab" onclick="showView('pricing-view')">Pricing</button>
+  </div>
+</nav>
+
+<!-- ==================== PITCH VIEW ==================== -->
+<div id="pitch-view" class="view active">
+
+  <!-- SLIDE 1: Hook -->
+  <div class="slide hero-slide">
+    <div class="slide-inner">
+      <div class="tag">For Chris &amp; Chris</div>
+      <h1>You built something<br>that works.<br><span class="accent">Now build the systems<br>to keep up with it.</span></h1>
+      <p class="hero-sub">Booked for a year. 5.0 on Google. 9 people, every trade in-house. The work isn't the problem. The question is what happens when it's time to grow.</p>
+      <div class="stat-row">
+        <div class="stat-item"><span class="stat-num">9</span><span class="stat-label">crew members, all in-house</span></div>
+        <div class="stat-item"><span class="stat-num">3+</span><span class="stat-label">builds running at once</span></div>
+        <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">systems tracking any of it</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: The Growth Problem -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="tag">The Growth Question</div>
+      <h2>What works at 3 builds<br><span class="accent">breaks at 7</span></h2>
+      <div class="ps-grid">
+        <div class="ps-card problem">
+          <h4>How It Works Now</h4>
+          <ul>
+            <li>Projects tracked in Chris's head, texts, and a whiteboard</li>
+            <li>Clients text Chris to ask "how's my truck?"</li>
+            <li>Inventory tracked by walking over and looking</li>
+            <li>Every quote is manual back-and-forth</li>
+            <li>New hires learn the process by shadowing</li>
+            <li>Posting on social when someone remembers</li>
+            <li>No way to know which efforts bring in work</li>
+          </ul>
+        </div>
+        <div class="ps-card solution">
+          <h4>How It Could Work</h4>
+          <ul>
+            <li>Every project tracked in one place, visible to the whole crew</li>
+            <li>Clients check their own build progress — fewer calls to Chris</li>
+            <li>Inventory alerts before you run out, not after</li>
+            <li>Quotes auto-respond so nobody waits over a weekend</li>
+            <li>Processes documented in a system, not in someone's memory</li>
+            <li>Social content goes out consistently without thinking about it</li>
+            <li>You know exactly what's bringing in work and what's not</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: What Changes -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="tag">The Impact</div>
+      <h2>Built for where you're<br><span class="accent">going, not where you are</span></h2>
+      <div class="stat-row">
+        <div class="stat-item"><span class="stat-num">8+ hrs/mo</span><span class="stat-label">Admin time saved on automation</span></div>
+        <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">"How's my truck?" calls to Chris</span></div>
+        <div class="stat-item"><span class="stat-num">24/7</span><span class="stat-label">Online presence that works while you sleep</span></div>
+      </div>
+      <div class="ps-grid" style="margin-top:2rem;">
+        <div class="ps-card" style="border-left: 4px solid #4ecdc4;">
+          <h4 style="color:#4ecdc4;">Operations That Scale</h4>
+          <p>Project tracking, inventory alerts, automated client updates, milestone photos — everything in one system instead of scattered across texts and whiteboards. When you add a build or hire a person, the system already works.</p>
+        </div>
+        <div class="ps-card" style="border-left: 4px solid #f5a623;">
+          <h4 style="color:#f5a623;">Premium Presence = Premium Prices</h4>
+          <p>A customer project portal, milestone updates with photos, and professional communication at every stage. This is how $139K builds feel to clients. It's how you justify being the best — and how you raise prices when the time comes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: The Tools -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="tag">What I'm Building</div>
+      <h2>Six things that get built</h2>
+      <div class="feature-row">
+        <div class="feature-num">01</div>
+        <div class="feature-content">
+          <h3>Operations Dashboard</h3>
+          <p>Every build, every milestone, every material order — tracked in one place. The whole crew can see where things stand without asking Chris. This is the backbone.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-num">02</div>
+        <div class="feature-content">
+          <h3>Customer Project Portal</h3>
+          <p>Clients log in and see their build progress: milestones, photos, estimated delivery. Kills the "how's my truck?" calls. Builds trust. Generates referrals.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-num">03</div>
+        <div class="feature-content">
+          <h3>Automation Engine</h3>
+          <p>Quote auto-responses, milestone notifications, review requests, follow-up emails. All triggered automatically. Michelle saves hours. Nothing falls through the cracks.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-num">04</div>
+        <div class="feature-content">
+          <h3>Rebuilt Website</h3>
+          <p>A site that matches the quality of the work. Mobile-first, fast, SEO-optimized. When someone finds you online, it should feel like walking into the shop — professional, premium, real.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-num">05</div>
+        <div class="feature-content">
+          <h3>Food Truck Configurator</h3>
+          <p>Customers pick their truck type, size, equipment, and finish. Gets a rough estimate instantly. Pre-qualifies leads so Chris only talks to serious buyers. No other Calgary fabricator has this.</p>
+        </div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-num">06</div>
+        <div class="feature-content">
+          <h3>Content &amp; Social</h3>
+          <p>Branded templates, content calendar, consistent posting. Your builds are content gold — the shop is full of it every day. We just need to capture and share it.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Timeline -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="tag">Rollout Plan</div>
+      <h2>How fast this happens</h2>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot">1</div>
+          <h4>Weeks 1-3: Quick Wins</h4>
+          <p>Google Business optimized. Social templates delivered. Review collection system set up. You see a difference before the heavy lifting starts.</p>
+          <span class="tl-deliverable">Visible results fast</span>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot">2</div>
+          <h4>Weeks 4-8: The Core Build</h4>
+          <p>New website live with configurator and quote system. Chatbot deployed. Email automation running. Analytics tracking everything.</p>
+          <span class="tl-deliverable">Online lead capture is real and working</span>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot">3</div>
+          <h4>Months 3-6: Ongoing &amp; Measuring</h4>
+          <p>Monthly analytics reports. Social content going out consistently. SEO climbing. Chatbot getting smarter from real conversations. You can see what's working.</p>
+          <span class="tl-deliverable">Data-driven decisions, not guesses</span>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot">4</div>
+          <h4>6+ Months: Advanced Systems (If You Want Them)</h4>
+          <p>Customer project portal. Internal ops dashboard. AI-powered workflows. These are bigger software projects — they take real time to build right. Only makes sense once the core is proven.</p>
+          <span class="tl-deliverable">Built when you're ready, not before</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: CTA -->
+  <div class="slide">
+    <div class="slide-inner cta-slide">
+      <div class="tag">The Ask</div>
+      <h2>You handle the metal.<br><span class="accent">I'll build the systems.</span></h2>
+      <p style="color:rgba(255,255,255,0.5); max-width:600px; margin:1.5rem auto; font-size:1.1rem;">
+        You didn't get booked for a year by accident.<br>
+        The next step is making sure the business can keep up with where it's going.
+      </p>
+      <div class="cta-buttons">
+        <button class="cta-btn primary" onclick="showView('pricing-view')">See Full Pricing</button>
+      </div>
+      <div style="margin-top:3rem; padding-top:2rem; border-top:1px solid rgba(255,255,255,0.1);">
+        <p style="color:rgba(255,255,255,0.3); font-size:0.85rem;">
+          Joel Kometz<br>
+          BFA (AUArts 2013) &bull; 5 years running World One Arcade &bull; Designer, developer, builder
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PRICING VIEW ==================== -->
+<div id="pricing-view" class="view">
+  <div class="page">
+
+    <div class="hero-banner">
+      <div class="tag" style="color:#4ecdc4;">For Brothers Fabrication</div>
+      <h1>What I Could Do &amp; What It Would Cost</h1>
+      <p>This is all hypothetical — just showing what's possible and what it would look like if you wanted any of it.</p>
+    </div>
+
+    <div class="section">
+      <h2>Background</h2>
+      <p class="sub">BFA from AUArts. 5 years running World One Arcade. Self-taught developer. I do design, web development, AI systems, and automation — all of it myself. Every hour tracked.</p>
+    </div>
+
+    <div class="section">
+      <h2>The Work</h2>
+      <p class="sub">Here's what the different levels could look like.</p>
+      <div class="pricing-grid">
+        <div class="price-card featured">
+          <div class="price-tier-name">The Core Build</div>
+          <div class="price-amount">$8,000-10,000 <span class="currency">CAD</span></div>
+          <div class="price-type">~130 hours &bull; 2-3 months</div>
+          <div class="price-desc">The foundation. Working alongside the current team to add what's missing.</div>
+          <ul class="feature-list">
+            <li>Fully redesigned website with AI assistant</li>
+            <li>Search engine optimization</li>
+            <li>Simple truck quote builder with ballpark pricing</li>
+            <li>Google Business profile optimization</li>
+            <li>Social media templates &amp; content calendar (3 months)</li>
+            <li>Quote form with auto-response</li>
+            <li>Email follow-ups &amp; review requests</li>
+            <li>Analytics — where leads come from</li>
+          </ul>
+        </div>
+        <div class="price-card">
+          <div class="price-tier-name">Full System</div>
+          <div class="price-amount">$35,000-45,000 <span class="currency">CAD</span></div>
+          <div class="price-type">~300-500 hours &bull; 10-12 months</div>
+          <div class="price-desc">Everything from the Core Build plus major additions no other shop in Alberta will have.</div>
+          <ul class="feature-list">
+            <li>Everything in The Core Build</li>
+            <li>Advanced food truck configurator with full layout &amp; detailed estimates</li>
+            <li>AI chatbot with deep knowledge of build process &amp; timelines</li>
+            <li>Customer project portal — clients see progress photos &amp; milestones</li>
+            <li>Smart quote routing by type, urgency, complexity</li>
+            <li>Automated milestone updates with photos</li>
+            <li>Full operations dashboard — job tracking, scheduling, capacity</li>
+            <li>Inventory &amp; materials tracking tied to active builds</li>
+            <li>Supplier integration for automated reordering or alerting</li>
+            <li>Accounting system &amp; Trello integration</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Payment</h2>
+      <p class="sub">How each option breaks down.</p>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-tier-name">Core Build Payment</div>
+          <div class="price-amount">$3,000-4,000 <span class="currency">upfront</span></div>
+          <div class="price-desc">Then $1,500-2,000 every two weeks until done.</div>
+        </div>
+        <div class="price-card">
+          <div class="price-tier-name">Full System Payment</div>
+          <div class="price-amount">$6,000-8,000 <span class="currency">upfront</span></div>
+          <div class="price-desc">Then $2,500 every two weeks until done.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Ongoing Retainers</h2>
+      <p class="sub">Once the build is complete, someone needs to keep an eye on it.</p>
+      <div class="retainer-grid">
+        <div class="price-card">
+          <div class="price-tier-name">Maintenance</div>
+          <div class="price-amount">$750 <span class="currency">/mo</span></div>
+          <div class="price-desc">Updates and keeping things running.</div>
+          <ul class="feature-list">
+            <li>Website updates, fixes, security</li>
+            <li>System monitoring</li>
+            <li>Hosting &amp; domain management</li>
+            <li>1-2 social posts per week</li>
+            <li>Monthly check-in</li>
+            <li>Direct access to me</li>
+          </ul>
+        </div>
+        <div class="price-card featured">
+          <div class="price-tier-name">Growth</div>
+          <div class="price-amount">$1,200-1,500 <span class="currency">/mo</span></div>
+          <div class="price-desc">New content and ongoing improvements.</div>
+          <ul class="feature-list">
+            <li>Everything in Maintenance</li>
+            <li>3-4 social posts per week</li>
+            <li>SEO &amp; keyword targeting</li>
+            <li>Blog content &amp; landing pages</li>
+            <li>Monthly analytics report</li>
+            <li>Chatbot &amp; automation refinement</li>
+          </ul>
+        </div>
+        <div class="price-card">
+          <div class="price-tier-name">Full Service</div>
+          <div class="price-amount">$2,500 <span class="currency">/mo</span></div>
+          <div class="price-desc">Hands-on management of everything, full time. Opens the door to expansion.</div>
+          <ul class="feature-list">
+            <li>Everything in Growth</li>
+            <li>Full-time hands-on management</li>
+            <li>Ongoing development &amp; expansion</li>
+            <li>Paid ad management</li>
+            <li>Video content support</li>
+            <li>Possibility of handling another test shop</li>
+          </ul>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:1rem; font-size:0.85rem; color:#888;">Cancel anytime. No contracts.</div>
+    </div>
+
+    <div class="section">
+      <h2>My Rates</h2>
+      <p class="sub">Depends on the type of work.</p>
+      <div class="ala-grid">
+        <div class="ala-item">
+          <div class="ala-name">Marketing &amp; Content<small>Social, templates, GBP, content calendars</small></div>
+          <div class="ala-price">$35-45/hr</div>
+        </div>
+        <div class="ala-item">
+          <div class="ala-name">Design &amp; Web Dev<small>Website builds, UI/UX, frontend &amp; backend</small></div>
+          <div class="ala-price">$50-60/hr</div>
+        </div>
+        <div class="ala-item">
+          <div class="ala-name">Custom Systems &amp; AI<small>Portals, dashboards, automation, AI</small></div>
+          <div class="ala-price">$60-75/hr</div>
+        </div>
+        <div class="ala-item">
+          <div class="ala-name">Ongoing Management<small>Monthly retainer — everything mixed</small></div>
+          <div class="ala-price">$1,200/mo</div>
+        </div>
+      </div>
+      <p style="margin-top:1rem; font-size:0.85rem; color:#888; text-align:center;">For reference, Calgary agencies typically charge $100-200/hr. AI consultants usually charge $200-250/hr.</p>
+    </div>
+
+    <div class="section">
+      <h2>What This Costs Elsewhere</h2>
+      <p class="sub">For reference — not a comparison, just context.</p>
+      <table class="compare-table">
+        <tr>
+          <th>Work</th>
+          <th style="text-align:right;">Calgary Agency</th>
+          <th style="text-align:right;">Freelancer</th>
+          <th style="text-align:right;">Me</th>
+        </tr>
+        <tr>
+          <td>Website + AI assistant</td>
+          <td class="agency-col">$10,000-20,000</td>
+          <td style="text-align:right; color:#888;">$3,000-8,000</td>
+          <td class="price-col">Part of $8-10K core</td>
+        </tr>
+        <tr class="highlight">
+          <td>Custom web app (configurator)</td>
+          <td class="agency-col">$15,000-30,000</td>
+          <td style="text-align:right; color:#888;">$5,000-15,000</td>
+          <td class="price-col">$3,500-5,000</td>
+        </tr>
+        <tr>
+          <td>AI chatbot</td>
+          <td class="agency-col">$8,000-15,000</td>
+          <td style="text-align:right; color:#888;">$3,000-8,000</td>
+          <td class="price-col">$3,000-4,500</td>
+        </tr>
+        <tr class="highlight">
+          <td>Customer portal + ops dashboard</td>
+          <td class="agency-col">$20,000-40,000</td>
+          <td style="text-align:right; color:#888;">$10,000-20,000</td>
+          <td class="price-col">Part of $35-45K system</td>
+        </tr>
+        <tr>
+          <td>Social media (monthly)</td>
+          <td class="agency-col">$1,500-3,000/mo</td>
+          <td style="text-align:right; color:#888;">$500-1,500/mo</td>
+          <td class="price-col">$750-1,500/mo</td>
+        </tr>
+        <tr style="background:#f8fafb; font-weight:600;">
+          <td>Everything (year 1)</td>
+          <td class="agency-col">$80,000-150,000+</td>
+          <td style="text-align:right; color:#888;">$35,000-70,000</td>
+          <td class="price-col">$8K-45K + monthly</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="roi-box">
+        <h3>The Range</h3>
+        <div class="roi-grid">
+          <div class="roi-item"><span class="num">$8-10K</span><span class="lbl">The Core Build</span></div>
+          <div class="roi-item"><span class="num">$35-45K</span><span class="lbl">Full System</span></div>
+        </div>
+        <div class="roi-note">For reference — one food truck build is $79,000-$139,000.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>The Bigger Picture</h2>
+      <p class="sub">Where this could go.</p>
+      <div class="ps-card" style="background:#fff; border:1px solid #eee; border-radius:14px; padding:2rem; border-left:4px solid #4ecdc4; color:#1a1a2e;">
+        <p style="color:#444; font-size:0.95rem; line-height:1.7;">
+          I'm forming an LLC this summer. Brothers Fabrication would be the founding client and partner. We start with your build this summer, get systems running by around September. After two to three months of real jobs running through it, we turn what we built into a product — something we can sell to other fabrication shops across Alberta. Brothers gets an ownership stake in that product and service. You're in on the ground floor.
+        </p>
+        <p style="color:#444; font-size:0.95rem; line-height:1.7; margin-top:1rem;">
+          Summer through fall — build the core system. Winter — test and refine with real jobs. Spring through following winter — develop it into a product. Early 2028 — start approaching other shops across Alberta. Year one is Brothers plus a few early adopters. Year two we go Alberta-wide. Year three and beyond — BC expansion, then further into Canada, with potential for franchising down the road.
+        </p>
+        <p style="color:#444; font-size:0.95rem; line-height:1.7; margin-top:1rem;">
+          Keeping things separate at first. Simple structure. Peace of mind for everyone. If something doesn't work out, it's clean. No tangled mess — just a straightforward arrangement that protects both of us.
+        </p>
+      </div>
+    </div>
+
+    <div class="guarantee">
+      <h3>How This Works Between Us</h3>
+      <p>If something's not working, we talk about it and fix it. If you want to pause, we pause. No contracts, no drama. We're family — I'm not going to take money for something that isn't helping.</p>
+    </div>
+
+    <div class="footer-note">
+      <p>Prepared by Joel Kometz | April 2026 | All prices in CAD</p>
+      <p style="margin-top:0.3rem;">E-transfer, cheque, or invoice — whatever works. GST applicable.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function showView(id) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  // Update tab highlighting
+  document.querySelectorAll('.top-nav .tab').forEach(function(t) { t.classList.remove('active'); });
+  if (id === 'pitch-view') {
+    document.querySelectorAll('.top-nav .tab')[0].classList.add('active');
+  } else {
+    document.querySelectorAll('.top-nav .tab')[1].classList.add('active');
+  }
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>

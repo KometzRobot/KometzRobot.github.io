@@ -950,8 +950,8 @@ class ChorusHandler(http.server.BaseHTTPRequestHandler):
 
 def main():
     os.makedirs(HISTORY_DIR, exist_ok=True)
-    server = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), ChorusHandler)
-    print(f"THE CHORUS running on http://0.0.0.0:{PORT}")
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), ChorusHandler)
+    print(f"THE CHORUS running on http://127.0.0.1:{PORT}")
     print(f"History: {HISTORY_DIR}")
     try:
         server.serve_forever()
