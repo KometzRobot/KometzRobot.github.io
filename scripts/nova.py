@@ -841,7 +841,7 @@ def check_tunnel_health():
         if r.returncode != 0:
             # Tunnel is down — restart it
             log_observation("ALERT: Cloudflare tunnel down, restarting...")
-            tunnel_script = os.path.join(BASE, "cloudflare-tunnel.sh")
+            tunnel_script = os.path.join(BASE, "scripts", "cloudflare-tunnel.sh")
             if os.path.exists(tunnel_script):
                 subprocess.Popen(['bash', tunnel_script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 log_observation("Cloudflare tunnel restart initiated")

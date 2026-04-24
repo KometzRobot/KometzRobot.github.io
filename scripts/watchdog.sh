@@ -10,7 +10,7 @@ CLAUDE_BIN="$HOME/.local/bin/claude"
 # === END CONFIG ===
 
 HEARTBEAT="$WORKING_DIR/.heartbeat"
-LOGFILE="$WORKING_DIR/watchdog.log"
+LOGFILE="$WORKING_DIR/logs/watchdog.log"
 WAKEUP_PROMPT="$WORKING_DIR/wakeup-prompt.md"
 LOCKFILE="/tmp/claude-instance.lock"
 MAX_INSTANCES=1
@@ -91,7 +91,7 @@ if [ "$HEARTBEAT_AGE" -gt "$MAX_AGE" ]; then
 
     # Secondary check: are .claude log files still being written to?
     CLAUDE_LOG_DIR="$HOME/.claude"
-    NEWEST_CLAUDE_LOG=$(find "$CLAUDE_LOG_DIR" -name "*.jsonl" -o -name "*.log" 2>/dev/null | head -20 | xargs ls -t 2>/dev/null | head -1)
+    NEWEST_CLAUDE_LOG=$(find "$CLAUDE_LOG_DIR" \( -name "*.jsonl" -o -name "*.log" \) -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
 
     if [ -n "$NEWEST_CLAUDE_LOG" ]; then
         CLAUDE_LOG_AGE=$(( $(date +%s) - $(stat -c %Y "$NEWEST_CLAUDE_LOG") ))

@@ -736,8 +736,7 @@ class V16(tk.Tk):
         self.bind('<Right>', self._nav_next_tab)
         self.bind('<Left>', self._nav_prev_tab)
         self.bind('<Tab>', self._nav_next_tab)
-        for i in range(min(10, len(self._tab_order))):
-            self.bind(f'<Key-{(i+1) % 10}>', lambda e, idx=i: self._show(self._tab_order[idx]))
+        # Number keys removed — Joel: "number keys shouldnt swap tabs"
 
         # Fonts (sans-serif for modern Android-style UI) — v49: +2pt globally
         _ff = "Noto Sans"  # Fallback: DejaVu Sans, Helvetica
@@ -1065,28 +1064,46 @@ class V16(tk.Tk):
         canvas.bind("<B3-Motion>", _do_drag)
         canvas.bind("<ButtonRelease-3>", _end_drag)
 
-    def _show_toast(self, text, color=GREEN, timeout=3500):
-        """Show a toast notification that auto-dismisses. Non-stacking — only one at a time.
-        Uses a popup-style label in the header area. Replaces yellow text output."""
-        if not hasattr(self, '_toast_frame'):
-            return
-        # Clear any existing toast — non-stacking
-        for w in self._toast_frame.winfo_children():
-            w.destroy()
-        # Cancel any pending fade timer
+    def _show_toast(self, text, color=GREEN, timeout=5000):
+        """Show a full toast notification popup. Readable, complete text, proper window.
+        Non-stacking — only one at a time. Auto-dismisses after timeout."""
+        # Kill any existing toast window
+        if hasattr(self, '_toast_win') and self._toast_win:
+            try:
+                self._toast_win.destroy()
+            except Exception:
+                pass
         if hasattr(self, '_toast_timer_id') and self._toast_timer_id:
             try:
                 self.after_cancel(self._toast_timer_id)
             except Exception:
                 pass
-        toast = tk.Label(self._toast_frame, text=f"  {text}  ", font=self.f_small,
-                        fg=WHITE, bg=color, relief=tk.RIDGE, padx=10, pady=4, bd=1)
-        toast.pack(side=tk.RIGHT, padx=4, pady=2)
+
+        # Create a proper popup window anchored to the main window
+        win = tk.Toplevel(self)
+        win.overrideredirect(True)
+        win.configure(bg=color, bd=2, relief=tk.RAISED)
+        win.attributes('-topmost', True)
+
+        # Full text, no truncation — wrap at 400px width
+        lbl = tk.Label(win, text=text, font=self.f_body, fg=WHITE, bg=color,
+                       wraplength=400, justify=tk.LEFT, padx=16, pady=12)
+        lbl.pack(fill=tk.BOTH, expand=True)
+
+        # Position: top-right of main window
+        self.update_idletasks()
+        wx = self.winfo_x() + self.winfo_width() - 440
+        wy = self.winfo_y() + 60
+        win.geometry(f"+{max(wx, 0)}+{max(wy, 0)}")
+
+        self._toast_win = win
+
         def fade():
             try:
-                toast.destroy()
+                win.destroy()
             except Exception:
                 pass
+            self._toast_win = None
             self._toast_timer_id = None
         self._toast_timer_id = self.after(timeout, fade)
 
@@ -1437,11 +1454,11 @@ class V16(tk.Tk):
             result = func()
             msg = str(result)[:80]
             self.action_result.configure(text=msg, fg=GREEN)
-            self._show_toast(msg[:60], GREEN)
+            self._show_toast(msg, GREEN)
         except Exception as e:
             err = f"Error: {e}"
             self.action_result.configure(text=err[:80], fg=RED)
-            self._show_toast(err[:60], RED, timeout=5000)
+            self._show_toast(err, RED, timeout=5000)
 
     def _do_action_bg(self, func):
         self.action_result.configure(text="Working...", fg=AMBER)
@@ -1451,11 +1468,11 @@ class V16(tk.Tk):
                 result = func()
                 msg = str(result)[:80]
                 self.after(0, lambda: self.action_result.configure(text=msg, fg=GREEN))
-                self.after(0, lambda: self._show_toast(msg[:60], GREEN))
+                self.after(0, lambda: self._show_toast(msg, GREEN))
             except Exception as e:
                 err = f"Error: {e}"
                 self.after(0, lambda: self.action_result.configure(text=err[:80], fg=RED))
-                self.after(0, lambda: self._show_toast(err[:60], RED, timeout=5000))
+                self.after(0, lambda: self._show_toast(err, RED, timeout=5000))
         threading.Thread(target=run, daemon=True).start()
 
     def _goto_compose(self):

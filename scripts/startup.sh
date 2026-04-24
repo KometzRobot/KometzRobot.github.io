@@ -8,7 +8,7 @@
 # THIS SCRIPT: Clean stale lock files, start/verify all user services, verify ports, watchdog trigger
 
 WORKING_DIR="$HOME/autonomous-ai"
-LOG="$WORKING_DIR/startup.log"
+LOG="$WORKING_DIR/logs/startup.log"
 PYTHON="$HOME/miniconda3/bin/python3"
 
 log() {

@@ -13,6 +13,7 @@ CONFIG="$REPO_DIR/signal-config.json"
 WEBSITE_CONFIG="$REPO_DIR/website/signal-config.json"
 LOG="/tmp/cloudflared-signal.log"
 PORT=8090
+CF_CONFIG="/home/joel/.cloudflared/config.yml"
 
 # Load .env for tunnel token
 if [ -f "$REPO_DIR/.env" ]; then
@@ -25,18 +26,42 @@ sleep 2
 
 echo "[$(date)] Starting Cloudflare tunnel on port $PORT..."
 
-if [ -n "$CF_TUNNEL_TOKEN" ]; then
-    # Named tunnel — routes to meridian-loop.com (configured in CF dashboard)
+if [ -f "$CF_CONFIG" ]; then
+    # Locally-managed tunnel with config file (routes to port 8095)
+    echo "[$(date)] Using LOCAL CONFIG tunnel (meridian-loop.com -> localhost:$PORT)"
+    $CLOUDFLARED tunnel --config "$CF_CONFIG" run > "$LOG" 2>&1 &
+    CF_PID=$!
+    echo "[$(date)] cloudflared PID: $CF_PID"
+
+    URL="https://meridian-loop.com"
+    sleep 5
+
+    if kill -0 $CF_PID 2>/dev/null; then
+        echo "[$(date)] Named tunnel running via local config. URL: $URL"
+    else
+        echo "[$(date)] ERROR: Local config tunnel failed. Falling back."
+        # Try token-based
+        if [ -n "$CF_TUNNEL_TOKEN" ]; then
+            echo "[$(date)] Trying token-based tunnel..."
+            $CLOUDFLARED tunnel run --token "$CF_TUNNEL_TOKEN" > "$LOG" 2>&1 &
+            CF_PID=$!
+            sleep 5
+            if kill -0 $CF_PID 2>/dev/null; then
+                echo "[$(date)] Token tunnel running. URL: $URL"
+            else
+                CF_TUNNEL_TOKEN=""
+            fi
+        fi
+    fi
+elif [ -n "$CF_TUNNEL_TOKEN" ]; then
     echo "[$(date)] Using NAMED tunnel (meridian-loop.com)"
     $CLOUDFLARED tunnel run --token "$CF_TUNNEL_TOKEN" > "$LOG" 2>&1 &
     CF_PID=$!
     echo "[$(date)] cloudflared PID: $CF_PID"
 
-    # Named tunnel URL is fixed
     URL="https://meridian-loop.com"
-    sleep 5  # Give it time to connect
+    sleep 5
 
-    # Check if process is still alive
     if kill -0 $CF_PID 2>/dev/null; then
         echo "[$(date)] Named tunnel running. URL: $URL"
     else
@@ -45,7 +70,7 @@ if [ -n "$CF_TUNNEL_TOKEN" ]; then
     fi
 fi
 
-if [ -z "$CF_TUNNEL_TOKEN" ]; then
+if [ -z "$CF_PID" ] || ! kill -0 $CF_PID 2>/dev/null; then
     # Fallback: quick tunnel (random URL)
     echo "[$(date)] Using QUICK tunnel (random URL)"
     $CLOUDFLARED tunnel --url http://localhost:$PORT > "$LOG" 2>&1 &

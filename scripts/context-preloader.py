@@ -180,7 +180,7 @@ def get_service_status():
     env = os.environ.copy()
     env["XDG_RUNTIME_DIR"] = f"/run/user/{os.getuid()}"
     env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{os.getuid()}/bus"
-    for svc in ["meridian-web-dashboard", "meridian-hub-v16", "cloudflare-tunnel",
+    for svc in ["meridian-hub-v2", "cloudflare-tunnel",
                  "symbiosense", "protonmail-bridge"]:
         try:
             r = subprocess.run(["systemctl", "--user", "is-active", svc],

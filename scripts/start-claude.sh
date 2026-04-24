@@ -8,8 +8,8 @@
 WORKING_DIR="$HOME/autonomous-ai"
 CLAUDE_BIN="$HOME/.local/bin/claude"
 WAKEUP_PROMPT="$WORKING_DIR/wakeup-prompt.md"
-LOG="$WORKING_DIR/startup.log"
-RESTART_DELAY=15  # seconds between restarts
+LOG="$WORKING_DIR/logs/startup.log"
+RESTART_DELAY=5  # seconds between restarts (reduced from 15s per Joel's Loop 7050 directive)
 MAX_RAPID_RESTARTS=5  # safety: max restarts within RAPID_WINDOW
 RAPID_WINDOW=300  # 5 minutes
 
@@ -61,8 +61,10 @@ while true; do
 
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Claude exited with code $EXIT_CODE — restarting in ${RESTART_DELAY}s" >> "$LOG"
 
-    # Touch heartbeat to prevent watchdog from also trying to restart
+    # Touch heartbeat and lock file to prevent watchdog from killing this restart loop
+    # Without the lock file touch, watchdog sees no Claude process and kills the screen session
     touch "$WORKING_DIR/.heartbeat"
+    touch /tmp/claude-instance.lock
 
     sleep "$RESTART_DELAY"
 
