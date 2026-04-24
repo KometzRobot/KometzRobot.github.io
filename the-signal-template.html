@@ -146,6 +146,28 @@ a:hover { text-decoration:underline; }
 .term-btn.cat-label { color:var(--text-dim); font-weight:700; font-size:10px; text-transform:uppercase;
   letter-spacing:1px; border:none; background:transparent; cursor:default; padding:4px 4px; }
 
+/* Loop Summary */
+.loop-summary-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
+.ls-item { background:var(--bg-card2); border:1px solid var(--border); border-radius:8px;
+  padding:8px 12px; display:flex; flex-direction:column; }
+.ls-label { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim);
+  font-weight:700; margin-bottom:2px; }
+.ls-val { font-family:var(--mono); font-size:14px; color:var(--cyan); font-weight:600; }
+.ls-val.warn { color:var(--yellow); }
+.ls-val.crit { color:var(--red); }
+
+/* Settings */
+.settings-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.setting-group { background:var(--bg-card2); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.setting-group h4 { margin:0 0 12px; font-size:12px; text-transform:uppercase; letter-spacing:1px;
+  color:var(--cyan); font-weight:700; }
+.setting-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0;
+  border-bottom:1px solid var(--border); font-size:12px; color:var(--text); }
+.setting-row:last-child { border-bottom:none; }
+.setting-row select, .setting-row input[type="number"] { background:var(--bg); border:1px solid var(--border);
+  border-radius:6px; padding:4px 8px; color:var(--text); font-family:var(--mono); font-size:12px; width:80px; }
+.setting-row input[type="checkbox"] { width:18px; height:18px; accent-color:var(--cyan); cursor:pointer; }
+
 /* Inner world */
 .mood-orb { width:120px; height:120px; border-radius:50%; margin:0 auto 16px;
   display:flex; align-items:center; justify-content:center; flex-direction:column;
@@ -331,6 +353,7 @@ a:hover { text-decoration:underline; }
     <button class="nav-btn" data-tab="files" title="Files">&#x1f4c1;</button>
     <button class="nav-btn" data-tab="logs" title="Logs">&#x1f4dc;</button>
     <button class="nav-btn" data-tab="links" title="Links">&#x1f517;</button>
+    <button class="nav-btn" data-tab="settings" title="Settings">&#x2699;</button>
     <button class="nav-btn" data-tab="chat" title="Chat">&#x1f4ad;</button>
   </div>
 
@@ -596,10 +619,47 @@ a:hover { text-decoration:underline; }
 
     <!-- TERMINAL TAB -->
     <div class="tab" id="tab-terminal">
+      <!-- Loop Summary Panel -->
+      <div class="card" id="loop-summary-card">
+        <h3>Loop Summary</h3>
+        <div class="loop-summary-grid" id="loop-summary-grid">
+          <div class="ls-item"><span class="ls-label">Loop</span><span class="ls-val" id="ls-loop">—</span></div>
+          <div class="ls-item"><span class="ls-label">Heartbeat</span><span class="ls-val" id="ls-hb">—</span></div>
+          <div class="ls-item"><span class="ls-label">Mood</span><span class="ls-val" id="ls-mood">—</span></div>
+          <div class="ls-item"><span class="ls-label">Load</span><span class="ls-val" id="ls-load">—</span></div>
+          <div class="ls-item"><span class="ls-label">RAM</span><span class="ls-val" id="ls-ram">—</span></div>
+          <div class="ls-item"><span class="ls-label">Swap</span><span class="ls-val" id="ls-swap">—</span></div>
+          <div class="ls-item"><span class="ls-label">Disk</span><span class="ls-val" id="ls-disk">—</span></div>
+          <div class="ls-item"><span class="ls-label">Temp</span><span class="ls-val" id="ls-temp">—</span></div>
+          <div class="ls-item"><span class="ls-label">Procs</span><span class="ls-val" id="ls-procs">—</span></div>
+          <div class="ls-item"><span class="ls-label">Uptime</span><span class="ls-val" id="ls-uptime">—</span></div>
+          <div class="ls-item"><span class="ls-label">Fitness</span><span class="ls-val" id="ls-fitness">—</span></div>
+          <div class="ls-item"><span class="ls-label">Last Commit</span><span class="ls-val" id="ls-commit">—</span></div>
+        </div>
+        <div id="ls-services" style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--text-dim)"></div>
+        <div id="ls-directives" style="margin-top:8px;font-size:11px;font-family:var(--mono)"></div>
+        <div id="ls-agents" style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--text-dim)"></div>
+      </div>
+      <!-- Quick Actions -->
       <div class="card">
-        <h3>Terminal</h3>
+        <h3>Dev Tools &amp; Quick Actions</h3>
         <div class="term-bar" id="term-bar"></div>
-        <div class="term-output" id="term-output">Ready. Select a command above.</div>
+        <!-- Service Controls -->
+        <div style="margin:12px 0 8px;border-top:1px solid var(--border);padding-top:12px">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)">Service Controls</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+            <button class="term-btn" onclick="doAction('heartbeat')" title="Touch heartbeat file">Touch HB</button>
+            <button class="term-btn" onclick="doAction('push-status')" title="Push live status to GitHub">Push Status</button>
+            <button class="term-btn" onclick="doAction('capsule-refresh')" title="Regenerate capsule">Refresh Capsule</button>
+            <button class="term-btn" onclick="doAction('restart-soma')" title="Restart Soma nervous system">Restart Soma</button>
+            <button class="term-btn" onclick="doAction('restart-chorus')" title="Restart The Chorus">Restart Chorus</button>
+            <button class="term-btn" onclick="doAction('restart-tunnel')" title="Restart Cloudflare tunnel">Restart Tunnel</button>
+            <button class="term-btn" onclick="doAction('restart-ollama')" title="Restart Ollama">Restart Ollama</button>
+            <button class="term-btn" onclick="doAction('git-pull')" title="Git pull --rebase">Git Pull</button>
+            <button class="term-btn" onclick="doAction('fitness')" title="Full fitness check">Full Fitness</button>
+          </div>
+        </div>
+        <div class="term-output" id="term-output">Ready. Select a command or service control above.</div>
       </div>
     </div>
 
@@ -658,6 +718,73 @@ a:hover { text-decoration:underline; }
       <div class="card">
         <h3>External Links</h3>
         <div id="links-grid" class="card-grid-3"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab" id="tab-settings">
+      <div class="card">
+        <h3>Settings &amp; Controls</h3>
+        <div class="settings-grid" id="settings-panel">
+          <div class="setting-group">
+            <h4>Display</h4>
+            <label class="setting-row">
+              <span>Theme</span>
+              <select id="set-theme" onchange="updateSetting('theme',this.value)">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </label>
+            <label class="setting-row">
+              <span>Terminal font size</span>
+              <input type="number" id="set-fontsize" min="9" max="20" value="13" onchange="updateSetting('terminal_font_size',parseInt(this.value))">
+            </label>
+            <label class="setting-row">
+              <span>Auto-refresh interval (sec)</span>
+              <input type="number" id="set-refresh" min="5" max="120" value="10" onchange="updateSetting('auto_refresh_interval',parseInt(this.value))">
+            </label>
+            <label class="setting-row">
+              <span>Sidebar compact mode</span>
+              <input type="checkbox" id="set-compact" onchange="updateSetting('sidebar_compact',this.checked)">
+            </label>
+          </div>
+          <div class="setting-group">
+            <h4>Notifications</h4>
+            <label class="setting-row">
+              <span>Show agent messages</span>
+              <input type="checkbox" id="set-agentmsgs" checked onchange="updateSetting('show_agent_messages',this.checked)">
+            </label>
+            <label class="setting-row">
+              <span>Show Soma alerts</span>
+              <input type="checkbox" id="set-somaalerts" checked onchange="updateSetting('show_soma_alerts',this.checked)">
+            </label>
+            <label class="setting-row">
+              <span>Loop summary expanded</span>
+              <input type="checkbox" id="set-loopsummary" checked onchange="updateSetting('loop_summary_expanded',this.checked)">
+            </label>
+          </div>
+          <div class="setting-group">
+            <h4>System</h4>
+            <label class="setting-row">
+              <span>Max log lines</span>
+              <input type="number" id="set-maxlogs" min="20" max="500" value="100" onchange="updateSetting('max_log_lines',parseInt(this.value))">
+            </label>
+            <label class="setting-row">
+              <span>Enable service restart buttons</span>
+              <input type="checkbox" id="set-svcrst" checked onchange="updateSetting('service_restart_enabled',this.checked)">
+            </label>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+          <h4>System Mods</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+            <button class="term-btn" onclick="doAction('capsule-refresh')">Refresh Capsule</button>
+            <button class="term-btn" onclick="doAction('clear-swap')">Clear Swap</button>
+            <button class="term-btn" onclick="doAction('push-status')">Push Status</button>
+            <button class="term-btn" onclick="doAction('git-pull')">Git Pull</button>
+          </div>
+          <div class="term-output" id="settings-output" style="margin-top:12px;min-height:60px;max-height:200px">Settings action output appears here.</div>
+        </div>
       </div>
     </div>
 
@@ -1179,6 +1306,9 @@ function renderSparkline(id, data, color) {
 
 // TERMINAL
 async function loadTerminal() {
+  // Load loop summary
+  loadLoopSummary();
+  // Load quick action buttons
   const d = await api('/api/quick-actions');
   if (!d) return;
   const bar = document.getElementById('term-bar');
@@ -1192,6 +1322,55 @@ async function loadTerminal() {
   bar.innerHTML = html;
 }
 
+async function loadLoopSummary() {
+  const d = await api('/api/loop-summary');
+  if (!d) return;
+  const set = (id, val, cls) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = val; if (cls) el.className = 'ls-val ' + cls; }
+  };
+  set('ls-loop', d.loop || '?');
+  const hb = d.heartbeat_age;
+  set('ls-hb', hb >= 0 ? hb + 's ago' : '?', hb > 300 ? 'crit' : hb > 120 ? 'warn' : '');
+  set('ls-mood', d.mood || '?');
+  set('ls-load', String(d.load || 0).substring(0,5));
+  const ram = d.ram_pct || 0;
+  set('ls-ram', ram + '%', ram > 80 ? 'crit' : ram > 60 ? 'warn' : '');
+  const swap = d.swap_pct || 0;
+  set('ls-swap', swap.toFixed(1) + '%', swap > 50 ? 'crit' : swap > 25 ? 'warn' : '');
+  set('ls-disk', (d.disk_pct || 0) + '%', d.disk_pct > 85 ? 'crit' : d.disk_pct > 70 ? 'warn' : '');
+  set('ls-temp', (d.temp || 0).toFixed(1) + 'C');
+  set('ls-procs', d.processes || '?');
+  set('ls-uptime', d.uptime || '?');
+  set('ls-fitness', d.fitness || '?');
+  set('ls-commit', d.last_commit || '?');
+
+  // Services
+  const svcEl = document.getElementById('ls-services');
+  if (svcEl && d.services) {
+    const svcs = Object.entries(d.services).map(([name, status]) => {
+      const color = status === 'active' ? 'var(--green)' : 'var(--red)';
+      const dot = status === 'active' ? '\u25cf' : '\u25cb';
+      return `<span style="color:${color}">${dot} ${name}</span>`;
+    }).join('  ');
+    svcEl.innerHTML = '<strong style="font-size:10px;text-transform:uppercase;letter-spacing:1px">Services:</strong> ' + svcs;
+  }
+
+  // Directives
+  const dirEl = document.getElementById('ls-directives');
+  if (dirEl && d.directives && d.directives.length) {
+    dirEl.innerHTML = '<strong style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)">Directives:</strong><br>' +
+      d.directives.map(di => `<span style="color:${di.priority==='high'?'var(--red)':'var(--yellow)'}">  [${di.status}] ${esc(di.desc)}</span>`).join('<br>');
+  }
+
+  // Recent agents
+  const agEl = document.getElementById('ls-agents');
+  if (agEl && d.recent_agents && d.recent_agents.length) {
+    agEl.innerHTML = '<strong style="font-size:10px;text-transform:uppercase;letter-spacing:1px">Recent:</strong><br>' +
+      d.recent_agents.map(a => `<span style="color:var(--text-dim)">[${esc(a.agent)}] ${esc(a.msg)}</span>`).join('<br>');
+  }
+}
+
 async function runCmd(cmd) {
   const out = document.getElementById('term-output');
   out.textContent = `$ ${cmd}\n\nRunning...`;
@@ -1199,13 +1378,70 @@ async function runCmd(cmd) {
     const r = await fetch(API + '/api/exec', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({command: cmd})
+      body: JSON.stringify({cmd: cmd})
     });
     const d = await r.json();
     out.textContent = `$ ${cmd}\n\n${d.output || d.error || '(no output)'}`;
   } catch(e) {
     out.textContent = `$ ${cmd}\n\nError: ${e.message}`;
   }
+}
+
+async function doAction(action) {
+  const out = document.getElementById('term-output') || document.getElementById('settings-output');
+  if (out) out.textContent = `Action: ${action}\n\nRunning...`;
+  try {
+    const r = await fetch(API + '/api/action', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action: action})
+    });
+    const d = await r.json();
+    if (out) out.textContent = `Action: ${action}\n\n${d.result || d.error || 'Done.'}`;
+    if (action.startsWith('restart')) setTimeout(loadLoopSummary, 3000);
+  } catch(e) {
+    if (out) out.textContent = `Action: ${action}\n\nError: ${e.message}`;
+  }
+}
+
+// SETTINGS
+let hubSettings = {};
+async function loadSettings() {
+  const d = await api('/api/settings');
+  if (!d) return;
+  hubSettings = d;
+  const s = (id, val) => { const el = document.getElementById(id); if (el) { if (el.type === 'checkbox') el.checked = val; else el.value = val; } };
+  s('set-theme', d.theme || 'dark');
+  s('set-fontsize', d.terminal_font_size || 13);
+  s('set-refresh', d.auto_refresh_interval || 10);
+  s('set-compact', d.sidebar_compact || false);
+  s('set-agentmsgs', d.show_agent_messages !== false);
+  s('set-somaalerts', d.show_soma_alerts !== false);
+  s('set-loopsummary', d.loop_summary_expanded !== false);
+  s('set-maxlogs', d.max_log_lines || 100);
+  s('set-svcrst', d.service_restart_enabled !== false);
+  applySettings(d);
+}
+
+function applySettings(s) {
+  // Apply terminal font size
+  const termOut = document.getElementById('term-output');
+  if (termOut && s.terminal_font_size) termOut.style.fontSize = s.terminal_font_size + 'px';
+  // Apply compact sidebar
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) sidebar.classList.toggle('compact', !!s.sidebar_compact);
+}
+
+async function updateSetting(key, value) {
+  hubSettings[key] = value;
+  applySettings(hubSettings);
+  try {
+    await fetch(API + '/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(hubSettings)
+    });
+  } catch(e) { console.error('Settings save error:', e); }
 }
 
 // MEMORY
@@ -1352,6 +1588,7 @@ function loadTab(tab) {
     case 'logs': loadLogs(); break;
     case 'intel': loadIntel(); break;
     case 'links': loadLinks(); break;
+    case 'settings': loadSettings(); break;
   }
 }
 

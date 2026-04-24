@@ -94,6 +94,18 @@ SAFE_COMMANDS = {
     "disk-big": f"du -sh {BASE}/* 2>/dev/null | sort -rh | head -15",
     "journal-size": "journalctl --user --disk-usage 2>/dev/null",
     "network": "ss -tlnp 2>/dev/null | head -20",
+    "swap-info": "free -h | grep Swap && echo '---Top swap users:' && for f in /proc/[0-9]*/status; do awk '/VmSwap/{s=$2}/Name/{n=$2}END{if(s>1000)printf \"%s %dKB\\n\",n,s}' \"$f\" 2>/dev/null; done | sort -t' ' -k2 -rn | head -5",
+    "soma-state": f"python3 -c \"import json; d=json.load(open('{SOMA_STATE}')); print(f'Mood: {{d.get(\\\"mood\\\",\\\"?\\\")}} | Load: {{d.get(\\\"load\\\",\\\"?\\\")}} | RAM: {{d.get(\\\"ram_pct\\\",\\\"?\\\")}}% | Swap: {{d.get(\\\"neural\\\",{{}}).get(\\\"swap_pct\\\",\\\"?\\\")}}% | Temp: {{d.get(\\\"thermal\\\",{{}}).get(\\\"avg_temp_c\\\",\\\"?\\\")}}C')\" 2>/dev/null",
+    "usb-status": "lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,LABEL | grep -E '(sd[d-z]|usb)' 2>/dev/null || echo 'No USB devices'",
+    "tailscale": "tailscale status 2>&1",
+    "directives": f"python3 -c \"import sqlite3; db=sqlite3.connect('{RELAY_DB}'); [print(f'[{{r[3]}}] {{r[4]}}: {{r[1][:80]}}') for r in db.execute('SELECT * FROM directives WHERE status NOT IN (\\\"done\\\",\\\"cancelled\\\") ORDER BY created_at DESC').fetchall()]; db.close()\" 2>/dev/null",
+    "memory-stats": f"python3 -c \"import sqlite3; db=sqlite3.connect('{MEMORY_DB}'); tables=['facts','observations','events','decisions','creative','connections']; [print(f'{{t}}: {{db.execute(f\\\"SELECT count(*) FROM {{t}}\\\").fetchone()[0]}}') for t in tables]; db.close()\" 2>/dev/null",
+    "loop-handoff": f"head -30 {os.path.join(BASE, '.loop-handoff.md')} 2>/dev/null || echo 'no handoff'",
+    "capsule-head": f"head -30 {os.path.join(BASE, '.capsule.md')} 2>/dev/null",
+    "dashboard-msgs": f"python3 -c \"import json; msgs=json.load(open('{DASH_FILE}')).get('messages',[]); [print(f'[{{m[\\\"time\\\"]}}] {{m[\\\"from\\\"]}}: {{m[\\\"text\\\"][:100]}}') for m in msgs[-10:]]\" 2>/dev/null || echo 'no messages'",
+    "temp": "cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | awk '{printf \"Zone %d: %.1fC\\n\", NR-1, $1/1000}'",
+    "ollama-models": "ollama list 2>/dev/null || echo 'Ollama not responding'",
+    "systemd-failed": "systemctl --user list-units --failed --no-pager 2>/dev/null; systemctl list-units --failed --no-pager 2>/dev/null | head -10",
 }
 
 LOG_FILES = {
@@ -203,6 +215,14 @@ def _get_system_health_inner():
     agent_names = ["Meridian", "Soma", "Eos", "Nova", "Atlas", "Tempo", "Hermes", "Junior"]
     # Map display names to relay DB agent names (some differ)
     relay_aliases = {"Meridian": ["Meridian", "MeridianLoop"], "Hermes": ["Hermes", "hermes"], "Eos": ["Eos", "Watchdog"]}
+    # Cron-based agents get longer thresholds (2x their cron interval)
+    agent_stale_thresholds = {
+        "Atlas": 1500,    # 25 min (cron every 10 min, allow slack)
+        "Tempo": 4200,    # 70 min (cron every 30 min)
+        "Nova": 3600,     # 60 min (cron every 15 min)
+        "Hermes": 1500,   # 25 min (cron every 10 min)
+        "Junior": 1800,   # 30 min
+    }
     try:
         db = sqlite3.connect(RELAY_DB, timeout=3)
         for name in agent_names:
@@ -222,7 +242,8 @@ def _get_system_health_inner():
                     if ts.tzinfo is None:
                         ts = ts.replace(tzinfo=timezone.utc)
                     age = (datetime.now(timezone.utc) - ts).total_seconds()
-                    agents[name] = {"last_seen": int(age), "status": "active" if age < 900 else "stale"}
+                    threshold = agent_stale_thresholds.get(name, 900)
+                    agents[name] = {"last_seen": int(age), "status": "active" if age < threshold else "stale"}
                 except Exception:
                     agents[name] = {"last_seen": -1, "status": "unknown"}
             else:
@@ -980,7 +1001,9 @@ def _get_agents_direct_inner():
                         ts = ts.replace(tzinfo=timezone.utc)
                     age = (datetime.now(timezone.utc) - ts).total_seconds()
                     last_seen = int(age)
-                    status = "active" if age < 900 else "stale"
+                    cron_thresholds = {"Atlas": 1500, "Tempo": 4200, "Nova": 3600, "Hermes": 1500, "Junior": 1800}
+                    threshold = cron_thresholds.get(name, 900)
+                    status = "active" if age < threshold else "stale"
                 except Exception:
                     pass
             # Message count and recent topics (last 24h)
@@ -1157,6 +1180,16 @@ def _get_creative_live_inner():
     }
 
 
+def _get_self_verify():
+    """Read self-verify state from .self-verify-state.json."""
+    state_path = os.path.join(BASE, ".self-verify-state.json")
+    try:
+        with open(state_path) as f:
+            return json.load(f)
+    except Exception:
+        return {"error": "no self-verify data yet", "pass": 0, "fail": 0}
+
+
 def _get_system_direct():
     """System data for the System tab — no proxy needed."""
     health = _get_system_health()
@@ -1173,6 +1206,7 @@ def _get_system_direct():
         "load": load_str,
         "load_val": _parse_load_val(load_str),
         "safe_commands": list(SAFE_COMMANDS.keys()),
+        "self_verify": _get_self_verify(),
     }
 
 
@@ -1311,13 +1345,21 @@ def _get_quick_actions():
             "df": "Disk usage",
             "top": "Top processes",
             "network": "Network listeners",
+            "swap-info": "Swap usage details",
+            "temp": "CPU temperatures",
+            "systemd-failed": "Failed services",
         },
-        "agents": {
+        "loop & agents": {
             "ps-agents": "Running agents",
             "heartbeat-age": "Heartbeat age",
             "loop-count": "Current loop",
             "relay-recent": "Recent relay messages",
             "fitness": "Loop fitness score",
+            "fitness-detail": "Detailed fitness breakdown",
+            "soma-state": "Soma nervous system state",
+            "directives": "Outstanding directives",
+            "dashboard-msgs": "Recent dashboard messages",
+            "loop-handoff": "Last session handoff",
         },
         "git": {
             "git-status": "Git status",
@@ -1329,8 +1371,124 @@ def _get_quick_actions():
             "services": "Running services",
             "tunnel-url": "Tunnel config",
             "verify": "System verification",
+            "journal-size": "Journal disk usage",
+            "tailscale": "Tailscale network",
+            "usb-status": "USB drives",
+            "ollama-models": "Ollama models loaded",
+        },
+        "memory & state": {
+            "memory-facts": "Recent memory facts",
+            "memory-stats": "Memory DB table sizes",
+            "capsule-head": "Capsule snapshot (top)",
         },
     }
+
+
+SETTINGS_FILE = os.path.join(BASE, ".hub-settings.json")
+
+def _get_settings():
+    """Load hub settings with defaults."""
+    defaults = {
+        "auto_refresh_interval": 10,
+        "terminal_font_size": 13,
+        "theme": "dark",
+        "show_agent_messages": True,
+        "show_soma_alerts": True,
+        "loop_summary_expanded": True,
+        "sidebar_compact": False,
+        "notification_sound": False,
+        "max_log_lines": 100,
+        "service_restart_enabled": True,
+    }
+    try:
+        with open(SETTINGS_FILE) as f:
+            saved = json.load(f)
+        defaults.update(saved)
+    except Exception:
+        pass
+    return defaults
+
+
+def _save_settings(settings):
+    """Save hub settings."""
+    try:
+        with open(SETTINGS_FILE, "w") as f:
+            json.dump(settings, f, indent=2)
+        return {"ok": True}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _get_loop_summary():
+    """Comprehensive loop summary for terminal display."""
+    summary = {}
+    # Loop count
+    try:
+        with open(LOOP_FILE) as f:
+            summary["loop"] = int(f.read().strip())
+    except Exception:
+        summary["loop"] = "?"
+
+    # Heartbeat age
+    try:
+        summary["heartbeat_age"] = int(time.time() - os.path.getmtime(HEARTBEAT))
+    except Exception:
+        summary["heartbeat_age"] = -1
+
+    # Soma state
+    try:
+        with open(SOMA_STATE) as f:
+            soma = json.load(f)
+        summary["mood"] = soma.get("mood", "?")
+        summary["mood_score"] = soma.get("mood_score", 0)
+        summary["load"] = soma.get("load", 0)
+        summary["ram_pct"] = soma.get("ram_pct", 0)
+        summary["disk_pct"] = soma.get("disk_pct", 0)
+        summary["swap_pct"] = soma.get("neural", {}).get("swap_pct", 0)
+        summary["temp"] = soma.get("thermal", {}).get("avg_temp_c", 0)
+        summary["processes"] = soma.get("processes", 0)
+        summary["services"] = soma.get("services", {})
+    except Exception:
+        summary["mood"] = "unknown"
+
+    # Fitness
+    try:
+        result = _run(f"cd {BASE} && python3 scripts/loop-fitness.py 2>/dev/null | tail -1", timeout=10)
+        summary["fitness"] = result.strip() if result else "?"
+    except Exception:
+        summary["fitness"] = "?"
+
+    # Outstanding directives
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        directives = db.execute("SELECT description, status, priority FROM directives WHERE status NOT IN ('done','cancelled')").fetchall()
+        db.close()
+        summary["directives"] = [{"desc": d[0][:80], "status": d[1], "priority": d[2]} for d in directives]
+    except Exception:
+        summary["directives"] = []
+
+    # Recent agent activity
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        recent = db.execute("SELECT agent, topic, substr(message,1,100), timestamp FROM agent_messages ORDER BY timestamp DESC LIMIT 5").fetchall()
+        db.close()
+        summary["recent_agents"] = [{"agent": r[0], "topic": r[1], "msg": r[2], "time": r[3]} for r in recent]
+    except Exception:
+        summary["recent_agents"] = []
+
+    # Uptime
+    try:
+        summary["uptime"] = _run("uptime -p", timeout=5).strip()
+    except Exception:
+        summary["uptime"] = "?"
+
+    # Git recent
+    try:
+        summary["last_commit"] = _run(f"cd {BASE} && git log --oneline -1", timeout=5).strip()
+    except Exception:
+        summary["last_commit"] = "?"
+
+    return summary
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1631,6 +1789,13 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
     def _authed(self):
         return _get_session(self.headers) is not None
 
+    def do_HEAD(self):
+        """Handle HEAD requests (health checks, Cloudflare, curl -I)."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_GET(self):
         path = urllib.parse.urlparse(self.path)
         qs = dict(urllib.parse.parse_qsl(path.query))
@@ -1676,12 +1841,24 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # Brothers Fab demo — public, no auth (temporary for Glenna)
-        if path.path.startswith("/brofab/") or path.path == "/brofab":
+        if path.path == "/brofab":
+            self.send_response(301)
+            self.send_header("Location", "/brofab/")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        if path.path.startswith("/brofab/"):
             BROFAB_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "brothers-fab")
-            rel = path.path[len("/brofab"):].lstrip("/") or "index.html"
+            rel = path.path[len("/brofab/"):] or "index.html"
             # Security: prevent directory traversal
             safe = os.path.normpath(os.path.join(BROFAB_ROOT, rel))
-            if not safe.startswith(BROFAB_ROOT) or not os.path.isfile(safe):
+            if not safe.startswith(BROFAB_ROOT):
+                self._send(404, "Not found", "text/plain")
+                return
+            # Auto-serve index.html for directory paths
+            if os.path.isdir(safe):
+                safe = os.path.join(safe, "index.html")
+            if not os.path.isfile(safe):
                 self._send(404, "Not found", "text/plain")
                 return
             ext = os.path.splitext(safe)[1].lower()
@@ -1697,6 +1874,23 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        if path.path.startswith("/download/"):
+            DOWNLOAD_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "downloads")
+            rel = path.path[len("/download/"):]
+            safe = os.path.normpath(os.path.join(DOWNLOAD_ROOT, rel))
+            if not safe.startswith(DOWNLOAD_ROOT) or not os.path.isfile(safe):
+                self._send(404, "Not found", "text/plain")
+                return
+            fname = os.path.basename(safe)
+            with open(safe, "rb") as f:
+                data = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Disposition", f'attachment; filename="{fname}"')
+            self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
             return
@@ -1768,6 +1962,8 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(_get_creative_live())
         elif path.path == "/api/system":
             self._send_json(_get_system_direct())
+        elif path.path == "/api/self-verify":
+            self._send_json(_get_self_verify())
         elif path.path == "/api/inner-world":
             self._send_json(_get_inner_world())
         elif path.path == "/api/memory/browse":
@@ -1780,6 +1976,10 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(_get_memory_browse(table, search, limit))
         elif path.path == "/api/quick-actions":
             self._send_json(_get_quick_actions())
+        elif path.path == "/api/loop-summary":
+            self._send_json(_get_loop_summary())
+        elif path.path == "/api/settings":
+            self._send_json(_get_settings())
         elif path.path == "/api/files":
             dir_path = qs.get("dir", ".")
             self._send_json(_get_files_direct(dir_path))
@@ -2130,6 +2330,9 @@ The tape is spooling. The mechanism is listening.
             else:
                 self._send_json({"error": "empty message"}, 400)
 
+        elif path == "/api/settings":
+            self._send_json(_save_settings(data))
+
         elif path == "/api/action":
             action = data.get("action", "")
             result = ""
@@ -2146,8 +2349,18 @@ The tape is spooling. The mechanism is listening.
                 result = _run("systemctl --user restart meridian-hub-v2", timeout=10)
             elif action == "restart-soma":
                 result = _run("systemctl --user restart symbiosense", timeout=10)
+            elif action == "restart-tunnel":
+                result = _run("systemctl restart cloudflare-tunnel", timeout=10)
+            elif action == "restart-ollama":
+                result = _run("systemctl restart ollama", timeout=10)
             elif action == "git-pull":
                 result = _run(f"cd {BASE} && git pull --rebase origin master", timeout=30)
+            elif action == "clear-swap":
+                result = _run("sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null; swapoff -a && swapon -a 2>/dev/null || echo 'swap clear requires root'", timeout=15)
+            elif action == "capsule-refresh":
+                result = _run(f"cd {BASE} && python3 scripts/capsule-refresh.py", timeout=30)
+            elif action == "push-status":
+                result = _run(f"cd {BASE} && python3 scripts/push-live-status.py", timeout=30)
             else:
                 result = f"Unknown action: {action}"
             self._send_json({"result": result})
@@ -2210,7 +2423,7 @@ class ThreadingHub(http.server.ThreadingHTTPServer):
     daemon_threads = True
 
 def main():
-    server = ThreadingHub(("0.0.0.0", PORT), HubHandler)
+    server = ThreadingHub(("127.0.0.1", PORT), HubHandler)
     print(f"Hub v2 running on port {PORT}")
     try:
         server.serve_forever()
