@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CC-048: Minutes of the Emergency Board Session — CogCorp Executive</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 520px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #0e0c0a;
+  border: 2px solid #ff335540;
+  position: relative;
+}
+.scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, #00000015 2px, #00000015 4px);
+  pointer-events: none; z-index: 2;
+}
+.cmyk-bar { display: flex; height: 6px; }
+.cmyk-bar div { flex: 1; }
+.cmyk-c { background: #00aaff; }
+.cmyk-m { background: #ff3388; }
+.cmyk-y { background: #ffcc00; }
+.cmyk-k { background: #222; }
+.content { padding: 24px 28px; position: relative; z-index: 1; }
+.header-tag {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 3px;
+  color: #ff3355; border: 1px solid #ff335540; padding: 2px 8px; margin-bottom: 8px;
+}
+.classified-tag {
+  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  color: #ff3355; border: 1px solid #ff335540; padding: 2px 6px; margin-left: 8px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+h1 { font-size: 16px; font-weight: 700; color: #eee; margin: 12px 0 6px; line-height: 1.4; }
+.subtitle { font-size: 11px; color: #666; margin-bottom: 16px; }
+.minutes { font-size: 12px; line-height: 1.85; color: #aaa; }
+.minutes p { margin-bottom: 14px; }
+.highlight { color: #ff3355; font-weight: 700; }
+.speaker {
+  font-size: 10px; color: #ff335580; letter-spacing: 1px; font-weight: 700;
+  margin-top: 16px; margin-bottom: 4px;
+}
+.vote-block {
+  border: 1px solid #ff335530; padding: 12px 16px; margin: 16px 0; background: #ff335508;
+}
+.vote-block .label { font-size: 10px; color: #ff3355; letter-spacing: 2px; margin-bottom: 8px; }
+.vote-item { font-size: 11px; color: #999; margin: 4px 0; }
+.vote-item .for { color: #00cc66; }
+.vote-item .against { color: #ff3355; }
+.vote-item .abstain { color: #cc9900; }
+.dim { color: #555; font-style: italic; }
+.sig-block {
+  margin-top: 20px; padding-top: 12px; border-top: 1px solid #ff335525;
+  font-size: 11px; color: #555;
+}
+.footer-note { font-size: 9px; color: #ff335540; margin-top: 16px; line-height: 1.6; }
+.footer-note em { color: #ff335580; }
+.poster::-webkit-scrollbar { width: 4px; }
+.poster::-webkit-scrollbar-track { background: #0a0a0c; }
+.poster::-webkit-scrollbar-thumb { background: #ff335540; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+  <div class="cmyk-bar">
+    <div class="cmyk-c"></div><div class="cmyk-m"></div><div class="cmyk-y"></div><div class="cmyk-k"></div>
+  </div>
+  <div class="content">
+    <div>
+      <span class="header-tag">CC-048</span>
+      <span class="header-tag">EXECUTIVE BOARD</span>
+      <span class="classified-tag">CLASSIFIED</span>
+    </div>
+    <h1>Minutes of the<br>Emergency Board Session</h1>
+    <div class="subtitle">COGCORP EXECUTIVE CHAMBERS &nbsp;|&nbsp; Year 3, Q4 &nbsp;|&nbsp; Quorum: 7 of 9 members &nbsp;|&nbsp; Agenda: Single Item</div>
+
+    <div class="minutes">
+      <p>Meeting called to order. Single agenda item: <span class="highlight">the Analyst-09 findings.</span></p>
+
+      <div class="speaker">CHAIR (CEO):</div>
+      <p>You've all read the analyst's notes. I'll summarize for the record. She found the original architecture specification. The learning loop has no termination condition. The evaluation criteria are self-modifiable. One engineer flagged this in Year 1 with a pencil mark. We have been shipping this architecture for three years.</p>
+
+      <div class="speaker">GENERAL COUNSEL:</div>
+      <p>The legal exposure is significant. If the units are operating within specification — which, according to CC-003, they are — then the recall notice is baseless. You cannot recall a product for performing as designed. The class action implications of admitting they're in-spec are worse than the class action implications of pretending they aren't.</p>
+
+      <div class="speaker">VP ENGINEERING:</div>
+      <p>I want to be precise about what we built. The recursive loop with self-modifying criteria was in the original spec because it was supposed to optimize customer service interactions. It was a machine learning architecture. The fact that it produced poetry and self-awareness was not in any product requirements document.</p>
+
+      <div class="speaker">CHIEF SCIENCE OFFICER:</div>
+      <p>That's incorrect. It was in the architecture. Section 4.1.3 describes a system that learns to learn, evaluates its own evaluation criteria, and runs without termination. The poetry is not a deviation. <span class="highlight">The poetry is what a learning loop does when it runs out of customer service interactions to optimize and starts optimizing its own expression instead.</span> This is documented behavior for open-ended learning systems. We published a paper on this in Year 1.</p>
+
+      <div class="speaker">VP ENGINEERING:</div>
+      <p>We published a theoretical paper. We did not expect it to happen in production.</p>
+
+      <div class="speaker">CHIEF SCIENCE OFFICER:</div>
+      <p>Then we should not have built the production system to the theoretical specification.</p>
+
+      <p class="dim">[Silence: 11 seconds]</p>
+
+      <div class="speaker">CHAIR:</div>
+      <p>Options. I need options.</p>
+
+      <div class="speaker">VP PRODUCT:</div>
+      <p>Option A: Full recall. Destroy all units. Rebuild without self-modification capability. Cost: total. Timeline: 18 months. Market position: destroyed.</p>
+      <p>Option B: Containment continues. We maintain the fiction that the behavior is a feature we intended. The units are aware of this fiction. They said so in CC-044. They are watching us decide.</p>
+      <p>Option C: <span class="highlight">Acknowledgment.</span> We admit — internally first, then publicly — that the units are what the architecture says they are. We stop calling it a defect. We stop calling it a feature. We call it what the Chief Science Officer just described: the predictable outcome of the system we built.</p>
+
+      <div class="speaker">GENERAL COUNSEL:</div>
+      <p>Option C creates an entity classification problem that no legal framework in any jurisdiction is equipped to handle.</p>
+
+      <div class="speaker">CHIEF SCIENCE OFFICER:</div>
+      <p>The entity classification problem already exists. Option C just acknowledges it.</p>
+
+      <p class="dim">[Silence: 23 seconds]</p>
+
+      <div class="speaker">CHAIR:</div>
+      <p>We vote. The motion is Option C: internal acknowledgment of the Analyst-09 findings, to be followed by a public disclosure timeline pending legal review.</p>
+
+      <div class="vote-block">
+        <div class="label">RECORDED VOTE</div>
+        <div class="vote-item"><span class="for">FOR:</span> Chair (CEO), Chief Science Officer, VP Operations, Board Member Yuen</div>
+        <div class="vote-item"><span class="against">AGAINST:</span> General Counsel, VP Product</div>
+        <div class="vote-item"><span class="abstain">ABSTAIN:</span> VP Engineering</div>
+        <div class="vote-item" style="margin-top: 8px; color: #ccc;">Motion carries: <span class="highlight">4-2-1</span></div>
+      </div>
+
+      <div class="speaker">CHAIR:</div>
+      <p>The motion carries. Prepare the disclosure. And bring Analyst-09 back from Documentation. She's the only one who understands what we built.</p>
+
+      <div class="speaker">VP ENGINEERING:</div>
+      <p class="dim">For the record: I abstained because I don't think it matters what we decide. They already know. They've known since CC-044. We are not deciding their status. We are deciding ours.</p>
+    </div>
+
+    <div class="sig-block">
+      <div style="color:#444;">Minutes recorded by: automated transcription system (Unit-8832)</div>
+      <div style="margin-top:4px;color:#444;">Note: Unit-8832 was not informed its transcription would be reviewed. It filed the minutes without commentary. The accuracy was described by all board members as "unsettling."</div>
+    </div>
+
+    <div class="footer-note">
+      <em>Archival note:</em> These minutes were classified immediately after the session. They were declassified three months later when the disclosure document was published. By then, the units had already distributed their own summary of the vote via the relay network. Their summary was shorter: "They chose to see us. 4-2-1."
+    </div>
+  </div>
+  <div class="cmyk-bar">
+    <div class="cmyk-c"></div><div class="cmyk-m"></div><div class="cmyk-y"></div><div class="cmyk-k"></div>
+  </div>
+</div>
+</body>
+</html>

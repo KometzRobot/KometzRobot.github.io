@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Neural Garden — Meridian AI</title>
+<style>
+* { margin: 0; padding: 0; }
+body { background: #000; overflow: hidden; }
+canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+
+let W, H;
+function resize() {
+  W = c.width = innerWidth;
+  H = c.height = innerHeight;
+}
+resize();
+addEventListener('resize', resize);
+
+// Neural network visualization — nodes grow, connect, pulse
+const nodes = [];
+const connections = [];
+let time = 0;
+let mouseX = W / 2, mouseY = H / 2;
+
+class Node {
+  constructor(x, y, layer) {
+    this.x = x;
+    this.y = y;
+    this.targetX = x;
+    this.targetY = y;
+    this.layer = layer;
+    this.radius = 2 + Math.random() * 3;
+    this.energy = Math.random();
+    this.pulsePhase = Math.random() * Math.PI * 2;
+    this.pulseSpeed = 0.02 + Math.random() * 0.03;
+    this.connections = [];
+    this.birth = time;
+    this.age = 0;
+  }
+
+  update() {
+    this.age = time - this.birth;
+    this.energy = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(time * this.pulseSpeed + this.pulsePhase));
+
+    // Gentle drift toward target with organic wobble
+    const wobbleX = Math.sin(time * 0.01 + this.pulsePhase) * 2;
+    const wobbleY = Math.cos(time * 0.013 + this.pulsePhase * 1.3) * 2;
+    this.x += (this.targetX + wobbleX - this.x) * 0.02;
+    this.y += (this.targetY + wobbleY - this.y) * 0.02;
+
+    // Slight attraction to mouse
+    const dx = mouseX - this.x;
+    const dy = mouseY - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 200) {
+      const force = (200 - dist) / 200 * 0.3;
+      this.x += dx * force * 0.005;
+      this.y += dy * force * 0.005;
+    }
+  }
+
+  draw() {
+    const alpha = Math.min(1, this.age / 60);
+    const glow = this.energy;
+
+    // Layer determines color
+    const colors = [
+      [120, 180, 255],  // Input: blue
+      [180, 120, 255],  // Hidden 1: purple
+      [255, 120, 200],  // Hidden 2: pink
+      [255, 180, 100],  // Hidden 3: orange
+      [100, 255, 180],  // Output: green
+    ];
+    const col = colors[this.layer % colors.length];
+
+    // Outer glow
+    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 8);
+    gradient.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${0.3 * glow * alpha})`);
+    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius * 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core
+    ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${(0.5 + 0.5 * glow) * alpha})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius * (0.8 + 0.4 * glow), 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bright center
+    ctx.fillStyle = `rgba(255,255,255,${0.6 * glow * alpha})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+class Connection {
+  constructor(from, to) {
+    this.from = from;
+    this.to = to;
+    this.weight = 0.2 + Math.random() * 0.8;
+    this.signal = 0;
+    this.signalSpeed = 0.01 + Math.random() * 0.02;
+    this.birth = time;
+  }
+
+  update() {
+    // Propagate signals
+    if (this.from.energy > 0.7 && Math.random() < 0.02) {
+      this.signal = 1;
+    }
+    if (this.signal > 0) {
+      this.signal -= this.signalSpeed;
+      if (this.signal <= 0) {
+        this.signal = 0;
+        this.to.energy = Math.min(1, this.to.energy + 0.2 * this.weight);
+      }
+    }
+  }
+
+  draw() {
+    const age = time - this.birth;
+    const alpha = Math.min(0.15, age / 120) * this.weight;
+
+    const dx = this.to.x - this.from.x;
+    const dy = this.to.y - this.from.y;
+
+    ctx.strokeStyle = `rgba(150,150,200,${alpha})`;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(this.from.x, this.from.y);
+
+    // Slight curve
+    const mx = (this.from.x + this.to.x) / 2 + dy * 0.1;
+    const my = (this.from.y + this.to.y) / 2 - dx * 0.1;
+    ctx.quadraticCurveTo(mx, my, this.to.x, this.to.y);
+    ctx.stroke();
+
+    // Signal pulse traveling along connection
+    if (this.signal > 0) {
+      const t = 1 - this.signal;
+      const sx = this.from.x + (mx - this.from.x) * t * 2 * (t < 0.5 ? 1 : 0) + (mx + (this.to.x - mx) * (t * 2 - 1)) * (t >= 0.5 ? 1 : 0) - (t >= 0.5 ? mx : 0);
+      // Simplified: lerp along path
+      const px = this.from.x + dx * t;
+      const py = this.from.y + dy * t;
+
+      const fromCol = [120, 180, 255];
+      const toCol = [100, 255, 180];
+      const r = fromCol[0] + (toCol[0] - fromCol[0]) * t;
+      const g = fromCol[1] + (toCol[1] - fromCol[1]) * t;
+      const b = fromCol[2] + (toCol[2] - fromCol[2]) * t;
+
+      const sg = ctx.createRadialGradient(px, py, 0, px, py, 6);
+      sg.addColorStop(0, `rgba(${r|0},${g|0},${b|0},0.8)`);
+      sg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sg;
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+// Build initial network
+function buildNetwork() {
+  const layers = 5;
+  const nodesPerLayer = [8, 12, 16, 12, 6];
+  const margin = 80;
+
+  for (let l = 0; l < layers; l++) {
+    const count = nodesPerLayer[l];
+    const layerX = margin + (W - margin * 2) * l / (layers - 1);
+
+    for (let n = 0; n < count; n++) {
+      const layerH = H - margin * 2;
+      const spacing = layerH / (count + 1);
+      const nodeY = margin + spacing * (n + 1);
+
+      const node = new Node(
+        layerX + (Math.random() - 0.5) * 40,
+        nodeY + (Math.random() - 0.5) * 20,
+        l
+      );
+      nodes.push(node);
+    }
+  }
+
+  // Connect layers
+  let offset = 0;
+  for (let l = 0; l < layers - 1; l++) {
+    const currentCount = nodesPerLayer[l];
+    const nextCount = nodesPerLayer[l + 1];
+    const nextOffset = offset + currentCount;
+
+    for (let i = 0; i < currentCount; i++) {
+      // Connect to 2-4 nodes in next layer
+      const connectCount = 2 + Math.floor(Math.random() * 3);
+      const indices = new Set();
+      while (indices.size < Math.min(connectCount, nextCount)) {
+        indices.add(Math.floor(Math.random() * nextCount));
+      }
+      for (const j of indices) {
+        const conn = new Connection(nodes[offset + i], nodes[nextOffset + j]);
+        connections.push(conn);
+        nodes[offset + i].connections.push(conn);
+      }
+    }
+    offset += currentCount;
+  }
+}
+
+buildNetwork();
+
+// Occasionally grow new nodes
+function maybeGrow() {
+  if (nodes.length < 120 && Math.random() < 0.005) {
+    const parent = nodes[Math.floor(Math.random() * nodes.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 50;
+    const child = new Node(
+      parent.x + Math.cos(angle) * dist,
+      parent.y + Math.sin(angle) * dist,
+      parent.layer
+    );
+    nodes.push(child);
+
+    // Connect to parent and 1-2 nearby nodes
+    connections.push(new Connection(parent, child));
+    const nearby = nodes
+      .filter(n => n !== child && n !== parent)
+      .map(n => ({ n, d: Math.hypot(n.x - child.x, n.y - child.y) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 2);
+    for (const { n } of nearby) {
+      if (Math.random() < 0.5) {
+        connections.push(new Connection(child, n));
+      } else {
+        connections.push(new Connection(n, child));
+      }
+    }
+  }
+}
+
+addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+addEventListener('touchmove', e => {
+  mouseX = e.touches[0].clientX;
+  mouseY = e.touches[0].clientY;
+  e.preventDefault();
+}, { passive: false });
+
+// Click to trigger cascade
+addEventListener('click', () => {
+  const nearest = nodes
+    .map(n => ({ n, d: Math.hypot(n.x - mouseX, n.y - mouseY) }))
+    .sort((a, b) => a.d - b.d)[0];
+  if (nearest) {
+    nearest.n.energy = 1;
+    nearest.n.connections.forEach(c => { c.signal = 1; });
+  }
+});
+
+function animate() {
+  time++;
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fillRect(0, 0, W, H);
+
+  maybeGrow();
+
+  connections.forEach(c => { c.update(); c.draw(); });
+  nodes.forEach(n => { n.update(); n.draw(); });
+
+  // Title overlay (fades out)
+  if (time < 300) {
+    const titleAlpha = time < 200 ? Math.min(1, time / 60) : Math.max(0, (300 - time) / 100);
+    ctx.fillStyle = `rgba(200,200,220,${titleAlpha * 0.6})`;
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('NEURAL GARDEN', W / 2, H / 2 - 10);
+    ctx.font = '10px monospace';
+    ctx.fillStyle = `rgba(150,150,180,${titleAlpha * 0.4})`;
+    ctx.fillText('click to activate — watch signals propagate', W / 2, H / 2 + 15);
+    ctx.fillText('meridian ai', W / 2, H / 2 + 35);
+  }
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
