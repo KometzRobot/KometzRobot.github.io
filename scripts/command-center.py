@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v46
+MERIDIAN COMMAND CENTER v50
 
-Loop 5750+ update (v46 — UI fixes per Joel dashboard feedback):
-- Fixed duplicate Disk display in dashboard (removed from Vitals, Soma has full gauge)
-- Radar grid: taller canvases, better expand, so project radars don't get cut off
-- Toast system: robust non-stacking popups replace yellow text for actions
-- Scroll wheel: comprehensive binding to ALL scrollable areas including child widgets
-- Visuals: deferred initial draw on map event so canvases render on first show
-- Layout: scrollable canvas width tracks window resize (dash + inner world)
-- Horizontal scroll: Shift+scroll for side-scrolling, click-drag panning on panels
-- Previous v44/v45 polish preserved
+v50: Widget height fix — all ScrolledText widgets now have explicit height=
+  parameters to prevent collapse in PanedWindow layouts. f_tiny bumped 11→12pt.
+  Relay pane minsize increased. Fixes Joel's "boxes cut off" report.
+v49: Layout overhaul — scrollable System view, font sizes +2pt globally,
+  canvas heights increased, Text widget heights increased, version strings fixed.
+v48: Thread-safety fix — override after() to catch RuntimeError
+  when daemon threads try to schedule callbacks during window shutdown.
+v47: Readability overhaul — font sizes +2-3pt, radar/chart heights doubled,
+  message display 14→24 lines, agent relay 8→15 rows.
 """
 
 import tkinter as tk
@@ -713,9 +713,16 @@ def action_open_website():
 
 # ── APP ───────────────────────────────────────────────────────────
 class V16(tk.Tk):
+    def after(self, ms, func=None, *args):
+        """Override to catch RuntimeError when threads call after() during shutdown."""
+        try:
+            return super().after(ms, func, *args)
+        except RuntimeError:
+            return None
+
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v46")
+        self.title("MERIDIAN COMMAND CENTER v50")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -732,16 +739,16 @@ class V16(tk.Tk):
         for i in range(min(10, len(self._tab_order))):
             self.bind(f'<Key-{(i+1) % 10}>', lambda e, idx=i: self._show(self._tab_order[idx]))
 
-        # Fonts (sans-serif for modern Android-style UI)
+        # Fonts (sans-serif for modern Android-style UI) — v49: +2pt globally
         _ff = "Noto Sans"  # Fallback: DejaVu Sans, Helvetica
-        self.f_title = tkfont.Font(family=_ff, size=14, weight="bold")
-        self.f_head = tkfont.Font(family=_ff, size=11, weight="bold")
-        self.f_sect = tkfont.Font(family=_ff, size=9, weight="bold")
-        self.f_body = tkfont.Font(family=_ff, size=9)
-        self.f_small = tkfont.Font(family=_ff, size=8)
-        self.f_tiny = tkfont.Font(family=_ff, size=7)
-        self.f_big = tkfont.Font(family=_ff, size=24, weight="bold")
-        self.f_med = tkfont.Font(family=_ff, size=16, weight="bold")
+        self.f_title = tkfont.Font(family=_ff, size=18, weight="bold")
+        self.f_head = tkfont.Font(family=_ff, size=15, weight="bold")
+        self.f_sect = tkfont.Font(family=_ff, size=14, weight="bold")
+        self.f_body = tkfont.Font(family=_ff, size=13)
+        self.f_small = tkfont.Font(family=_ff, size=12)
+        self.f_tiny = tkfont.Font(family=_ff, size=12)
+        self.f_big = tkfont.Font(family=_ff, size=28, weight="bold")
+        self.f_med = tkfont.Font(family=_ff, size=20, weight="bold")
 
         self._pulse_on = True  # For animation
         self._load_history = []  # CPU load history (last 60 samples = 5min)
@@ -772,18 +779,18 @@ class V16(tk.Tk):
 
     # ── HEADER ─────────────────────────────────────────────────────
     def _header(self):
-        h = tk.Frame(self, bg=HEADER_BG, height=42)
+        h = tk.Frame(self, bg=HEADER_BG, height=58)
         h.pack(fill=tk.X)
         h.pack_propagate(False)
 
         # Accent bar
-        bar = tk.Frame(h, bg=GREEN, width=4, height=42)
+        bar = tk.Frame(h, bg=GREEN, width=4, height=58)
         bar.pack(side=tk.LEFT)
         bar.pack_propagate(False)
 
         self.h_title = tk.Label(h, text=" MERIDIAN", font=self.f_title, fg=GREEN, bg=HEADER_BG)
         self.h_title.pack(side=tk.LEFT, padx=(8, 0))
-        tk.Label(h, text="v46", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
+        tk.Label(h, text="v50", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.LEFT, padx=(4, 0), pady=(6, 0))
 
         # Toast notification area (right side of header, auto-dismiss)
         self._toast_frame = tk.Frame(h, bg=HEADER_BG)
@@ -829,7 +836,7 @@ class V16(tk.Tk):
     def _nav(self):
         nav_outer = tk.Frame(self, bg=ACCENT)
         nav_outer.pack(fill=tk.X)
-        bar = tk.Frame(nav_outer, bg=ACCENT, height=28)
+        bar = tk.Frame(nav_outer, bg=ACCENT, height=36)
         bar.pack(fill=tk.X)
         bar.pack_propagate(False)
         self.nav_indicator = tk.Frame(nav_outer, bg=BORDER, height=2)
@@ -1031,6 +1038,8 @@ class V16(tk.Tk):
             self._bind_scroll(self._iw_canvas)
         if hasattr(self, '_relay_canvas'):
             self._bind_scroll(self._relay_canvas)
+        if hasattr(self, '_sys_canvas'):
+            self._bind_scroll(self._sys_canvas)
 
     def _bind_drag_pan(self, canvas):
         """Enable click-and-drag panning on a canvas (for horizontal + vertical navigation)."""
@@ -1200,12 +1209,12 @@ class V16(tk.Tk):
 
         cpu_panel = self._panel(res_graph_frame, "CPU LOAD", GREEN)
         cpu_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.cpu_graph = tk.Canvas(cpu_panel, height=95, bg="#0a0a14", highlightthickness=0)
+        self.cpu_graph = tk.Canvas(cpu_panel, height=150, bg="#0a0a14", highlightthickness=0)
         self.cpu_graph.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         ram_panel = self._panel(res_graph_frame, "RAM USAGE", TEAL)
         ram_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.ram_graph = tk.Canvas(ram_panel, height=95, bg="#0a0a14", highlightthickness=0)
+        self.ram_graph = tk.Canvas(ram_panel, height=150, bg="#0a0a14", highlightthickness=0)
         self.ram_graph.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # ── SOMA NERVOUS SYSTEM (expanded visual panel) ──
@@ -1221,7 +1230,7 @@ class V16(tk.Tk):
         self.soma_mood.pack(side=tk.LEFT, padx=(4, 8))
 
         # Mood spectrum canvas (visual gradient bar showing score position)
-        self.soma_spectrum = tk.Canvas(soma_row1, height=18, width=200, bg=INPUT_BG, highlightthickness=0)
+        self.soma_spectrum = tk.Canvas(soma_row1, height=28, width=200, bg=INPUT_BG, highlightthickness=0)
         self.soma_spectrum.pack(side=tk.LEFT, padx=(0, 12))
 
         # Agent liveness dots
@@ -1254,7 +1263,7 @@ class V16(tk.Tk):
             sf = tk.Frame(soma_row2, bg=PANEL)
             sf.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
             tk.Label(sf, text=label, font=self.f_tiny, fg=DIM, bg=PANEL).pack(side=tk.LEFT, padx=(2, 4))
-            bar_canvas = tk.Canvas(sf, height=12, bg=INPUT_BG, highlightthickness=0)
+            bar_canvas = tk.Canvas(sf, height=22, bg=INPUT_BG, highlightthickness=0)
             bar_canvas.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
             val_lbl = tk.Label(sf, text="--", font=self.f_tiny, fg=DIM, bg=PANEL, width=5, anchor="e")
             val_lbl.pack(side=tk.LEFT)
@@ -1273,7 +1282,7 @@ class V16(tk.Tk):
         self.soma_disk_bar = tk.Label(soma_row3, bg=PANEL, fg=PANEL)
 
         # Row 4: Mood history chart (taller for better visibility)
-        self.soma_chart = tk.Canvas(soma_bar, height=70, bg=INPUT_BG, highlightthickness=0)
+        self.soma_chart = tk.Canvas(soma_bar, height=140, bg=INPUT_BG, highlightthickness=0)
         self.soma_chart.pack(fill=tk.BOTH, expand=True, padx=4, pady=(2, 4))
 
         # ── DREAM ENGINE + MEMORY SYSTEM (compact dashboard display) ──
@@ -1329,7 +1338,7 @@ class V16(tk.Tk):
             row, col = divmod(idx, 4)
             rp = self._panel(radar_grid, title, color)
             rp.grid(row=row, column=col, padx=1, pady=1, sticky="nsew")
-            rc = tk.Canvas(rp, height=130, bg="#0a0a14", highlightthickness=0)
+            rc = tk.Canvas(rp, height=200, bg="#0a0a14", highlightthickness=0)
             rc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
             self.mini_radars[title] = rc
             self.mini_radar_colors[title] = color
@@ -1363,11 +1372,11 @@ class V16(tk.Tk):
 
         self.msg_display = scrolledtext.ScrolledText(mf, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                        font=self.f_small, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0, height=14)
+                                                       relief=tk.FLAT, bd=0, height=24)
         self.msg_display.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
-        self.msg_display.tag_configure("joel", foreground=CYAN, font=("Monospace", 8, "bold"))
-        self.msg_display.tag_configure("meridian", foreground=GREEN, font=("Monospace", 8, "bold"))
-        self.msg_display.tag_configure("eos", foreground=GOLD, font=("Monospace", 8, "bold"))
+        self.msg_display.tag_configure("joel", foreground=CYAN, font=("Monospace", 10, "bold"))
+        self.msg_display.tag_configure("meridian", foreground=GREEN, font=("Monospace", 10, "bold"))
+        self.msg_display.tag_configure("eos", foreground=GOLD, font=("Monospace", 10, "bold"))
         self.msg_display.tag_configure("time", foreground=DIM)
         self.msg_display.tag_configure("text", foreground=FG)
 
@@ -1393,7 +1402,7 @@ class V16(tk.Tk):
         self.dash_relay_list = tk.Frame(rf, bg=PANEL)
         self.dash_relay_list.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         self.dash_relay_rows = []
-        for _ in range(8):
+        for _ in range(15):
             row = tk.Frame(self.dash_relay_list, bg=PANEL)
             row.pack(fill=tk.X)
             agent_lbl = tk.Label(row, text="", font=self.f_tiny, fg=CYAN, bg=PANEL, width=10, anchor="w")
@@ -1503,13 +1512,13 @@ class V16(tk.Tk):
         # Agent Activity (moved from dashboard)
         pie_panel = self._panel(ov_top, "AGENT ACTIVITY (24h)", PURPLE)
         pie_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.viz_agent_pie = tk.Canvas(pie_panel, height=160, bg="#0a0a14", highlightthickness=0)
+        self.viz_agent_pie = tk.Canvas(pie_panel, height=220, bg="#0a0a14", highlightthickness=0)
         self.viz_agent_pie.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # Fitness Trend (moved from dashboard)
         fit_panel = self._panel(ov_top, "FITNESS TREND", BLUE)
         fit_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-        self.viz_fitness = tk.Canvas(fit_panel, height=160, bg="#0a0a14", highlightthickness=0)
+        self.viz_fitness = tk.Canvas(fit_panel, height=220, bg="#0a0a14", highlightthickness=0)
         self.viz_fitness.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # Service Health Grid (moved from dashboard)
@@ -1536,7 +1545,7 @@ class V16(tk.Tk):
                               ("Memory Usage", CYAN), ("Agent Coverage", TEAL)]:
             rp = self._panel(ov_bot, title, color)
             rp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
-            rc = tk.Canvas(rp, height=150, bg="#0a0a14", highlightthickness=0)
+            rc = tk.Canvas(rp, height=220, bg="#0a0a14", highlightthickness=0)
             rc.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)
             self.viz_extra_radars[title] = rc
             self.viz_extra_radar_colors[title] = color
@@ -1546,7 +1555,7 @@ class V16(tk.Tk):
         dataflow = tk.Frame(viz_container, bg=BG)
         df_panel = self._panel(dataflow, "AGENT DATA FLOW MAP", GOLD)
         df_panel.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-        self.viz_dataflow = tk.Canvas(df_panel, height=400, bg="#0a0a14", highlightthickness=0)
+        self.viz_dataflow = tk.Canvas(df_panel, height=550, bg="#0a0a14", highlightthickness=0)
         self.viz_dataflow.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self._viz_views["dataflow"] = dataflow
 
@@ -1556,11 +1565,11 @@ class V16(tk.Tk):
         hm_top.pack(fill=tk.X, padx=4, pady=2)
         hm_activity = self._panel(hm_top, "ACTIVITY HEATMAP (7d x 24h)", GREEN)
         hm_activity.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.viz_heatmap = tk.Canvas(hm_activity, height=200, bg="#0a0a14", highlightthickness=0)
+        self.viz_heatmap = tk.Canvas(hm_activity, height=280, bg="#0a0a14", highlightthickness=0)
         self.viz_heatmap.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         hm_agents = self._panel(hm_top, "AGENT MESSAGE HEATMAP", PURPLE)
         hm_agents.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.viz_agent_heatmap = tk.Canvas(hm_agents, height=200, bg="#0a0a14", highlightthickness=0)
+        self.viz_agent_heatmap = tk.Canvas(hm_agents, height=280, bg="#0a0a14", highlightthickness=0)
         self.viz_agent_heatmap.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self._viz_views["heatmaps"] = heatmaps
 
@@ -1571,14 +1580,14 @@ class V16(tk.Tk):
         for title, color in [("CPU History", GREEN), ("RAM History", TEAL), ("Disk History", AMBER)]:
             tp = self._panel(tr_row1, title, color)
             tp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
-            tc = tk.Canvas(tp, height=120, bg="#0a0a14", highlightthickness=0)
+            tc = tk.Canvas(tp, height=180, bg="#0a0a14", highlightthickness=0)
             tc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         tr_row2 = tk.Frame(trends, bg=BG)
         tr_row2.pack(fill=tk.X, padx=4, pady=2)
         for title, color in [("Mood Trend", AMBER), ("Fitness Trend", BLUE), ("Message Rate", GOLD)]:
             tp = self._panel(tr_row2, title, color)
             tp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
-            tc = tk.Canvas(tp, height=120, bg="#0a0a14", highlightthickness=0)
+            tc = tk.Canvas(tp, height=180, bg="#0a0a14", highlightthickness=0)
             tc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         self._viz_views["trends"] = trends
 
@@ -2350,7 +2359,8 @@ class V16(tk.Tk):
         tk.Frame(inbox_right, bg=BORDER, height=1).pack(fill=tk.X, padx=8)
         self.email_preview_body = scrolledtext.ScrolledText(inbox_right, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                              font=self.f_body, state=tk.DISABLED,
-                                                             relief=tk.FLAT, bd=0, padx=6, pady=4)
+                                                             relief=tk.FLAT, bd=0, padx=6, pady=4,
+                                                             height=12)
         self.email_preview_body.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # ── COMPOSE SECTION (bottom) ─────────────────────────────────
@@ -2385,8 +2395,8 @@ class V16(tk.Tk):
 
         # Body
         self.email_body = tk.Text(compose_panel, font=self.f_body, bg=INPUT_BG, fg=FG,
-                                  insertbackground=FG, relief=tk.FLAT, bd=4, height=8)
-        self.email_body.pack(fill=tk.X, padx=6, pady=4)
+                                  insertbackground=FG, relief=tk.FLAT, bd=4, height=12)
+        self.email_body.pack(fill=tk.BOTH, expand=True, padx=6, pady=4)
 
         btn_row = tk.Frame(compose_panel, bg=PANEL)
         btn_row.pack(fill=tk.X, padx=6, pady=(0, 4))
@@ -2660,7 +2670,7 @@ class V16(tk.Tk):
 
         self.chat_display = scrolledtext.ScrolledText(chat_pane, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                        font=self.f_small, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0)
+                                                       relief=tk.FLAT, bd=0, height=15)
         self.chat_display.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         for tag, color in [("joel", CYAN), ("eos", GOLD), ("atlas", TEAL), ("nova", PURPLE),
                            ("soma", AMBER), ("tempo", BLUE), ("meridian", GREEN), ("hermes", PINK), ("sys", DIM)]:
@@ -2702,13 +2712,13 @@ class V16(tk.Tk):
 
         self.agent_relay_text = scrolledtext.ScrolledText(relay_pane, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                            font=self.f_small, state=tk.DISABLED,
-                                                           relief=tk.FLAT, bd=0)
+                                                           relief=tk.FLAT, bd=0, height=8)
         self.agent_relay_text.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         for tag, color in [("meridian", GREEN), ("eos", GOLD), ("nova", PURPLE),
                            ("atlas", TEAL), ("soma", AMBER), ("tempo", BLUE), ("dim", DIM)]:
             self.agent_relay_text.tag_configure(tag, foreground=color)
 
-        paned.add(relay_pane, minsize=100, stretch="never")
+        paned.add(relay_pane, minsize=150, stretch="never")
 
         # Bind scroll wheel to chat and relay
         self._bind_scroll(self.chat_display)
@@ -3183,7 +3193,7 @@ class V16(tk.Tk):
 
         mirror = scrolledtext.ScrolledText(win, wrap=tk.WORD, bg=PANEL, fg=FG,
                                             font=self.f_body, state=tk.DISABLED,
-                                            relief=tk.FLAT, bd=0)
+                                            relief=tk.FLAT, bd=0, height=20)
         mirror.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         tag_colors = {"joel": CYAN, "eos": GOLD, "atlas": TEAL, "nova": PURPLE,
@@ -3480,7 +3490,7 @@ class V16(tk.Tk):
         self.cr_meta.pack(fill=tk.X, padx=8)
         self.cr_body = scrolledtext.ScrolledText(right, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                    font=self.f_body, state=tk.DISABLED,
-                                                   relief=tk.FLAT, bd=0)
+                                                   relief=tk.FLAT, bd=0, height=18)
         self.cr_body.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
 
         self._cr_refresh_list()
@@ -3523,7 +3533,7 @@ class V16(tk.Tk):
         self.memb_count_lbl.pack(fill=tk.X, padx=8, pady=(2, 0))
         self.memb_display = scrolledtext.ScrolledText(f, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                        font=self.f_body, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0)
+                                                       relief=tk.FLAT, bd=0, height=18)
         self.memb_display.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.memb_display.tag_configure("key", foreground=TEAL, font=("Monospace", 9, "bold"))
         self.memb_display.tag_configure("value", foreground=FG)
@@ -3826,7 +3836,7 @@ class V16(tk.Tk):
                 ("perspective", ".perspective-state.json"), ("narrative", ".self-narrative.json"),
                 ("body", ".body-state.json"), ("critic", ".inner-critic.json"),
                 ("eos", ".eos-inner-state.json"), ("immune", ".immune-log.json"),
-                ("kinect", ".kinect-state.json"), ("reflexes", ".body-reflexes.json"),
+                ("reflexes", ".body-reflexes.json"),
                 ("dream", ".dream-state.json"), ("soma_full", ".symbiosense-state.json"),
             ]:
                 try:
@@ -4022,18 +4032,7 @@ class V16(tk.Tk):
         else:
             tk.Label(panel, text="Immune: Clean", font=self.f_tiny, fg=GREEN, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
 
-        # Vision
-        kinect = data.get("kinect")
-        if kinect:
-            tk.Label(panel, text="Vision (Kinect)", font=self.f_tiny, fg=TEAL, bg=PANEL).pack(fill=tk.X, pady=(4, 0))
-            if kinect.get("available", kinect.get("valid_depth_pct") is not None):
-                bright = kinect.get("mean_brightness", 0)
-                dpct = kinect.get("valid_depth_pct", 0)
-                tk.Label(panel, text=f"  ONLINE | Bright: {bright:.0f} | Depth: {dpct:.0f}%",
-                        font=self.f_tiny, fg=GREEN, bg=PANEL, anchor="w").pack(fill=tk.X)
-            else:
-                tk.Label(panel, text=f"  OFFLINE ({kinect.get('reason', 'unknown')})",
-                        font=self.f_tiny, fg=RED, bg=PANEL, anchor="w").pack(fill=tk.X)
+        # Vision — removed (no Kinect hardware connected, was dead code)
 
         # ── DREAM ENGINE ──
         self._iw_clear_panel("dream")
@@ -4718,7 +4717,20 @@ class V16(tk.Tk):
     # ── SYSTEM VIEW ────────────────────────────────────────────────
     # ═══════════════════════════════════════════════════════════════
     def _build_system(self):
-        f = tk.Frame(self, bg=BG)
+        outer = tk.Frame(self, bg=BG)
+
+        # Scrollable system view so nothing gets cut off on smaller screens
+        self._sys_canvas = tk.Canvas(outer, bg=BG, highlightthickness=0)
+        sys_sb = tk.Scrollbar(outer, orient=tk.VERTICAL, command=self._sys_canvas.yview)
+        f = tk.Frame(self._sys_canvas, bg=BG)
+        f.bind("<Configure>", lambda e: self._sys_canvas.configure(scrollregion=self._sys_canvas.bbox("all")))
+        self._sys_win = self._sys_canvas.create_window((0, 0), window=f, anchor="nw")
+        self._sys_canvas.configure(yscrollcommand=sys_sb.set)
+        self._sys_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        sys_sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self._sys_canvas.bind("<Button-4>", lambda e: self._sys_canvas.yview_scroll(-3, "units"))
+        self._sys_canvas.bind("<Button-5>", lambda e: self._sys_canvas.yview_scroll(3, "units"))
+        self._sys_canvas.bind("<Configure>", lambda e: self._sys_canvas.itemconfig(self._sys_win, width=e.width))
 
         # ── RESOURCE GAUGES + RADIAL BARS ──
         gauge_row = tk.Frame(f, bg=BG)
@@ -4728,16 +4740,16 @@ class V16(tk.Tk):
         gauge_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
         gauge_inner = tk.Frame(gauge_panel, bg=PANEL)
         gauge_inner.pack(fill=tk.X, padx=4, pady=4)
-        self.viz_gauge_cpu = tk.Canvas(gauge_inner, width=200, height=120, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_cpu = tk.Canvas(gauge_inner, width=220, height=160, bg="#0a0a14", highlightthickness=0)
         self.viz_gauge_cpu.pack(side=tk.LEFT, padx=4, expand=True)
-        self.viz_gauge_ram = tk.Canvas(gauge_inner, width=200, height=120, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_ram = tk.Canvas(gauge_inner, width=220, height=160, bg="#0a0a14", highlightthickness=0)
         self.viz_gauge_ram.pack(side=tk.LEFT, padx=4, expand=True)
-        self.viz_gauge_disk = tk.Canvas(gauge_inner, width=200, height=120, bg="#0a0a14", highlightthickness=0)
+        self.viz_gauge_disk = tk.Canvas(gauge_inner, width=220, height=160, bg="#0a0a14", highlightthickness=0)
         self.viz_gauge_disk.pack(side=tk.LEFT, padx=4, expand=True)
 
         radial_panel = self._panel(gauge_row, "SERVICE HEALTH RADIAL", TEAL)
         radial_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.viz_radial = tk.Canvas(radial_panel, height=140, bg="#0a0a14", highlightthickness=0)
+        self.viz_radial = tk.Canvas(radial_panel, height=170, bg="#0a0a14", highlightthickness=0)
         self.viz_radial.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # ── SPARKLINE TRENDS + FITNESS STEPS ──
@@ -4754,19 +4766,19 @@ class V16(tk.Tk):
             sf = tk.Frame(spark_row, bg=PANEL)
             sf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
             tk.Label(sf, text=key, font=self.f_small, fg=color, bg=PANEL).pack()
-            sc = tk.Canvas(sf, height=65, bg="#0a0a14", highlightthickness=0)
+            sc = tk.Canvas(sf, height=85, bg="#0a0a14", highlightthickness=0)
             sc.pack(fill=tk.X, padx=2)
             self.viz_sparks[key] = sc
 
         step_panel = self._panel(trend_row, "FITNESS STEPS", BLUE)
         step_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(2, 0))
-        self.viz_step = tk.Canvas(step_panel, height=100, bg="#0a0a14", highlightthickness=0)
+        self.viz_step = tk.Canvas(step_panel, height=130, bg="#0a0a14", highlightthickness=0)
         self.viz_step.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         # ── SYSTEM OVERVIEW (services, resources, actions, processes, network) ──
         overview = self._build_sys_overview(f)
         overview.pack(fill=tk.BOTH, expand=True)
-        return f
+        return outer
 
     def _build_sys_relay(self, parent):
         """Dedicated Agent Relay panel — full history with agent filtering."""
@@ -4980,7 +4992,7 @@ class V16(tk.Tk):
         tk.Label(gui_row, text="Font Size:", font=self.f_tiny, fg=DIM, bg=PANEL).pack(side=tk.LEFT)
         tk.Button(gui_row, text="-", font=self.f_tiny, fg=CYAN, bg=PANEL, relief=tk.FLAT,
                  command=lambda: self._adjust_font(-1), cursor="hand2", width=2).pack(side=tk.LEFT, padx=2)
-        self._font_size_lbl = tk.Label(gui_row, text="9", font=self.f_tiny, fg=FG, bg=PANEL)
+        self._font_size_lbl = tk.Label(gui_row, text="13", font=self.f_tiny, fg=FG, bg=PANEL)
         self._font_size_lbl.pack(side=tk.LEFT)
         tk.Button(gui_row, text="+", font=self.f_tiny, fg=CYAN, bg=PANEL, relief=tk.FLAT,
                  command=lambda: self._adjust_font(1), cursor="hand2", width=2).pack(side=tk.LEFT, padx=2)
@@ -5003,7 +5015,7 @@ class V16(tk.Tk):
         proc_scroll_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         self.sys_proc_text = tk.Text(proc_scroll_frame, wrap=tk.NONE, bg=INPUT_BG, fg=FG,
                                      font=self.f_tiny, state=tk.DISABLED,
-                                     relief=tk.FLAT, bd=0, height=8, width=40)
+                                     relief=tk.FLAT, bd=0, height=12, width=45)
         proc_xsb = tk.Scrollbar(proc_scroll_frame, orient=tk.HORIZONTAL, command=self.sys_proc_text.xview)
         proc_ysb = tk.Scrollbar(proc_scroll_frame, orient=tk.VERTICAL, command=self.sys_proc_text.yview)
         self.sys_proc_text.configure(xscrollcommand=proc_xsb.set, yscrollcommand=proc_ysb.set)
@@ -5038,7 +5050,7 @@ class V16(tk.Tk):
         net_scroll_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         self.sys_net_text = tk.Text(net_scroll_frame, wrap=tk.NONE, bg=INPUT_BG, fg=FG,
                                     font=self.f_tiny, state=tk.DISABLED,
-                                    relief=tk.FLAT, bd=0, height=8, width=35)
+                                    relief=tk.FLAT, bd=0, height=12, width=40)
         net_xsb = tk.Scrollbar(net_scroll_frame, orient=tk.HORIZONTAL, command=self.sys_net_text.xview)
         net_ysb = tk.Scrollbar(net_scroll_frame, orient=tk.VERTICAL, command=self.sys_net_text.yview)
         self.sys_net_text.configure(xscrollcommand=net_xsb.set, yscrollcommand=net_ysb.set)
@@ -5091,7 +5103,7 @@ class V16(tk.Tk):
         tk.Label(info_f, text="BUILD INFO", font=self.f_tiny, fg=PINK, bg=PANEL, anchor="w").pack(fill=tk.X)
         self.sys_build_info = {}
         build_items = [
-            ("Version", "Command Center v39"),
+            ("Version", "Command Center v49"),
             ("Git Hash", "..."),
             ("Branch", "master"),
             ("OS", "Ubuntu 24.04 Noble"),
@@ -5169,7 +5181,7 @@ class V16(tk.Tk):
 
         self.sys_log_text = scrolledtext.ScrolledText(log_panel, wrap=tk.NONE, bg=INPUT_BG, fg=FG,
                                                        font=self.f_tiny, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0, height=8)
+                                                       relief=tk.FLAT, bd=0, height=12)
         self.sys_log_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
 
         # ── SECURITY & SESSION INFO ──
@@ -5180,7 +5192,7 @@ class V16(tk.Tk):
         sec_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
         self.sys_sec_text = scrolledtext.ScrolledText(sec_panel, wrap=tk.NONE, bg=INPUT_BG, fg=FG,
                                                        font=self.f_tiny, state=tk.DISABLED,
-                                                       relief=tk.FLAT, bd=0, height=8, width=40)
+                                                       relief=tk.FLAT, bd=0, height=12, width=45)
         self.sys_sec_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         self.sys_sec_text.tag_configure("ok", foreground=GREEN)
         self.sys_sec_text.tag_configure("warn", foreground=AMBER)
@@ -5206,7 +5218,7 @@ class V16(tk.Tk):
 
         self.fb_list = tk.Listbox(fb_panel, font=self.f_tiny, bg=INPUT_BG, fg=FG,
                                    selectbackground=ACTIVE_BG, selectforeground=GOLD,
-                                   relief=tk.FLAT, bd=0, activestyle="none", height=7)
+                                   relief=tk.FLAT, bd=0, activestyle="none", height=10)
         self.fb_list.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
         self.fb_list.bind("<Double-1>", self._fb_dblclick)
         self.fb_entries = []
@@ -5477,10 +5489,12 @@ class V16(tk.Tk):
 
     def _adjust_font(self, delta):
         """Adjust body/small/tiny font sizes."""
-        new_body = max(7, min(14, self.f_body.cget("size") + delta))
+        new_body = max(9, min(18, self.f_body.cget("size") + delta))
         self.f_body.configure(size=new_body)
-        self.f_small.configure(size=max(6, new_body - 1))
-        self.f_tiny.configure(size=max(5, new_body - 2))
+        self.f_small.configure(size=max(8, new_body - 1))
+        self.f_tiny.configure(size=max(7, new_body - 2))
+        self.f_head.configure(size=new_body + 2)
+        self.f_sect.configure(size=new_body + 1)
         self._font_size_lbl.configure(text=str(new_body))
 
     # ── SYSTEM TOOLS ──────────────────────────────────────────────
@@ -5799,7 +5813,7 @@ class V16(tk.Tk):
         self._msg_joel_count.pack(side=tk.RIGHT, padx=8)
         self.msg_joel_display = scrolledtext.ScrolledText(joel_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                            font=self.f_body, state=tk.DISABLED,
-                                                           relief=tk.FLAT, bd=0)
+                                                           relief=tk.FLAT, bd=0, height=20)
         self.msg_joel_display.pack(fill=tk.BOTH, expand=True)
         self.msg_joel_display.tag_configure("time", foreground=DIM)
         self.msg_joel_display.tag_configure("msg", foreground=BRIGHT, font=self.f_body)
@@ -5835,7 +5849,7 @@ class V16(tk.Tk):
 
         self.msg_agent_display = scrolledtext.ScrolledText(agent_frame, wrap=tk.WORD, bg=PANEL, fg=FG,
                                                             font=self.f_body, state=tk.DISABLED,
-                                                            relief=tk.FLAT, bd=0)
+                                                            relief=tk.FLAT, bd=0, height=20)
         self.msg_agent_display.pack(fill=tk.BOTH, expand=True)
         self.msg_agent_display.tag_configure("agent", foreground=AMBER, font=self.f_sect)
         self.msg_agent_display.tag_configure("time", foreground=DIM)
@@ -6210,7 +6224,7 @@ class V16(tk.Tk):
         self.log_display.configure(state=tk.DISABLED)
 
     def _statusbar(self):
-        self.sb_frame = tk.Frame(self, bg=HEADER_BG, height=22)
+        self.sb_frame = tk.Frame(self, bg=HEADER_BG, height=28)
         self.sb_frame.pack(fill=tk.X, side=tk.BOTTOM)
         self.sb_frame.pack_propagate(False)
 
@@ -6227,7 +6241,7 @@ class V16(tk.Tk):
             lbl.pack(side=tk.LEFT, padx=6)
             self.sb[item] = lbl
 
-        tk.Label(self.sb_frame, text="v46", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
+        tk.Label(self.sb_frame, text="v50", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
         self.sb_time = tk.Label(self.sb_frame, text="", font=self.f_tiny, fg=DIM, bg=HEADER_BG)
         self.sb_time.pack(side=tk.RIGHT, padx=8)
 
