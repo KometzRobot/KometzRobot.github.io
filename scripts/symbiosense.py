@@ -1327,7 +1327,7 @@ AGENT_CHECKS = {
     "Meridian": {"source": "heartbeat", "stale_sec": 600},
     "Eos":     {"source": "file", "path": ".eos-watchdog-state.json", "stale_sec": 300},
     "Nova":    {"source": "file", "path": ".nova-state.json", "stale_sec": 1200},
-    "Atlas":   {"source": "file", "path": "goose.log", "stale_sec": 900},
+    "Atlas":   {"source": "file", "path": "logs/atlas-runner.log", "stale_sec": 900},
     "Soma":    {"source": "self"},
     "Tempo":   {"source": "relay", "stale_sec": 2400},
 }

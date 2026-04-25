@@ -54,9 +54,9 @@ CRON_FAIL=0
 
 declare -A CRON_LOGS
 CRON_LOGS=(
-    ["watchdog"]="watchdog.log:900"
+    ["watchdog"]="logs/watchdog.log:900"
     ["watchdog-status"]="logs/watchdog-status.log:360"
-    ["eos-watchdog"]="logs/eos-watchdog.log:180"
+    ["eos-watchdog"]="logs/eos-watchdog.log:360"
     ["push-live-status"]="logs/push-live-status.log:360"
     ["loop-optimizer"]="logs/loop-optimizer.log:2400"
     ["eos-creative"]="logs/eos-creative.log:900"
