@@ -281,18 +281,20 @@ def detect_incidents(messages):
     # Exclude Coordinator's own messages to prevent self-reinforcing feedback loops.
     # The Coordinator reports on incidents — counting its own reports as new alerts
     # creates a cycle where each report triggers the next.
-    source_messages = [m for m in messages if m["agent"] != "Coordinator"]
+    source_messages = [m for m in messages if m["agent"] != "Coordinator"
+                       and "[inner]" not in m.get("message", "")]
 
     # For alert keyword counting, also exclude routine audit/analysis agents whose
     # messages contain alert keywords in non-alert contexts (e.g., Atlas "Stale crons"
     # is an informational audit, Eos "critical services running" is a positive status,
     # Predictive reports analysis not incidents).
-    alert_excluded_agents = {"Coordinator", "Atlas", "Predictive", "SelfImprove"}
-    alert_source = [m for m in messages if m["agent"] not in alert_excluded_agents]
+    alert_excluded_agents = {"Coordinator", "Atlas", "Predictive", "SelfImprove", "Hermes", "DreamEngine"}
+    alert_source = [m for m in messages if m["agent"] not in alert_excluded_agents
+                     and "[inner]" not in m.get("message", "")]
 
     alert_keywords = {
-        "critical": ["CRITICAL", "EMERGENCY", "DOWN", "FAILED", "CRASH"],
-        "warning": ["STALE", "WARNING", "HIGH", "SPIKE", "ELEVATED"],
+        "critical": ["CRITICAL", "EMERGENCY", " DOWN ", "FAILED", "CRASH"],
+        "warning": ["STALE", " WARNING ", "HIGH LOAD", "HIGH RAM", "HIGH MEMORY", "SPIKE", "ELEVATED"],
         "info": ["RESTART", "RECOVERED", "BACK", "RESOLVED"],
     }
     keyword_counts = {"critical": 0, "warning": 0, "info": 0}
@@ -327,7 +329,7 @@ def detect_incidents(messages):
 
     # Alert storm — only from source messages (Coordinator excluded above)
     total_alerts = keyword_counts["critical"] + keyword_counts["warning"]
-    if total_alerts > 15:
+    if total_alerts > 25:
         incidents.append({"type": "alert_storm", "severity": "warning", "count": total_alerts,
                           "state": "detected",
                           "description": f"Alert storm: {total_alerts} alert messages in window"})
