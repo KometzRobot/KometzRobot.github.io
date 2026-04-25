@@ -7150,7 +7150,7 @@ def _acquire_singleton():
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except (IOError, OSError):
         print(f"Command Center already running (lock held on {lock_path}). Exiting.")
-        raise SystemExit(1)
+        raise SystemExit(42)  # distinct code so systemd RestartPreventExitStatus can skip restart
     fd.write(str(os.getpid()))
     fd.flush()
     return fd  # must stay open for process lifetime
