@@ -59,9 +59,9 @@ CRON_LOGS=(
     ["eos-watchdog"]="logs/eos-watchdog.log:360"
     ["push-live-status"]="logs/push-live-status.log:360"
     ["loop-optimizer"]="logs/loop-optimizer.log:2400"
-    ["eos-creative"]="logs/eos-creative.log:900"
-    ["nova"]="logs/nova.log:1200"
-    ["eos-react"]="logs/eos-react.log:900"
+    ["eos-creative"]="logs/eos-creative.log:1500"
+    ["nova"]="logs/nova.log:1500"
+    ["eos-react"]="logs/eos-react.log:1500"
     ["atlas"]="logs/atlas-runner.log:900"
     ["loop-fitness"]="logs/loop-fitness.log:2400"
     # daily-log REMOVED — cron was deleted (file doesn't exist)
