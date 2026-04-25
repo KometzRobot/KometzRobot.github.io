@@ -50,11 +50,17 @@ By Joel Kometz & Meridian, Loop 4446
 import json
 import os
 import random
+import re
 import sqlite3
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+
+
+def strip_ansi(text):
+    """Remove ANSI escape sequences from Ollama streaming output."""
+    return re.sub(r'\x1b\[[0-9;]*[A-Za-z]|\[\d*[A-Za-z]', '', text)
 from pathlib import Path
 import importlib
 
@@ -376,7 +382,7 @@ Write the dream in first person. 3-6 sentences. Be poetic but not precious."""
             text=True,
             timeout=45
         )
-        narrative = result.stdout.strip() if result.stdout else None
+        narrative = strip_ansi(result.stdout).strip() if result.stdout else None
         if narrative and len(narrative) > 20:
             return narrative
     except Exception:
@@ -649,7 +655,7 @@ Output ONLY the one sentence."""
             text=True,
             timeout=30
         )
-        insight = result.stdout.strip() if result.stdout else None
+        insight = strip_ansi(result.stdout).strip() if result.stdout else None
         if insight and len(insight) > 10:
             # Store Eos's insight in memory.db as an observation
             try:

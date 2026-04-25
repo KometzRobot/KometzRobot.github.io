@@ -27,10 +27,16 @@ By Joel Kometz & Meridian, Loop 4445
 import argparse
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
 import time
+
+
+def strip_ansi(text):
+    """Remove ANSI escape sequences from Ollama streaming output."""
+    return re.sub(r'\x1b\[[0-9;]*[A-Za-z]|\[\d*[A-Za-z]', '', text)
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -229,7 +235,8 @@ def sentinel_status_note(state):
             ["ollama", "run", "cinder"],
             input=prompt, capture_output=True, text=True, timeout=30
         )
-        note = result.stdout.strip().splitlines()[0][:200] if result.stdout.strip() else "Gatekeeper holding."
+        cleaned = strip_ansi(result.stdout).strip() if result.stdout else ""
+        note = cleaned.splitlines()[0][:200] if cleaned else "Gatekeeper holding."
 
         # Write to relay
         db = sqlite3.connect(os.path.join(BASE, "agent-relay.db"), timeout=3)

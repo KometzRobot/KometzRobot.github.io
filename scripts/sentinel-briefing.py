@@ -22,10 +22,16 @@ By Joel Kometz & Meridian, Loop 3196 (renamed Loop 4446)
 
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
 import time
+
+
+def strip_ansi(text):
+    """Remove ANSI escape sequences from Ollama streaming output."""
+    return re.sub(r'\x1b\[[0-9;]*[A-Za-z]|\[\d*[A-Za-z]', '', text)
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -194,7 +200,7 @@ def ask_cinder_to_summarize(relay_items, loop, hb_age, cinder_cycles):
             text=True,
             timeout=30
         )
-        raw = result.stdout.strip() if result.stdout.strip() else None
+        raw = strip_ansi(result.stdout).strip() if result.stdout.strip() else None
         if raw:
             # Prepend the pre-filled loop line
             return f"{loop_line}\n{raw}"

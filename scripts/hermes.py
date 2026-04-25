@@ -23,11 +23,17 @@ Born: Loop 2082. Rebuilt: Loop 3196.
 import argparse
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
 import urllib.request
 import urllib.error
+
+
+def strip_ansi(text):
+    """Remove ANSI escape sequences from Ollama streaming output."""
+    return re.sub(r'\x1b\[[0-9;]*[A-Za-z]|\[\d*[A-Za-z]', '', text)
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -127,9 +133,10 @@ def ask_cinder_as_hermes(prompt):
             text=True,
             timeout=30
         )
-        if result.stdout.strip():
+        cleaned = strip_ansi(result.stdout).strip() if result.stdout else ""
+        if cleaned:
             # Take first meaningful line
-            for line in result.stdout.strip().splitlines():
+            for line in cleaned.splitlines():
                 line = line.strip()
                 if line and len(line) > 5:
                     return line[:300]
