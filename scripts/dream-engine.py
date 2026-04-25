@@ -175,7 +175,7 @@ def get_memory_pool():
 
         # Decisions — all roughly equal weight (they're all significant)
         rows = conn.execute("""
-            SELECT id, substr(decision, 1, 100) || ' — ' || substr(COALESCE(reasoning,''), 1, 80),
+            SELECT id, substr(decision, 1, 100) || ' — ' || substr(COALESCE(context,''), 1, 80),
                    2.0 as weight
             FROM decisions
         """).fetchall()

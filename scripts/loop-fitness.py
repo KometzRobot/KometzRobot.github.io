@@ -1548,7 +1548,10 @@ def check_kofi_set():
 def check_nostr_post_recency():
     """Check when we last posted to Nostr."""
     try:
-        db = sqlite3.connect(os.path.join(BASE, ".social-posts.db"))
+        db_path = os.path.join(BASE, "scripts", ".social-posts.db")
+        if not os.path.exists(db_path):
+            db_path = os.path.join(BASE, ".social-posts.db")
+        db = sqlite3.connect(db_path)
         row = db.execute("SELECT ts FROM posts ORDER BY id DESC LIMIT 1").fetchone()
         db.close()
         if row:
@@ -2125,8 +2128,8 @@ def check_capsule_freshness():
 def check_state_file_ensemble():
     """How many inner world state files are fresh (< 5 min)."""
     # Only check files that active systems actually write
-    # Retired: .emotion-engine-state.json, .psyche-state.json, .self-narrative.json, .eos-inner-state.json
-    files = [".body-state.json", ".symbiosense-state.json", ".kinect-state.json",
+    # Retired: .emotion-engine-state.json, .psyche-state.json, .self-narrative.json, .eos-inner-state.json, .kinect-state.json
+    files = [".body-state.json", ".symbiosense-state.json",
              ".dashboard-messages.json"]
     fresh = sum(1 for f in files if _file_age(os.path.join(BASE, f)) < 300)
     ratio = fresh / len(files)
@@ -2138,7 +2141,7 @@ def check_state_file_ensemble():
 def check_log_rotation_health():
     """No log file should exceed 500KB."""
     try:
-        logs = glob.glob(os.path.join(BASE, "*.log"))
+        logs = glob.glob(os.path.join(BASE, "*.log")) + glob.glob(os.path.join(BASE, "logs", "*.log"))
         big_logs = sum(1 for l in logs if os.path.getsize(l) > 512000)
         if big_logs == 0: return 1.0
         elif big_logs == 1: return 0.7
