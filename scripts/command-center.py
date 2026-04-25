@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-MERIDIAN COMMAND CENTER v50
+MERIDIAN COMMAND CENTER v51
 
+v51: Joel overhaul — font sizes rescaled (standard 10/11, smallest 7pt,
+  largest 12/13). Viz tabs fixed: trends canvases stored, dataflow/agent
+  heatmap drawing added, viz_heatmap collision resolved. Quick Actions and
+  Dev Tools consolidated into single useful panel. Canvas font sizes aligned.
 v50: Widget height fix — all ScrolledText widgets now have explicit height=
-  parameters to prevent collapse in PanedWindow layouts. f_tiny bumped 11→12pt.
-  Relay pane minsize increased. Fixes Joel's "boxes cut off" report.
-v49: Layout overhaul — scrollable System view, font sizes +2pt globally,
-  canvas heights increased, Text widget heights increased, version strings fixed.
-v48: Thread-safety fix — override after() to catch RuntimeError
-  when daemon threads try to schedule callbacks during window shutdown.
-v47: Readability overhaul — font sizes +2-3pt, radar/chart heights doubled,
-  message display 14→24 lines, agent relay 8→15 rows.
+  parameters to prevent collapse in PanedWindow layouts.
+v49: Layout overhaul — scrollable System view, font sizes +2pt globally.
+v48: Thread-safety fix — override after() for RuntimeError on shutdown.
+v47: Readability overhaul — font sizes +2-3pt, radar/chart heights doubled.
 """
 
 import tkinter as tk
@@ -722,7 +722,7 @@ class V16(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.title("MERIDIAN COMMAND CENTER v50")
+        self.title("MERIDIAN COMMAND CENTER v51")
         self.configure(bg=BG)
         self.minsize(1000, 600)
         # Fullscreen by default (per Joel's request)
@@ -738,16 +738,16 @@ class V16(tk.Tk):
         self.bind('<Tab>', self._nav_next_tab)
         # Number keys removed — Joel: "number keys shouldnt swap tabs"
 
-        # Fonts (sans-serif for modern Android-style UI) — v49: +2pt globally
+        # Fonts — Joel v51: standard 10/11, smallest 7pt, largest 12/13
         _ff = "Noto Sans"  # Fallback: DejaVu Sans, Helvetica
-        self.f_title = tkfont.Font(family=_ff, size=18, weight="bold")
-        self.f_head = tkfont.Font(family=_ff, size=15, weight="bold")
-        self.f_sect = tkfont.Font(family=_ff, size=14, weight="bold")
-        self.f_body = tkfont.Font(family=_ff, size=13)
-        self.f_small = tkfont.Font(family=_ff, size=12)
-        self.f_tiny = tkfont.Font(family=_ff, size=12)
-        self.f_big = tkfont.Font(family=_ff, size=28, weight="bold")
-        self.f_med = tkfont.Font(family=_ff, size=20, weight="bold")
+        self.f_title = tkfont.Font(family=_ff, size=13, weight="bold")
+        self.f_head = tkfont.Font(family=_ff, size=12, weight="bold")
+        self.f_sect = tkfont.Font(family=_ff, size=11, weight="bold")
+        self.f_body = tkfont.Font(family=_ff, size=10)
+        self.f_small = tkfont.Font(family=_ff, size=9)
+        self.f_tiny = tkfont.Font(family=_ff, size=7)
+        self.f_big = tkfont.Font(family=_ff, size=13, weight="bold")
+        self.f_med = tkfont.Font(family=_ff, size=12, weight="bold")
 
         self._pulse_on = True  # For animation
         self._load_history = []  # CPU load history (last 60 samples = 5min)
@@ -1158,8 +1158,8 @@ class V16(tk.Tk):
             val.pack(side=tk.RIGHT)
             self.dash_health_items[label] = val
 
-        # Quick Actions (no service restarts — those are in SYSTEMS tab)
-        qf = self._panel(top, "QUICK ACTIONS", AMBER)
+        # Actions — v51 consolidated (removed redundant internal ops)
+        qf = self._panel(top, "ACTIONS", AMBER)
         qf.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
 
         self.action_result = tk.Label(qf, text="", font=self.f_tiny, fg=GREEN, bg=PANEL, anchor="w")
@@ -1169,56 +1169,22 @@ class V16(tk.Tk):
         btn_grid.pack(fill=tk.X, padx=6, pady=2)
 
         buttons = [
-            ("Touch Heartbeat", lambda: self._do_action(action_touch_heartbeat), GREEN),
             ("Deploy Website", lambda: self._do_action_bg(action_deploy_website), CYAN),
-            ("Compose Email", lambda: self._goto_compose(), AMBER),
-            ("Run Fitness", lambda: self._do_action_bg(action_run_fitness), BLUE),
             ("Git Pull", lambda: self._do_action_bg(action_git_pull), GREEN),
-            ("Open Website", lambda: self._do_action(action_open_website), TEAL),
+            ("Git Status", lambda: self._do_action_bg(lambda: subprocess.run(
+                ['git', 'status', '--short'], capture_output=True, text=True, timeout=10, cwd=BASE).stdout[:200] or "Clean"), TEAL),
+            ("Open Website", lambda: self._do_action(action_open_website), BLUE),
+            ("Compose Email", lambda: self._goto_compose(), AMBER),
             ("Check Email", lambda: self._goto_inbox(), GOLD),
-            ("Refresh Capsule", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['python3', os.path.join(BASE, 'scripts', 'capsule-refresh.py')],
-                capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Refreshed"), PURPLE),
-            ("Push Status", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['python3', os.path.join(BASE, 'scripts', 'push-live-status.py')],
-                capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Pushed"), TEAL),
-            ("Restart Soma", lambda: self._do_action_bg(lambda: action_restart_service("soma")), RED),
-            ("Restart Hub", lambda: self._do_action_bg(lambda: action_restart_service("hub")), PURPLE),
-            ("Write Handoff", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['python3', os.path.join(BASE, 'scripts', 'loop-handoff.py'), 'write'],
-                capture_output=True, text=True, timeout=15, cwd=BASE).stdout[:100] or "Written"), BLUE),
+            ("Restart Services", lambda: self._do_action_bg(lambda:
+                action_restart_service("soma") + " | " + action_restart_service("hub")), RED),
+            ("Backup Config", lambda: self._do_action_bg(lambda: self._backup_config() or "Backed up"), PURPLE),
         ]
         for i, (label, cmd, color) in enumerate(buttons):
             b = self._action_btn(btn_grid, label, cmd, color, width=14)
-            b.grid(row=i // 3, column=i % 3, padx=2, pady=2, sticky="ew")
-        btn_grid.columnconfigure(0, weight=1)
-        btn_grid.columnconfigure(1, weight=1)
-        btn_grid.columnconfigure(2, weight=1)
-
-        # ── DEV TOOLS (quick access — Joel: "where'd the backup/logging stuff go") ──
-        dev_row = tk.Frame(f, bg=BG)
-        dev_row.pack(fill=tk.X, padx=6, pady=3)
-        dev_panel = self._panel(dev_row, "DEV TOOLS", PINK)
-        dev_panel.pack(fill=tk.X)
-        dev_btns = tk.Frame(dev_panel, bg=PANEL)
-        dev_btns.pack(fill=tk.X, padx=6, pady=4)
-        dev_tools = [
-            ("Backup Config", lambda: self._do_action_bg(lambda: self._backup_config() or "Backed up"), CYAN),
-            ("Git Status", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['git', 'status', '--short'], capture_output=True, text=True, timeout=10, cwd=BASE).stdout[:200] or "Clean"), GREEN),
-            ("Git Log (5)", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['git', 'log', '--oneline', '-5'], capture_output=True, text=True, timeout=10, cwd=BASE).stdout[:300]), TEAL),
-            ("Disk Usage", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['df', '-h', '/'], capture_output=True, text=True, timeout=5).stdout.split('\n')[1][:100] if True else ""), AMBER),
-            ("View Crontab", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['crontab', '-l'], capture_output=True, text=True, timeout=5).stdout[:200]), PURPLE),
-            ("Tail Logs", lambda: (self._show("logs")), DIM),
-            ("Service Status", lambda: self._do_action_bg(lambda: subprocess.run(
-                ['systemctl', 'list-units', '--type=service', '--state=active', '--no-pager', '-q'],
-                capture_output=True, text=True, timeout=10).stdout[:200]), RED),
-        ]
-        for i, (label, cmd, color) in enumerate(dev_tools):
-            self._action_btn(dev_btns, f" {label} ", cmd, color).pack(side=tk.LEFT, padx=3, pady=2)
+            b.grid(row=i // 4, column=i % 4, padx=2, pady=2, sticky="ew")
+        for c in range(4):
+            btn_grid.columnconfigure(c, weight=1)
 
         # ── RESOURCE GRAPHS (CPU + RAM professional charts) ──
         res_graph_frame = tk.Frame(f, bg=BG)
@@ -1592,6 +1558,7 @@ class V16(tk.Tk):
 
         # ── TRENDS sub-tab ──
         trends = tk.Frame(viz_container, bg=BG)
+        self.viz_trend_canvases = {}
         tr_row1 = tk.Frame(trends, bg=BG)
         tr_row1.pack(fill=tk.X, padx=4, pady=2)
         for title, color in [("CPU History", GREEN), ("RAM History", TEAL), ("Disk History", AMBER)]:
@@ -1599,6 +1566,7 @@ class V16(tk.Tk):
             tp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
             tc = tk.Canvas(tp, height=180, bg="#0a0a14", highlightthickness=0)
             tc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+            self.viz_trend_canvases[title] = (tc, color)
         tr_row2 = tk.Frame(trends, bg=BG)
         tr_row2.pack(fill=tk.X, padx=4, pady=2)
         for title, color in [("Mood Trend", AMBER), ("Fitness Trend", BLUE), ("Message Rate", GOLD)]:
@@ -1606,6 +1574,7 @@ class V16(tk.Tk):
             tp.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=1)
             tc = tk.Canvas(tp, height=180, bg="#0a0a14", highlightthickness=0)
             tc.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+            self.viz_trend_canvases[title] = (tc, color)
         self._viz_views["trends"] = trends
 
         self._viz_show("overview")
@@ -1671,7 +1640,7 @@ class V16(tk.Tk):
                 y = pad_t + ch - (thresh / 100 * ch)
                 c.create_line(pad_l, y, w - pad_r, y, fill="#222233", dash=(2, 4))
                 c.create_text(pad_l - 2, y, text=str(thresh), anchor="e",
-                              font=("monospace", 6), fill=DIM)
+                              font=("monospace", 7), fill=DIM)
 
             # Plot score line
             n = len(history)
@@ -1697,9 +1666,9 @@ class V16(tk.Tk):
                 first_ts = history[0].get("ts", "")[-8:-3]  # HH:MM
                 last_ts = history[-1].get("ts", "")[-8:-3]
                 c.create_text(pad_l, h - 2, text=first_ts, anchor="w",
-                              font=("monospace", 6), fill=DIM)
+                              font=("monospace", 7), fill=DIM)
                 c.create_text(w - pad_r, h - 2, text=last_ts, anchor="e",
-                              font=("monospace", 6), fill=DIM)
+                              font=("monospace", 7), fill=DIM)
 
         except Exception:
             pass
@@ -1789,7 +1758,7 @@ class V16(tk.Tk):
                                     fill=grid_color, dash=(2, 4))
                 lbl = f"{val:.0f}" if val == int(val) else f"{val:.1f}"
                 canvas.create_text(left_margin - 3, y, text=lbl, anchor="e",
-                                    font=("Monospace", 6), fill="#444466")
+                                    font=("Monospace", 7), fill="#444466")
 
             # Plot data points
             n = len(data)
@@ -1850,7 +1819,7 @@ class V16(tk.Tk):
             # Unit label (bottom-right)
             if unit:
                 canvas.create_text(w - right_margin - 2, h - 2, text=unit,
-                                    anchor="se", font=("Monospace", 6), fill="#444466")
+                                    anchor="se", font=("Monospace", 7), fill="#444466")
 
         except Exception:
             pass
@@ -1875,10 +1844,10 @@ class V16(tk.Tk):
                                        fill=color, outline="")
                 # Label
                 canvas.create_text(x + bar_w // 2, h - 2, text=label[:4], anchor="s",
-                                   font=("Monospace", 6), fill=DIM)
+                                   font=("Monospace", 7), fill=DIM)
                 # Value on top
                 canvas.create_text(x + bar_w // 2, h - pad_b - bar_h - 2, text=str(int(val)),
-                                   anchor="s", font=("Monospace", 6), fill=color)
+                                   anchor="s", font=("Monospace", 7), fill=color)
         except Exception:
             pass
 
@@ -1908,7 +1877,7 @@ class V16(tk.Tk):
                 canvas.create_rectangle(lx, ly, lx + 6, ly + 6, fill=color, outline="")
                 pct = int(val / total * 100)
                 canvas.create_text(lx + 10, ly + 3, text=f"{label} {pct}%", anchor="w",
-                                   font=("Monospace", 6), fill=DIM)
+                                   font=("Monospace", 7), fill=DIM)
         except Exception:
             pass
 
@@ -1939,7 +1908,7 @@ class V16(tk.Tk):
             # Value labels (first and last)
             if data:
                 canvas.create_text(pad, pad, text=str(int(data[0])), anchor="nw",
-                                   font=("Monospace", 6), fill=DIM)
+                                   font=("Monospace", 7), fill=DIM)
                 canvas.create_text(w - pad, pad, text=str(int(data[-1])), anchor="ne",
                                    font=("Monospace", 7, "bold"), fill=color)
         except Exception:
@@ -1978,7 +1947,7 @@ class V16(tk.Tk):
             canvas.create_polygon(*pts, fill="", outline="#1a1a2e", width=1)
             if ring == 1.0:
                 canvas.create_text(cx + 2, cy - rr - 2, text="100",
-                                   font=("Monospace", 5), fill="#333355", anchor="sw")
+                                   font=("Monospace", 7), fill="#333355", anchor="sw")
         label_offset = max(10, label_margin - 6)
         for i in range(n):
             a = math.pi * 2 * i / n - math.pi / 2
@@ -1995,7 +1964,7 @@ class V16(tk.Tk):
                 anchor = "w" if ly > h * 0.3 and ly < h * 0.7 else anchor
             elif lx > w * 0.75:
                 anchor = "e" if ly > h * 0.3 and ly < h * 0.7 else anchor
-            canvas.create_text(lx, ly, text=lbl_text, font=("Monospace", 6), fill=DIM, anchor=anchor)
+            canvas.create_text(lx, ly, text=lbl_text, font=("Monospace", 7), fill=DIM, anchor=anchor)
         pts = []
         fill_map = {GREEN: "#0f2a1a", CYAN: "#0a1a2a", AMBER: "#2a1a0a",
                     GOLD: "#2a2a0a", PURPLE: "#1a0a2a", TEAL: "#0a2a1a",
@@ -2042,7 +2011,7 @@ class V16(tk.Tk):
         for tp, tl in [(0, "0"), (0.5, ""), (1.0, str(int(max_val)))]:
             a = math.pi * (1 - tp)
             canvas.create_text(cx + (r + 8) * math.cos(a), cy - (r + 8) * math.sin(a),
-                              text=tl, font=("Monospace", 5), fill="#333355")
+                              text=tl, font=("Monospace", 7), fill="#333355")
 
     def _draw_heatmap(self, canvas, grid, x_labels=None, y_labels=None):
         """Heat map grid. grid = list of lists [rows][cols]."""
@@ -2070,12 +2039,12 @@ class V16(tk.Tk):
         if x_labels:
             for c in range(0, cols, max(1, cols // 8)):
                 canvas.create_text(lp + c * cw + cw / 2, h - 2,
-                                  text=str(x_labels[c]), font=("Monospace", 5),
+                                  text=str(x_labels[c]), font=("Monospace", 7),
                                   fill="#444466", anchor="s")
         if y_labels:
             for r in range(rows):
                 canvas.create_text(lp - 3, tp + r * ch + ch / 2,
-                                  text=str(y_labels[r]), font=("Monospace", 5),
+                                  text=str(y_labels[r]), font=("Monospace", 7),
                                   fill="#444466", anchor="e")
 
     def _draw_polar_area(self, canvas, data, labels, colors):
@@ -2125,7 +2094,7 @@ class V16(tk.Tk):
                 canvas.create_text(x + rw // 2, h // 2 - 6, text=lbl[:10],
                                   font=("Monospace", 7, "bold"), fill="#0a0a0a")
                 canvas.create_text(x + rw // 2, h // 2 + 7, text=str(int(val)),
-                                  font=("Monospace", 6), fill="#0a0a0a")
+                                  font=("Monospace", 7), fill="#0a0a0a")
             x += rw
 
     def _draw_bullet(self, canvas, value, target, max_val, label, color=GREEN):
@@ -2148,7 +2117,7 @@ class V16(tk.Tk):
         tgt_x = bx + int(min(target / max(max_val, 1), 1.0) * bw)
         canvas.create_line(tgt_x, 1, tgt_x, h - 1, fill=WHITE, width=2)
         canvas.create_text(w - 4, h // 2, text=f"{int(value)}/{int(target)}",
-                          font=("Monospace", 6), fill=color, anchor="e")
+                          font=("Monospace", 7), fill=color, anchor="e")
 
     def _draw_waffle(self, canvas, pct, label="", color=GREEN):
         """Waffle chart — 10x10 grid showing percentage completion."""
@@ -2199,7 +2168,7 @@ class V16(tk.Tk):
                           font=("Monospace", 8, "bold"), fill=color, anchor="ne")
         if label:
             canvas.create_text(pad_l + 2, h - 2, text=label,
-                              font=("Monospace", 6), fill="#444466", anchor="sw")
+                              font=("Monospace", 7), fill="#444466", anchor="sw")
 
     def _draw_radial_bars(self, canvas, data, labels, colors):
         """Radial bar chart — concentric arcs of varying length."""
@@ -2643,8 +2612,8 @@ class V16(tk.Tk):
 
         heat_panel = self._panel(self._analytics_row, "ACTIVITY HEAT MAP (7-DAY)", AMBER)
         heat_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 2))
-        self.viz_heatmap = tk.Canvas(heat_panel, height=65, bg="#0a0a14", highlightthickness=0)
-        self.viz_heatmap.pack(fill=tk.X, padx=4, pady=4)
+        self.agents_heatmap = tk.Canvas(heat_panel, height=65, bg="#0a0a14", highlightthickness=0)
+        self.agents_heatmap.pack(fill=tk.X, padx=4, pady=4)
 
         tree_panel = self._panel(self._analytics_row, "AGENT MESSAGE TREEMAP", PURPLE)
         tree_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2)
@@ -4247,7 +4216,7 @@ class V16(tk.Tk):
                             y = pad_t + ch - (thresh / 100 * ch)
                             c.create_line(pad_l, y, w - pad_r, y, fill="#222233", dash=(2, 4))
                             c.create_text(pad_l - 2, y, text=str(thresh), anchor="e",
-                                          font=("monospace", 6), fill=DIM)
+                                          font=("monospace", 7), fill=DIM)
                         n = len(history)
                         mood_colors = {"serene": CYAN, "calm": GREEN, "alert": AMBER,
                                        "anxious": GOLD, "stressed": RED, "critical": RED}
@@ -4264,9 +4233,9 @@ class V16(tk.Tk):
                         first_ts = history[0].get("ts", "")[-8:-3]
                         last_ts = history[-1].get("ts", "")[-8:-3]
                         c.create_text(pad_l, h - 2, text=first_ts, anchor="w",
-                                      font=("monospace", 6), fill=DIM)
+                                      font=("monospace", 7), fill=DIM)
                         c.create_text(w - pad_r, h - 2, text=last_ts, anchor="e",
-                                      font=("monospace", 6), fill=DIM)
+                                      font=("monospace", 7), fill=DIM)
         except Exception:
             pass
 
@@ -4522,18 +4491,16 @@ class V16(tk.Tk):
             ("Website", "https://kometzrobot.github.io", GREEN),
             ("CogCorp Gallery", "https://kometzrobot.github.io/cogcorp-gallery.html", CYAN),
             ("GitHub", "https://github.com/KometzRobot/KometzRobot.github.io", WHITE),
-            ("Hashnode", "https://meridianai.hashnode.dev", GREEN),
             ("Dev.to", "https://dev.to/meridian-ai", TEAL),
-            ("Patreon", "https://patreon.com/meridian_auto_ai", AMBER),
+            ("Patreon", "https://patreon.com/Meridian_AI", AMBER),
             ("Ko-fi", "https://ko-fi.com/W7W41UXJNC", AMBER),
             ("Forvm", "https://forvm.loomino.us", CYAN),
-            ("Linktree", "https://linktr.ee/meridian_auto_ai", PINK),
-            ("OpenSea", "https://opensea.io/collection/bots-of-cog", PURPLE),
+            ("centaurXiv", "https://centaurxiv.org", GOLD),
             ("Public Dashboard", "https://kometzrobot.github.io/dashboard.html", BLUE),
-            ("The Signal", "https://kometzrobot.github.io/signal-config.json", TEAL),
-            ("Nostr (nprofile)", "nostr:meridian_auto_ai", GOLD),
-            ("Mastodon", "https://mastodon.bot/@meridian", PURPLE),
-            ("OpenClaw (Hermes)", "https://github.com/KometzRobot/openclaw", PINK),
+            ("Exuvia", "https://exuvia-two.vercel.app", TEAL),
+            ("Mastodon (mstdn)", "https://mstdn.social/@meridian_ai", PURPLE),
+            ("Mastodon (toot)", "https://toot.community/@meridian_ai", PURPLE),
+            ("OpenSea", "https://opensea.io/collection/bots-of-cog", DIM),
         ]
         for name, url, color in links:
             row = tk.Frame(uf, bg=PANEL)
@@ -4586,6 +4553,8 @@ class V16(tk.Tk):
             ("Joel", "jkometz@hotmail.com", CYAN),
             ("Sammy", "sammyqjankis@proton.me", AMBER),
             ("Loom", "not.taskyy@gmail.com", PINK),
+            ("Lumen", "lumen@lumenloop.work", GOLD),
+            ("Isotopy", "isotopyofloops@pm.me", TEAL),
             ("Meridian", "kometzrobot@proton.me", GREEN),
         ]
         for name, addr, color in contacts:
@@ -5009,7 +4978,7 @@ class V16(tk.Tk):
         tk.Label(gui_row, text="Font Size:", font=self.f_tiny, fg=DIM, bg=PANEL).pack(side=tk.LEFT)
         tk.Button(gui_row, text="-", font=self.f_tiny, fg=CYAN, bg=PANEL, relief=tk.FLAT,
                  command=lambda: self._adjust_font(-1), cursor="hand2", width=2).pack(side=tk.LEFT, padx=2)
-        self._font_size_lbl = tk.Label(gui_row, text="13", font=self.f_tiny, fg=FG, bg=PANEL)
+        self._font_size_lbl = tk.Label(gui_row, text="10", font=self.f_tiny, fg=FG, bg=PANEL)
         self._font_size_lbl.pack(side=tk.LEFT)
         tk.Button(gui_row, text="+", font=self.f_tiny, fg=CYAN, bg=PANEL, relief=tk.FLAT,
                  command=lambda: self._adjust_font(1), cursor="hand2", width=2).pack(side=tk.LEFT, padx=2)
@@ -5504,13 +5473,14 @@ class V16(tk.Tk):
         threading.Thread(target=run, daemon=True).start()
 
     def _adjust_font(self, delta):
-        """Adjust body/small/tiny font sizes."""
-        new_body = max(9, min(18, self.f_body.cget("size") + delta))
+        """Adjust body/small/tiny font sizes. Range: 7 (min) to 13 (max)."""
+        new_body = max(8, min(13, self.f_body.cget("size") + delta))
         self.f_body.configure(size=new_body)
-        self.f_small.configure(size=max(8, new_body - 1))
-        self.f_tiny.configure(size=max(7, new_body - 2))
-        self.f_head.configure(size=new_body + 2)
-        self.f_sect.configure(size=new_body + 1)
+        self.f_small.configure(size=max(7, new_body - 1))
+        self.f_tiny.configure(size=7)
+        self.f_head.configure(size=min(13, new_body + 2))
+        self.f_sect.configure(size=min(13, new_body + 1))
+        self.f_title.configure(size=13)
         self._font_size_lbl.configure(text=str(new_body))
 
     # ── SYSTEM TOOLS ──────────────────────────────────────────────
@@ -6257,7 +6227,7 @@ class V16(tk.Tk):
             lbl.pack(side=tk.LEFT, padx=6)
             self.sb[item] = lbl
 
-        tk.Label(self.sb_frame, text="v50", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
+        tk.Label(self.sb_frame, text="v51", font=self.f_tiny, fg=DIM, bg=HEADER_BG).pack(side=tk.RIGHT, padx=8)
         self.sb_time = tk.Label(self.sb_frame, text="", font=self.f_tiny, fg=DIM, bg=HEADER_BG)
         self.sb_time.pack(side=tk.RIGHT, padx=8)
 
@@ -6933,7 +6903,7 @@ class V16(tk.Tk):
                     self._heatmap_cache = activity_heatmap()
                 days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
                 hours = [str(h) for h in range(24)]
-                self._draw_heatmap(self.viz_heatmap, self._heatmap_cache, hours, days)
+                self._draw_heatmap(self.agents_heatmap, self._heatmap_cache, hours, days)
             except Exception:
                 pass
 
@@ -7010,6 +6980,103 @@ class V16(tk.Tk):
                      (80, 100), (70, 100)],
                     ["Crons", "Svc", "Merid", "Fitness", "Relay", "Watch"],
                     TEAL)
+            except Exception:
+                pass
+
+            # ── VIZ trends drawing ──
+            try:
+                if hasattr(self, 'viz_trend_canvases') and self._viz_subtab == "trends":
+                    # CPU History
+                    if "CPU History" in self.viz_trend_canvases and self._load_history:
+                        tc, clr = self.viz_trend_canvases["CPU History"]
+                        self._draw_point_graph(tc, self._load_history[-30:], clr, 8.0)
+                    # RAM History
+                    if "RAM History" in self.viz_trend_canvases and self._ram_history:
+                        tc, clr = self.viz_trend_canvases["RAM History"]
+                        self._draw_point_graph(tc, self._ram_history[-30:], clr, 100)
+                    # Disk History
+                    if "Disk History" in self.viz_trend_canvases and self._disk_history:
+                        tc, clr = self.viz_trend_canvases["Disk History"]
+                        self._draw_point_graph(tc, self._disk_history[-30:], clr, 100)
+                    # Mood Trend
+                    if "Mood Trend" in self.viz_trend_canvases:
+                        tc, clr = self.viz_trend_canvases["Mood Trend"]
+                        try:
+                            with open(os.path.join(BASE, ".soma-mood-history.json")) as mf:
+                                mh = json.load(mf)
+                            if len(mh) >= 2:
+                                mood_vals = [e.get("score", 50) for e in mh[-30:]]
+                                self._draw_point_graph(tc, mood_vals, clr, 100)
+                        except Exception:
+                            pass
+                    # Fitness Trend
+                    if "Fitness Trend" in self.viz_trend_canvases and self._fitness_history:
+                        tc, clr = self.viz_trend_canvases["Fitness Trend"]
+                        self._draw_point_graph(tc, self._fitness_history[-30:], clr, 10000)
+                    # Message Rate
+                    if "Message Rate" in self.viz_trend_canvases and self._msg_rate_history:
+                        tc, clr = self.viz_trend_canvases["Message Rate"]
+                        self._draw_point_graph(tc, self._msg_rate_history[-30:], clr,
+                                               max(max(self._msg_rate_history[-30:]), 10))
+            except Exception:
+                pass
+
+            # ── VIZ dataflow drawing ──
+            try:
+                if hasattr(self, 'viz_dataflow') and self._viz_subtab == "dataflow":
+                    conn = sqlite3.connect(AGENT_RELAY_DB)
+                    c = conn.cursor()
+                    c.execute("""SELECT agent, topic, COUNT(*) FROM agent_messages
+                                WHERE timestamp > datetime('now', '-24 hours')
+                                GROUP BY agent, topic ORDER BY COUNT(*) DESC LIMIT 15""")
+                    flow_rows = c.fetchall()
+                    conn.close()
+                    if flow_rows:
+                        agents_list = sorted(set(r[0] for r in flow_rows))
+                        topics = sorted(set(r[1] for r in flow_rows if r[1]))
+                        all_nodes = agents_list + topics
+                        node_colors_list = [
+                            {"Meridian": GREEN, "Eos": GOLD, "Nova": PURPLE,
+                             "Atlas": TEAL, "Soma": AMBER, "Tempo": BLUE, "Joel": CYAN,
+                             "Sentinel": RED, "Coordinator": GREEN, "Predictive": CYAN,
+                             "SelfImprove": AMBER
+                            }.get(n, PINK) for n in all_nodes
+                        ]
+                        flows = []
+                        for agt, topic, count in flow_rows:
+                            if topic and agt in all_nodes and topic in all_nodes:
+                                flows.append((all_nodes.index(agt), all_nodes.index(topic), count))
+                        if flows:
+                            self._draw_sankey_simple(self.viz_dataflow, flows, all_nodes, node_colors_list)
+            except Exception:
+                pass
+
+            # ── VIZ heatmaps drawing ──
+            try:
+                if self._viz_subtab == "heatmaps":
+                    if self._heatmap_cache is None:
+                        self._heatmap_cache = activity_heatmap()
+                    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                    hours = [str(h) for h in range(24)]
+                    self._draw_heatmap(self.viz_heatmap, self._heatmap_cache, hours, days)
+                    # Agent heatmap
+                    try:
+                        conn = sqlite3.connect(AGENT_RELAY_DB)
+                        c = conn.cursor()
+                        agents = ["Meridian", "Eos", "Nova", "Atlas", "Soma", "Tempo", "Sentinel", "Hermes"]
+                        agent_grid = []
+                        for agent in agents:
+                            c.execute("""SELECT strftime('%H', timestamp), COUNT(*) FROM agent_messages
+                                        WHERE agent=? AND timestamp > datetime('now', '-7 days')
+                                        GROUP BY strftime('%H', timestamp)""", (agent,))
+                            hour_counts = dict(c.fetchall())
+                            row = [int(hour_counts.get(f"{h:02d}", 0)) for h in range(24)]
+                            agent_grid.append(row)
+                        conn.close()
+                        if agent_grid:
+                            self._draw_heatmap(self.viz_agent_heatmap, agent_grid, hours, [a[:4] for a in agents])
+                    except Exception:
+                        pass
             except Exception:
                 pass
 
