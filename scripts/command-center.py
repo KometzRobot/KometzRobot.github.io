@@ -194,7 +194,7 @@ def cron_ok():
         "Eos Watchdog": (os.path.join(BASE, ".eos-watchdog-state.json"), 600),
         "Push Status": (os.path.join(BASE, "logs", "push-live-status.log"), 600),
         "Nova": (NOVA_STATE, 1200),
-        "Atlas": (os.path.join(BASE, "goose.log"), 1200),
+        "Atlas": (os.path.join(BASE, "logs", "atlas-runner.log"), 1200),
         "Tempo": (os.path.join(BASE, "logs", "loop-fitness.log"), 2400),
         "Sentinel": (os.path.join(BASE, "logs", "sentinel-gatekeeper.log"), 900),
         "Coordinator": (os.path.join(BASE, ".coordinator-state.json"), 900),
@@ -5177,7 +5177,6 @@ class V16(tk.Tk):
         self._log_files = {
             "eos-watchdog": os.path.join("logs", "eos-watchdog.log"),
             "nova": os.path.join("logs", "nova.log"),
-            "goose (Atlas)": os.path.join("logs", "goose.log"),
             "watchdog": os.path.join("logs", "watchdog.log"),
             "push-status": os.path.join("logs", "push-live-status.log"),
             "eos-creative": os.path.join("logs", "eos-creative.log"),

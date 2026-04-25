@@ -60,7 +60,7 @@ LOG_FILES = [
     "watchdog.log",
     "watchdog-status.log",
     "nova.log",
-    "goose.log",
+    "atlas-runner.log",
     "symbiosense.log",
     "loop-fitness.log",
     "loop-optimizer.log",

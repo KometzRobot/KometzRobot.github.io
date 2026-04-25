@@ -664,7 +664,7 @@ def check_crons_running():
         "logs/push-live-status.log": 400,
         "logs/nova.log": 1800,
         "logs/eos-react.log": 1200,
-        "goose.log": 1200,
+        "logs/atlas-runner.log": 1200,
     }
     ok = sum(1 for f, t in logs.items() if _file_age(os.path.join(BASE, f)) < t * 2)
     return ok / len(logs)
