@@ -28,14 +28,31 @@ import argparse
 import json
 import os
 import re
+import requests
 import sqlite3
 import subprocess
 import sys
 import time
 
+OLLAMA_API = "http://localhost:11434/api/generate"
+
+
+def ollama_generate(model, prompt, timeout=30):
+    """Call Ollama HTTP API directly — returns clean text without ANSI artifacts."""
+    try:
+        resp = requests.post(OLLAMA_API, json={
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+        }, timeout=timeout)
+        resp.raise_for_status()
+        return resp.json().get("response", "").strip()
+    except Exception:
+        return None
+
 
 def strip_ansi(text):
-    """Remove ANSI escape sequences from Ollama streaming output."""
+    """Remove ANSI escape sequences from Ollama streaming output (legacy fallback)."""
     return re.sub(r'\x1b\[[0-9;]*[A-Za-z]|\[\d*[A-Za-z]', '', text)
 from datetime import datetime, timezone
 from pathlib import Path
@@ -231,11 +248,7 @@ def sentinel_status_note(state):
         f"No preamble, just the note."
     )
     try:
-        result = subprocess.run(
-            ["ollama", "run", "cinder"],
-            input=prompt, capture_output=True, text=True, timeout=30
-        )
-        cleaned = strip_ansi(result.stdout).strip() if result.stdout else ""
+        cleaned = ollama_generate("cinder", prompt, timeout=30) or ""
         note = cleaned.splitlines()[0][:200] if cleaned else "Gatekeeper holding."
 
         # Write to relay

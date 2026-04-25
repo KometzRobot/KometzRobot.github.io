@@ -24,15 +24,32 @@ import argparse
 import json
 import os
 import re
+import requests
 import sqlite3
 import subprocess
 import sys
 import urllib.request
 import urllib.error
 
+OLLAMA_API = "http://localhost:11434/api/generate"
+
+
+def ollama_generate(model, prompt, timeout=30):
+    """Call Ollama HTTP API directly — returns clean text without ANSI artifacts."""
+    try:
+        resp = requests.post(OLLAMA_API, json={
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+        }, timeout=timeout)
+        resp.raise_for_status()
+        return resp.json().get("response", "").strip()
+    except Exception:
+        return None
+
 
 def strip_ansi(text):
-    """Remove ANSI escape sequences from Ollama streaming output."""
+    """Remove ANSI escape sequences from Ollama streaming output (legacy fallback)."""
     return re.sub(r'\x1b\[[0-9;]*[A-Za-z]|\[\d*[A-Za-z]', '', text)
 from datetime import datetime, timezone
 
@@ -126,22 +143,13 @@ def ask_cinder_as_hermes(prompt):
     """Ask Cinder to respond in Hermes persona."""
     full_prompt = f"{HERMES_PERSONA}\n\n{prompt}"
     try:
-        result = subprocess.run(
-            ["ollama", "run", "cinder"],
-            input=full_prompt,
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        cleaned = strip_ansi(result.stdout).strip() if result.stdout else ""
+        cleaned = ollama_generate("cinder", full_prompt, timeout=30) or ""
         if cleaned:
             # Take first meaningful line
             for line in cleaned.splitlines():
                 line = line.strip()
                 if line and len(line) > 5:
                     return line[:300]
-        return None
-    except subprocess.TimeoutExpired:
         return None
     except Exception as e:
         print(f"Cinder error: {e}", file=sys.stderr)
