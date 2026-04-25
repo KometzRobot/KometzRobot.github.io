@@ -11,7 +11,7 @@ case "$1" in
         echo "Starting Internet-in-a-Box..."
         for svc in $SERVICES; do
             echo "  Starting $svc..."
-            echo '590148001' | sudo -S systemctl start "$svc" 2>/dev/null
+            sudo -S systemctl start "$svc" 2>/dev/null
         done
         sleep 2
         echo ""
@@ -26,7 +26,7 @@ case "$1" in
         echo "Stopping Internet-in-a-Box..."
         for svc in $SERVICES; do
             echo "  Stopping $svc..."
-            echo '590148001' | sudo -S systemctl stop "$svc" 2>/dev/null
+            sudo -S systemctl stop "$svc" 2>/dev/null
         done
         echo "IIAB stopped."
         ;;

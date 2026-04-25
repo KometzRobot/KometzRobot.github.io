@@ -677,7 +677,7 @@ def action_restart_service(name):
         if svc_type == "system":
             subprocess.run(
                 ['sudo', '-S', 'systemctl', 'restart', svc_name],
-                input="590148001\n", capture_output=True, text=True, timeout=15
+                input=f"{os.environ.get('SUDO_PASS', '')}\n", capture_output=True, text=True, timeout=15
             )
             return f"{svc_name} restarted"
         elif svc_type == "user":

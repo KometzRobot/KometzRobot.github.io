@@ -616,7 +616,7 @@ def restart_service(name, state=None):
             svc = restart_info["systemd"]
             subprocess.run(
                 ["sudo", "-S", "systemctl", "restart", svc],
-                input="590148001\n", capture_output=True, text=True, timeout=15
+                input=f"{os.environ.get('SUDO_PASS', '')}\n", capture_output=True, text=True, timeout=15
             )
         elif isinstance(restart_info, dict) and "systemd_user" in restart_info:
             # User-level systemd service

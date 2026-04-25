@@ -9,7 +9,7 @@ NOMAD_DIR="/opt/project-nomad"
 case "$1" in
     start)
         echo "Starting Project N.O.M.A.D..."
-        cd "$NOMAD_DIR" && echo '590148001' | sudo -S docker compose up -d 2>&1
+        cd "$NOMAD_DIR" && sudo -S docker compose up -d 2>&1
         echo ""
         echo "N.O.M.A.D. Admin: http://localhost:8080"
         echo "Dozzle Logs:      http://localhost:9999"
@@ -18,12 +18,12 @@ case "$1" in
         ;;
     stop)
         echo "Stopping Project N.O.M.A.D..."
-        cd "$NOMAD_DIR" && echo '590148001' | sudo -S docker compose down 2>&1
+        cd "$NOMAD_DIR" && sudo -S docker compose down 2>&1
         echo "N.O.M.A.D. stopped."
         ;;
     status)
         echo "Project N.O.M.A.D. Status:"
-        echo '590148001' | sudo -S docker ps -a --filter "name=^nomad_" --format "  {{.Names}}: {{.Status}}" 2>&1
+        sudo -S docker ps -a --filter "name=^nomad_" --format "  {{.Names}}: {{.Status}}" 2>&1
         ;;
     open)
         xdg-open "http://localhost:8080" 2>/dev/null &

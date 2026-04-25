@@ -233,8 +233,9 @@ def tool_restart_service(name):
             subprocess.run(["systemctl", "--user", "restart", svc["unit"]],
                          env=env, capture_output=True, timeout=15)
         else:
+            sudo_pass = os.environ.get("SUDO_PASS", "")
             subprocess.run(["sudo", "-S", "systemctl", "restart", svc["unit"]],
-                         input="590148001\n", capture_output=True, text=True, timeout=15)
+                         input=f"{sudo_pass}\n", capture_output=True, text=True, timeout=15)
         time.sleep(3)
         check_pattern = {"command-center": "command-center.py"}.get(name, name)
         r = subprocess.run(["pgrep", "-f", check_pattern], capture_output=True, timeout=2)

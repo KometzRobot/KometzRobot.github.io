@@ -248,13 +248,15 @@ def verify_ollama():
             record("Ollama API /api/tags", "PASS", f"{len(models)} models loaded", cat)
         else:
             record("Ollama API", "FAIL", f"HTTP {code}", cat)
+            sudo_pass = os.environ.get("SUDO_PASS", "")
             heal("ollama", "restart ollama",
-                 "echo '590148001' | sudo -S systemctl restart ollama")
+                 f"echo '{sudo_pass}' | sudo -S systemctl restart ollama")
     except Exception as e:
         err_msg = str(e)[:80]
         record("Ollama API", "FAIL", err_msg, cat)
+        sudo_pass = os.environ.get("SUDO_PASS", "")
         heal("ollama", "restart ollama",
-             "echo '590148001' | sudo -S systemctl restart ollama")
+             f"echo '{sudo_pass}' | sudo -S systemctl restart ollama")
 
 
 def verify_databases():
@@ -326,8 +328,9 @@ def verify_tunnel():
     else:
         record("Cloudflared process", "FAIL", "not running", cat)
         # Try to restart — check if there's a systemd service or config
+        sudo_pass = os.environ.get("SUDO_PASS", "")
         heal("cloudflared", "restart cloudflared",
-             "echo '590148001' | sudo -S systemctl restart cloudflared 2>/dev/null || "
+             f"echo '{sudo_pass}' | sudo -S systemctl restart cloudflared 2>/dev/null || "
              "cloudflared tunnel run 2>/dev/null &")
 
     # Verify tunnel URL from config

@@ -67,7 +67,8 @@ def tool_service_restart(name):
     if name not in allowed:
         return {"error": f"Not allowed to restart '{name}'. Allowed: {allowed}"}
     if name == "ollama":
-        result = run(f"echo 590148001 | sudo -S systemctl restart {name} 2>&1")
+        sudo_pass = os.environ.get("SUDO_PASS", "")
+        result = run(f"echo {sudo_pass} | sudo -S systemctl restart {name} 2>&1")
     else:
         result = run(f"XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus systemctl --user restart {name}")
     return {"result": result or f"{name} restarted", "service": name}

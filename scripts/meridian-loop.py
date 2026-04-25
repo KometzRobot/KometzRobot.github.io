@@ -662,7 +662,7 @@ def disk_cleanup_if_needed():
     # 7. Journal logs
     try:
         subprocess.run(["sudo", "-S", "journalctl", "--vacuum-size=50M"],
-                       input="590148001\n", capture_output=True, text=True, timeout=30)
+                       input=f"{os.environ.get('SUDO_PASS', '')}\n", capture_output=True, text=True, timeout=30)
     except Exception:
         pass
 

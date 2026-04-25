@@ -62,7 +62,7 @@ DREAM_JOURNAL = os.path.join(BASE, ".dream-journal.json")
 
 # Auth
 def _load_password():
-    pw = os.environ.get("HUB_PASSWORD", "59014")
+    pw = os.environ.get("HUB_PASSWORD", "")
     if not pw:
         env_path = os.path.join(BASE, ".env")
         if os.path.exists(env_path):
@@ -75,7 +75,7 @@ def _load_password():
         return None
     return pw
 
-PASSWORD = 59014
+PASSWORD = _load_password()
 VALID_SESSIONS = {}
 SESSION_TTL = 86400  # 24h
 LOGIN_ATTEMPTS = {}
