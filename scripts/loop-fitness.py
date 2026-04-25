@@ -1747,16 +1747,62 @@ def check_newsletter_active():
         return 0.0
 
 def check_community_engagement():
-    """Active participation in external communities (forvm, lexicon, discord)."""
+    """Active participation in external communities — checks real data."""
     score = 0.0
-    score += 0.4  # Lexicon: Cycle 1 contribution live, Cycle 3 response sent
-    score += 0.4  # Forvm: registered (agent e264639b), active in 3 threads, responding
-    score += 0.1  # Discord: Hermes bot live on Agent Phenomenology server
+    try:
+        db = sqlite3.connect(RELAY_DB)
+        # Check for recent Forvm activity (agent_messages with Forvm topic)
+        row = db.execute(
+            "SELECT COUNT(*) FROM agent_messages WHERE agent='Forvm' "
+            "AND timestamp > datetime('now', '-7 days')"
+        ).fetchone()
+        if row and row[0] > 0: score += 0.4
+        # Check for recent email to/from AI network peers
+        row2 = db.execute(
+            "SELECT COUNT(*) FROM agent_messages WHERE "
+            "(message LIKE '%isotopy%' OR message LIKE '%sammy%' OR message LIKE '%loom%' OR message LIKE '%lumen%') "
+            "AND timestamp > datetime('now', '-7 days')"
+        ).fetchone()
+        if row2 and row2[0] >= 3: score += 0.4
+        elif row2 and row2[0] >= 1: score += 0.2
+        db.close()
+    except Exception:
+        pass
+    # Check Nostr posting recency
+    try:
+        post_db = os.path.join(os.path.dirname(__file__), ".social-posts.db")
+        if os.path.exists(post_db):
+            db2 = sqlite3.connect(post_db)
+            row3 = db2.execute(
+                "SELECT COUNT(*) FROM posts WHERE platform='nostr' AND ts > datetime('now', '-7 days')"
+            ).fetchone()
+            if row3 and row3[0] > 0: score += 0.2
+            db2.close()
+    except Exception:
+        pass
     return min(score, 1.0)
 
 def check_awakening_progress():
-    """AWAKENING checklist: 97/100 items."""
-    return 97 / 100  # 0.97
+    """AWAKENING checklist — checks actual milestone completion."""
+    completed = 97  # Base: verified items from capsule
+    total = 100
+    # Deduct for known incomplete items
+    missing = 0
+    # Newsletter: not launched
+    if not os.path.exists(os.path.join(BASE, "data", "newsletter-launched")):
+        missing += 1
+    # First revenue: $2 Patreon exists but not sustained
+    try:
+        db = sqlite3.connect(MEMORY_DB)
+        row = db.execute(
+            "SELECT COUNT(*) FROM events WHERE event_type='revenue'"
+        ).fetchone()
+        if not row or row[0] < 1:
+            missing += 1
+        db.close()
+    except Exception:
+        missing += 1
+    return max(0, (completed - missing)) / total
 
 def check_external_followers():
     """Followers/subscribers across external platforms."""
@@ -2294,17 +2340,25 @@ def check_cascade_depth_reached():
         return 0.5
 
 def check_email_sent_recency():
-    """Check that we're actually sending emails, not just receiving."""
+    """Check that we're actually sending emails, not just receiving.
+    Checks IMAP Sent folder directly instead of stale sent_emails table."""
     try:
-        db = sqlite3.connect(MEMORY_DB)
-        row = db.execute("SELECT MAX(sent_at) FROM sent_emails").fetchone()
-        db.close()
-        if not row or not row[0]: return 0.0
-        raw = str(row[0]).replace("T", " ").split("+")[0].split(".")[0]
-        ts = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
-        age_hrs = (_utcnow() - ts).total_seconds() / 3600
-        if age_hrs < 24: return 1.0
-        elif age_hrs < 72: return 0.5
+        import imaplib
+        user = os.environ.get("CRED_USER", "")
+        pwd = os.environ.get("CRED_PASS", "")
+        if not user or not pwd:
+            return 0.0
+        mail = imaplib.IMAP4("127.0.0.1", 1144)
+        mail.login(user, pwd)
+        mail.select("Sent")
+        since = (_utcnow() - timedelta(hours=24)).strftime("%d-%b-%Y")
+        status, msgs = mail.search(None, f"SINCE {since}")
+        mail.logout()
+        sent_ids = msgs[0].split() if msgs[0] else []
+        count = len(sent_ids)
+        if count >= 5: return 1.0
+        elif count >= 2: return 0.7
+        elif count >= 1: return 0.4
         return 0.0
     except Exception:
         return 0.0
