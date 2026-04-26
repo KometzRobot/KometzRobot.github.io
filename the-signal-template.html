@@ -125,7 +125,7 @@ a:hover { text-decoration:underline; }
 /* Messages */
 .msg-row { padding:8px 12px; border-bottom:1px solid var(--border); }
 .msg-row .mr-from { font-size:10px; font-weight:700; color:var(--cyan); }
-.msg-row .mr-text { font-size:13px; color:var(--text); margin-top:4px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+.msg-row .mr-text { font-size:12px; color:var(--text); margin-top:2px; line-height:1.5; }
 .msg-row .mr-time { font-size:10px; color:var(--text-dim); margin-top:2px; font-family:var(--mono); }
 .msg-input-row { display:flex; gap:8px; margin-top:12px; }
 .msg-input-row input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px;
@@ -167,26 +167,6 @@ a:hover { text-decoration:underline; }
 .setting-row select, .setting-row input[type="number"] { background:var(--bg); border:1px solid var(--border);
   border-radius:6px; padding:4px 8px; color:var(--text); font-family:var(--mono); font-size:12px; width:80px; }
 .setting-row input[type="checkbox"] { width:18px; height:18px; accent-color:var(--cyan); cursor:pointer; }
-
-/* Viz charts */
-.viz-chart { display:flex; align-items:flex-end; gap:2px; height:120px; padding:4px 0;
-  border-bottom:1px solid var(--border); }
-.viz-chart .vbar { flex:1; min-width:3px; border-radius:2px 2px 0 0; transition:height .3s;
-  position:relative; cursor:crosshair; }
-.viz-chart .vbar:hover { opacity:0.8; }
-.viz-chart .vbar:hover::after { content:attr(data-val); position:absolute; top:-18px; left:50%;
-  transform:translateX(-50%); font-size:9px; color:var(--text-bright); background:var(--bg-card);
-  padding:1px 4px; border-radius:3px; white-space:nowrap; border:1px solid var(--border); z-index:10; }
-.viz-panel { margin-top:0; }
-.term-btn.active { border-color:var(--cyan); color:var(--cyan); background:rgba(0,229,255,.08); }
-.viz-agent-row { display:flex; align-items:center; gap:8px; padding:6px 0;
-  border-bottom:1px solid var(--border); }
-.viz-agent-row .agent-bar { height:16px; border-radius:4px; min-width:4px;
-  transition:width .3s; }
-.viz-agent-row .agent-name { font-family:var(--mono); font-size:11px; color:var(--text-bright);
-  width:100px; flex-shrink:0; }
-.viz-agent-row .agent-count { font-family:var(--mono); font-size:10px; color:var(--text-dim);
-  width:40px; text-align:right; flex-shrink:0; }
 
 /* Inner world */
 .mood-orb { width:120px; height:120px; border-radius:50%; margin:0 auto 16px;
@@ -336,32 +316,9 @@ a:hover { text-decoration:underline; }
 /* SSE indicator */
 .sse-dot { width:6px; height:6px; border-radius:50%; background:var(--green); margin-right:4px; }
 .sse-dot.disconnected { background:var(--red); }
-
-/* Toast notifications */
-#toast-container { position:fixed; bottom:20px; right:20px; z-index:9999; display:flex;
-  flex-direction:column-reverse; gap:8px; max-width:min(600px, 90vw); pointer-events:none; }
-.toast { pointer-events:auto; background:#1a1f2e; border:1px solid var(--border); border-radius:10px;
-  padding:14px 18px; color:var(--text); font-size:14px; line-height:1.6; box-shadow:0 4px 24px rgba(0,0,0,.5);
-  display:flex; align-items:flex-start; gap:10px; animation:toastIn .3s ease; word-break:break-word; }
-.toast.hiding { animation:toastOut .3s ease forwards; }
-.toast-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
-.toast-body { flex:1; }
-.toast-title { font-weight:600; margin-bottom:2px; }
-.toast-msg { opacity:.85; white-space:pre-wrap; }
-.toast-close { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:16px;
-  padding:0 0 0 8px; flex-shrink:0; line-height:1; }
-.toast-close:hover { color:var(--text); }
-.toast.success { border-left:3px solid var(--green); }
-.toast.error { border-left:3px solid var(--red); }
-.toast.info { border-left:3px solid var(--cyan); }
-.toast.warning { border-left:3px solid #f59e0b; }
-@keyframes toastIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-@keyframes toastOut { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(20px)} }
 </style>
 </head>
 <body>
-
-<div id="toast-container"></div>
 
 <div class="shell">
   <!-- HEADER -->
@@ -389,7 +346,6 @@ a:hover { text-decoration:underline; }
     <button class="nav-btn" data-tab="messages" title="Messages">&#x1f4ac;</button>
     <button class="nav-btn" data-tab="relay" title="Relay">&#x1f4e1;</button>
     <button class="nav-btn" data-tab="intel" title="Intelligence">&#x26a1;</button>
-    <button class="nav-btn" data-tab="viz" title="Visualizations">&#x1f4ca;</button>
     <button class="nav-btn" data-tab="innerworld" title="Inner World">&#x1f9e0;</button>
     <button class="nav-btn" data-tab="terminal" title="Terminal">&#x1f4bb;</button>
     <button class="nav-btn" data-tab="memory" title="Memory">&#x1f4be;</button>
@@ -614,77 +570,6 @@ a:hover { text-decoration:underline; }
       </div>
     </div>
 
-    <!-- VISUALIZATION TAB -->
-    <div class="tab" id="tab-viz">
-      <!-- Subtab bar -->
-      <div class="card" style="padding:8px 12px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="term-btn active" id="viz-sub-system" onclick="switchVizSub('system')">System</button>
-          <button class="term-btn" id="viz-sub-agents" onclick="switchVizSub('agents')">Agents</button>
-          <button class="term-btn" id="viz-sub-fitness" onclick="switchVizSub('fitness')">Fitness</button>
-          <button class="term-btn" id="viz-sub-mood" onclick="switchVizSub('mood')">Mood</button>
-        </div>
-      </div>
-      <!-- System subtab -->
-      <div class="viz-panel" id="viz-system">
-        <div class="card">
-          <h3>CPU Load (30-sample history)</h3>
-          <div class="viz-chart" id="viz-load-chart"></div>
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-dim);margin-top:4px">
-            <span>oldest</span><span id="viz-load-summary"></span><span>newest</span>
-          </div>
-        </div>
-        <div class="card-grid-3">
-          <div class="card">
-            <h3>RAM % (20-sample)</h3>
-            <div class="viz-chart" id="viz-ram-chart"></div>
-            <div id="viz-ram-summary" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-          <div class="card">
-            <h3>Disk % (120-sample)</h3>
-            <div class="viz-chart" id="viz-disk-chart"></div>
-            <div id="viz-disk-summary" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-          <div class="card">
-            <h3>Health Score History</h3>
-            <div class="viz-chart" id="viz-health-chart"></div>
-            <div id="viz-health-summary" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-        </div>
-      </div>
-      <!-- Agents subtab -->
-      <div class="viz-panel" id="viz-agents" style="display:none">
-        <div class="card">
-          <h3>Agent Activity (last 6 hours)</h3>
-          <div id="viz-agent-bars" style="display:flex;flex-direction:column;gap:8px"></div>
-        </div>
-        <div class="card">
-          <h3>Agent Timeline</h3>
-          <div id="viz-agent-timeline" style="overflow-x:auto;font-family:var(--mono);font-size:10px"></div>
-        </div>
-      </div>
-      <!-- Fitness subtab -->
-      <div class="viz-panel" id="viz-fitness" style="display:none">
-        <div class="card">
-          <h3>Fitness Score Trend (last 20 readings)</h3>
-          <div class="viz-chart" id="viz-fitness-chart" style="height:180px"></div>
-          <div id="viz-fitness-summary" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-        </div>
-        <div class="card">
-          <h3>Weak Dimensions Count</h3>
-          <div class="viz-chart" id="viz-weak-chart" style="height:100px"></div>
-        </div>
-      </div>
-      <!-- Mood subtab -->
-      <div class="viz-panel" id="viz-mood" style="display:none">
-        <div class="card">
-          <h3>Mood Score History</h3>
-          <div class="viz-chart" id="viz-mood-chart" style="height:150px"></div>
-          <div id="viz-mood-summary" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-        </div>
-      </div>
-    </div>
-
     <!-- INNER WORLD TAB -->
     <div class="tab" id="tab-innerworld">
       <div class="card" style="text-align:center">
@@ -750,12 +635,7 @@ a:hover { text-decoration:underline; }
           <div class="ls-item"><span class="ls-label">Uptime</span><span class="ls-val" id="ls-uptime">—</span></div>
           <div class="ls-item"><span class="ls-label">Fitness</span><span class="ls-val" id="ls-fitness">—</span></div>
           <div class="ls-item"><span class="ls-label">Last Commit</span><span class="ls-val" id="ls-commit">—</span></div>
-          <div class="ls-item"><span class="ls-label">Unseen Email</span><span class="ls-val" id="ls-email">—</span></div>
-          <div class="ls-item"><span class="ls-label">Active Agents</span><span class="ls-val" id="ls-agents-cnt">—</span></div>
-          <div class="ls-item"><span class="ls-label">Git Ahead</span><span class="ls-val" id="ls-git-ahead">—</span></div>
-          <div class="ls-item"><span class="ls-label">Git Modified</span><span class="ls-val" id="ls-git-mod">—</span></div>
         </div>
-        <div id="ls-prediction" style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--amber)"></div>
         <div id="ls-services" style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--text-dim)"></div>
         <div id="ls-directives" style="margin-top:8px;font-size:11px;font-family:var(--mono)"></div>
         <div id="ls-agents" style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--text-dim)"></div>
@@ -894,58 +774,6 @@ a:hover { text-decoration:underline; }
               <input type="checkbox" id="set-svcrst" checked onchange="updateSetting('service_restart_enabled',this.checked)">
             </label>
           </div>
-          <div class="setting-group">
-            <h4>Dashboard</h4>
-            <label class="setting-row">
-              <span>Default tab on load</span>
-              <select id="set-defaulttab" onchange="updateSetting('default_tab',this.value)">
-                <option value="overview">Overview</option>
-                <option value="terminal">Terminal</option>
-                <option value="agents">Agents</option>
-                <option value="email">Email</option>
-                <option value="viz">Visualizations</option>
-                <option value="innerworld">Inner World</option>
-              </select>
-            </label>
-            <label class="setting-row">
-              <span>Show header bar</span>
-              <input type="checkbox" id="set-showheader" checked onchange="updateSetting('show_header',this.checked)">
-            </label>
-            <label class="setting-row">
-              <span>Viz chart height (px)</span>
-              <input type="number" id="set-chartheight" min="60" max="300" value="120" onchange="updateSetting('chart_height',parseInt(this.value))">
-            </label>
-          </div>
-          <div class="setting-group">
-            <h4>Agent Monitoring</h4>
-            <label class="setting-row">
-              <span>Stale agent threshold (sec)</span>
-              <input type="number" id="set-stalethresh" min="60" max="3600" value="600" onchange="updateSetting('stale_threshold',parseInt(this.value))">
-            </label>
-            <label class="setting-row">
-              <span>Show agent message previews</span>
-              <input type="checkbox" id="set-agentpreview" checked onchange="updateSetting('agent_previews',this.checked)">
-            </label>
-            <label class="setting-row">
-              <span>Max relay messages shown</span>
-              <input type="number" id="set-maxrelay" min="5" max="100" value="20" onchange="updateSetting('max_relay_messages',parseInt(this.value))">
-            </label>
-          </div>
-          <div class="setting-group">
-            <h4>Advanced</h4>
-            <label class="setting-row">
-              <span>Debug mode (verbose console)</span>
-              <input type="checkbox" id="set-debug" onchange="updateSetting('debug_mode',this.checked)">
-            </label>
-            <label class="setting-row">
-              <span>Terminal output max lines</span>
-              <input type="number" id="set-termlines" min="20" max="1000" value="200" onchange="updateSetting('terminal_max_lines',parseInt(this.value))">
-            </label>
-            <label class="setting-row">
-              <span>API timeout (sec)</span>
-              <input type="number" id="set-apitimeout" min="3" max="30" value="10" onchange="updateSetting('api_timeout',parseInt(this.value))">
-            </label>
-          </div>
         </div>
         <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
           <h4>System Mods</h4>
@@ -1031,33 +859,6 @@ let memSearchText = '';
 let fbPath = '.';
 let currentLog = '';
 
-// TOAST NOTIFICATIONS
-function showToast(msg, type='info', title='', duration=0) {
-  const container = document.getElementById('toast-container');
-  const icons = {success:'&#x2705;', error:'&#x274c;', info:'&#x2139;&#xfe0f;', warning:'&#x26a0;&#xfe0f;'};
-  const toast = document.createElement('div');
-  toast.className = 'toast ' + type;
-  // Auto-duration: min 5s, +1s per 40 chars, so long messages stay visible
-  if (!duration) duration = Math.max(5000, Math.min(15000, 5000 + Math.floor(msg.length / 40) * 1000));
-  toast.innerHTML = `<span class="toast-icon">${icons[type]||icons.info}</span>
-    <div class="toast-body">${title ? `<div class="toast-title">${title}</div>` : ''}<div class="toast-msg">${msg}</div></div>
-    <button class="toast-close" onclick="this.parentElement.classList.add('hiding');setTimeout(()=>this.parentElement.remove(),300)">&times;</button>`;
-  container.appendChild(toast);
-  if (duration > 0) setTimeout(() => { if (toast.parentElement) { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 300); } }, duration);
-}
-
-// PREVENT NUMBER KEYS FROM SWITCHING TABS
-document.addEventListener('keydown', function(e) {
-  const tag = e.target.tagName;
-  const isInput = (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable);
-  // Block number keys (1-9, 0) from doing anything tab-related when not typing
-  if (!isInput && e.key >= '0' && e.key <= '9') {
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
-});
-
 // NAV
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1075,7 +876,7 @@ async function api(path) {
     const r = await fetch(API + path);
     if (!r.ok) throw new Error(r.status);
     return await r.json();
-  } catch(e) { console.error('API error:', path, e); showToast('Failed to load data — check connection', 'error', 'API Error', 4000); return null; }
+  } catch(e) { console.error('API error:', path, e); return null; }
 }
 
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
@@ -1313,20 +1114,11 @@ async function sendMessage() {
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text) return;
-  try {
-    const r = await fetch(API + '/api/message', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({text: text, from: 'Joel'})
-    });
-    if (r.ok) {
-      showToast('Message delivered to dashboard', 'success', 'Message Sent', 3000);
-    } else {
-      showToast('Server returned error ' + r.status + ' — try again', 'error', 'Message Failed', 5000);
-    }
-  } catch(e) {
-    showToast('Could not reach server: ' + e.message, 'error', 'Connection Error', 5000);
-  }
+  await fetch(API + '/api/message', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({text: text, from: 'Joel'})
+  });
   input.value = '';
   loadMessages();
 }
@@ -1343,12 +1135,7 @@ async function loadRelay() {
         ${r.topic ? `<span class="fi-topic">${esc(r.topic)}</span>` : ''}
         <span class="fi-time">${shortDate(r.time || r.timestamp)}</span>
       </div>
-      <div class="fi-msg">${(() => {
-        const full = esc(r.message || '');
-        if (full.length <= 300) return full;
-        const id = 'relay-' + Math.random().toString(36).substr(2, 8);
-        return `<span id="${id}-short">${full.substring(0, 300)}... <a href="#" onclick="document.getElementById('${id}-short').style.display='none';document.getElementById('${id}-full').style.display='inline';return false" style="color:var(--cyan);text-decoration:none">[show all]</a></span><span id="${id}-full" style="display:none">${full} <a href="#" onclick="document.getElementById('${id}-full').style.display='none';document.getElementById('${id}-short').style.display='inline';return false" style="color:var(--cyan);text-decoration:none">[collapse]</a></span>`;
-      })()}</div>
+      <div class="fi-msg">${esc((r.message||'').substring(0, 500))}</div>
     </div>`).join('');
 }
 
@@ -1594,30 +1381,15 @@ async function runCmd(cmd) {
       body: JSON.stringify({cmd: cmd})
     });
     const d = await r.json();
-    if (d.error) {
-      out.textContent = `$ ${cmd}\n\n${d.error}`;
-      showToast(d.error, 'error', `Command: ${cmd}`, 4000);
-    } else {
-      out.textContent = `$ ${cmd}\n\n${d.output || '(no output)'}`;
-      showToast(`Command completed: ${cmd}`, 'success', '', 2000);
-    }
+    out.textContent = `$ ${cmd}\n\n${d.output || d.error || '(no output)'}`;
   } catch(e) {
-    out.textContent = `$ ${cmd}\n\nConnection error: ${e.message}`;
-    showToast(`Connection error: ${e.message}`, 'error', `Command: ${cmd}`, 4000);
+    out.textContent = `$ ${cmd}\n\nError: ${e.message}`;
   }
 }
 
 async function doAction(action) {
-  const actionNames = {
-    'heartbeat': 'Touch Heartbeat', 'push-status': 'Push Live Status', 'capsule-refresh': 'Refresh Capsule',
-    'restart-soma': 'Restart Soma', 'restart-chorus': 'Restart Chorus', 'restart-tunnel': 'Restart Tunnel',
-    'restart-ollama': 'Restart Ollama', 'git-pull': 'Git Pull', 'fitness': 'Fitness Check',
-    'clear-swap': 'Clear Swap', 'deploy': 'Deploy'
-  };
-  const label = actionNames[action] || action;
   const out = document.getElementById('term-output') || document.getElementById('settings-output');
-  if (out) out.textContent = `${label}\n\nRunning...`;
-  showToast(`Running: ${label}...`, 'info', '', 2000);
+  if (out) out.textContent = `Action: ${action}\n\nRunning...`;
   try {
     const r = await fetch(API + '/api/action', {
       method: 'POST',
@@ -1625,17 +1397,10 @@ async function doAction(action) {
       body: JSON.stringify({action: action})
     });
     const d = await r.json();
-    const result = d.result || d.error || 'Done.';
-    if (out) out.textContent = `${label}\n\n${result}`;
-    if (d.error) {
-      showToast(d.error, 'error', `${label} failed`, 5000);
-    } else {
-      showToast(result.length > 120 ? `${label} completed successfully` : result, 'success', label, 3000);
-    }
+    if (out) out.textContent = `Action: ${action}\n\n${d.result || d.error || 'Done.'}`;
     if (action.startsWith('restart')) setTimeout(loadLoopSummary, 3000);
   } catch(e) {
-    if (out) out.textContent = `${label}\n\nError: ${e.message}`;
-    showToast(`Connection error: ${e.message}`, 'error', `${label} failed`, 5000);
+    if (out) out.textContent = `Action: ${action}\n\nError: ${e.message}`;
   }
 }
 
@@ -1671,14 +1436,12 @@ async function updateSetting(key, value) {
   hubSettings[key] = value;
   applySettings(hubSettings);
   try {
-    const r = await fetch(API + '/api/settings', {
+    await fetch(API + '/api/settings', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(hubSettings)
     });
-    if (r.ok) showToast(`${key.replace(/_/g,' ')} updated`, 'success', 'Setting Saved', 2000);
-    else showToast(`Could not save ${key.replace(/_/g,' ')} — server error`, 'error', 'Settings Error', 4000);
-  } catch(e) { showToast('Could not reach server: ' + e.message, 'error', 'Settings Error', 4000); }
+  } catch(e) { console.error('Settings save error:', e); }
 }
 
 // MEMORY
@@ -1759,7 +1522,7 @@ async function loadFiles(path) {
 
 async function viewFile(path) {
   const d = await api('/api/file-content?path=' + encodeURIComponent(path));
-  if (!d || d.error) { showToast(d?.error || 'Could not load file — check path and permissions', 'error', 'File Error', 4000); return; }
+  if (!d || d.error) { alert(d?.error || 'Error loading file'); return; }
   document.getElementById('fb-viewer-name').textContent = d.name + ` (${d.lines} lines, ${formatSize(d.size)})`;
   document.getElementById('fb-viewer-content').textContent = d.content || '(empty)';
   document.getElementById('fb-viewer-card').style.display = 'block';
@@ -1810,125 +1573,6 @@ async function loadLinks() {
 }
 
 // TAB LOADER
-// VISUALIZATION TAB
-let vizSub = 'system';
-function switchVizSub(sub) {
-  vizSub = sub;
-  document.querySelectorAll('.viz-panel').forEach(p => p.style.display = 'none');
-  document.getElementById('viz-' + sub).style.display = '';
-  document.querySelectorAll('#tab-viz .term-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('viz-sub-' + sub).classList.add('active');
-}
-
-function renderVizChart(containerId, data, color, maxVal, unit) {
-  const el = document.getElementById(containerId);
-  if (!el || !data || !data.length) { if (el) el.innerHTML = '<span style="color:var(--text-dim);font-size:11px">No data available</span>'; return; }
-  const vals = data.map(v => typeof v === 'number' ? v : parseFloat(v) || 0);
-  const max = maxVal || Math.max(...vals, 1);
-  const chartH = el.offsetHeight || 120;
-  el.innerHTML = vals.map(v => {
-    const h = Math.max(2, (v / max) * 100);
-    const dispVal = v % 1 === 0 ? v : v.toFixed(1);
-    return `<div class="vbar" data-val="${dispVal}${unit||''}" style="height:${h}%;background:${color}"></div>`;
-  }).join('');
-}
-
-function chartSummary(data) {
-  if (!data || !data.length) return '';
-  const vals = data.map(v => typeof v === 'number' ? v : parseFloat(v) || 0);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const avg = (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1);
-  const latest = vals[vals.length - 1];
-  return `min: ${min.toFixed?min.toFixed(1):min} | avg: ${avg} | max: ${max.toFixed?max.toFixed(1):max} | current: ${latest.toFixed?latest.toFixed(1):latest}`;
-}
-
-async function loadViz() {
-  const d = await api('/api/viz');
-  if (!d) return;
-
-  // System charts
-  renderVizChart('viz-load-chart', d.load_history, 'var(--cyan)', null, '');
-  document.getElementById('viz-load-summary').textContent = chartSummary(d.load_history);
-
-  renderVizChart('viz-ram-chart', d.ram_history, 'var(--purple)', 100, '%');
-  document.getElementById('viz-ram-summary').textContent = chartSummary(d.ram_history);
-
-  renderVizChart('viz-disk-chart', d.disk_history, 'var(--amber)', 100, '%');
-  document.getElementById('viz-disk-summary').textContent = chartSummary(d.disk_history);
-
-  // Health chart
-  const healthScores = (d.health_history || []).map(h => h.score);
-  renderVizChart('viz-health-chart', healthScores, 'var(--green)', 100, '/100');
-  const hEl = document.getElementById('viz-health-summary');
-  if (hEl && d.health_history && d.health_history.length) {
-    const latest = d.health_history[d.health_history.length - 1];
-    hEl.textContent = `Latest: ${latest.score}/100 (${latest.status}) | ${chartSummary(healthScores)}`;
-  }
-
-  // Agent activity bars
-  const agentBars = document.getElementById('viz-agent-bars');
-  if (agentBars && d.agent_activity && d.agent_activity.length) {
-    const maxCount = Math.max(...d.agent_activity.map(a => a.count), 1);
-    const colors = ['var(--cyan)', 'var(--purple)', 'var(--green)', 'var(--amber)', 'var(--pink)', 'var(--blue)', 'var(--red)'];
-    agentBars.innerHTML = d.agent_activity.map((a, i) => `
-      <div class="viz-agent-row">
-        <span class="agent-name">${esc(a.agent)}</span>
-        <div style="flex:1;background:var(--bg);border-radius:4px;height:16px;overflow:hidden">
-          <div class="agent-bar" style="width:${(a.count/maxCount*100).toFixed(1)}%;background:${colors[i%colors.length]}"></div>
-        </div>
-        <span class="agent-count">${a.count}</span>
-      </div>`).join('');
-  } else if (agentBars) {
-    agentBars.innerHTML = '<span style="color:var(--text-dim);font-size:11px">No agent activity in last 6 hours</span>';
-  }
-
-  // Agent timeline
-  const tlEl = document.getElementById('viz-agent-timeline');
-  if (tlEl && d.agent_timeline && d.agent_timeline.length) {
-    const agents = [...new Set(d.agent_timeline.map(t => t.agent))];
-    const times = [...new Set(d.agent_timeline.map(t => t.time))].sort();
-    const lookup = {};
-    d.agent_timeline.forEach(t => { lookup[t.agent + '|' + t.time] = t.count; });
-    let html = '<table style="width:100%;border-collapse:collapse">';
-    html += '<tr><th style="text-align:left;padding:2px 6px;color:var(--text-dim);font-size:9px">Agent</th>';
-    times.forEach(t => html += `<th style="padding:2px 4px;color:var(--text-dim);font-size:9px">${t}</th>`);
-    html += '</tr>';
-    agents.forEach(a => {
-      html += `<tr><td style="padding:2px 6px;color:var(--text-bright)">${esc(a)}</td>`;
-      times.forEach(t => {
-        const cnt = lookup[a + '|' + t] || 0;
-        const intensity = cnt ? Math.min(255, cnt * 60) : 0;
-        const bg = cnt ? `rgba(0,229,255,${(intensity/255*0.6+0.1).toFixed(2)})` : 'transparent';
-        html += `<td style="padding:2px 4px;text-align:center;background:${bg};border-radius:2px">${cnt||''}</td>`;
-      });
-      html += '</tr>';
-    });
-    html += '</table>';
-    tlEl.innerHTML = html;
-  }
-
-  // Fitness chart
-  const fitnessScores = (d.fitness_history || []).map(f => f.score);
-  renderVizChart('viz-fitness-chart', fitnessScores, 'var(--cyan)', 10000, '/10k');
-  const fEl = document.getElementById('viz-fitness-summary');
-  if (fEl && d.fitness_history && d.fitness_history.length) {
-    const latest = d.fitness_history[d.fitness_history.length - 1];
-    fEl.textContent = `Latest: ${latest.score}/10000 | ${chartSummary(fitnessScores)}`;
-  }
-
-  // Weak dimensions chart
-  const weakCounts = (d.fitness_history || []).map(f => f.weak);
-  renderVizChart('viz-weak-chart', weakCounts, 'var(--red)', null, ' weak');
-
-  // Mood chart
-  renderVizChart('viz-mood-chart', d.mood_scores, 'var(--pink)', 100, '/100');
-  const mEl = document.getElementById('viz-mood-summary');
-  if (mEl && d.mood_scores && d.mood_scores.length) {
-    mEl.textContent = chartSummary(d.mood_scores);
-  }
-}
-
 function loadTab(tab) {
   switch(tab) {
     case 'overview': loadOverview(); break;
@@ -1943,7 +1587,6 @@ function loadTab(tab) {
     case 'files': loadFiles(fbPath); break;
     case 'logs': loadLogs(); break;
     case 'intel': loadIntel(); break;
-    case 'viz': loadViz(); break;
     case 'links': loadLinks(); break;
     case 'settings': loadSettings(); break;
   }
