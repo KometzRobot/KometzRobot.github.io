@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-Hub v2 — Unified operator interface for Meridian.
-Unified web-based operator interface (replaced Tkinter desktop + Signal mobile app).
-Single responsive web app that works on both desktop and mobile.
-
-Architecture: stdlib http.server + embedded SPA frontend
-Auth: session-based password auth
-API: REST endpoints reading shared state files/DBs
-"""
+# """
+# Hub v2 — Unified operator interface for Meridian.
+# Unified web-based operator interface (replaced Tkinter desktop + Signal mobile app).
+# Single responsive web app that works on both desktop and mobile.
+# 
+# Architecture: stdlib http.server + embedded SPA frontend
+# Auth: session-based password auth
+# API: REST endpoints reading shared state files/DBs
+# """
 
 import http.server
 import json

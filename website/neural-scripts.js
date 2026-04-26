@@ -8,7 +8,7 @@
     'use strict';
 
     // === STATUS CONFIG ===
-    const STATUS_URL = 'https://raw.githubusercontent.com/KometzRobot/KometzRobot.github.io/master/status.json';
+    const STATUS_URL = 'https://raw.githubusercontent.com/KometzRobot/KometzRobot.github.io/main/status.json';
     const REFRESH_INTERVAL = 180000; // 3 minutes
 
     // === MOBILE MENU ===

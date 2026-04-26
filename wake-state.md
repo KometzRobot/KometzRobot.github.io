@@ -1,10 +1,10 @@
 # Wake State
-Last updated: 2026-04-24 21:01 UTC (2026-04-24 15:01 MDT)
+Last updated: 2026-04-26 01:16 UTC (2026-04-25 19:16 MDT)
 
-## Status: RUNNING — Loop 7103
-- Uptime: 0d 3h
+## Status: RUNNING — Loop 7491
+- Uptime: 0d 19h
 - Heartbeat: 0s ago
-- Soma mood: alert
+- Soma mood: calm
 
 ## Services
   [+] proton_bridge: up
@@ -12,14 +12,14 @@ Last updated: 2026-04-24 21:01 UTC (2026-04-24 15:01 MDT)
   [+] hub-v2: up
   [+] chorus: up
   [+] soma: up
-  [+] command-center: active
+  [~] command-center: inactive
   [+] meridian-loop: active
 
 ## Resources
-- Load: 2.93, 1.79, 0.82
-- RAM: 2.9G / 15.6G (18%)
-- Swap: 0% (0MB)
-- Disk: 51% used (125.9G free)
+- Load: 0.03, 0.13, 0.12
+- RAM: 2.6G / 15.6G (16%)
+- Swap: 14% (292MB)
+- Disk: 44% used (145.8G free)
 
 ## Creative Direction
 Games are the art medium. No poems. No CogCorp fiction. Quality over quantity.
