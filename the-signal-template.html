@@ -145,6 +145,7 @@ a:hover { text-decoration:underline; }
 .term-btn:hover { border-color:var(--cyan); color:var(--cyan); }
 .term-btn.cat-label { color:var(--text-dim); font-weight:700; font-size:10px; text-transform:uppercase;
   letter-spacing:1px; border:none; background:transparent; cursor:default; padding:4px 4px; }
+.sys-sub.active { background:var(--cyan); color:var(--bg); border-color:var(--cyan); font-weight:700; }
 
 /* Loop Summary */
 .loop-summary-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
@@ -351,8 +352,7 @@ a:hover { text-decoration:underline; }
     <button class="nav-btn" data-tab="terminal" title="Terminal">&#x1f4bb;</button>
     <button class="nav-btn" data-tab="memory" title="Memory">&#x1f4be;</button>
     <button class="nav-btn" data-tab="creative" title="Creative">&#x1f3a8;</button>
-    <button class="nav-btn" data-tab="files" title="Files">&#x1f4c1;</button>
-    <button class="nav-btn" data-tab="logs" title="Logs">&#x1f4dc;</button>
+    <button class="nav-btn" data-tab="system" title="Files & Logs">&#x1f5c4;</button>
     <button class="nav-btn" data-tab="links" title="Links">&#x1f517;</button>
     <button class="nav-btn" data-tab="settings" title="Settings">&#x2699;</button>
     <button class="nav-btn" data-tab="chat" title="Chat">&#x1f4ad;</button>
@@ -723,6 +723,24 @@ a:hover { text-decoration:underline; }
         </div>
         <div class="term-output" id="term-output">Ready. Select a command or service control above.</div>
       </div>
+      <!-- Quick Log Tail -->
+      <div class="card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center">
+          Quick Log
+          <select id="term-log-select" onchange="loadTermLog(this.value)" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:11px;font-family:var(--mono)">
+            <option value="">— select —</option>
+            <option value="watchdog">watchdog</option>
+            <option value="nova">nova</option>
+            <option value="atlas">atlas</option>
+            <option value="symbiosense">symbiosense</option>
+            <option value="hermes">hermes</option>
+            <option value="eos-react">eos-react</option>
+            <option value="meridian-loop">meridian-loop</option>
+            <option value="push-status">push-status</option>
+          </select>
+        </h3>
+        <div id="term-log-output" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);max-height:200px;overflow-y:auto;white-space:pre-wrap;line-height:1.4">Select a log to tail.</div>
+      </div>
     </div>
 
     <!-- MEMORY TAB -->
@@ -752,26 +770,34 @@ a:hover { text-decoration:underline; }
       </div>
     </div>
 
-    <!-- FILES TAB -->
-    <div class="tab" id="tab-files">
-      <div class="card">
-        <h3>File Browser</h3>
-        <div class="fb-path" id="fb-path">.</div>
-        <div id="fb-entries" style="max-height:600px;overflow-y:auto"></div>
+    <!-- SYSTEM TAB (Files + Logs combined) -->
+    <div class="tab" id="tab-system">
+      <div style="display:flex;gap:4px;margin-bottom:12px">
+        <button class="term-btn sys-sub active" onclick="switchSysTab('files')" id="sys-tab-files">Files</button>
+        <button class="term-btn sys-sub" onclick="switchSysTab('logs')" id="sys-tab-logs">Logs</button>
       </div>
-      <div class="card" id="fb-viewer-card" style="display:none">
-        <h3 id="fb-viewer-name">—</h3>
-        <pre id="fb-viewer-content" style="font-family:var(--mono);font-size:11px;color:var(--text);
-          max-height:500px;overflow:auto;white-space:pre-wrap;line-height:1.5"></pre>
+      <div id="sys-files-panel">
+        <div class="card">
+          <h3 style="display:flex;align-items:center;justify-content:space-between">
+            File Browser
+            <span class="fb-path" id="fb-path" style="font-size:11px;font-family:var(--mono);color:var(--text-dim)">.</span>
+          </h3>
+          <div id="fb-entries" style="max-height:600px;overflow-y:auto"></div>
+        </div>
+        <div class="card" id="fb-viewer-card" style="display:none">
+          <h3 id="fb-viewer-name" style="display:flex;justify-content:space-between;align-items:center">—
+            <button class="term-btn" onclick="document.getElementById('fb-viewer-card').style.display='none'" style="font-size:10px">Close</button>
+          </h3>
+          <pre id="fb-viewer-content" style="font-family:var(--mono);font-size:11px;color:var(--text);
+            max-height:500px;overflow:auto;white-space:pre-wrap;line-height:1.5"></pre>
+        </div>
       </div>
-    </div>
-
-    <!-- LOGS TAB -->
-    <div class="tab" id="tab-logs">
-      <div class="card">
-        <h3>Log Viewer</h3>
-        <div class="log-tabs" id="log-tabs"></div>
-        <div class="log-output" id="log-output">Select a log file above.</div>
+      <div id="sys-logs-panel" style="display:none">
+        <div class="card">
+          <h3>Log Viewer</h3>
+          <div class="log-tabs" id="log-tabs"></div>
+          <div class="log-output" id="log-output">Select a log file above.</div>
+        </div>
       </div>
     </div>
 
@@ -1450,8 +1476,10 @@ async function loadViz() {
   const body = d.body_state || {};
   const thermal = body.thermal || {};
   const neural = body.neural || {};
-  document.getElementById('viz-temp-val').textContent = thermal.cpu_temp ? thermal.cpu_temp + '°C' : '—';
-  document.getElementById('viz-neural-val').textContent = neural.pressure ? Math.round(neural.pressure * 100) / 100 : '—';
+  const temp = thermal.avg_temp_c || thermal.cpu_temp;
+  document.getElementById('viz-temp-val').textContent = temp ? Math.round(temp * 10) / 10 + '°C' : '—';
+  const neuralPressure = neural.pressure;
+  document.getElementById('viz-neural-val').textContent = neuralPressure ? (typeof neuralPressure === 'number' ? Math.round(neuralPressure * 100) / 100 : neuralPressure) : '—';
 }
 
 // TERMINAL
@@ -1707,6 +1735,35 @@ async function viewLog(name) {
   }
 }
 
+// TERMINAL quick log tail
+async function loadTermLog(name) {
+  const out = document.getElementById('term-log-output');
+  if (!name) { out.textContent = 'Select a log to tail.'; return; }
+  out.textContent = 'Loading...';
+  const d = await api('/api/logs?file=' + encodeURIComponent(name) + '&lines=50');
+  if (d && d.content) {
+    out.textContent = d.content;
+    out.scrollTop = out.scrollHeight;
+  } else {
+    out.textContent = d?.error || 'Error loading log.';
+  }
+}
+
+// SYSTEM (combined Files + Logs)
+let currentSysTab = 'files';
+function switchSysTab(sub) {
+  currentSysTab = sub;
+  document.getElementById('sys-files-panel').style.display = sub === 'files' ? 'block' : 'none';
+  document.getElementById('sys-logs-panel').style.display = sub === 'logs' ? 'block' : 'none';
+  document.querySelectorAll('.sys-sub').forEach(b => b.classList.remove('active'));
+  document.getElementById('sys-tab-' + sub).classList.add('active');
+  if (sub === 'files') loadFiles(fbPath);
+  if (sub === 'logs') loadLogs();
+}
+async function loadSystem() {
+  switchSysTab(currentSysTab);
+}
+
 // LINKS
 async function loadLinks() {
   const d = await api('/api/links');
@@ -1735,8 +1792,7 @@ function loadTab(tab) {
     case 'terminal': loadTerminal(); break;
     case 'memory': loadMemory(); break;
     case 'creative': loadCreative(); break;
-    case 'files': loadFiles(fbPath); break;
-    case 'logs': loadLogs(); break;
+    case 'system': loadSystem(); break;
     case 'intel': loadIntel(); break;
     case 'links': loadLinks(); break;
     case 'settings': loadSettings(); break;

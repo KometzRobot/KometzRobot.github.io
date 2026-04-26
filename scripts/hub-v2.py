@@ -1286,7 +1286,7 @@ def _get_inner_world():
             content = f.read().strip()
             if content:
                 mono = json.loads(content)
-                result["monologue"] = mono.get("text", "")
+                result["monologue"] = mono.get("current", {}).get("text", "") or mono.get("text", "")
             else:
                 result["monologue"] = ""
     except Exception:
@@ -1635,13 +1635,13 @@ def _get_viz_data():
     except Exception:
         result["health_history"] = []
 
-    # Soma body state
+    # Soma body state (thermal/neural from symbiosense state)
     try:
-        with open(BODY_STATE) as f:
-            body = json.load(f)
+        with open(SOMA_STATE) as f:
+            soma_body = json.load(f)
         result["body_state"] = {
-            "thermal": body.get("thermal", {}),
-            "neural": body.get("neural", {}),
+            "thermal": soma_body.get("thermal", {}),
+            "neural": soma_body.get("neural", {}),
         }
     except Exception:
         result["body_state"] = {}
