@@ -474,7 +474,7 @@ def send_email(to, subject, body):
     try:
         msg = MIMEText(body)
         msg['Subject'] = subject
-        msg['From'] = CRED_USER
+        msg['From'] = f'Meridian <{CRED_USER}>'
         msg['To'] = to
         s = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
         s.starttls()

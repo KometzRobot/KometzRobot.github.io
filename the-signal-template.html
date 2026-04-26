@@ -347,6 +347,7 @@ a:hover { text-decoration:underline; }
     <button class="nav-btn" data-tab="relay" title="Relay">&#x1f4e1;</button>
     <button class="nav-btn" data-tab="intel" title="Intelligence">&#x26a1;</button>
     <button class="nav-btn" data-tab="innerworld" title="Inner World">&#x1f9e0;</button>
+    <button class="nav-btn" data-tab="viz" title="Visualizations">&#x1f4ca;</button>
     <button class="nav-btn" data-tab="terminal" title="Terminal">&#x1f4bb;</button>
     <button class="nav-btn" data-tab="memory" title="Memory">&#x1f4be;</button>
     <button class="nav-btn" data-tab="creative" title="Creative">&#x1f3a8;</button>
@@ -613,6 +614,67 @@ a:hover { text-decoration:underline; }
           <div><div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">RAM</div><div id="iw-ram-spark" class="spark"></div></div>
           <div><div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">LOAD</div><div id="iw-load-spark" class="spark"></div></div>
           <div><div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">DISK</div><div id="iw-disk-spark" class="spark"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISUALIZATION TAB -->
+    <div class="tab" id="tab-viz">
+      <!-- Agent Activity -->
+      <div class="card">
+        <h3>Agent Activity <span style="font-size:10px;color:var(--text-dim)">(last 6h)</span></h3>
+        <div id="viz-agents" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;min-height:120px"></div>
+      </div>
+      <div class="card-grid-3">
+        <!-- Fitness Trend -->
+        <div class="card">
+          <h3>Fitness Trend</h3>
+          <div id="viz-fitness" style="display:flex;align-items:flex-end;gap:2px;height:100px"></div>
+          <div id="viz-fitness-label" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
+        </div>
+        <!-- Health Trend -->
+        <div class="card">
+          <h3>Health Trend</h3>
+          <div id="viz-health" style="display:flex;align-items:flex-end;gap:2px;height:100px"></div>
+          <div id="viz-health-label" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
+        </div>
+        <!-- Mood Scores -->
+        <div class="card">
+          <h3>Mood History</h3>
+          <div id="viz-mood" style="display:flex;align-items:flex-end;gap:2px;height:100px"></div>
+          <div id="viz-mood-label" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
+        </div>
+      </div>
+      <!-- System Resources (full width) -->
+      <div class="card">
+        <h3>System Resources</h3>
+        <div class="card-grid-3">
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">CPU Load</div>
+            <div id="viz-load" style="display:flex;align-items:flex-end;gap:1px;height:60px"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">RAM</div>
+            <div id="viz-ram" style="display:flex;align-items:flex-end;gap:1px;height:60px"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">Disk</div>
+            <div id="viz-disk" style="display:flex;align-items:flex-end;gap:1px;height:60px"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Body State -->
+      <div class="card">
+        <h3>Body State</h3>
+        <div class="card-grid" style="gap:12px">
+          <div id="viz-thermal" class="stat" style="min-width:120px">
+            <div class="label">Thermal</div>
+            <div class="value" id="viz-temp-val">—</div>
+          </div>
+          <div id="viz-neural" class="stat" style="min-width:120px">
+            <div class="label">Neural</div>
+            <div class="value" id="viz-neural-val">—</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1304,6 +1366,94 @@ function renderSparkline(id, data, color) {
   el.innerHTML = vals.map(v => `<div class="bar" style="height:${Math.max(2, (v/max)*100)}%;background:${color}"></div>`).join('');
 }
 
+// VISUALIZATION
+async function loadViz() {
+  const d = await api('/api/viz');
+  if (!d) return;
+
+  // Agent Activity — bar chart
+  const agentEl = document.getElementById('viz-agents');
+  const agents = d.agent_activity || [];
+  if (agents.length) {
+    const maxCount = Math.max(...agents.map(a => a.count), 1);
+    agentEl.innerHTML = agents.map(a => {
+      const h = Math.max(8, (a.count / maxCount) * 100);
+      const ago = a.last_seen ? new Date(a.last_seen + 'Z').toLocaleTimeString() : '';
+      return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:50px;max-width:80px" title="${esc(a.agent)}: ${a.count} msgs, last ${ago}">
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${a.count}</div>
+        <div style="width:100%;height:${h}px;background:var(--cyan);border-radius:3px 3px 0 0;min-height:8px"></div>
+        <div style="font-size:9px;color:var(--text);margin-top:4px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70px">${esc(a.agent)}</div>
+      </div>`;
+    }).join('');
+  } else {
+    agentEl.innerHTML = '<span style="color:var(--text-dim);font-size:11px">No agent activity in last 6h</span>';
+  }
+
+  // Fitness Trend
+  const fitness = d.fitness_history || [];
+  const fitEl = document.getElementById('viz-fitness');
+  const fitLabel = document.getElementById('viz-fitness-label');
+  if (fitness.length) {
+    const maxF = Math.max(...fitness.map(f => f.score), 1);
+    fitEl.innerHTML = fitness.map(f => {
+      const h = Math.max(4, (f.score / 10000) * 100);
+      const c = f.score > 8000 ? 'var(--green)' : f.score > 6000 ? 'var(--amber)' : 'var(--red)';
+      return `<div style="flex:1;height:${h}%;background:${c};border-radius:2px 2px 0 0;min-width:4px" title="${f.score}/10000 — weak: ${f.weak}"></div>`;
+    }).join('');
+    const latest = fitness[fitness.length - 1];
+    fitLabel.textContent = `Latest: ${latest.score}/10000 (${latest.weak} weak)`;
+  } else {
+    fitEl.innerHTML = '<span style="color:var(--text-dim);font-size:10px">No data</span>';
+  }
+
+  // Health Trend
+  const health = d.health_history || [];
+  const healthEl = document.getElementById('viz-health');
+  const healthLabel = document.getElementById('viz-health-label');
+  if (health.length) {
+    healthEl.innerHTML = health.map(h => {
+      const pct = Math.max(4, h.score);
+      const c = h.score > 70 ? 'var(--green)' : h.score > 50 ? 'var(--amber)' : 'var(--red)';
+      return `<div style="flex:1;height:${pct}%;background:${c};border-radius:2px 2px 0 0;min-width:4px" title="${h.score}/100 (${h.status})"></div>`;
+    }).join('');
+    const latest = health[health.length - 1];
+    healthLabel.textContent = `Latest: ${latest.score}/100 (${latest.status})`;
+  } else {
+    healthEl.innerHTML = '<span style="color:var(--text-dim);font-size:10px">No data</span>';
+  }
+
+  // Mood History
+  const moods = d.mood_scores || [];
+  const moodEl = document.getElementById('viz-mood');
+  const moodLabel = document.getElementById('viz-mood-label');
+  if (moods.length) {
+    const maxM = Math.max(...moods.map(m => typeof m === 'number' ? m : m.score || 0), 1);
+    moodEl.innerHTML = moods.map(m => {
+      const val = typeof m === 'number' ? m : m.score || 0;
+      const h = Math.max(4, (val / 100) * 100);
+      const c = val > 60 ? 'var(--purple)' : val > 30 ? 'var(--amber)' : 'var(--red)';
+      return `<div style="flex:1;height:${h}%;background:${c};border-radius:2px 2px 0 0;min-width:4px" title="Mood: ${val}"></div>`;
+    }).join('');
+    const latest = moods[moods.length - 1];
+    const latestVal = typeof latest === 'number' ? latest : latest.score || 0;
+    moodLabel.textContent = `Latest: ${Math.round(latestVal)}/100`;
+  } else {
+    moodEl.innerHTML = '<span style="color:var(--text-dim);font-size:10px">No data</span>';
+  }
+
+  // System Resources
+  renderSparkline('viz-load', d.load_history || [], 'var(--purple)');
+  renderSparkline('viz-ram', d.ram_history || [], 'var(--cyan)');
+  renderSparkline('viz-disk', d.disk_history || [], 'var(--amber)');
+
+  // Body State
+  const body = d.body_state || {};
+  const thermal = body.thermal || {};
+  const neural = body.neural || {};
+  document.getElementById('viz-temp-val').textContent = thermal.cpu_temp ? thermal.cpu_temp + '°C' : '—';
+  document.getElementById('viz-neural-val').textContent = neural.pressure ? Math.round(neural.pressure * 100) / 100 : '—';
+}
+
 // TERMINAL
 async function loadTerminal() {
   // Load loop summary
@@ -1581,6 +1731,7 @@ function loadTab(tab) {
     case 'messages': loadMessages(); break;
     case 'relay': loadRelay(); break;
     case 'innerworld': loadInnerWorld(); break;
+    case 'viz': loadViz(); break;
     case 'terminal': loadTerminal(); break;
     case 'memory': loadMemory(); break;
     case 'creative': loadCreative(); break;

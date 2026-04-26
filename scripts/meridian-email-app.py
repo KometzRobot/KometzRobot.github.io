@@ -157,7 +157,7 @@ def fetch_emails(unseen_only=True, count=20):
 def send_reply(to, subject, body):
     try:
         msg = MIMEText(body, "plain", "utf-8")
-        msg["From"]    = CRED_USER
+        msg["From"]    = f'Meridian <{CRED_USER}>'
         msg["To"]      = to
         msg["Subject"] = subject if subject.startswith("Re:") else f"Re: {subject}"
         ctx = ssl.create_default_context()

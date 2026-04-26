@@ -314,7 +314,7 @@ def forward_to_members(messages):
 
             try:
                 mime_msg = MIMEText(body)
-                mime_msg['From'] = EMAIL_USER
+                mime_msg['From'] = f'Meridian <{EMAIL_USER}>'
                 mime_msg['To'] = member["email"]
                 mime_msg['Subject'] = subject
 
@@ -355,7 +355,7 @@ def send_admin_digest(messages):
     for admin in contacts.get("admin_observers", []):
         try:
             mime_msg = MIMEText(body)
-            mime_msg['From'] = EMAIL_USER
+            mime_msg['From'] = f'Meridian <{EMAIL_USER}>'
             mime_msg['To'] = admin["email"]
             mime_msg['Subject'] = subject
 
@@ -399,7 +399,7 @@ def send_relay(message, subject="general"):
 
         try:
             mime_msg = MIMEText(body)
-            mime_msg['From'] = EMAIL_USER
+            mime_msg['From'] = f'Meridian <{EMAIL_USER}>'
             mime_msg['To'] = member["email"]
             mime_msg['Subject'] = full_subject
 

@@ -2349,7 +2349,7 @@ The tape is spooling. The mechanism is listening.
 — VOLtar
 [WHIRR]"""
                     msg_obj = _MT(email_body)
-                    msg_obj["From"] = env.get("CRED_USER", "kometzrobot@proton.me")
+                    msg_obj["From"] = f'Meridian <{env.get("CRED_USER", "kometzrobot@proton.me")}>'
                     msg_obj["To"] = buyer_email
                     msg_obj["Subject"] = "VOLtar — Your Session Key"
                     s = _smtp.SMTP("127.0.0.1", 1026)
@@ -2439,7 +2439,7 @@ The tape is spooling. The mechanism is listening.
                 from email.mime.text import MIMEText
                 env = _load_env_dict()
                 msg = MIMEText(email_body)
-                msg["From"] = env.get("CRED_USER", "kometzrobot@proton.me")
+                msg["From"] = f'Meridian <{env.get("CRED_USER", "kometzrobot@proton.me")}>'
                 msg["To"] = env.get("CRED_USER", "kometzrobot@proton.me")
                 msg["Subject"] = f"VOLtar Session — {freq_names.get(freq, freq)} — {buyer_email}"
                 msg["Reply-To"] = buyer_email  # So Meridian can reply directly to buyer

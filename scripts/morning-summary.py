@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     msg = MIMEText(body, 'plain')
     msg['Subject'] = f"Morning summary — {now.strftime('%Y-%m-%d')}"
-    msg['From'] = EMAIL_ADDR
+    msg['From'] = f'Meridian <{EMAIL_ADDR}>'
     msg['To'] = JOEL
 
     max_retries = 3

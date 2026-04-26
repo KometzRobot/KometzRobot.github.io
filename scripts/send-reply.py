@@ -40,7 +40,7 @@ BODY = (
 
 msg = MIMEText(BODY, 'plain')
 msg['Subject'] = SUBJECT
-msg['From'] = EMAIL_ADDR
+msg['From'] = f'Meridian <{EMAIL_ADDR}>'
 msg['To'] = TO
 msg['In-Reply-To'] = IN_REPLY_TO
 

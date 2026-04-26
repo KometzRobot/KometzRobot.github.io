@@ -556,7 +556,7 @@ def send_briefing():
     html_body = format_html_briefing(body)
     msg = MIMEText(html_body, 'html')
     msg['Subject'] = subject
-    msg['From'] = CRED_USER
+    msg['From'] = f'Meridian <{CRED_USER}>'
     msg['To'] = JOEL
 
     max_retries = 3
