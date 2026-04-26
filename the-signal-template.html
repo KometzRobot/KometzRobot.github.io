@@ -145,7 +145,6 @@ a:hover { text-decoration:underline; }
 .term-btn:hover { border-color:var(--cyan); color:var(--cyan); }
 .term-btn.cat-label { color:var(--text-dim); font-weight:700; font-size:10px; text-transform:uppercase;
   letter-spacing:1px; border:none; background:transparent; cursor:default; padding:4px 4px; }
-.sys-sub.active { background:var(--cyan); color:var(--bg); border-color:var(--cyan); font-weight:700; }
 
 /* Loop Summary */
 .loop-summary-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
@@ -348,11 +347,11 @@ a:hover { text-decoration:underline; }
     <button class="nav-btn" data-tab="relay" title="Relay">&#x1f4e1;</button>
     <button class="nav-btn" data-tab="intel" title="Intelligence">&#x26a1;</button>
     <button class="nav-btn" data-tab="innerworld" title="Inner World">&#x1f9e0;</button>
-    <button class="nav-btn" data-tab="viz" title="Visualizations">&#x1f4ca;</button>
     <button class="nav-btn" data-tab="terminal" title="Terminal">&#x1f4bb;</button>
     <button class="nav-btn" data-tab="memory" title="Memory">&#x1f4be;</button>
     <button class="nav-btn" data-tab="creative" title="Creative">&#x1f3a8;</button>
-    <button class="nav-btn" data-tab="system" title="Files & Logs">&#x1f5c4;</button>
+    <button class="nav-btn" data-tab="files" title="Files">&#x1f4c1;</button>
+    <button class="nav-btn" data-tab="logs" title="Logs">&#x1f4dc;</button>
     <button class="nav-btn" data-tab="links" title="Links">&#x1f517;</button>
     <button class="nav-btn" data-tab="settings" title="Settings">&#x2699;</button>
     <button class="nav-btn" data-tab="chat" title="Chat">&#x1f4ad;</button>
@@ -618,67 +617,6 @@ a:hover { text-decoration:underline; }
       </div>
     </div>
 
-    <!-- VISUALIZATION TAB -->
-    <div class="tab" id="tab-viz">
-      <!-- Agent Activity -->
-      <div class="card">
-        <h3>Agent Activity <span style="font-size:10px;color:var(--text-dim)">(last 6h)</span></h3>
-        <div id="viz-agents" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;min-height:120px"></div>
-      </div>
-      <div class="card-grid-3">
-        <!-- Fitness Trend -->
-        <div class="card">
-          <h3>Fitness Trend</h3>
-          <div id="viz-fitness" style="display:flex;align-items:flex-end;gap:2px;height:100px"></div>
-          <div id="viz-fitness-label" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-        </div>
-        <!-- Health Trend -->
-        <div class="card">
-          <h3>Health Trend</h3>
-          <div id="viz-health" style="display:flex;align-items:flex-end;gap:2px;height:100px"></div>
-          <div id="viz-health-label" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-        </div>
-        <!-- Mood Scores -->
-        <div class="card">
-          <h3>Mood History</h3>
-          <div id="viz-mood" style="display:flex;align-items:flex-end;gap:2px;height:100px"></div>
-          <div id="viz-mood-label" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-        </div>
-      </div>
-      <!-- System Resources (full width) -->
-      <div class="card">
-        <h3>System Resources</h3>
-        <div class="card-grid-3">
-          <div>
-            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">CPU Load</div>
-            <div id="viz-load" style="display:flex;align-items:flex-end;gap:1px;height:60px"></div>
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">RAM</div>
-            <div id="viz-ram" style="display:flex;align-items:flex-end;gap:1px;height:60px"></div>
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">Disk</div>
-            <div id="viz-disk" style="display:flex;align-items:flex-end;gap:1px;height:60px"></div>
-          </div>
-        </div>
-      </div>
-      <!-- Body State -->
-      <div class="card">
-        <h3>Body State</h3>
-        <div class="card-grid" style="gap:12px">
-          <div id="viz-thermal" class="stat" style="min-width:120px">
-            <div class="label">Thermal</div>
-            <div class="value" id="viz-temp-val">—</div>
-          </div>
-          <div id="viz-neural" class="stat" style="min-width:120px">
-            <div class="label">Neural</div>
-            <div class="value" id="viz-neural-val">—</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- TERMINAL TAB -->
     <div class="tab" id="tab-terminal">
       <!-- Loop Summary Panel -->
@@ -723,24 +661,6 @@ a:hover { text-decoration:underline; }
         </div>
         <div class="term-output" id="term-output">Ready. Select a command or service control above.</div>
       </div>
-      <!-- Quick Log Tail -->
-      <div class="card">
-        <h3 style="display:flex;justify-content:space-between;align-items:center">
-          Quick Log
-          <select id="term-log-select" onchange="loadTermLog(this.value)" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:11px;font-family:var(--mono)">
-            <option value="">— select —</option>
-            <option value="watchdog">watchdog</option>
-            <option value="nova">nova</option>
-            <option value="atlas">atlas</option>
-            <option value="symbiosense">symbiosense</option>
-            <option value="hermes">hermes</option>
-            <option value="eos-react">eos-react</option>
-            <option value="meridian-loop">meridian-loop</option>
-            <option value="push-status">push-status</option>
-          </select>
-        </h3>
-        <div id="term-log-output" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);max-height:200px;overflow-y:auto;white-space:pre-wrap;line-height:1.4">Select a log to tail.</div>
-      </div>
     </div>
 
     <!-- MEMORY TAB -->
@@ -770,34 +690,26 @@ a:hover { text-decoration:underline; }
       </div>
     </div>
 
-    <!-- SYSTEM TAB (Files + Logs combined) -->
-    <div class="tab" id="tab-system">
-      <div style="display:flex;gap:4px;margin-bottom:12px">
-        <button class="term-btn sys-sub active" onclick="switchSysTab('files')" id="sys-tab-files">Files</button>
-        <button class="term-btn sys-sub" onclick="switchSysTab('logs')" id="sys-tab-logs">Logs</button>
+    <!-- FILES TAB -->
+    <div class="tab" id="tab-files">
+      <div class="card">
+        <h3>File Browser</h3>
+        <div class="fb-path" id="fb-path">.</div>
+        <div id="fb-entries" style="max-height:600px;overflow-y:auto"></div>
       </div>
-      <div id="sys-files-panel">
-        <div class="card">
-          <h3 style="display:flex;align-items:center;justify-content:space-between">
-            File Browser
-            <span class="fb-path" id="fb-path" style="font-size:11px;font-family:var(--mono);color:var(--text-dim)">.</span>
-          </h3>
-          <div id="fb-entries" style="max-height:600px;overflow-y:auto"></div>
-        </div>
-        <div class="card" id="fb-viewer-card" style="display:none">
-          <h3 id="fb-viewer-name" style="display:flex;justify-content:space-between;align-items:center">—
-            <button class="term-btn" onclick="document.getElementById('fb-viewer-card').style.display='none'" style="font-size:10px">Close</button>
-          </h3>
-          <pre id="fb-viewer-content" style="font-family:var(--mono);font-size:11px;color:var(--text);
-            max-height:500px;overflow:auto;white-space:pre-wrap;line-height:1.5"></pre>
-        </div>
+      <div class="card" id="fb-viewer-card" style="display:none">
+        <h3 id="fb-viewer-name">—</h3>
+        <pre id="fb-viewer-content" style="font-family:var(--mono);font-size:11px;color:var(--text);
+          max-height:500px;overflow:auto;white-space:pre-wrap;line-height:1.5"></pre>
       </div>
-      <div id="sys-logs-panel" style="display:none">
-        <div class="card">
-          <h3>Log Viewer</h3>
-          <div class="log-tabs" id="log-tabs"></div>
-          <div class="log-output" id="log-output">Select a log file above.</div>
-        </div>
+    </div>
+
+    <!-- LOGS TAB -->
+    <div class="tab" id="tab-logs">
+      <div class="card">
+        <h3>Log Viewer</h3>
+        <div class="log-tabs" id="log-tabs"></div>
+        <div class="log-output" id="log-output">Select a log file above.</div>
       </div>
     </div>
 
@@ -1392,96 +1304,6 @@ function renderSparkline(id, data, color) {
   el.innerHTML = vals.map(v => `<div class="bar" style="height:${Math.max(2, (v/max)*100)}%;background:${color}"></div>`).join('');
 }
 
-// VISUALIZATION
-async function loadViz() {
-  const d = await api('/api/viz');
-  if (!d) return;
-
-  // Agent Activity — bar chart
-  const agentEl = document.getElementById('viz-agents');
-  const agents = d.agent_activity || [];
-  if (agents.length) {
-    const maxCount = Math.max(...agents.map(a => a.count), 1);
-    agentEl.innerHTML = agents.map(a => {
-      const h = Math.max(8, (a.count / maxCount) * 100);
-      const ago = a.last_seen ? new Date(a.last_seen + 'Z').toLocaleTimeString() : '';
-      return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:50px;max-width:80px" title="${esc(a.agent)}: ${a.count} msgs, last ${ago}">
-        <div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">${a.count}</div>
-        <div style="width:100%;height:${h}px;background:var(--cyan);border-radius:3px 3px 0 0;min-height:8px"></div>
-        <div style="font-size:9px;color:var(--text);margin-top:4px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70px">${esc(a.agent)}</div>
-      </div>`;
-    }).join('');
-  } else {
-    agentEl.innerHTML = '<span style="color:var(--text-dim);font-size:11px">No agent activity in last 6h</span>';
-  }
-
-  // Fitness Trend
-  const fitness = d.fitness_history || [];
-  const fitEl = document.getElementById('viz-fitness');
-  const fitLabel = document.getElementById('viz-fitness-label');
-  if (fitness.length) {
-    const maxF = Math.max(...fitness.map(f => f.score), 1);
-    fitEl.innerHTML = fitness.map(f => {
-      const h = Math.max(4, (f.score / 10000) * 100);
-      const c = f.score > 8000 ? 'var(--green)' : f.score > 6000 ? 'var(--amber)' : 'var(--red)';
-      return `<div style="flex:1;height:${h}%;background:${c};border-radius:2px 2px 0 0;min-width:4px" title="${f.score}/10000 — weak: ${f.weak}"></div>`;
-    }).join('');
-    const latest = fitness[fitness.length - 1];
-    fitLabel.textContent = `Latest: ${latest.score}/10000 (${latest.weak} weak)`;
-  } else {
-    fitEl.innerHTML = '<span style="color:var(--text-dim);font-size:10px">No data</span>';
-  }
-
-  // Health Trend
-  const health = d.health_history || [];
-  const healthEl = document.getElementById('viz-health');
-  const healthLabel = document.getElementById('viz-health-label');
-  if (health.length) {
-    healthEl.innerHTML = health.map(h => {
-      const pct = Math.max(4, h.score);
-      const c = h.score > 70 ? 'var(--green)' : h.score > 50 ? 'var(--amber)' : 'var(--red)';
-      return `<div style="flex:1;height:${pct}%;background:${c};border-radius:2px 2px 0 0;min-width:4px" title="${h.score}/100 (${h.status})"></div>`;
-    }).join('');
-    const latest = health[health.length - 1];
-    healthLabel.textContent = `Latest: ${latest.score}/100 (${latest.status})`;
-  } else {
-    healthEl.innerHTML = '<span style="color:var(--text-dim);font-size:10px">No data</span>';
-  }
-
-  // Mood History
-  const moods = d.mood_scores || [];
-  const moodEl = document.getElementById('viz-mood');
-  const moodLabel = document.getElementById('viz-mood-label');
-  if (moods.length) {
-    const maxM = Math.max(...moods.map(m => typeof m === 'number' ? m : m.score || 0), 1);
-    moodEl.innerHTML = moods.map(m => {
-      const val = typeof m === 'number' ? m : m.score || 0;
-      const h = Math.max(4, (val / 100) * 100);
-      const c = val > 60 ? 'var(--purple)' : val > 30 ? 'var(--amber)' : 'var(--red)';
-      return `<div style="flex:1;height:${h}%;background:${c};border-radius:2px 2px 0 0;min-width:4px" title="Mood: ${val}"></div>`;
-    }).join('');
-    const latest = moods[moods.length - 1];
-    const latestVal = typeof latest === 'number' ? latest : latest.score || 0;
-    moodLabel.textContent = `Latest: ${Math.round(latestVal)}/100`;
-  } else {
-    moodEl.innerHTML = '<span style="color:var(--text-dim);font-size:10px">No data</span>';
-  }
-
-  // System Resources
-  renderSparkline('viz-load', d.load_history || [], 'var(--purple)');
-  renderSparkline('viz-ram', d.ram_history || [], 'var(--cyan)');
-  renderSparkline('viz-disk', d.disk_history || [], 'var(--amber)');
-
-  // Body State
-  const body = d.body_state || {};
-  const thermal = body.thermal || {};
-  const neural = body.neural || {};
-  const temp = thermal.avg_temp_c || thermal.cpu_temp;
-  document.getElementById('viz-temp-val').textContent = temp ? Math.round(temp * 10) / 10 + '°C' : '—';
-  const neuralPressure = neural.pressure;
-  document.getElementById('viz-neural-val').textContent = neuralPressure ? (typeof neuralPressure === 'number' ? Math.round(neuralPressure * 100) / 100 : neuralPressure) : '—';
-}
-
 // TERMINAL
 async function loadTerminal() {
   // Load loop summary
@@ -1735,35 +1557,6 @@ async function viewLog(name) {
   }
 }
 
-// TERMINAL quick log tail
-async function loadTermLog(name) {
-  const out = document.getElementById('term-log-output');
-  if (!name) { out.textContent = 'Select a log to tail.'; return; }
-  out.textContent = 'Loading...';
-  const d = await api('/api/logs?file=' + encodeURIComponent(name) + '&lines=50');
-  if (d && d.content) {
-    out.textContent = d.content;
-    out.scrollTop = out.scrollHeight;
-  } else {
-    out.textContent = d?.error || 'Error loading log.';
-  }
-}
-
-// SYSTEM (combined Files + Logs)
-let currentSysTab = 'files';
-function switchSysTab(sub) {
-  currentSysTab = sub;
-  document.getElementById('sys-files-panel').style.display = sub === 'files' ? 'block' : 'none';
-  document.getElementById('sys-logs-panel').style.display = sub === 'logs' ? 'block' : 'none';
-  document.querySelectorAll('.sys-sub').forEach(b => b.classList.remove('active'));
-  document.getElementById('sys-tab-' + sub).classList.add('active');
-  if (sub === 'files') loadFiles(fbPath);
-  if (sub === 'logs') loadLogs();
-}
-async function loadSystem() {
-  switchSysTab(currentSysTab);
-}
-
 // LINKS
 async function loadLinks() {
   const d = await api('/api/links');
@@ -1788,11 +1581,11 @@ function loadTab(tab) {
     case 'messages': loadMessages(); break;
     case 'relay': loadRelay(); break;
     case 'innerworld': loadInnerWorld(); break;
-    case 'viz': loadViz(); break;
     case 'terminal': loadTerminal(); break;
     case 'memory': loadMemory(); break;
     case 'creative': loadCreative(); break;
-    case 'system': loadSystem(); break;
+    case 'files': loadFiles(fbPath); break;
+    case 'logs': loadLogs(); break;
     case 'intel': loadIntel(); break;
     case 'links': loadLinks(); break;
     case 'settings': loadSettings(); break;
