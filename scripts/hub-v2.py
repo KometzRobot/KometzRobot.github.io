@@ -1293,9 +1293,30 @@ def _get_inner_world():
         result["monologue"] = ""
     try:
         with open(BODY_STATE) as f:
-            result["body"] = json.load(f)
+            body = json.load(f)
+        result["body"] = body
+        # Extract structured emotion + organ data for rich rendering
+        result["emotion"] = body.get("emotion", {})
+        result["organs"] = body.get("organs", {})
+        result["vitals"] = body.get("vitals", {})
+        result["services_state"] = body.get("services", {})
+        result["pain_signals"] = body.get("pain_signals", [])
+        result["alerts"] = body.get("alerts", [])
     except Exception:
         result["body"] = {}
+        result["emotion"] = {}
+        result["organs"] = {}
+        result["vitals"] = {}
+        result["services_state"] = {}
+    # Self-narrative from Soma body_map
+    try:
+        result["self_narrative"] = soma.get("body_map", {}).get("mood_description", "")
+        result["mood_description"] = soma.get("mood_description", "")
+        result["emergent_goals"] = soma.get("emergent_goals", [])
+    except Exception:
+        result["self_narrative"] = ""
+        result["mood_description"] = ""
+        result["emergent_goals"] = []
     try:
         with open(os.path.join(BASE, ".sentinel-briefing.md")) as f:
             result["sentinel"] = f.read().strip()
