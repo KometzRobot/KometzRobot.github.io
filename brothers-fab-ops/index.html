@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Brothers Fabrication — Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@500;600&family=Special+Elite&family=Archivo+Black&family=Archivo:wght@500;600;700;800&family=Stardos+Stencil:wght@400;700&display=swap" />
+<link rel="stylesheet" href="styles.css?v=3" />
+<link rel="stylesheet" href="tablet.css?v=3" />
+<link rel="stylesheet" href="other.css?v=3" />
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="stock.js"></script>
+<script type="text/babel" src="data.jsx"></script>
+<script type="text/babel" src="icons.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="surfaces/tablet.jsx"></script>
+<script type="text/babel" src="surfaces/other.jsx"></script>
+<script type="text/babel" src="surfaces/photo-inbox.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "brand",
+  "ownerMode": true,
+  "portalTheme": "branded",
+  "scenario": "calm"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [surface, setSurface] = useState('tablet');
+  const [tweaks, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', tweaks.theme === 'default' ? '' : tweaks.theme);
+  }, [tweaks.theme]);
+
+  const surfaces = [
+    { id: 'tablet',   label: 'Shop Tablet',     ic: <Ic.tablet size={14}/> },
+    { id: 'admin',    label: 'Admin',           ic: <Ic.layout size={14}/> },
+    { id: 'portal',   label: 'Customer Portal', ic: <Ic.user size={14}/> },
+    { id: 'inv',      label: 'Inventory',       ic: <Ic.box size={14}/> },
+    { id: 'pipe',     label: 'Pipeline',        ic: <Ic.inbox size={14}/> },
+    { id: 'photos',   label: 'Photo Inbox',     ic: <Ic.image size={14}/> },
+    { id: 'ai',       label: 'Brothers AI',     ic: <Ic.spark size={14}/> },
+  ];
+
+  return (
+    <div className="app" data-screen-label={`BF Ops — ${surface}`}>
+      <header className="topbar">
+        <div className="brand">
+          <div className="mark">BF</div>
+          <span>Brothers Fabrication</span>
+          <span className="muted" style={{ fontWeight: 400 }}>· Ops</span>
+        </div>
+        <div className="surfaces">
+          {surfaces.map(s => (
+            <button key={s.id} className={surface === s.id ? 'active' : ''} onClick={() => setSurface(s.id)}>
+              {s.ic} {s.label}
+            </button>
+          ))}
+        </div>
+        <div className="right">
+          <span className="pill"><span className="dot"/> Trello synced · 2m ago</span>
+          <span className="pill">v0.4 — staging</span>
+        </div>
+      </header>
+
+      <div className="surface">
+        {surface === 'tablet' && <ShopTablet workerMode={!tweaks.ownerMode}/>}
+        {surface === 'admin' && <AdminDashboard/>}
+        {surface === 'portal' && <CustomerPortal/>}
+        {surface === 'inv' && <Inventory/>}
+        {surface === 'pipe' && <Pipeline/>}
+        {surface === 'photos' && <PhotoInbox/>}
+        {surface === 'ai' && <BrothersAI/>}
+      </div>
+
+      <window.TweaksPanel title="Tweaks">
+        <window.TweakSection title="Theme">
+          <window.TweakRadio label="Color theme" value={tweaks.theme} onChange={v => setTweak('theme', v)}
+            options={[
+              { value: 'default', label: 'Neutral SaaS (default)' },
+              { value: 'brand', label: 'Brothers brand (teal/yellow)' },
+              { value: 'shop', label: 'Shop / dark mode' },
+            ]}/>
+        </window.TweakSection>
+        <window.TweakSection title="Mode">
+          <window.TweakToggle label="Owner mode (more controls)" value={tweaks.ownerMode} onChange={v => setTweak('ownerMode', v)}/>
+        </window.TweakSection>
+        <window.TweakSection title="Customer portal">
+          <window.TweakRadio label="Portal theme" value={tweaks.portalTheme} onChange={v => setTweak('portalTheme', v)}
+            options={[
+              { value: 'neutral', label: 'Neutral SaaS' },
+              { value: 'branded', label: 'Branded (matches website)' },
+            ]}/>
+        </window.TweakSection>
+        <window.TweakSection title="Scenario">
+          <window.TweakRadio label="Mock data" value={tweaks.scenario} onChange={v => setTweak('scenario', v)}
+            options={[
+              { value: 'calm', label: 'Calm day' },
+              { value: 'busy', label: 'Busy / over budget' },
+            ]}/>
+        </window.TweakSection>
+      </window.TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
