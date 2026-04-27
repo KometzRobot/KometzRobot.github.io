@@ -19,12 +19,16 @@
 <div id="root"></div>
 
 <script src="stock.js"></script>
+<script src="engine.js"></script>
 <script type="text/babel" src="data.jsx"></script>
 <script type="text/babel" src="icons.jsx"></script>
 <script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="trello.jsx"></script>
+<script type="text/babel" src="connect.jsx"></script>
 <script type="text/babel" src="surfaces/tablet.jsx"></script>
 <script type="text/babel" src="surfaces/other.jsx"></script>
 <script type="text/babel" src="surfaces/photo-inbox.jsx"></script>
+<script type="text/babel" src="surfaces/journey.jsx"></script>
 
 <script type="text/babel">
 const { useState, useEffect } = React;
@@ -44,6 +48,8 @@ function App() {
     document.documentElement.setAttribute('data-theme', tweaks.theme === 'default' ? '' : tweaks.theme);
   }, [tweaks.theme]);
 
+  const trello = window.useTrello ? window.useTrello() : null;
+
   const surfaces = [
     { id: 'tablet',   label: 'Shop Tablet',     ic: <Ic.tablet size={14}/> },
     { id: 'admin',    label: 'Admin',           ic: <Ic.layout size={14}/> },
@@ -52,6 +58,7 @@ function App() {
     { id: 'pipe',     label: 'Pipeline',        ic: <Ic.inbox size={14}/> },
     { id: 'photos',   label: 'Photo Inbox',     ic: <Ic.image size={14}/> },
     { id: 'ai',       label: 'Brothers AI',     ic: <Ic.spark size={14}/> },
+    { id: 'journey',  label: 'Journey',         ic: <Ic.layout size={14}/> },
   ];
 
   return (
@@ -70,8 +77,10 @@ function App() {
           ))}
         </div>
         <div className="right">
-          <span className="pill"><span className="dot"/> Trello synced · 2m ago</span>
-          <span className="pill">v0.4 — staging</span>
+          {trello && typeof SyncStatusChip !== 'undefined'
+            ? <SyncStatusChip status={trello.status} lastSync={trello.lastSync}/>
+            : <span className="pill"><span className="dot"/> Trello · demo mode</span>}
+          <span className="pill">v0.5</span>
         </div>
       </header>
 
@@ -83,6 +92,8 @@ function App() {
         {surface === 'pipe' && <Pipeline/>}
         {surface === 'photos' && <PhotoInbox/>}
         {surface === 'ai' && <BrothersAI/>}
+        {surface === 'journey' && typeof Journey !== 'undefined' && <Journey/>}
+        {surface === 'connect' && typeof ConnectScreen !== 'undefined' && <ConnectScreen onDone={() => setSurface('tablet')}/>}
       </div>
 
       <window.TweaksPanel title="Tweaks">

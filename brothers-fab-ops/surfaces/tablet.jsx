@@ -53,6 +53,7 @@ function AvatarStack({ ids, size=24, max=4 }) {
 }
 
 function Money({ n }) {
+  if (n == null) return <span className="mono muted">--</span>;
   return <span className="mono">${(n/1000).toFixed(1)}K</span>;
 }
 
@@ -505,7 +506,7 @@ function ActionSheet({ kind, job, onClose, onComplete }) {
                 </select>
               </label>
               <div className="sheet-info">
-                <Ic.alert size={14} /> Photo will be visible to {job.client.name} after Chris approves it.
+                <Ic.alert size={14} /> Photo will be visible to {job.client ? job.client.name : 'the client'} after Chris approves it.
               </div>
             </div>
           )}

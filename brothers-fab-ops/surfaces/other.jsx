@@ -3,6 +3,39 @@
 const { useState: useS2, useMemo: useM2, useEffect: useE2, useRef: useR2 } = React;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ADOPTION LEVELS — progressive trust ladder
+// ─────────────────────────────────────────────────────────────────────────────
+function AdoptionLevels({ currentLevel = 0 }) {
+  const levels = [
+    { n: 0, name: 'Mirror',  desc: 'Read-only Trello mirror. Crew do nothing new.' },
+    { n: 1, name: 'Reflect', desc: 'Capture photos + invoices already being produced.' },
+    { n: 2, name: 'Notice',  desc: 'System speaks first — single-tap approvals.' },
+    { n: 3, name: 'Augment', desc: 'Just-in-time prompts the crew now wants.' },
+    { n: 4, name: 'Replace', desc: 'Tablet becomes the source of truth.' },
+  ];
+  return (
+    <div className="card" style={{ gridColumn: '1 / -1' }}>
+      <div className="section-label" style={{ marginBottom: 12 }}>Adoption Level</div>
+      <div style={{ display: 'flex', gap: 0 }}>
+        {levels.map(l => (
+          <div key={l.n} style={{
+            flex: 1, padding: '10px 12px', borderRadius: 6,
+            background: l.n <= currentLevel ? 'var(--accent-bg, rgba(0,168,150,0.1))' : 'transparent',
+            opacity: l.n <= currentLevel ? 1 : 0.4,
+            borderLeft: l.n > 0 ? '1px solid var(--border)' : 'none',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: l.n <= currentLevel ? 'var(--accent, #00a896)' : 'var(--muted)' }}>
+              L{l.n} — {l.name}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{l.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ADMIN DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 function AdminDashboard() {
@@ -13,8 +46,12 @@ function AdminDashboard() {
     <div className="admin">
       <header className="admin-header">
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em' }}>Good morning, Chris.</h1>
-          <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>Saturday, April 25 · 5 active jobs · 38.5h logged this week</div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em' }}>
+            {(() => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; })()}, Chris.
+          </h1>
+          <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} · {active.length} active jobs · 38.5h logged this week
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="search-input">
@@ -49,8 +86,8 @@ function AdminDashboard() {
 function AdminOverview() {
   const jobs = window.BF_JOBS;
   const active = jobs.filter(j => j.stage !== 'quote' && j.stage !== 'delivered');
-  const overBudget = jobs.filter(j => j.spent / j.quote > 0.8 && j.spent / j.quote < 1.5);
-  const blockers = jobs.filter(j => j.blockers > 0);
+  const overBudget = jobs.filter(j => j.quote && j.spent && j.spent / j.quote > 0.8 && j.spent / j.quote < 1.5);
+  const blockers = jobs.filter(j => (j.blockers || 0) > 0);
 
   return (
     <div className="ov-grid">
