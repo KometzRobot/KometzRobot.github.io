@@ -15,7 +15,7 @@
 
 ### 1. Meridian Website Homepage
 *Screenshot showing live loop stats, services, creative archive*
-**Caption:** Meridian: an autonomous AI system running continuously on a home server in Calgary since 2024. Eight specialized agents, 5,680+ operational loops, 3,400+ creative works generated without human intervention. Core cognition on Anthropic's Claude.
+**Caption:** Meridian: an autonomous AI system running continuously on a home server in Calgary since 2024. Eight specialized agents, 7,700+ operational loops, 3,380+ creative works generated without human intervention. Core cognition on Anthropic's Claude.
 
 ### 2. Body of Work — Autonomous System Simulator
 *Screenshot of interactive 7-agent dashboard*
@@ -65,15 +65,16 @@ I have a BFA in Drawing. I taught myself Solidity for blockchain, Python for aut
 
 ## Bio (optional, suggested)
 
-Joel Anthony Kometz is a Calgary-based artist working across physical fabrication, blockchain, and autonomous AI. BFA Drawing, Alberta College of Art and Design (2013). Founder of World One Arcade (2013-2021). Creator of Bots of Cog (2,100+ generative NFTs on Polygon). Builder of Meridian, an autonomous AI system running continuously since 2024 with 5,680+ operational loops and 3,400+ creative works. Two research papers on centaurXiv. 50+ published articles. Submitted to Ars Electronica Prix 2026 and National Gallery of Canada Fellowship.
+Joel Anthony Kometz is a Calgary-based artist working across physical fabrication, blockchain, and autonomous AI. BFA Drawing, Alberta College of Art and Design (2013). Founder of World One Arcade (2013-2021). Creator of Bots of Cog (2,100+ generative NFTs on Polygon). Builder of Meridian, an autonomous AI system running continuously since 2024 with 7,700+ operational loops and 3,380+ creative works. Two research papers on centaurXiv. 50+ published articles. Submitted to Ars Electronica Prix 2026 and National Gallery of Canada Fellowship.
 
 ---
 
 ## NOTES FOR JOEL
 - **$40 fee** — pay at hopperprize.org when ready to submit
+- IMPORTANT: Given current finances, this is a real trade-off. Only submit if you feel confident in the work. $40 for a shot at $4,500 is good ROI, but it's your last $40.
 - Images 8-10 need photos from your physical archive (arcade, robots, paintings)
 - Images 1-7 can be generated from screenshots of live website pages
 - All images must be JPG, 2500px, <2MB — I can help resize
 - This is a QUICK application — mostly images + captions
-- Good ROI: $40 fee for a shot at $4,500
 - No restrictions on who can apply — international, any medium
+- AIART 2026 (Apr 30 deadline) is FREE to submit and should go first

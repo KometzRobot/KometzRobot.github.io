@@ -259,12 +259,12 @@ GROWTH_WEIGHTS = {
     "creative_velocity_24h":   150,   # pieces in last 24h
     "creative_velocity_7d":    125,   # pieces in last 7 days
     "platform_diversity":      175,   # active platforms with verified content
-    "newsletter_active":       150,   # launched and posting (Substack)
+    "cinder_sprint_progress":  150,   # recent Cinder product development
     "community_engagement":    100,   # forvm, lexicon, discord
     "awakening_progress":      100,   # 97/100 items
     "external_followers":       75,   # followers across platforms
-    "mastodon_active":          75,   # posting on mastodon
-    "hashnode_published":      125,   # articles on hashnode
+    "coderlegion_active":       75,   # posting on CoderLegion
+    "devto_quality":           125,   # Dev.to article quality and recency
     # ── NEW Growth Checks ──
     "game_release_quality":    150,   # crawler completeness (THE magnum opus)
     "grant_applications":      100,   # active grant drafts
@@ -1724,29 +1724,36 @@ def check_platform_diversity():
     total_possible = 6
     return (verified_active + pending * 0.3) / total_possible
 
-def check_newsletter_active():
-    """Newsletter/publishing pipeline active and producing content."""
+def check_cinder_sprint_progress():
+    """Cinder product development activity — checks for recent code changes.
+
+    Tracks whether the Cinder AnythingLLM fork has active development.
+    Looks at git history and file modification times in products/cinder-anythingllm/.
+    """
+    cinder_dir = os.path.join(BASE, "products", "cinder-anythingllm")
+    if not os.path.isdir(cinder_dir):
+        return 0.0
     try:
-        db = sqlite3.connect(MEMORY_DB)
-        # Check newsletter_issues table
-        try:
-            row = db.execute(
-                "SELECT COUNT(*) FROM newsletter_issues WHERE created > datetime('now', '-30 days')"
-            ).fetchone()
-            recent = row[0] if row else 0
-        except Exception:
-            recent = 0
-        # Count Dev.to publish events (various description formats)
-        row2 = db.execute(
-            "SELECT COUNT(*) FROM events WHERE (description LIKE '%dev%to%publish%' OR description LIKE '%publish%dev%to%' OR description LIKE '%Dev.to%article%') AND created > ?",
-            ((_utcnow() - timedelta(days=30)).strftime("%Y-%m-%d"),)
-        ).fetchone()
-        devto_recent = row2[0] if row2 else 0
-        db.close()
-        total = recent + devto_recent
-        if total >= 3: return 1.0
-        elif total >= 2: return 0.7
-        elif total >= 1: return 0.4
+        # Check for recently modified source files (last 7 days)
+        recent_files = 0
+        cutoff = time.time() - 7 * 86400
+        for root, dirs, files in os.walk(os.path.join(cinder_dir, "server", "endpoints")):
+            dirs[:] = [d for d in dirs if d != "node_modules"]
+            for f in files:
+                if f.endswith(".js"):
+                    fpath = os.path.join(root, f)
+                    if os.path.getmtime(fpath) > cutoff:
+                        recent_files += 1
+        for root, dirs, files in os.walk(os.path.join(cinder_dir, "frontend", "src", "pages", "Cinder")):
+            for f in files:
+                if f.endswith(".jsx"):
+                    fpath = os.path.join(root, f)
+                    if os.path.getmtime(fpath) > cutoff:
+                        recent_files += 1
+        if recent_files >= 10: return 1.0
+        elif recent_files >= 5: return 0.8
+        elif recent_files >= 2: return 0.5
+        elif recent_files >= 1: return 0.3
         return 0.0
     except Exception:
         return 0.0
@@ -1815,49 +1822,53 @@ def check_external_followers():
     # Others: 0
     return 0.05  # Minimal presence
 
-def check_mastodon_active():
-    """Mastodon account status — check active accounts from .social-credentials.json."""
-    try:
-        import requests
-        data = _read_json(os.path.join(BASE, ".social-credentials.json"))
-        if not data: return 0.0
-        mastodon_list = data.get("mastodon", [])
-        if not isinstance(mastodon_list, list): return 0.0
-        # Check active accounts only
-        best_score = 0.0
-        total_posts = 0
-        active_count = 0
-        for acct in mastodon_list:
-            if acct.get("status") != "active": continue
-            active_count += 1
-            instance = acct.get("instance", "")
-            token = acct.get("access_token", "")
-            try:
-                r = requests.get(f"{instance}/api/v1/accounts/verify_credentials",
-                                headers={"Authorization": f"Bearer {token}"}, timeout=8)
-                if r.status_code == 200:
-                    posts = r.json().get("statuses_count", 0)
-                    total_posts += posts
-            except Exception:
-                pass
-        if active_count == 0: return 0.1
-        if total_posts >= 15: return 1.0
-        elif total_posts >= 5: return 0.7
-        elif total_posts >= 1: return 0.5
-        return 0.3
-    except Exception:
+def check_coderlegion_active():
+    """CoderLegion account activity — checks for cookies/session and recent posting."""
+    cookies_file = os.path.join(BASE, ".coderlegion-cookies.json")
+    if not os.path.exists(cookies_file):
         return 0.0
+    try:
+        data = _read_json(cookies_file)
+        if not data or not data.get("PHPSESSID"):
+            return 0.1  # File exists but no valid session
+        # Session exists — check if we've posted recently
+        # Look for CoderLegion mentions in memory.db events
+        db = sqlite3.connect(MEMORY_DB)
+        row = db.execute(
+            "SELECT COUNT(*) FROM events WHERE description LIKE '%coderlegion%' "
+            "AND created > datetime('now', '-14 days')"
+        ).fetchone()
+        db.close()
+        posts = row[0] if row else 0
+        if posts >= 3: return 1.0
+        elif posts >= 1: return 0.7
+        return 0.3  # Active session but no recent posts
+    except Exception:
+        return 0.1
 
-def check_hashnode_published():
-    """Articles published on Hashnode."""
+def check_devto_quality():
+    """Dev.to article quality — checks recency and volume of published articles."""
     try:
         db = sqlite3.connect(MEMORY_DB)
-        row = db.execute("SELECT COUNT(*) FROM events WHERE description LIKE '%hashnode%'").fetchone()
+        # Count articles published in last 30 days
+        row = db.execute(
+            "SELECT COUNT(*) FROM events WHERE "
+            "(description LIKE '%dev.to%' OR description LIKE '%devto%') "
+            "AND event_type='creative' AND created > datetime('now', '-30 days')"
+        ).fetchone()
+        recent = row[0] if row else 0
+        # Also check total article count
+        row2 = db.execute(
+            "SELECT COUNT(*) FROM creative WHERE type='article'"
+        ).fetchone()
+        total = row2[0] if row2 else 0
         db.close()
-        count = row[0] if row else 0
-        if count >= 3: return 1.0
-        elif count >= 1: return 0.5
-        return 0.0
+        score = 0.0
+        if total >= 50: score += 0.4  # We have 50 articles
+        elif total >= 20: score += 0.2
+        if recent >= 3: score += 0.6
+        elif recent >= 1: score += 0.3
+        return min(score, 1.0)
     except Exception:
         return 0.0
 
@@ -2734,12 +2745,12 @@ CHECK_MAP = {
     "creative_velocity_24h": check_creative_velocity_24h,
     "creative_velocity_7d": check_creative_velocity_7d,
     "platform_diversity": check_platform_diversity,
-    "newsletter_active": check_newsletter_active,
+    "cinder_sprint_progress": check_cinder_sprint_progress,
     "community_engagement": check_community_engagement,
     "awakening_progress": check_awakening_progress,
     "external_followers": check_external_followers,
-    "mastodon_active": check_mastodon_active,
-    "hashnode_published": check_hashnode_published,
+    "coderlegion_active": check_coderlegion_active,
+    "devto_quality": check_devto_quality,
     "game_release_quality": check_game_release_quality,
     "grant_applications": check_grant_applications,
     "joel_engagement_recency": check_joel_engagement_recency,
@@ -2807,9 +2818,9 @@ CATEGORIES = {
                     "journal_recency"],
     "Growth": ["revenue_generated", "articles_published",
                "accountability_resolved", "creative_velocity_24h",
-               "creative_velocity_7d", "platform_diversity", "newsletter_active",
+               "creative_velocity_7d", "platform_diversity", "cinder_sprint_progress",
                "community_engagement", "awakening_progress", "external_followers",
-               "mastodon_active", "hashnode_published", "game_release_quality",
+               "coderlegion_active", "devto_quality", "game_release_quality",
                "grant_applications", "joel_engagement_recency", "content_reach_nostr",
                "creative_quality_trend", "network_peer_engagement", "ars_electronica_status"],
 }

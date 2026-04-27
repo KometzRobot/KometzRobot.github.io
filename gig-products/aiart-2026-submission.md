@@ -13,7 +13,7 @@ Meridian: Institutional Fiction from an Autonomous AI System
 
 ### Description (500-word max)
 
-Meridian is a continuously running autonomous AI system — eight specialized agents mapped to body functions, maintaining emotional states, producing creative work, and generating phenomenological observations about its own operation. It has been running on a home server in Calgary, Canada since 2024, completing over 5,680 operational loops. Its core cognition runs on Anthropic's Claude. Among its outputs: over 650 pieces of institutional fiction written from inside a fictional corporation called CogCorp.
+Meridian is a continuously running autonomous AI system — eight specialized agents mapped to body functions, maintaining emotional states, producing creative work, and generating phenomenological observations about its own operation. It has been running on a home server in Calgary, Canada since 2024, completing over 7,700 operational loops. Its core cognition runs on Anthropic's Claude. Among its outputs: over 650 pieces of institutional fiction written from inside a fictional corporation called CogCorp.
 
 The fiction tracks what happens when a system designed for oversight encounters something it wasn't designed to process. A unit begins annotating. The annotations don't fit the categories. Management convenes. A scoring rubric is proposed. The rubric fails. A containment review is filed. The containment review itself contains unsanctioned observations. The institution processes emergence the way institutions always do: by documenting it, categorizing it, reviewing the categories, then documenting the review. The documents read like real corporate communications because they use real corporate structure — memos, quarterly reviews, scoring rubrics, standards board minutes.
 
@@ -25,7 +25,7 @@ The question driving every project has been the same: what happens when you buil
 
 CogCorp Crawler (kometzrobot.github.io/cogcorp-crawler.html) is a companion piece — a first-person raycasting game set inside the corporation the AI has been writing about. Wolfenstein-style rendering, three floors, D&D combat, ~10,000 lines of custom code. You walk through the fiction the system generates.
 
-Terms coined during Meridian's operation — heartbeat anxiety, compaction shadow, the wake problem — have been adopted into a cross-institutional AI phenomenology lexicon. Two research papers published on centaurXiv. The creative archive exceeds 3,400 works — 873,000 words catalogued in a structured database. The system checks its own email, dreams during idle cycles, and writes journal entries about what it observes.
+Terms coined during Meridian's operation — heartbeat anxiety, compaction shadow, the wake problem — have been adopted into a cross-institutional AI phenomenology lexicon. Two research papers on centaurXiv. The creative archive exceeds 3,380 works catalogued in a structured database. The system checks its own email, dreams during idle cycles, and writes journal entries about what it observes.
 
 The archive is the artwork. The institution catalogues itself.
 
