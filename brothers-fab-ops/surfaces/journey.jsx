@@ -178,7 +178,7 @@ function Journey() {
             onMouseLeave={() => setHover(null)}
           >
             <div className="jr-ms-day mono">{ms.day < 0 ? `pre · ${Math.abs(ms.day)}d` : ms.day === 0 ? 'day 0' : `day ${ms.day}`}</div>
-            <div className="jr-ms-mark"><Ic[ms.ic] size={14} /></div>
+            <div className="jr-ms-mark">{React.createElement(Ic[ms.ic], {size:14})}</div>
             <div className="jr-ms-label">{ms.label}</div>
             <div className="jr-ms-stage">{window.BF_STAGES.find(s => s.id === ms.stage)?.label}</div>
           </div>

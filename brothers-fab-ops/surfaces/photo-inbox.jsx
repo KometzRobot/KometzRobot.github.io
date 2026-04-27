@@ -209,7 +209,7 @@ function PhotoTile({ p, active, onClick }) {
       </div>
       <div className="pix-tile-foot">
         <span className="pix-tile-src" style={{ color: meta.color }}>
-          <Ic[meta.ic] size={11}/> {meta.label}
+          {React.createElement(Ic[meta.ic], {size:11})} {meta.label}
         </span>
         <span className="pix-tile-job mono">{p.jobId || '—'}</span>
         <span className="muted mono" style={{ fontSize: 10.5 }}>{p.received}</span>
@@ -233,7 +233,7 @@ function PhotoDetail({ p, setState, assign }) {
       <div className="pix-d-img" style={{ backgroundImage: `url(${url})` }}>
         <div className="pix-d-overlay">
           <span className="pix-d-src" style={{ background: meta.color }}>
-            <Ic[meta.ic] size={12}/> {meta.label}
+            {React.createElement(Ic[meta.ic], {size:12})} {meta.label}
           </span>
           <span className="pix-d-time mono">{p.received}</span>
         </div>
