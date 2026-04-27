@@ -426,6 +426,20 @@ def compute_learning_rate(agent, state):
     return "stable"
 
 
+AGENT_EXPECTED_INTERVALS = {
+    "DreamEngine": 120,
+    "Hermes": 120,       # posts replies ~6/day; cron runs more often but most are "no cascades"
+    "Eos": 20,
+    "Nova": 20,
+    "Atlas": 20,
+    "Soma": 5,
+    "Tempo": 30,
+    "SelfImprove": 30,
+    "Sentinel": 30,      # cron every 2min but only posts to relay every ~6-30min
+    "MeridianLoop": 5,
+}
+
+
 def generate_report_cards(state):
     """Generate report cards for all active agents."""
     messages = get_recent_messages(hours=24)
@@ -437,7 +451,8 @@ def generate_report_cards(state):
     cards = {}
 
     for agent in agents:
-        uptime = compute_agent_uptime(agent, messages)
+        interval = AGENT_EXPECTED_INTERVALS.get(agent, 30)
+        uptime = compute_agent_uptime(agent, messages, expected_interval_min=interval)
         signal = compute_signal_quality(agent, messages)
         resp_time = compute_response_time(agent, messages)
         learning = compute_learning_rate(agent, state)
