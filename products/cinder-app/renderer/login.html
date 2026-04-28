@@ -87,16 +87,46 @@ input::placeholder{color:#b0a090}
 <script>
 let attempts = 0;
 const MAX_ATTEMPTS = 10;
+const LOCKOUT_SECONDS = 300; // 5 minute cooldown
+let lockedUntil = 0;
 
-// Check vault availability on load
+// Check vault on load
 (async function() {
   try {
     const vs = await window.cinder.vaultStatus();
-    if (vs.available && vs.device) {
+    if (vs.device) {
       document.getElementById('vault-hint').textContent = 'vault detected \u2014 will unlock on login';
     }
   } catch {}
 })();
+
+function startLockoutTimer() {
+  const err = document.getElementById('err');
+  const btn = document.querySelector('.btn');
+  const pw = document.getElementById('pw');
+  btn.disabled = true;
+  pw.disabled = true;
+
+  const tick = () => {
+    const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
+    if (remaining <= 0) {
+      attempts = 0;
+      lockedUntil = 0;
+      err.textContent = '';
+      btn.disabled = false;
+      pw.disabled = false;
+      pw.value = '';
+      pw.focus();
+      btn.textContent = 'Enter';
+      return;
+    }
+    const min = Math.floor(remaining / 60);
+    const sec = remaining % 60;
+    err.textContent = 'Too many attempts. Try again in ' + min + ':' + String(sec).padStart(2,'0');
+    requestAnimationFrame(() => setTimeout(tick, 500));
+  };
+  tick();
+}
 
 async function doLogin() {
   const pw = document.getElementById('pw').value;
@@ -104,10 +134,12 @@ async function doLogin() {
   const btn = document.querySelector('.btn');
 
   if (!pw) return;
+  if (lockedUntil > Date.now()) return;
 
   attempts++;
-  if (attempts > MAX_ATTEMPTS) {
-    err.textContent = 'Too many attempts. Unplug the drive and try again.';
+  if (attempts >= MAX_ATTEMPTS) {
+    lockedUntil = Date.now() + LOCKOUT_SECONDS * 1000;
+    startLockoutTimer();
     return;
   }
 

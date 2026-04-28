@@ -437,204 +437,194 @@ ipcMain.handle('memory:recall', async (event, { query } = {}) => {
   return memoryCmd(args);
 });
 
-// ── VeraCrypt Vault Management ────────────────────────────
-// Handles the CINDER-VAULT partition: detect, init, mount, unmount.
-// Same password as app login — one password for everything.
+// ── Software Vault (AES-256-GCM) ─────────────────────────
+// Encrypted file vault using Node.js crypto. No external tools needed.
+// Same password as app login — one key for everything.
+// Files stored as encrypted blobs in vault/ directory on USB.
 
 const os = require('os');
 
-function getVeraCryptBin() {
-  const platform = os.platform();
-  if (platform === 'win32') return 'C:\\Program Files\\VeraCrypt\\VeraCrypt.exe';
-  if (platform === 'darwin') return '/Applications/VeraCrypt.app/Contents/MacOS/VeraCrypt';
-  return 'veracrypt'; // Linux — assumed in PATH
+const VAULT_DIR = path.join(path.dirname(__dirname), 'vault');
+const VAULT_META = path.join(VAULT_DIR, '.vault-meta');
+const VAULT_ALGO = 'aes-256-gcm';
+const VAULT_SALT_LEN = 32;
+const VAULT_IV_LEN = 16;
+const VAULT_TAG_LEN = 16;
+const VAULT_KEY_LEN = 32;
+
+let _vaultKey = null; // Derived key, held in memory while vault is "mounted"
+let _vaultMountDir = null; // Temp directory for decrypted files
+
+function deriveVaultKey(password, salt) {
+  return crypto.scryptSync(password, salt, VAULT_KEY_LEN);
 }
 
-function runCmd(cmd, args, timeout = 30000) {
-  return new Promise((resolve) => {
-    execFile(cmd, args, { timeout }, (err, stdout, stderr) => {
-      resolve({ ok: !err, stdout: (stdout || '').trim(), stderr: (stderr || '').trim(), code: err?.code });
-    });
-  });
+function encryptBuffer(buf, key) {
+  const iv = crypto.randomBytes(VAULT_IV_LEN);
+  const cipher = crypto.createCipheriv(VAULT_ALGO, key, iv);
+  const encrypted = Buffer.concat([cipher.update(buf), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  // Format: [salt is stored separately] [16-byte IV][16-byte tag][encrypted data]
+  return Buffer.concat([iv, tag, encrypted]);
 }
 
-// Check if VeraCrypt is installed
-async function veracryptInstalled() {
-  const bin = getVeraCryptBin();
-  const result = await runCmd(bin, ['--text', '--version'], 5000);
-  return result.ok || result.stdout.includes('VeraCrypt');
+function decryptBuffer(buf, key) {
+  const iv = buf.subarray(0, VAULT_IV_LEN);
+  const tag = buf.subarray(VAULT_IV_LEN, VAULT_IV_LEN + VAULT_TAG_LEN);
+  const data = buf.subarray(VAULT_IV_LEN + VAULT_TAG_LEN);
+  const decipher = crypto.createDecipheriv(VAULT_ALGO, key, iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(data), decipher.final()]);
 }
 
-// Find the CINDER-VAULT partition/device
-async function findVaultPartition() {
-  const platform = os.platform();
-
-  if (platform === 'linux') {
-    // Use lsblk to find partition labeled CINDER-VAULT or by partition name
-    const result = await runCmd('lsblk', ['-nrpo', 'NAME,PARTLABEL,LABEL,SIZE,TYPE'], 5000);
-    if (result.ok) {
-      for (const line of result.stdout.split('\n')) {
-        if (line.includes('CINDER-VAULT')) {
-          return line.split(' ')[0]; // /dev/sdX2
-        }
-      }
-    }
-    // Fallback: check if USB app is running from a partition, vault is next partition
-    const appDrive = path.parse(__dirname).root;
-    if (appDrive && appDrive !== '/') {
-      const mountResult = await runCmd('findmnt', ['-n', '-o', 'SOURCE', appDrive], 5000);
-      if (mountResult.ok) {
-        const src = mountResult.stdout; // e.g., /dev/sdb1
-        const match = src.match(/^(\/dev\/\w+?)(\d+)$/);
-        if (match) {
-          const vaultDev = `${match[1]}${parseInt(match[2]) + 1}`;
-          return vaultDev; // e.g., /dev/sdb2
-        }
-      }
-    }
-  } else if (platform === 'darwin') {
-    const result = await runCmd('diskutil', ['list', '-plist'], 5000);
-    if (result.ok && result.stdout.includes('CINDER-VAULT')) {
-      // Parse diskutil output for the vault partition
-      const lines = result.stdout.split('\n');
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes('CINDER-VAULT') && i > 0) {
-          const devMatch = lines.slice(Math.max(0, i - 5), i + 5).join('\n').match(/disk\d+s\d+/);
-          if (devMatch) return `/dev/${devMatch[0]}`;
-        }
-      }
-    }
-  } else if (platform === 'win32') {
-    // On Windows, look for a raw/unformatted partition via diskpart or wmic
-    // VeraCrypt can mount by partition number — use volume file instead
-    const vaultFile = path.join(path.dirname(__dirname), 'vault.hc');
-    if (fs.existsSync(vaultFile)) return vaultFile;
-    // Also check for the vault container on the same drive as the app
-    const appDrive = path.parse(__dirname).root; // e.g., D:\
-    const altVault = path.join(appDrive, 'vault.hc');
-    if (fs.existsSync(altVault)) return altVault;
-  }
-
-  // Last resort: check for vault container file next to app
-  const containerFile = path.join(path.dirname(__dirname), 'vault.hc');
-  if (fs.existsSync(containerFile)) return containerFile;
-
-  return null;
+function vaultExists() {
+  return fs.existsSync(VAULT_DIR) && fs.existsSync(VAULT_META);
 }
 
-// Get vault mount point
+function isVaultMounted() {
+  return _vaultKey !== null && _vaultMountDir !== null;
+}
+
 function getVaultMountPoint() {
-  const platform = os.platform();
-  if (platform === 'win32') return 'V:'; // V for Vault
-  const mountDir = path.join(os.tmpdir(), 'cinder-vault');
-  if (!fs.existsSync(mountDir)) fs.mkdirSync(mountDir, { recursive: true });
-  return mountDir;
+  if (_vaultMountDir) return _vaultMountDir;
+  const dir = path.join(os.tmpdir(), 'cinder-vault-' + process.pid);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
 }
 
-// Check if vault is currently mounted
-async function isVaultMounted() {
-  const bin = getVeraCryptBin();
-  const result = await runCmd(bin, ['--text', '--list'], 5000);
-  if (result.ok && result.stdout) {
-    return result.stdout.includes('CINDER-VAULT') || result.stdout.includes('cinder-vault') || result.stdout.includes('vault.hc');
+// Initialize vault — creates vault directory and meta file
+function initVault(password) {
+  if (!fs.existsSync(VAULT_DIR)) fs.mkdirSync(VAULT_DIR, { recursive: true });
+  const salt = crypto.randomBytes(VAULT_SALT_LEN);
+  const key = deriveVaultKey(password, salt);
+  // Store salt and a verification token
+  const verifyToken = crypto.randomBytes(32);
+  const encryptedToken = encryptBuffer(verifyToken, key);
+  const meta = {
+    version: 1,
+    salt: salt.toString('hex'),
+    verify: encryptedToken.toString('hex'),
+    verifyPlain: verifyToken.toString('hex'),
+    created: new Date().toISOString()
+  };
+  fs.writeFileSync(VAULT_META, JSON.stringify(meta, null, 2));
+  return { ok: true, salt };
+}
+
+// Verify password against vault
+function verifyVaultPassword(password) {
+  if (!vaultExists()) return false;
+  try {
+    const meta = JSON.parse(fs.readFileSync(VAULT_META, 'utf8'));
+    const salt = Buffer.from(meta.salt, 'hex');
+    const key = deriveVaultKey(password, salt);
+    const encToken = Buffer.from(meta.verify, 'hex');
+    const decrypted = decryptBuffer(encToken, key);
+    return decrypted.toString('hex') === meta.verifyPlain;
+  } catch {
+    return false;
   }
-  // Also check mount point directly
-  const mountPoint = getVaultMountPoint();
-  if (os.platform() !== 'win32') {
-    return fs.existsSync(mountPoint) && fs.readdirSync(mountPoint).length > 0;
+}
+
+// Mount vault — derive key, decrypt files to temp
+function mountVault(password) {
+  if (!vaultExists()) return { ok: false, error: 'Vault not initialized' };
+  if (!verifyVaultPassword(password)) return { ok: false, error: 'Wrong vault password' };
+
+  const meta = JSON.parse(fs.readFileSync(VAULT_META, 'utf8'));
+  const salt = Buffer.from(meta.salt, 'hex');
+  _vaultKey = deriveVaultKey(password, salt);
+  _vaultMountDir = getVaultMountPoint();
+
+  // Decrypt all vault files to temp
+  const files = fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.enc'));
+  for (const encFile of files) {
+    try {
+      const encData = fs.readFileSync(path.join(VAULT_DIR, encFile));
+      const decData = decryptBuffer(encData, _vaultKey);
+      const originalName = encFile.replace(/\.enc$/, '');
+      fs.writeFileSync(path.join(_vaultMountDir, originalName), decData);
+    } catch {
+      // Skip corrupted files
+    }
   }
-  return false;
+
+  return { ok: true, mountPoint: _vaultMountDir };
 }
 
-// Initialize vault (first time — creates VeraCrypt volume)
-async function initVault(password, device) {
-  const bin = getVeraCryptBin();
-  const args = [
-    '--text', '--create', device,
-    '--volume-type', 'normal',
-    '--encryption', 'AES',
-    '--hash', 'SHA-512',
-    '--filesystem', 'exFAT',
-    '--password', password,
-    '--pim', '0',
-    '--keyfiles', '',
-    '--random-source', os.platform() === 'win32' ? '' : '/dev/urandom',
-    '--non-interactive'
-  ];
-  // Remove empty args
-  const filteredArgs = args.filter(a => a !== '');
-  return runCmd(bin, filteredArgs, 120000); // 2 min timeout for creation
+// Dismount vault — wipe temp files, clear key
+function dismountVault() {
+  if (_vaultMountDir && fs.existsSync(_vaultMountDir)) {
+    // Securely wipe temp files
+    const files = fs.readdirSync(_vaultMountDir);
+    for (const f of files) {
+      const fp = path.join(_vaultMountDir, f);
+      try {
+        // Overwrite with random data before delete
+        const size = fs.statSync(fp).size;
+        if (size > 0) fs.writeFileSync(fp, crypto.randomBytes(size));
+        fs.unlinkSync(fp);
+      } catch {}
+    }
+    try { fs.rmdirSync(_vaultMountDir); } catch {}
+  }
+  _vaultKey = null;
+  _vaultMountDir = null;
+  return { ok: true };
 }
 
-// Mount vault
-async function mountVault(password, device) {
-  const bin = getVeraCryptBin();
-  const mountPoint = getVaultMountPoint();
-  const args = [
-    '--text', '--mount', device, mountPoint,
-    '--password', password,
-    '--pim', '0',
-    '--keyfiles', '',
-    '--non-interactive',
-    '--protect-hidden', 'no'
-  ];
-  return runCmd(bin, args, 30000);
+// Add file to vault (encrypt and store)
+function addToVault(filePath) {
+  if (!_vaultKey) return { ok: false, error: 'Vault not unlocked' };
+  const data = fs.readFileSync(filePath);
+  const encrypted = encryptBuffer(data, _vaultKey);
+  const name = path.basename(filePath) + '.enc';
+  fs.writeFileSync(path.join(VAULT_DIR, name), encrypted);
+  return { ok: true, name: path.basename(filePath) };
 }
 
-// Dismount vault
-async function dismountVault() {
-  const bin = getVeraCryptBin();
-  const mountPoint = getVaultMountPoint();
-  return runCmd(bin, ['--text', '--dismount', mountPoint, '--non-interactive'], 15000);
+// List vault files
+function listVaultFiles() {
+  if (!fs.existsSync(VAULT_DIR)) return [];
+  return fs.readdirSync(VAULT_DIR)
+    .filter(f => f.endsWith('.enc'))
+    .map(f => f.replace(/\.enc$/, ''));
 }
 
 // ── Vault IPC Handlers ────────────────────────────────────
 
 ipcMain.handle('vault:status', async () => {
-  const installed = await veracryptInstalled();
-  if (!installed) return { available: false, reason: 'VeraCrypt not installed' };
-  const device = await findVaultPartition();
-  const mounted = device ? await isVaultMounted() : false;
+  const exists = vaultExists();
+  const mounted = isVaultMounted();
   return {
-    available: true,
-    device: device || null,
+    available: true, // Always available — no external tools needed
+    device: exists ? VAULT_DIR : null,
     mounted,
-    mountPoint: mounted ? getVaultMountPoint() : null
+    mountPoint: mounted ? _vaultMountDir : null,
+    files: listVaultFiles()
   };
 });
 
 ipcMain.handle('vault:init', async (event, { password }) => {
-  const installed = await veracryptInstalled();
-  if (!installed) return { ok: false, error: 'VeraCrypt not installed. Download from veracrypt.fr' };
-  const device = await findVaultPartition();
-  if (!device) return { ok: false, error: 'CINDER-VAULT partition not found. Is this running from the Cinder USB?' };
-  const result = await initVault(password, device);
-  if (!result.ok) return { ok: false, error: result.stderr || 'Vault creation failed' };
+  const result = initVault(password);
+  if (!result.ok) return result;
   // Mount immediately after creation
-  const mountResult = await mountVault(password, device);
-  return { ok: mountResult.ok, error: mountResult.ok ? null : mountResult.stderr, mountPoint: getVaultMountPoint() };
+  return mountVault(password);
 });
 
 ipcMain.handle('vault:mount', async (event, { password }) => {
-  const installed = await veracryptInstalled();
-  if (!installed) return { ok: false, error: 'VeraCrypt not installed' };
-  const already = await isVaultMounted();
-  if (already) return { ok: true, mountPoint: getVaultMountPoint(), alreadyMounted: true };
-  const device = await findVaultPartition();
-  if (!device) return { ok: false, error: 'CINDER-VAULT partition not found' };
-  const result = await mountVault(password, device);
-  return { ok: result.ok, error: result.ok ? null : result.stderr, mountPoint: getVaultMountPoint() };
+  if (isVaultMounted()) return { ok: true, mountPoint: _vaultMountDir, alreadyMounted: true };
+  return mountVault(password);
 });
 
 ipcMain.handle('vault:dismount', async () => {
-  const result = await dismountVault();
-  return { ok: result.ok, error: result.ok ? null : result.stderr };
+  return dismountVault();
 });
 
 // Auto-dismount vault on app quit
 app.on('before-quit', async () => {
   app.isQuitting = true;
-  try { await dismountVault(); } catch {}
+  try { dismountVault(); } catch {}
 });
 
 // ── XP / Evolution System ─────────────────────────────────

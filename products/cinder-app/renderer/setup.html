@@ -118,18 +118,17 @@ input::placeholder{color:#b0a090}
 <script>
 let vaultAvailable = false;
 
-// Check vault status on load
+// Check vault status on load — software vault, always available
 (async function checkVault() {
   const info = document.getElementById('vault-info');
   try {
     const status = await window.cinder.vaultStatus();
-    if (status.available && status.device) {
-      vaultAvailable = true;
-      info.style.display = 'block';
-      info.innerHTML = '<span class="ok">&#x1f512;</span> <span class="step">Vault detected</span> \u2014 your password will also initialize the encrypted vault on this USB.';
-    } else if (!status.available) {
-      info.style.display = 'block';
-      info.innerHTML = '<span class="warn">&#x26a0;</span> VeraCrypt not installed. Vault encryption will be skipped. Install from <strong>veracrypt.fr</strong> for full protection.';
+    vaultAvailable = true; // Software vault — always available
+    info.style.display = 'block';
+    if (status.device) {
+      info.innerHTML = '<span class="ok">&#x1f512;</span> <span class="step">Vault ready</span> \u2014 your password will also protect the encrypted vault on this USB.';
+    } else {
+      info.innerHTML = '<span class="ok">&#x1f512;</span> <span class="step">Encrypted vault</span> \u2014 a secure vault will be created on this USB for your private files.';
     }
   } catch {}
 })();

@@ -30,7 +30,7 @@ contextBridge.exposeInMainWorld('cinder', {
   buildIndex: () => ipcRenderer.invoke('memory:buildIndex'),
   recallMemories: (query) => ipcRenderer.invoke('memory:recall', { query }),
 
-  // Vault — VeraCrypt encrypted partition management
+  // Vault — AES-256-GCM encrypted file storage (no external tools needed)
   vaultStatus: () => ipcRenderer.invoke('vault:status'),
   vaultInit: (password) => ipcRenderer.invoke('vault:init', { password }),
   vaultMount: (password) => ipcRenderer.invoke('vault:mount', { password }),
