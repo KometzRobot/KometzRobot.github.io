@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cinder Console</title>
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin>
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap"></noscript>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin>
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap"></noscript>
 <style>
 /* ═══ CINDER CONSOLE v2.0 ════════════════════════════════════
    Real working AI console. Ollama-powered chat, persistent memory,
@@ -43,9 +43,25 @@
   --purple-soft:rgba(122,90,138,.1);
   --shadow:rgba(80,50,20,.08);
   --shadow-med:rgba(80,50,20,.12);
-  --topbar-grad:linear-gradient(135deg,#c8a070 0%,#ddc098 30%,#e8d4b8 70%,#f0e4d0 100%);
-  --paper-texture:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(180,155,120,.03) 2px,rgba(180,155,120,.03) 4px);
-  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(220,160,80,.06) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(196,90,42,.04) 0%,transparent 50%);
+  --topbar-grad:linear-gradient(135deg,#b8925e 0%,#c9a474 20%,#d4b88a 50%,#e0cca0 80%,#dcc494 100%);
+  --paper-texture:
+    /* Kraft paper grain — visible fiber lines */
+    repeating-linear-gradient(0deg,transparent,transparent 1px,rgba(160,130,90,.06) 1px,rgba(160,130,90,.06) 2px),
+    repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(140,110,70,.04) 3px,rgba(140,110,70,.04) 4px),
+    /* Rough surface noise */
+    repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(120,90,50,.03) 4px,rgba(120,90,50,.03) 5px),
+    repeating-linear-gradient(-30deg,transparent,transparent 6px,rgba(100,70,30,.02) 6px,rgba(100,70,30,.02) 7px);
+  --warm-overlay:
+    /* Coffee stain rings */
+    radial-gradient(ellipse 180px 160px at 15% 25%,rgba(160,100,40,.08) 0%,rgba(140,80,20,.05) 40%,transparent 70%),
+    radial-gradient(ellipse 120px 130px at 85% 75%,rgba(180,120,50,.07) 0%,rgba(150,90,30,.04) 45%,transparent 65%),
+    radial-gradient(circle 90px at 60% 10%,rgba(140,90,30,.05) 0%,transparent 60%),
+    /* Ink spot accents */
+    radial-gradient(circle 8px at 22% 68%,rgba(80,40,10,.06) 0%,transparent 100%),
+    radial-gradient(circle 5px at 78% 35%,rgba(90,50,15,.05) 0%,transparent 100%),
+    radial-gradient(circle 12px at 45% 90%,rgba(70,35,8,.04) 0%,transparent 100%),
+    /* Warm aged paper wash */
+    radial-gradient(ellipse at 50% 50%,rgba(220,180,100,.04) 0%,transparent 70%);
   --ring-track:#e0d4c4;
   --ring-fill:var(--ember);
   --sparkline-color:var(--ember-light);
@@ -178,11 +194,13 @@
 [data-fontfamily="sans"]  { --active-font:'DM Sans','Segoe UI',system-ui,sans-serif }
 [data-fontfamily="serif"] { --active-font:'Merriweather','Georgia',serif }
 [data-fontfamily="mono"]  { --active-font:'JetBrains Mono','Courier New',monospace }
+[data-fontfamily="typewriter"] { --active-font:'Special Elite','Courier Prime','Courier New',monospace }
 
 :root {
   --sans:'DM Sans','Segoe UI',system-ui,sans-serif;
   --mono:'JetBrains Mono','Courier New',monospace;
   --serif:'Merriweather','Georgia',serif;
+  --typewriter:'Special Elite','Courier Prime','Courier New',monospace;
   --active-font:var(--sans);
 }
 
@@ -205,6 +223,32 @@ body::before{
   background:var(--warm-overlay);
   pointer-events:none;
   z-index:0;
+}
+/* Woodgrain/kraft texture overlay — visible fiber effect */
+body::after{
+  content:'';
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.35;
+  mix-blend-mode:multiply;
+  background:
+    /* Fine horizontal wood grain lines */
+    repeating-linear-gradient(
+      2deg,
+      transparent 0px,transparent 8px,
+      rgba(120,80,30,.04) 8px,rgba(120,80,30,.04) 9px,
+      transparent 9px,transparent 14px,
+      rgba(100,65,20,.03) 14px,rgba(100,65,20,.03) 15px
+    ),
+    /* Wider grain bands */
+    repeating-linear-gradient(
+      178deg,
+      transparent 0px,transparent 30px,
+      rgba(140,100,50,.025) 30px,rgba(140,100,50,.025) 32px,
+      transparent 32px,transparent 55px,
+      rgba(130,90,40,.02) 55px,rgba(130,90,40,.02) 56px
+    );
 }
 
 /* ── SCROLLBAR ───────────────────────────────────────────── */
