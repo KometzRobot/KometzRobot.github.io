@@ -43,6 +43,7 @@ const app = {
   sceneBackground: 'light', // light, grey, dark, asphalt, concrete, checker
   _truckWalls: [],  // per-wall refs for dynamic transparency
   _dimensionGroup: null,  // 3D dimension lines
+  _exteriorGroup: null,   // exterior truck shell (cab, chassis, wheels)
 
   // Truck chassis type — affects wheel wells and structure
   truckType: 'step-van', // 'step-van', 'box-truck', 'ups-style', 'flatbed'
@@ -1378,7 +1379,7 @@ const app = {
 
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.02;
+    ground.position.y = -2.5;  // Ground at bottom of wheels (floor is at Y=0, chassis + clearance = 2.5ft below)
     ground.receiveShadow = true;
     ground.name = 'ground-plane';
     this.scene.add(ground);
@@ -1787,10 +1788,10 @@ const app = {
 
     const cv = document.getElementById('btn-center-view');
     if (cv) cv.addEventListener('click', () => {
-      // Just re-center the orbit target on the truck — keep current zoom/angle
+      // Re-center orbit target on the full truck (box body + cab)
       const truckW = this.gridCellsX * CELL_SIZE;
       const truckD = this.gridCellsZ * CELL_SIZE;
-      this.controls.target.set(truckW / 2, 3, truckD / 2);
+      this.controls.target.set(truckW / 2 - 2.5, 2, truckD / 2);
       this.controls.update();
       UI.showToast('Centered', 'info');
     });
@@ -1800,12 +1801,12 @@ const app = {
 
     const reset = document.getElementById('btn-reset-camera');
     if (reset) reset.addEventListener('click', () => {
-      // Full reset — default position, zoom, angle
-      const cx = this.truckLengthFt * CELL_SIZE * CELLS_PER_FOOT / 2;
+      // Full reset — default position, zoom, angle (accounts for cab)
+      const cx = this.truckLengthFt * CELL_SIZE * CELLS_PER_FOOT / 2 - 2.5;
       const cz = this.truckWidthFt * CELL_SIZE * CELLS_PER_FOOT / 2;
-      const dist = 42;
-      this.camera.position.set(cx + dist * 0.42, dist * 0.55, cz + dist * 0.38);
-      this.controls.target.set(cx, 3.25, cz);
+      const dist = 48;
+      this.camera.position.set(cx + dist * 0.45, dist * 0.5, cz + dist * 0.4);
+      this.controls.target.set(cx, 2, cz);
       this.controls.update();
       // Reset zoom slider
       const slider = document.getElementById('zoom-slider');
@@ -2829,26 +2830,27 @@ const app = {
     this.viewPreset = preset;
     const truckW = this.gridCellsX * CELL_SIZE;
     const truckD = this.gridCellsZ * CELL_SIZE;
-    const cx = truckW / 2;
+    // Center on full truck including cab
+    const cx = truckW / 2 - 2.5;
     const cz = truckD / 2;
 
-    this.controls.target.set(cx, 3, cz);
-    const dist = 36;
+    this.controls.target.set(cx, 2, cz);
+    const dist = 40;
     switch (preset) {
       case 'iso':
-        this.camera.position.set(cx + dist * 0.8, dist * 0.7, cz + dist * 0.7);
+        this.camera.position.set(cx + dist * 0.8, dist * 0.65, cz + dist * 0.7);
         break;
       case 'top':
         this.camera.position.set(cx + 0.01, dist * 1.4, cz);
         break;
       case 'front':
-        this.camera.position.set(cx, 4, cz + dist);
+        this.camera.position.set(cx, 3, cz + dist);
         break;
       case 'side':
-        this.camera.position.set(cx + dist, 4, cz);
+        this.camera.position.set(cx + dist, 3, cz);
         break;
     }
-    this.camera.lookAt(cx, 3, cz);
+    this.camera.lookAt(cx, 2, cz);
     this.controls.update();
   },
 
@@ -3110,13 +3112,13 @@ const app = {
     const aspect = window.innerWidth / window.innerHeight;
     this.camera = new THREE.PerspectiveCamera(24, aspect, 0.5, 500);
 
-    // Camera positioned to frame a 20x8 truck nicely on load
-    // Will be re-targeted to truck center in setupControls
-    const cx = this.truckLengthFt * CELL_SIZE * CELLS_PER_FOOT / 2;
+    // Camera positioned to frame full truck (box body + cab) nicely on load
+    // Cab extends ~5ft in front of box body, so center is shifted back
+    const cx = this.truckLengthFt * CELL_SIZE * CELLS_PER_FOOT / 2 - 2.5;
     const cz = this.truckWidthFt * CELL_SIZE * CELLS_PER_FOOT / 2;
-    const dist = 42;
-    this.camera.position.set(cx + dist * 0.42, dist * 0.55, cz + dist * 0.38);
-    this.camera.lookAt(cx, 3.25, cz);
+    const dist = 48;
+    this.camera.position.set(cx + dist * 0.45, dist * 0.5, cz + dist * 0.4);
+    this.camera.lookAt(cx, 2, cz);
 
     // Renderer
     const canvas = document.getElementById('canvas');
@@ -3516,6 +3518,274 @@ const app = {
       });
     }
 
+    // ---- EXTERIOR TRUCK SHELL ----
+    // Adds cab, outer skin, chassis frame, wheels, and bumpers so the
+    // configurator looks like a real food truck instead of a floating box.
+    // All exterior geometry lives in _exteriorGroup for easy toggling.
+    const ext = new THREE.Group();
+    ext.name = 'exterior-shell';
+
+    // -- Dimensions --
+    const shellThick = 0.15;           // ~2" aluminum skin + insulation
+    const chassisH = 1.5;              // frame rail depth below floor
+    const groundClear = 1.0;           // ground clearance under frame
+    const floorAboveGround = chassisH + groundClear; // 2.5 ft
+    const wheelRadius = 1.25;          // 30" diameter tires
+    const wheelWidth = 0.7;
+    const cabLength = 5.0;             // driver cab length
+    const cabRoofDrop = 0.6;           // cab roof sits lower than box roof
+    const cabH = wallH - cabRoofDrop;
+    const bumperH = 0.8;
+    const bumperDepth = 0.4;
+
+    // Outer box body dimensions (wraps around interior)
+    const outerW = truckW + shellThick * 2;     // length
+    const outerD = truckD + shellThick * 2;     // width
+    const outerH = wallH + shellThick;          // height (floor to roof exterior)
+
+    // -- Materials --
+    const bodyMat = new THREE.MeshPhongMaterial({
+      color: 0xe8e8e8, shininess: 40, transparent: true, opacity: 0.35,
+      side: THREE.DoubleSide
+    });
+    const chassisMat = new THREE.MeshPhongMaterial({
+      color: 0x2a2a2a, shininess: 10
+    });
+    const tireMat = new THREE.MeshPhongMaterial({
+      color: 0x1a1a1a, shininess: 5
+    });
+    const rimMat = new THREE.MeshPhongMaterial({
+      color: 0x888888, shininess: 60, specular: 0x444444
+    });
+    const cabMat = new THREE.MeshPhongMaterial({
+      color: 0xe0e0e0, shininess: 30, transparent: true, opacity: 0.3,
+      side: THREE.DoubleSide
+    });
+    const glassMat = new THREE.MeshPhongMaterial({
+      color: 0x88bbdd, transparent: true, opacity: 0.25,
+      shininess: 90, side: THREE.DoubleSide
+    });
+    const bumperMat = new THREE.MeshPhongMaterial({
+      color: 0x444444, shininess: 20
+    });
+
+    // -- Box Body Outer Skin --
+    // The interior walls are at X=[0, truckW], Z=[0, truckD], Y=[0, wallH].
+    // Outer skin wraps around that with shellThick offset.
+    const oX = -shellThick;   // outer origin X
+    const oZ = -shellThick;   // outer origin Z
+    const oY = -shellThick;   // outer origin Y (slightly below floor for skin thickness)
+
+    // Roof outer skin
+    const roofGeo = new THREE.BoxGeometry(outerW, shellThick, outerD);
+    const roofMesh = new THREE.Mesh(roofGeo, bodyMat);
+    roofMesh.position.set(oX + outerW / 2, wallH + shellThick / 2, oZ + outerD / 2);
+    roofMesh.castShadow = true;
+    ext.add(roofMesh);
+
+    // Left outer wall (Z = oZ side)
+    const sideOutGeo = new THREE.BoxGeometry(outerW, outerH, shellThick);
+    const leftOuter = new THREE.Mesh(sideOutGeo, bodyMat);
+    leftOuter.position.set(oX + outerW / 2, oY + outerH / 2, oZ + shellThick / 2);
+    leftOuter.castShadow = true;
+    ext.add(leftOuter);
+
+    // Right outer wall (Z = oZ + outerD side)
+    const rightOuter = new THREE.Mesh(sideOutGeo, bodyMat);
+    rightOuter.position.set(oX + outerW / 2, oY + outerH / 2, oZ + outerD - shellThick / 2);
+    rightOuter.castShadow = true;
+    ext.add(rightOuter);
+
+    // Rear outer wall (X = truckW + shellThick side)
+    const rearOutGeo = new THREE.BoxGeometry(shellThick, outerH, outerD);
+    const rearOuter = new THREE.Mesh(rearOutGeo, bodyMat);
+    rearOuter.position.set(truckW + shellThick / 2, oY + outerH / 2, oZ + outerD / 2);
+    rearOuter.castShadow = true;
+    ext.add(rearOuter);
+
+    // Floor underside skin
+    const floorSkinGeo = new THREE.BoxGeometry(outerW, shellThick, outerD);
+    const floorSkin = new THREE.Mesh(floorSkinGeo, bodyMat);
+    floorSkin.position.set(oX + outerW / 2, -shellThick / 2, oZ + outerD / 2);
+    ext.add(floorSkin);
+
+    // -- Chassis Frame --
+    // Two parallel frame rails running the full truck length + cab
+    const totalLength = outerW + cabLength;
+    const railW = 0.3;                   // rail width (3.6")
+    const railH = chassisH * 0.6;        // rail height
+    const railY = -shellThick - railH / 2;
+    for (const zOff of [truckD * 0.2, truckD * 0.8]) {
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(totalLength, railH, railW), chassisMat
+      );
+      rail.position.set(oX + outerW / 2 - cabLength / 2, railY, zOff);
+      rail.castShadow = true;
+      ext.add(rail);
+    }
+
+    // Cross members
+    const crossCount = Math.floor(totalLength / 3);
+    for (let i = 0; i <= crossCount; i++) {
+      const cx2 = oX - cabLength + (totalLength * i / crossCount);
+      const cross = new THREE.Mesh(
+        new THREE.BoxGeometry(railW, railH * 0.6, truckD * 0.6), chassisMat
+      );
+      cross.position.set(cx2, railY, truckD / 2);
+      ext.add(cross);
+    }
+
+    // -- Cab --
+    // Positioned at X < 0 (in front of the box body)
+    const cabStartX = -shellThick - cabLength;
+    const cabFloorY = 0;        // cab floor at same height as box floor
+    const cabCenterX = cabStartX + cabLength / 2;
+    const cabCenterZ = truckD / 2;
+
+    // Cab roof
+    const cabRoofGeo = new THREE.BoxGeometry(cabLength, shellThick, outerD);
+    const cabRoof = new THREE.Mesh(cabRoofGeo, cabMat);
+    cabRoof.position.set(cabCenterX, cabH, cabCenterZ);
+    cabRoof.castShadow = true;
+    ext.add(cabRoof);
+
+    // Cab left wall
+    const cabSideGeo = new THREE.BoxGeometry(cabLength, cabH, shellThick);
+    const cabLeft = new THREE.Mesh(cabSideGeo, cabMat);
+    cabLeft.position.set(cabCenterX, cabH / 2, oZ + shellThick / 2);
+    cabLeft.castShadow = true;
+    ext.add(cabLeft);
+
+    // Cab right wall
+    const cabRight = new THREE.Mesh(cabSideGeo, cabMat);
+    cabRight.position.set(cabCenterX, cabH / 2, oZ + outerD - shellThick / 2);
+    cabRight.castShadow = true;
+    ext.add(cabRight);
+
+    // Cab front wall (with windshield cutout implied by transparency)
+    const cabFrontGeo = new THREE.BoxGeometry(shellThick, cabH, outerD);
+    const cabFront = new THREE.Mesh(cabFrontGeo, cabMat);
+    cabFront.position.set(cabStartX, cabH / 2, cabCenterZ);
+    cabFront.castShadow = true;
+    ext.add(cabFront);
+
+    // Windshield (glass panel on front, upper portion)
+    const windshieldH = cabH * 0.45;
+    const windshieldW = outerD * 0.85;
+    const windshieldGeo = new THREE.BoxGeometry(0.05, windshieldH, windshieldW);
+    const windshield = new THREE.Mesh(windshieldGeo, glassMat);
+    windshield.position.set(cabStartX - 0.02, cabH - windshieldH / 2 - 0.2, cabCenterZ);
+    ext.add(windshield);
+
+    // Cab floor
+    const cabFloorGeo = new THREE.BoxGeometry(cabLength, shellThick, outerD);
+    const cabFloor = new THREE.Mesh(cabFloorGeo, chassisMat);
+    cabFloor.position.set(cabCenterX, -shellThick / 2, cabCenterZ);
+    ext.add(cabFloor);
+
+    // -- Hood / Engine Area --
+    // Slight downward slope at front of cab (below windshield)
+    const hoodH = cabH * 0.35;
+    const hoodLength = cabLength * 0.4;
+    const hoodGeo = new THREE.BoxGeometry(hoodLength, hoodH, outerD * 0.95);
+    const hoodMesh = new THREE.Mesh(hoodGeo, cabMat);
+    hoodMesh.position.set(cabStartX + hoodLength / 2, hoodH / 2, cabCenterZ);
+    hoodMesh.castShadow = true;
+    ext.add(hoodMesh);
+
+    // -- Wheels --
+    // Food trucks typically have 4 rear wheels (dual) + 2 front = 6
+    // Or 2 rear + 2 front = 4 for lighter step vans
+    const wheelY = -floorAboveGround + wheelRadius;
+    const wheelSegments = 24;
+
+    const makeWheel = (wx, wz, isDual) => {
+      // Tire
+      const tireGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, isDual ? wheelWidth * 2.2 : wheelWidth, wheelSegments);
+      const tire = new THREE.Mesh(tireGeo, tireMat);
+      tire.rotation.x = Math.PI / 2;
+      tire.position.set(wx, wheelY, wz);
+      tire.castShadow = true;
+      ext.add(tire);
+
+      // Rim (smaller cylinder inside)
+      const rimRadius = wheelRadius * 0.55;
+      const rimGeo = new THREE.CylinderGeometry(rimRadius, rimRadius, isDual ? wheelWidth * 2.3 : wheelWidth + 0.05, wheelSegments);
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(wx, wheelY, wz);
+      ext.add(rim);
+
+      // Hub cap
+      const hubGeo = new THREE.CylinderGeometry(rimRadius * 0.4, rimRadius * 0.4, isDual ? wheelWidth * 2.4 : wheelWidth + 0.1, 12);
+      const hub = new THREE.Mesh(hubGeo, new THREE.MeshPhongMaterial({ color: 0x666666, shininess: 40 }));
+      hub.rotation.x = Math.PI / 2;
+      hub.position.set(wx, wheelY, wz);
+      ext.add(hub);
+    };
+
+    const isDualRear = (this.truckType === 'box-truck' || this.truckType === 'flatbed');
+    const rearWheelX = truckW * this.wheelWellPosition;
+    const frontWheelX = cabStartX + cabLength * 0.35;
+
+    // Rear wheels (at wheel well position)
+    makeWheel(rearWheelX, -0.1, isDualRear);             // left rear
+    makeWheel(rearWheelX, truckD + 0.1, isDualRear);     // right rear
+
+    // Front wheels (in the cab area)
+    makeWheel(frontWheelX, 0.1, false);                   // left front
+    makeWheel(frontWheelX, truckD - 0.1, false);          // right front
+
+    // -- Bumpers --
+    // Rear bumper
+    const rearBumperGeo = new THREE.BoxGeometry(bumperDepth, bumperH, outerD + 0.3);
+    const rearBumper = new THREE.Mesh(rearBumperGeo, bumperMat);
+    rearBumper.position.set(truckW + shellThick + bumperDepth / 2, -floorAboveGround + bumperH / 2 + 0.3, cabCenterZ);
+    rearBumper.castShadow = true;
+    ext.add(rearBumper);
+
+    // Front bumper
+    const frontBumperGeo = new THREE.BoxGeometry(bumperDepth, bumperH, outerD + 0.3);
+    const frontBumper = new THREE.Mesh(frontBumperGeo, bumperMat);
+    frontBumper.position.set(cabStartX - bumperDepth / 2, -floorAboveGround + bumperH / 2 + 0.3, cabCenterZ);
+    frontBumper.castShadow = true;
+    ext.add(frontBumper);
+
+    // -- Step (entry step at man door side) --
+    const stepGeo = new THREE.BoxGeometry(1.5, 0.15, 1.2);
+    const stepMat = new THREE.MeshPhongMaterial({ color: 0x555555, shininess: 15 });
+    // Step below the front wall (X=0) man door
+    const stepMesh = new THREE.Mesh(stepGeo, stepMat);
+    stepMesh.position.set(-0.75, -floorAboveGround * 0.5, truckD / 2);
+    ext.add(stepMesh);
+
+    // -- Headlights (small glowing boxes on cab front) --
+    const headlightGeo = new THREE.BoxGeometry(0.1, 0.4, 0.6);
+    const headlightMat = new THREE.MeshPhongMaterial({
+      color: 0xffffcc, emissive: 0xffff88, emissiveIntensity: 0.3,
+      transparent: true, opacity: 0.8
+    });
+    for (const zOff of [outerD * 0.2, outerD * 0.8]) {
+      const hl = new THREE.Mesh(headlightGeo, headlightMat);
+      hl.position.set(cabStartX - 0.05, cabH * 0.35, oZ + zOff);
+      ext.add(hl);
+    }
+
+    // -- Taillights --
+    const taillightGeo = new THREE.BoxGeometry(0.1, 0.35, 0.5);
+    const taillightMat = new THREE.MeshPhongMaterial({
+      color: 0xff3333, emissive: 0xff0000, emissiveIntensity: 0.2,
+      transparent: true, opacity: 0.8
+    });
+    for (const zOff of [outerD * 0.15, outerD * 0.85]) {
+      const tl = new THREE.Mesh(taillightGeo, taillightMat);
+      tl.position.set(truckW + shellThick + 0.05, wallH * 0.25, oZ + zOff);
+      ext.add(tl);
+    }
+
+    this.truckGroup.add(ext);
+    this._exteriorGroup = ext;
+
     // ---- Interior lighting — gentle, even, no hotspots ----
     const lightCount = Math.max(3, Math.floor(truckW / 2.5));
     for (let i = 0; i < lightCount; i++) {
@@ -3532,11 +3802,11 @@ const app = {
 
     this.scene.add(this.truckGroup);
 
-    // Center camera target
-    const cx = truckW / 2;
+    // Center camera target — account for cab extending beyond box body
+    const cx = (truckW - cabLength) / 2;
     const cz = truckD / 2;
     if (this.controls) {
-      this.controls.target.set(cx, 3, cz);
+      this.controls.target.set(cx, 2, cz);
       this.controls.update();
     }
   },
@@ -3642,7 +3912,7 @@ const app = {
     this.controls.zoomSpeed = 1.6; // Faster zoom
     this.controls.minDistance = 8;
     this.controls.maxDistance = 150;
-    this.controls.maxPolarAngle = Math.PI / 2.5; // Don't go below floor
+    this.controls.maxPolarAngle = Math.PI / 2.2; // Allow slight look below floor to see chassis/wheels
     this.controls.minPolarAngle = Math.PI / 8;   // Don't go fully top-down
 
     // Left handled by app, middle pans, right orbits
@@ -3652,9 +3922,10 @@ const app = {
       RIGHT: THREE.MOUSE.ROTATE
     };
 
+    // Center on the full truck (box body + cab), slightly lower to show exterior
     const truckW = this.gridCellsX * CELL_SIZE;
     const truckD = this.gridCellsZ * CELL_SIZE;
-    this.controls.target.set(truckW / 2, 3, truckD / 2);
+    this.controls.target.set(truckW / 2 - 2.5, 2, truckD / 2);
     this.controls.update();
   },
 
@@ -4512,10 +4783,10 @@ const app = {
     this.buildTruck();
     this.buildGridOverlay();
 
-    // Re-center camera
+    // Re-center camera on full truck (box body + cab)
     const truckW = this.gridCellsX * CELL_SIZE;
     const truckD = this.gridCellsZ * CELL_SIZE;
-    this.controls.target.set(truckW / 2, 3, truckD / 2);
+    this.controls.target.set(truckW / 2 - 2.5, 2, truckD / 2);
     this.controls.update();
 
     UI.setItemCount(0);
@@ -4974,16 +5245,17 @@ const app = {
     const origPos = this.camera.position.clone();
     const origTarget = this.controls.target.clone();
 
-    // Compute orbit center + radius
+    // Compute orbit center + radius — include cab in the framing
     const truckW = this.gridCellsX * CELL_SIZE;
     const truckD = this.gridCellsZ * CELL_SIZE;
-    const cx = truckW / 2;
+    const cx = truckW / 2 - 2.5;
     const cz = truckD / 2;
     const cy = 4;
-    const radius = Math.max(truckW, truckD) * 1.8 + 20;
+    const totalLen = truckW + 5; // box body + cab
+    const radius = Math.max(totalLen, truckD) * 1.8 + 20;
     const elev = radius * 0.55;
 
-    this.controls.target.set(cx, 3, cz);
+    this.controls.target.set(cx, 2, cz);
 
     recorder.start();
     UI.showToast('Recording 360° rotation...', 'info');

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Build — Brothers Fabrication</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bf-dark: #0a1628;
+  --bf-dark-mid: #0d1f35;
+  --bf-dark-card: #0f2239;
+  --bf-accent: #4ecdc4;
+  --bf-accent-dim: rgba(78,205,196,0.12);
+  --bf-success: #2ecc71;
+  --bf-warning: #f5a623;
+  --bf-danger: #e74c3c;
+  --bf-border: rgba(255,255,255,0.08);
+  --bf-text: #e8eaf0;
+  --bf-text-dim: rgba(255,255,255,0.45);
+  --bf-font-display: 'Space Grotesk', sans-serif;
+  --bf-font-body: 'Inter', -apple-system, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--bf-font-body);
+  background: var(--bf-dark);
+  color: var(--bf-text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.header {
+  background: linear-gradient(90deg, rgba(0,0,0,0.38), rgba(0,0,0,0.3));
+  border-bottom: 1px solid var(--bf-border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-logo {
+  width: 36px; height: 36px;
+  background: var(--bf-accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--bf-font-display);
+  font-weight: 700; font-size: 0.8rem; color: #000;
+}
+.header h1 {
+  font-family: var(--bf-font-display);
+  font-size: 1.1rem; font-weight: 600;
+}
+.header p { color: var(--bf-text-dim); font-size: 0.8rem; }
+
+.container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+
+.build-hero {
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.build-hero h2 {
+  font-family: var(--bf-font-display);
+  font-size: 1.4rem; margin-bottom: 4px;
+}
+.build-meta {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  color: var(--bf-text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+.build-meta span { display: flex; align-items: center; gap: 4px; }
+
+.progress-track {
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  height: 14px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--bf-accent), #2ecc71);
+  border-radius: 10px;
+  transition: width 0.8s ease;
+}
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 0.8rem; color: var(--bf-text-dim);
+}
+
+.section-title {
+  font-family: var(--bf-font-display);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bf-accent);
+  margin: 28px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--bf-border);
+}
+
+.phase-list { display: flex; flex-direction: column; gap: 10px; }
+.phase-card {
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 14px;
+}
+.phase-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.phase-icon.done { background: rgba(46,204,113,0.15); }
+.phase-icon.active { background: rgba(78,205,196,0.15); animation: pulse 2s infinite; }
+.phase-icon.upcoming { background: rgba(255,255,255,0.06); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.phase-info { flex: 1; }
+.phase-info h3 { font-size: 0.95rem; font-weight: 600; }
+.phase-info p { font-size: 0.8rem; color: var(--bf-text-dim); margin-top: 2px; }
+.phase-status {
+  font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 4px 10px; border-radius: 6px;
+}
+.phase-status.done { background: rgba(46,204,113,0.12); color: #2ecc71; }
+.phase-status.active { background: rgba(78,205,196,0.12); color: #4ecdc4; }
+.phase-status.upcoming { background: rgba(255,255,255,0.06); color: var(--bf-text-dim); }
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+.photo-card {
+  aspect-ratio: 4/3;
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.photo-card img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.photo-card .photo-label {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  padding: 20px 10px 8px;
+  font-size: 0.7rem; color: rgba(255,255,255,0.7);
+}
+.photo-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bf-text-dim); font-size: 2rem;
+}
+
+.contact-bar {
+  background: var(--bf-dark-card);
+  border: 1px solid var(--bf-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.contact-bar p { font-size: 0.85rem; }
+.contact-bar a {
+  background: var(--bf-accent);
+  color: #000;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.contact-bar a:hover { opacity: 0.85; }
+
+.footer {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--bf-text-dim);
+  font-size: 0.75rem;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="hub.html" class="header-logo" style="text-decoration:none;color:#000;" title="Back to Demo Hub">BF</a>
+  <div style="flex:1;">
+    <h1>My Build</h1>
+    <p>Brothers Fabrication — Customer Portal</p>
+  </div>
+  <a href="hub.html" style="color:var(--bf-accent);font-size:0.8rem;text-decoration:none;font-weight:600;">← Hub</a>
+</div>
+
+<div class="container">
+  <!-- Build Hero -->
+  <div class="build-hero">
+    <h2>Richardson Catering — 18ft Step Van</h2>
+    <div class="build-meta">
+      <span>Order #BF-2026-041</span>
+      <span>Started: Mar 12, 2026</span>
+      <span>Target: Jun 28, 2026</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width: 62%"></div>
+    </div>
+    <div class="progress-label">
+      <span>62% Complete</span>
+      <span>8 of 13 milestones</span>
+    </div>
+  </div>
+
+  <!-- Build Phases -->
+  <div class="section-title">Build Timeline</div>
+  <div class="phase-list">
+    <div class="phase-card">
+      <div class="phase-icon done">&#9989;</div>
+      <div class="phase-info">
+        <h3>Design Approval</h3>
+        <p>Layout finalized, equipment list confirmed</p>
+      </div>
+      <span class="phase-status done">Complete</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon done">&#9989;</div>
+      <div class="phase-info">
+        <h3>Chassis Prep</h3>
+        <p>Vehicle stripped, frame cleaned, rust treatment</p>
+      </div>
+      <span class="phase-status done">Complete</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon done">&#9989;</div>
+      <div class="phase-info">
+        <h3>Electrical Rough-In</h3>
+        <p>Panel, circuits, generator hookup installed</p>
+      </div>
+      <span class="phase-status done">Complete</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon done">&#9989;</div>
+      <div class="phase-info">
+        <h3>Plumbing</h3>
+        <p>Fresh, grey, and black water systems complete</p>
+      </div>
+      <span class="phase-status done">Complete</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon done">&#9989;</div>
+      <div class="phase-info">
+        <h3>Interior Framing</h3>
+        <p>Walls, ceiling, floor insulated and framed</p>
+      </div>
+      <span class="phase-status done">Complete</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon done">&#9989;</div>
+      <div class="phase-info">
+        <h3>Stainless Walls + Counter</h3>
+        <p>Food-grade stainless steel mounted, serving window cut</p>
+      </div>
+      <span class="phase-status done">Complete</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon done">&#9989;</div>
+      <div class="phase-info">
+        <h3>Hood + Ventilation</h3>
+        <p>Commercial hood, exhaust fan, fire suppression</p>
+      </div>
+      <span class="phase-status done">Complete</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon active">&#128295;</div>
+      <div class="phase-info">
+        <h3>Equipment Install</h3>
+        <p>Fryer, griddle, steam table, refrigeration going in now</p>
+      </div>
+      <span class="phase-status active">In Progress</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon upcoming">&#9898;</div>
+      <div class="phase-info">
+        <h3>Exterior Wrap</h3>
+        <p>Custom vinyl wrap — design approved, printing scheduled</p>
+      </div>
+      <span class="phase-status upcoming">Upcoming</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon upcoming">&#9898;</div>
+      <div class="phase-info">
+        <h3>Generator + Propane</h3>
+        <p>Generator mount, propane lines, safety testing</p>
+      </div>
+      <span class="phase-status upcoming">Upcoming</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon upcoming">&#9898;</div>
+      <div class="phase-info">
+        <h3>Final Electrical</h3>
+        <p>Outlets, lighting, POS wiring, final inspection</p>
+      </div>
+      <span class="phase-status upcoming">Upcoming</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon upcoming">&#9898;</div>
+      <div class="phase-info">
+        <h3>Health Inspection</h3>
+        <p>AHS inspection, permits, compliance sign-off</p>
+      </div>
+      <span class="phase-status upcoming">Upcoming</span>
+    </div>
+    <div class="phase-card">
+      <div class="phase-icon upcoming">&#9898;</div>
+      <div class="phase-info">
+        <h3>Handover</h3>
+        <p>Training, warranty docs, keys in hand</p>
+      </div>
+      <span class="phase-status upcoming">Upcoming</span>
+    </div>
+  </div>
+
+  <!-- Build Photos -->
+  <div class="section-title">Build Photos</div>
+  <div class="photo-grid">
+    <div class="photo-card">
+      <div class="photo-placeholder">&#128247;</div>
+      <div class="photo-label">Chassis prep — Mar 15</div>
+    </div>
+    <div class="photo-card">
+      <div class="photo-placeholder">&#128247;</div>
+      <div class="photo-label">Electrical panel — Mar 22</div>
+    </div>
+    <div class="photo-card">
+      <div class="photo-placeholder">&#128247;</div>
+      <div class="photo-label">Framing complete — Apr 3</div>
+    </div>
+    <div class="photo-card">
+      <div class="photo-placeholder">&#128247;</div>
+      <div class="photo-label">Stainless mounted — Apr 12</div>
+    </div>
+    <div class="photo-card">
+      <div class="photo-placeholder">&#128247;</div>
+      <div class="photo-label">Hood install — Apr 19</div>
+    </div>
+    <div class="photo-card">
+      <div class="photo-placeholder">&#128247;</div>
+      <div class="photo-label">Equipment staging — Apr 25</div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="contact-bar">
+    <p>Questions about your build? We're here to help.</p>
+    <a href="mailto:info@brothersfabrication.ca">Contact Brothers Fab</a>
+  </div>
+
+  <div class="footer">
+    <p>Brothers Fabrication Customer Portal — Powered by BroFab Systems</p>
+    <p style="margin-top: 4px;">This is a private link. Do not share publicly.</p>
+  </div>
+</div>
+
+</body>
+</html>
