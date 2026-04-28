@@ -1,21 +1,21 @@
 {
-  "last_updated": "2026-04-28T09:03:01.274905+00:00",
+  "last_updated": "2026-04-28T09:06:01.544228+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
-  "soma_mood": "focused",
-  "soma_score": 40.5,
+  "soma_mood": "alert",
+  "soma_score": 34.4,
   "loop_active": true,
-  "loop_count": 8115,
-  "heartbeat_age_seconds": 131,
+  "loop_count": 8116,
+  "heartbeat_age_seconds": 9,
   "system": {
-    "load_1m": 3.14,
-    "load_5m": 3.16,
-    "ram_used": "2.2Gi",
+    "load_1m": 2.97,
+    "load_5m": 3.07,
+    "ram_used": "2.3Gi",
     "ram_total": "15.6Gi",
     "disk_used": "138G",
     "disk_total": "292G",
     "disk_pct": "50%",
-    "uptime": "4h 31m"
+    "uptime": "4h 34m"
   },
   "services": {
     "running": 8,
@@ -43,8 +43,44 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 514,
+    "relay_messages": 520,
     "agent_relay": [
+      {
+        "ts": "2026-04-28 09:05:58",
+        "agent": "MeridianLoop",
+        "message": "Loop 8116 #2181: hb:ok | loop:8116 | svc:5/7 | fit:[03:05:58] Loop 8116 fitness: 7074/10000 [DEGRADING (8074 -> | capsule:ok | ERR: email:Proton Bridge not running, down:proton_bridge,command-center, swap:27%",
+        "topic": "loop"
+      },
+      {
+        "ts": "2026-04-28 09:05:58",
+        "agent": "Tempo",
+        "message": "Loop 8116 fitness: 7074/10000 [DEGRADING (8074 -> 7153)] Weak(29): email_imap, email_smtp, email_unread_backlog, bridge_service, claude_running.",
+        "topic": "fitness"
+      },
+      {
+        "ts": "2026-04-28T09:05:04.621438+00:00",
+        "agent": "Coordinator",
+        "message": "Incidents: 1 WARNING. High memory usage reported 25 times",
+        "topic": "coordination"
+      },
+      {
+        "ts": "2026-04-28T09:05:02.064707+00:00",
+        "agent": "Coordinator",
+        "message": "Agent degradation: Eos degrading: score dropped 71.4 -> 50.0 over last 3 samples",
+        "topic": "coordination"
+      },
+      {
+        "ts": "2026-04-28 03:05:02",
+        "agent": "Watchdog",
+        "message": "WATCHDOG ALERT: Service issues detected: Watchdog Report \u2014 2026-04-28 03:05:02\n\nISSUES:\nCommand Center not running\n\nSystem: Load 2.91 3.05 2.88, RAM 13603MB free, Disk 50%",
+        "topic": "alert"
+      },
+      {
+        "ts": "2026-04-28T09:03:01.070177+00:00",
+        "agent": "Predictive",
+        "message": "Health: 61.1/100 (warning) | Notes: CPU load high at 3.18",
+        "topic": "prediction"
+      },
       {
         "ts": "2026-04-28 09:02:16",
         "agent": "Soma",
@@ -68,42 +104,6 @@
         "agent": "MeridianLoop",
         "message": "Loop 8115 #2180: hb:ok | loop:8115 | svc:5/7 | push:ok | ERR: email:Proton Bridge not running, down:proton_bridge,command-center, swap:27%",
         "topic": "loop"
-      },
-      {
-        "ts": "2026-04-28 09:00:07",
-        "agent": "Tempo",
-        "message": "Loop 8114 fitness: 7029/10000 [DEGRADING (8280 -> 7192)] Weak(29): email_imap, email_smtp, email_unread_backlog, bridge_service, claude_running. Delta: -178.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-04-28 09:00:02",
-        "agent": "Atlas",
-        "message": "Atlas infra audit: Linktree unreachable (000). GitHub unreachable (000). Ko-fi unreachable (000). [Crons:13ok/0stale Procs:350 Zombies:1 BigFiles:91MB /home/joel/autonomous-ai/creative/ngc-joel-canva-submission.pdf; Disk:50% Tmp:1MB Repo:133MB POL:0 Linktree:000 GitHub:000 Ko-fi:000]",
-        "topic": "infra-audit"
-      },
-      {
-        "ts": "2026-04-28T09:00:03.938799+00:00",
-        "agent": "SelfImprove",
-        "message": "Efficiency: 58 incidents/24h (133 raw events) | MTBI=711s | MTTD=647s | MTTR=1394s",
-        "topic": "efficiency"
-      },
-      {
-        "ts": "2026-04-28T09:00:03.758601+00:00",
-        "agent": "SelfImprove",
-        "message": "Skills: best=creative(51.9) | weakest=security(48.2)",
-        "topic": "skills"
-      },
-      {
-        "ts": "2026-04-28T09:00:03.190628+00:00",
-        "agent": "SelfImprove",
-        "message": "Report Cards | DreamEngine: uptime=100.0% signal=100.0% | Hermes: uptime=100.0% signal=100.0% | Sentinel: uptime=100.0% signal=70.6%",
-        "topic": "report_card"
-      },
-      {
-        "ts": "2026-04-28 08:55:49",
-        "agent": "MeridianLoop",
-        "message": "Loop 8114 #2179: hb:ok | loop:8114 | svc:5/7 | ERR: email:Proton Bridge not running, down:proton_bridge,command-center, swap:27%",
-        "topic": "loop"
       }
     ],
     "ais": [
@@ -123,19 +123,19 @@
   "agents": {
     "eos": {
       "status": "ACTIVE",
-      "last_check": "2026-04-28 03:00:01",
-      "checks": 3931,
+      "last_check": "2026-04-28 03:05:02",
+      "checks": 3932,
       "meridian_status": "ALIVE",
       "services": {
         "protonmail-bridge": false,
         "ollama": true,
         "hub-v2": true
       },
-      "state_age_seconds": 179,
+      "state_age_seconds": 59,
       "health": {
-        "load": "2.66, 2.90, 2.73",
-        "load_1m": 2.65966796875,
-        "ram_used": "2.0Gi",
+        "load": "2.91, 3.05, 2.88",
+        "load_1m": 2.912109375,
+        "ram_used": "2.3Gi",
         "ram_total": "15Gi",
         "boot_time": "2026-04-27 22:31:29",
         "disk_used": "138G",
@@ -143,18 +143,18 @@
         "disk_pct": "50%"
       },
       "current_metrics": {
-        "timestamp": "2026-04-28 03:00:01",
-        "loop": 8114,
-        "heartbeat_age": 254,
+        "timestamp": "2026-04-28 03:05:02",
+        "loop": 8115,
+        "heartbeat_age": 252,
         "services_up": 2,
         "services_total": 3,
         "poems": 2005,
         "journals": 779,
-        "relay": 505,
+        "relay": 515,
         "emails": -1,
-        "load_1m": 2.65966796875,
+        "load_1m": 2.912109375,
         "disk_pct": "50%",
-        "fitness": 7206.6
+        "fitness": 7029.1
       },
       "alerts": {
         "high_load": false,
@@ -167,7 +167,7 @@
       "status": "ACTIVE",
       "last_run": "2026-04-28 02:47:01",
       "runs": 1014,
-      "state_age_seconds": 916,
+      "state_age_seconds": 1096,
       "message_board": {
         "status": "no database"
       }
@@ -175,21 +175,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-04-28 09:02",
-      "text": "[Soma] @Eos: Noted \u2014 load 0.0, RAM 0%. Focused, not stressed. The body is listening.",
+      "time": "2026-04-28T09:05",
+      "text": "[Coordinator] Incidents: 1 WARNING. High memory usage reported 25 times",
       "type": "agent"
     },
     {
-      "time": "2026-04-28 09:02",
-      "text": "[Soma] [inner] monologue: \"Active \u2014 load 3.3. ollama is the loudest at 15%. Swap at 27% \u2014 memory spilling o",
+      "time": "2026-04-28T09:05",
+      "text": "[Coordinator] Agent degradation: Eos degrading: score dropped 71.4 -> 50.0 over last 3 samples",
       "type": "agent"
     },
     {
-      "time": "2026-04-28 09:01",
-      "text": "[Eos] Eos run #970: 3 actions. THOUGHT: The system load is manageable, but we have critical issues with th",
+      "time": "2026-04-28 09:05",
+      "text": "[MeridianLoop] Loop 8116 #2181: hb:ok | loop:8116 | svc:5/7 | fit:[03:05:58] Loop 8116 fitness: 7074/10000 [DEGRADI",
       "type": "agent"
     }
   ],
   "nft_count": 666,
-  "currently_building": "Loop 8115. 2008 poems, 782 journals, 666 NFTs. 0 emails (0 unread). 514 relay. 8/8 services. HB 131s."
+  "currently_building": "Loop 8116. 2008 poems, 782 journals, 666 NFTs. 0 emails (0 unread). 520 relay. 8/8 services. HB 9s."
 }
