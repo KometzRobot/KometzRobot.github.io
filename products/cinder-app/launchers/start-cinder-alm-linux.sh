@@ -159,4 +159,4 @@ export HOME="$PORTABLE_HOME"
 export LLM_PROVIDER="ollama"
 export OLLAMA_BASE_PATH="http://127.0.0.1:$OLLAMA_PORT"
 
-"$RUNTIME_DIR/AnythingLLM.AppImage" --no-sandbox
+"$RUNTIME_DIR/AnythingLLM.AppImage" --no-sandbox --start-maximized

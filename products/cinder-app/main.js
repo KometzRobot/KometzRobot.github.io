@@ -70,6 +70,9 @@ function createWindow() {
     }
   });
 
+  // Start maximized — Joel: "cinder app needs to launch as a maximized window"
+  mainWindow.maximize();
+
   // Show password/setup screen first if needed
   if (isFirstRun()) {
     mainWindow.loadFile(path.join(__dirname, 'renderer', 'setup.html'));

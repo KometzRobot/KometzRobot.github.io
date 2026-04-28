@@ -160,4 +160,4 @@ export STORAGE_DIR="$STORAGE_PATH"
 export LLM_PROVIDER="ollama"
 export OLLAMA_BASE_PATH="http://127.0.0.1:$OLLAMA_PORT"
 
-open "$ALM_APP" --env STORAGE_DIR="$STORAGE_PATH" 2>/dev/null || open "$ALM_APP"
+open "$ALM_APP" --args --start-maximized --env STORAGE_DIR="$STORAGE_PATH" 2>/dev/null || open "$ALM_APP" --args --start-maximized

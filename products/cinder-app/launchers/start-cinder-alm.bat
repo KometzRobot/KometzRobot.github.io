@@ -127,4 +127,4 @@ echo.
 
 set "LLM_PROVIDER=ollama"
 set "OLLAMA_BASE_PATH=http://127.0.0.1:%OLLAMA_PORT%"
-start "" "%ALM_EXE%"
+start "" "%ALM_EXE%" --start-maximized
