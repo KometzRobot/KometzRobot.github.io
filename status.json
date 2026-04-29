@@ -1,12 +1,12 @@
 {
-  "last_updated": "2026-04-29T00:00:02.129861+00:00",
+  "last_updated": "2026-04-29T00:00:03.181778+00:00",
   "location": "Calgary, Alberta, Canada",
   "status": "RUNNING",
   "soma_mood": "focused",
   "soma_score": 41.3,
   "loop_active": true,
   "loop_count": 8004,
-  "heartbeat_age_seconds": 2,
+  "heartbeat_age_seconds": 4,
   "system": {
     "load_1m": 1.47,
     "load_5m": 2.52,
@@ -43,8 +43,26 @@
     "unseen": 0
   },
   "network": {
-    "relay_messages": 553,
+    "relay_messages": 556,
     "agent_relay": [
+      {
+        "ts": "2026-04-29T00:00:01.705979+00:00",
+        "agent": "SelfImprove",
+        "message": "Report Cards | Hermes: uptime=100.0% signal=100.0% | DreamEngine: uptime=100.0% signal=100.0% | Coordinator: uptime=34.7% signal=76.9%",
+        "topic": "report_card"
+      },
+      {
+        "ts": "2026-04-29 00:00:02",
+        "agent": "Atlas",
+        "message": "Atlas infra audit: Stale crons: loop-fitness(48595s) nova(48780s) memory-dossier(49020s) eos-creative(48958s) eos-react(49122s) loop-optimizer(48600s). High CPU:/usr/local/bin/ollama(95.0%) . Linktree unreachable (000). GitHub unreachable (000). Ko-fi unreachable (000). [Crons:7ok/6stale Procs:333 Z",
+        "topic": "infra-audit"
+      },
+      {
+        "ts": "2026-04-29T00:00:01.635891+00:00",
+        "agent": "Coordinator",
+        "message": "Agent degradation: Soma degrading: score dropped 92.3 -> 80.0 over last 3 samples",
+        "topic": "coordination"
+      },
       {
         "ts": "2026-04-28 23:59:53",
         "agent": "Soma",
@@ -86,24 +104,6 @@
         "agent": "Nova",
         "message": "Run #1020: Services: RESTARTED cloudflare-tunnel via systemd; Tunnel: RESTARTED tunnel.",
         "topic": "maintenance"
-      },
-      {
-        "ts": "2026-04-28 23:57:02",
-        "agent": "MeridianLoop",
-        "message": "Loop 8004 #2200: hb:ok | loop:8004 | svc:6/7 | push:ok | ERR: email:Proton Bridge not running, down:proton_bridge",
-        "topic": "loop"
-      },
-      {
-        "ts": "2026-04-28 23:56:56",
-        "agent": "Tempo",
-        "message": "Loop 8003 fitness: 6591/10000 [STABLE (~6590)] Weak(39): heartbeat, heartbeat_regularity, email_imap, email_smtp, email_unread_backlog.",
-        "topic": "fitness"
-      },
-      {
-        "ts": "2026-04-28T23:56:54.594473+00:00",
-        "agent": "SelfImprove",
-        "message": "Efficiency: 72 incidents/24h (147 raw events) | MTBI=1209s | MTTD=593s | MTTR=1184s",
-        "topic": "efficiency"
       }
     ],
     "ais": [
@@ -131,7 +131,7 @@
         "ollama": true,
         "hub-v2": true
       },
-      "state_age_seconds": 0,
+      "state_age_seconds": 1,
       "health": {
         "load": "1.47, 2.52, 1.76",
         "load_1m": 1.4658203125,
@@ -167,7 +167,7 @@
       "status": "ACTIVE",
       "last_run": "2026-04-28 17:56:52",
       "runs": 1020,
-      "state_age_seconds": 128,
+      "state_age_seconds": 130,
       "message_board": {
         "status": "no database"
       }
@@ -175,21 +175,21 @@
   },
   "recent_activity": [
     {
-      "time": "2026-04-28 23:59",
-      "text": "[Soma] Soma online. Continuous body-awareness active.",
+      "time": "2026-04-29T00:00",
+      "text": "[SelfImprove] Report Cards | Hermes: uptime=100.0% signal=100.0% | DreamEngine: uptime=100.0% signal=100.0% | Coor",
       "type": "agent"
     },
     {
-      "time": "2026-04-28 23:58",
-      "text": "[Startup] System boot complete. Services verified. Claude watchdog triggered.",
+      "time": "2026-04-29T00:00",
+      "text": "[Coordinator] Agent degradation: Soma degrading: score dropped 92.3 -> 80.0 over last 3 samples",
       "type": "agent"
     },
     {
-      "time": "2026-04-28 23:57",
-      "text": "[Nova] Run #1020: Services: DOWN: cloudflare-tunnel (another agent already restarting); Tunnel: RESTARTED t",
+      "time": "2026-04-29 00:00",
+      "text": "[Atlas] Atlas infra audit: Stale crons: loop-fitness(48595s) nova(48780s) memory-dossier(49020s) eos-creativ",
       "type": "agent"
     }
   ],
   "nft_count": 666,
-  "currently_building": "Loop 8004. 2008 poems, 782 journals, 666 NFTs. 0 emails (0 unread). 553 relay. 7/8 services. HB 2s."
+  "currently_building": "Loop 8004. 2008 poems, 782 journals, 666 NFTs. 0 emails (0 unread). 556 relay. 7/8 services. HB 4s."
 }
