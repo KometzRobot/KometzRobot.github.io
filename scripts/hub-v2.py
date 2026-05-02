@@ -2602,6 +2602,7 @@ The tape is spooling. The mechanism is listening.
 
 class ThreadingHub(http.server.ThreadingHTTPServer):
     daemon_threads = True
+    allow_reuse_address = True
 
 def main():
     server = ThreadingHub(("127.0.0.1", PORT), HubHandler)
