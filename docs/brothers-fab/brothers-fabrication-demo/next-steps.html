@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brothers Fab Ops — Next Steps for Chris</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --teal: #4ecdc4;
+      --dark: #0a1628;
+      --mid: #0d1f35;
+      --text: rgba(255,255,255,0.85);
+      --muted: rgba(255,255,255,0.45);
+      --border: rgba(255,255,255,0.08);
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    a { color: var(--teal); text-decoration: none; }
+
+    /* NAV */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,22,40,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700; font-size: 1rem;
+      color: #fff;
+    }
+    .nav-brand span { color: var(--teal); }
+    .nav-meta { font-size: 0.8rem; color: var(--muted); }
+
+    /* SECTIONS */
+    .section {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+    .section + .section {
+      border-top: 1px solid var(--border);
+    }
+
+    /* HERO */
+    .hero {
+      max-width: 820px; margin: 0 auto;
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+    }
+    .hero .tag {
+      display: inline-block;
+      background: rgba(78,205,196,0.12);
+      color: var(--teal);
+      padding: 0.35rem 1rem;
+      border-radius: 100px;
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800; line-height: 1.15;
+      margin-bottom: 1.25rem;
+    }
+    .hero p {
+      font-size: 1.1rem; color: var(--muted);
+      max-width: 600px; margin: 0 auto 2rem;
+    }
+    .hero-date {
+      font-size: 0.8rem; color: var(--muted);
+      margin-top: 0.75rem;
+    }
+
+    /* SECTION HEADERS */
+    h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.6rem; font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+    h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: #fff;
+    }
+    .section-sub {
+      color: var(--muted); font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    /* 7 SCREENS GRID */
+    .screens-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    @media (max-width: 600px) { .screens-grid { grid-template-columns: 1fr; } }
+    .screen-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      transition: border-color 0.2s;
+    }
+    .screen-card:hover { border-color: rgba(78,205,196,0.3); }
+    .screen-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--teal); margin-bottom: 0.5rem;
+    }
+    .screen-card h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+    .screen-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.5; }
+
+    /* 5 THINGS NEEDED */
+    .checklist {
+      list-style: none;
+      margin-top: 1.5rem;
+    }
+    .checklist li {
+      display: flex;
+      gap: 1rem;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .check-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.2rem; font-weight: 800;
+      color: var(--teal); flex-shrink: 0;
+      width: 32px;
+    }
+    .check-content h4 {
+      font-size: 0.95rem; font-weight: 700;
+      margin-bottom: 0.3rem; color: #fff;
+    }
+    .check-content p { font-size: 0.88rem; color: var(--muted); }
+
+    /* ROLLOUT TIMELINE */
+    .timeline {
+      margin-top: 1.5rem;
+      position: relative;
+      padding-left: 2rem;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute; left: 7px; top: 8px; bottom: 8px;
+      width: 2px; background: rgba(78,205,196,0.2);
+    }
+    .tl-item {
+      position: relative;
+      margin-bottom: 2.5rem;
+    }
+    .tl-dot {
+      position: absolute; left: -2rem; top: 4px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+    .tl-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--teal); margin-bottom: 0.3rem;
+    }
+    .tl-item h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+    .tl-item p { font-size: 0.88rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .tl-result {
+      display: inline-block;
+      background: rgba(78,205,196,0.08);
+      border: 1px solid rgba(78,205,196,0.2);
+      color: var(--teal);
+      font-size: 0.8rem; font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+    }
+
+    /* PRICING */
+    .pricing-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem; margin-top: 1.5rem;
+    }
+    @media (max-width: 700px) { .pricing-row { grid-template-columns: 1fr; } }
+    .price-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+    .price-card.featured {
+      border-color: var(--teal);
+      background: rgba(78,205,196,0.05);
+    }
+    .price-tag {
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); margin-bottom: 0.75rem;
+    }
+    .price-card.featured .price-tag { color: var(--teal); }
+    .price-card h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+    .price-card .amount {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem; font-weight: 800;
+      color: #fff; margin-bottom: 0.75rem;
+    }
+    .price-card p { font-size: 0.85rem; color: var(--muted); }
+
+    /* SENTENCE */
+    .one-liner {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: rgba(78,205,196,0.04);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .one-liner p {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.1rem, 3vw, 1.5rem);
+      font-weight: 600;
+      max-width: 700px; margin: 0 auto;
+      line-height: 1.5;
+    }
+    .one-liner p em {
+      font-style: normal;
+      color: var(--teal);
+    }
+
+    /* CTA */
+    .cta-section {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+    .cta-section h2 { margin-bottom: 1rem; }
+    .cta-section p { color: var(--muted); max-width: 500px; margin: 0 auto 2rem; }
+    .btn-row {
+      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    }
+    .btn {
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-weight: 700; font-size: 0.95rem;
+      display: inline-block;
+    }
+    .btn-primary {
+      background: var(--teal);
+      color: #0a1628;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* BACK LINK */
+    .back-bar {
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.85rem; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">Brothers Fab <span>Ops</span></div>
+  <div class="nav-meta">Prepared by Joel Kometz · May 2026</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="tag">Operations System</div>
+  <h1>What's ready right now — and what I need from you to go live.</h1>
+  <p>The prototype is built and working. Seven screens. Your data. No new habits for anyone.</p>
+  <div class="hero-date">Brothers Fab Ops · Updated May 2, 2026</div>
+</div>
+
+<!-- 7 SCREENS -->
+<div class="section">
+  <h2>What's ready right now</h2>
+  <p class="section-sub">Seven screens, all working, all connected. Connect your Trello board and your real jobs appear in minutes.</p>
+  <div class="screens-grid">
+    <div class="screen-card">
+      <div class="screen-num">Screen 01</div>
+      <h3>Shop Tablet</h3>
+      <p>Kanban board showing current jobs, who's on what, due dates. Read-only mirror of your Trello. Put a tablet on the shop wall.</p>
+    </div>
+    <div class="screen-card">
+      <div class="screen-num">Screen 02</div>
+      <h3>Admin Dashboard</h3>
+      <p>Overview of all jobs with budget, schedule, and crew at a glance. Chris sees everything without asking anyone.</p>
+    </div>
+    <div class="screen-card">
+      <div class="screen-num">Screen 03</div>
+      <h3>Customer Portal</h3>
+      <p>Customers see their build progress. No more "where's my truck?" texts. Each job gets its own portal link.</p>
+    </div>
+    <div class="screen-card">
+      <div class="screen-num">Screen 04</div>
+      <h3>Inventory</h3>
+      <p>Material tracking with stock levels and reorder suggestions. Know what you have before a job starts, not after.</p>
+    </div>
+    <div class="screen-card">
+      <div class="screen-num">Screen 05</div>
+      <h3>Pipeline</h3>
+      <p>Lead tracking from first inquiry to signed contract. Nothing falls through the cracks.</p>
+    </div>
+    <div class="screen-card">
+      <div class="screen-num">Screen 06</div>
+      <h3>Photo Inbox</h3>
+      <p>All build photos organized by job, automatically. Crew texts or emails photos — system routes them to the right job.</p>
+    </div>
+    <div class="screen-card" style="grid-column: span 2; border-color: rgba(78,205,196,0.2);">
+      <div class="screen-num" style="color: var(--teal);">Screen 07</div>
+      <h3>Brothers AI</h3>
+      <p>AI assistant that knows your jobs, materials, and processes. Ask it anything — "what's on BF-2041?" or "what did we charge for the last food truck?" — and get a real answer instantly.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 5 THINGS NEEDED -->
+<div class="section">
+  <h2>What I need from you</h2>
+  <p class="section-sub">Five things. Most take under 5 minutes.</p>
+  <ol class="checklist">
+    <li>
+      <span class="check-num">1</span>
+      <div class="check-content">
+        <h4>Connect your real Trello board</h4>
+        <p>Open the demo, hit Connect, follow the 3-step setup. Takes 2 minutes. Your jobs appear on screen in real time.</p>
+      </div>
+    </li>
+    <li>
+      <span class="check-num">2</span>
+      <div class="check-content">
+        <h4>Do you use Trello labels?</h4>
+        <p>Like "framed" or "plumbing done" — if yes, the system auto-advances job stages when you label. Zero extra work.</p>
+      </div>
+    </li>
+    <li>
+      <span class="check-num">3</span>
+      <div class="check-content">
+        <h4>Can you set up build@brothersfab.ca?</h4>
+        <p>This is the cornerstone. Crew email or text build photos to one address. Photos auto-attach to the right job. Customers see progress without anyone "updating" anything.</p>
+      </div>
+    </li>
+    <li>
+      <span class="check-num">4</span>
+      <div class="check-content">
+        <h4>Is there a crew photo group chat?</h4>
+        <p>If they already share build photos somewhere, we pull from there instead of asking anyone to change habits.</p>
+      </div>
+    </li>
+    <li>
+      <span class="check-num">5</span>
+      <div class="check-content">
+        <h4>Comfortable with wifi-based time tracking?</h4>
+        <p>Optional. Phone detects shop wifi = clocked in. No buttons, no app. If not, we skip it entirely.</p>
+      </div>
+    </li>
+  </ol>
+</div>
+
+<!-- ROLLOUT -->
+<div class="section">
+  <h2>The rollout</h2>
+  <p class="section-sub">Each step earns the next. You change nothing until it's already working.</p>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-label">Week 1 — Mirror</div>
+      <h3>Zero work for anyone</h3>
+      <p>Connect Trello, tablet goes on the wall. Customer portals turn on for every active job. Chris changes nothing. Crew changes nothing.</p>
+      <span class="tl-result">Result: Customers stop texting "where's my truck?"</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-label">Week 2 — Reflect</div>
+      <h3>Capture what's already happening</h3>
+      <p>Set up the build@ email. Crew emails or texts build photos (same habit, new recipient). Photos auto-attach to jobs. Customer portal shows real progress.</p>
+      <span class="tl-result">Result: Portal feels alive without anyone "updating" it</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-label">Month 1 — Notice</div>
+      <h3>The money feature</h3>
+      <p>Morning email to Chris: "Here's what I'd do today — tap to confirm." Budget alerts. Material reorder suggestions. All single-tap — never data entry.</p>
+      <span class="tl-result">Result: Save Chris 30+ minutes every morning</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-label">Month 2 — Augment</div>
+      <h3>Passive data collection</h3>
+      <p>Tablet asks "Andrew, is this you?" when a job moves to Plumbing (one tap). System drafts customer ETAs; Chris hits send. Wifi time tracking opt-in.</p>
+      <span class="tl-result">Result: Schedule data and crew assignment without anyone "tracking" anything</span>
+    </div>
+    <div class="tl-item" style="margin-bottom: 0;">
+      <div class="tl-dot"></div>
+      <div class="tl-label">Month 6 — Replace</div>
+      <h3>It becomes the source of truth</h3>
+      <p>Tablet becomes drag-to-move for admins. Chris notices he hasn't opened Trello in a week. The system IS the source of truth.</p>
+      <span class="tl-result">Result: Unified operations system running Brothers Fab</span>
+    </div>
+  </div>
+</div>
+
+<!-- ONE LINER -->
+<div class="one-liner">
+  <p>Your crew <em>already takes photos</em>, Chris <em>already uses Trello</em>, customers <em>already ask for updates</em> — this system connects those three things and <em>eliminates the busywork in between</em>.</p>
+</div>
+
+<!-- PRICING -->
+<div class="section">
+  <h2>What this costs</h2>
+  <p class="section-sub">Three ways to start. You pick the one that feels right.</p>
+  <div class="pricing-row">
+    <div class="price-card">
+      <div class="price-tag">Option A</div>
+      <h3>Start Free</h3>
+      <div class="amount">$0</div>
+      <p>Connect the demo prototype to your Trello. See if the tablet view and customer portal are useful. No commitment, no contract.</p>
+    </div>
+    <div class="price-card featured">
+      <div class="price-tag">Option B — Recommended</div>
+      <h3>Core Build</h3>
+      <div class="amount">$8K–$10K</div>
+      <p>Finalized web app with Brothers branding. Trello integration hardened for production. Customer portal with your domain. Photo inbox + auto-attach. About 2 months of work.</p>
+    </div>
+    <div class="price-card">
+      <div class="price-tag">Option C</div>
+      <h3>Full Partnership</h3>
+      <div class="amount">$35K–$45K</div>
+      <p>Everything in Core plus AI, inventory, pipeline, and configurator. Brothers Fab is founding partner with equity stake. Product gets sold to other shops across Alberta.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>Ready to see it with your data?</h2>
+  <p>Takes 2 minutes to connect your Trello board. Your jobs appear on screen in real time.</p>
+  <div class="btn-row">
+    <a href="hub.html" class="btn btn-primary">Open All Demos</a>
+    <a href="../index.html" class="btn btn-ghost">Back to Overview</a>
+  </div>
+  <p style="margin-top: 2rem; font-size: 0.85rem; color: var(--muted);">
+    Questions? Joel: jkometz@hotmail.com
+  </p>
+</div>
+
+<!-- BACK -->
+<div class="back-bar">
+  <a href="../index.html">← Brothers Fab Demo Overview</a>
+  &nbsp;·&nbsp;
+  <a href="pitch.html">Full Digital Pitch →</a>
+  &nbsp;·&nbsp;
+  <a href="pricing.html">Pricing Details →</a>
+</div>
+
+</body>
+</html>

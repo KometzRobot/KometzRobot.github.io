@@ -6,127 +6,230 @@
   <title>Brothers Fabrication — Demo Preview</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --teal: #4ab5a3;
+      --dark: #0a1628;
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --border: #e3e8f0;
+      --text: #1a1a2e;
+      --muted: #5f6368;
+    }
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background: #f8f9fa;
-      color: #1a1a2e;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
+
+    /* HEADER */
     .header {
-      width: 100%;
-      background: #fff;
-      border-bottom: 1px solid #e8e8e8;
-      padding: 1.5rem 2rem;
+      background: var(--dark);
+      color: #fff;
+      padding: 2.5rem 2rem;
       text-align: center;
+    }
+    .header-eyebrow {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--teal); margin-bottom: 0.75rem;
     }
     .header h1 {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #0a1628;
-      margin-bottom: 0.3rem;
+      font-size: 1.9rem; font-weight: 800;
+      margin-bottom: 0.4rem;
     }
     .header p {
-      color: #5f6368;
-      font-size: 0.95rem;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.95rem; margin-bottom: 1.5rem;
     }
+    .url-badge {
+      display: inline-block;
+      background: rgba(74,181,163,0.12);
+      border: 1px solid rgba(74,181,163,0.3);
+      color: var(--teal);
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem; font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .url-badge .url-label {
+      font-size: 0.7rem; opacity: 0.6;
+      display: block; margin-bottom: 0.1rem;
+    }
+
+    /* MAIN */
     .container {
-      max-width: 900px;
-      width: 100%;
-      padding: 2rem 1.5rem;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
     }
+
     .section-label {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #4ab5a3;
-      margin-bottom: 0.75rem;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--teal);
+      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.75rem;
     }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px;
+      background: var(--border);
+    }
+
     .cards {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
     }
-    @media (max-width: 640px) {
-      .cards { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } }
+
     .card {
-      background: #fff;
-      border: 1px solid #e0e0e0;
+      background: var(--card);
+      border: 1.5px solid var(--border);
       border-radius: 16px;
-      padding: 2rem;
+      padding: 1.75rem;
       text-decoration: none;
       color: inherit;
-      transition: all 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
+      transition: all 0.18s ease;
+      display: flex; flex-direction: column; gap: 0.65rem;
+      position: relative;
     }
     .card:hover {
-      border-color: #4ab5a3;
-      box-shadow: 0 4px 20px rgba(74, 181, 163, 0.12);
+      border-color: var(--teal);
+      box-shadow: 0 6px 24px rgba(74, 181, 163, 0.1);
       transform: translateY(-2px);
     }
+    .card.featured {
+      border-color: var(--teal);
+      background: #f0faf8;
+    }
+    .featured-badge {
+      position: absolute;
+      top: -1px; right: 1.5rem;
+      background: var(--teal);
+      color: #fff;
+      font-size: 0.65rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0 0 8px 8px;
+    }
+
     .card-icon {
       font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 1.4rem;
+      font-weight: 800; font-size: 1rem;
       color: #fff;
-      background: #0a1628;
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: var(--dark);
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
     }
-    .card-icon.green { background: #4ab5a3; }
+    .card-icon.teal { background: var(--teal); }
     .card-icon.blue { background: #2563eb; }
     .card-icon.orange { background: #e8a020; }
+    .card-icon.red { background: #e74c3c; }
+
     .card h3 {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.15rem;
-      font-weight: 700;
+      font-size: 1.05rem; font-weight: 700;
     }
     .card p {
-      color: #5f6368;
-      font-size: 0.9rem;
-      line-height: 1.5;
+      color: var(--muted);
+      font-size: 0.88rem; line-height: 1.55;
     }
     .card .tag {
       display: inline-block;
-      background: #f0faf7;
+      background: #eef6f4;
       color: #2a9d8f;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
+      font-size: 0.7rem; font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 5px;
       margin-top: auto;
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
-    .footer-note {
+    .card.featured .tag {
+      background: rgba(74,181,163,0.15);
+    }
+
+    /* FULL-WIDTH CARD */
+    .card-wide {
+      grid-column: span 2;
+    }
+    @media (max-width: 600px) { .card-wide { grid-column: span 1; } }
+
+    /* FOOTER */
+    .footer {
       text-align: center;
-      color: #9aa0a6;
+      color: var(--muted);
       font-size: 0.8rem;
       padding: 2rem 1rem;
-      border-top: 1px solid #e8e8e8;
-      margin-top: auto;
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
+
   <div class="header">
+    <div class="header-eyebrow">Private Preview — Joel Kometz + Meridian AI</div>
     <h1>Brothers Fabrication</h1>
-    <p>Demo preview — everything Joel's been building for the business</p>
+    <p>Full demo suite — website, ops system, pitch, tools, and more</p>
+    <div class="url-badge">
+      <span class="url-label">Preview URL</span>
+      https://meridian-loop.com/brofab/
+    </div>
   </div>
 
   <div class="container">
+
+    <!-- START HERE -->
+    <div class="section-label">Start Here</div>
+    <div class="cards">
+      <a href="brothers-fabrication-demo/next-steps.html" class="card featured card-wide">
+        <div class="featured-badge">Updated May 2026</div>
+        <div class="card-icon teal">→</div>
+        <h3>Next Steps for Chris — Ops System</h3>
+        <p>The prototype is live and working. 7 screens ready to connect to your real Trello board. This doc walks through what's ready, what I need from you (5 things), the phased rollout, and pricing options A/B/C. Start here before anything else.</p>
+        <span class="tag">Most Current</span>
+      </a>
+    </div>
+
+    <!-- PITCH & STRATEGY -->
+    <div class="section-label">Pitch &amp; Strategy</div>
+    <div class="cards">
+      <a href="brothers-fabrication-demo/pitch.html" class="card">
+        <div class="card-icon orange">P</div>
+        <h3>Digital Optimization Pitch</h3>
+        <p>Full-screen scrolling pitch — website rebuild, SEO, AI chatbot, quoting system, social media. The digital presence side of the offering.</p>
+        <span class="tag">Full Pitch Deck</span>
+      </a>
+      <a href="brothers-fabrication-demo/pricing.html" class="card">
+        <div class="card-icon blue">$</div>
+        <h3>Service Packages &amp; Pricing</h3>
+        <p>Rates, Core Build ($8K–$10K), Full System ($35K–$45K), monthly retainers, and the bigger LLC + partnership picture.</p>
+        <span class="tag">Pricing Detail</span>
+      </a>
+      <a href="brothers-fabrication-demo/client-journey.html" class="card">
+        <div class="card-icon">CJ</div>
+        <h3>Client Journey Flowchart</h3>
+        <p>Interactive flowchart of the full customer path from discovery to retention. Shows what's automated vs. manual at every touchpoint.</p>
+        <span class="tag">Interactive</span>
+      </a>
+      <a href="brothers-fabrication-pitch-complete.html" class="card">
+        <div class="card-icon red">!</div>
+        <h3>Complete Pitch (Single Page)</h3>
+        <p>Everything in one long-form scrollable document — background, strategy, pricing, timeline, and the founding partner vision. Most comprehensive.</p>
+        <span class="tag">Long Form</span>
+      </a>
+    </div>
+
+    <!-- INTERACTIVE DEMOS -->
     <div class="section-label">Interactive Demos</div>
     <div class="cards">
       <a href="brothers-fabrication-demo/index.html" class="card">
@@ -136,33 +239,18 @@
         <span class="tag">Full Website</span>
       </a>
       <a href="truck-app/Truck-App/index.html" class="card">
-        <div class="card-icon green">3D</div>
+        <div class="card-icon teal">3D</div>
         <h3>Truck Builder</h3>
-        <p>Interactive 3D truck configurator. Drag and drop equipment, choose finishes, route utilities, generate quotes and bills of materials. Used internally for builds.</p>
-        <span class="tag">3D Application</span>
+        <p>Interactive truck configurator. Choose equipment, finishes, route utilities, generate quotes and bills of materials.</p>
+        <span class="tag">3D Configurator</span>
       </a>
     </div>
 
-    <div class="section-label">Pitch & Strategy</div>
-    <div class="cards">
-      <a href="brothers-fabrication-demo/pitch.html" class="card">
-        <div class="card-icon orange">P</div>
-        <h3>Pitch Deck</h3>
-        <p>Full-screen scrolling pitch with pricing tiers, payment plans, and agency cost comparison. Start here.</p>
-        <span class="tag">Start Here</span>
-      </a>
-      <a href="brothers-fabrication-demo/client-journey.html" class="card">
-        <div class="card-icon blue">CJ</div>
-        <h3>Client Journey Flowchart</h3>
-        <p>Complete customer path from discovery to retention. Shows what's automated vs. manual at every touchpoint.</p>
-        <span class="tag">Interactive Flowchart</span>
-      </a>
-    </div>
-
+    <!-- INTERNAL SYSTEMS -->
     <div class="section-label">Internal Systems</div>
     <div class="cards">
       <a href="shop-tablet-app/index.html" class="card">
-        <div class="card-icon green">T</div>
+        <div class="card-icon teal">T</div>
         <h3>Shop Tablet — Trello Sync</h3>
         <p>Shop floor job tracker with live Trello board sync. View jobs, update progress, track timelines. Pulls cards directly from your Trello board.</p>
         <span class="tag">Trello Integration</span>
@@ -170,20 +258,21 @@
       <a href="shop-tablet-app/admin.html" class="card">
         <div class="card-icon blue">A</div>
         <h3>Shop Admin Panel</h3>
-        <p>Admin view — manage jobs, employees, revenue tracking, activity logs. Syncs with same Trello board for full two-way visibility.</p>
+        <p>Admin view — manage jobs, employees, revenue tracking, activity logs. Two-way visibility with the same Trello board.</p>
         <span class="tag">Admin Dashboard</span>
       </a>
-      <a href="brothers-fabrication-demo/hub.html" class="card">
+      <a href="brothers-fabrication-demo/hub.html" class="card card-wide">
         <div class="card-icon">H</div>
-        <h3>All Demos & Docs</h3>
-        <p>Analytics reports, social media strategy, internal ops dashboard, and everything else — all in one hub.</p>
+        <h3>Everything Else — Hub</h3>
+        <p>Analytics reports, social media strategy, internal ops dashboard, and all supplementary docs in one place.</p>
         <span class="tag">Full Hub</span>
       </a>
     </div>
+
   </div>
 
-  <div class="footer-note">
-    Private demo preview. Built by Joel Kometz + Meridian AI.
+  <div class="footer">
+    Private demo preview. Built by Joel Kometz + Meridian AI. · Last updated May 2, 2026
   </div>
 </body>
 </html>
