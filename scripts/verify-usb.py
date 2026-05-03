@@ -55,7 +55,7 @@ EXPECTED_P2 = {
     "min_sizes": {
         "Cinder/Windows/Cinder.exe": 100_000,
         "Cinder/Linux/cinder-desktop": 100_000,
-        "Cinder/ollama/ollama": 50_000_000,  # Ollama binary ~80MB
+        "Cinder/ollama/ollama": 35_000_000,  # Ollama binary (v0.6+ is ~43MB)
     },
 }
 
