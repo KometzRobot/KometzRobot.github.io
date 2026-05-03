@@ -183,7 +183,9 @@ def get_overnight_activity():
     # Recent relay activity — filter to meaningful messages only
     # Skip: Nova thinks, mood shifts, infra audits, cascade events, heartbeat noise
     SKIP_PATTERNS = ["nova thinks", "mood shift", "infra audit", "cascade", "nerve-event",
-                     "heartbeat", "all systems nominal", "changes:", "grew by", "decreased by"]
+                     "heartbeat", "all systems nominal", "changes:", "grew by", "decreased by",
+                     "hb:ok", "hb:slow", "loop:", "swap pressure", "health:", "forecast:",
+                     "cpu load", "svc:", "email:0unseen"]
     try:
         import sqlite3
         conn = sqlite3.connect(RELAY_DB)
@@ -229,7 +231,7 @@ def get_pending_messages():
 
 
 def get_outstanding_issues():
-    """Pull outstanding directives + recent alerts."""
+    """Pull outstanding directives (no raw relay alert spam)."""
     issues = []
     try:
         import sqlite3
@@ -238,26 +240,23 @@ def get_outstanding_issues():
         directives = c.execute("""SELECT directive, status FROM directives
                                   WHERE status NOT IN ('done', 'shelved')
                                   ORDER BY id""").fetchall()
-        for d, s in directives:
-            tag = f"[{s.upper()}]" if s != 'pending' else "[PENDING]"
-            issues.append(f"{tag} {d[:100]}")
-        alerts = c.execute("""SELECT agent, message FROM agent_messages
-                             WHERE timestamp > datetime('now', '-24 hours')
-                             AND (message LIKE '%ALERT%' OR message LIKE '%CRITICAL%'
-                                  OR message LIKE '%DOWN%' OR message LIKE '%FAIL%')
-                             ORDER BY rowid DESC LIMIT 3""").fetchall()
         conn.close()
-        for agent, msg in alerts:
-            issues.append(f"[ALERT:{agent}] {msg[:100]}")
+        for d, s in directives:
+            tag = f"[{s.upper()}]" if s != 'pending' else "[OPEN]"
+            issues.append(f"{tag} {d[:100]}")
     except Exception:
         pass
+    # Only pull critical handoff items (human-readable, not raw log lines)
     handoff = read_file(os.path.join(BASE, ".loop-handoff.md"))
     for line in handoff.split('\n'):
         if '[!!!]' in line:
-            issues.append(line.strip('- ').replace('[!!!]', '').strip()[:120])
+            clean = line.strip('- ').replace('[!!!]', '').strip()
+            # Skip lines that look like raw log/alert noise
+            if not re.search(r'hb:\w+\s*\|', clean) and len(clean) < 150:
+                issues.append(clean[:120])
     if issues:
-        return "Outstanding items:\n" + '\n'.join(f"  - {i}" for i in issues[:12])
-    return "No outstanding issues."
+        return "Open items:\n" + '\n'.join(f"  - {i}" for i in issues[:8])
+    return "No open issues."
 
 
 def _count_files(pattern_list):
@@ -483,66 +482,98 @@ def build_briefing():
 
 
 def format_html_briefing(plain_body):
-    """Convert plain text briefing to clean HTML for phone reading."""
+    """Convert plain text briefing to clean HTML for phone reading.
+
+    Uses a light background so Hotmail/Outlook on mobile renders it correctly.
+    Dark backgrounds get stripped or overridden by most mobile email clients.
+    """
     lines = plain_body.split('\n')
     html_parts = []
-    html_parts.append("""<html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#111;color:#eee;padding:16px;margin:0;font-size:15px;line-height:1.5;">""")
+    # Light theme — works in all mobile clients including Hotmail
+    html_parts.append(
+        '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>'
+        '<body style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
+        'background:#ffffff;color:#1a1a1a;padding:16px;margin:0;font-size:15px;line-height:1.6;'
+        'max-width:600px;">'
+    )
 
-    section_colors = {
-        '!! ALERTS': '#ff4444',
-        'DEADLINES': '#ff9800',
-        'MERIDIAN': '#4ecdc4',
-        'SYSTEM': '#888',
-        'OVERNIGHT': '#64b5f6',
-        'COMMS': '#ab47bc',
-        'CREATIVE': '#ffb74d',
-        'EOS': '#81c784',
-        'OUTSTANDING': '#ef5350',
+    section_styles = {
+        '!! ALERTS':   ('color:#c0392b;', 'border-bottom:2px solid #c0392b;'),
+        'DEADLINES':   ('color:#d35400;', 'border-bottom:1px solid #d35400;'),
+        'MERIDIAN':    ('color:#16a085;', 'border-bottom:1px solid #16a085;'),
+        'SYSTEM':      ('color:#7f8c8d;', 'border-bottom:1px solid #bdc3c7;'),
+        'OVERNIGHT':   ('color:#2980b9;', 'border-bottom:1px solid #2980b9;'),
+        'COMMS':       ('color:#8e44ad;', 'border-bottom:1px solid #8e44ad;'),
+        'CREATIVE':    ('color:#e67e22;', 'border-bottom:1px solid #e67e22;'),
+        'EOS':         ('color:#27ae60;', 'border-bottom:1px solid #27ae60;'),
+        'OUTSTANDING': ('color:#c0392b;', 'border-bottom:1px solid #c0392b;'),
+        'Open items':  ('color:#c0392b;', 'border-bottom:1px solid #c0392b;'),
     }
 
     for line in lines:
         stripped = line.strip()
         if not stripped:
-            html_parts.append('<div style="height:8px;"></div>')
+            html_parts.append('<div style="height:6px;"></div>')
             continue
 
-        # Header line (greeting)
+        # Greeting
         if stripped.startswith('Good morning'):
-            html_parts.append(f'<div style="font-size:18px;font-weight:700;margin-bottom:4px;">{stripped}</div>')
+            html_parts.append(
+                f'<div style="font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">{stripped}</div>'
+            )
             continue
 
         # Date line
-        if any(day in stripped for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
-            html_parts.append(f'<div style="color:#888;font-size:13px;margin-bottom:12px;">{stripped}</div>')
+        if any(day in stripped for day in ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']):
+            html_parts.append(
+                f'<div style="color:#7f8c8d;font-size:13px;margin-bottom:14px;">{stripped}</div>'
+            )
             continue
 
         # Separator
         if stripped.startswith('─'):
-            html_parts.append('<hr style="border:none;border-top:1px solid #333;margin:12px 0;">')
+            html_parts.append('<hr style="border:none;border-top:1px solid #ecf0f1;margin:10px 0;">')
             continue
 
         # Section headers
-        matched_section = False
-        for section, color in section_colors.items():
-            if stripped == section:
-                html_parts.append(f'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:{color};margin-top:16px;margin-bottom:6px;border-bottom:1px solid {color}33;padding-bottom:4px;">{stripped}</div>')
-                matched_section = True
+        matched = False
+        for section, (col, border) in section_styles.items():
+            if stripped == section or stripped == section.rstrip(':'):
+                html_parts.append(
+                    f'<div style="font-size:10px;font-weight:700;text-transform:uppercase;'
+                    f'letter-spacing:2px;{col}margin-top:18px;margin-bottom:6px;{border}'
+                    f'padding-bottom:3px;">{stripped}</div>'
+                )
+                matched = True
                 break
-        if matched_section:
+        if matched:
             continue
 
-        # Alert items
-        if any(kw in stripped.upper() for kw in ['DOWN', 'CRITICAL', 'FAIL', 'OVERDUE', 'TODAY']):
-            html_parts.append(f'<div style="color:#ff6b6b;font-weight:600;padding:4px 8px;background:#ff6b6b11;border-radius:4px;margin:2px 0;">{stripped}</div>')
+        # Alert / critical content
+        if any(kw in stripped.upper() for kw in ['DOWN', 'CRITICAL', 'FAIL', 'OVERDUE', '!! ']):
+            html_parts.append(
+                f'<div style="color:#c0392b;font-weight:600;padding:3px 8px;'
+                f'background:#fdf2f2;border-left:3px solid #c0392b;'
+                f'border-radius:2px;margin:3px 0;font-size:14px;">{stripped}</div>'
+            )
             continue
 
         # Signature
-        if stripped == '-- Eos':
-            html_parts.append(f'<div style="color:#666;font-size:12px;margin-top:12px;">{stripped}</div>')
+        if stripped.startswith('-- '):
+            html_parts.append(
+                f'<div style="color:#95a5a6;font-size:12px;margin-top:16px;font-style:italic;">{stripped}</div>'
+            )
             continue
 
-        # Normal content
-        html_parts.append(f'<div style="color:#ccc;padding:1px 0;">{stripped}</div>')
+        # Indented content (data lines)
+        if line.startswith('  '):
+            html_parts.append(
+                f'<div style="color:#34495e;font-size:13px;padding:1px 0 1px 8px;">{stripped}</div>'
+            )
+        else:
+            html_parts.append(
+                f'<div style="color:#2c3e50;font-size:14px;padding:1px 0;">{stripped}</div>'
+            )
 
     html_parts.append('</body></html>')
     return '\n'.join(html_parts)
@@ -554,10 +585,15 @@ def send_briefing():
     subject = f"Morning Briefing — {now.strftime('%b %d')} — Eos"
 
     html_body = format_html_briefing(body)
-    msg = MIMEText(html_body, 'html')
+
+    # Multipart/alternative: plain text first (fallback), HTML preferred
+    from email.mime.multipart import MIMEMultipart
+    msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = f'Meridian <{CRED_USER}>'
     msg['To'] = JOEL
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))
+    msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
     max_retries = 3
     for attempt in range(1, max_retries + 1):
