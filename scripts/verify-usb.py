@@ -15,6 +15,7 @@ EXPECTED_P1 = {
         "Start Cinder (Mac).command",
         "start-cinder.sh",
         "autorun.inf",
+        "Start Cinder.vbs",
     ],
     "dirs": [],
     "critical_files": [],
@@ -34,6 +35,10 @@ EXPECTED_P2 = {
         "Cinder/data",
         "Cinder/data/identity",
         "Library Catalogue",
+        "Library Catalogue/Code",
+        "Library Catalogue/Documents",
+        "Library Catalogue/Media",
+        "Library Catalogue/Reference",
     ],
     "files": [
         "Cinder/data/identity/Modelfile",
