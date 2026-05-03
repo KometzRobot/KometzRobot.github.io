@@ -7,52 +7,51 @@ Usage: python3 scripts/verify-usb.py /media/usb0-p1 [/media/usb0-p2]
 import sys
 import os
 
+# Boot partition (FAT32/exFAT, ~512MB) — launcher scripts
 EXPECTED_P1 = {
     "files": [
-        "QUICKSTART.txt",
-        "Launch Cinder.bat",
-        "Launch Cinder.command",
-        "launch-cinder.sh",
+        "README.txt",
+        "Start Cinder.bat",
+        "Start Cinder (Mac).command",
+        "start-cinder.sh",
+        "autorun.inf",
     ],
+    "dirs": [],
+    "critical_files": [],
+    "critical_paths": [],
+    "min_sizes": {},
+}
+
+# App partition (exFAT, ~40GB) — bins, models, data
+EXPECTED_P2 = {
     "dirs": [
         "Cinder",
         "Cinder/Windows",
         "Cinder/Linux",
         "Cinder/Mac",
-        "Cinder/models",
-        "Tools",
-        "Tools/APKs",
-        "UserFiles",
+        "Cinder/ollama",
+        "Cinder/ollama/models",
+        "Cinder/data",
+        "Cinder/data/identity",
+        "Library Catalogue",
+    ],
+    "files": [
+        "Cinder/data/identity/Modelfile",
     ],
     "critical_files": [
         "Cinder/Windows/Cinder.exe",
         "Cinder/Linux/cinder-desktop",
-        "Cinder/models/cinder.gguf",
-        "Tools/APKs/MarketplaceLister-1.0.0.apk",
-        "Tools/APKs/Cinder-1.0.0.apk",
-        "Tools/APKs/BroFabQuote-1.0.0.apk",
+        "Cinder/ollama/ollama",
     ],
     "critical_paths": [
         "Cinder/Mac/Cinder.app",  # Mac .app is a directory bundle
+        "Cinder/ollama/models/blobs",  # Ollama model blobs directory
     ],
     "min_sizes": {
-        "Cinder/models/cinder.gguf": 1_000_000_000,  # >1GB
         "Cinder/Windows/Cinder.exe": 100_000,
         "Cinder/Linux/cinder-desktop": 100_000,
+        "Cinder/ollama/ollama": 50_000_000,  # Ollama binary ~80MB
     },
-}
-
-EXPECTED_P2 = {
-    "dirs": [
-        "identity",
-        "memory",
-        "config",
-        "growth",
-        "logs",
-    ],
-    "files": [
-        "growth/xp.json",
-    ],
 }
 
 
@@ -135,18 +134,18 @@ def main():
     total_ok = 0
     total_fail = 0
 
-    print(f"Verifying P1: {p1}")
+    print(f"Verifying BOOT (P1): {p1}")
     ok, fail = verify_partition(p1, EXPECTED_P1, "P1")
     total_ok += ok
     total_fail += fail
-    print(f"  P1: {ok} passed, {fail} failed")
+    print(f"  BOOT: {ok} passed, {fail} failed")
 
     if p2:
-        print(f"Verifying P2: {p2}")
+        print(f"Verifying APP (P2): {p2}")
         ok, fail = verify_partition(p2, EXPECTED_P2, "P2")
         total_ok += ok
         total_fail += fail
-        print(f"  P2: {ok} passed, {fail} failed")
+        print(f"  APP: {ok} passed, {fail} failed")
 
     print(f"\nTotal: {total_ok} passed, {total_fail} failed")
     if total_fail == 0:
