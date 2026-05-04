@@ -2064,14 +2064,39 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 self._send(404, "Not found", "text/plain")
                 return
             fname = os.path.basename(safe)
-            with open(safe, "rb") as f:
-                data = f.read()
+            fsize = os.path.getsize(safe)
             self.send_response(200)
             self.send_header("Content-Type", "application/octet-stream")
             self.send_header("Content-Disposition", f'attachment; filename="{fname}"')
-            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Content-Length", str(fsize))
             self.end_headers()
-            self.wfile.write(data)
+            with open(safe, "rb") as f:
+                while True:
+                    chunk = f.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+            return
+        # Streaming download for Cinder images (large files, served from products dir)
+        if path.path.startswith("/cinder-img/"):
+            CINDER_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "products", "cinder-anythingllm")
+            fname = os.path.basename(path.path[len("/cinder-img/"):])
+            safe = os.path.normpath(os.path.join(CINDER_DIR, fname))
+            if not safe.startswith(CINDER_DIR) or not fname.endswith(".img") or not os.path.isfile(safe):
+                self._send(404, "Not found", "text/plain")
+                return
+            fsize = os.path.getsize(safe)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Disposition", f'attachment; filename="{fname}"')
+            self.send_header("Content-Length", str(fsize))
+            self.end_headers()
+            with open(safe, "rb") as f:
+                while True:
+                    chunk = f.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
             return
 
         # Auth check for everything else
