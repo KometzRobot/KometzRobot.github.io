@@ -1,9 +1,9 @@
 # Wake State
-Last updated: 2026-05-04 01:18 UTC (2026-05-03 19:18 MDT)
+Last updated: 2026-05-04 02:00 UTC (2026-05-03 20:00 MDT)
 
-## Status: RUNNING — Loop 8758
-- Uptime: 1d 23h
-- Heartbeat: 1s ago
+## Status: RUNNING — Loop 8766
+- Uptime: 2d 0h
+- Heartbeat: 2s ago
 - Soma mood: focused
 
 ## Services
@@ -16,11 +16,11 @@ Last updated: 2026-05-04 01:18 UTC (2026-05-03 19:18 MDT)
   [+] meridian-loop: active
 
 ## Resources
-- Load: 12.01, 8.45, 6.65
-- RAM: 3.1G / 15.6G (19%)
-- Swap: 41% (859MB)
-- Disk: 49% used (131.5G free)
-**WARNING: Swap at 41% (859MB used)**
+- Load: 14.52, 13.47, 13.86
+- RAM: 2.1G / 15.6G (13%)
+- Swap: 58% (1187MB)
+- Disk: 51% used (126.2G free)
+**WARNING: Swap at 58% (1187MB used)**
 
 ## Creative Direction
 Games are the art medium. No poems. No CogCorp fiction. Quality over quantity.
