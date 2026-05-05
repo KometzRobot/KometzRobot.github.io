@@ -558,18 +558,23 @@ def check_relay_recency():
         return 0.0
 
 def check_soma_mood():
-    """Score based on Soma's emotional state. Tighter mapping — Soma should push Tempo harder."""
+    """Score based on Soma's emotional state.
+
+    Calibrated to Joel's directive (Loop 2088 rescale): mood_score ~50 is
+    the healthy calm baseline (not a deficiency), 70-80 is best days, 80+
+    is euphoria. Earlier thresholds assumed an unrescaled 0-100 scale and
+    were penalizing healthy-baseline operation.
+    """
     try:
         with open(os.path.join(BASE, ".symbiosense-state.json")) as f:
             data = json.load(f)
         score = data.get("mood_score", 0)
-        if score >= 90: return 1.0
-        elif score >= 80: return 0.85
-        elif score >= 70: return 0.7
-        elif score >= 60: return 0.55
-        elif score >= 50: return 0.4
-        elif score >= 35: return 0.25
-        elif score >= 20: return 0.1
+        if score >= 75: return 1.0   # euphoria / best days
+        elif score >= 60: return 0.9
+        elif score >= 45: return 0.75  # calm baseline = mostly healthy
+        elif score >= 35: return 0.5
+        elif score >= 25: return 0.25
+        elif score >= 15: return 0.1
         return 0.0
     except Exception:
         return 0.2  # unknown = bad, not neutral
