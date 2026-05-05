@@ -879,11 +879,15 @@ def check_swap_usage():
     free = info.get("SwapFree", 0)
     if total == 0: return 1.0  # No swap = fine
     pct = 100 * (1 - free / total) if total > 0 else 0
+    # Healthy swap depends on RAM availability — stale paged-out data
+    # with plenty of RAM available is not real pressure.
+    avail_mb = info.get("MemAvailable", 0) / 1024
+    ram_healthy = avail_mb >= 2048  # >=2GB available
     if pct < 10: return 1.0
-    elif pct < 30: return 0.8
-    elif pct < 60: return 0.5
-    elif pct < 80: return 0.2
-    return 0.0
+    elif pct < 30: return 0.9 if ram_healthy else 0.8
+    elif pct < 60: return 0.8 if ram_healthy else 0.5
+    elif pct < 80: return 0.6 if ram_healthy else 0.2
+    return 0.3 if ram_healthy else 0.0
 
 def check_zombies():
     try:
@@ -2108,6 +2112,7 @@ def check_neural_pressure():
     neural = data.get("neural", {})
     pressure = neural.get("pressure", "unknown")
     if pressure == "normal": return 1.0
+    elif pressure == "active": return 0.8  # paged-out data, RAM still healthy
     elif pressure == "stressed": return 0.5
     elif pressure == "critical": return 0.0
     return 0.3

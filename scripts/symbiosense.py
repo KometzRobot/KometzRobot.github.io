@@ -230,7 +230,7 @@ def get_circulatory():
 
 def get_neural():
     """Neural state — memory pressure, swap, page faults."""
-    result = {"swap_pct": 0, "swap_used_mb": 0, "page_faults": 0, "pressure": "normal"}
+    result = {"swap_pct": 0, "swap_used_mb": 0, "page_faults": 0, "pressure": "normal", "ram_avail_mb": 0}
     try:
         mem = {}
         for line in open("/proc/meminfo"):
@@ -245,6 +245,8 @@ def get_neural():
         cached = mem.get("Cached", 0)
         buffers = mem.get("Buffers", 0)
         result["cache_mb"] = round((cached + buffers) / 1024, 1)
+        # RAM availability is the gating factor for whether swap matters
+        result["ram_avail_mb"] = round(mem.get("MemAvailable", 0) / 1024, 1)
     except Exception:
         pass
     try:
@@ -255,12 +257,21 @@ def get_neural():
                 result["page_faults"] = int(parts[1])
     except Exception:
         pass
-    # Pressure assessment
-    if result["swap_pct"] > 50:
+    # Pressure assessment — high swap with healthy RAM is stale paging,
+    # not real pressure. Real pressure = swap full AND RAM low.
+    swap_pct = result["swap_pct"]
+    ram_avail_mb = result["ram_avail_mb"]
+    ram_tight = ram_avail_mb > 0 and ram_avail_mb < 1024  # <1GB available
+    ram_squeezed = ram_avail_mb > 0 and ram_avail_mb < 2048  # <2GB available
+    if swap_pct > 50 and ram_tight:
         result["pressure"] = "critical"
-    elif result["swap_pct"] > 20:
+    elif swap_pct > 50 and ram_squeezed:
         result["pressure"] = "stressed"
-    elif result["swap_pct"] > 5:
+    elif swap_pct > 20 and ram_squeezed:
+        result["pressure"] = "stressed"
+    elif swap_pct > 50:
+        result["pressure"] = "active"  # stale paged-out data, RAM is fine
+    elif swap_pct > 5:
         result["pressure"] = "active"
     return result
 
