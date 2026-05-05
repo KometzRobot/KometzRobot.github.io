@@ -699,7 +699,9 @@ def check_cron_tempo():
 
 def check_services_systemd():
     """Overall systemd service health."""
-    svcs = ["the-chorus", "meridian-hub-v2", "cloudflare-tunnel", "symbiosense", "protonmail-bridge"]
+    # protonmail-bridge runs inside the Proton Mail desktop app, not as a systemd unit —
+    # bridge health is covered by check_svc_protonbridge / check_port_1144.
+    svcs = ["the-chorus", "meridian-hub-v2", "cloudflare-tunnel", "symbiosense"]
     ok = sum(1 for s in svcs if _svc_active(s))
     return ok / len(svcs)
 
