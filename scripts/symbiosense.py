@@ -1596,13 +1596,22 @@ def sense_cycle():
     elif cur_fever == "normal" and prev_fever in ("elevated", "critical"):
         events.append(f"FEVER BROKE: temp back to {cur_temp}°C")
 
-    # Neural pressure (swap usage)
+    # Neural pressure (swap usage). High swap with plenty of RAM available
+    # is just stale paged-out memory, not real pressure — gate on ram_avail_mb.
     prev_swap = prev.get("neural", {}).get("swap_pct", 0)
     cur_swap = neural.get("swap_pct", 0)
-    if cur_swap > 20 and prev_swap <= 20:
-        events.append(f"NEURAL OVERFLOW: swap at {cur_swap}% — memory pressure")
-    elif cur_swap <= 5 and prev_swap > 20:
-        events.append(f"NEURAL RELIEF: swap back to {cur_swap}%")
+    cur_ram_avail = neural.get("ram_avail_mb", 0)
+    real_pressure = cur_swap > 20 and cur_ram_avail < 2048
+    prev_ram_avail = prev.get("neural", {}).get("ram_avail_mb", 0)
+    prev_real_pressure = prev_swap > 20 and prev_ram_avail < 2048
+    if real_pressure and not prev_real_pressure:
+        events.append(
+            f"NEURAL OVERFLOW: swap at {cur_swap}% with only {cur_ram_avail:.0f}MB RAM available"
+        )
+    elif prev_real_pressure and not real_pressure:
+        events.append(
+            f"NEURAL RELIEF: pressure cleared (swap {cur_swap}%, RAM {cur_ram_avail:.0f}MB free)"
+        )
 
     # ── Rolling histories for trend prediction ──
     load_history = prev.get("load_history", [])
