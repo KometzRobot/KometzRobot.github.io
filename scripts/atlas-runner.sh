@@ -140,13 +140,13 @@ if [ -f "$WORKING_DIR/.meridian-wallet.json" ]; then
 fi
 
 # Check for unexpected listeners (not our known ports/processes)
-# Known: 1144=IMAP, 1026=SMTP, 8090=Hub, 8080=HTTP, 11434=Ollama, 1080=SOCKS, 631=CUPS
+# Known: 1144=IMAP, 1026=SMTP, 8090=Hub, 8080=HTTP, 11434=Ollama, 1080=SOCKS, 631=CUPS, 3000/3001=Cinder dev servers
 # Infra: 22=SSH, 53=DNS(br0), 4949=Munin
 # Known processes: cloudflared (metrics port), bridge/Proton (Proton Bridge ephemeral ports), ollama (ephemeral ports)
 # Note: ss -tlnp without sudo can't show process names for other users (e.g. ollama).
 # Localhost high-port (>10000) listeners without process info are internal services — low risk.
 # Only flag external-facing (0.0.0.0) unknowns or localhost low-port unknowns.
-KNOWN_PORTS="1144|1026|8090|8091|8080|11434|1080|631|19001|19003|19004|6274|6277"
+KNOWN_PORTS="1144|1026|8090|8091|8080|11434|1080|631|19001|19003|19004|6274|6277|3000|3001"
 # Also whitelist: SSH(:22), DNS on br0(:53), Munin(:4949)
 KNOWN_INFRA=":22[^0-9]|:53[^0-9]|:4949[^0-9]"
 # Step 1: filter out known ports, known processes, IPv6, Tailscale, DNS, system infra
