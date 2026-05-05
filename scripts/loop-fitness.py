@@ -2265,14 +2265,25 @@ def check_fitness_score_stability():
 
 def check_memory_db_backup():
     """Critical data should have backups."""
-    backup_patterns = ["memory.db.bak", "memory-backup-*.db"]
+    backup_patterns = [
+        "memory.db.bak", "memory-backup-*.db",
+        "data/memory.db.backup.*",
+    ]
+    youngest = None
     for pattern in backup_patterns:
-        matches = glob.glob(os.path.join(BASE, pattern))
-        for m in matches:
-            if _file_age(m) < 604800:  # < 7 days
-                return 1.0
-            return 0.5  # Exists but old
-    return 0.0
+        for m in glob.glob(os.path.join(BASE, pattern)):
+            if m.endswith('.corrupt'):
+                continue
+            age = _file_age(m)
+            if youngest is None or age < youngest:
+                youngest = age
+    if youngest is None:
+        return 0.0
+    if youngest < 86400 * 2:   # < 2 days
+        return 1.0
+    if youngest < 604800:      # < 7 days
+        return 0.7
+    return 0.3
 
 def check_service_restart_frequency():
     """Frequent service restarts = instability."""
