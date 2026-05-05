@@ -1,10 +1,10 @@
 # Wake State
-Last updated: 2026-05-05 17:25 UTC (2026-05-05 11:25 MDT)
+Last updated: 2026-05-05 17:30 UTC (2026-05-05 11:30 MDT)
 
 ## Status: RUNNING — Loop 9135
 - Uptime: 0d 18h
 - Heartbeat: 0s ago
-- Soma mood: alert
+- Soma mood: focused
 
 ## Services
   [+] proton_bridge: up
@@ -16,7 +16,7 @@ Last updated: 2026-05-05 17:25 UTC (2026-05-05 11:25 MDT)
   [+] meridian-loop: active
 
 ## Resources
-- Load: 0.09, 0.40, 0.54
+- Load: 0.25, 0.33, 0.46
 - RAM: 2.7G / 15.6G (17%)
 - Swap: 48% (1001MB)
 - Disk: 53% used (119.4G free)
