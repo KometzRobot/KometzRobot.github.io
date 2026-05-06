@@ -2108,9 +2108,10 @@ def _main_loop():
                     log(f"EVENT: {event}")
 
                 # Post critical events to dashboard (with cooldown)
+                # Joel's dashboard is for emergencies only — drop MOOD SHIFT,
+                # AGENT SILENT, PREDICTION (still go to relay db). Loop 9230.
                 critical = [e for e in events if any(
-                    w in e for w in ["DOWN", "CRITICAL", "STALE", "SPIKE",
-                                     "AGENT SILENT", "MOOD SHIFT", "PREDICTION"]
+                    w in e for w in ["DOWN", "CRITICAL", "STALE", "SPIKE"]
                 )]
                 if critical:
                     now = time.time()

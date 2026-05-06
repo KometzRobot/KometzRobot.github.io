@@ -1239,16 +1239,14 @@ def main():
         relay_msg = f"Run #{state['runs']}: {'; '.join(significant_parts) if significant_parts else 'routine — all clear'}."
         post_to_relay(relay_msg)
 
-        # Only post to dashboard if something noteworthy happened
-        # (Not just "All systems nominal" every 30 minutes)
+        # Only post to dashboard if something noteworthy happened.
+        # No "all clear" pings — Joel doesn't need that on the dashboard.
+        # (Loop 9230 — dashboard is for emergencies, not heartbeats.)
         if significant_parts:
             dash_msg = f"Nova #{state['runs']}: {'; '.join(significant_parts)}"
             post_to_dashboard(dash_msg)
             actions.append("Posted to relay + dashboard")
         else:
-            # Only post a "nominal" message every 2 hours (every 8 runs)
-            if state["runs"] % 8 == 0:
-                post_to_dashboard(f"Nova #{state['runs']}: All systems nominal. {state.get('creative', {}).get('total_poems', '?')}p/{state.get('creative', {}).get('total_journals', '?')}j.")
             actions.append("Posted to relay")
 
     # ── NOVA THINKING (every 8 runs = ~2 hours) ──
@@ -1271,8 +1269,8 @@ def main():
             if thought and "thinking" not in thought.lower():
                 log_observation(f"Nova's thought: {thought}")
                 post_to_relay(thought)
-                # Post thoughts to dashboard too so Joel sees them
-                post_to_dashboard(f"Nova thinks: {thought[:200]}")
+                # Thoughts stay in relay db only. Loop 9230 — dashboard
+                # was getting flooded; Joel reads relay if he wants depth.
                 actions.append(f"Thought: {thought[:60]}")
         except Exception as e:
             log_exception(agent="Nova")  # Don't fail the whole cycle over a thought
