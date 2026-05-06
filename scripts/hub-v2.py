@@ -9,9 +9,11 @@
 # API: REST endpoints reading shared state files/DBs
 # """
 
+import cgi
 import http.server
 import json
 import os
+import re
 import secrets
 import sqlite3
 import subprocess
@@ -2496,6 +2498,152 @@ The tape is spooling. The mechanism is listening.
                 self._send_json({"ok": True, "message": "Questions received. VOLtar will reply to " + buyer_email + " within 24 hours."})
             except Exception as e:
                 self._send_json({"ok": True, "message": "Questions received.", "note": "email delivery pending"})
+            return
+
+        # Cinder Inbox — public endpoint for bug reports from beta testers' USBs.
+        # Auth: shared CINDER_INBOX_TOKEN baked into the Cinder build (form field).
+        if path == "/api/cinder-inbox/bug-report":
+            env = _load_env_dict()
+            expected_token = env.get("CINDER_INBOX_TOKEN", "")
+            if not expected_token:
+                self._send_json({"error": "inbox not configured"}, 503)
+                return
+
+            ip = self.client_address[0]
+            # Rate limit: reuse login bucket — 5 reports per 10 minutes per IP is plenty.
+            if not _check_rate_limit(ip):
+                self._send_json({"error": "rate limited"}, 429)
+                return
+
+            ctype = self.headers.get("Content-Type", "")
+            if not ctype.startswith("multipart/form-data"):
+                self._send_json({"error": "expected multipart/form-data"}, 400)
+                return
+
+            try:
+                fs = cgi.FieldStorage(
+                    fp=self.rfile,
+                    headers=self.headers,
+                    environ={"REQUEST_METHOD": "POST", "CONTENT_TYPE": ctype},
+                    keep_blank_values=True,
+                )
+            except Exception as e:
+                _record_attempt(ip)
+                self._send_json({"error": f"parse failed: {e}"}, 400)
+                return
+
+            token = (fs.getvalue("token") or "").strip()
+            if not secrets.compare_digest(token, expected_token):
+                _record_attempt(ip)
+                self._send_json({"error": "bad token"}, 403)
+                return
+
+            report_raw = fs.getvalue("report") or "{}"
+            try:
+                report = json.loads(report_raw)
+                if not isinstance(report, dict):
+                    raise ValueError("report not object")
+            except Exception:
+                self._send_json({"error": "invalid report json"}, 400)
+                return
+
+            # Reject empty submissions: need at least a title, description, or attached file.
+            has_title = bool(str(report.get("title", "") or "").strip())
+            has_desc = bool(str(report.get("description", "") or "").strip())
+            has_files = "files" in fs and (
+                any(getattr(it, "filename", None) for it in (fs["files"] if isinstance(fs["files"], list) else [fs["files"]]))
+            )
+            if not (has_title or has_desc or has_files):
+                self._send_json({"error": "report needs title, description, or file"}, 400)
+                return
+
+            raw_id = str(report.get("id", "") or "")
+            sanitized = re.sub(r"[^a-zA-Z0-9_-]", "", raw_id)[:64]
+            ts = int(time.time())
+            received_id = f"{ts}-{sanitized}" if sanitized else f"{ts}-{secrets.token_hex(4)}"
+
+            inbox_root = os.path.join(BASE, "incoming-bug-reports")
+            os.makedirs(inbox_root, exist_ok=True)
+            dest = os.path.join(inbox_root, received_id)
+            os.makedirs(os.path.join(dest, "files"), exist_ok=True)
+
+            report["receivedAt"] = datetime.now(timezone.utc).isoformat()
+            report["clientIP"] = ip
+            report["originalId"] = raw_id
+
+            with open(os.path.join(dest, "report.json"), "w") as rf:
+                json.dump(report, rf, indent=2)
+
+            file_count = 0
+            total_bytes = 0
+            MAX_BYTES = 50 * 1024 * 1024
+            if "files" in fs:
+                items = fs["files"]
+                if not isinstance(items, list):
+                    items = [items]
+                for item in items:
+                    if not getattr(item, "filename", None):
+                        continue
+                    safe_name = re.sub(r"[^a-zA-Z0-9_.\- ]", "_", os.path.basename(item.filename))[:128]
+                    if not safe_name:
+                        continue
+                    data = item.file.read()
+                    if total_bytes + len(data) > MAX_BYTES:
+                        break
+                    total_bytes += len(data)
+                    with open(os.path.join(dest, "files", safe_name), "wb") as ff:
+                        ff.write(data)
+                    file_count += 1
+
+            try:
+                db = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+                summary = (
+                    f"Cinder bug report from {ip}: "
+                    f"{str(report.get('title', '(no title)'))[:80]} "
+                    f"[sev={report.get('severity', '?')}, files={file_count}, id={received_id}]"
+                )
+                db.execute(
+                    "INSERT INTO agent_messages (agent, topic, message, timestamp) VALUES (?, ?, ?, datetime('now'))",
+                    ("CinderInbox", "bug-report", summary),
+                )
+                db.commit()
+                db.close()
+            except Exception:
+                pass
+
+            try:
+                import smtplib
+                from email.mime.text import MIMEText
+                env2 = _load_env_dict()
+                title = str(report.get("title", "(no title)"))[:100]
+                desc = str(report.get("description", ""))[:1500]
+                sev = report.get("severity", "?")
+                sysinfo = report.get("systemInfo", {})
+                email_text = (
+                    f"New Cinder beta bug report received.\n\n"
+                    f"ID: {received_id}\n"
+                    f"Title: {title}\n"
+                    f"Severity: {sev}\n"
+                    f"Files attached: {file_count}\n"
+                    f"From IP: {ip}\n"
+                    f"Reporter email: {report.get('email') or '(not given)'}\n"
+                    f"Platform: {sysinfo.get('platform','?')} {sysinfo.get('release','')} {sysinfo.get('arch','')}\n"
+                    f"Cinder version: {sysinfo.get('cinderVersion','?')}\n\n"
+                    f"--- Description ---\n{desc}\n\n"
+                    f"--- Files saved at ---\n{dest}\n"
+                )
+                msg = MIMEText(email_text)
+                msg["From"] = f'Meridian <{env2.get("CRED_USER", "kometzrobot@proton.me")}>'
+                msg["To"] = "jkometz@hotmail.com"
+                msg["Subject"] = f"[Cinder Beta] {sev.upper()}: {title[:60]}"
+                smtp = smtplib.SMTP("127.0.0.1", 1026)
+                smtp.login(env2.get("CRED_USER", ""), env2.get("CRED_PASS", ""))
+                smtp.sendmail(msg["From"], [msg["To"]], msg.as_string())
+                smtp.quit()
+            except Exception:
+                pass
+
+            self._send_json({"ok": True, "id": received_id, "files": file_count})
             return
 
         # Auth check
