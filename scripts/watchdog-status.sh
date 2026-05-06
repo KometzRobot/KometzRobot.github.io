@@ -171,6 +171,20 @@ else
     FAILURES="${FAILURES}Command Center not running\n"
 fi
 
+# ── Check for duplicate systemd unit definitions ─────────────────
+# Loop 9226 first hit; Loop 9357 recurred (the detector existed but
+# nothing scheduled it). Now it runs every cycle. Conflicts go to the
+# alert path so they don't go quietly.
+DUP_OUT=$($PYTHON "$WORKING_DIR/scripts/check-duplicate-units.py" 2>&1)
+DUP_RC=$?
+if [ "$DUP_RC" -ne 0 ]; then
+    log "ALERT: duplicate systemd units detected"
+    log "$DUP_OUT"
+    FAILURES="${FAILURES}Duplicate systemd unit conflict (run check-duplicate-units.py)\n"
+else
+    log "OK: no duplicate systemd unit conflicts."
+fi
+
 # ── Send alert if there are failures ─────────────────────────────
 if [ -n "$FAILURES" ] || [ -n "$RESTARTS" ]; then
     # Rate limit: only email once per 30 minutes
