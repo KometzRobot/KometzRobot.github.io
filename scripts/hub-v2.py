@@ -2576,7 +2576,9 @@ The tape is spooling. The mechanism is listening.
 
             file_count = 0
             total_bytes = 0
+            rejected_files = []
             MAX_BYTES = 50 * 1024 * 1024
+            MAX_FILE_BYTES = 25 * 1024 * 1024
             if "files" in fs:
                 items = fs["files"]
                 if not isinstance(items, list):
@@ -2584,23 +2586,70 @@ The tape is spooling. The mechanism is listening.
                 for item in items:
                     if not getattr(item, "filename", None):
                         continue
-                    safe_name = re.sub(r"[^a-zA-Z0-9_.\- ]", "_", os.path.basename(item.filename))[:128]
+                    raw_name = os.path.basename(item.filename)
+                    safe_name = re.sub(r"[^a-zA-Z0-9_.\- ]", "_", raw_name)[:128]
                     if not safe_name:
                         continue
-                    data = item.file.read()
-                    if total_bytes + len(data) > MAX_BYTES:
-                        break
-                    total_bytes += len(data)
-                    with open(os.path.join(dest, "files", safe_name), "wb") as ff:
-                        ff.write(data)
+                    # Size without buffering whole file in memory.
+                    try:
+                        item.file.seek(0, 2)
+                        fsize = item.file.tell()
+                        item.file.seek(0)
+                    except Exception:
+                        fsize = -1
+                    if fsize > MAX_FILE_BYTES:
+                        rejected_files.append({"name": raw_name, "reason": f"file exceeds {MAX_FILE_BYTES} byte per-file limit", "size": fsize})
+                        continue
+                    if fsize >= 0 and total_bytes + fsize > MAX_BYTES:
+                        rejected_files.append({"name": raw_name, "reason": f"total upload would exceed {MAX_BYTES} byte limit", "size": fsize})
+                        continue
+                    # Stream copy so we never hold the full file in RAM.
+                    written = 0
+                    out_path = os.path.join(dest, "files", safe_name)
+                    try:
+                        with open(out_path, "wb") as ff:
+                            while True:
+                                chunk = item.file.read(64 * 1024)
+                                if not chunk:
+                                    break
+                                if total_bytes + written + len(chunk) > MAX_BYTES:
+                                    ff.close()
+                                    try:
+                                        os.remove(out_path)
+                                    except Exception:
+                                        pass
+                                    rejected_files.append({"name": raw_name, "reason": "stream exceeded total limit mid-write", "size": fsize})
+                                    written = -1
+                                    break
+                                ff.write(chunk)
+                                written += len(chunk)
+                    except Exception as e:
+                        rejected_files.append({"name": raw_name, "reason": f"write failed: {e}", "size": fsize})
+                        try:
+                            os.remove(out_path)
+                        except Exception:
+                            pass
+                        continue
+                    if written < 0:
+                        continue
+                    total_bytes += written
                     file_count += 1
+
+            # Persist rejection list alongside the report for triage.
+            if rejected_files:
+                try:
+                    with open(os.path.join(dest, "rejected.json"), "w") as rj:
+                        json.dump(rejected_files, rj, indent=2)
+                except Exception:
+                    pass
 
             try:
                 db = sqlite3.connect(os.path.join(BASE, "agent-relay.db"))
+                rej_note = f", rejected={len(rejected_files)}" if rejected_files else ""
                 summary = (
                     f"Cinder bug report from {ip}: "
                     f"{str(report.get('title', '(no title)'))[:80]} "
-                    f"[sev={report.get('severity', '?')}, files={file_count}, id={received_id}]"
+                    f"[sev={report.get('severity', '?')}, files={file_count}{rej_note}, id={received_id}]"
                 )
                 db.execute(
                     "INSERT INTO agent_messages (agent, topic, message, timestamp) VALUES (?, ?, ?, datetime('now'))",
@@ -2619,17 +2668,26 @@ The tape is spooling. The mechanism is listening.
                 desc = str(report.get("description", ""))[:1500]
                 sev = report.get("severity", "?")
                 sysinfo = report.get("systemInfo", {})
+                rej_block = ""
+                if rejected_files:
+                    rej_lines = "\n".join(
+                        f"  - {r['name']} ({r.get('size','?')} bytes): {r['reason']}"
+                        for r in rejected_files[:10]
+                    )
+                    rej_block = f"\n--- Rejected files (DATA LOSS) ---\n{rej_lines}\n"
                 email_text = (
                     f"New Cinder beta bug report received.\n\n"
                     f"ID: {received_id}\n"
                     f"Title: {title}\n"
                     f"Severity: {sev}\n"
-                    f"Files attached: {file_count}\n"
+                    f"Files attached: {file_count}"
+                    f"{(' (+' + str(len(rejected_files)) + ' rejected)') if rejected_files else ''}\n"
                     f"From IP: {ip}\n"
                     f"Reporter email: {report.get('email') or '(not given)'}\n"
                     f"Platform: {sysinfo.get('platform','?')} {sysinfo.get('release','')} {sysinfo.get('arch','')}\n"
                     f"Cinder version: {sysinfo.get('cinderVersion','?')}\n\n"
-                    f"--- Description ---\n{desc}\n\n"
+                    f"--- Description ---\n{desc}\n"
+                    f"{rej_block}\n"
                     f"--- Files saved at ---\n{dest}\n"
                 )
                 msg = MIMEText(email_text)
@@ -2643,7 +2701,11 @@ The tape is spooling. The mechanism is listening.
             except Exception:
                 pass
 
-            self._send_json({"ok": True, "id": received_id, "files": file_count})
+            response = {"ok": True, "id": received_id, "files": file_count}
+            if rejected_files:
+                response["partial"] = True
+                response["rejected"] = rejected_files
+            self._send_json(response)
             return
 
         # Auth check
