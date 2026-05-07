@@ -355,9 +355,16 @@
     .evo-text p{text-align:center}
     .evo-text .evo-tag{display:block;text-align:center;font-size:11px}
   }
+  /* Mobile evolve — give the GameBoy enough room so animations don't squish */
+  .evo-stage > .evo-text{min-width:0}
+  @media (max-width:880px){
+    .gb{max-width:340px}
+    .gb-screen{padding:18px 18px 32px 22px}
+  }
   @media (max-width:560px){
     section.evolve{padding:44px 0 54px}
-    .gb{padding:18px 14px 22px}
+    .gb{padding:18px 14px 22px;max-width:320px}
+    .gb-screen{padding:16px 16px 28px 20px}
     .gb-screen{padding:18px 16px 30px 22px}
     .caption{font-size:11.5px;min-height:40px}
     .gb-power{top:22px;left:8px}
@@ -647,9 +654,12 @@
     .section-head{margin-bottom:22px}
     .ach-grid{grid-template-columns:repeat(2,1fr);gap:8px}
     .stages-row{grid-template-columns:1fr;gap:8px}
-    .gb{max-width:260px;padding:14px 12px 20px}
+    .gb{max-width:300px;padding:14px 12px 20px}
     .gb-screen{padding:14px 14px 26px 18px}
-    .caption{font-size:10.5px;min-height:36px}
+    .caption{font-size:10.5px;min-height:36px;letter-spacing:.04em}
+    .caption .line{font-size:10.5px}
+    /* Keep sprites/silhouettes proportional even when LCD is tiny */
+    .sprite,.silhouette{width:55%;height:55%}
     .evo-text h3{font-size:20px}
     .evo-text p{font-size:13.5px}
     .uimock-text h2,.journal-text h2{font-size:22px}
@@ -953,8 +963,8 @@
       <div class="evo-text">
         <h3>The whole arc is seven of these.</h3>
         <p><span class="evo-tag">SPARK → EMBER → FLAME → FIRE → BLAZE → BONFIRE → INFERNO</span></p>
-        <p>Each evolution is hand-drawn — no off-the-shelf splash screen. Cinder pauses what it's doing, plays the cutscene, drops a new badge into your trophy case, and writes a paragraph in your journal about what changed and why.</p>
-        <p class="evo-fine">The animation above is a real 12-second sequence — the same one your stick will play the first time it crosses 1,000 XP. Replays from your archive any time you want to see it again.</p>
+        <p>Each evolution is hand-coded pixel art — Game Boy cell, eleven steps, white-flash reveal, fanfare. The Spark and Ember sprites you see above ship with v1; later stage sprites land monthly as we draw them.</p>
+        <p class="evo-fine">The animation above is a real 12-second loop. Cinder plays it on the first stage-up of a stick and the cutscene replays from your archive any time you want to see it again.</p>
       </div>
     </div>
   </div>
@@ -1069,7 +1079,7 @@
             <rect x="580" y="240" width="200" height="100" rx="10" fill="#fff" stroke="#48b04f" stroke-width="2.5"/>
             <text x="600" y="266" font-size="26">🔒</text>
             <text x="640" y="270" font-family="Helvetica Neue, sans-serif" font-size="13" font-weight="800" fill="#1c1a17">Vault</text>
-            <text x="640" y="288" font-family="Courier New, monospace" font-size="10" fill="#3d7a2f" letter-spacing="1">VeraCrypt · zero-touch</text>
+            <text x="640" y="288" font-family="Courier New, monospace" font-size="10" fill="#3d7a2f" letter-spacing="1">AES-256-GCM · zero-touch</text>
             <text x="600" y="312" font-family="Helvetica Neue, sans-serif" font-size="11" fill="#1c1a17">Encrypted partition · auto-mount</text>
           </g>
 
@@ -1137,17 +1147,7 @@
         <span class="lg-data">your writing</span>
         <span class="lg-host">host boundary (read-only to your data)</span>
       </div>
-      <p class="sysmap-foot">Nothing in this diagram persists on the host. The vault uses <strong>VeraCrypt</strong> (cross-platform), the chat layer is a fork of <strong>AnythingLLM</strong>, and the model runs in <strong>Ollama</strong>. Pull the USB and every byte you typed leaves with it.</p>
-    </div>
-  </div>
-</section>
-
-<section class="real-shots" id="screenshots" style="padding:48px 0 80px;background:var(--paper)">
-  <div class="wrap">
-    <div class="section-head">
-      <div class="eyebrow">Honest note · Cinder v1.0 (beta)</div>
-      <h2>The branded UI you see above is the target — not yet final on every screen.</h2>
-      <p>The chat, journal, vault, and growth panels match the warm/kraft theme already. A few sub-screens still wear the underlying framework's defaults while we re-skin them. We won't ship marketing screenshots that pretend otherwise — when the full re-skin lands, we'll re-shoot and update this section.</p>
+      <p class="sysmap-foot">Nothing in this diagram persists on the host. The vault uses <strong>AES-256-GCM with scrypt key derivation</strong> (built into the app, no external dep — optional VeraCrypt sidecar for a separately mountable disk vault), the chat layer is a fork of <strong>AnythingLLM</strong>, and the model runs in <strong>Ollama</strong>. Pull the USB and every byte you typed leaves with it.</p>
     </div>
   </div>
 </section>
@@ -1176,7 +1176,7 @@
         <div class="gami-card">
           <div class="gami-eyebrow">Levels &amp; Stages</div>
           <h3>How it grows up</h3>
-          <p>Every chat earns experience. Levels stack inside seven named Stages. When you finish a Stage, Cinder shows a hand-drawn evolution animation — kraft paper unfolds, an ember catches, the new Stage badge inks itself onto the page. The whole arc from Spark to Inferno is a year of real use.</p>
+          <p>Every chat earns experience. Levels stack inside seven named Stages. When you finish a Stage, Cinder plays a Game Boy-style pixel-art cutscene — silhouettes blink, the screen flashes, your new Stage sprite appears. The whole arc from Spark to Inferno is a year of real use.</p>
           <ul class="gami-list">
             <li>7 Stages, each with 3–6 levels inside</li>
             <li>XP earned for chats, journal entries, vault use, daily check-ins</li>
@@ -1403,15 +1403,15 @@
         </ul>
       </div>
       <div class="lib-shelf">
-        <div class="lh">Cinder originals · 9 docs</div>
+        <div class="lh">Cinder originals · 5 docs</div>
         <h3>Stuff to chew on</h3>
         <ul>
           <li>About The Library — the meta-doc</li>
           <li>On Talking To AI — practical etiquette for prompting</li>
           <li>Letter From The Maker — what Cinder is and why it exists</li>
           <li>Cinder's Lineage — what we forked, what we owe</li>
-          <li>Bash, Git, SQL, Markdown quick-references</li>
-          <li>Plus the Companion Journal you fill out together</li>
+          <li>Cinder Survival Compendium — offline-prep reference</li>
+          <li>Plus the Companion Journal you and Cinder fill out together</li>
         </ul>
       </div>
       <div class="lib-shelf">
@@ -1437,13 +1437,14 @@
         </ul>
       </div>
       <div class="lib-shelf">
-        <div class="lh">Programming canon · 3 docs</div>
-        <h3>Free programming references</h3>
+        <div class="lh">Programming quick-refs · 4 docs</div>
+        <h3>Practical references</h3>
         <ul>
-          <li>SICP (Abelson &amp; Sussman) — CC BY-SA 4.0, bundled inline</li>
-          <li>The Rust Book intro &amp; Ch.1 — MIT/Apache, bundled</li>
-          <li>Free Programming Canon index — pointers to Pro Git, Eloquent JS, etc.</li>
-          <li><em>Note: no Pragmatic Programmer. It's copyrighted; the publisher doesn't ship a redistributable excerpt. Earlier storefront copy that promised it was wrong, and we won't pretend.</em></li>
+          <li>Bash quick reference — common commands, flags, pipe patterns</li>
+          <li>Git quick reference — daily commands, history, recovery</li>
+          <li>SQL quick reference — SELECT/JOIN/aggregates patterns</li>
+          <li>Markdown quick reference — syntax cheat-sheet</li>
+          <li><em>Note: no SICP, no Rust Book, no Pragmatic Programmer. We don't redistribute books we can't license. v1 ships these four short references; longer canonical texts arrive only when we can ship them legally.</em></li>
         </ul>
       </div>
 
@@ -1460,7 +1461,7 @@
       </div>
     </div>
     <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:24px;max-width:680px;margin-left:auto;margin-right:auto">
-      That's the actual shelf — 160 pieces (19 Cinder originals + 110 real Wikipedia articles + 25 full classic books + 3 programming references + 3 open-library media files), about 28 MB total. Every Beta 0 stick ships with the same shelf. Personalized brain packs, custom cases, and the hand-bound journal are tier-dependent. Everything you add later — your PDFs, notes, drawings — lives in the encrypted vault, not the seed library.
+      That's the actual shelf — 159 files (5 Cinder originals + 10 reference docs + 4 programming quick-refs + 110 Wikipedia articles + 25 classic books + 3 open-library media + the Companion Journal you fill out together), about 28 MB total. Every Beta 0 stick ships with the same shelf. Everything you add later — your PDFs, notes, drawings — lives in the encrypted vault, not the seed library.
     </p>
   </div>
 </section>
