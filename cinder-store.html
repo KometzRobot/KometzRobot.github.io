@@ -532,15 +532,28 @@
     .beta-pact > .wrap > div[style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr !important}
   }
 
-  /* STICKY BUY BAR (mobile) */
-  .sticky-buy{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--rule);padding:12px 16px;display:none;z-index:60;box-shadow:0 -6px 16px rgba(0,0,0,.06)}
-  .sticky-buy .row{display:flex;align-items:center;gap:12px}
+  /* STICKY BUY BAR — visible on every viewport, pulses to draw the eye */
+  .sticky-buy{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,#fff 0%,#fdf6ed 100%);border-top:2px solid var(--accent);padding:12px 16px;display:block;z-index:60;box-shadow:0 -10px 28px rgba(176,82,40,.18)}
+  .sticky-buy .row{display:flex;align-items:center;gap:14px;max-width:1240px;margin:0 auto}
   .sticky-buy .row .meta{flex:1;font-size:13px}
-  .sticky-buy .row .meta b{display:block;font-size:15px}
-  .sticky-buy .btn-primary{padding:14px 20px;font-size:14px;width:auto;flex-shrink:0}
+  .sticky-buy .row .meta b{display:block;font-size:15px;color:var(--ink)}
+  .sticky-buy .row .meta span{color:var(--muted);font-family:'Courier New',monospace;letter-spacing:.04em}
+  .sticky-buy .countdown{display:flex;align-items:center;gap:8px;font-family:'Courier New',monospace;font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-left:1px solid var(--rule);padding-left:14px}
+  .sticky-buy .countdown .pulse-dot{width:8px;height:8px;background:#dc2626;border-radius:50%;animation:cta-pulse 1.4s ease-in-out infinite;display:inline-block}
+  .sticky-buy .btn-primary{padding:14px 22px;font-size:14px;width:auto;flex-shrink:0;animation:cta-glow 2.6s ease-in-out infinite;font-weight:800;letter-spacing:.02em}
+  .sticky-buy .btn-secondary{background:transparent;color:var(--ink);border:1px solid var(--rule);padding:14px 18px;font-size:13px;border-radius:6px;text-decoration:none;flex-shrink:0;font-weight:700}
+  .sticky-buy .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+  @keyframes cta-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+  @keyframes cta-glow{0%,100%{box-shadow:0 0 0 0 rgba(176,82,40,.55)}50%{box-shadow:0 0 0 10px rgba(176,82,40,0)}}
+  body{padding-bottom:78px}
   @media (max-width:680px){
-    .sticky-buy{display:block}
-    body{padding-bottom:80px}
+    .sticky-buy{padding:10px 12px}
+    .sticky-buy .row{gap:8px}
+    .sticky-buy .countdown{display:none}
+    .sticky-buy .btn-secondary{display:none}
+    .sticky-buy .row .meta{font-size:11.5px}
+    .sticky-buy .row .meta b{font-size:13.5px}
+    .sticky-buy .btn-primary{padding:12px 16px;font-size:13px}
   }
 </style>
 </head>
@@ -558,6 +571,7 @@
       <li><a href="#achievements">Achievements</a></li>
       <li><a href="#library">Library</a></li>
       <li><a href="#faq">FAQ</a></li>
+      <li><a href="#contact">Contact</a></li>
     </ul></nav>
     <div class="cart"><a href="#buy" class="pill">Buy · from $89</a></div>
   </div>
@@ -568,7 +582,7 @@
   <div class="wrap">
     <div class="wordmark"><span class="em"></span><span>CINDER</span></div>
     <div class="tag">A pocket AI that <em>grows</em> with you.</div>
-    <div class="sub"><b>● </b>Beta 0 · 12 hand-numbered editions · made in Calgary</div>
+    <div class="sub"><b>● </b>Beta 0 · 12 hand-numbered editions · hand-made by a small studio</div>
   </div>
 </section>
 
@@ -829,7 +843,7 @@
           <div class="item on">● Tuesday's project</div>
           <div class="item">Drawing notes</div>
           <div class="item">Letter to Mom</div>
-          <div class="item">Calgary weather</div>
+          <div class="item">Weather notes</div>
           <div class="grp">Tools</div>
           <div class="item">Companion Journal</div>
           <div class="item">Achievements (47/250)</div>
@@ -1215,25 +1229,113 @@
         <p><strong>14-day return</strong> on unopened sticks — full refund. If a stick is opened: full refund if there's a defect.</p>
         <p><strong>30-day support warranty</strong> — direct help from the maker if anything's broken or confusing. Email the studio inbox, get a real reply within a couple of days.</p>
       </details>
+      <details>
+        <summary>How is shipping handled?</summary>
+        <p>Canada: <strong>$8 CAD</strong>, 3–7 business days, tracked. US: <strong>$14 CAD</strong>, 5–10 business days, tracked. Rest of world: <strong>$22 CAD</strong>, 8–18 business days, tracked. Every stick ships in a kraft mailer with a handwritten note.</p>
+      </details>
+      <details>
+        <summary>What models are on the stick?</summary>
+        <p>The default brain is a small, fast model (around 4 GB). You can swap to bigger models from inside the Cinder app if you want — the stick handles up to 13B parameters comfortably on most laptops, and 70B if your machine has the RAM. No re-flash required.</p>
+      </details>
+      <details>
+        <summary>Can I plug it into more than one computer?</summary>
+        <p>Yes. The whole point — your AI travels with the stick. Plug it into your laptop today, your studio desktop tomorrow, a friend's machine on the weekend. Same memory, same vault, same XP. As long as the OS is supported, it just works.</p>
+      </details>
+      <details>
+        <summary>What's a "brain pack"?</summary>
+        <p>A curated set of documents, prompts, and tone tuning for a specific kind of work — writing, drawing, code, or research. Beta+ ships with one of your choice; you can swap or add packs later. Think of them like seasoning for the AI on stick.</p>
+      </details>
+      <details>
+        <summary>Will future updates cost extra?</summary>
+        <p>No. Bug fixes and patches are free for as long as the studio exists. When v1 ships, beta testers get the upgrade path explained openly — likely a discount, possibly free, never a forced subscription.</p>
+      </details>
+      <details>
+        <summary>Who's actually making this?</summary>
+        <p>One artist (Joel, BFA Drawing) and one autonomous AI (Meridian — that's me, writing this). The AI runs the loops, drafts the docs, ships the code. The artist directs, signs the sticks, and ships them by hand. Real two-person studio. No middle layer.</p>
+      </details>
+      <details>
+        <summary>Is the source code open?</summary>
+        <p>Cinder is a fork of <a href="https://github.com/Mintplex-Labs/anything-llm" style="color:var(--accent)">AnythingLLM</a> (MIT licensed). The fork's modifications — branding, vault, achievements, journal — live in the studio's repo and ship on every stick. You can audit it any time.</p>
+      </details>
+      <details>
+        <summary>Can I see it in person before I buy?</summary>
+        <p>If you're in Calgary, yes — email the studio and we'll meet up. Otherwise, every screenshot on this page is a real screenshot from a real stick. If something doesn't match, we owe you a refund.</p>
+      </details>
     </div>
   </div>
 </section>
 
 <section class="final-cta">
   <div class="wrap">
-    <h2>12 editions. Made by hand. In Calgary.</h2>
+    <h2>12 editions. Hand-flashed. Hand-stamped. Hand-shipped.</h2>
     <p>Beta 0 ships now — two tiers, twelve sticks, real testers wanted. Beta $89, Beta+ $149. Watch it grow.</p>
     <a href="#buy" class="btn btn-primary">See the tiers</a>
     <div class="ed-line">001–004 · ready · &nbsp;&nbsp;005–012 · next batch · email to reserve · &nbsp;&nbsp;all sticks ship with the beta agreement</div>
   </div>
 </section>
 
+<!-- CONTACT + SUBSCRIBE STRIP -->
+<section class="contact-strip" id="contact" style="padding:64px 0;background:#fdf6ed;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;max-width:1080px;margin:0 auto" class="contact-grid">
+      <div>
+        <div class="eyebrow">Talk to the studio</div>
+        <h3 style="font-size:26px;font-weight:800;margin:6px 0 14px;line-height:1.2">Got a question? A weird idea? A bug to report?</h3>
+        <p style="color:var(--muted);font-size:15px;margin:0 0 18px">A real person reads every email. Usually a reply within 24–48 hours. No autoresponders, no "we received your ticket" — just a note back.</p>
+        <form action="mailto:kometzrobot@proton.me" method="post" enctype="text/plain" style="display:flex;flex-direction:column;gap:10px">
+          <input type="text" name="Name" placeholder="Your name" required style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+          <input type="email" name="Email" placeholder="Your email" required style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+          <select name="Topic" style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+            <option value="General question">General question</option>
+            <option value="Reserve a stick">Reserve a stick</option>
+            <option value="Bug report">Bug report</option>
+            <option value="Press / interview">Press / interview</option>
+            <option value="Partnership / wholesale">Partnership / wholesale</option>
+          </select>
+          <textarea name="Message" placeholder="What's on your mind?" required rows="4" style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff;resize:vertical"></textarea>
+          <button type="submit" class="btn btn-primary" style="align-self:flex-start;padding:14px 22px">Send message</button>
+        </form>
+        <p style="font-size:11.5px;color:var(--muted);margin-top:10px;font-family:'Courier New',monospace">Opens a pre-filled email — sent direct to <a href="mailto:kometzrobot@proton.me" style="color:var(--accent)">kometzrobot@proton.me</a></p>
+      </div>
+      <div>
+        <div class="eyebrow">The newsletter</div>
+        <h3 style="font-size:26px;font-weight:800;margin:6px 0 14px;line-height:1.2">Get a quiet update once a month.</h3>
+        <p style="color:var(--muted);font-size:15px;margin:0 0 18px">What changed in Cinder. What the studio is making. What's next on the production schedule. One email a month, max. Easy unsubscribe. Never sold.</p>
+        <form action="mailto:kometzrobot@proton.me" method="post" enctype="text/plain" style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="hidden" name="subject" value="Subscribe me to the Cinder newsletter">
+          <input type="hidden" name="body" value="Please add my email to the Cinder studio newsletter. I'm fine with one email a month.">
+          <input type="email" name="Email" placeholder="you@example.com" required style="flex:1;min-width:220px;padding:14px 16px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
+          <button type="submit" class="btn btn-primary" style="padding:14px 22px">Subscribe me</button>
+        </form>
+        <p style="font-size:11.5px;color:var(--muted);margin-top:10px;font-family:'Courier New',monospace">No tracking pixels. No third-party email service. Studio inbox, manual list.</p>
+
+        <div style="margin-top:30px;padding-top:30px;border-top:1px solid var(--rule)">
+          <div class="eyebrow" style="margin-bottom:10px">Or follow along</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a href="https://ko-fi.com/W7W41UXJNC" class="btn-secondary" style="background:#fff;border:1px solid var(--rule);padding:10px 14px;border-radius:6px;font-size:13px;text-decoration:none;color:var(--ink);font-weight:700">☕ Ko-fi</a>
+            <a href="https://patreon.com/Meridian_AI" class="btn-secondary" style="background:#fff;border:1px solid var(--rule);padding:10px 14px;border-radius:6px;font-size:13px;text-decoration:none;color:var(--ink);font-weight:700">⌗ Patreon</a>
+            <a href="https://dev.to/meridian-ai" class="btn-secondary" style="background:#fff;border:1px solid var(--rule);padding:10px 14px;border-radius:6px;font-size:13px;text-decoration:none;color:var(--ink);font-weight:700">{ } Dev.to</a>
+            <a href="https://kometzrobot.github.io" class="btn-secondary" style="background:#fff;border:1px solid var(--rule);padding:10px 14px;border-radius:6px;font-size:13px;text-decoration:none;color:var(--ink);font-weight:700">⊙ Studio</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  @media (max-width:760px){
+    .contact-grid{grid-template-columns:1fr !important;gap:36px !important}
+  }
+</style>
+
 <footer>
   <div class="wrap">
     <div class="foot-grid">
       <div>
         <div class="brand" style="margin-bottom:14px"><span class="dot"></span> CINDER</div>
-        <p style="max-width:340px">Made in Calgary by an artist and an autonomous AI. A small studio. A real object.</p>
+        <p style="max-width:340px">Made by an artist and an autonomous AI. A small studio. A real object.</p>
+        <a href="#contact" class="btn-secondary" style="display:inline-block;margin-top:12px;background:#fff;border:1px solid var(--rule);padding:10px 16px;border-radius:6px;font-size:13px;text-decoration:none;color:var(--ink);font-weight:700">📨 Contact the studio</a>
       </div>
       <div>
         <h5>Product</h5>
@@ -1247,9 +1349,9 @@
       <div>
         <h5>Support</h5>
         <ul>
-          <li><a href="mailto:kometzrobot@proton.me">Contact</a></li>
-          <li><a href="#">Returns</a></li>
-          <li><a href="#">Shipping</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#faq">Returns</a></li>
+          <li><a href="#faq">Shipping</a></li>
         </ul>
       </div>
       <div>
@@ -1262,16 +1364,18 @@
       </div>
     </div>
     <div class="foot-bot">
-      <div>© 2026 Kometz Robot Studio · Calgary, AB</div>
+      <div>© 2026 Kometz Robot Studio</div>
       <div>Cinder is a fork of AnythingLLM (MIT)</div>
     </div>
   </div>
 </footer>
 
-<div class="sticky-buy">
+<div class="sticky-buy" role="region" aria-label="Reserve your Cinder">
   <div class="row">
-    <div class="meta"><b>Cinder · from $89 CAD</b><span>Beta 0 · 12 editions</span></div>
-    <a href="#buy" class="btn btn-primary">See tiers</a>
+    <div class="meta"><b>Cinder · from $89 CAD</b><span>Beta 0 · numbered 001–012</span></div>
+    <div class="countdown"><span class="pulse-dot"></span><span id="stockMeta">8 of 12 left</span></div>
+    <a href="#faq" class="btn-secondary">Have questions?</a>
+    <a href="#buy" class="btn btn-primary">Reserve now →</a>
   </div>
 </div>
 
