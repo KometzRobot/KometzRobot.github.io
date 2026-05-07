@@ -51,11 +51,20 @@
   .pill{display:inline-block;padding:9px 16px;border-radius:999px;background:var(--ink);color:#fbf7f1;font-size:13px;text-decoration:none;font-weight:600;letter-spacing:.02em}
   .pill:hover{background:var(--accent-deep)}
 
+  /* BRAND BANNER (logo + tagline, focal) */
+  .brand-banner{padding:56px 0 24px;text-align:center;border-bottom:1px solid var(--rule);background:linear-gradient(180deg,var(--bg) 0%,var(--paper) 100%)}
+  .brand-banner .wordmark{display:inline-flex;align-items:center;gap:18px;font-family:"Courier New",ui-monospace,monospace;font-weight:800;letter-spacing:.18em;font-size:88px;line-height:1;color:var(--ink)}
+  .brand-banner .wordmark .em{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd58a 0%,var(--accent) 55%,var(--accent-deep) 100%);box-shadow:0 0 38px var(--accent),0 0 16px #ffaf66 inset;animation:pulse 2.4s ease-in-out infinite}
+  .brand-banner .tag{font-family:"Helvetica Neue",sans-serif;font-size:30px;font-weight:800;color:var(--ink);margin-top:24px;letter-spacing:-.01em;line-height:1.18}
+  .brand-banner .tag em{font-style:normal;color:var(--accent)}
+  .brand-banner .sub{font-family:"Courier New",monospace;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:14px}
+  .brand-banner .sub b{color:var(--accent);font-weight:700}
+
   /* HERO */
   .hero{padding:48px 0 24px}
   .hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center}
   .eyebrow{font-family:"Courier New",monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-  h1{font-size:56px;line-height:1.04;margin:0 0 18px;letter-spacing:-.015em;font-weight:800}
+  h1{font-size:48px;line-height:1.04;margin:0 0 18px;letter-spacing:-.015em;font-weight:800}
   h1 em{font-style:normal;color:var(--accent);font-weight:800}
   .lede{font-size:18px;color:var(--muted);max-width:520px;margin-bottom:24px}
   .stock{display:inline-flex;gap:8px;align-items:center;background:var(--accent-soft);color:var(--accent-deep);font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px}
@@ -105,8 +114,14 @@
   /* MARQUEE */
   .marq{border-block:1px solid var(--rule);background:#fff;padding:14px 0;margin-top:48px;font-family:"Courier New",monospace;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
   .marq-row{display:flex;justify-content:space-around;flex-wrap:wrap;gap:24px}
-  .marq-row span{display:flex;align-items:center;gap:8px}
-  .marq-row span::before{content:"●";color:var(--accent);font-size:8px}
+  .marq-row > span{display:flex;align-items:center;gap:8px}
+  .marq-row .ico{font-size:18px;line-height:1;color:var(--accent)}
+
+  /* BETA AGREEMENT GRID (3 cards with icons) */
+  .beta-agree-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px}
+  .beta-agree-card{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:24px 20px;position:relative}
+  .beta-agree-card .bac-icon{font-size:36px;line-height:1;margin-bottom:10px}
+  @media (max-width:680px){.beta-agree-grid{grid-template-columns:1fr}}
 
   /* GROWTH (NEW) */
   section.growth{padding:80px 0 40px;background:linear-gradient(180deg,var(--bg) 0%,var(--paper) 100%)}
@@ -147,6 +162,133 @@
   .stage h4{margin:0 0 2px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
   .stage p{margin:0;color:var(--muted);font-size:11px;line-height:1.4}
   @media (max-width:880px){.stages-row{grid-template-columns:repeat(2,1fr)}}
+
+  /* EVOLUTION (Pokemon Red/Blue style) */
+  section.evolve{padding:60px 0 80px;background:var(--paper);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  .evo-stage{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;max-width:1080px;margin:0 auto}
+  .gb{position:relative;background:linear-gradient(180deg,#cfc7b4 0%,#aea693 100%);border-radius:18px 18px 60px 18px;padding:24px 22px 30px;box-shadow:0 24px 50px rgba(28,26,23,.25),inset 0 2px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.18);max-width:380px;margin:0 auto;font-family:"Courier New",monospace}
+  .gb-power{position:absolute;top:30px;left:14px;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .gb-power .led{width:8px;height:8px;border-radius:50%;background:#48b04f;box-shadow:0 0 6px #48b04f}
+  .gb-power .lbl{font-size:7px;color:#5a5247;letter-spacing:.1em}
+  .gb-screen{background:#807a6c;border-radius:8px 8px 36px 8px;padding:22px 22px 38px 28px;position:relative;box-shadow:inset 0 4px 12px rgba(0,0,0,.4),inset 0 -2px 0 rgba(255,255,255,.15)}
+  .lcd{background:#9bbc0f;background:linear-gradient(180deg,#9bbc0f 0%,#8bac0f 100%);aspect-ratio:10/9;position:relative;overflow:hidden;border-radius:2px;box-shadow:inset 0 0 0 2px #5d6a06}
+  .sprite,.silhouette{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64%;height:64%}
+  .sprite.spark,.silhouette.spark{animation:evoSpark 12s linear infinite}
+  .sprite.ember,.silhouette.ember{opacity:0;animation:evoEmber 12s linear infinite}
+  .silhouette{filter:brightness(2)}
+  .silhouette.spark{animation:evoSilSpark 12s linear infinite;opacity:0}
+  .silhouette.ember{animation:evoSilEmber 12s linear infinite;opacity:0}
+  .flash{position:absolute;inset:0;background:#fbe4a3;opacity:0;animation:evoFlash 12s linear infinite;pointer-events:none;mix-blend-mode:screen}
+
+  /* SPRITE A: real Spark visible from 0–10% (calm) — fades out 10–15% */
+  @keyframes evoSpark{
+    0%,10%{opacity:1}
+    11%,89%{opacity:0}
+    90%,100%{opacity:0}
+  }
+  /* SPRITE B: real Ember reveals 89–100% */
+  @keyframes evoEmber{
+    0%,86%{opacity:0}
+    89%,100%{opacity:1}
+  }
+  /* Silhouette toggles — Spark shape on odd beats, Ember shape on even, accelerating */
+  @keyframes evoSilSpark{
+    0%,11%{opacity:0}
+    /* slow oscillation */
+    12%,18%{opacity:1}
+    19%,24%{opacity:0}
+    25%,29%{opacity:1}
+    30%,34%{opacity:0}
+    /* faster */
+    35%,38%{opacity:1}
+    39%,42%{opacity:0}
+    43%,46%{opacity:1}
+    47%,50%{opacity:0}
+    /* even faster */
+    51%,53%{opacity:1}
+    54%,56%{opacity:0}
+    57%,59%{opacity:1}
+    60%,62%{opacity:0}
+    /* fastest */
+    63%,64%{opacity:1}
+    65%,66%{opacity:0}
+    67%,68%{opacity:1}
+    69%,70%{opacity:0}
+    71%,72%{opacity:1}
+    73%,86%{opacity:0}
+    87%,100%{opacity:0}
+  }
+  @keyframes evoSilEmber{
+    0%,18%{opacity:0}
+    19%,24%{opacity:1}
+    25%,29%{opacity:0}
+    30%,34%{opacity:1}
+    35%,38%{opacity:0}
+    39%,42%{opacity:1}
+    43%,46%{opacity:0}
+    47%,50%{opacity:1}
+    51%,53%{opacity:0}
+    54%,56%{opacity:1}
+    57%,59%{opacity:0}
+    60%,62%{opacity:1}
+    63%,64%{opacity:0}
+    65%,66%{opacity:1}
+    67%,68%{opacity:0}
+    69%,70%{opacity:1}
+    71%,72%{opacity:0}
+    73%,82%{opacity:1}
+    83%,86%{opacity:0}
+    87%,100%{opacity:0}
+  }
+  /* White flash spikes — sync with the big transitions */
+  @keyframes evoFlash{
+    0%,9%{opacity:0}
+    10%,12%{opacity:1}
+    13%,82%{opacity:0}
+    83%,87%{opacity:1}
+    88%,100%{opacity:0}
+  }
+  .caption{margin-top:14px;font-family:"Courier New",monospace;color:#0f380f;font-size:13px;letter-spacing:.06em;line-height:1.5;min-height:46px;font-weight:700;text-transform:uppercase;text-align:left;background:#9bbc0f;padding:8px 10px;border:2px solid #0f380f;border-radius:3px;position:relative;box-shadow:inset 1px 1px 0 #5d6a06}
+  .caption .line{position:absolute;left:14px;right:14px;top:10px;opacity:0}
+  .caption .line.a{animation:capA 12s linear infinite}
+  .caption .line.b{animation:capB 12s linear infinite}
+  .caption .line.c{animation:capC 12s linear infinite}
+  @keyframes capA{0%,9%{opacity:1}10%,100%{opacity:0}}
+  @keyframes capB{0%,9%{opacity:0}10%,82%{opacity:1}83%,100%{opacity:0}}
+  @keyframes capC{0%,86%{opacity:0}88%,100%{opacity:1}}
+  .caption::after{content:"▼";position:absolute;right:10px;bottom:6px;color:#0f380f;font-size:10px;animation:capArrow 1s steps(2) infinite}
+  @keyframes capArrow{0%,49%{opacity:1}50%,100%{opacity:0}}
+  .dpad-bar{position:absolute;bottom:8px;left:8px;right:8px;display:flex;gap:3px;justify-content:center}
+  .dpad-bar .bar{width:14px;height:2px;background:#5d6a06;border-radius:1px}
+  .gb-pad{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding:0 8px}
+  .dpad{position:relative;width:50px;height:50px}
+  .dpad-cross{position:absolute;inset:0;background:#1c1a17;clip-path:polygon(35% 0,65% 0,65% 35%,100% 35%,100% 65%,65% 65%,65% 100%,35% 100%,35% 65%,0 65%,0 35%,35% 35%);border-radius:4px}
+  .ab{display:flex;gap:10px;align-items:center}
+  .ab span{width:30px;height:30px;border-radius:50%;background:#a83245;color:#fff;font-family:"Courier New",monospace;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 #5a1a23,inset 0 -2px 0 rgba(0,0,0,.2)}
+  .gb-startsel{display:flex;justify-content:center;gap:14px;margin-top:14px}
+  .gb-startsel span{width:32px;height:7px;background:#5a5247;border-radius:4px;transform:rotate(-22deg);box-shadow:0 1px 0 rgba(255,255,255,.2)}
+  .gb-grill{position:absolute;bottom:14px;right:18px;display:flex;gap:3px;transform:rotate(-22deg)}
+  .gb-grill span{width:3px;height:22px;background:#5a5247;border-radius:2px}
+
+  .evo-text h3{font-size:30px;margin:0 0 14px;font-weight:800;letter-spacing:-.01em}
+  .evo-text p{color:var(--ink);font-size:15px;margin-bottom:14px;line-height:1.6}
+  .evo-text .evo-tag{font-family:"Courier New",monospace;font-size:13px;letter-spacing:.1em;color:var(--accent);font-weight:700;display:inline-block;background:#fff;padding:8px 12px;border-radius:6px;border:1px solid var(--rule)}
+  .evo-text .evo-fine{font-size:13px;color:var(--muted);font-style:italic;margin-top:18px}
+  @media (max-width:880px){
+    .evo-stage{grid-template-columns:1fr;gap:32px}
+    .evo-text h3{font-size:24px;text-align:center}
+    .evo-text p{text-align:center}
+    .evo-text .evo-tag{display:block;text-align:center;font-size:11px}
+  }
+  @media (max-width:560px){
+    section.evolve{padding:44px 0 54px}
+    .gb{padding:18px 14px 22px}
+    .gb-screen{padding:18px 16px 30px 22px}
+    .caption{font-size:11.5px;min-height:40px}
+    .gb-power{top:22px;left:8px}
+    .evo-text h3{font-size:22px}
+    .evo-text p{font-size:14px}
+  }
 
   /* CINDER UI MOCKUP */
   section.uimock{padding:64px 0}
@@ -204,6 +346,21 @@
   .gami-list li:first-child{border-top:0}
   .gami-list li::before{content:"·";position:absolute;left:4px;color:var(--accent);font-weight:800}
   .gami-foot{text-align:center;margin-top:26px;color:var(--muted);font-size:12px;font-family:"Courier New",monospace;letter-spacing:.06em;font-style:italic}
+
+  /* SKILL TREE INFOGRAPHIC */
+  .skilltree-wrap{margin:50px auto 0;max-width:1100px;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:36px 28px;box-shadow:var(--shadow)}
+  .skilltree-svg-wrap{width:100%;overflow:hidden;background:repeating-linear-gradient(45deg,#fbf6ec 0 6px,#f3ead9 6px 12px);border-radius:10px;padding:12px}
+  .skilltree{width:100%;height:auto;display:block}
+  .skilltree-head h3{letter-spacing:-.01em}
+  .skilltree-foot{text-align:center;margin-top:18px;font-size:13.5px;color:var(--muted);max-width:680px;margin-left:auto;margin-right:auto}
+  .skilltree-foot strong{color:var(--accent)}
+  .skilltree .node circle{transition:transform .2s,filter .2s;transform-origin:center;transform-box:fill-box}
+  .skilltree .node:hover circle{filter:drop-shadow(0 0 8px rgba(177,75,31,.6))}
+  @media (max-width:560px){
+    .skilltree-wrap{padding:22px 16px;margin-top:36px}
+    .skilltree-head h3{font-size:18px;line-height:1.25}
+    .skilltree-foot{font-size:12.5px}
+  }
 
   /* JOURNAL */
   section.journal{padding:80px 0}
@@ -269,17 +426,110 @@
   footer a:hover{color:var(--ink)}
   .foot-bot{border-top:1px solid var(--rule);padding-top:18px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 
-  /* MOBILE */
+  /* MOBILE — tablet */
   @media (max-width:880px){
-    .hero-grid,.uimock-grid,.journal-grid{grid-template-columns:1fr;gap:32px}
+    .wrap{padding:0 20px}
+    .hero-grid,.uimock-grid,.journal-grid{grid-template-columns:1fr;gap:36px}
     .ach-grid{grid-template-columns:repeat(2,1fr)}
     .lib-grid{grid-template-columns:1fr}
     .kit{grid-template-columns:repeat(2,1fr)}
-    h1{font-size:38px}
+    .gami-grid{grid-template-columns:1fr;gap:14px}
+    .gami-card{padding:22px 22px}
+    h1{font-size:42px;line-height:1.06}
     nav ul{display:none}
-    .foot-grid{grid-template-columns:1fr 1fr}
+    .foot-grid{grid-template-columns:1fr 1fr;gap:24px}
     .ui-body{grid-template-columns:1fr}
     .ui-side{display:none}
+    .brand-banner{padding:44px 0 22px}
+    .brand-banner .wordmark{font-size:60px;gap:14px}
+    .brand-banner .wordmark .em{width:30px;height:30px}
+    .brand-banner .tag{font-size:24px;margin-top:18px}
+    .brand-banner .sub{font-size:11px}
+    .stages-row{grid-template-columns:repeat(2,1fr)}
+    .section-head h2{font-size:30px}
+    .uimock-text h2,.journal-text h2{font-size:28px}
+    .final-cta h2{font-size:32px}
+    .xp-panel{padding:22px 22px}
+  }
+
+  /* MOBILE — phone (the tight one Joel saw) */
+  @media (max-width:560px){
+    .wrap{padding:0 16px}
+    .ann{font-size:11px;letter-spacing:.02em;padding:8px 12px;line-height:1.45}
+    .navrow{padding:10px 0}
+    .brand{font-size:15px}
+    .pill{padding:8px 12px;font-size:12px}
+    .brand-banner{padding:36px 0 18px}
+    .brand-banner .wordmark{font-size:44px;gap:10px;letter-spacing:.14em}
+    .brand-banner .wordmark .em{width:22px;height:22px;box-shadow:0 0 22px var(--accent)}
+    .brand-banner .tag{font-size:21px;margin-top:14px;line-height:1.22}
+    .brand-banner .sub{font-size:10px;letter-spacing:.14em;line-height:1.5}
+    .hero{padding:32px 0 16px}
+    .hero-grid{gap:26px}
+    h1{font-size:34px;line-height:1.08;margin-bottom:14px}
+    .lede{font-size:16px;margin-bottom:20px}
+    .stock{font-size:11px}
+    .tier-tabs{flex-direction:column;padding:6px;gap:4px}
+    .tier-tab{padding:14px 10px;font-size:14px;letter-spacing:.06em;min-height:46px}
+    .tier-card{padding:18px 16px}
+    .tier-head{flex-direction:column;align-items:flex-start;gap:4px}
+    .tier-head h3{font-size:17px}
+    .tier-price{font-size:24px}
+    .tier-list li{font-size:13.5px;padding-left:20px;line-height:1.5}
+    .btn{padding:15px 18px;font-size:15px}
+    .pay-row{font-size:11px;gap:6px}
+    .badge{font-size:10px;padding:3px 6px}
+    .marq{padding:12px 0;font-size:11px;letter-spacing:.1em}
+    .marq-row{gap:14px;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding:0 4px;scrollbar-width:none}
+    .marq-row::-webkit-scrollbar{display:none}
+    .marq-row span{flex-shrink:0}
+    section.growth,section.achievements,section.library,.faq,.final-cta{padding:54px 0}
+    section.uimock,section.journal{padding:44px 0}
+    .section-head h2{font-size:24px;line-height:1.2}
+    .section-head p{font-size:15px}
+    .section-head{margin-bottom:28px}
+    .stages-row{grid-template-columns:repeat(2,1fr);gap:8px}
+    .stage{padding:14px 8px}
+    .stage h4{font-size:11px}
+    .stage p{font-size:10.5px;line-height:1.35}
+    .uimock-text h2,.journal-text h2{font-size:24px}
+    .uimock-text p,.journal-text p{font-size:14.5px}
+    .ach-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    .ach{padding:14px 10px}
+    .ach h4{font-size:12px}
+    .ach p{font-size:10.5px;line-height:1.4}
+    .ach .ai{font-size:24px}
+    .ach.rare::before{font-size:8px;padding:1px 6px;letter-spacing:.12em}
+    .gami-card{padding:20px 18px}
+    .gami-card h3{font-size:18px}
+    .gami-card p{font-size:13.5px}
+    .gami-list li{font-size:12.5px}
+    .lib-shelf{padding:20px 18px}
+    .lib-shelf h3{font-size:17px}
+    .lib-shelf ul{font-size:13px;line-height:1.7}
+    .journal-paper{padding:24px 22px;font-size:13px}
+    .journal-paper h4{font-size:18px}
+    .journal-paper .sig{font-size:12px}
+    details{padding:14px 16px}
+    details summary{font-size:14px}
+    details p{font-size:13.5px}
+    .final-cta h2{font-size:26px;line-height:1.2}
+    .final-cta p{font-size:14.5px}
+    .final-cta .btn{font-size:15px}
+    .ed-line{font-size:10.5px;letter-spacing:.12em;line-height:1.5}
+    .foot-grid{grid-template-columns:1fr;gap:20px;text-align:left}
+    .whatsin{padding:44px 0}
+    .whatsin h2{font-size:22px}
+    .kit{grid-template-columns:repeat(2,1fr);gap:10px}
+    .kit-item{padding:12px 8px}
+    .kit-item h4{font-size:13px}
+    .kit-item p{font-size:11.5px}
+    body{padding-bottom:74px}
+    .sticky-buy{padding:10px 14px}
+    .sticky-buy .row .meta{font-size:11.5px}
+    .sticky-buy .row .meta b{font-size:13.5px}
+    .sticky-buy .btn-primary{padding:12px 16px;font-size:13px}
+    .beta-pact > .wrap > div[style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr !important}
   }
 
   /* STICKY BUY BAR (mobile) */
@@ -313,22 +563,30 @@
   </div>
 </header>
 
+<!-- BRAND BANNER — logo + tagline, focal -->
+<section class="brand-banner">
+  <div class="wrap">
+    <div class="wordmark"><span class="em"></span><span>CINDER</span></div>
+    <div class="tag">A pocket AI that <em>grows</em> with you.</div>
+    <div class="sub"><b>● </b>Beta 0 · 12 hand-numbered editions · made in Calgary</div>
+  </div>
+</section>
+
 <section class="hero">
   <div class="wrap hero-grid">
     <div>
       <div class="stock"><span class="stock-dot"></span> Beta 0 · 12 hand-numbered editions</div>
-      <h1>A pocket AI<br>that <em>grows</em><br>with you.</h1>
-      <p class="lede">Cinder is a USB stick with a private AI on it. Plug it in, talk to it, and it remembers — across days, machines, conversations. The longer you use it, the more it knows you. Nothing leaves the stick.</p>
+      <h1>Plug it in.<br>Talk to it.<br>It <em>remembers</em>.</h1>
+      <p class="lede">A USB stick with a private AI on it. Across days, machines, conversations — the longer you use it, the more it knows you. Nothing leaves the stick.</p>
 
       <div class="tiers" id="buy">
         <div class="tier-tabs" role="tablist">
-          <button class="tier-tab active" data-tier="standard" role="tab">Standard · $89</button>
+          <button class="tier-tab active" data-tier="beta" role="tab">Beta · $89</button>
           <button class="tier-tab" data-tier="plus" role="tab">Beta+ · $149</button>
-          <button class="tier-tab" data-tier="studio" role="tab">Studio · $249</button>
         </div>
 
-        <div class="tier-card active" data-tier="standard">
-          <div class="tier-head"><h3>Cinder · Beta Standard</h3><div class="tier-price">$89<small>CAD</small></div></div>
+        <div class="tier-card active" data-tier="beta">
+          <div class="tier-head"><h3>Cinder · Beta</h3><div class="tier-price">$89<small>CAD</small></div></div>
           <div class="tier-cap">Beta 0 · numbered 001–012 · same stick for every buyer</div>
           <ul class="tier-list">
             <li>64 GB hand-flashed Cinder USB — numbered, stamped, signed</li>
@@ -337,15 +595,15 @@
             <li>The full seed library, identical on every stick</li>
             <li>Handwritten note, kraft-paper quick-start card, linen-tied package</li>
           </ul>
-          <a href="mailto:kometzrobot@proton.me?subject=Cinder%20Beta%20Standard%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0APreferred%20stick%20number%20(if%20any)%3A%0AAnything%20you%20want%20me%20to%20know%3A" class="btn btn-primary">Order Beta Standard — $89 CAD</a>
+          <a href="mailto:kometzrobot@proton.me?subject=Cinder%20Beta%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0APreferred%20stick%20number%20(if%20any)%3A%0AAnything%20you%20want%20me%20to%20know%3A" class="btn btn-primary">Order Beta — $89 CAD</a>
           <div style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:.04em">All sticks ship with the Beta Tester agreement — see below</div>
         </div>
 
         <div class="tier-card" data-tier="plus">
           <div class="tier-head"><h3>Cinder · Beta+</h3><div class="tier-price">$149<small>CAD</small></div></div>
-          <div class="tier-cap">Standard plus a couple of personalized touches</div>
+          <div class="tier-cap">Beta plus a couple of personalized touches</div>
           <ul class="tier-list">
-            <li>Everything in Beta Standard</li>
+            <li>Everything in Beta</li>
             <li>One custom theme tuned to your work (chat colours, boot screen, soundscape)</li>
             <li>One pre-loaded brain pack of your choice — writing, drawing, code, or research</li>
             <li>Custom case or box upgrade (kraft, leather, fabric — your pick)</li>
@@ -353,20 +611,6 @@
           </ul>
           <a href="mailto:kometzrobot@proton.me?subject=Cinder%20Beta%2B%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0AWhich%20theme%20do%20you%20want%3F%0AWhich%20brain%20pack%3F%20(writing%20%2F%20drawing%20%2F%20code%20%2F%20research)%0AWhich%20case%3F%20(kraft%20%2F%20leather%20%2F%20fabric)%0A" class="btn btn-primary">Order Beta+ — $149 CAD</a>
           <div style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:.04em">Same beta sticker, same agreement — just dressed up</div>
-        </div>
-
-        <div class="tier-card" data-tier="studio">
-          <div class="tier-head"><h3>Cinder · Studio</h3><div class="tier-price">$249<small>CAD</small></div></div>
-          <div class="tier-cap">For people who want everything we offer this round</div>
-          <ul class="tier-list">
-            <li>Everything in Beta+</li>
-            <li>Two pre-loaded brains (any combo: writing, drawing, code, research)</li>
-            <li>Hand-bound starter journal — kraft paper, sewn by hand</li>
-            <li>Engraving or dedication on the case (your choice of words)</li>
-            <li>Direct line for setup help — short call or chat to get you going</li>
-          </ul>
-          <a href="mailto:kometzrobot@proton.me?subject=Cinder%20Studio%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0ATheme%20%2F%20boot%20art%3A%0ATwo%20brain%20packs%3A%0ACase%20type%3A%0AEngraving%20text%3A%0APreferred%20setup-call%20time%3A%0A" class="btn btn-primary">Order Studio — $249 CAD</a>
-          <div style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:.04em">Still beta — the agreement still applies</div>
         </div>
       </div>
 
@@ -389,11 +633,11 @@
 
 <div class="marq">
   <div class="wrap marq-row">
-    <span>Doesn't phone home</span>
-    <span>No accounts</span>
-    <span>No subscription</span>
-    <span>Yours to keep</span>
-    <span>Hand-numbered</span>
+    <span><span class="ico">📡</span>Doesn't phone home</span>
+    <span><span class="ico">🚫</span>No accounts</span>
+    <span><span class="ico">∞</span>No subscription</span>
+    <span><span class="ico">🔑</span>Yours to keep</span>
+    <span><span class="ico">✍</span>Hand-numbered</span>
   </div>
 </div>
 
@@ -404,16 +648,19 @@
       <h2 style="font-size:32px">You're not buying a finished product. You're buying a stake in one.</h2>
       <p>Cinder is in active beta. Buying a stick means you sign on as a beta tester. That's the whole deal — three things, plain language.</p>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px">
-      <div style="background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:20px">
+    <div class="beta-agree-grid">
+      <div class="beta-agree-card">
+        <div class="bac-icon">🐛</div>
         <div class="eyebrow" style="margin-bottom:6px">1. Debug with us</div>
         <p style="margin:0;font-size:14px;color:var(--ink)">When something breaks or feels wrong, you tell us. Short note is fine. We log it, we fix it, we credit you in the changelog.</p>
       </div>
-      <div style="background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:20px">
+      <div class="beta-agree-card">
+        <div class="bac-icon">📋</div>
         <div class="eyebrow" style="margin-bottom:6px">2. A short survey, sometimes</div>
         <p style="margin:0;font-size:14px;color:var(--ink)">Every few weeks, a small survey — what you used, what you ignored, what you wished worked. 5 minutes. Skip any question.</p>
       </div>
-      <div style="background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:20px">
+      <div class="beta-agree-card">
+        <div class="bac-icon">📨</div>
         <div class="eyebrow" style="margin-bottom:6px">3. An email or contact</div>
         <p style="margin:0;font-size:14px;color:var(--ink)">We need a way to reach you with patches, fixes, and survey links. Email is fine. We don't sell it, mail it to anyone, or use it for anything else.</p>
       </div>
@@ -453,6 +700,118 @@
       <div class="stage"><span class="sicon">✺</span><h4>Blaze</h4><p>Cross-references months.</p></div>
       <div class="stage"><span class="sicon">☼</span><h4>Bonfire</h4><p>A real second brain.</p></div>
       <div class="stage"><span class="sicon">✸</span><h4>Inferno</h4><p>Year+ deep. Earned, not bought.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- POKEMON-STYLE EVOLUTION ANIMATION (Joel asked 3x) -->
+<section class="evolve" id="evolve">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Stage Up</div>
+      <h2>The level-up looks like this.</h2>
+      <p>When your Cinder evolves to its next stage, you don't just see a number tick over. The screen takes you back to 1996.</p>
+    </div>
+    <div class="evo-stage">
+      <div class="gb">
+        <div class="gb-power"><span class="led"></span><span class="lbl">POWER</span></div>
+        <div class="gb-screen">
+          <div class="lcd">
+            <!-- Spark sprite (current form) -->
+            <svg class="sprite spark" viewBox="0 0 32 32" aria-label="Spark stage" preserveAspectRatio="xMidYMid meet">
+              <g shape-rendering="crispEdges">
+                <rect x="14" y="3"  width="4" height="3" fill="#1c1a17"/>
+                <rect x="14" y="26" width="4" height="3" fill="#1c1a17"/>
+                <rect x="3"  y="14" width="3" height="4" fill="#1c1a17"/>
+                <rect x="26" y="14" width="3" height="4" fill="#1c1a17"/>
+                <rect x="7"  y="7"  width="3" height="3" fill="#1c1a17"/>
+                <rect x="22" y="7"  width="3" height="3" fill="#1c1a17"/>
+                <rect x="7"  y="22" width="3" height="3" fill="#1c1a17"/>
+                <rect x="22" y="22" width="3" height="3" fill="#1c1a17"/>
+                <rect x="12" y="12" width="8"  height="8" fill="#b14b1f"/>
+                <rect x="14" y="14" width="4"  height="4" fill="#fbe4a3"/>
+                <rect x="15" y="15" width="2"  height="2" fill="#fff7e1"/>
+              </g>
+            </svg>
+            <!-- Ember sprite (next form) -->
+            <svg class="sprite ember" viewBox="0 0 32 32" aria-label="Ember stage" preserveAspectRatio="xMidYMid meet">
+              <g shape-rendering="crispEdges">
+                <!-- glow halo dots -->
+                <rect x="15" y="1"  width="2" height="2" fill="#e8a93b"/>
+                <rect x="15" y="29" width="2" height="2" fill="#e8a93b"/>
+                <rect x="1"  y="15" width="2" height="2" fill="#e8a93b"/>
+                <rect x="29" y="15" width="2" height="2" fill="#e8a93b"/>
+                <rect x="5"  y="5"  width="2" height="2" fill="#e8a93b"/>
+                <rect x="25" y="5"  width="2" height="2" fill="#e8a93b"/>
+                <rect x="5"  y="25" width="2" height="2" fill="#e8a93b"/>
+                <rect x="25" y="25" width="2" height="2" fill="#e8a93b"/>
+                <!-- outer body -->
+                <rect x="10" y="8"  width="12" height="2" fill="#1c1a17"/>
+                <rect x="8"  y="10" width="2"  height="12" fill="#1c1a17"/>
+                <rect x="22" y="10" width="2"  height="12" fill="#1c1a17"/>
+                <rect x="10" y="22" width="12" height="2" fill="#1c1a17"/>
+                <rect x="9"  y="9"  width="1"  height="1" fill="#1c1a17"/>
+                <rect x="22" y="9"  width="1"  height="1" fill="#1c1a17"/>
+                <rect x="9"  y="22" width="1"  height="1" fill="#1c1a17"/>
+                <rect x="22" y="22" width="1"  height="1" fill="#1c1a17"/>
+                <!-- inner fill -->
+                <rect x="10" y="10" width="12" height="12" fill="#7a2c10"/>
+                <rect x="11" y="11" width="10" height="10" fill="#b14b1f"/>
+                <rect x="13" y="13" width="6"  height="6"  fill="#e8a93b"/>
+                <rect x="14" y="14" width="4"  height="4"  fill="#fbe4a3"/>
+                <rect x="15" y="15" width="2"  height="2"  fill="#fff7e1"/>
+              </g>
+            </svg>
+            <!-- White silhouette overlays — clipped via mask, drives the morph oscillation -->
+            <svg class="silhouette spark" viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet">
+              <g shape-rendering="crispEdges" fill="#ffffff">
+                <rect x="14" y="3"  width="4" height="3"/>
+                <rect x="14" y="26" width="4" height="3"/>
+                <rect x="3"  y="14" width="3" height="4"/>
+                <rect x="26" y="14" width="3" height="4"/>
+                <rect x="7"  y="7"  width="3" height="3"/>
+                <rect x="22" y="7"  width="3" height="3"/>
+                <rect x="7"  y="22" width="3" height="3"/>
+                <rect x="22" y="22" width="3" height="3"/>
+                <rect x="12" y="12" width="8" height="8"/>
+              </g>
+            </svg>
+            <svg class="silhouette ember" viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet">
+              <g shape-rendering="crispEdges" fill="#ffffff">
+                <rect x="15" y="1"  width="2" height="2"/>
+                <rect x="15" y="29" width="2" height="2"/>
+                <rect x="1"  y="15" width="2" height="2"/>
+                <rect x="29" y="15" width="2" height="2"/>
+                <rect x="5"  y="5"  width="2" height="2"/>
+                <rect x="25" y="5"  width="2" height="2"/>
+                <rect x="5"  y="25" width="2" height="2"/>
+                <rect x="25" y="25" width="2" height="2"/>
+                <rect x="8"  y="8"  width="16" height="16"/>
+                <rect x="9"  y="9"  width="14" height="14"/>
+              </g>
+            </svg>
+            <div class="flash"></div>
+          </div>
+          <div class="caption">
+            <span class="line a">CINDER · STAGE 1 — SPARK</span>
+            <span class="line b">CINDER IS EVOLVING!</span>
+            <span class="line c">CINDER EVOLVED INTO EMBER!</span>
+          </div>
+          <div class="dpad-bar"><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
+        </div>
+        <div class="gb-pad">
+          <div class="dpad"><span class="dpad-cross"></span></div>
+          <div class="ab"><span class="btn-b">B</span><span class="btn-a">A</span></div>
+        </div>
+        <div class="gb-startsel"><span></span><span></span></div>
+        <div class="gb-grill"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="evo-text">
+        <h3>The whole arc is seven of these.</h3>
+        <p><span class="evo-tag">SPARK → EMBER → FLAME → FIRE → BLAZE → BONFIRE → INFERNO</span></p>
+        <p>Each evolution is hand-drawn — no off-the-shelf splash screen. Cinder pauses what it's doing, plays the cutscene, drops a new badge into your trophy case, and writes a paragraph in your journal about what changed and why.</p>
+        <p class="evo-fine">The animation above is a real 12-second sequence — the same one your stick will play the first time it crosses 1,000 XP. Replays from your archive any time you want to see it again.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -572,6 +931,111 @@
             <li>Optional daily prompt — write one line and Cinder picks it up</li>
           </ul>
         </div>
+      </div>
+
+      <!-- SKILL TREE INFOGRAPHIC (Joel: custom mock, like my system maps) -->
+      <div class="skilltree-wrap">
+        <div class="skilltree-head">
+          <div class="gami-eyebrow" style="text-align:center">The skill tree, mapped</div>
+          <h3 style="text-align:center;font-size:24px;margin:6px 0 24px">Spend Cinder Marks. Lean it toward who you want it to be.</h3>
+        </div>
+        <div class="skilltree-svg-wrap">
+          <svg class="skilltree" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Cinder skill tree — four branches radiating from a hub: Scholar, Tinkerer, Companion, Artist">
+            <defs>
+              <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fbe4a3"/>
+                <stop offset="40%" stop-color="#b14b1f"/>
+                <stop offset="100%" stop-color="#7a2c10"/>
+              </radialGradient>
+              <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+
+            <!-- connector lines (drawn first, behind nodes) -->
+            <g stroke="#b14b1f" stroke-width="3" stroke-dasharray="4 4" fill="none" opacity=".55">
+              <!-- N (Scholar) -->
+              <line x1="500" y1="360" x2="500" y2="270"/>
+              <line x1="500" y1="270" x2="500" y2="170"/>
+              <line x1="500" y1="170" x2="500" y2="80"/>
+              <!-- S (Companion) -->
+              <line x1="500" y1="360" x2="500" y2="450"/>
+              <line x1="500" y1="450" x2="500" y2="550"/>
+              <line x1="500" y1="550" x2="500" y2="640"/>
+              <!-- E (Artist) -->
+              <line x1="500" y1="360" x2="610" y2="360"/>
+              <line x1="610" y1="360" x2="740" y2="360"/>
+              <line x1="740" y1="360" x2="880" y2="360"/>
+              <!-- W (Tinkerer) -->
+              <line x1="500" y1="360" x2="390" y2="360"/>
+              <line x1="390" y1="360" x2="260" y2="360"/>
+              <line x1="260" y1="360" x2="120" y2="360"/>
+            </g>
+
+            <!-- HUB node (center) -->
+            <circle cx="500" cy="360" r="58" fill="url(#hubGrad)" stroke="#1c1a17" stroke-width="3" filter="url(#glow)"/>
+            <text x="500" y="354" text-anchor="middle" font-family="Courier New, monospace" font-size="14" font-weight="800" fill="#fbf7f1" letter-spacing="2">CINDER</text>
+            <text x="500" y="372" text-anchor="middle" font-family="Courier New, monospace" font-size="11" fill="#fbe4a3" letter-spacing="1">MARK HUB</text>
+
+            <!-- branch labels -->
+            <text x="500" y="42" text-anchor="middle" font-family="Helvetica Neue, sans-serif" font-size="22" font-weight="800" fill="#1c1a17" letter-spacing="-.5">SCHOLAR</text>
+            <text x="500" y="60" text-anchor="middle" font-family="Courier New, monospace" font-size="11" fill="#6e655c" letter-spacing="3">RECALL · CITATIONS</text>
+
+            <text x="940" y="346" text-anchor="end" font-family="Helvetica Neue, sans-serif" font-size="22" font-weight="800" fill="#1c1a17" letter-spacing="-.5">ARTIST</text>
+            <text x="940" y="364" text-anchor="end" font-family="Courier New, monospace" font-size="11" fill="#6e655c" letter-spacing="3">VISUAL · MOOD</text>
+
+            <text x="500" y="700" text-anchor="middle" font-family="Helvetica Neue, sans-serif" font-size="22" font-weight="800" fill="#1c1a17" letter-spacing="-.5">COMPANION</text>
+            <text x="500" y="682" text-anchor="middle" font-family="Courier New, monospace" font-size="11" fill="#6e655c" letter-spacing="3">WARMTH · JOURNAL</text>
+
+            <text x="60" y="346" text-anchor="start" font-family="Helvetica Neue, sans-serif" font-size="22" font-weight="800" fill="#1c1a17" letter-spacing="-.5">TINKERER</text>
+            <text x="60" y="364" text-anchor="start" font-family="Courier New, monospace" font-size="11" fill="#6e655c" letter-spacing="3">CODE · TOOLS</text>
+
+            <!-- NORTH: Scholar nodes (3 tiers up) -->
+            <g class="node tier1"><circle cx="500" cy="270" r="34" fill="#fff" stroke="#b14b1f" stroke-width="3"/><text x="500" y="262" text-anchor="middle" font-size="22">📚</text><text x="500" y="290" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="700" fill="#1c1a17" letter-spacing="1">CITE</text></g>
+            <g class="node tier2"><circle cx="500" cy="170" r="34" fill="#fff" stroke="#b14b1f" stroke-width="3"/><text x="500" y="162" text-anchor="middle" font-size="22">🔖</text><text x="500" y="190" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="700" fill="#1c1a17" letter-spacing="1">RECALL+</text></g>
+            <g class="node tier3"><circle cx="500" cy="80" r="38" fill="#fff7e1" stroke="#c98a2b" stroke-width="4" filter="url(#glow)"/><text x="500" y="72" text-anchor="middle" font-size="24">🎓</text><text x="500" y="94" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="800" fill="#7a2c10" letter-spacing="1">INDEX</text></g>
+
+            <!-- EAST: Artist nodes -->
+            <g class="node tier1"><circle cx="610" cy="360" r="34" fill="#fff" stroke="#b14b1f" stroke-width="3"/><text x="610" y="352" text-anchor="middle" font-size="22">🎨</text><text x="610" y="380" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="700" fill="#1c1a17" letter-spacing="1">PALETTE</text></g>
+            <g class="node tier2"><circle cx="740" cy="360" r="34" fill="#fff" stroke="#b14b1f" stroke-width="3"/><text x="740" y="352" text-anchor="middle" font-size="22">🖼</text><text x="740" y="380" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="700" fill="#1c1a17" letter-spacing="1">REFS</text></g>
+            <g class="node tier3"><circle cx="880" cy="360" r="38" fill="#fff7e1" stroke="#c98a2b" stroke-width="4" filter="url(#glow)"/><text x="880" y="352" text-anchor="middle" font-size="24">✺</text><text x="880" y="380" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="800" fill="#7a2c10" letter-spacing="1">MOOD</text></g>
+
+            <!-- SOUTH: Companion nodes -->
+            <g class="node tier1"><circle cx="500" cy="450" r="34" fill="#fff" stroke="#b14b1f" stroke-width="3"/><text x="500" y="442" text-anchor="middle" font-size="22">☕</text><text x="500" y="470" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="700" fill="#1c1a17" letter-spacing="1">WARMTH</text></g>
+            <g class="node tier2"><circle cx="500" cy="550" r="34" fill="#fff" stroke="#b14b1f" stroke-width="3"/><text x="500" y="542" text-anchor="middle" font-size="22">💬</text><text x="500" y="570" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="700" fill="#1c1a17" letter-spacing="1">FOLLOW</text></g>
+            <g class="node tier3"><circle cx="500" cy="640" r="38" fill="#fff7e1" stroke="#c98a2b" stroke-width="4" filter="url(#glow)"/><text x="500" y="632" text-anchor="middle" font-size="24">📓</text><text x="500" y="654" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="800" fill="#7a2c10" letter-spacing="1">DIARY+</text></g>
+
+            <!-- WEST: Tinkerer nodes -->
+            <g class="node tier1"><circle cx="390" cy="360" r="34" fill="#fff" stroke="#b14b1f" stroke-width="3"/><text x="390" y="352" text-anchor="middle" font-size="22">⌨</text><text x="390" y="380" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="700" fill="#1c1a17" letter-spacing="1">CODE</text></g>
+            <g class="node tier2"><circle cx="260" cy="360" r="34" fill="#fff" stroke="#b14b1f" stroke-width="3"/><text x="260" y="352" text-anchor="middle" font-size="22">⚙</text><text x="260" y="380" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="700" fill="#1c1a17" letter-spacing="1">CONFIG</text></g>
+            <g class="node tier3"><circle cx="120" cy="360" r="38" fill="#fff7e1" stroke="#c98a2b" stroke-width="4" filter="url(#glow)"/><text x="120" y="352" text-anchor="middle" font-size="24">🔧</text><text x="120" y="380" text-anchor="middle" font-family="Courier New, monospace" font-size="9" font-weight="800" fill="#7a2c10" letter-spacing="1">MAKER</text></g>
+
+            <!-- tier cost badges along each branch -->
+            <g font-family="Courier New, monospace" font-size="10" fill="#7a2c10" font-weight="700">
+              <text x="510" y="320" text-anchor="start">1 ★</text>
+              <text x="510" y="220" text-anchor="start">3 ★</text>
+              <text x="510" y="130" text-anchor="start">7 ★</text>
+              <text x="555" y="354" text-anchor="start">1 ★</text>
+              <text x="685" y="354" text-anchor="start">3 ★</text>
+              <text x="825" y="354" text-anchor="start">7 ★</text>
+              <text x="510" y="500" text-anchor="start">1 ★</text>
+              <text x="510" y="600" text-anchor="start">3 ★</text>
+              <text x="510" y="690" text-anchor="start">7 ★</text>
+              <text x="445" y="354" text-anchor="end">1 ★</text>
+              <text x="315" y="354" text-anchor="end">3 ★</text>
+              <text x="175" y="354" text-anchor="end">7 ★</text>
+            </g>
+
+            <!-- legend -->
+            <g transform="translate(40, 40)" font-family="Courier New, monospace" font-size="11" fill="#1c1a17">
+              <rect x="0" y="0" width="170" height="78" fill="#fff" stroke="#e6dccc" stroke-width="1" rx="6"/>
+              <text x="10" y="18" font-weight="800" letter-spacing="1">LEGEND</text>
+              <circle cx="18" cy="36" r="6" fill="#fff" stroke="#b14b1f" stroke-width="2"/>
+              <text x="32" y="40">node — 1 or 3 marks</text>
+              <circle cx="18" cy="58" r="7" fill="#fff7e1" stroke="#c98a2b" stroke-width="2"/>
+              <text x="32" y="62">capstone — 7 marks</text>
+            </g>
+          </svg>
+        </div>
+        <p class="skilltree-foot">Nothing locks the others out — you can spend across all four branches over time. The image is the in-app screen at <strong>Stage 3 (Flame)</strong>; earlier stages show fewer nodes unlocked.</p>
       </div>
 
       <div class="gami-foot">
@@ -758,7 +1222,7 @@
 <section class="final-cta">
   <div class="wrap">
     <h2>12 editions. Made by hand. In Calgary.</h2>
-    <p>Beta 0 ships now — three tiers, twelve sticks, real testers wanted. Standard $89, Beta+ $149, Studio $249. Watch it grow.</p>
+    <p>Beta 0 ships now — two tiers, twelve sticks, real testers wanted. Beta $89, Beta+ $149. Watch it grow.</p>
     <a href="#buy" class="btn btn-primary">See the tiers</a>
     <div class="ed-line">001–004 · ready · &nbsp;&nbsp;005–012 · next batch · email to reserve · &nbsp;&nbsp;all sticks ship with the beta agreement</div>
   </div>
