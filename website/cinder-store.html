@@ -90,6 +90,8 @@
   /* HERO IMAGE */
   .hero-art{position:relative;background:linear-gradient(135deg,#f3ead9,#e7d8b8);border-radius:18px;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);overflow:hidden}
   .hero-art::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,180,80,.35),transparent 60%);pointer-events:none}
+  .hero-photo{aspect-ratio:3/2}
+  .hero-photo img{width:100%;height:100%;object-fit:cover;display:block}
   .usb-mock{position:relative;width:62%}
   .usb-mock .stick{background:#1c1a17;border-radius:14px;padding:18% 8% 24%;box-shadow:0 24px 60px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06);position:relative}
   .usb-mock .stick::after{content:"";position:absolute;left:50%;bottom:-8%;transform:translateX(-50%);width:38%;height:14%;background:#c9c2b6;border-radius:3px;box-shadow:inset 0 -3px 0 #8a8276}
@@ -202,6 +204,13 @@
   .journal-text h2{font-size:34px;margin:0 0 14px;font-weight:800;letter-spacing:-.01em}
 
   /* WHATS IN */
+  .lifeshots{padding:48px 0;background:var(--bg)}
+  .lifeshots-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
+  .lifeshot{margin:0;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);background:#fff;position:relative}
+  .lifeshot img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:3/2}
+  .lifeshot.tall img{aspect-ratio:2/3}
+  .lifeshot figcaption{position:absolute;left:0;right:0;bottom:0;padding:12px 16px;color:#fbf7f1;background:linear-gradient(transparent,rgba(28,26,23,.78));font-size:13px;font-family:"Courier New",monospace;letter-spacing:.06em}
+  @media (max-width:780px){.lifeshots-grid{grid-template-columns:1fr}.lifeshot.tall img{aspect-ratio:3/2}}
   .whatsin{background:#fff;border-block:1px solid var(--rule);padding:64px 0}
   .whatsin h2{font-size:30px;margin:0 0 28px;font-weight:800;text-align:center}
   .kit{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
@@ -351,17 +360,9 @@
       </div>
     </div>
 
-    <div class="hero-art">
+    <div class="hero-art hero-photo">
       <span class="ribbon">Beta 0</span>
-      <div class="usb-mock">
-        <div class="stick">
-          <div class="label">
-            <div class="logo"><span class="ember"></span>CINDER</div>
-            <div class="ver">v1.0 · YOURS ONLY</div>
-          </div>
-        </div>
-        <div class="serial">CDR-USB-B0-001 OF 012</div>
-      </div>
+      <img src="img/cinder/cinder-hero.webp" alt="Cinder USB drive on kraft paper desk with autumn leaves, fountain pen, and steaming coffee" loading="eager">
     </div>
   </div>
 </section>
@@ -484,6 +485,21 @@
       <p>You also asked me to remind you about the Brothers Fab pitch on Friday. Done.</p>
       <p>Mood read: focused, slightly tired. You skipped lunch. (You said this — I'm not guessing.)</p>
       <div class="sig">— Cinder</div>
+    </div>
+  </div>
+</section>
+
+<section class="lifeshots">
+  <div class="wrap">
+    <div class="lifeshots-grid">
+      <figure class="lifeshot wide">
+        <img src="img/cinder/cinder-lifestyle.webp" alt="Hands plugging a Cinder USB into a laptop on a wooden desk with an open journal and croissant" loading="lazy">
+        <figcaption>Plug it in. That's the whole setup.</figcaption>
+      </figure>
+      <figure class="lifeshot tall">
+        <img src="img/cinder/cinder-journal.webp" alt="Cinder USB resting on an open leather-bound journal with handwritten Day 47 entry" loading="lazy">
+        <figcaption>Day 47. The journal is yours.</figcaption>
+      </figure>
     </div>
   </div>
 </section>
