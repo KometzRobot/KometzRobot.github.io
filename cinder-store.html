@@ -51,13 +51,17 @@
   .pill{display:inline-block;padding:9px 16px;border-radius:999px;background:var(--ink);color:#fbf7f1;font-size:13px;text-decoration:none;font-weight:600;letter-spacing:.02em}
   .pill:hover{background:var(--accent-deep)}
 
-  /* BRAND BANNER (logo + tagline, focal) */
-  .brand-banner{padding:56px 0 24px;text-align:center;border-bottom:1px solid var(--rule);background:linear-gradient(180deg,var(--bg) 0%,var(--paper) 100%)}
-  .brand-banner .wordmark{display:inline-flex;align-items:center;gap:18px;font-family:"Courier New",ui-monospace,monospace;font-weight:800;letter-spacing:.18em;font-size:88px;line-height:1;color:var(--ink)}
-  .brand-banner .wordmark .em{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd58a 0%,var(--accent) 55%,var(--accent-deep) 100%);box-shadow:0 0 38px var(--accent),0 0 16px #ffaf66 inset;animation:pulse 2.4s ease-in-out infinite}
-  .brand-banner .tag{font-family:"Helvetica Neue",sans-serif;font-size:30px;font-weight:800;color:var(--ink);margin-top:24px;letter-spacing:-.01em;line-height:1.18}
-  .brand-banner .tag em{font-style:normal;color:var(--accent)}
-  .brand-banner .sub{font-family:"Courier New",monospace;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:14px}
+  /* BRAND BANNER — Joel asked for "more focal" twice; bumped wordmark + halo glow */
+  .brand-banner{padding:88px 0 56px;text-align:center;border-bottom:1px solid var(--rule);background:radial-gradient(ellipse at 50% 30%,#ffeac4 0%,var(--paper) 55%,var(--bg) 100%);position:relative;overflow:hidden}
+  .brand-banner::before{content:"";position:absolute;top:-30%;left:50%;transform:translateX(-50%);width:520px;height:520px;background:radial-gradient(circle,rgba(217,124,68,.18) 0%,transparent 60%);pointer-events:none;animation:halo 6s ease-in-out infinite}
+  @keyframes halo{0%,100%{opacity:.7;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.08)}}
+  .brand-banner .wrap{position:relative;z-index:1}
+  .brand-banner .wordmark{display:inline-flex;align-items:center;gap:24px;font-family:"Courier New",ui-monospace,monospace;font-weight:800;letter-spacing:.2em;font-size:128px;line-height:1;color:var(--ink);text-shadow:0 2px 0 rgba(28,26,23,.04)}
+  .brand-banner .wordmark .em{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff2c8 0%,#ffb86c 35%,var(--accent) 60%,var(--accent-deep) 100%);box-shadow:0 0 80px var(--accent),0 0 38px #ffaf66 inset,0 4px 18px rgba(217,124,68,.4);animation:pulse 2.4s ease-in-out infinite}
+  .brand-banner .tag{font-family:"Helvetica Neue",sans-serif;font-size:42px;font-weight:800;color:var(--ink);margin-top:32px;letter-spacing:-.015em;line-height:1.14;max-width:780px;margin-left:auto;margin-right:auto}
+  .brand-banner .tag em{font-style:normal;color:var(--accent);position:relative}
+  .brand-banner .tag em::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:6px;background:var(--accent);opacity:.18;border-radius:3px}
+  .brand-banner .sub{font-family:"Courier New",monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:22px}
   .brand-banner .sub b{color:var(--accent);font-weight:700}
 
   /* HERO */
@@ -440,10 +444,11 @@
     .foot-grid{grid-template-columns:1fr 1fr;gap:24px}
     .ui-body{grid-template-columns:1fr}
     .ui-side{display:none}
-    .brand-banner{padding:44px 0 22px}
-    .brand-banner .wordmark{font-size:60px;gap:14px}
-    .brand-banner .wordmark .em{width:30px;height:30px}
-    .brand-banner .tag{font-size:24px;margin-top:18px}
+    .brand-banner{padding:60px 0 36px}
+    .brand-banner::before{width:340px;height:340px}
+    .brand-banner .wordmark{font-size:74px;gap:16px}
+    .brand-banner .wordmark .em{width:38px;height:38px;box-shadow:0 0 50px var(--accent),0 0 22px #ffaf66 inset}
+    .brand-banner .tag{font-size:28px;margin-top:22px}
     .brand-banner .sub{font-size:11px}
     .stages-row{grid-template-columns:repeat(2,1fr)}
     .section-head h2{font-size:30px}
@@ -459,10 +464,11 @@
     .navrow{padding:10px 0}
     .brand{font-size:15px}
     .pill{padding:8px 12px;font-size:12px}
-    .brand-banner{padding:36px 0 18px}
-    .brand-banner .wordmark{font-size:44px;gap:10px;letter-spacing:.14em}
-    .brand-banner .wordmark .em{width:22px;height:22px;box-shadow:0 0 22px var(--accent)}
-    .brand-banner .tag{font-size:21px;margin-top:14px;line-height:1.22}
+    .brand-banner{padding:42px 0 24px}
+    .brand-banner::before{width:240px;height:240px}
+    .brand-banner .wordmark{font-size:48px;gap:11px;letter-spacing:.14em}
+    .brand-banner .wordmark .em{width:24px;height:24px;box-shadow:0 0 28px var(--accent),0 0 12px #ffaf66 inset}
+    .brand-banner .tag{font-size:22px;margin-top:16px;line-height:1.22;padding:0 6px}
     .brand-banner .sub{font-size:10px;letter-spacing:.14em;line-height:1.5}
     .hero{padding:32px 0 16px}
     .hero-grid{gap:26px}
