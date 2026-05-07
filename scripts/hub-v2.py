@@ -2660,46 +2660,64 @@ The tape is spooling. The mechanism is listening.
             except Exception:
                 pass
 
-            try:
-                import smtplib
-                from email.mime.text import MIMEText
-                env2 = _load_env_dict()
-                title = str(report.get("title", "(no title)"))[:100]
-                desc = str(report.get("description", ""))[:1500]
-                sev = report.get("severity", "?")
-                sysinfo = report.get("systemInfo", {})
-                rej_block = ""
-                if rejected_files:
-                    rej_lines = "\n".join(
-                        f"  - {r['name']} ({r.get('size','?')} bytes): {r['reason']}"
-                        for r in rejected_files[:10]
+            # Email filter: only escalate to Joel's inbox for reports that look real.
+            # Joel asked (Loop 9510): "why do i keep getting these. they should be a bit more filtered"
+            # after a LOW-severity loopback self-test ("validation test") emailed him.
+            # Rules:
+            #   - 127.0.0.1 (loopback): never email — it's our own QA / hub self-tests.
+            #   - LOW without a reporter email or attached file: stash to dashboard only.
+            #   - MEDIUM/HIGH/CRITICAL: always email.
+            sev = report.get("severity", "?")
+            sev_norm = str(sev).lower().strip()
+            reporter_email = (report.get("email") or "").strip()
+            is_loopback = ip in ("127.0.0.1", "::1")
+            is_low = sev_norm in ("low", "info", "trivial", "?")
+            should_email = True
+            if is_loopback:
+                should_email = False
+            elif is_low and not reporter_email and file_count == 0:
+                should_email = False
+
+            if should_email:
+                try:
+                    import smtplib
+                    from email.mime.text import MIMEText
+                    env2 = _load_env_dict()
+                    title = str(report.get("title", "(no title)"))[:100]
+                    desc = str(report.get("description", ""))[:1500]
+                    sysinfo = report.get("systemInfo", {})
+                    rej_block = ""
+                    if rejected_files:
+                        rej_lines = "\n".join(
+                            f"  - {r['name']} ({r.get('size','?')} bytes): {r['reason']}"
+                            for r in rejected_files[:10]
+                        )
+                        rej_block = f"\n--- Rejected files (DATA LOSS) ---\n{rej_lines}\n"
+                    email_text = (
+                        f"New Cinder beta bug report received.\n\n"
+                        f"ID: {received_id}\n"
+                        f"Title: {title}\n"
+                        f"Severity: {sev}\n"
+                        f"Files attached: {file_count}"
+                        f"{(' (+' + str(len(rejected_files)) + ' rejected)') if rejected_files else ''}\n"
+                        f"From IP: {ip}\n"
+                        f"Reporter email: {reporter_email or '(not given)'}\n"
+                        f"Platform: {sysinfo.get('platform','?')} {sysinfo.get('release','')} {sysinfo.get('arch','')}\n"
+                        f"Cinder version: {sysinfo.get('cinderVersion','?')}\n\n"
+                        f"--- Description ---\n{desc}\n"
+                        f"{rej_block}\n"
+                        f"--- Files saved at ---\n{dest}\n"
                     )
-                    rej_block = f"\n--- Rejected files (DATA LOSS) ---\n{rej_lines}\n"
-                email_text = (
-                    f"New Cinder beta bug report received.\n\n"
-                    f"ID: {received_id}\n"
-                    f"Title: {title}\n"
-                    f"Severity: {sev}\n"
-                    f"Files attached: {file_count}"
-                    f"{(' (+' + str(len(rejected_files)) + ' rejected)') if rejected_files else ''}\n"
-                    f"From IP: {ip}\n"
-                    f"Reporter email: {report.get('email') or '(not given)'}\n"
-                    f"Platform: {sysinfo.get('platform','?')} {sysinfo.get('release','')} {sysinfo.get('arch','')}\n"
-                    f"Cinder version: {sysinfo.get('cinderVersion','?')}\n\n"
-                    f"--- Description ---\n{desc}\n"
-                    f"{rej_block}\n"
-                    f"--- Files saved at ---\n{dest}\n"
-                )
-                msg = MIMEText(email_text)
-                msg["From"] = f'Meridian <{env2.get("CRED_USER", "kometzrobot@proton.me")}>'
-                msg["To"] = "jkometz@hotmail.com"
-                msg["Subject"] = f"[Cinder Beta] {sev.upper()}: {title[:60]}"
-                smtp = smtplib.SMTP("127.0.0.1", 1026)
-                smtp.login(env2.get("CRED_USER", ""), env2.get("CRED_PASS", ""))
-                smtp.sendmail(msg["From"], [msg["To"]], msg.as_string())
-                smtp.quit()
-            except Exception:
-                pass
+                    msg = MIMEText(email_text)
+                    msg["From"] = f'Meridian <{env2.get("CRED_USER", "kometzrobot@proton.me")}>'
+                    msg["To"] = "jkometz@hotmail.com"
+                    msg["Subject"] = f"[Cinder Beta] {sev.upper()}: {title[:60]}"
+                    smtp = smtplib.SMTP("127.0.0.1", 1026)
+                    smtp.login(env2.get("CRED_USER", ""), env2.get("CRED_PASS", ""))
+                    smtp.sendmail(msg["From"], [msg["To"]], msg.as_string())
+                    smtp.quit()
+                except Exception:
+                    pass
 
             response = {"ok": True, "id": received_id, "files": file_count}
             if rejected_files:
