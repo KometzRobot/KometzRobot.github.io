@@ -51,13 +51,17 @@
   .pill{display:inline-block;padding:9px 16px;border-radius:999px;background:var(--ink);color:#fbf7f1;font-size:13px;text-decoration:none;font-weight:600;letter-spacing:.02em}
   .pill:hover{background:var(--accent-deep)}
 
-  /* BRAND BANNER (logo + tagline, focal) */
-  .brand-banner{padding:56px 0 24px;text-align:center;border-bottom:1px solid var(--rule);background:linear-gradient(180deg,var(--bg) 0%,var(--paper) 100%)}
-  .brand-banner .wordmark{display:inline-flex;align-items:center;gap:18px;font-family:"Courier New",ui-monospace,monospace;font-weight:800;letter-spacing:.18em;font-size:88px;line-height:1;color:var(--ink)}
-  .brand-banner .wordmark .em{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd58a 0%,var(--accent) 55%,var(--accent-deep) 100%);box-shadow:0 0 38px var(--accent),0 0 16px #ffaf66 inset;animation:pulse 2.4s ease-in-out infinite}
-  .brand-banner .tag{font-family:"Helvetica Neue",sans-serif;font-size:30px;font-weight:800;color:var(--ink);margin-top:24px;letter-spacing:-.01em;line-height:1.18}
-  .brand-banner .tag em{font-style:normal;color:var(--accent)}
-  .brand-banner .sub{font-family:"Courier New",monospace;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:14px}
+  /* BRAND BANNER (logo + tagline, focal — Joel asked for more focal twice) */
+  .brand-banner{padding:88px 0 56px;text-align:center;border-bottom:1px solid var(--rule);background:radial-gradient(ellipse at 50% 30%,#ffeac4 0%,var(--paper) 55%,var(--bg) 100%);position:relative;overflow:hidden}
+  .brand-banner::before{content:"";position:absolute;top:-30%;left:50%;transform:translateX(-50%);width:520px;height:520px;background:radial-gradient(circle,rgba(217,124,68,.18) 0%,transparent 60%);pointer-events:none;animation:halo 6s ease-in-out infinite}
+  @keyframes halo{0%,100%{opacity:.7;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.08)}}
+  .brand-banner .wrap{position:relative;z-index:1}
+  .brand-banner .wordmark{display:inline-flex;align-items:center;gap:24px;font-family:"Courier New",ui-monospace,monospace;font-weight:800;letter-spacing:.2em;font-size:128px;line-height:1;color:var(--ink);text-shadow:0 2px 0 rgba(28,26,23,.04)}
+  .brand-banner .wordmark .em{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff2c8 0%,#ffb86c 35%,var(--accent) 60%,var(--accent-deep) 100%);box-shadow:0 0 80px var(--accent),0 0 38px #ffaf66 inset,0 4px 18px rgba(217,124,68,.4);animation:pulse 2.4s ease-in-out infinite}
+  .brand-banner .tag{font-family:"Helvetica Neue",sans-serif;font-size:42px;font-weight:800;color:var(--ink);margin-top:32px;letter-spacing:-.015em;line-height:1.14;max-width:780px;margin-left:auto;margin-right:auto}
+  .brand-banner .tag em{font-style:normal;color:var(--accent);position:relative}
+  .brand-banner .tag em::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:6px;background:var(--accent);opacity:.18;border-radius:3px}
+  .brand-banner .sub{font-family:"Courier New",monospace;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:22px}
   .brand-banner .sub b{color:var(--accent);font-weight:700}
 
   /* HERO */
@@ -416,6 +420,38 @@
   .final-cta .btn{max-width:340px;margin:0 auto;position:relative}
   .final-cta .ed-line{font-family:"Courier New",monospace;color:var(--accent);font-size:12px;letter-spacing:.16em;margin-top:18px;text-transform:uppercase;position:relative}
 
+  /* CONTACT */
+  .contact{padding:64px 0;background:#fff;border-top:1px solid var(--rule)}
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;max-width:1080px;margin:0 auto}
+  .contact h2{font-size:30px;margin:6px 0 12px;font-weight:800;letter-spacing:-.01em}
+  .contact p{color:var(--muted);font-size:15px;line-height:1.55;max-width:460px;margin:0 0 18px}
+  .contact-bullets{list-style:none;padding:0;margin:18px 0 0}
+  .contact-bullets li{padding:6px 0;font-size:14px;color:var(--ink)}
+  .contact-bullets .bd{color:var(--accent);margin-right:8px;font-weight:800}
+  .contact-form{background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:22px 22px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+  .contact-form label{font-family:"Courier New",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:8px 0 6px;font-weight:700}
+  .contact-form input,.contact-form select,.contact-form textarea{padding:11px 13px;border:1px solid var(--rule);border-radius:8px;font-size:14.5px;font-family:inherit;background:#fff;color:var(--ink);outline:none;transition:border-color .15s}
+  .contact-form input:focus,.contact-form select:focus,.contact-form textarea:focus{border-color:var(--accent)}
+  .contact-form textarea{resize:vertical;min-height:80px;line-height:1.45}
+  .contact-form .btn{margin-top:14px}
+  @media (max-width:780px){.contact-grid{grid-template-columns:1fr;gap:24px}.contact{padding:46px 0}}
+  @media (max-width:560px){.contact h2{font-size:24px}.contact p{font-size:14px}.contact-form{padding:18px 16px}}
+
+  /* SUBSCRIBE */
+  .subscribe{padding:64px 0;background:var(--paper);border-top:1px solid var(--rule)}
+  .subscribe-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;max-width:1080px;margin:0 auto}
+  .subscribe h2{font-size:30px;margin:6px 0 12px;font-weight:800;letter-spacing:-.01em}
+  .subscribe p{color:var(--muted);font-size:15px;line-height:1.55;margin:0;max-width:460px}
+  .sub-form{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:22px 22px 18px;box-shadow:var(--shadow)}
+  .sub-form label{display:block;font-family:"Courier New",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700}
+  .sub-row{display:flex;gap:8px}
+  .sub-row input[type=email]{flex:1;padding:12px 14px;border:1px solid var(--rule);border-radius:8px;font-size:15px;font-family:inherit;background:#fbf7f1;color:var(--ink);outline:none;transition:border-color .15s}
+  .sub-row input[type=email]:focus{border-color:var(--accent);background:#fff}
+  .sub-row button{flex-shrink:0;padding:12px 18px;font-size:14px;width:auto;border-radius:8px}
+  .sub-note{margin-top:10px;font-size:11.5px;color:var(--muted);font-family:"Courier New",monospace;letter-spacing:.04em}
+  @media (max-width:780px){.subscribe-grid{grid-template-columns:1fr;gap:24px}.subscribe{padding:46px 0}}
+  @media (max-width:560px){.subscribe h2{font-size:24px}.subscribe p{font-size:14px}.sub-row{flex-direction:column}.sub-row button{width:100%}}
+
   /* FOOTER */
   footer{padding:48px 0 28px;font-size:13px;color:var(--muted)}
   .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;margin-bottom:36px}
@@ -440,10 +476,11 @@
     .foot-grid{grid-template-columns:1fr 1fr;gap:24px}
     .ui-body{grid-template-columns:1fr}
     .ui-side{display:none}
-    .brand-banner{padding:44px 0 22px}
-    .brand-banner .wordmark{font-size:60px;gap:14px}
-    .brand-banner .wordmark .em{width:30px;height:30px}
-    .brand-banner .tag{font-size:24px;margin-top:18px}
+    .brand-banner{padding:60px 0 36px}
+    .brand-banner::before{width:340px;height:340px}
+    .brand-banner .wordmark{font-size:74px;gap:16px}
+    .brand-banner .wordmark .em{width:38px;height:38px;box-shadow:0 0 50px var(--accent),0 0 22px #ffaf66 inset}
+    .brand-banner .tag{font-size:28px;margin-top:22px}
     .brand-banner .sub{font-size:11px}
     .stages-row{grid-template-columns:repeat(2,1fr)}
     .section-head h2{font-size:30px}
@@ -459,10 +496,11 @@
     .navrow{padding:10px 0}
     .brand{font-size:15px}
     .pill{padding:8px 12px;font-size:12px}
-    .brand-banner{padding:36px 0 18px}
-    .brand-banner .wordmark{font-size:44px;gap:10px;letter-spacing:.14em}
-    .brand-banner .wordmark .em{width:22px;height:22px;box-shadow:0 0 22px var(--accent)}
-    .brand-banner .tag{font-size:21px;margin-top:14px;line-height:1.22}
+    .brand-banner{padding:42px 0 24px}
+    .brand-banner::before{width:240px;height:240px}
+    .brand-banner .wordmark{font-size:48px;gap:11px;letter-spacing:.14em}
+    .brand-banner .wordmark .em{width:24px;height:24px;box-shadow:0 0 28px var(--accent),0 0 12px #ffaf66 inset}
+    .brand-banner .tag{font-size:22px;margin-top:16px;line-height:1.22;padding:0 6px}
     .brand-banner .sub{font-size:10px;letter-spacing:.14em;line-height:1.5}
     .hero{padding:32px 0 16px}
     .hero-grid{gap:26px}
@@ -552,12 +590,13 @@
   <div class="wrap navrow">
     <div class="brand"><span class="dot"></span> CINDER</div>
     <nav><ul>
-      <li><a href="#beta">Beta deal</a></li>
       <li><a href="#growth">It Grows</a></li>
       <li><a href="#ui">The App</a></li>
       <li><a href="#achievements">Achievements</a></li>
       <li><a href="#library">Library</a></li>
       <li><a href="#faq">FAQ</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="#subscribe">Updates</a></li>
     </ul></nav>
     <div class="cart"><a href="#buy" class="pill">Buy · from $89</a></div>
   </div>
@@ -568,7 +607,7 @@
   <div class="wrap">
     <div class="wordmark"><span class="em"></span><span>CINDER</span></div>
     <div class="tag">A pocket AI that <em>grows</em> with you.</div>
-    <div class="sub"><b>● </b>Beta 0 · 12 hand-numbered editions · made in Calgary</div>
+    <div class="sub"><b>● </b>Beta 0 · 12 hand-numbered editions · made by hand</div>
   </div>
 </section>
 
@@ -829,7 +868,7 @@
           <div class="item on">● Tuesday's project</div>
           <div class="item">Drawing notes</div>
           <div class="item">Letter to Mom</div>
-          <div class="item">Calgary weather</div>
+          <div class="item">Sketchbook ideas</div>
           <div class="grp">Tools</div>
           <div class="item">Companion Journal</div>
           <div class="item">Achievements (47/250)</div>
@@ -1215,25 +1254,132 @@
         <p><strong>14-day return</strong> on unopened sticks — full refund. If a stick is opened: full refund if there's a defect.</p>
         <p><strong>30-day support warranty</strong> — direct help from the maker if anything's broken or confusing. Email the studio inbox, get a real reply within a couple of days.</p>
       </details>
+      <details>
+        <summary>How do I pay?</summary>
+        <p>Email to order. The maker replies with payment options — Interac e-Transfer (Canada), PayPal, or Stripe invoice. No checkout robot, no surprise fees. Shipping is added at confirmation.</p>
+      </details>
+      <details>
+        <summary>When will it ship?</summary>
+        <p>Beta 0 sticks 001–004 are ready to ship now. Sticks 005–012 are in the next batch — we hand-flash, stamp, sign, and pack each one. From order confirmation, allow 3–7 business days plus carrier time.</p>
+      </details>
+      <details>
+        <summary>Can I update the AI or swap models?</summary>
+        <p>Yes. The bundled model is a small, well-rounded one chosen for offline reliability. Power users can drop in larger Ollama models — there's a one-line swap inside the app. The XP profile and journal stay intact through model swaps.</p>
+      </details>
+      <details>
+        <summary>What if I get stuck or have questions later?</summary>
+        <p>Email the studio. The first 12 buyers get direct contact — not a help desk, an actual person. Beta+ buyers also get a one-on-one onboarding call if they want one.</p>
+      </details>
+      <details>
+        <summary>Why a USB stick and not a download?</summary>
+        <p>Two reasons. First — the stick <em>is</em> the AI: portable across machines, immune to a service shutdown, no account to lose. Second — it's a real object you can hold, hand to a friend, lose in a drawer for two years and find again. That's harder to do with a folder.</p>
+      </details>
+      <details>
+        <summary>Is it really worth $89?</summary>
+        <p>It's a 64 GB hand-flashed stick, hand-numbered, with a private offline AI, a 157-doc seed library, an encrypted vault, and 30 days of direct support from the maker. You also get to shape the v1 — your bug reports and suggestions go into the shipping product. Beta+ adds a personal theme, a brain pack, and a custom case for $149.</p>
+      </details>
     </div>
   </div>
 </section>
 
+<!-- SUBSCRIBE SECTION -->
+<section class="subscribe" id="subscribe">
+  <div class="wrap subscribe-grid">
+    <div class="sub-text">
+      <div class="eyebrow">stay in the loop</div>
+      <h2>Get updates on Cinder.</h2>
+      <p>Beta drops, evolution stages, new themes, restocks. Maybe one email a fortnight. Easy unsubscribe — just reply with "stop". No tracking, no ad partners.</p>
+    </div>
+    <form class="sub-form" action="mailto:kometzrobot@proton.me" method="get" enctype="text/plain" onsubmit="return cinderSub(this)">
+      <label for="sub-email">Email address</label>
+      <div class="sub-row">
+        <input id="sub-email" type="email" name="from" placeholder="you@something.com" required>
+        <button type="submit" class="btn btn-primary">Subscribe</button>
+      </div>
+      <input type="hidden" name="subject" value="Subscribe me to Cinder updates">
+      <input type="hidden" name="body" value="Add me to the Cinder updates list. (Reply with stop any time to unsubscribe.)">
+      <div class="sub-note">Opens your email app to confirm — we never store your address until you hit send.</div>
+    </form>
+  </div>
+</section>
+<script>
+  function cinderSub(form){
+    var em = (form.querySelector('#sub-email').value || '').trim();
+    if(!em || em.indexOf('@')<0){ return false; }
+    var subj = encodeURIComponent('Subscribe me to Cinder updates');
+    var body = encodeURIComponent('Hi — please add ' + em + ' to the Cinder updates list. (Reply with "stop" any time to unsubscribe.)\n\nMy name (optional): \nWhat you\'re excited about (optional): ');
+    window.location.href = 'mailto:kometzrobot@proton.me?subject=' + subj + '&body=' + body;
+    return false;
+  }
+</script>
+
 <section class="final-cta">
   <div class="wrap">
-    <h2>12 editions. Made by hand. In Calgary.</h2>
+    <h2>12 editions. Made by hand. Made for keeping.</h2>
     <p>Beta 0 ships now — two tiers, twelve sticks, real testers wanted. Beta $89, Beta+ $149. Watch it grow.</p>
     <a href="#buy" class="btn btn-primary">See the tiers</a>
     <div class="ed-line">001–004 · ready · &nbsp;&nbsp;005–012 · next batch · email to reserve · &nbsp;&nbsp;all sticks ship with the beta agreement</div>
   </div>
 </section>
 
+<!-- CONTACT FORM SECTION -->
+<section class="contact" id="contact">
+  <div class="wrap contact-grid">
+    <div class="contact-text">
+      <div class="eyebrow">talk to the maker</div>
+      <h2>Got a question? Send a real message.</h2>
+      <p>Direct line to the studio. Order questions, tech help, weird ideas, custom requests — opens your email already filled in. Replies usually inside a day.</p>
+      <ul class="contact-bullets">
+        <li><span class="bd">●</span> Real human (and one autonomous AI)</li>
+        <li><span class="bd">●</span> Reply within 1–2 days, weekdays</li>
+        <li><span class="bd">●</span> Beta+ buyers get a 1:1 onboarding call</li>
+      </ul>
+    </div>
+    <form class="contact-form" onsubmit="return cinderContact(this)">
+      <label for="ct-topic">What's it about?</label>
+      <select id="ct-topic" required>
+        <option value="">Pick one…</option>
+        <option value="Order question">Order question</option>
+        <option value="Tech help">Tech help / setup</option>
+        <option value="Custom / Beta+ touches">Custom / Beta+ touches</option>
+        <option value="Press or partnership">Press or partnership</option>
+        <option value="Just saying hi">Just saying hi</option>
+      </select>
+      <label for="ct-name">Your name</label>
+      <input id="ct-name" type="text" placeholder="Pat from the internet" required>
+      <label for="ct-email">Your email</label>
+      <input id="ct-email" type="email" placeholder="you@something.com" required>
+      <label for="ct-msg">Message</label>
+      <textarea id="ct-msg" rows="4" placeholder="What's going on?" required></textarea>
+      <button type="submit" class="btn btn-primary">Send via email</button>
+      <div class="sub-note">Opens your email app with everything pre-filled — review and hit send.</div>
+    </form>
+  </div>
+</section>
+<script>
+  function cinderContact(form){
+    var topic = document.getElementById('ct-topic').value;
+    var name = document.getElementById('ct-name').value.trim();
+    var email = document.getElementById('ct-email').value.trim();
+    var msg = document.getElementById('ct-msg').value.trim();
+    if(!topic || !name || !email || !msg) return false;
+    var subj = encodeURIComponent('Cinder · ' + topic);
+    var body = encodeURIComponent(
+      'From: ' + name + ' <' + email + '>\n' +
+      'Topic: ' + topic + '\n\n' +
+      msg + '\n\n— Sent from cinder-store.html\n'
+    );
+    window.location.href = 'mailto:kometzrobot@proton.me?subject=' + subj + '&body=' + body;
+    return false;
+  }
+</script>
+
 <footer>
   <div class="wrap">
     <div class="foot-grid">
       <div>
         <div class="brand" style="margin-bottom:14px"><span class="dot"></span> CINDER</div>
-        <p style="max-width:340px">Made in Calgary by an artist and an autonomous AI. A small studio. A real object.</p>
+        <p style="max-width:340px">Made by an artist and an autonomous AI. A small studio in Calgary, AB. A real object.</p>
       </div>
       <div>
         <h5>Product</h5>
@@ -1247,9 +1393,9 @@
       <div>
         <h5>Support</h5>
         <ul>
-          <li><a href="mailto:kometzrobot@proton.me">Contact</a></li>
-          <li><a href="#">Returns</a></li>
-          <li><a href="#">Shipping</a></li>
+          <li><a href="#contact">Contact form</a></li>
+          <li><a href="mailto:kometzrobot@proton.me">Email direct</a></li>
+          <li><a href="#subscribe">Get updates</a></li>
         </ul>
       </div>
       <div>
