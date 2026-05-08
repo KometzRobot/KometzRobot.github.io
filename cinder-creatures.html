@@ -86,7 +86,7 @@
 <div class="shell">
   <div class="brand">
     <span><b>CINDER</b> · Creatures</span>
-    <span>v0.4 — quest log &amp; claim flow</span>
+    <span>v0.5 — date-stamped claims</span>
   </div>
 
   <div class="screen-frame">
@@ -449,8 +449,8 @@ function questSet(id, value){
 function readyCount(){ return Object.values(questState).filter(s=>s.status==="ready").length; }
 
 // claim animation (plays when player presses A on a 'ready' quest)
-let claimAnim = null; // {title, reward, ts}
-function startClaimAnim(q){ claimAnim = {title:q.title, reward:q.reward, ts:performance.now()}; }
+let claimAnim = null; // {title, reward, stamp, ts}
+function startClaimAnim(q, stamp){ claimAnim = {title:q.title, reward:q.reward, stamp:stamp||"", ts:performance.now()}; }
 function tickClaimAnim(){
   if(!claimAnim) return;
   if(performance.now() - claimAnim.ts > 1700){ claimAnim = null; }
@@ -1278,7 +1278,8 @@ function drawQuests(){
       if(blink) text("!", 138, y, PAL[3]);
       text("press A to claim", 18, y+10, PAL[3]);
     } else if(row.s.status === "claimed"){
-      text("done — " + row.q.reward, 18, y+10, PAL[3]);
+      const stamp = row.s.claimedAt ? " · " + row.s.claimedAt : "";
+      text("done — " + row.q.reward + stamp, 18, y+10, PAL[3]);
     } else {
       text(`${row.s.progress}/${row.q.target}  ${row.q.sub}`, 18, y+10, PAL[3]);
     }
@@ -1296,9 +1297,10 @@ function updateQuests(){
     const row = list[quests.sel];
     if(row && row.s.status === "ready"){
       row.s.status = "claimed";
+      row.s.claimedAt = new Date().toISOString().slice(0,10); // YYYY-MM-DD
       try{ row.q.rewardFn && row.q.rewardFn(); }catch(e){}
       saveQuests(); saveGame();
-      startClaimAnim(row.q);
+      startClaimAnim(row.q, row.s.claimedAt);
     }
   }
   tickClaimAnim();
@@ -1310,12 +1312,13 @@ function drawClaimAnim(){
   let off = 0;
   if(t < 0.15) off = (1 - t/0.15) * 30;
   else if(t > 0.85) off = ((t-0.85)/0.15) * 30;
-  const cx = 16, cy = 40 + off, cw = 128, ch = 56;
+  const cx = 16, cy = 40 + off, cw = 128, ch = 64;
   drawTextBox(cx, cy, cw, ch);
   text("★ CLAIMED ★", cx+34, cy+5, PAL[3]);
-  text(claimAnim.title, cx+8, cy+20, PAL[3]);
-  text("reward:", cx+8, cy+34, PAL[3]);
-  text(claimAnim.reward, cx+8, cy+44, PAL[3]);
+  text(claimAnim.title, cx+8, cy+18, PAL[3]);
+  text("reward:", cx+8, cy+30, PAL[3]);
+  text(claimAnim.reward, cx+8, cy+40, PAL[3]);
+  if(claimAnim.stamp) text(claimAnim.stamp, cx+8, cy+52, PAL[3]);
   // sparkles — pseudo random pixels around the box
   const seed = (claimAnim.ts|0) ^ 0x1F1F;
   const r = rng(seed);
