@@ -667,7 +667,7 @@ def main():
 
     # 2) Achievement sprites — start with our themed batch, then numeric fillers
     base_count = len(ACH_THEMES)
-    target = 159
+    target = 250
     for i, (slug, kind, _desc) in enumerate(ACH_THEMES):
         out = ACH_DIR / f"ach-{i+1:03d}-{slug}.webp"
         img = achievement_sprite(slug, kind, i)
