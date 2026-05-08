@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cinder Creatures — a procedural creature collector</title>
+<meta name="description" content="A Gameboy-style procedural creature collector built from Cinder's code bits. Walk, encounter, capture, battle. The final boss is Cinder itself.">
+<style>
+  :root{
+    --gb-bg:#0f380f;--gb-mid:#306230;--gb-light:#8bac0f;--gb-pale:#9bbc0f;
+    --shell:#cfc7b4;--shell-dark:#aea693;--ink:#1c1a17;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#1c1a17;color:#cfc7b4;
+    font-family:"Courier New",ui-monospace,Menlo,monospace;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:20px;
+  }
+  .shell{
+    background:linear-gradient(180deg,var(--shell) 0%,var(--shell-dark) 100%);
+    border-radius:18px 18px 60px 18px;
+    box-shadow:0 24px 50px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.18);
+    padding:22px 22px 32px;max-width:480px;width:100%;
+    color:var(--ink);
+  }
+  .brand{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#5a5448}
+  .brand b{color:#1c1a17;letter-spacing:.18em}
+  .screen-frame{
+    background:#1c1a17;border-radius:10px;padding:18px 16px 26px 22px;
+    box-shadow:inset 0 6px 14px rgba(0,0,0,.6);
+  }
+  .screen-tab{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:10px;color:#aea693;letter-spacing:.1em}
+  .led{width:8px;height:8px;border-radius:50%;background:#e85a3b;box-shadow:0 0 6px rgba(232,90,59,.6);display:inline-block;margin-right:6px;vertical-align:middle}
+  canvas{
+    display:block;width:100%;aspect-ratio:160/144;
+    image-rendering:pixelated;image-rendering:crisp-edges;
+    background:var(--gb-pale);border:2px solid #6a6354;border-radius:4px;
+    box-shadow:inset 0 0 0 1px #1c1a17;
+  }
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px;align-items:center}
+  .dpad{position:relative;width:120px;height:120px;justify-self:center}
+  .dpad button{
+    position:absolute;background:#1c1a17;border:none;color:#cfc7b4;
+    font-family:inherit;font-size:18px;font-weight:bold;cursor:pointer;
+    box-shadow:0 2px 0 rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1);
+  }
+  .dpad button:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+  .dpad .up{top:0;left:40px;width:40px;height:40px;border-radius:6px 6px 0 0}
+  .dpad .down{bottom:0;left:40px;width:40px;height:40px;border-radius:0 0 6px 6px}
+  .dpad .left{top:40px;left:0;width:40px;height:40px;border-radius:6px 0 0 6px}
+  .dpad .right{top:40px;right:0;width:40px;height:40px;border-radius:0 6px 6px 0}
+  .dpad .center{top:40px;left:40px;width:40px;height:40px;background:#0a0908}
+  .ab{display:flex;gap:14px;justify-content:center;align-items:center;transform:rotate(-18deg)}
+  .ab button{
+    width:54px;height:54px;border-radius:50%;border:none;
+    background:radial-gradient(circle at 30% 30%,#9d2f4a,#5a1a2c);
+    color:#fff;font-family:inherit;font-size:17px;font-weight:bold;cursor:pointer;
+    box-shadow:0 3px 0 rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.2);
+  }
+  .ab button:active{transform:translateY(1px)}
+  .ab .label{font-size:9px;color:#5a5448;letter-spacing:.1em;text-transform:uppercase;align-self:flex-end;padding-bottom:4px}
+  .startsel{display:flex;gap:18px;justify-content:center;margin-top:18px;transform:rotate(-12deg)}
+  .startsel button{
+    background:#5a5448;color:#cfc7b4;border:none;padding:5px 16px;
+    border-radius:14px;font-family:inherit;font-size:9px;letter-spacing:.15em;
+    text-transform:uppercase;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.3);
+  }
+  .meta{margin-top:24px;padding-top:16px;border-top:1px solid #aea693;font-size:11px;color:#5a5448;line-height:1.6}
+  .meta b{color:#1c1a17}
+  .meta a{color:#1c1a17}
+  .footer{text-align:center;margin-top:18px;font-size:10px;color:#5a5448;letter-spacing:.1em;text-transform:uppercase}
+  @media (max-width:520px){
+    .shell{padding:18px 14px 24px}
+    .screen-frame{padding:14px 12px 20px 16px}
+    .controls{gap:12px}
+    .dpad{width:100px;height:100px}
+    .dpad .up,.dpad .down,.dpad .left,.dpad .right,.dpad .center{width:34px;height:34px}
+    .dpad .up{left:33px}.dpad .down{left:33px}.dpad .left{top:33px}.dpad .right{top:33px}.dpad .center{top:33px;left:33px}
+    .ab button{width:46px;height:46px}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="brand">
+    <span><b>CINDER</b> · Creatures</span>
+    <span>v0.1 — prototype</span>
+  </div>
+
+  <div class="screen-frame">
+    <div class="screen-tab">
+      <span><span class="led"></span>BATTERY</span>
+      <span>DOT MATRIX WITH STEREO SOUND</span>
+    </div>
+    <canvas id="screen" width="160" height="144"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="dpad" aria-label="D-pad">
+      <button class="up" data-key="ArrowUp">▲</button>
+      <button class="left" data-key="ArrowLeft">◀</button>
+      <button class="center" disabled></button>
+      <button class="right" data-key="ArrowRight">▶</button>
+      <button class="down" data-key="ArrowDown">▼</button>
+    </div>
+    <div class="ab">
+      <div class="label">B</div>
+      <button data-key="b">B</button>
+      <button data-key="a">A</button>
+      <div class="label">A</div>
+    </div>
+  </div>
+  <div class="startsel">
+    <button data-key="select">select</button>
+    <button data-key="start">start</button>
+  </div>
+
+  <div class="meta">
+    <p><b>How to play.</b> Arrow keys / D-pad to walk. Step on the dark grass, things wake up. <b>A</b> picks; <b>B</b> backs out. <b>Select</b> opens your codex of caught creatures.</p>
+    <p style="margin-top:8px">Creatures are <b>code bits</b> — fragments of Cinder's filesystem given form. Catch them with Tokens. Keys drop from rare ones. Final boss is Cinder.</p>
+    <p style="margin-top:8px;color:#7a7060">Procedural; seeded by your browser. No save yet — this is the v0.1 spike. Made on a Gameboy budget.</p>
+  </div>
+
+  <div class="footer">stage 0 — overworld + encounter + capture + battle</div>
+</div>
+
+<script>
+"use strict";
+
+// ---------- pixel screen ----------
+const screen = document.getElementById("screen");
+const ctx = screen.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+
+const W = 160, H = 144;
+const TILE = 16;
+const COLS = 10, ROWS = 9;
+
+// GB palette (4 shades, lightest → darkest)
+const PAL = ["#9bbc0f","#8bac0f","#306230","#0f380f"];
+
+// ---------- input ----------
+const keys = {};
+const fired = {};
+const KEYMAP = {
+  "ArrowUp":"up","ArrowDown":"down","ArrowLeft":"left","ArrowRight":"right",
+  "w":"up","s":"down","a":"left","d":"right",
+  "z":"a","x":"b","b":"b","Enter":"a","Shift":"select","Backspace":"b",
+};
+addEventListener("keydown",e=>{
+  const k = KEYMAP[e.key]; if(!k) return;
+  e.preventDefault();
+  if(!keys[k]) fired[k]=true;
+  keys[k]=true;
+});
+addEventListener("keyup",e=>{ const k = KEYMAP[e.key]; if(k) keys[k]=false; });
+
+// virtual buttons
+document.querySelectorAll("[data-key]").forEach(btn=>{
+  const k = btn.dataset.key;
+  const map = {ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",a:"a",b:"b",select:"select",start:"start"};
+  const mk = map[k] || k;
+  const press = (e)=>{ e.preventDefault(); if(!keys[mk]) fired[mk]=true; keys[mk]=true; };
+  const rel = ()=>{ keys[mk]=false; };
+  btn.addEventListener("touchstart",press,{passive:false});
+  btn.addEventListener("touchend",rel);
+  btn.addEventListener("mousedown",press);
+  btn.addEventListener("mouseup",rel);
+  btn.addEventListener("mouseleave",rel);
+});
+
+function consume(k){ if(fired[k]){ fired[k]=false; return true; } return false; }
+
+// ---------- rng (mulberry32) ----------
+function rng(seed){
+  let t = seed >>> 0;
+  return ()=>{
+    t = (t + 0x6D2B79F5) >>> 0;
+    let r = Math.imul(t ^ (t>>>15), 1 | t);
+    r = (r + Math.imul(r ^ (r>>>7), 61 | r)) ^ r;
+    return ((r ^ (r>>>14)) >>> 0) / 4294967296;
+  };
+}
+function pick(arr,r){ return arr[Math.floor(r()*arr.length)]; }
+function ri(r,a,b){ return Math.floor(r()*(b-a+1))+a; }
+
+// ---------- world / map ----------
+// 0=path, 1=grass(safe), 2=tall grass(encounter), 3=tree, 4=water, 5=stone, 6=portal
+const MAP = [
+  [3,3,3,3,3,3,3,3,3,3],
+  [3,1,1,1,1,2,2,2,2,3],
+  [3,1,3,1,2,2,2,2,2,3],
+  [3,1,1,1,1,1,2,2,2,3],
+  [3,5,5,1,1,1,1,2,2,3],
+  [3,5,1,1,4,4,1,1,1,3],
+  [3,1,1,1,4,4,1,1,1,3],
+  [3,1,1,1,1,1,1,1,6,3],
+  [3,3,3,3,3,3,3,3,3,3],
+];
+
+function tileAt(x,y){
+  if(x<0||y<0||x>=COLS||y>=ROWS) return 3;
+  return MAP[y][x];
+}
+function walkable(t){ return t===1 || t===2 || t===6; }
+
+// ---------- creature definitions ----------
+// Each species = a "code bit" archetype. Stats are deterministic from name+seed.
+const SPECIES = [
+  {name:"FORKLING", type:"PROC", note:"cleaves into two on hit"},
+  {name:"DAEMONET", type:"PROC", note:"runs in the background"},
+  {name:"KERNITE",  type:"CORE", note:"hard-headed, low EXP"},
+  {name:"RECURSE",  type:"LOGIC",note:"calls itself, can stack"},
+  {name:"MUTEXEL",  type:"LOGIC",note:"locks one move per turn"},
+  {name:"BYTEFLY",  type:"DATA", note:"swarms in tall grass"},
+  {name:"SEMAFOX",  type:"LOGIC",note:"signals before striking"},
+  {name:"REGEXEL",  type:"DATA", note:"matches your pattern"},
+  {name:"SCOPEWVR", type:"MEM",  note:"weaves a closure"},
+  {name:"ALLOCROC", type:"MEM",  note:"opens its jaws wide"},
+  {name:"NULLPUP",  type:"MEM",  note:"a pointer to nothing"},
+  {name:"CACHEBIT", type:"DATA", note:"remembers your last move"},
+];
+const TYPE_COLOR = {PROC:1, CORE:2, LOGIC:2, DATA:1, MEM:3};
+const MOVES = [
+  {name:"NIBBLE",  pwr:6,  acc:.95},
+  {name:"FORKBOMB",pwr:9,  acc:.85},
+  {name:"PATCH",   pwr:0,  acc:1, heal:5},
+  {name:"DEADLOCK",pwr:11, acc:.7},
+  {name:"GREP",    pwr:7,  acc:.9},
+  {name:"SIGKILL", pwr:14, acc:.5},
+  {name:"PARSE",   pwr:5,  acc:1},
+  {name:"OVERFLOW",pwr:13, acc:.65},
+];
+
+function makeCreature(seed, level=1){
+  const r = rng(seed);
+  const sp = SPECIES[Math.floor(r()*SPECIES.length)];
+  const moves = [];
+  const mp = [...MOVES].sort(()=>r()-.5).slice(0,4);
+  for(const m of mp) moves.push({...m, pp:8});
+  const maxhp = 18 + Math.floor(r()*8) + level*2;
+  return {
+    seed, level, species:sp,
+    name: sp.name,
+    hp:maxhp, maxhp, moves,
+    atk: 4 + ri(r,0,3) + level,
+    def: 3 + ri(r,0,3) + level,
+    sprite:null, // generated lazily
+  };
+}
+
+// ---------- creature sprite generator ----------
+// 32x32 procedural creature, 4-color GB palette, symmetric.
+function spriteCanvas(seed){
+  const r = rng(seed*7919 + 13);
+  const c = document.createElement("canvas");
+  c.width = 32; c.height = 32;
+  const x = c.getContext("2d");
+  x.imageSmoothingEnabled = false;
+  // body shape — pick from a few archetypes
+  const arch = Math.floor(r()*5);
+  const accentShade = pick([1,2,3], r);
+  const dark = 3, mid = 2;
+  // helper: set pixel mirrored
+  function px(i,j,p){
+    if(i<0||j<0||i>=32||j>=32) return;
+    x.fillStyle = PAL[p]; x.fillRect(i,j,1,1);
+    x.fillRect(31-i,j,1,1);
+  }
+  function fill(i0,j0,i1,j1,p){
+    for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++) px(i,j,p);
+  }
+  // base body
+  if(arch===0){ // round blob
+    fill(7,12,15,26,mid);
+    fill(5,16,15,24,mid);
+    // outline
+    for(let j=12;j<=26;j++){ px(7,j,dark); }
+    for(let j=16;j<=24;j++){ px(5,j,dark); }
+    for(let i=5;i<=15;i++){ px(i,12,dark); px(i,26,dark); }
+    // belly
+    fill(9,18,15,24, accentShade);
+  } else if(arch===1){ // bug/insect
+    fill(6,14,15,22,mid);
+    for(let j=14;j<=22;j++) px(6,j,dark);
+    for(let i=6;i<=15;i++){ px(i,14,dark); px(i,22,dark); }
+    // legs
+    px(7,23,dark); px(7,24,dark);
+    px(10,23,dark); px(10,25,dark);
+    px(13,23,dark); px(13,24,dark);
+    // wing hint
+    fill(8,15,13,17, accentShade);
+  } else if(arch===2){ // tall stalk
+    fill(8,8,15,26,mid);
+    for(let j=8;j<=26;j++) px(8,j,dark);
+    for(let i=8;i<=15;i++){ px(i,8,dark); px(i,26,dark); }
+    fill(10,12,15,22, accentShade);
+  } else if(arch===3){ // crouching beast
+    fill(5,16,15,26,mid);
+    for(let j=16;j<=26;j++) px(5,j,dark);
+    for(let i=5;i<=15;i++) px(i,26,dark);
+    // head bump
+    fill(8,12,15,16,mid);
+    for(let j=12;j<=16;j++) px(8,j,dark);
+    for(let i=8;i<=15;i++) px(i,12,dark);
+    fill(7,20,15,24, accentShade);
+  } else { // crystalline
+    for(let k=0;k<10;k++){
+      const i0 = 8+ri(r,0,4), j0 = 14+ri(r,0,8);
+      const w = 2+ri(r,0,3), h = 2+ri(r,0,3);
+      fill(i0,j0,i0+w,j0+h,mid);
+    }
+    // spike top
+    fill(10,10,15,14,mid);
+    px(11,9,dark); px(13,8,dark); px(15,9,dark);
+    fill(11,16,15,22, accentShade);
+  }
+  // eyes
+  const eyeY = 14 + Math.floor(r()*4);
+  const eyeX = 9 + Math.floor(r()*2);
+  px(eyeX,eyeY,dark); px(eyeX,eyeY+1,dark);
+  // eye glint
+  px(eyeX,eyeY,0);
+  // mouth
+  if(r()>0.5){
+    const my = eyeY+3;
+    px(11,my,dark); px(12,my,dark); px(13,my,dark);
+  }
+  // shadow
+  for(let i=4;i<=15;i++) x.fillStyle = "rgba(15,56,15,.35)", x.fillRect(i,28,1,1), x.fillRect(31-i,28,1,1);
+  return c;
+}
+
+// ---------- game state ----------
+const STATE = { OVERWORLD:0, ENCOUNTER:1, BATTLE:2, MENU:3, DIALOG:4, VICTORY:5, GAMEOVER:6 };
+let state = STATE.OVERWORLD;
+
+const player = {
+  tx:2,ty:1, dir:"down", step:0, // tile coords
+  px:32, py:16, // pixel coords for smooth move
+  moving:false, mvFrom:null, mvTo:null, mvT:0,
+  party:[],
+  tokens: 8,
+  keys: 0,
+  steps: 0,
+};
+
+// give starter
+player.party.push(makeCreature(0x53504152|0, 5)); // SPARK starter
+player.party[0].name = "SPARK";
+
+let dialog = null; // {lines, idx}
+let battle = null;
+
+const worldSeed = (Math.floor(Math.random()*1e9)) >>> 0;
+let encounterChance = 0;
+
+// ---------- map render ----------
+function drawTile(t, x, y){
+  if(t===0){ // path
+    ctx.fillStyle = PAL[1]; ctx.fillRect(x,y,TILE,TILE);
+  } else if(t===1){ // grass
+    ctx.fillStyle = PAL[1]; ctx.fillRect(x,y,TILE,TILE);
+    ctx.fillStyle = PAL[0];
+    for(let k=0;k<3;k++){
+      ctx.fillRect(x+2+k*5, y+3, 1, 2);
+      ctx.fillRect(x+4+k*5, y+9, 1, 2);
+    }
+  } else if(t===2){ // tall grass — encounter zone
+    ctx.fillStyle = PAL[2]; ctx.fillRect(x,y,TILE,TILE);
+    ctx.fillStyle = PAL[3];
+    for(let k=0;k<4;k++){
+      ctx.fillRect(x+1+k*4, y+2, 1, 5);
+      ctx.fillRect(x+3+k*4, y+8, 1, 6);
+    }
+  } else if(t===3){ // tree
+    ctx.fillStyle = PAL[1]; ctx.fillRect(x,y,TILE,TILE);
+    ctx.fillStyle = PAL[3];
+    ctx.fillRect(x+3,y+2,10,11);
+    ctx.fillStyle = PAL[2];
+    ctx.fillRect(x+5,y+3,6,8);
+    ctx.fillStyle = PAL[3];
+    ctx.fillRect(x+7,y+12,2,3);
+  } else if(t===4){ // water
+    ctx.fillStyle = PAL[2]; ctx.fillRect(x,y,TILE,TILE);
+    ctx.fillStyle = PAL[3];
+    ctx.fillRect(x+2,y+5,5,1); ctx.fillRect(x+9,y+9,5,1);
+    ctx.fillRect(x+1,y+12,4,1);
+  } else if(t===5){ // stone
+    ctx.fillStyle = PAL[1]; ctx.fillRect(x,y,TILE,TILE);
+    ctx.fillStyle = PAL[2];
+    ctx.fillRect(x+2,y+2,12,12);
+    ctx.fillStyle = PAL[3];
+    ctx.fillRect(x+2,y+2,12,1); ctx.fillRect(x+2,y+13,12,1);
+    ctx.fillRect(x+2,y+2,1,12); ctx.fillRect(x+13,y+2,1,12);
+  } else if(t===6){ // portal — Cinder's gate
+    ctx.fillStyle = PAL[1]; ctx.fillRect(x,y,TILE,TILE);
+    ctx.fillStyle = PAL[3]; ctx.fillRect(x+3,y+2,10,12);
+    ctx.fillStyle = PAL[2]; ctx.fillRect(x+5,y+4,6,8);
+    ctx.fillStyle = PAL[0]; ctx.fillRect(x+7,y+6,2,3);
+  }
+}
+
+function drawMap(){
+  for(let j=0;j<ROWS;j++) for(let i=0;i<COLS;i++){
+    drawTile(MAP[j][i], i*TILE, j*TILE);
+  }
+}
+
+// ---------- player render ----------
+function drawPlayer(){
+  const x = player.px, y = player.py;
+  // shadow
+  ctx.fillStyle = PAL[2];
+  ctx.fillRect(x+3, y+14, 10, 2);
+  // body
+  ctx.fillStyle = PAL[3];
+  ctx.fillRect(x+4, y+6, 8, 8);  // torso
+  ctx.fillRect(x+5, y+2, 6, 4);  // head
+  ctx.fillStyle = PAL[2];
+  ctx.fillRect(x+5, y+3, 6, 2);  // hat band
+  // legs (alternate)
+  ctx.fillStyle = PAL[3];
+  const leg = (player.step % 2 === 0);
+  ctx.fillRect(x+4 + (leg?0:1), y+13, 3, 2);
+  ctx.fillRect(x+9 + (leg?1:0), y+13, 3, 2);
+  // facing pip
+  ctx.fillStyle = PAL[0];
+  if(player.dir==="up")    ctx.fillRect(x+7,y+2,2,1);
+  if(player.dir==="down")  ctx.fillRect(x+7,y+5,2,1);
+  if(player.dir==="left")  ctx.fillRect(x+5,y+3,1,1);
+  if(player.dir==="right") ctx.fillRect(x+10,y+3,1,1);
+}
+
+// ---------- HUD ----------
+function drawTextBox(x,y,w,h){
+  ctx.fillStyle = PAL[0]; ctx.fillRect(x,y,w,h);
+  ctx.fillStyle = PAL[3]; ctx.fillRect(x,y,w,1); ctx.fillRect(x,y+h-1,w,1);
+  ctx.fillRect(x,y,1,h); ctx.fillRect(x+w-1,y,1,h);
+}
+// 5x5 mini bitmap font (only chars we need)
+const FONT = (()=>{
+  // Build a tiny readable font with the canvas itself rather than per-char bitmaps.
+  return null;
+})();
+
+function text(s, x, y, color){
+  ctx.fillStyle = color || PAL[3];
+  // Use canvas text in a pixel-ish font. We render at integer positions.
+  ctx.font = "8px 'Courier New', monospace";
+  ctx.textBaseline = "top";
+  ctx.fillText(s, x, y);
+}
+
+function drawHUD(){
+  // top bar — tokens, keys, party count
+  drawTextBox(0,0,160,12);
+  text(`TOKENS:${player.tokens}`, 3, 2);
+  text(`KEYS:${player.keys}`, 70, 2);
+  text(`x${player.party.length}`, 130, 2);
+}
+
+// ---------- dialog ----------
+function showDialog(lines){
+  state = STATE.DIALOG;
+  dialog = {lines, idx:0, char:0, ts:performance.now()};
+}
+function drawDialog(){
+  drawTextBox(4, 96, 152, 44);
+  const line = dialog.lines[dialog.idx] || "";
+  const shown = line.slice(0, dialog.char);
+  // wrap manually at ~28 chars
+  let y = 102;
+  let cur = "";
+  let lineCount = 0;
+  for(const w of shown.split(" ")){
+    if((cur+" "+w).trim().length > 26){
+      text(cur.trim(), 10, y); y+=10; lineCount++;
+      cur = w;
+      if(lineCount>=3) break;
+    } else cur += " "+w;
+  }
+  if(cur && lineCount<3) text(cur.trim(), 10, y);
+  // arrow
+  if(dialog.char >= line.length){
+    if(((performance.now()/300)|0) % 2) text("▼", 144, 128);
+  }
+}
+
+function tickDialog(now){
+  const speed = 32; // chars/sec
+  const line = dialog.lines[dialog.idx] || "";
+  const elapsed = (now - dialog.ts) / 1000;
+  dialog.char = Math.min(line.length, Math.floor(elapsed*speed));
+  if(consume("a") || consume("b")){
+    if(dialog.char < line.length) dialog.char = line.length;
+    else {
+      dialog.idx++;
+      dialog.char = 0;
+      dialog.ts = now;
+      if(dialog.idx >= dialog.lines.length){
+        const after = dialog.after;
+        dialog = null;
+        if(after) after();
+        else state = STATE.OVERWORLD;
+      }
+    }
+  }
+}
+
+// ---------- overworld update ----------
+function tryMove(dx,dy){
+  if(player.moving) return;
+  const nx = player.tx+dx, ny = player.ty+dy;
+  player.dir = dx<0?"left":dx>0?"right":dy<0?"up":"down";
+  const t = tileAt(nx,ny);
+  if(!walkable(t)) return;
+  player.mvFrom = {px:player.tx*TILE, py:player.ty*TILE};
+  player.mvTo = {px:nx*TILE, py:ny*TILE};
+  player.tx = nx; player.ty = ny;
+  player.moving = true; player.mvT = 0;
+}
+
+function updateOverworld(dt){
+  if(player.moving){
+    player.mvT += dt/180; // 180ms per tile
+    const t = Math.min(1, player.mvT);
+    player.px = player.mvFrom.px + (player.mvTo.px-player.mvFrom.px)*t;
+    player.py = player.mvFrom.py + (player.mvTo.py-player.mvFrom.py)*t;
+    if(t>=1){
+      player.moving = false;
+      player.step++;
+      player.steps++;
+      const cur = tileAt(player.tx, player.ty);
+      // encounter check on tall grass
+      if(cur === 2){
+        encounterChance += 0.18;
+        if(Math.random() < encounterChance){
+          encounterChance = 0;
+          startEncounter();
+          return;
+        }
+      } else if(cur === 6){
+        // portal — Cinder's gate
+        if(player.keys >= 3){
+          showDialog([
+            "The gate accepts your three keys.",
+            "Beyond it, something already knows your name.",
+            "TO BE CONTINUED — v0.2"
+          ]);
+        } else {
+          showDialog([
+            "A black gate. Three keyholes.",
+            `You hold ${player.keys} key${player.keys===1?"":"s"}.`,
+            "Catch rare creatures. Keep walking."
+          ]);
+        }
+      }
+    }
+  } else {
+    if(keys.up) tryMove(0,-1);
+    else if(keys.down) tryMove(0,1);
+    else if(keys.left) tryMove(-1,0);
+    else if(keys.right) tryMove(1,0);
+  }
+  if(consume("select")) openMenu();
+  if(consume("start")) showDialog([
+    "CINDER CREATURES v0.1",
+    `Steps: ${player.steps}. Caught: ${player.party.length}. Keys: ${player.keys}.`,
+    "Walk into the dark grass. Fight. Catch. Earn keys. Reach the gate."
+  ]);
+}
+
+function drawOverworld(){
+  drawMap();
+  drawPlayer();
+  drawHUD();
+}
+
+// ---------- encounter / battle ----------
+function startEncounter(){
+  state = STATE.ENCOUNTER;
+  // pick a wild creature seeded by world+step
+  const seed = (worldSeed ^ (player.steps * 2654435761)) >>> 0;
+  const wild = makeCreature(seed, ri(rng(seed),1,5));
+  wild.sprite = spriteCanvas(seed);
+  battle = {
+    wild,
+    you: player.party[0],
+    log:[`A wild ${wild.name} appeared!`, `Lvl ${wild.level}. Type ${wild.species.type}.`, wild.species.note+"."],
+    logIdx:0, logCh:0, ts:performance.now(),
+    phase:"intro",     // intro -> menu -> chooseMove -> resolve -> end
+    menuSel:0,
+    moveSel:0,
+    flash:0,
+    captureAnim:null,
+  };
+  // ensure your sprite
+  if(!battle.you.sprite) battle.you.sprite = spriteCanvas(battle.you.seed);
+}
+
+function drawBattleFrame(){
+  ctx.fillStyle = PAL[0]; ctx.fillRect(0,0,W,H);
+  // top half — wild
+  ctx.fillStyle = PAL[1]; ctx.fillRect(0,0,W,72);
+  // bottom platform
+  ctx.fillStyle = PAL[2]; ctx.fillRect(0,76,W,4);
+  // wild stage
+  ctx.fillStyle = PAL[2]; ctx.beginPath(); ctx.ellipse(120,52,28,6,0,0,Math.PI*2); ctx.fill();
+  // your stage
+  ctx.fillStyle = PAL[2]; ctx.beginPath(); ctx.ellipse(40,108,32,7,0,0,Math.PI*2); ctx.fill();
+}
+
+function drawHpBar(x,y,w,cur,max,label,lvl){
+  text(label, x, y, PAL[3]);
+  text("L"+lvl, x+w-12, y, PAL[3]);
+  ctx.fillStyle = PAL[3]; ctx.fillRect(x, y+9, w, 5);
+  ctx.fillStyle = PAL[0]; ctx.fillRect(x+1, y+10, w-2, 3);
+  const pct = Math.max(0, cur/max);
+  ctx.fillStyle = pct>0.5?PAL[2]:(pct>0.2?PAL[3]:PAL[3]);
+  ctx.fillRect(x+1, y+10, Math.floor((w-2)*pct), 3);
+  text(`${cur}/${max}`, x, y+15, PAL[3]);
+}
+
+function drawBattle(){
+  drawBattleFrame();
+  // wild sprite
+  if(battle.flash%4 < 2 || battle.phase!=="resolveWildHit"){
+    ctx.drawImage(battle.wild.sprite, 104, 24);
+  }
+  // your sprite
+  if(battle.flash%4 < 2 || battle.phase!=="resolveYouHit"){
+    ctx.drawImage(battle.you.sprite, 24, 80);
+  }
+  // wild HP plate
+  drawTextBox(4, 6, 80, 26);
+  drawHpBar(8, 9, 70, battle.wild.hp, battle.wild.maxhp, battle.wild.name, battle.wild.level);
+  // your HP plate
+  drawTextBox(82, 64, 74, 26);
+  drawHpBar(86, 67, 64, battle.you.hp, battle.you.maxhp, battle.you.name, battle.you.level);
+
+  // bottom box
+  drawTextBox(0, 96, 160, 48);
+  if(battle.phase === "menu"){
+    const items = ["FIGHT","TOKEN","SWAP","RUN"];
+    items.forEach((s,i)=>{
+      const x = 12 + (i%2)*70;
+      const y = 102 + (i>>1)*16;
+      text((battle.menuSel===i?"▶":" ")+s, x, y);
+    });
+  } else if(battle.phase === "chooseMove"){
+    battle.you.moves.forEach((m,i)=>{
+      const x = 12 + (i%2)*70;
+      const y = 102 + (i>>1)*16;
+      text((battle.moveSel===i?"▶":" ")+m.name+" "+m.pp, x, y);
+    });
+  } else {
+    // log
+    const line = battle.log[battle.logIdx] || "";
+    const shown = line.slice(0, battle.logCh);
+    text(shown, 8, 102);
+    if(battle.logCh >= line.length && battle.logIdx < battle.log.length){
+      if(((performance.now()/300)|0) % 2) text("▼", 148, 132);
+    }
+  }
+  // capture anim
+  if(battle.captureAnim){
+    const a = battle.captureAnim;
+    const t = Math.min(1, (performance.now()-a.start)/1200);
+    const cx = 116 + Math.cos(t*Math.PI*4)*6;
+    const cy = 30 + (t<0.5? -20+40*t*2 : 8 + Math.sin(t*Math.PI*6)*4);
+    ctx.fillStyle = PAL[3]; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = PAL[0]; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = PAL[3]; ctx.fillRect(cx-6, cy-1, 12, 2);
+  }
+}
+
+function pushLog(line){
+  battle.log.push(line);
+}
+
+function advanceLog(){
+  battle.logIdx++; battle.logCh = 0; battle.ts = performance.now();
+  if(battle.logIdx >= battle.log.length){
+    const next = battle.next;
+    battle.next = null;
+    battle.log = []; battle.logIdx = 0; battle.logCh = 0;
+    if(next) next();
+    else battle.phase = "menu";
+  }
+}
+
+function tickBattleLog(now){
+  const line = battle.log[battle.logIdx] || "";
+  const speed = 36;
+  const elapsed = (now - battle.ts)/1000;
+  battle.logCh = Math.min(line.length, Math.floor(elapsed*speed));
+  if(consume("a") || consume("b")){
+    if(battle.logCh < line.length) battle.logCh = line.length;
+    else advanceLog();
+  }
+}
+
+function youAttack(){
+  const m = battle.you.moves[battle.moveSel];
+  battle.log = [`${battle.you.name} used ${m.name}!`];
+  battle.logIdx = 0; battle.logCh = 0; battle.ts = performance.now();
+  battle.phase = "resolveYouHit";
+  battle.flash = 8;
+  m.pp = Math.max(0, m.pp-1);
+  if(Math.random() <= m.acc){
+    if(m.heal){
+      const heal = Math.min(m.heal, battle.you.maxhp - battle.you.hp);
+      battle.you.hp += heal;
+      battle.log.push(`Patched ${heal} HP.`);
+    } else {
+      const dmg = Math.max(1, Math.round((m.pwr * battle.you.atk / Math.max(1,battle.wild.def)) * (0.85 + Math.random()*0.3)));
+      battle.wild.hp = Math.max(0, battle.wild.hp - dmg);
+      battle.log.push(`Dealt ${dmg}.`);
+    }
+  } else {
+    battle.log.push("It missed.");
+  }
+  battle.next = ()=>{
+    if(battle.wild.hp <= 0){ winBattle(); return; }
+    wildAttack();
+  };
+}
+
+function wildAttack(){
+  const m = battle.wild.moves[Math.floor(Math.random()*battle.wild.moves.length)];
+  battle.log = [`Wild ${battle.wild.name} used ${m.name}.`];
+  battle.logIdx = 0; battle.logCh = 0; battle.ts = performance.now();
+  battle.phase = "resolveWildHit";
+  battle.flash = 8;
+  if(Math.random() <= m.acc){
+    if(m.heal){
+      battle.wild.hp = Math.min(battle.wild.maxhp, battle.wild.hp + m.heal);
+      battle.log.push(`It patched ${m.heal} HP.`);
+    } else {
+      const dmg = Math.max(1, Math.round((m.pwr * battle.wild.atk / Math.max(1,battle.you.def)) * (0.85 + Math.random()*0.3)));
+      battle.you.hp = Math.max(0, battle.you.hp - dmg);
+      battle.log.push(`Took ${dmg}.`);
+    }
+  } else {
+    battle.log.push("It missed.");
+  }
+  battle.next = ()=>{
+    if(battle.you.hp <= 0){ loseBattle(); return; }
+    battle.phase = "menu";
+  };
+}
+
+function tryToken(){
+  if(player.tokens <= 0){
+    battle.log = ["No tokens left."];
+    battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+    battle.next = ()=>{ battle.phase="menu"; };
+    battle.phase = "log";
+    return;
+  }
+  player.tokens--;
+  battle.captureAnim = {start: performance.now()};
+  battle.log = [`Threw a Token at ${battle.wild.name}.`];
+  battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+  battle.phase = "log";
+  // catch chance: lower HP => higher chance
+  const hpFrac = battle.wild.hp / battle.wild.maxhp;
+  const base = 0.45;
+  const chance = Math.min(0.95, base + (1-hpFrac)*0.5);
+  setTimeout(()=>{ /* visual only */ }, 1100);
+  battle.next = ()=>{
+    battle.captureAnim = null;
+    if(Math.random() < chance){
+      battle.log = [`Caught ${battle.wild.name}!`];
+      // earn key on rare seeds
+      const r = rng(battle.wild.seed ^ 0xC07E);
+      const keyDrop = r() < 0.12;
+      battle.wild.sprite = battle.wild.sprite; // keep
+      player.party.push(battle.wild);
+      if(keyDrop){
+        player.keys++;
+        battle.log.push("It dropped a key!");
+      }
+      battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+      battle.next = ()=>{ endBattle(); };
+      battle.phase = "log";
+    } else {
+      battle.log = ["It broke free."];
+      battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+      battle.next = ()=>{ wildAttack(); };
+      battle.phase = "log";
+    }
+  };
+}
+
+function tryRun(){
+  battle.log = ["You backed away."];
+  battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+  battle.next = ()=>{ endBattle(); };
+  battle.phase = "log";
+}
+
+function winBattle(){
+  battle.log = [`Wild ${battle.wild.name} fell.`, `+${battle.wild.level*4} EXP.`];
+  battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+  battle.next = ()=>{
+    battle.you.level += Math.max(1, Math.floor(battle.wild.level/2));
+    battle.you.maxhp += 2; battle.you.hp = Math.min(battle.you.maxhp, battle.you.hp+5);
+    endBattle();
+  };
+  battle.phase = "log";
+}
+function loseBattle(){
+  battle.log = [`${battle.you.name} blacked out.`, "You hobble back to camp.", "(HP restored)"];
+  battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+  battle.next = ()=>{
+    battle.you.hp = battle.you.maxhp;
+    player.tx = 2; player.ty = 1;
+    player.px = player.tx*TILE; player.py = player.ty*TILE;
+    endBattle();
+  };
+  battle.phase = "log";
+}
+function endBattle(){
+  battle = null; state = STATE.OVERWORLD;
+  encounterChance = 0;
+}
+
+function updateBattle(now){
+  battle.flash = Math.max(0, battle.flash-1);
+  if(battle.phase === "intro"){
+    tickBattleLog(now);
+    if(battle.logIdx >= battle.log.length){
+      battle.log = []; battle.logIdx = 0; battle.logCh = 0;
+      battle.phase = "menu";
+    }
+  } else if(battle.phase === "menu"){
+    if(consume("up") && battle.menuSel>=2) battle.menuSel-=2;
+    if(consume("down") && battle.menuSel<=1) battle.menuSel+=2;
+    if(consume("left") && battle.menuSel%2===1) battle.menuSel-=1;
+    if(consume("right") && battle.menuSel%2===0) battle.menuSel+=1;
+    if(consume("a")){
+      if(battle.menuSel===0) battle.phase = "chooseMove";
+      else if(battle.menuSel===1) tryToken();
+      else if(battle.menuSel===2) {
+        battle.log = ["Only one in the party so far."];
+        battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+        battle.next = ()=>{ battle.phase="menu"; };
+        battle.phase = "log";
+      } else tryRun();
+    }
+  } else if(battle.phase === "chooseMove"){
+    if(consume("up") && battle.moveSel>=2) battle.moveSel-=2;
+    if(consume("down") && battle.moveSel<=1) battle.moveSel+=2;
+    if(consume("left") && battle.moveSel%2===1) battle.moveSel-=1;
+    if(consume("right") && battle.moveSel%2===0) battle.moveSel+=1;
+    if(consume("a")) youAttack();
+    if(consume("b")) battle.phase = "menu";
+  } else { // log states
+    tickBattleLog(now);
+  }
+}
+
+// ---------- party menu ----------
+let menu = null;
+function openMenu(){
+  state = STATE.MENU;
+  menu = {sel:0};
+}
+function drawMenu(){
+  drawTile(1,0,0); drawMap(); drawPlayer();
+  // overlay
+  ctx.fillStyle = "rgba(15,56,15,.7)"; ctx.fillRect(0,0,W,H);
+  drawTextBox(8,8,144,128);
+  text("CODEX", 14, 12, PAL[3]);
+  text(`Tokens ${player.tokens}  Keys ${player.keys}`, 14, 22, PAL[3]);
+  player.party.forEach((c,i)=>{
+    if(!c.sprite) c.sprite = spriteCanvas(c.seed);
+    const y = 36 + i*24;
+    if(y>118) return;
+    if(menu.sel===i) text("▶", 12, y+6, PAL[3]);
+    ctx.drawImage(c.sprite, 22, y-2, 24, 24);
+    text(c.name, 50, y, PAL[3]);
+    text(`L${c.level}  ${c.species.type}`, 50, y+10, PAL[3]);
+    text(`${c.hp}/${c.maxhp}`, 110, y+5, PAL[3]);
+  });
+  text("[B] back", 100, 124, PAL[3]);
+}
+function updateMenu(){
+  if(consume("up")) menu.sel = Math.max(0, menu.sel-1);
+  if(consume("down")) menu.sel = Math.min(player.party.length-1, menu.sel+1);
+  if(consume("b") || consume("select")) { menu = null; state = STATE.OVERWORLD; }
+}
+
+// ---------- main loop ----------
+let last = performance.now();
+function frame(now){
+  const dt = now - last; last = now;
+  ctx.clearRect(0,0,W,H);
+
+  if(state === STATE.OVERWORLD){
+    updateOverworld(dt);
+    drawOverworld();
+  } else if(state === STATE.DIALOG){
+    drawOverworld();
+    drawDialog();
+    tickDialog(now);
+  } else if(state === STATE.ENCOUNTER || state === STATE.BATTLE){
+    if(!battle){ state = STATE.OVERWORLD; }
+    else {
+      drawBattle();
+      updateBattle(now);
+    }
+  } else if(state === STATE.MENU){
+    drawMenu();
+    updateMenu();
+  }
+
+  // clear all firing edges that nothing consumed
+  for(const k in fired) fired[k] = false;
+  requestAnimationFrame(frame);
+}
+
+// player sprite warm-up + first frame
+player.party[0].sprite = spriteCanvas(player.party[0].seed);
+requestAnimationFrame(frame);
+
+// opening dialog
+showDialog([
+  "You wake at the edge of the SCOPE FIELD.",
+  "Cinder's gate sleeps to the east.",
+  "Three keys to wake it. Catch what runs."
+]);
+</script>
+
+</body>
+</html>
