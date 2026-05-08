@@ -142,6 +142,23 @@ const COLS = 10, ROWS = 9;
 // GB palette (4 shades, lightest → darkest)
 const PAL = ["#9bbc0f","#8bac0f","#306230","#0f380f"];
 
+// CC0 creature atlas — 56 sprites (8x7 grid, 64x64 each).
+// Source: opengameart.org "50+ Monsters Pack 2D" by isaiah658, recolored to GB palette.
+const SPRITE_ATLAS = new Image();
+let atlasLoaded = false;
+SPRITE_ATLAS.onload = ()=>{
+  atlasLoaded = true;
+  // re-stamp any sprites that were created with procedural fallback
+  if (typeof player !== "undefined" && player.party) {
+    for(const c of player.party) c.sprite = spriteCanvas(c.seed);
+  }
+  if (typeof player !== "undefined" && player.codex) {
+    for(const c of player.codex) c.sprite = spriteCanvas(c.seed);
+  }
+};
+SPRITE_ATLAS.src = "sprites/cinder-creatures/atlas.png";
+const ATLAS_COLS = 8, ATLAS_ROWS = 7, ATLAS_CELL = 64, ATLAS_COUNT = 56;
+
 // ---------- input ----------
 const keys = {};
 const fired = {};
@@ -286,8 +303,28 @@ function makeCreature(seed, level=1){
 }
 
 // ---------- creature sprite generator ----------
-// 32x32 procedural creature, 4-color GB palette, symmetric.
+// Atlas-backed: each seed maps deterministically to one of 56 CC0 sprites.
+// CINDER boss uses fixed slot 55 (last sprite). Falls back to procedural
+// if the atlas image hasn't loaded yet (re-stamped on load).
+function spriteFromAtlas(seed){
+  const c = document.createElement("canvas");
+  c.width = 32; c.height = 32;
+  const x = c.getContext("2d");
+  x.imageSmoothingEnabled = false;
+  // fixed slots: CINDER boss=55, SPARK starter=0
+  let idx;
+  if (seed === 0xC1ADE5) idx = 55;
+  else if (seed === 0x53504152) idx = 0;
+  else idx = ((seed >>> 0) % ATLAS_COUNT);
+  const sx = (idx % ATLAS_COLS) * ATLAS_CELL;
+  const sy = Math.floor(idx / ATLAS_COLS) * ATLAS_CELL;
+  x.drawImage(SPRITE_ATLAS, sx, sy, ATLAS_CELL, ATLAS_CELL, 0, 0, 32, 32);
+  return c;
+}
+
 function spriteCanvas(seed){
+  if (atlasLoaded) return spriteFromAtlas(seed);
+  // procedural fallback (used until atlas loads, then re-stamped)
   const r = rng(seed*7919 + 13);
   const c = document.createElement("canvas");
   c.width = 32; c.height = 32;
