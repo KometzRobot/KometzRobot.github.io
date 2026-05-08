@@ -86,7 +86,7 @@
 <div class="shell">
   <div class="brand">
     <span><b>CINDER</b> · Creatures</span>
-    <span>v0.4 — quests &amp; claims</span>
+    <span>v0.5 — date-stamped claims</span>
   </div>
 
   <div class="screen-frame">
@@ -114,13 +114,13 @@
   </div>
   <div class="startsel">
     <button data-key="select">select</button>
+    <button data-key="q">quests</button>
     <button data-key="start">start</button>
   </div>
 
   <div class="meta">
-    <p><b>How to play.</b> Arrow keys / D-pad to walk. Step on the dark grass, things wake up. <b>A</b> picks; <b>B</b> backs out. <b>Select</b> opens your codex; <b>◀ ▶</b> in the menu flips to the <b>QUESTS</b> tab.</p>
+    <p><b>How to play.</b> Arrow keys / D-pad to walk. Step on the dark grass, things wake up. <b>A</b> picks; <b>B</b> backs out. <b>Select</b> opens your codex of caught creatures.</p>
     <p style="margin-top:8px">Creatures are <b>code bits</b> — fragments of Cinder's filesystem given form. Catch them with Tokens. Keys drop from rare ones. Final boss is Cinder.</p>
-    <p style="margin-top:8px">Quests auto-track. When the HUD shows <b>!</b>, a reward is waiting. Open the menu, slide to QUESTS, press <b>A</b> on the highlighted line to claim.</p>
     <p style="margin-top:8px;color:#7a7060">Procedural; seeded by your browser. Auto-saves to localStorage. Three zones, one boss. Made on a Gameboy budget.</p>
   </div>
 
@@ -142,6 +142,23 @@ const COLS = 10, ROWS = 9;
 // GB palette (4 shades, lightest → darkest)
 const PAL = ["#9bbc0f","#8bac0f","#306230","#0f380f"];
 
+// CC0 creature atlas — 56 sprites (8x7 grid, 64x64 each).
+// Source: opengameart.org "50+ Monsters Pack 2D" by isaiah658, recolored to GB palette.
+const SPRITE_ATLAS = new Image();
+let atlasLoaded = false;
+SPRITE_ATLAS.onload = ()=>{
+  atlasLoaded = true;
+  // re-stamp any sprites that were created with procedural fallback
+  if (typeof player !== "undefined" && player.party) {
+    for(const c of player.party) c.sprite = spriteCanvas(c.seed);
+  }
+  if (typeof player !== "undefined" && player.codex) {
+    for(const c of player.codex) c.sprite = spriteCanvas(c.seed);
+  }
+};
+SPRITE_ATLAS.src = "sprites/cinder-creatures/atlas.png";
+const ATLAS_COLS = 8, ATLAS_ROWS = 7, ATLAS_CELL = 64, ATLAS_COUNT = 56;
+
 // ---------- input ----------
 const keys = {};
 const fired = {};
@@ -149,6 +166,7 @@ const KEYMAP = {
   "ArrowUp":"up","ArrowDown":"down","ArrowLeft":"left","ArrowRight":"right",
   "w":"up","s":"down","a":"left","d":"right",
   "z":"a","x":"b","b":"b","Enter":"a","Shift":"select","Backspace":"b",
+  "q":"quests","Q":"quests",
 };
 addEventListener("keydown",e=>{
   const k = KEYMAP[e.key]; if(!k) return;
@@ -161,7 +179,7 @@ addEventListener("keyup",e=>{ const k = KEYMAP[e.key]; if(k) keys[k]=false; });
 // virtual buttons
 document.querySelectorAll("[data-key]").forEach(btn=>{
   const k = btn.dataset.key;
-  const map = {ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",a:"a",b:"b",select:"select",start:"start"};
+  const map = {ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",a:"a",b:"b",select:"select",start:"start",q:"quests"};
   const mk = map[k] || k;
   const press = (e)=>{ e.preventDefault(); if(!keys[mk]) fired[mk]=true; keys[mk]=true; };
   const rel = ()=>{ keys[mk]=false; };
@@ -285,8 +303,28 @@ function makeCreature(seed, level=1){
 }
 
 // ---------- creature sprite generator ----------
-// 32x32 procedural creature, 4-color GB palette, symmetric.
+// Atlas-backed: each seed maps deterministically to one of 56 CC0 sprites.
+// CINDER boss uses fixed slot 55 (last sprite). Falls back to procedural
+// if the atlas image hasn't loaded yet (re-stamped on load).
+function spriteFromAtlas(seed){
+  const c = document.createElement("canvas");
+  c.width = 32; c.height = 32;
+  const x = c.getContext("2d");
+  x.imageSmoothingEnabled = false;
+  // fixed slots: CINDER boss=55, SPARK starter=0
+  let idx;
+  if (seed === 0xC1ADE5) idx = 55;
+  else if (seed === 0x53504152) idx = 0;
+  else idx = ((seed >>> 0) % ATLAS_COUNT);
+  const sx = (idx % ATLAS_COLS) * ATLAS_CELL;
+  const sy = Math.floor(idx / ATLAS_COLS) * ATLAS_CELL;
+  x.drawImage(SPRITE_ATLAS, sx, sy, ATLAS_CELL, ATLAS_CELL, 0, 0, 32, 32);
+  return c;
+}
+
 function spriteCanvas(seed){
+  if (atlasLoaded) return spriteFromAtlas(seed);
+  // procedural fallback (used until atlas loads, then re-stamped)
   const r = rng(seed*7919 + 13);
   const c = document.createElement("canvas");
   c.width = 32; c.height = 32;
@@ -367,7 +405,7 @@ function spriteCanvas(seed){
 }
 
 // ---------- game state ----------
-const STATE = { OVERWORLD:0, ENCOUNTER:1, BATTLE:2, MENU:3, DIALOG:4, VICTORY:5, GAMEOVER:6 };
+const STATE = { OVERWORLD:0, ENCOUNTER:1, BATTLE:2, MENU:3, DIALOG:4, VICTORY:5, GAMEOVER:6, QUESTS:7 };
 let state = STATE.OVERWORLD;
 
 const player = {
@@ -379,11 +417,6 @@ const player = {
   keys: 0,
   steps: 0,
   cinderDefeated: false,
-  // quest stats
-  catches: 0,         // total creatures caught (excludes starter)
-  wildDefeats: 0,     // wild battles won (no capture)
-  questsClaimed: {},  // {questId: true} once reward applied
-  questsReady: {},    // {questId: true} unlocked, waiting on player to claim
 };
 
 // give starter
@@ -396,117 +429,83 @@ let battle = null;
 let worldSeed = (Math.floor(Math.random()*1e9)) >>> 0;
 let encounterChance = 0;
 
-// claim notifications (Animal-Crossing-style: pop a card, B to claim)
+// ambient pop (still used for non-rewarded blips like FOUNTAIN)
 let claim = null; // {label, sub, ts}
 function popClaim(label, sub){ claim = {label, sub, ts: performance.now()}; }
 
-// ---------- quests ----------
-// Mission/quest auto-tracker. When met, queue an entry the player must
-// claim from the menu — a reward animation plays and the prize is granted.
+// ---------- quest log (Animal-Crossing-style claim flow) ----------
+// states: 'locked' (not yet trackable), 'active' (visible), 'ready' (done, awaiting claim), 'claimed' (rewarded)
 const QUESTS = [
-  { id:"first_catch", label:"FIRST CATCH",   desc:"Catch any creature.",
-    cond:(p)=>p.catches>=1,  reward:{tokens:2}, hint:"+2 tokens" },
-  { id:"walker_100",  label:"FIELD WALKER",  desc:"Walk 100 steps.",
-    cond:(p)=>p.steps>=100,  reward:{tokens:1}, hint:"+1 token" },
-  { id:"codex_3",     label:"CODEX × 3",     desc:"Catch 3 creatures.",
-    cond:(p)=>p.catches>=3,  reward:{keys:1},   hint:"+1 key" },
-  { id:"reach_cavern",label:"INTO THE STACK",desc:"Reach Stack Cavern.",
-    cond:(p)=>p.maxZone>=1,  reward:{tokens:5}, hint:"+5 tokens" },
-  { id:"defeat_3",    label:"FIRST BLOOD",   desc:"Win 3 wild battles.",
-    cond:(p)=>p.wildDefeats>=3,reward:{tokens:2}, hint:"+2 tokens" },
-  { id:"codex_5",     label:"CODEX × 5",     desc:"Catch 5 creatures.",
-    cond:(p)=>p.catches>=5,  reward:{keys:2},   hint:"+2 keys" },
-  { id:"walker_300",  label:"LONG STRIDE",   desc:"Walk 300 steps total.",
-    cond:(p)=>p.steps>=300,  reward:{tokens:3}, hint:"+3 tokens" },
-  { id:"reach_core",  label:"AT THE CORE",   desc:"Reach Kernel Core.",
-    cond:(p)=>p.maxZone>=2,  reward:{heal:true},hint:"full heal" },
-  { id:"defeat_cinder",label:"BOSS DOWN",    desc:"Defeat Cinder.",
-    cond:(p)=>!!p.cinderDefeated, reward:{tokens:9, keys:1}, hint:"+9 tokens, +1 key" },
-  { id:"codex_8",     label:"CODEX × 8",     desc:"Catch 8 creatures.",
-    cond:(p)=>p.catches>=8,  reward:{tokens:5}, hint:"+5 tokens" },
+  { id:"first_step",   title:"First Steps",     sub:"take 50 steps",            target:50,  reward:"+2 tokens",  rewardFn:()=>{ player.tokens+=2; } },
+  { id:"first_catch",  title:"First Catch",     sub:"add a creature to codex",  target:1,   reward:"+1 token",   rewardFn:()=>{ player.tokens+=1; } },
+  { id:"five_caught",  title:"Codex of Five",   sub:"catch 5 creatures",        target:5,   reward:"+3 tokens",  rewardFn:()=>{ player.tokens+=3; } },
+  { id:"first_key",    title:"One Key",         sub:"earn a single key",        target:1,   reward:"+2 tokens",  rewardFn:()=>{ player.tokens+=2; } },
+  { id:"gate_zone1",   title:"Through the Gate",sub:"reach the cavern",         target:1,   reward:"+5 tokens",  rewardFn:()=>{ player.tokens+=5; } },
+  { id:"gate_zone2",   title:"Into the Core",   sub:"reach the altar room",     target:1,   reward:"+8 tokens",  rewardFn:()=>{ player.tokens+=8; } },
+  { id:"cinder_fall",  title:"Embrace the Loop",sub:"defeat Cinder",            target:1,   reward:"the credits",rewardFn:()=>{ /* glory */ } },
 ];
-
-// claim animation overlay (sparkles when a quest is claimed)
-let questAnim = null; // {ts, label, hint}
-
-function popQuestAnim(label, hint){
-  questAnim = { ts: performance.now(), label, hint };
-}
-
-function checkQuests(){
-  // pass a flat snapshot the cond functions can read
-  const snap = {
-    catches: player.catches|0,
-    steps: player.steps|0,
-    wildDefeats: player.wildDefeats|0,
-    cinderDefeated: !!player.cinderDefeated,
-    maxZone: Math.max(currentZone|0, player.maxZone|0),
-  };
-  player.maxZone = snap.maxZone;
-  let unlocked = 0;
+const QSAVE_KEY = "cinder.creatures.quests.v1";
+let questState = {}; // id -> {progress, status}
+function initQuests(){
   for(const q of QUESTS){
-    if(player.questsClaimed[q.id]) continue;
-    if(player.questsReady[q.id]) continue;
-    if(q.cond(snap)){
-      player.questsReady[q.id] = true;
-      unlocked++;
-      // soft notify — the gameplay popClaim already runs for big events,
-      // so use a simple, distinct message for quests.
-      popClaim("QUEST UNLOCKED", q.label);
-    }
+    if(!questState[q.id]) questState[q.id] = { progress:0, status: q.id==="first_step"||q.id==="first_catch"||q.id==="first_key" ? "active" : "active" };
   }
-  if(unlocked>0) saveGame();
-  return unlocked;
 }
-
-function readyQuestCount(){
-  let n=0;
-  for(const k in player.questsReady){
-    if(player.questsReady[k] && !player.questsClaimed[k]) n++;
-  }
-  return n;
+function saveQuests(){ try{ localStorage.setItem(QSAVE_KEY, JSON.stringify(questState)); }catch(e){} }
+function loadQuests(){
+  try{
+    const raw = localStorage.getItem(QSAVE_KEY);
+    if(!raw){ initQuests(); return; }
+    questState = JSON.parse(raw) || {};
+    initQuests();
+  }catch(e){ questState = {}; initQuests(); }
 }
-
-function claimQuest(id){
-  const q = QUESTS.find(x=>x.id===id);
-  if(!q) return false;
-  if(player.questsClaimed[id]) return false;
-  if(!player.questsReady[id]) return false;
-  // grant reward
-  const r = q.reward || {};
-  if(r.tokens) player.tokens = Math.max(0, (player.tokens|0)+r.tokens);
-  if(r.keys)   player.keys   = Math.max(0, (player.keys|0)+r.keys);
-  if(r.heal){
-    for(const c of player.party){ c.hp = c.maxhp; }
+function questProgress(id, amount){
+  const q = QUESTS.find(x=>x.id===id); if(!q) return;
+  const s = questState[id]; if(!s || s.status==="claimed" || s.status==="ready") return;
+  s.progress = Math.min(q.target, (s.progress|0) + (amount|0));
+  if(s.progress >= q.target){
+    s.status = "ready";
+    popClaim("QUEST READY", q.title);
+    saveQuests();
+  } else {
+    s.status = "active";
+    saveQuests();
   }
-  player.questsClaimed[id] = true;
-  delete player.questsReady[id];
-  popQuestAnim(q.label, q.hint);
-  saveGame();
-  return true;
+}
+function questSet(id, value){
+  const q = QUESTS.find(x=>x.id===id); if(!q) return;
+  const s = questState[id]; if(!s || s.status==="claimed" || s.status==="ready") return;
+  s.progress = Math.min(q.target, value|0);
+  if(s.progress >= q.target){
+    s.status = "ready";
+    popClaim("QUEST READY", q.title);
+    saveQuests();
+  }
+}
+function readyCount(){ return Object.values(questState).filter(s=>s.status==="ready").length; }
+
+// claim animation (plays when player presses A on a 'ready' quest)
+let claimAnim = null; // {title, reward, stamp, ts}
+function startClaimAnim(q, stamp){ claimAnim = {title:q.title, reward:q.reward, stamp:stamp||"", ts:performance.now()}; }
+function tickClaimAnim(){
+  if(!claimAnim) return;
+  if(performance.now() - claimAnim.ts > 1700){ claimAnim = null; }
 }
 
 // ---------- save / load (localStorage) ----------
-// SAVE_KEY is the live (current) format. Older keys are read once, then the
-// game writes back into SAVE_KEY on the next save. Bump v + key together.
-const SAVE_KEY    = "cinder.creatures.save.v3";
-const SAVE_KEY_V2 = "cinder.creatures.save.v2";
+const SAVE_KEY = "cinder.creatures.save.v2";
 const SAVE_KEY_V1 = "cinder.creatures.save.v1";
 function saveGame(){
   try{
     const data = {
-      v:3,
+      v:2,
       worldSeed,
       zone: currentZone,
       player:{
         tx:player.tx, ty:player.ty, dir:player.dir,
         tokens:player.tokens, keys:player.keys, steps:player.steps,
         cinderDefeated: !!player.cinderDefeated,
-        catches: player.catches|0,
-        wildDefeats: player.wildDefeats|0,
-        maxZone: Math.max(currentZone|0, player.maxZone|0),
-        questsClaimed: player.questsClaimed||{},
-        questsReady:   player.questsReady||{},
         party: player.party.map(c=>({
           seed:c.seed, level:c.level, hp:c.hp, maxhp:c.maxhp,
           atk:c.atk, def:c.def, name:c.name,
@@ -522,24 +521,19 @@ function loadGame(){
   try{
     let raw = localStorage.getItem(SAVE_KEY);
     if(!raw){
-      // migrate older saves (v1, v2) into v3 on first save
-      raw = localStorage.getItem(SAVE_KEY_V2) || localStorage.getItem(SAVE_KEY_V1);
-      if(!raw) return false;
+      // migrate v1 -> v2 (zone 0 default)
+      const old = localStorage.getItem(SAVE_KEY_V1);
+      if(!old) return false;
+      raw = old;
     }
     const d = JSON.parse(raw);
-    if(d.v !== 1 && d.v !== 2 && d.v !== 3) return false;
+    if(d.v !== 1 && d.v !== 2) return false;
     worldSeed = d.worldSeed >>> 0;
     currentZone = (d.zone|0) || 0;
     player.tx = d.player.tx; player.ty = d.player.ty; player.dir = d.player.dir || "down";
     player.px = player.tx*TILE; player.py = player.ty*TILE;
     player.tokens = d.player.tokens; player.keys = d.player.keys; player.steps = d.player.steps;
     player.cinderDefeated = !!d.player.cinderDefeated;
-    // v3 fields — fall back for older saves
-    player.catches      = d.player.catches      |0;
-    player.wildDefeats  = d.player.wildDefeats  |0;
-    player.maxZone      = d.player.maxZone      |0 || currentZone;
-    player.questsClaimed= d.player.questsClaimed|| {};
-    player.questsReady  = d.player.questsReady  || {};
     player.party = d.player.party.map(c=>({
       ...c,
       sprite:null,
@@ -548,11 +542,7 @@ function loadGame(){
   }catch(e){ return false; }
 }
 function resetGame(){
-  try{
-    localStorage.removeItem(SAVE_KEY);
-    localStorage.removeItem(SAVE_KEY_V2);
-    localStorage.removeItem(SAVE_KEY_V1);
-  }catch(e){}
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
 }
 
 // ---------- map render ----------
@@ -671,20 +661,22 @@ function text(s, x, y, color){
 }
 
 function drawHUD(){
-  // top bar — tokens, keys, party count, quest indicator
+  // top bar — tokens, keys, party count
   drawTextBox(0,0,160,12);
   text(`T:${player.tokens}`, 3, 2);
   text(`K:${player.keys}/${ZONE_KEYS_REQ[currentZone]}`, 30, 2);
-  text(ZONE_NAMES[currentZone], 70, 2);
-  text(`x${player.party.length}`, 142, 2);
-  // claimable-quest indicator: blink "!" when rewards are waiting
-  const ready = readyQuestCount();
-  if(ready>0 && ((performance.now()/420)|0) % 2){
-    // little notch + bang to the right of party count
-    ctx.fillStyle = PAL[3];
-    ctx.fillRect(154, 2, 4, 7);
-    ctx.fillStyle = PAL[0];
-    ctx.fillRect(155, 3, 2, 3); ctx.fillRect(155, 7, 2, 1);
+  text(ZONE_NAMES[currentZone], 64, 2);
+  text(`x${player.party.length}`, 130, 2);
+  // quest badge — flash if any 'ready' (Animal Crossing-style)
+  const rc = readyCount();
+  if(rc > 0){
+    const blink = ((performance.now()/300)|0) % 2;
+    const bx = 144, by = 1;
+    if(blink){ ctx.fillStyle = PAL[3]; ctx.fillRect(bx, by, 14, 10); ctx.fillStyle = PAL[0]; ctx.fillRect(bx+1,by+1,12,8); }
+    else { drawTextBox(bx, by, 14, 10); }
+    text(`Q${rc}`, bx+1, by+2);
+  } else {
+    text("[Q]", 144, 2);
   }
 }
 
@@ -759,8 +751,7 @@ function updateOverworld(dt){
       player.moving = false;
       player.step++;
       player.steps++;
-      // step-driven quest checks (cheap + only runs on step completion)
-      if(player.steps % 10 === 0) checkQuests();
+      questSet("first_step", player.steps);
       const cur = tileAt(player.tx, player.ty);
       // encounter check on tall grass
       if(cur === 2){
@@ -780,9 +771,9 @@ function updateOverworld(dt){
           player.tx = 1; player.ty = currentZone===2 ? 4 : (currentZone===1 ? 1 : 1);
           player.px = player.tx*TILE; player.py = player.ty*TILE;
           encounterChance = 0;
-          player.maxZone = Math.max(player.maxZone|0, currentZone);
           popClaim("ENTERED " + ZONE_NAMES[currentZone], "the air changes");
-          checkQuests();
+          if(currentZone === 1) questSet("gate_zone1", 1);
+          else if(currentZone === 2) questSet("gate_zone2", 1);
           if(currentZone === 1){
             showDialog([
               "The gate clicks. Three keys spent.",
@@ -833,6 +824,7 @@ function updateOverworld(dt){
     else if(keys.right) tryMove(1,0);
   }
   if(consume("select")) openMenu();
+  if(consume("quests")) openQuests();
   if(consume("start")) showDialog([
     `CINDER CREATURES v0.4 — ${ZONE_NAMES[currentZone]}`,
     `Steps: ${player.steps}. Caught: ${player.party.length}. Keys: ${player.keys}/${ZONE_KEYS_REQ[currentZone]}.`,
@@ -1113,15 +1105,18 @@ function tryToken(){
       const keyDrop = r() < 0.12;
       battle.wild.sprite = battle.wild.sprite; // keep
       player.party.push(battle.wild);
-      player.catches = (player.catches|0) + 1;
       popClaim("CAUGHT " + battle.wild.name, "added to codex");
+      // catch counts toward codex quests
+      const caughtCount = Math.max(0, player.party.length - 1);
+      questSet("first_catch", Math.min(1, caughtCount));
+      questSet("five_caught", caughtCount);
       if(keyDrop){
         player.keys++;
         battle.log.push("It dropped a key!");
-        popClaim("+1 KEY", `${player.keys}/3 to the gate`);
+        popClaim("+1 KEY", `${player.keys}/${ZONE_KEYS_REQ[currentZone]}`);
+        questSet("first_key", 1);
       }
       saveGame();
-      checkQuests();
       battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
       battle.next = ()=>{ endBattle(); };
       battle.phase = "log";
@@ -1169,11 +1164,11 @@ function winBattle(){
       };
       player.party.push(cinder);
       player.cinderDefeated = true;
+      questSet("cinder_fall", 1);
       battle.you.level += 5;
       battle.you.maxhp += 6; battle.you.hp = battle.you.maxhp;
       popClaim("CINDER JOINED", "the loop closes");
       saveGame();
-      checkQuests();
       // brief credits screen
       battle.log = [
         "Cinder Creatures — v0.4",
@@ -1192,8 +1187,6 @@ function winBattle(){
   battle.next = ()=>{
     battle.you.level += Math.max(1, Math.floor(battle.wild.level/2));
     battle.you.maxhp += 2; battle.you.hp = Math.min(battle.you.maxhp, battle.you.hp+5);
-    player.wildDefeats = (player.wildDefeats|0) + 1;
-    checkQuests();
     endBattle();
   };
   battle.phase = "log";
@@ -1254,125 +1247,34 @@ function updateBattle(now){
 let menu = null;
 function openMenu(){
   state = STATE.MENU;
-  menu = {sel:0, tab:0}; // tab 0 = CODEX, 1 = QUESTS
-  // re-scan in case anything became eligible while waiting
-  checkQuests();
-}
-function questList(){
-  // ordered: claimable first, then unmet, then claimed
-  const claimable = [], unmet = [], claimed = [];
-  for(const q of QUESTS){
-    if(player.questsClaimed[q.id]) claimed.push(q);
-    else if(player.questsReady[q.id]) claimable.push(q);
-    else unmet.push(q);
-  }
-  return claimable.concat(unmet, claimed);
+  menu = {sel:0};
 }
 function drawMenu(){
   drawTile(1,0,0); drawMap(); drawPlayer();
   // overlay
   ctx.fillStyle = "rgba(15,56,15,.7)"; ctx.fillRect(0,0,W,H);
   drawTextBox(8,8,144,128);
-  // tab header
-  const tabs = ["CODEX","QUESTS"];
-  tabs.forEach((label,i)=>{
-    const x = 14 + i*68;
-    if(menu.tab===i){
-      ctx.fillStyle = PAL[3]; ctx.fillRect(x-2, 10, 50, 10);
-      text(label, x, 12, PAL[0]);
-    } else text(label, x, 12, PAL[3]);
+  text("CODEX", 14, 12, PAL[3]);
+  text(`Tokens ${player.tokens}  Keys ${player.keys}`, 14, 22, PAL[3]);
+  player.party.forEach((c,i)=>{
+    if(!c.sprite) c.sprite = spriteCanvas(c.seed);
+    const y = 36 + i*24;
+    if(y>118) return;
+    if(menu.sel===i) text("▶", 12, y+6, PAL[3]);
+    ctx.drawImage(c.sprite, 22, y-2, 24, 24);
+    text(c.name, 50, y, PAL[3]);
+    text(`L${c.level}  ${c.species.type}`, 50, y+10, PAL[3]);
+    text(`${c.hp}/${c.maxhp}`, 110, y+5, PAL[3]);
   });
-  text(`T${player.tokens} K${player.keys}`, 118, 12, PAL[3]);
-
-  if(menu.tab===0){
-    // CODEX
-    player.party.forEach((c,i)=>{
-      if(!c.sprite) c.sprite = spriteCanvas(c.seed);
-      const y = 30 + i*22;
-      if(y>116) return;
-      if(menu.sel===i) text("▶", 12, y+6, PAL[3]);
-      ctx.drawImage(c.sprite, 22, y-2, 22, 22);
-      text(c.name, 48, y, PAL[3]);
-      text(`L${c.level} ${c.species.type}`, 48, y+10, PAL[3]);
-      text(`${c.hp}/${c.maxhp}`, 110, y+4, PAL[3]);
-    });
-    if(menu.confirm) text("START again to wipe", 14, 124, PAL[3]);
-    else text("[◀▶]tab [B]back [START]wipe", 14, 124, PAL[3]);
+  if(menu.confirm){
+    text("START again to wipe", 14, 124, PAL[3]);
   } else {
-    // QUESTS
-    const list = questList();
-    const top = menu.scroll||0;
-    const visible = 6;
-    for(let i=0;i<visible && (top+i)<list.length;i++){
-      const q = list[top+i];
-      const y = 30 + i*15;
-      const claimed = !!player.questsClaimed[q.id];
-      const ready   = !!player.questsReady[q.id];
-      if(menu.sel===(top+i)) text("▶", 12, y, PAL[3]);
-      // status mark
-      let mark = "·";
-      if(claimed) mark = "✓";
-      else if(ready) mark = "!";
-      text(mark, 22, y, PAL[3]);
-      text(q.label, 30, y, PAL[3]);
-      text(ready ? q.hint : (claimed ? "claimed" : q.desc.slice(0,18)),
-           30, y+7, PAL[3]);
-    }
-    if(list.length>visible){
-      text("▼", 142, 116, PAL[3]);
-    }
-    text("[A] claim  [B] back", 14, 124, PAL[3]);
-  }
-  // claim animation overlay (sparkle + reward text)
-  if(questAnim){
-    const t = (performance.now()-questAnim.ts)/1400;
-    if(t>=1){ questAnim = null; }
-    else {
-      // halftone backdrop
-      ctx.fillStyle = "rgba(15,56,15,.85)"; ctx.fillRect(0,40,160,64);
-      drawTextBox(12, 50, 136, 44);
-      text("MISSION COMPLETE", 24, 56, PAL[3]);
-      text(questAnim.label, 24, 70, PAL[3]);
-      text(questAnim.hint,  24, 82, PAL[3]);
-      // sparkles — 8 dots flying out
-      for(let i=0;i<10;i++){
-        const ang = (i/10)*Math.PI*2 + t*4;
-        const r = 14 + t*60;
-        const x = 80 + Math.cos(ang)*r;
-        const y = 72 + Math.sin(ang)*r*0.55;
-        if(t>0.7) continue;
-        ctx.fillStyle = PAL[3]; ctx.fillRect(x|0, y|0, 2, 2);
-      }
-    }
+    text("[B] back  [START] wipe", 14, 124, PAL[3]);
   }
 }
 function updateMenu(){
-  if(menu.tab===0){
-    // CODEX: vertical list of party members
-    if(consume("up"))   menu.sel = Math.max(0, menu.sel-1);
-    if(consume("down")) menu.sel = Math.min(Math.max(0, player.party.length-1), menu.sel+1);
-  } else {
-    // QUESTS: scroll list
-    const list = questList();
-    if(consume("up"))   menu.sel = Math.max(0, menu.sel-1);
-    if(consume("down")) menu.sel = Math.min(Math.max(0, list.length-1), menu.sel+1);
-    // keep scroll window
-    menu.scroll = menu.scroll||0;
-    if(menu.sel < menu.scroll) menu.scroll = menu.sel;
-    if(menu.sel >= menu.scroll+6) menu.scroll = menu.sel-5;
-    if(consume("a")){
-      const q = list[menu.sel];
-      if(q && claimQuest(q.id)){
-        // ok — animation triggered by claimQuest
-      } else if(q && player.questsClaimed[q.id]){
-        // already done — no-op
-      }
-    }
-  }
-  // tab switch with left/right
-  if(consume("left"))  { menu.tab = 0; menu.sel = 0; menu.scroll = 0; }
-  if(consume("right")) { menu.tab = 1; menu.sel = 0; menu.scroll = 0; }
-
+  if(consume("up")) menu.sel = Math.max(0, menu.sel-1);
+  if(consume("down")) menu.sel = Math.min(player.party.length-1, menu.sel+1);
   if(consume("b") || consume("select")) { menu = null; state = STATE.OVERWORLD; }
   if(consume("start")){
     if(menu.confirm){
@@ -1381,6 +1283,93 @@ function updateMenu(){
       showDialog(["Save wiped.","Reload the page to start fresh."]);
     } else {
       menu.confirm = true;
+    }
+  }
+}
+
+// ---------- quest screen (Animal-Crossing-style claim flow) ----------
+let quests = null; // {sel, scroll}
+function openQuests(){ state = STATE.QUESTS; quests = { sel: 0 }; }
+function questOrder(){
+  // ready first (so claim flow is one-button), then active, then claimed
+  const w = { ready:0, active:1, claimed:2 };
+  return QUESTS.map((q,i)=>({q, s:questState[q.id]||{progress:0,status:"active"}, i}))
+    .sort((a,b)=> (w[a.s.status]??1) - (w[b.s.status]??1));
+}
+function drawQuests(){
+  drawTile(1,0,0); drawMap(); drawPlayer();
+  ctx.fillStyle = "rgba(15,56,15,.78)"; ctx.fillRect(0,0,W,H);
+  drawTextBox(4,4,152,132);
+  text("QUESTS", 10, 8, PAL[3]);
+  const rc = readyCount();
+  text(rc>0 ? `${rc} READY` : "(none ready)", 100, 8, PAL[3]);
+  const list = questOrder();
+  const top = 22;
+  list.slice(0, 5).forEach((row, i)=>{
+    const y = top + i*22;
+    const isSel = quests.sel === i;
+    if(isSel){ text("▶", 8, y+4, PAL[3]); }
+    text(row.q.title, 18, y, PAL[3]);
+    if(row.s.status === "ready"){
+      const blink = ((performance.now()/200)|0) % 2;
+      if(blink) text("!", 138, y, PAL[3]);
+      text("press A to claim", 18, y+10, PAL[3]);
+    } else if(row.s.status === "claimed"){
+      const stamp = row.s.claimedAt ? " · " + row.s.claimedAt : "";
+      text("done — " + row.q.reward + stamp, 18, y+10, PAL[3]);
+    } else {
+      text(`${row.s.progress}/${row.q.target}  ${row.q.sub}`, 18, y+10, PAL[3]);
+    }
+  });
+  text("[A] claim   [B] back", 10, 124, PAL[3]);
+  // claim animation overlays the quest screen
+  drawClaimAnim();
+}
+function updateQuests(){
+  const list = questOrder();
+  if(consume("up")) quests.sel = Math.max(0, quests.sel-1);
+  if(consume("down")) quests.sel = Math.min(Math.min(4, list.length-1), quests.sel+1);
+  if(consume("b") || consume("quests")) { quests = null; state = STATE.OVERWORLD; return; }
+  if(consume("a") && !claimAnim){
+    const row = list[quests.sel];
+    if(row && row.s.status === "ready"){
+      row.s.status = "claimed";
+      row.s.claimedAt = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+      try{ row.q.rewardFn && row.q.rewardFn(); }catch(e){}
+      saveQuests(); saveGame();
+      startClaimAnim(row.q, row.s.claimedAt);
+    }
+  }
+  tickClaimAnim();
+}
+function drawClaimAnim(){
+  if(!claimAnim) return;
+  const t = (performance.now() - claimAnim.ts) / 1700; // 0..1
+  // slide in 0..0.15, hold 0.15..0.85, slide out 0.85..1
+  let off = 0;
+  if(t < 0.15) off = (1 - t/0.15) * 30;
+  else if(t > 0.85) off = ((t-0.85)/0.15) * 30;
+  const cx = 16, cy = 40 + off, cw = 128, ch = 64;
+  drawTextBox(cx, cy, cw, ch);
+  text("★ CLAIMED ★", cx+34, cy+5, PAL[3]);
+  text(claimAnim.title, cx+8, cy+18, PAL[3]);
+  text("reward:", cx+8, cy+30, PAL[3]);
+  text(claimAnim.reward, cx+8, cy+40, PAL[3]);
+  if(claimAnim.stamp) text(claimAnim.stamp, cx+8, cy+52, PAL[3]);
+  // sparkles — pseudo random pixels around the box
+  const seed = (claimAnim.ts|0) ^ 0x1F1F;
+  const r = rng(seed);
+  for(let i=0;i<14;i++){
+    const sx = cx - 6 + Math.floor(r()*(cw+12));
+    const sy = cy - 6 + Math.floor(r()*(ch+12));
+    const phase = ((performance.now()/120)|0 + i) % 6;
+    if(phase < 3){
+      ctx.fillStyle = PAL[phase===0?0:3];
+      ctx.fillRect(sx, sy, 1, 1);
+      ctx.fillRect(sx-1, sy, 1, 1);
+      ctx.fillRect(sx+1, sy, 1, 1);
+      ctx.fillRect(sx, sy-1, 1, 1);
+      ctx.fillRect(sx, sy+1, 1, 1);
     }
   }
 }
@@ -1407,6 +1396,9 @@ function frame(now){
   } else if(state === STATE.MENU){
     drawMenu();
     updateMenu();
+  } else if(state === STATE.QUESTS){
+    drawQuests();
+    updateQuests();
   }
 
   // clear all firing edges that nothing consumed
@@ -1419,17 +1411,22 @@ player.party[0].sprite = spriteCanvas(player.party[0].seed);
 
 // try to load a save before kicking off the loop
 const _loaded = loadGame();
-// Run an initial quest sweep so legacy saves can claim things they already
-// earned (catches, steps, defeated zones) under the new v0.4 system.
-checkQuests();
+loadQuests();
+// retro-fill quest progress for resumed saves
+questSet("first_step", player.steps);
+questSet("first_catch", Math.max(0, player.party.length-1));
+questSet("five_caught", Math.max(0, player.party.length-1));
+questSet("first_key", player.keys>0?1:0);
+if(currentZone>=1) questSet("gate_zone1", 1);
+if(currentZone>=2) questSet("gate_zone2", 1);
+if(player.cinderDefeated) questSet("cinder_fall", 1);
 requestAnimationFrame(frame);
 
 if(_loaded){
-  const ready = readyQuestCount();
   showDialog([
     `Resumed: steps ${player.steps}, keys ${player.keys}.`,
     `Party of ${player.party.length}.`,
-    ready>0 ? `${ready} quest${ready===1?"":"s"} ready — Select to claim.` : "START in menu to wipe save."
+    "START in menu to wipe save."
   ]);
 } else {
   showDialog([
