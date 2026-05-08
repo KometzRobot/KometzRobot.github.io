@@ -10,11 +10,25 @@ A Game Boy ROM project, built on GB Studio 4.2.
 
 ## Open in GB Studio
 
+GB Studio is installed locally as an AppImage. Open the project with:
+
 ```
-flatpak run dev.gbstudio.gb-studio products/cinder-creatures-gb/project.gbsproj
+gb-studio products/cinder-creatures-gb/project.gbsproj
 ```
 
-When you open it, GB Studio auto-imports any new PNGs in `assets/sprites/` and generates the `.gbsres` metadata files for them. The 56 `cinder_NN.png` sprites will appear as static fixed-frame sprites you can drop into any scene.
+Or launch the GB Studio GUI from your desktop menu (a `.desktop` entry is
+installed at `~/.local/share/applications/gb-studio.desktop`) and use
+**File → Open Project**.
+
+If you need to reinstall, the AppImage lives at
+`~/Applications/gb-studio-linux.AppImage` (v4.2.2 from chrismaltby/gb-studio).
+The wrapper at `~/.local/bin/gb-studio` runs it with `--no-sandbox` so it
+launches without root-owned chrome-sandbox setup.
+
+When you open the project, GB Studio auto-imports any new PNGs in
+`assets/sprites/` and generates the `.gbsres` metadata files for them. The 56
+`cinder_NN.png` sprites will appear as static fixed-frame sprites you can drop
+into any scene.
 
 ## How the creatures got into GB palette
 
