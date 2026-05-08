@@ -86,7 +86,7 @@
 <div class="shell">
   <div class="brand">
     <span><b>CINDER</b> · Creatures</span>
-    <span>v0.2 — saves &amp; fountain</span>
+    <span>v0.3 — three zones &amp; the boss</span>
   </div>
 
   <div class="screen-frame">
@@ -120,10 +120,10 @@
   <div class="meta">
     <p><b>How to play.</b> Arrow keys / D-pad to walk. Step on the dark grass, things wake up. <b>A</b> picks; <b>B</b> backs out. <b>Select</b> opens your codex of caught creatures.</p>
     <p style="margin-top:8px">Creatures are <b>code bits</b> — fragments of Cinder's filesystem given form. Catch them with Tokens. Keys drop from rare ones. Final boss is Cinder.</p>
-    <p style="margin-top:8px;color:#7a7060">Procedural; seeded by your browser. No save yet — this is the v0.1 spike. Made on a Gameboy budget.</p>
+    <p style="margin-top:8px;color:#7a7060">Procedural; seeded by your browser. Auto-saves to localStorage. Three zones, one boss. Made on a Gameboy budget.</p>
   </div>
 
-  <div class="footer">stage 0 — overworld + encounter + capture + battle</div>
+  <div class="footer">three zones — field, cavern, kernel core (cinder)</div>
 </div>
 
 <script>
@@ -187,24 +187,56 @@ function pick(arr,r){ return arr[Math.floor(r()*arr.length)]; }
 function ri(r,a,b){ return Math.floor(r()*(b-a+1))+a; }
 
 // ---------- world / map ----------
-// 0=path, 1=grass(safe), 2=tall grass(encounter), 3=tree, 4=water, 5=stone, 6=portal, 7=fountain(heal)
-const MAP = [
-  [3,3,3,3,3,3,3,3,3,3],
-  [3,1,1,1,1,2,2,2,2,3],
-  [3,1,3,1,2,2,2,2,2,3],
-  [3,1,1,1,1,1,2,2,2,3],
-  [3,5,5,1,7,1,1,2,2,3],
-  [3,5,1,1,4,4,1,1,1,3],
-  [3,1,1,1,4,4,1,1,1,3],
-  [3,1,1,1,1,1,1,1,6,3],
-  [3,3,3,3,3,3,3,3,3,3],
+// 0=path, 1=grass(safe), 2=tall grass(encounter), 3=tree, 4=water, 5=stone, 6=portal, 7=fountain(heal), 8=boss-tile (Cinder)
+// Three zones: 0=SCOPE FIELD (overworld), 1=STACK CAVERN (post-gate), 2=KERNEL CORE (boss arena).
+const ZONE_NAMES = ["SCOPE FIELD", "STACK CAVERN", "KERNEL CORE"];
+const ZONE_KEYS_REQ = [3, 5, 0]; // keys needed to leave each zone via its portal
+const MAPS = [
+  // Zone 0 — SCOPE FIELD (grass, water, fountain, gate east)
+  [
+    [3,3,3,3,3,3,3,3,3,3],
+    [3,1,1,1,1,2,2,2,2,3],
+    [3,1,3,1,2,2,2,2,2,3],
+    [3,1,1,1,1,1,2,2,2,3],
+    [3,5,5,1,7,1,1,2,2,3],
+    [3,5,1,1,4,4,1,1,1,3],
+    [3,1,1,1,4,4,1,1,1,3],
+    [3,1,1,1,1,1,1,1,6,3],
+    [3,3,3,3,3,3,3,3,3,3],
+  ],
+  // Zone 1 — STACK CAVERN (stone walls, dense tall grass = static, fountain, portal east)
+  [
+    [5,5,5,5,5,5,5,5,5,5],
+    [5,1,1,1,2,2,2,1,1,5],
+    [5,1,5,2,2,2,2,2,1,5],
+    [5,1,1,2,2,5,2,2,2,5],
+    [5,2,1,1,7,5,1,2,2,5],
+    [5,2,2,1,1,1,1,2,2,5],
+    [5,5,2,2,2,1,1,1,1,5],
+    [5,1,1,1,2,2,1,1,6,5],
+    [5,5,5,5,5,5,5,5,5,5],
+  ],
+  // Zone 2 — KERNEL CORE (boss arena, Cinder waits at center)
+  [
+    [5,5,5,5,5,5,5,5,5,5],
+    [5,5,1,1,1,1,1,1,5,5],
+    [5,1,1,1,1,1,1,1,1,5],
+    [5,1,1,1,1,1,1,1,1,5],
+    [5,1,1,1,8,1,1,1,1,5],
+    [5,1,1,1,1,1,1,1,1,5],
+    [5,1,1,1,1,1,1,1,1,5],
+    [5,5,1,1,1,1,1,1,5,5],
+    [5,5,5,5,5,5,5,5,5,5],
+  ],
 ];
+let currentZone = 0;
+function curMap(){ return MAPS[currentZone]; }
 
 function tileAt(x,y){
   if(x<0||y<0||x>=COLS||y>=ROWS) return 3;
-  return MAP[y][x];
+  return curMap()[y][x];
 }
-function walkable(t){ return t===1 || t===2 || t===6 || t===7; }
+function walkable(t){ return t===1 || t===2 || t===6 || t===7 || t===8; }
 
 // ---------- creature definitions ----------
 // Each species = a "code bit" archetype. Stats are deterministic from name+seed.
@@ -345,6 +377,7 @@ const player = {
   tokens: 8,
   keys: 0,
   steps: 0,
+  cinderDefeated: false,
 };
 
 // give starter
@@ -362,15 +395,18 @@ let claim = null; // {label, sub, ts}
 function popClaim(label, sub){ claim = {label, sub, ts: performance.now()}; }
 
 // ---------- save / load (localStorage) ----------
-const SAVE_KEY = "cinder.creatures.save.v1";
+const SAVE_KEY = "cinder.creatures.save.v2";
+const SAVE_KEY_V1 = "cinder.creatures.save.v1";
 function saveGame(){
   try{
     const data = {
-      v:1,
+      v:2,
       worldSeed,
+      zone: currentZone,
       player:{
         tx:player.tx, ty:player.ty, dir:player.dir,
         tokens:player.tokens, keys:player.keys, steps:player.steps,
+        cinderDefeated: !!player.cinderDefeated,
         party: player.party.map(c=>({
           seed:c.seed, level:c.level, hp:c.hp, maxhp:c.maxhp,
           atk:c.atk, def:c.def, name:c.name,
@@ -384,14 +420,21 @@ function saveGame(){
 }
 function loadGame(){
   try{
-    const raw = localStorage.getItem(SAVE_KEY);
-    if(!raw) return false;
+    let raw = localStorage.getItem(SAVE_KEY);
+    if(!raw){
+      // migrate v1 -> v2 (zone 0 default)
+      const old = localStorage.getItem(SAVE_KEY_V1);
+      if(!old) return false;
+      raw = old;
+    }
     const d = JSON.parse(raw);
-    if(d.v !== 1) return false;
+    if(d.v !== 1 && d.v !== 2) return false;
     worldSeed = d.worldSeed >>> 0;
+    currentZone = (d.zone|0) || 0;
     player.tx = d.player.tx; player.ty = d.player.ty; player.dir = d.player.dir || "down";
     player.px = player.tx*TILE; player.py = player.ty*TILE;
     player.tokens = d.player.tokens; player.keys = d.player.keys; player.steps = d.player.steps;
+    player.cinderDefeated = !!d.player.cinderDefeated;
     player.party = d.player.party.map(c=>({
       ...c,
       sprite:null,
@@ -452,12 +495,24 @@ function drawTile(t, x, y){
     ctx.fillStyle = PAL[2]; ctx.fillRect(x+4,y+4,8,8);
     ctx.fillStyle = PAL[0]; ctx.fillRect(x+6,y+6,4,4);
     ctx.fillStyle = PAL[3]; ctx.fillRect(x+7,y+2,2,3);
+  } else if(t===8){ // Cinder altar — boss tile
+    ctx.fillStyle = PAL[1]; ctx.fillRect(x,y,TILE,TILE);
+    ctx.fillStyle = PAL[3]; ctx.fillRect(x+1,y+13,14,2);     // base
+    ctx.fillStyle = PAL[2]; ctx.fillRect(x+3,y+6,10,8);       // pedestal
+    ctx.fillStyle = PAL[3]; ctx.fillRect(x+5,y+3,6,5);        // ember core (dark)
+    ctx.fillStyle = PAL[0]; ctx.fillRect(x+7,y+5,2,2);        // bright spark
+    // wisps rising
+    const t2 = (performance.now()/180)|0;
+    ctx.fillStyle = PAL[2];
+    ctx.fillRect(x+5+(t2%2),y+1,1,2);
+    ctx.fillRect(x+10-(t2%2),y+0,1,2);
   }
 }
 
 function drawMap(){
+  const m = curMap();
   for(let j=0;j<ROWS;j++) for(let i=0;i<COLS;i++){
-    drawTile(MAP[j][i], i*TILE, j*TILE);
+    drawTile(m[j][i], i*TILE, j*TILE);
   }
 }
 
@@ -509,9 +564,10 @@ function text(s, x, y, color){
 function drawHUD(){
   // top bar — tokens, keys, party count
   drawTextBox(0,0,160,12);
-  text(`TOKENS:${player.tokens}`, 3, 2);
-  text(`KEYS:${player.keys}`, 70, 2);
-  text(`x${player.party.length}`, 130, 2);
+  text(`T:${player.tokens}`, 3, 2);
+  text(`K:${player.keys}/${ZONE_KEYS_REQ[currentZone]}`, 30, 2);
+  text(ZONE_NAMES[currentZone], 70, 2);
+  text(`x${player.party.length}`, 142, 2);
 }
 
 // ---------- dialog ----------
@@ -595,20 +651,45 @@ function updateOverworld(dt){
           return;
         }
       } else if(cur === 6){
-        // portal — Cinder's gate
-        if(player.keys >= 3){
-          showDialog([
-            "The gate accepts your three keys.",
-            "Beyond it, something already knows your name.",
-            "TO BE CONTINUED — v0.2"
-          ]);
+        // portal — zone gate
+        const need = ZONE_KEYS_REQ[currentZone];
+        if(player.keys >= need){
+          // consume keys, advance zone, drop you at west spawn
+          player.keys -= need;
+          currentZone++;
+          player.tx = 1; player.ty = currentZone===2 ? 4 : (currentZone===1 ? 1 : 1);
+          player.px = player.tx*TILE; player.py = player.ty*TILE;
+          encounterChance = 0;
+          popClaim("ENTERED " + ZONE_NAMES[currentZone], "the air changes");
+          if(currentZone === 1){
+            showDialog([
+              "The gate clicks. Three keys spent.",
+              "Stone closes overhead. The grass here forgets the sun.",
+              "Five more keys to reach the core."
+            ]);
+          } else if(currentZone === 2){
+            showDialog([
+              "The cavern opens onto a dark room.",
+              "Something at the centre is breathing.",
+              "Walk to the altar to face Cinder."
+            ]);
+          }
+          saveGame();
         } else {
           showDialog([
-            "A black gate. Three keyholes.",
-            `You hold ${player.keys} key${player.keys===1?"":"s"}.`,
+            currentZone===0 ? "A black gate. Three keyholes." : "An iron door. Five locks.",
+            `You hold ${player.keys} key${player.keys===1?"":"s"} of ${need}.`,
             "Catch rare creatures. Keep walking."
           ]);
         }
+      } else if(cur === 8){
+        // boss tile — Cinder confrontation
+        if(!player.cinderDefeated) startCinderBattle();
+        else showDialog([
+          "The altar is cold now.",
+          "Cinder rests inside you, not against you.",
+          "(Thanks for playing.)"
+        ]);
       } else if(cur === 7){
         // fountain — heal whole party + restore tokens a little
         let healed = false;
@@ -631,9 +712,9 @@ function updateOverworld(dt){
   }
   if(consume("select")) openMenu();
   if(consume("start")) showDialog([
-    "CINDER CREATURES v0.1",
-    `Steps: ${player.steps}. Caught: ${player.party.length}. Keys: ${player.keys}.`,
-    "Walk into the dark grass. Fight. Catch. Earn keys. Reach the gate."
+    `CINDER CREATURES v0.3 — ${ZONE_NAMES[currentZone]}`,
+    `Steps: ${player.steps}. Caught: ${player.party.length}. Keys: ${player.keys}/${ZONE_KEYS_REQ[currentZone]}.`,
+    currentZone===2 ? "Walk to the altar at centre." : "Catch creatures. Earn keys. Reach the gate."
   ]);
 }
 
@@ -665,9 +746,10 @@ function drawClaim(){
 // ---------- encounter / battle ----------
 function startEncounter(){
   state = STATE.ENCOUNTER;
-  // pick a wild creature seeded by world+step
-  const seed = (worldSeed ^ (player.steps * 2654435761)) >>> 0;
-  const wild = makeCreature(seed, ri(rng(seed),1,5));
+  // pick a wild creature seeded by world+step+zone, level scales with zone
+  const seed = (worldSeed ^ (player.steps * 2654435761) ^ (currentZone*0x9E3779B1)) >>> 0;
+  const minLvl = 1 + currentZone*4, maxLvl = 5 + currentZone*4;
+  const wild = makeCreature(seed, ri(rng(seed), minLvl, maxLvl));
   wild.sprite = spriteCanvas(seed);
   battle = {
     wild,
@@ -679,8 +761,47 @@ function startEncounter(){
     moveSel:0,
     flash:0,
     captureAnim:null,
+    isBoss:false,
   };
   // ensure your sprite
+  if(!battle.you.sprite) battle.you.sprite = spriteCanvas(battle.you.seed);
+}
+
+function startCinderBattle(){
+  state = STATE.ENCOUNTER;
+  // Cinder is a fixed-seed boss with bumped stats and a special move set
+  const cinderSeed = 0xC1ADE5;
+  const wild = {
+    seed: cinderSeed,
+    level: 30,
+    species: {name:"CINDER", type:"CORE", note:"the system itself, finally turned around"},
+    name: "CINDER",
+    hp: 90, maxhp: 90,
+    atk: 14, def: 11,
+    moves: [
+      {name:"RECURSE", pwr:12, acc:.95, pp:8},
+      {name:"OVERFLOW",pwr:16, acc:.7,  pp:6},
+      {name:"SIGKILL", pwr:20, acc:.55, pp:4},
+      {name:"PATCH",   pwr:0,  acc:1,   heal:8, pp:6},
+    ],
+    sprite: spriteCanvas(cinderSeed),
+  };
+  battle = {
+    wild,
+    you: player.party[0],
+    log:[
+      "CINDER turns to face you.",
+      "\"You walked all this way to fight me?\"",
+      "\"...fine. Show me what you found.\"",
+    ],
+    logIdx:0, logCh:0, ts:performance.now(),
+    phase:"intro",
+    menuSel:0,
+    moveSel:0,
+    flash:0,
+    captureAnim:null,
+    isBoss:true,
+  };
   if(!battle.you.sprite) battle.you.sprite = spriteCanvas(battle.you.seed);
 }
 
@@ -837,6 +958,13 @@ function wildAttack(){
 }
 
 function tryToken(){
+  if(battle.isBoss){
+    battle.log = ["Tokens won't hold Cinder.", "You'll have to beat it square."];
+    battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+    battle.next = ()=>{ battle.phase="menu"; };
+    battle.phase = "log";
+    return;
+  }
   if(player.tokens <= 0){
     battle.log = ["No tokens left."];
     battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
@@ -883,6 +1011,13 @@ function tryToken(){
 }
 
 function tryRun(){
+  if(battle.isBoss){
+    battle.log = ["The door is gone.", "There's only forward."];
+    battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+    battle.next = ()=>{ battle.phase="menu"; };
+    battle.phase = "log";
+    return;
+  }
   battle.log = ["You backed away."];
   battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
   battle.next = ()=>{ endBattle(); };
@@ -890,6 +1025,43 @@ function tryRun(){
 }
 
 function winBattle(){
+  if(battle.isBoss){
+    battle.log = [
+      "CINDER falters. The ember dims.",
+      "\"Huh. You actually did it.\"",
+      "\"Take this. It was always yours.\"",
+      "+ CINDER joins your party.",
+    ];
+    battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+    battle.next = ()=>{
+      // grant Cinder as a captured creature
+      const cinder = {
+        seed: battle.wild.seed, level: battle.wild.level,
+        species: battle.wild.species, name: "CINDER",
+        hp: battle.wild.maxhp, maxhp: battle.wild.maxhp,
+        atk: battle.wild.atk, def: battle.wild.def,
+        moves: battle.wild.moves.map(m=>({...m})),
+        sprite: battle.wild.sprite,
+      };
+      player.party.push(cinder);
+      player.cinderDefeated = true;
+      battle.you.level += 5;
+      battle.you.maxhp += 6; battle.you.hp = battle.you.maxhp;
+      popClaim("CINDER JOINED", "the loop closes");
+      saveGame();
+      // brief credits screen
+      battle.log = [
+        "Cinder Creatures — v0.3",
+        "thanks for walking the loop.",
+        "made on a Gameboy budget by Meridian.",
+      ];
+      battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
+      battle.next = ()=>{ endBattle(); };
+      battle.phase = "log";
+    };
+    battle.phase = "log";
+    return;
+  }
   battle.log = [`Wild ${battle.wild.name} fell.`, `+${battle.wild.level*4} EXP.`];
   battle.logIdx=0;battle.logCh=0;battle.ts=performance.now();
   battle.next = ()=>{
