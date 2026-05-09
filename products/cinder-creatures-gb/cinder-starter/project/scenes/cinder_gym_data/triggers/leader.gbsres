@@ -1,0 +1,262 @@
+{
+  "_resourceType": "trigger",
+  "id": "c1bd5e01-4000-4004-8004-0000000000b0",
+  "_index": 4,
+  "symbol": "trigger_data_leader",
+  "name": "Data Leader HERMES",
+  "x": 10,
+  "y": 4,
+  "width": 2,
+  "height": 2,
+  "trigger": "walk",
+  "leaveScript": [],
+  "script": [
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-000",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000080",
+        "operator": "<",
+        "comparator": 15
+      },
+      "children": {
+        "true": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-001",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "COURIER HERMES:\nSort the floor first.\nFour packets, four lanes."
+            }
+          }
+        ],
+        "false": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-002",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "COURIER HERMES:\nFinally. Three at once.\nKeep me talking."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-003",
+            "command": "EVENT_CC_TRAINER_CHALLENGE",
+            "args": {
+              "title": "COURIER",
+              "trainer": "HERMES",
+              "intro": "challenges you!",
+              "boast": "I send. You receive.\nThree messages. Go."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-004",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "HERMES sends out\nREGEXEL!"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-005",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000035",
+              "value": {
+                "type": "number",
+                "value": 8
+              }
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-006",
+            "command": "EVENT_CC_SET_STATS",
+            "args": {
+              "idVar": "c1bd5e01-3000-4003-8003-000000000035",
+              "hpVar": "c1bd5e01-3000-4003-8003-000000000032",
+              "atkVar": "c1bd5e01-3000-4003-8003-000000000033",
+              "defVar": "c1bd5e01-3000-4003-8003-000000000034"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-007",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "You attack.\nREGEXEL captures the\npattern of your move."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-008",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "REGEXEL inflicts\nSWARM. Two hits, then a third."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-009",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "You break the regex.\nREGEXEL fainted."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-020",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "HERMES sends out\nINTGAR!"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-021",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000035",
+              "value": {
+                "type": "number",
+                "value": 36
+              }
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-022",
+            "command": "EVENT_CC_SET_STATS",
+            "args": {
+              "idVar": "c1bd5e01-3000-4003-8003-000000000035",
+              "hpVar": "c1bd5e01-3000-4003-8003-000000000032",
+              "atkVar": "c1bd5e01-3000-4003-8003-000000000033",
+              "defVar": "c1bd5e01-3000-4003-8003-000000000034"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-023",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "You attack.\nINTGAR overflows. Reverts."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-024",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "INTGAR inflicts\nMISDIRECT. Wrong target."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-025",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "You hit the right one.\nINTGAR fainted."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-040",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "HERMES sends out\nSTRTERM!"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-041",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000035",
+              "value": {
+                "type": "number",
+                "value": 38
+              }
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-042",
+            "command": "EVENT_CC_SET_STATS",
+            "args": {
+              "idVar": "c1bd5e01-3000-4003-8003-000000000035",
+              "hpVar": "c1bd5e01-3000-4003-8003-000000000032",
+              "atkVar": "c1bd5e01-3000-4003-8003-000000000033",
+              "defVar": "c1bd5e01-3000-4003-8003-000000000034"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-043",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "You attack.\nSTRTERM truncates\nyour string."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-044",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "STRTERM inflicts\nBURST. Three back-to-back."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-045",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "You finish the message.\nSTRTERM fainted."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-060",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "COURIER HERMES:\nQuiet on the line. New.\nYou ride this far."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-061",
+            "command": "EVENT_IF_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000081",
+              "operator": "==",
+              "comparator": 0
+            },
+            "children": {
+              "true": [
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-062",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000081",
+                    "value": {
+                      "type": "number",
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-063",
+                  "command": "EVENT_VARIABLE_MATH",
+                  "args": {
+                    "vectorX": "c1bd5e01-3000-4003-8003-000000000030",
+                    "operation": "add",
+                    "other": "value",
+                    "value": {
+                      "type": "number",
+                      "value": 8
+                    },
+                    "clamp": false
+                  }
+                }
+              ],
+              "false": []
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-064",
+            "command": "EVENT_CC_BADGE_UNLOCK",
+            "args": {
+              "badge": "DATA",
+              "leaderName": "COURIER HERMES"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000b0-leader-065",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "COURIER HERMES:\nFind ATLAS next.\nThey speak rarely. Listen harder."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

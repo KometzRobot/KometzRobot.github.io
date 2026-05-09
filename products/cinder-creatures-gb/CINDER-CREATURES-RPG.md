@@ -262,8 +262,15 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     leader trigger with 3-creature team (SIGNAUR/ZYBORG/FORKLING), entry sign.
     Leader gate requires VAR_CC_PROC_TRAINERS == 15 (1+2+4+8). Awards PROC
     badge bit (4). Hint to next gym (HERMES).
-14. **Next** — GYM-DATA (COURIER HERMES), then GYM-CORE (FOREMAN ATLAS), then
-    final CINDER fight.
+14. **Loop 9812** — v0.16 ✅: GYM-DATA (COURIER HERMES) playable. Background
+    (cc_gym_data.png — courier sort station, parcel grid, pneumatic tubes,
+    HERMES's console with stacked-dot DATA rune), 4 COURIER-trainer triggers
+    (PACKET/STREAM/QUEUE/FLUSH, status motif SWARM/MISDIRECT/BURST), COURIER
+    HERMES leader trigger with 3-creature team (REGEXEL/INTGAR/STRTERM),
+    entry sign. Leader gate requires VAR_CC_DATA_TRAINERS == 15. Awards DATA
+    badge bit (8). Hint to next gym (ATLAS).
+15. **Next** — GYM-CORE (FOREMAN ATLAS, badge CORE bit 16), then final
+    CINDER fight (VOID overwrite-the-save mechanic).
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
