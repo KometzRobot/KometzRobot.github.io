@@ -105,6 +105,73 @@ CUSTOM[38] = ("STRTERM", [
     "......####......",
 ])
 
+# Starter trio — Loop 9953. These are the FIRST creatures the player sees in
+# Professor Cinder's lab; first impression of the entire bestiary depends on
+# these three reading distinctly at 16x16 in DMG palette.
+
+# id 3 — KERNITE (CORE/tank). Squat pebble with a hard diamond nucleus.
+# Tank role: compact, low silhouette, no protrusions, reads as solid/heavy.
+CUSTOM[3] = ("KERNITE", [
+    "................",
+    "................",
+    "......####......",
+    ".....#----#.....",
+    "....##----##....",
+    "...##--##--##...",
+    "..##---++---##..",
+    "..#---+##+---#..",
+    "..#---+##+---#..",
+    "..##---++---##..",
+    "...##--##--##...",
+    "....##----##....",
+    ".....##--##.....",
+    "....##....##....",
+    "....##....##....",
+    "................",
+])
+
+# id 4 — RECURSE (LOGIC/glass cannon). Nested concentric rings — recursion
+# made literal. Three frames, a paired core inside, no limbs (it IS the call).
+CUSTOM[4] = ("RECURSE", [
+    "................",
+    ".....######.....",
+    "....#------#....",
+    "...#-######-#...",
+    "..#-#------#-#..",
+    "..#-#-####-#-#..",
+    "..#-#-#--#-#-#..",
+    "..#-#-#++#-#-#..",
+    "..#-#-#--#-#-#..",
+    "..#-#-####-#-#..",
+    "..#-#------#-#..",
+    "...#-######-#...",
+    "....#------#....",
+    ".....######.....",
+    "......####......",
+    "................",
+])
+
+# id 6 — BYTEFLY (DATA/swarm). Small body, wings out, motion dots on the
+# extreme edges — speed reads at a glance even in 4 shades.
+CUSTOM[6] = ("BYTEFLY", [
+    "................",
+    "................",
+    "....##....##....",
+    "...#--#..#--#...",
+    "....##-##-##....",
+    "...##-####-##...",
+    "..##--####--##..",
+    ".+#---####---#+.",
+    ".+#---####---#+.",
+    "..##--####--##..",
+    "...##-####-##...",
+    "....##-##-##....",
+    ".....##++##.....",
+    "......####......",
+    ".......##.......",
+    "................",
+])
+
 
 def render(grid: list[str]) -> Image.Image:
     img = Image.new("RGB", (16, 16), DMG['.'])
