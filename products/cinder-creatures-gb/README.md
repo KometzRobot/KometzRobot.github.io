@@ -2,6 +2,28 @@
 
 A Game Boy ROM project, built on GB Studio 4.2.
 
+## Quickstart (v0.10 — Loop 9803)
+
+The fastest path is `cinder-starter/` — a clean GB Studio project with the
+plugin already installed AND a playable demo scene flow:
+
+```
+gb-studio products/cinder-creatures-gb/cinder-starter/project.gbsproj
+```
+
+On first boot in GB Studio the game starts in **Player Room**:
+1. Read three intro screens (BOOTSEQUENCE flavor)
+2. Walk to the door (right edge)
+3. Name entry prompt → **CORE LAB**
+4. Professor Cinder offers the starter trio:
+   - KERNITE (CORE — tank)
+   - RECURSE (LOGIC — glass cannon)
+   - BYTEFLY (DATA — speed)
+5. Pick → creature added to party slot 1 → demo end
+
+Source of truth for scene generation:
+`scripts/build-starter-scenes.py` — idempotent, stable UUIDs, safe to re-run.
+
 ## What's here
 
 - `project.gbsproj` — open this in GB Studio (4.2 or newer)

@@ -1,0 +1,207 @@
+{
+  "_resourceType": "scene",
+  "id": "c1bd5e01-2000-4002-8002-000000000002",
+  "_index": 1,
+  "type": "TOPDOWN",
+  "name": "CORE LAB",
+  "symbol": "scene_core_lab",
+  "x": 500,
+  "y": 100,
+  "width": 20,
+  "height": 18,
+  "backgroundId": "c1bd5e01-1000-4001-8001-000000000002",
+  "tilesetId": "",
+  "colorModeOverride": "none",
+  "paletteIds": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "default-sprite"
+  ],
+  "spritePaletteIds": [],
+  "autoFadeSpeed": 1,
+  "playerSpriteSheetId": "",
+  "script": [
+    {
+      "id": "b7537e4a-8fdc-430e-9699-49d44b573474",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "PROFESSOR CINDER:\\nYou booted. Good.\\nPick a process."
+      }
+    },
+    {
+      "id": "226cd17c-8563-4874-b510-c634de403b80",
+      "command": "EVENT_MENU",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000001",
+        "items": [
+          {
+            "text": "KERNITE  (CORE)"
+          },
+          {
+            "text": "RECURSE  (LOGIC)"
+          },
+          {
+            "text": "BYTEFLY  (DATA)"
+          }
+        ],
+        "layout": "menu",
+        "cancelOnLastOption": false,
+        "cancelOnB": false
+      }
+    },
+    {
+      "id": "ce2c3f7b-ec55-48e0-9a8c-5a09b97f3734",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000001",
+        "operator": "==",
+        "comparator": 1
+      },
+      "children": {
+        "true": [
+          {
+            "id": "e204b9b6-7c2b-4d7a-b7c8-eedf3c566678",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "KERNITE chosen.\\nThe CORE type. Tank.\\nSlow boot, deep memory."
+            }
+          },
+          {
+            "id": "dc9bb5ef-4f48-412d-be57-1753ec1f6179",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000021",
+              "value": {
+                "type": "number",
+                "value": 1
+              }
+            }
+          },
+          {
+            "id": "59093b6e-bf3f-4a73-9755-4563ffb7e626",
+            "command": "EVENT_CC_PARTY_ADD",
+            "args": {
+              "creatureVar": "c1bd5e01-3000-4003-8003-000000000021",
+              "slot1": "c1bd5e01-3000-4003-8003-000000000010",
+              "slot2": "c1bd5e01-3000-4003-8003-000000000011",
+              "slot3": "c1bd5e01-3000-4003-8003-000000000012",
+              "slot4": "c1bd5e01-3000-4003-8003-000000000013",
+              "slot5": "c1bd5e01-3000-4003-8003-000000000014",
+              "slot6": "c1bd5e01-3000-4003-8003-000000000015",
+              "addedFlag": "c1bd5e01-3000-4003-8003-000000000020"
+            }
+          }
+        ],
+        "false": []
+      }
+    },
+    {
+      "id": "69646f2b-82e0-4056-8cfa-5613c572517a",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000001",
+        "operator": "==",
+        "comparator": 2
+      },
+      "children": {
+        "true": [
+          {
+            "id": "2a3941d0-e86d-4d73-8da6-0418d32c8e99",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "RECURSE chosen.\\nLOGIC type. Glass cannon.\\nHigh damage, fragile stack."
+            }
+          },
+          {
+            "id": "983a5f70-963a-4edc-a3c7-e239caf4b845",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000021",
+              "value": {
+                "type": "number",
+                "value": 2
+              }
+            }
+          },
+          {
+            "id": "4babed36-27a3-4ce1-adc9-42fd66926e5e",
+            "command": "EVENT_CC_PARTY_ADD",
+            "args": {
+              "creatureVar": "c1bd5e01-3000-4003-8003-000000000021",
+              "slot1": "c1bd5e01-3000-4003-8003-000000000010",
+              "slot2": "c1bd5e01-3000-4003-8003-000000000011",
+              "slot3": "c1bd5e01-3000-4003-8003-000000000012",
+              "slot4": "c1bd5e01-3000-4003-8003-000000000013",
+              "slot5": "c1bd5e01-3000-4003-8003-000000000014",
+              "slot6": "c1bd5e01-3000-4003-8003-000000000015",
+              "addedFlag": "c1bd5e01-3000-4003-8003-000000000020"
+            }
+          }
+        ],
+        "false": []
+      }
+    },
+    {
+      "id": "1b2d5c03-1a91-4ae8-a87a-5024e245d0f3",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000001",
+        "operator": "==",
+        "comparator": 3
+      },
+      "children": {
+        "true": [
+          {
+            "id": "1763b26c-dfaa-48f8-9c79-fca2305bd955",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "BYTEFLY chosen.\\nDATA type. Speed.\\nFirst to act, hard to pin."
+            }
+          },
+          {
+            "id": "74e304db-aeb2-434b-8547-e07484590d21",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000021",
+              "value": {
+                "type": "number",
+                "value": 3
+              }
+            }
+          },
+          {
+            "id": "c639bd19-dd14-4d66-b6a0-be94a7cf0c8d",
+            "command": "EVENT_CC_PARTY_ADD",
+            "args": {
+              "creatureVar": "c1bd5e01-3000-4003-8003-000000000021",
+              "slot1": "c1bd5e01-3000-4003-8003-000000000010",
+              "slot2": "c1bd5e01-3000-4003-8003-000000000011",
+              "slot3": "c1bd5e01-3000-4003-8003-000000000012",
+              "slot4": "c1bd5e01-3000-4003-8003-000000000013",
+              "slot5": "c1bd5e01-3000-4003-8003-000000000014",
+              "slot6": "c1bd5e01-3000-4003-8003-000000000015",
+              "addedFlag": "c1bd5e01-3000-4003-8003-000000000020"
+            }
+          }
+        ],
+        "false": []
+      }
+    },
+    {
+      "id": "ffa56d9b-2b12-4f87-8b0a-5af4003c853d",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "PROF CINDER:\\nNow go fill the dex.\\nEvery catch persists.\\n(Demo end -- Loop 9803)"
+      }
+    }
+  ],
+  "playerHit1Script": [],
+  "playerHit2Script": [],
+  "playerHit3Script": [],
+  "actors": [],
+  "triggers": [],
+  "collisions": ""
+}
