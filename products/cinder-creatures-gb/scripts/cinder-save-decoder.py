@@ -33,9 +33,10 @@ COMPANION_PUBLIC_CINDER = REPO_ROOT / "products" / "cinder-anythingllm" / "front
 
 KNOWN_KEYS = {
     "schema_version", "trainer", "playtime_minutes", "current_scene",
-    "party", "dex", "badges", "items", "save_present", "raw_size",
+    "party", "dex", "badges", "items", "save_present", "raw_size", "flags",
 }
 KNOWN_DEX_KEYS = {"caught", "seen"}
+KNOWN_FLAG_KEYS = {"beat_void", "void_byte_resolved", "persist_unlock"}
 VALID_BADGES = {"LOGIC", "MEM", "PROC", "DATA", "CORE"}
 
 
@@ -93,6 +94,14 @@ def parse_shim(shim_bytes: bytes) -> dict:
         bad = [b for b in raw["badges"] if b not in VALID_BADGES]
         if bad:
             raise ValueError(f"unknown badges: {bad} (valid: {sorted(VALID_BADGES)})")
+
+    if "flags" in raw:
+        flags = raw["flags"]
+        if not isinstance(flags, dict):
+            raise ValueError("flags must be an object")
+        unknown_flags = set(flags.keys()) - KNOWN_FLAG_KEYS
+        if unknown_flags:
+            raise ValueError(f"unknown flag keys: {sorted(unknown_flags)}")
 
     payload["save_present"] = bool(raw.get("save_present", True))
     return payload

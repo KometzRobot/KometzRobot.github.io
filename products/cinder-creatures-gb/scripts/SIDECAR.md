@@ -15,7 +15,7 @@ unlock template stays locked.
   that follows the sidecar schema. Use this to exercise unlock templates
   before a real ROM exists.
 
-Seven sample shims live in `samples/`:
+Eight sample shims live in `samples/`:
 
 | File                              | What it exercises                                 |
 |-----------------------------------|---------------------------------------------------|
@@ -25,6 +25,7 @@ Seven sample shims live in `samples/`:
 | `sidecar-shim-ten-caught.json`    | Ten caught — Vault drop zone on Companion Journal |
 | `sidecar-shim-all-badges.json`    | All 5 badges + 20 caught — VESSEL chat mode       |
 | `sidecar-shim-full-dex.json`      | All 56 caught + 5 badges — PROFESSOR CINDER persona |
+| `sidecar-shim-beat-void.json`     | Full dex + `flags.beat_void` — MEMORY VESSEL band   |
 | `sidecar-shim-mid-game.json`      | Two badges + four caught — multiple unlocks       |
 
 ## Quick wire-up

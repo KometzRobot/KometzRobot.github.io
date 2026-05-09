@@ -476,16 +476,43 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     `frontend/src/pages/Cinder/Achievements/index.jsx`,
     `samples/sidecar-shim-full-dex.json`,
     `scripts/SIDECAR.md`.
-27. **Next** — wire the remaining unlock (`beat_void` → persistent memory
-    across USB ejections). Also: replace the `parse_sav` stub with the real
-    GB Studio 4 binary parser once the ROM compiles and emits variable
-    offsets to `build/<name>/build/Sav/data.h`. Vault sealing currently
-    writes to localStorage; swap to vault.js v2 once the wrap-key
-    auto-unlock flow is on the partition. Per-gym intro plates (the
-    title-card the player sees when they first walk into a gym) are the
-    next obvious cc_font_8 surface after the badge case — that's where
-    ARCHIVIST / WARDEN / CONDUCTOR / COURIER / FOREMAN finally show up
-    in-screen.
+27. **Loop 9942** — v0.34 ✅: `beat_void` unlock wired end-to-end. Sixth and
+    final milestone connected. Once `flags.beat_void` is true in the sidecar,
+    a system-level MEMORY VESSEL band renders at the very top of
+    `/settings/cinder/agents` — above PROFESSOR CINDER, because it changes
+    the behavior of every panel below it rather than introducing a seventh
+    voice. The band states the unlock plainly (chat history, journal entries,
+    persona threads now migrate into the encrypted vault on USB unmount and
+    re-mount on the next session), then breaks the contract into four detail
+    rows (Workspaces / Journal / Persona memory / Migration target). The
+    persona definition lives in `frontend/public/cinder/memory-vessel.json`;
+    accent color `#cabba6` reuses the achievement card accent so the unlock
+    visually rhymes with the milestone that earned it. Achievements page
+    flips `beat_void` to `wired: true` with a refreshed unlockNote pointing
+    at the actual UX. New shim `samples/sidecar-shim-beat-void.json` (full
+    dex, all badges, `flags.beat_void = true`, PALLET_D7_BEDROOM_DAWN scene)
+    exercises the panel without a real ROM. SIDECAR.md bumped to eight
+    shims; decoder gains `flags` as a top-level key (validated against
+    `KNOWN_FLAG_KEYS = {beat_void, void_byte_resolved, persist_unlock}`).
+    All six achievement milestones from the design table on line 224 are
+    now `wired: true`. Files:
+    `frontend/public/cinder/memory-vessel.json`,
+    `frontend/src/pages/Cinder/Agents/index.jsx`,
+    `frontend/src/pages/Cinder/Achievements/index.jsx`,
+    `samples/sidecar-shim-beat-void.json`,
+    `scripts/cinder-save-decoder.py`,
+    `scripts/SIDECAR.md`.
+28. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
+    parser once the ROM compiles and emits variable offsets to
+    `build/<name>/build/Sav/data.h`. Vault sealing currently writes to
+    localStorage; swap to vault.js v2 once the wrap-key auto-unlock flow is
+    on the partition (this is what MEMORY VESSEL actually plugs into when
+    the ROM is real). Per-gym intro plates (the title-card the player sees
+    when they first walk into a gym) are the next cc_font_8 surface after
+    the badge case — that's where ARCHIVIST / WARDEN / CONDUCTOR / COURIER
+    / FOREMAN finally show up in-screen. With every milestone's companion-app
+    side wired, the work is now mostly ROM-side: scenes, encounters,
+    balancing, and the actual VOID fight feeling like a fight.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
