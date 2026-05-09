@@ -269,8 +269,37 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     HERMES leader trigger with 3-creature team (REGEXEL/INTGAR/STRTERM),
     entry sign. Leader gate requires VAR_CC_DATA_TRAINERS == 15. Awards DATA
     badge bit (8). Hint to next gym (ATLAS).
-15. **Next** — GYM-CORE (FOREMAN ATLAS, badge CORE bit 16), then final
-    CINDER fight (VOID overwrite-the-save mechanic).
+15. **Loop 9813** — v0.17 ✅: GYM-CORE (FOREMAN ATLAS) playable. Fifth and
+    final gym. Background (cc_gym_core.png — foundry / load-bearing scaffolds,
+    crossed beams, anvil pads, plinth with diagonal nucleus CORE rune), 4
+    FOREMAN-trainer triggers (GIRDER/STRUT/RIVET/BEAM on ARMOTE/RISKIT/
+    CISCOTL/PIPELYNX), FOREMAN ATLAS leader trigger with 5-creature rotation
+    (KERNITE/ANDOWL/BUFFROG/SCHEDOG/GRAFTLE — one of each type, no STAB),
+    status motif ROUND-ROBIN + WEB, entry sign. Leader gate requires
+    VAR_CC_CORE_TRAINERS == 15. Awards CORE badge bit (16). All 5 badges
+    obtainable. Final hint points to VOID at SECTOR-9.
+16. **Loop 9814** — v0.18 ✅: SECTOR-9 / VOID final fight playable. Background
+    (cc_sector9_void.png — DARKEST void space, scattered LIGHTEST static, jagged
+    horizon, vertical corruption stripes, plinth outline only — VOID has no sprite,
+    it is the absence between bytes). Three triggers — entry GATE (refuses entry
+    without VAR_BADGES == 31), SIGN, and the VOID encounter itself.
+    Fight breaks Pokemon's HP-deplete pattern in three phases:
+      - PHASE 1 — READ: VOID reads the player's lead creature backwards; player
+        speaks the name aloud to restore it.
+      - PHASE 2 — WRITE: VOID writes DELETE into a slot; player refuses the move
+        and the slot reverts.
+      - PHASE 3 — ERASE / PRESSURE LOOP: 5 turns of random byte overwrites. Each
+        turn `VAR_VOID_BYTE = random 0..3` branches to one of 4 corruption beats
+        (trainer name / dex flags / party HP / save header), then a recovery
+        beat. `VAR_VOID_TURNS` ticks each iteration. After 5 holds, VOID retreats.
+    Win sets `VAR_CC_VOID_DEFEATED = 1` AND `VAR_CC_PERSIST_UNLOCK = 1`. The
+    second flag is what the companion app reads to enable persistent memory mode
+    across USB ejections — finishing the ROM unlocks a real product feature, not
+    a credits screen. Replay-safe (already-defeated branch skips the fight).
+17. **Next** — companion-app side of the VOID unlock:
+    - `cc-dex-sync.py` reads `VAR_CC_PERSIST_UNLOCK` from the decoded save and
+      flips the corresponding flag the AnythingLLM-fork sidecar respects.
+    - Hall-of-Fame style party snapshot on the journal page when defeated.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 

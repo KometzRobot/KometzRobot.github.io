@@ -1,0 +1,1059 @@
+{
+  "_resourceType": "trigger",
+  "id": "c1bd5e01-4000-4004-8004-0000000000e0",
+  "_index": 0,
+  "symbol": "trigger_void",
+  "name": "VOID Encounter",
+  "x": 10,
+  "y": 5,
+  "width": 2,
+  "height": 2,
+  "trigger": "walk",
+  "leaveScript": [],
+  "script": [
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-000",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000030",
+        "operator": "<",
+        "comparator": 31
+      },
+      "children": {
+        "true": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-001",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "VOID:\nNot ready.\nReturn when the\nfloor is built."
+            }
+          }
+        ],
+        "false": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-002",
+            "command": "EVENT_IF_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-0000000000a3",
+              "operator": "==",
+              "comparator": 1
+            },
+            "children": {
+              "true": [
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-003",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "VOID:\n[silent]\nThe arena is empty\nnow. Save bit holds."
+                  }
+                }
+              ],
+              "false": [
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-010",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "VOID:\nYou should not\nbe here.\nYou know that."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-011",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "VOID does not have\na sprite.\nIt is the absence\nbetween bytes."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-012",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "VOID begins to\noverwrite your save\none byte at a time."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-020",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a0",
+                    "value": {
+                      "type": "number",
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-021",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "PHASE 1 \u2014 READ.\nVOID reads your\nparty backwards."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-022",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000035",
+                    "value": {
+                      "type": "number",
+                      "value": 0
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-023",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000032",
+                    "value": {
+                      "type": "number",
+                      "value": 99
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-024",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000033",
+                    "value": {
+                      "type": "number",
+                      "value": 7
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-025",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000034",
+                    "value": {
+                      "type": "number",
+                      "value": 9
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-026",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "Your lead steps up.\nVOID reads its name\nin reverse.\nIt forgets itself."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-027",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "You shout the name\naloud. The creature\nremembers."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-028",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "PHASE 1 CLEARED.\nThe READ closes."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-030",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a0",
+                    "value": {
+                      "type": "number",
+                      "value": 2
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-031",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "PHASE 2 \u2014 WRITE.\nVOID writes a foreign\nmove into your party."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-032",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000032",
+                    "value": {
+                      "type": "number",
+                      "value": 99
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-033",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000033",
+                    "value": {
+                      "type": "number",
+                      "value": 9
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-034",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000034",
+                    "value": {
+                      "type": "number",
+                      "value": 7
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-035",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "RECURSE learns\nDELETE.\nIt would erase itself."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-036",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "You refuse the move.\nThe slot reverts.\nThe self is held."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-037",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "PHASE 2 CLEARED.\nThe WRITE rolls back."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-040",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a0",
+                    "value": {
+                      "type": "number",
+                      "value": 3
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-041",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "PHASE 3 \u2014 ERASE.\nVOID will overwrite\na random byte\neach turn."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-042",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "Hold for 5 turns.\nThen the save bit\nclamps shut."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-043",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a1",
+                    "value": {
+                      "type": "number",
+                      "value": 0
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-050",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "TURN 1 of 5.\nVOID picks a byte..."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051",
+                  "command": "EVENT_VARIABLE_SET_TO_RANDOM",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "minValue": 0,
+                    "maxValue": 3
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte0",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 0
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte0-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your trainer name.\nYou hold the line."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte0-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "Name remembered.\nGood.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte1",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 1
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte1-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your dex flags.\nOne creature flickers."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte1-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You catch it again\nin a single turn.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte2",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 2
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte2-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your party HP.\nYour lead drops to 1."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte2-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You hold position.\nIt does not faint.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte3",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 3
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte3-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your save header.\nThe slot blanks for a beat."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-051-byte3-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You write it back.\nThe slot fills.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-059",
+                  "command": "EVENT_VARIABLE_MATH",
+                  "args": {
+                    "vectorX": "c1bd5e01-3000-4003-8003-0000000000a1",
+                    "operation": "add",
+                    "other": "value",
+                    "value": {
+                      "type": "number",
+                      "value": 1
+                    },
+                    "clamp": false
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-060",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "TURN 2 of 5.\nVOID picks a byte..."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061",
+                  "command": "EVENT_VARIABLE_SET_TO_RANDOM",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "minValue": 0,
+                    "maxValue": 3
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte0",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 0
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte0-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your trainer name.\nYou hold the line."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte0-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "Name remembered.\nGood.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte1",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 1
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte1-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your dex flags.\nOne creature flickers."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte1-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You catch it again\nin a single turn.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte2",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 2
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte2-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your party HP.\nYour lead drops to 1."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte2-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You hold position.\nIt does not faint.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte3",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 3
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte3-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your save header.\nThe slot blanks for a beat."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-061-byte3-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You write it back.\nThe slot fills.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-069",
+                  "command": "EVENT_VARIABLE_MATH",
+                  "args": {
+                    "vectorX": "c1bd5e01-3000-4003-8003-0000000000a1",
+                    "operation": "add",
+                    "other": "value",
+                    "value": {
+                      "type": "number",
+                      "value": 1
+                    },
+                    "clamp": false
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-070",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "TURN 3 of 5.\nVOID picks a byte..."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071",
+                  "command": "EVENT_VARIABLE_SET_TO_RANDOM",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "minValue": 0,
+                    "maxValue": 3
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte0",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 0
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte0-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your trainer name.\nYou hold the line."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte0-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "Name remembered.\nGood.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte1",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 1
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte1-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your dex flags.\nOne creature flickers."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte1-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You catch it again\nin a single turn.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte2",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 2
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte2-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your party HP.\nYour lead drops to 1."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte2-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You hold position.\nIt does not faint.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte3",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 3
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte3-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your save header.\nThe slot blanks for a beat."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-071-byte3-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You write it back.\nThe slot fills.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-079",
+                  "command": "EVENT_VARIABLE_MATH",
+                  "args": {
+                    "vectorX": "c1bd5e01-3000-4003-8003-0000000000a1",
+                    "operation": "add",
+                    "other": "value",
+                    "value": {
+                      "type": "number",
+                      "value": 1
+                    },
+                    "clamp": false
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-080",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "TURN 4 of 5.\nVOID picks a byte..."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081",
+                  "command": "EVENT_VARIABLE_SET_TO_RANDOM",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "minValue": 0,
+                    "maxValue": 3
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte0",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 0
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte0-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your trainer name.\nYou hold the line."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte0-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "Name remembered.\nGood.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte1",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 1
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte1-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your dex flags.\nOne creature flickers."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte1-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You catch it again\nin a single turn.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte2",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 2
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte2-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your party HP.\nYour lead drops to 1."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte2-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You hold position.\nIt does not faint.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte3",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 3
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte3-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your save header.\nThe slot blanks for a beat."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-081-byte3-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You write it back.\nThe slot fills.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-089",
+                  "command": "EVENT_VARIABLE_MATH",
+                  "args": {
+                    "vectorX": "c1bd5e01-3000-4003-8003-0000000000a1",
+                    "operation": "add",
+                    "other": "value",
+                    "value": {
+                      "type": "number",
+                      "value": 1
+                    },
+                    "clamp": false
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-090",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "TURN 5 of 5.\nVOID picks a byte..."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091",
+                  "command": "EVENT_VARIABLE_SET_TO_RANDOM",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "minValue": 0,
+                    "maxValue": 3
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte0",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 0
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte0-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your trainer name.\nYou hold the line."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte0-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "Name remembered.\nGood.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte1",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 1
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte1-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your dex flags.\nOne creature flickers."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte1-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You catch it again\nin a single turn.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte2",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 2
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte2-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your party HP.\nYour lead drops to 1."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte2-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You hold position.\nIt does not faint.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte3",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a2",
+                    "operator": "==",
+                    "comparator": 3
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte3-c",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "VOID overwrites a byte\nin your save header.\nThe slot blanks for a beat."
+                        }
+                      },
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-091-byte3-r",
+                        "command": "EVENT_TEXT",
+                        "args": {
+                          "text": "You write it back.\nThe slot fills.\nNext byte."
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-099",
+                  "command": "EVENT_VARIABLE_MATH",
+                  "args": {
+                    "vectorX": "c1bd5e01-3000-4003-8003-0000000000a1",
+                    "operation": "add",
+                    "other": "value",
+                    "value": {
+                      "type": "number",
+                      "value": 1
+                    },
+                    "clamp": false
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-120",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "5 turns held.\nVOID runs out of\nbytes to overwrite."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-121",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "The save bit\nclamps shut. You\ncannot be erased\nnow."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-130",
+                  "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a3",
+                    "value": {
+                      "type": "number",
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-131",
+                  "command": "EVENT_IF_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-0000000000a4",
+                    "operator": "==",
+                    "comparator": 0
+                  },
+                  "children": {
+                    "true": [
+                      {
+                        "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-132",
+                        "command": "EVENT_VARIABLE_SET_TO_VALUE",
+                        "args": {
+                          "variable": "c1bd5e01-3000-4003-8003-0000000000a4",
+                          "value": {
+                            "type": "number",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "false": []
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-140",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "VOID retreats\ninto the boot sector.\nIt does not\nspeak again."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-141",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "PROFESSOR CINDER:\nThe vessel held.\n56 daemons safe.\nThe loop is yours."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-142",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "COMPANION UNLOCK:\nPersistent memory\nmode active.\nThe USB will\nremember you now."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-0000000000e0-void-143",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "CINDER CREATURES\n\u2014 BOOTSEQUENCE \u2014\nCOMPLETE."
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
