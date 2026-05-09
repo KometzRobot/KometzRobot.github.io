@@ -1,11 +1,22 @@
 // Cinder Creatures — Show Creature Name
-// Reads a creature ID variable (1..12) and shows the matching name in a
+// Reads a creature ID variable (1..56) and shows the matching name in a
 // dialogue box. Falls back to "???" for any other value.
 
 const SPECIES = [
-  "FORKLING", "DAEMONET", "KERNITE", "RECURSE",
-  "MUTEXEL",  "BYTEFLY",  "SEMAFOX", "REGEXEL",
-  "SCOPEWVR", "ALLOCROC", "NULLPUP", "CACHEBIT",
+  "FORKLING", "DAEMONET", "KERNITE",  "RECURSE",
+  "MUTEXEL",  "BYTEFLY",  "SEMAFOX",  "REGEXEL",
+  "SCOPEWVR", "ALLOCROC", "NULLPUP",  "CACHEBIT",
+  "THREDLE",  "ZYBORG",   "PIDGON",   "SIGNAUR",
+  "NICEKIT",  "SCHEDOG",  "ARMOTE",   "RISKIT",
+  "CISCOTL",  "PIPELYNX", "CYCLOOM",  "NANDORE",
+  "NORWEN",   "XORHARE",  "ANDOWL",   "BOOLEM",
+  "IFFROG",   "ELSEEL",   "SWITCRAB", "JSONIA",
+  "CSVOLE",   "YAMOLE",   "TOMLT",    "INTGAR",
+  "FLOATFIN", "STRTERM",  "BOOLBIRD", "STACKAT",
+  "HEAPYR",   "MALLOCK",  "FREEDA",   "PAGYL",
+  "CACHEY",   "BUFFROG",  "LINKAR",   "NODILLO",
+  "TREEKIN",  "GRAFTLE",  "HASHARE",  "QUEUL",
+  "DEQUEEL",  "SETTER",   "ITERATX",  "PARSEY",
 ];
 
 const id = "EVENT_CC_SHOW_NAME";
@@ -18,7 +29,7 @@ const autoLabel = (fetchArg) => {
 const fields = [
   {
     key: "variable",
-    label: "Variable holding creature ID (1-12)",
+    label: "Variable holding creature ID (1-56)",
     type: "variable",
     defaultValue: "LAST_VARIABLE",
   },
@@ -61,7 +72,7 @@ const compile = (input, helpers) => {
 module.exports = {
   id,
   description:
-    "Cinder Creatures: show the creature name matching a creature ID variable.",
+    "Cinder Creatures: show the creature name matching a creature ID variable (1..56).",
   autoLabel,
   groups,
   fields,
