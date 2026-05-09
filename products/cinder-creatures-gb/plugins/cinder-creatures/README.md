@@ -1,84 +1,104 @@
-# Cinder Creatures - GB Studio plugin v0.3
+# Cinder Creatures - GB Studio plugin v0.4
 
 Drop-in plugin for GB Studio 4.x. Adds:
 
 - **56 CC0 creature sprites** (16x16, GB DMG palette)
-- **7 custom script events** under "Cinder Creatures" sub-group
-- **3 backgrounds** (battle, lab interior, forest overworld) - 160x144 GB-palette
-- **1 tileset** (basic dungeon)
+- **11 custom script events** under "Cinder Creatures" sub-group
+- **6 backgrounds** (battle, lab, forest overworld, Route 1, town, party menu, item bag) — 160x144 GB-palette
+- **2 tilesets** (basic dungeon + overworld 256x256)
 - **5 sound effects** (encounter, hit, crit, capture, faint)
 
-## Install (works in any GB Studio 4.x project)
+## Install — EXACT steps (this is where v0.3 testers got stuck)
 
-1. Open your GB Studio project folder.
-2. If there is no `plugins/` folder next to `project.gbsproj`, create one.
-3. Copy the **`cinder-creatures/`** folder (this folder, not its parent zip) into `plugins/`.
-4. In GB Studio: **File -> Reload Project** (or quit + reopen).
-5. Sprites, backgrounds, sounds appear in their respective panels.
-6. New events appear under "Add Event" -> sub-group **"Cinder Creatures"** inside the Variables and Dialogue groups.
+The plugin folder name MUST be `cinder-creatures` and it MUST sit at:
 
-## Custom events
+```
+YOUR-PROJECT-FOLDER/
+├── project.gbsproj            ← your existing project file
+└── plugins/                   ← if missing, create this folder
+    └── cinder-creatures/      ← THIS folder (the one with plugin.json inside)
+        ├── plugin.json
+        ├── events/
+        ├── sprites/
+        ├── backgrounds/
+        ├── tilesets/
+        ├── sounds/
+        └── data/
+```
 
-| Event | What it does |
-|-------|-------------|
-| Cinder: random encounter | Pick a random creature ID in [min..max] into a variable |
-| Cinder: show name | Show "A wild FORKLING appeared!" from a creature ID variable |
-| Cinder: encounter (combo) | random encounter + show name in one step |
-| Cinder: set stats | Write HP/ATK/DEF into 3 variables from creature ID |
-| Cinder: roll damage | Random damage in [min..max] |
-| Cinder: damage formula | dmg = ATK + rnd(0..variance) - DEF (clamped >= 0) |
-| Cinder: BOSS encounter | Set CINDER boss stats (80/12/8) + intro line |
+Common mistakes:
+- Copying the parent zip folder instead of `cinder-creatures/`
+- Putting `cinder-creatures/` in the project root next to `project.gbsproj` (must be inside `plugins/`)
+- Nesting it twice: `plugins/cinder-creatures/cinder-creatures/...`
 
-## Quick battle wire-up
+After copying, in GB Studio: **File → Reload Project** (or quit + reopen).
+You should see new entries when adding events under sub-group **"Cinder Creatures"**.
+
+## Custom events (11)
+
+| Event | Group | Purpose |
+|-------|-------|---------|
+| Cinder: random encounter | Variables | Pick a random creature ID into a variable |
+| Cinder: show name | Dialogue | Show "A wild FORKLING appeared!" |
+| Cinder: encounter (combo) | Dialogue | random encounter + show name |
+| Cinder: set stats | Variables | Write HP/ATK/DEF from creature ID |
+| Cinder: roll damage | Variables | Random damage in range |
+| Cinder: damage formula | Variables | dmg = ATK + rnd(0..variance) - DEF |
+| Cinder: BOSS encounter | Dialogue | Set CINDER boss stats + intro |
+| Cinder: party add | Variables | Add caught creature to next empty party slot |
+| Cinder: capture roll | Variables | Calculate capture success based on HP + base rate |
+| Cinder: heal party | Variables | Restore HP variables to max (Cinder Center) |
+| Cinder: item give | Variables | Add to item count, capped at 99 |
+
+## Quick wire-up: full encounter -> capture -> party
 
 ```
 Cinder: random encounter 1..12 -> $foeId$
-Cinder: show name from $foeId$
 Cinder: set stats from $foeId$ -> $foeHp$ $foeAtk$ $foeDef$
+$foeMaxHp$ = $foeHp$
+Cinder: show name from $foeId$
 
-# (player's loop)
+# (battle loop here)
 Cinder: damage formula $playerAtk$ + rnd(0..4) - $foeDef$ -> $hit$
 $foeHp$ -= $hit$
-If $foeHp$ <= 0 -> "FORKLING fainted!"
+
+# After weakening, attempt capture:
+Cinder: capture roll baseRate=30 curr=$foeHp$ max=$foeMaxHp$ -> $caught$
+If $caught$ == 1:
+  Cinder: party add $foeId$ to slots $p1$..$p6$ flag=$added$
+  If $added$ == 1: dialogue "Caught FORKLING!"
+  Else: dialogue "Party full!"
 ```
+
+## Backgrounds reference
+
+- `cc_battle_bg.png` — battle scene
+- `cc_lab_bg.png` — Cinder lab interior
+- `cc_overworld_bg.png` — generic forest
+- `cc_route1_bg.png` — Route 1 with grass + path + sign + fence (NEW v0.4)
+- `cc_town_bg.png` — Pallet-style town with two houses (NEW v0.4)
+- `cc_party_bg.png` — party menu with 6 slot frame (NEW v0.4)
+- `cc_bag_bg.png` — item bag screen (NEW v0.4)
+
+## Tilesets
+
+- `cc_tileset.png` — basic dungeon
+- `cc_overworld_tileset.png` — 256x256 (32x32 grid of 8x8 tiles): grass variants,
+  paths, trees, fence, water (8 anim frames), sign, door, house wall + roof (NEW v0.4)
 
 ## Sprite naming
 
 Sprites are `creature_01.png`..`creature_56.png`. The lookup table in
 `data/creatures.json` maps each ID to its name and stats.
 
-## Species roster (1..56)
+## Roster
 
-Tier 1 (default encounter pool 1..12):
-
-| ID | Name | Type | HP | ATK | DEF |
-|---:|------|------|---:|----:|----:|
-| 1 | FORKLING | PROC | 18 | 6 | 4 |
-| 2 | DAEMONET | PROC | 22 | 5 | 5 |
-| 3 | KERNITE | CORE | 30 | 4 | 8 |
-| 4 | RECURSE | LOGIC | 16 | 9 | 3 |
-| 5 | MUTEXEL | LOGIC | 20 | 6 | 6 |
-| 6 | BYTEFLY | DATA | 12 | 4 | 2 |
-| 7 | SEMAFOX | LOGIC | 19 | 7 | 4 |
-| 8 | REGEXEL | DATA | 17 | 7 | 3 |
-| 9 | SCOPEWVR | MEM | 21 | 5 | 6 |
-| 10 | ALLOCROC | MEM | 28 | 8 | 5 |
-| 11 | NULLPUP | MEM | 14 | 3 | 2 |
-| 12 | CACHEBIT | DATA | 16 | 5 | 4 |
-
-Tiers 2+: see `data/creatures.json`.
-
-Boss: **CINDER** (CORE, 80/12/8) - "the system itself, finally turned around."
-
-## Troubleshooting
-
-- **Events don't appear**: GB Studio must be reloaded (File -> Reload Project). If still missing, check the developer console (View -> Developer Tools) for syntax errors in the events folder.
-- **Sprites don't appear**: GB Studio scans plugins on project open. Make sure the folder is named exactly `cinder-creatures/` and lives directly inside `plugins/`.
-- **No sub-group "Cinder Creatures"**: events use `subGroups` which requires GB Studio >= 4.0.0. Older versions show events under their parent group with no sub-grouping.
+See `data/creatures.json` for the full 56-creature roster (name, type, HP, ATK, DEF).
+Tier 1 starters (1..12) are balanced for early-game encounters; tier 2 (13..30) for
+mid-game; tier 3 (31..56) for late-game including the CINDER boss at slot 56.
 
 ## License
 
-Sprites: CC0 (derived from "50+ Monsters Pack 2D" by isaiah658 on
-OpenGameArt, recolored to GB DMG palette).
-Sounds & backgrounds: CC0.
-Code & data: MIT.
+- All event code: MIT (Meridian / Joel Kometz)
+- Sprites and tilesets: CC0 (free for any use, no attribution required)
+- Sound effects: CC0
