@@ -123,13 +123,18 @@ boots. The companion app and the GB ROM share the same vessel.
 ## Build order (multi-loop)
 
 1. **Loop 9710** — title screen ✅ + this design doc + starter definition + decoder stub
-2. **Loop 9711** — Player Room scene (160×144 bg + intro dialog Professor Cinder)
-3. **Loop 9712** — CORE LAB scene + starter selection (3-creature pick)
-4. **Loop 9713** — PALLET-D7 town tilemap + 4 NPCs
-5. **Loop 9714** — ROUTE 0x01 + first wild encounter using existing battle events
-6. **Loop 9715** — HEAP-CITY (PokéMart equivalent) + heal point
-7. **Loop 9716** — GYM-LOGIC (Eos) — first gym, 4 trainers + leader fight
-8. **Loop 9717** — Companion app save-decoder integration
+2. **Loop 9713** — v0.8: integrate Joel's downloaded asset packs ✅
+   - 4 trainer-portrait BGs (cc_trainer_elder/rival/prof/nurse) from Oval Portraits pack
+   - cc_battle_arena BG from K's Turn-Based Battle pack
+   - cc_gameover BG from K's pack
+   - 2 new events: `Cinder: show dex entry` + `Cinder: trainer challenge intro`
+3. **Loop 9714** — Player Room scene (160×144 bg + intro dialog Professor Cinder)
+4. **Loop 9715** — CORE LAB scene + starter selection (3-creature pick)
+5. **Loop 9716** — PALLET-D7 town tilemap + 4 NPCs
+6. **Loop 9717** — ROUTE 0x01 + first wild encounter using existing battle events
+7. **Loop 9718** — HEAP-CITY (PokéMart equivalent) + heal point
+8. **Loop 9719** — GYM-LOGIC (Eos) — first gym, 4 trainers + leader fight
+9. **Loop 9720** — Companion app save-decoder integration
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
