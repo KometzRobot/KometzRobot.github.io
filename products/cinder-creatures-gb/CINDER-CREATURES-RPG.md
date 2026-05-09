@@ -361,9 +361,27 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     (player save state shouldn't follow the branch). README at
     `scripts/SIDECAR.md`. The biggest lever called out in the v0.26 next-step
     is now pulled — unlocks fire on demand.
-21. **Next** — wire the remaining five unlocks (first_badge → persona theme,
-    ten_caught → vault widget on journal, all_badges → VESSEL chat mode,
-    full_dex → PROFESSOR CINDER persona, beat_void → persistent memory).
+21. **Loop 9897** — v0.28 ✅: `first_badge` unlock wired end-to-end. The
+    Cinder companion app's Agents page (`/settings/cinder/agents`) now reads
+    `save.badges[0]` from the sidecar and surfaces the corresponding gym
+    leader as an "Earned in Cinder Creatures" persona panel above the regular
+    agent grid. Five personas live in `frontend/public/cinder/gym-personas.json`
+    (LOGIC→EOS, MEM→SOMA, PROC→TEMPO, DATA→HERMES, CORE→ATLAS) — each card
+    has a job title, a tagline, a one-line voice description, and a system
+    prompt that holds the agent's cadence in character. Click "Use this voice"
+    and a workspace is created with that persona's prompt loaded. If no badge
+    is earned yet, a dashed-border locked card explains the unlock criteria.
+    Achievements page now shows `first_badge` as `wired` instead of
+    `reflected`. New shim `samples/sidecar-shim-first-badge.json` (1 LOGIC
+    badge, 2 creatures) lets the panel be exercised without a real ROM. SIDECAR.md
+    bumped to four shims. Files:
+    `frontend/public/cinder/gym-personas.json`,
+    `frontend/src/pages/Cinder/Agents/index.jsx`,
+    `frontend/src/pages/Cinder/Achievements/index.jsx`,
+    `samples/sidecar-shim-first-badge.json`.
+22. **Next** — wire the remaining four unlocks (ten_caught → vault widget on
+    journal, all_badges → VESSEL chat mode, full_dex → PROFESSOR CINDER
+    persona, beat_void → persistent memory).
     Also: replace the `parse_sav` stub with the real GB Studio 4 binary
     parser once the ROM compiles and emits variable offsets to
     `build/<name>/build/Sav/data.h`.
