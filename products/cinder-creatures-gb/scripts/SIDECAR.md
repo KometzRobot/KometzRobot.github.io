@@ -21,7 +21,7 @@ Eight sample shims live in `samples/`:
 |-----------------------------------|---------------------------------------------------|
 | `sidecar-shim-empty.json`         | No save — every template should stay locked       |
 | `sidecar-shim-first-catch.json`   | `dex.caught.length == 1` — first-catch template   |
-| `sidecar-shim-first-badge.json`   | One LOGIC badge — earns ARCHIVIST EOS persona     |
+| `sidecar-shim-first-badge.json`   | One LOGIC badge — earns ARCHIVIST PYRE persona     |
 | `sidecar-shim-ten-caught.json`    | Ten caught — Vault drop zone on Companion Journal |
 | `sidecar-shim-all-badges.json`    | All 5 badges + 20 caught — VESSEL chat mode       |
 | `sidecar-shim-full-dex.json`      | All 56 caught + 5 badges — PROFESSOR CINDER persona |

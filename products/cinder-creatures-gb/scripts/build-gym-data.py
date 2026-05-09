@@ -84,7 +84,7 @@ def build_gym_bg():
       - North wall: parcel grid (small cell stacks)
       - E/W: pneumatic tubes (vertical pipes with capsule blips)
       - Floor: 4 sorting tables (square pads with rune)
-      - Hub (north center): HERMES's console — wide dais with stacked-dot rune
+      - Hub (north center): WICK's console — wide dais with stacked-dot rune
       - South: entry door
     """
     W, H = 160, 144
@@ -121,7 +121,7 @@ def build_gym_bg():
     d.line((64, H - 16, 95, H - 16), fill=DARKEST)
     d.rectangle((78, H - 12, 81, H - 4), fill=DARK)
 
-    # HERMES's console — wide dais, stacked-dot rune (DATA signature)
+    # WICK's console — wide dais, stacked-dot rune (DATA signature)
     px, py = 56, 22
     d.rectangle((px, py, px + 47, py + 9), fill=DARKEST)
     d.rectangle((px + 2, py + 2, px + 45, py + 7), fill=DARK)
@@ -201,7 +201,7 @@ def trainer_script(idx, trg_id):
         "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
         "atkVar": ID_VAR_OPP_ATK, "defVar": ID_VAR_OPP_DEF,
     }))
-    # HERMES-flavored fight beats — swarm / multi-hit / RNG
+    # WICK-flavored fight beats — swarm / multi-hit / RNG
     s.append(text(eid(5), f"You attack.\n{cname} forks into\nthree copies."))
     s.append(text(eid(6), f"{cname} inflicts\nSWARM. Three hits."))
     s.append(text(eid(7), f"You hit the broadcast.\n{cname} fainted."))
@@ -391,7 +391,7 @@ def main():
     # Pads at (32,80),(64,80),(96,80),(128,80) in pixels
     # Tiles (8px): (4,10),(8,10),(12,10),(16,10). Trigger size 2x2 tiles.
     pads_tile = [(4, 10), (8, 10), (12, 10), (16, 10)]
-    leader_tile = (10, 4)   # in front of HERMES's console
+    leader_tile = (10, 4)   # in front of WICK's console
     riddle_tile = (9, 16)   # near south door
 
     trigger_files = []

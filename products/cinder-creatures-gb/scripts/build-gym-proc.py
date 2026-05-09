@@ -195,7 +195,7 @@ def trainer_script(idx, trg_id):
         "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
         "atkVar": ID_VAR_OPP_ATK, "defVar": ID_VAR_OPP_DEF,
     }))
-    # TEMPO-flavored fight beats — fast, interrupt-heavy
+    # HUSKE-flavored fight beats — fast, interrupt-heavy
     s.append(text(eid(5), f"You attack.\n{cname} ducks the\nfirst beat."))
     s.append(text(eid(6), f"{cname} inflicts\nSTUN. You skip a turn."))
     s.append(text(eid(7), f"You catch the rhythm.\n{cname} fainted."))

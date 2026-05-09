@@ -16,7 +16,7 @@ Layout (160x144, 4-shade DMG):
                LOGIC / MEM / PROC top, DATA / CORE bottom
   Row 130-137: footer "BOOTSEQUENCE" (or CC_VERSION_BAND env)
 
-Per-gym title (ARCHIVIST/WARDEN/etc) is *not* drawn in the case — at
+Per-gym title (AUDITOR/KEEPER/etc) is *not* drawn in the case — at
 8px×9chars it overflows the slot, and the type rune already carries the
 brand role. Title text reappears on the per-gym intro plate (next loop).
 
@@ -42,11 +42,11 @@ PAL = {
 W, H = 160, 144
 
 GYMS = [
-    {"bit": 1,  "type": "LOGIC", "title": "ARCHIVIST", "name": "EOS"},
-    {"bit": 2,  "type": "MEM",   "title": "WARDEN",    "name": "SOMA"},
-    {"bit": 4,  "type": "PROC",  "title": "CONDUCTOR", "name": "TEMPO"},
-    {"bit": 8,  "type": "DATA",  "title": "COURIER",   "name": "HERMES"},
-    {"bit": 16, "type": "CORE",  "title": "FOREMAN",   "name": "ATLAS"},
+    {"bit": 1,  "type": "LOGIC", "title": "AUDITOR", "name": "PYRE"},
+    {"bit": 2,  "type": "MEM",   "title": "KEEPER",  "name": "KILN"},
+    {"bit": 4,  "type": "PROC",  "title": "FOREMAN", "name": "HUSKE"},
+    {"bit": 8,  "type": "DATA",  "title": "CARRIER", "name": "WICK"},
+    {"bit": 16, "type": "CORE",  "title": "STOKER",  "name": "HEARTH"},
 ]
 
 

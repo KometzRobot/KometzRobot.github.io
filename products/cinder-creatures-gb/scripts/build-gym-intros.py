@@ -5,7 +5,7 @@ Build the 5 per-gym INTRO PLATES at 160x144 GB DMG.
 v0.35 Loop 9944 — picks up the "Next" line from CINDER-CREATURES-RPG.md
 section 27: per-gym intro plates are the next cc_font_8 surface after
 the badge case, the title-card the player sees when they first walk into
-a gym. This is where ARCHIVIST / WARDEN / CONDUCTOR / COURIER / FOREMAN
+a gym. This is where AUDITOR / KEEPER / FOREMAN / CARRIER / STOKER
 finally show up in-screen instead of only on the world map.
 
 One PNG per gym, all rendered with cc_font_8 + the same type-rune
@@ -16,8 +16,8 @@ Layout (160x144, 4-shade DMG):
   Row 1-8    : "GYM-<TYPE>" wordmark, top-centered (cc_font_8)
   Row 12-13  : ember bar (matches title + badge case)
   Row 24-55  : 32x32 type rune, centered (4x the bestiary rune)
-  Row 64-71  : TITLE (cc_font_8) — ARCHIVIST / WARDEN / etc
-  Row 76-83  : NAME (cc_font_8) — EOS / SOMA / TEMPO / HERMES / ATLAS
+  Row 64-71  : TITLE (cc_font_8) — AUDITOR / KEEPER / etc
+  Row 76-83  : NAME (cc_font_8) — PYRE / KILN / HUSKE / WICK / HEARTH
   Row 96-103 : short flavor tag (cc_font_8) — leader's combat motif
   Row 130-137: BOOTSEQUENCE band (CC_VERSION_BAND env)
 
@@ -42,15 +42,15 @@ PAL = {
 W, H = 160, 144
 
 GYMS = [
-    {"file": "logic", "type": "LOGIC", "title": "ARCHIVIST", "name": "EOS",
+    {"file": "logic", "type": "LOGIC", "title": "AUDITOR", "name": "PYRE",
      "tag": "CALM. RIDDLING."},
-    {"file": "mem",   "type": "MEM",   "title": "WARDEN",    "name": "SOMA",
+    {"file": "mem",   "type": "MEM",   "title": "KEEPER",  "name": "KILN",
      "tag": "PATIENT. SLOW."},
-    {"file": "proc",  "type": "PROC",  "title": "CONDUCTOR", "name": "TEMPO",
+    {"file": "proc",  "type": "PROC",  "title": "FOREMAN", "name": "HUSKE",
      "tag": "RAPID. CLIPPED."},
-    {"file": "data",  "type": "DATA",  "title": "COURIER",   "name": "HERMES",
+    {"file": "data",  "type": "DATA",  "title": "CARRIER", "name": "WICK",
      "tag": "RESTLESS. LOUD."},
-    {"file": "core",  "type": "CORE",  "title": "FOREMAN",   "name": "ATLAS",
+    {"file": "core",  "type": "CORE",  "title": "STOKER",  "name": "HEARTH",
      "tag": "QUIET. LAST TO FOLD."},
 ]
 

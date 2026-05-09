@@ -73,8 +73,8 @@ TRAINERS = [
      "Span clear.\nClimb up.", 8),
 ]
 
-# Leader team: rotation of all 5 types — that's ATLAS's signature.
-# Tank-leaning picks across the chart, no creature gets STAB from ATLAS.
+# Leader team: rotation of all 5 types — that's HEARTH's signature.
+# Tank-leaning picks across the chart, no creature gets STAB from HEARTH.
 LEADER_TEAM = [
     (3,  "KERNITE",  "CORE"),    # 30/4/8 — opens like a wall
     (27, "ANDOWL",   "LOGIC"),   # 19/6/5 — patient AND-gate
@@ -91,7 +91,7 @@ def build_gym_bg():
       - North wall: scaffolding lattice (heavy crossed beams)
       - E/W: load-bearing pillars (thick verticals with bolt rivets)
       - Floor: 4 anvil pads (squat squares with diagonal nucleus rune)
-      - Hub (north center): ATLAS's plinth — wide low platform with diagonal CORE rune
+      - Hub (north center): HEARTH's plinth — wide low platform with diagonal CORE rune
       - South: entry door
     """
     W, H = 160, 144
@@ -132,7 +132,7 @@ def build_gym_bg():
     d.line((64, H - 16, 95, H - 16), fill=DARKEST)
     d.rectangle((78, H - 12, 81, H - 4), fill=DARK)
 
-    # ATLAS's plinth — wide low dais, diagonal nucleus CORE rune
+    # HEARTH's plinth — wide low dais, diagonal nucleus CORE rune
     px, py = 56, 22
     d.rectangle((px, py, px + 47, py + 11), fill=DARKEST)
     d.rectangle((px + 2, py + 2, px + 45, py + 9), fill=DARK)
@@ -211,7 +211,7 @@ def trainer_script(idx, trg_id):
         "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
         "atkVar": ID_VAR_OPP_ATK, "defVar": ID_VAR_OPP_DEF,
     }))
-    # ATLAS-flavored beats — slow, durable, last-to-fold.
+    # HEARTH-flavored beats — slow, durable, last-to-fold.
     s.append(text(eid(5), f"You attack.\n{cname} braces.\nThe blow does not move it."))
     s.append(text(eid(6), f"{cname} returns one hit.\nIt lands twice as hard."))
     s.append(text(eid(7), f"You wear it down.\n{cname} fainted."))
@@ -411,7 +411,7 @@ def main():
     # Pads at (32,80),(64,80),(96,80),(128,80) in pixels
     # Tiles (8px): (4,10),(8,10),(12,10),(16,10). Trigger size 2x2 tiles.
     pads_tile = [(4, 10), (8, 10), (12, 10), (16, 10)]
-    leader_tile = (10, 4)   # in front of ATLAS's plinth
+    leader_tile = (10, 4)   # in front of HEARTH's plinth
     riddle_tile = (9, 16)   # near south door
 
     trigger_files = []

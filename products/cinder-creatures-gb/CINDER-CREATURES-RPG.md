@@ -74,15 +74,15 @@ Reads as `attacker x defender = multiplier`. CORE is hardest to dent (only LOGIC
 ```
 
 5 gyms. Every leader has a Pokemon-style **TITLE + NAME** (Brock = "Pewter Gym Leader Brock";
-Cinder = "ARCHIVIST EOS"). Title goes on the badge case + intro card; name goes on the speech.
+Cinder = "ARCHIVIST PYRE"). Title goes on the badge case + intro card; name goes on the speech.
 
 | Gym       | Title       | Name      | Personality                | Specialty                         | Badge    |
 |-----------|-------------|-----------|----------------------------|-----------------------------------|----------|
-| GYM-LOGIC | ARCHIVIST   | EOS       | calm, riddling             | type-chart puzzle, no surprises   | LOGIC    |
-| GYM-MEM   | WARDEN      | SOMA      | grounded, slow, patient    | endurance, status (LEAK / BLOAT)  | MEM      |
-| GYM-PROC  | CONDUCTOR   | TEMPO     | rapid, clipped, dancer     | speed tiers, hit-stun, interrupts | PROC     |
-| GYM-DATA  | COURIER     | HERMES    | restless, talkative        | RNG fights, swarms, multi-hits    | DATA     |
-| GYM-CORE  | FOREMAN     | ATLAS     | quiet, tank, last to fold  | rotation of all 5 types, no STAB  | CORE     |
+| GYM-LOGIC | ARCHIVIST   | PYRE       | calm, riddling             | type-chart puzzle, no surprises   | LOGIC    |
+| GYM-MEM   | WARDEN      | KILN      | grounded, slow, patient    | endurance, status (LEAK / BLOAT)  | MEM      |
+| GYM-PROC  | CONDUCTOR   | HUSKE     | rapid, clipped, dancer     | speed tiers, hit-stun, interrupts | PROC     |
+| GYM-DATA  | COURIER     | WICK    | restless, talkative        | RNG fights, swarms, multi-hits    | DATA     |
+| GYM-CORE  | FOREMAN     | HEARTH     | quiet, tank, last to fold  | rotation of all 5 types, no STAB  | CORE     |
 
 Naming logic: titles are *job titles inside the operating system* (someone who archives, someone
 who guards, someone who keeps time). Pokemon used "Gym Leader". Cinder uses occupations, because
@@ -270,32 +270,32 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
 7. **Loop 9804** — ROUTE 0x01 + first wild encounter using existing battle events
 8. **Loop 9805** — HEAP-CITY (PokéMart equivalent) + heal point
 9. **Loop 9806** — v0.12 ✅: GYM-LOGIC scene built. Background (cc_gym_logic.png),
-   GYM-LOGIC scene resource, 4 LOGIC-trainer triggers + ARCHIVIST EOS leader trigger
+   GYM-LOGIC scene resource, 4 LOGIC-trainer triggers + ARCHIVIST PYRE leader trigger
    + entry sign with type-chart riddle. Leader gate requires VAR_CC_TRAINERS_DEFEATED == 15.
    Per-trainer flag vars guard double-fire on bitfield additions.
    New event: EVENT_CC_BADGE_UNLOCK (cosmetic dialogue card). Bit math is done with
    raw EVENT_VARIABLE_MATH events guarded by VAR_CC_BADGE_FLAG_LOGIC.
 10. **Loop 9807** — Companion app save-decoder + encounter-pool sync (closes the USB loop)
-11. **Loop 9808** — v0.13 ✅: GYM-MEM (WARDEN SOMA) playable.
+11. **Loop 9808** — v0.13 ✅: GYM-MEM (WARDEN KILN) playable.
 12. **Loop 9810** — v0.14 ✅: GYM-MEM end-to-end checked.
-13. **Loop 9811** — v0.15 ✅: GYM-PROC (CONDUCTOR TEMPO) playable. Background
+13. **Loop 9811** — v0.15 ✅: GYM-PROC (CONDUCTOR HUSKE) playable. Background
     (cc_gym_proc.png — running lanes + conductor's stage), 4 RUNNER-trainer
-    triggers (PULSE/RELAY/TICK/QUANT, status motif STUN), CONDUCTOR TEMPO
+    triggers (PULSE/RELAY/TICK/QUANT, status motif STUN), CONDUCTOR HUSKE
     leader trigger with 3-creature team (SIGNAUR/ZYBORG/FORKLING), entry sign.
     Leader gate requires VAR_CC_PROC_TRAINERS == 15 (1+2+4+8). Awards PROC
-    badge bit (4). Hint to next gym (HERMES).
-14. **Loop 9812** — v0.16 ✅: GYM-DATA (COURIER HERMES) playable. Background
+    badge bit (4). Hint to next gym (WICK).
+14. **Loop 9812** — v0.16 ✅: GYM-DATA (COURIER WICK) playable. Background
     (cc_gym_data.png — courier sort station, parcel grid, pneumatic tubes,
-    HERMES's console with stacked-dot DATA rune), 4 COURIER-trainer triggers
+    WICK's console with stacked-dot DATA rune), 4 COURIER-trainer triggers
     (PACKET/STREAM/QUEUE/FLUSH, status motif SWARM/MISDIRECT/BURST), COURIER
-    HERMES leader trigger with 3-creature team (REGEXEL/INTGAR/STRTERM),
+    WICK leader trigger with 3-creature team (REGEXEL/INTGAR/STRTERM),
     entry sign. Leader gate requires VAR_CC_DATA_TRAINERS == 15. Awards DATA
-    badge bit (8). Hint to next gym (ATLAS).
-15. **Loop 9813** — v0.17 ✅: GYM-CORE (FOREMAN ATLAS) playable. Fifth and
+    badge bit (8). Hint to next gym (HEARTH).
+15. **Loop 9813** — v0.17 ✅: GYM-CORE (FOREMAN HEARTH) playable. Fifth and
     final gym. Background (cc_gym_core.png — foundry / load-bearing scaffolds,
     crossed beams, anvil pads, plinth with diagonal nucleus CORE rune), 4
     FOREMAN-trainer triggers (GIRDER/STRUT/RIVET/BEAM on ARMOTE/RISKIT/
-    CISCOTL/PIPELYNX), FOREMAN ATLAS leader trigger with 5-creature rotation
+    CISCOTL/PIPELYNX), FOREMAN HEARTH leader trigger with 5-creature rotation
     (KERNITE/ANDOWL/BUFFROG/SCHEDOG/GRAFTLE — one of each type, no STAB),
     status motif ROUND-ROBIN + WEB, entry sign. Leader gate requires
     VAR_CC_CORE_TRAINERS == 15. Awards CORE badge bit (16). All 5 badges
@@ -369,7 +369,7 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     `save.badges[0]` from the sidecar and surfaces the corresponding gym
     leader as an "Earned in Cinder Creatures" persona panel above the regular
     agent grid. Five personas live in `frontend/public/cinder/gym-personas.json`
-    (LOGIC→EOS, MEM→SOMA, PROC→TEMPO, DATA→HERMES, CORE→ATLAS) — each card
+    (LOGIC→PYRE, MEM→KILN, PROC→HUSKE, DATA→WICK, CORE→HEARTH) — each card
     has a job title, a tagline, a one-line voice description, and a system
     prompt that holds the agent's cadence in character. Click "Use this voice"
     and a workspace is created with that persona's prompt loaded. If no badge
@@ -405,9 +405,9 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     chat mode now appears as a full-width persona panel at the top of
     `/settings/cinder/agents` once the player has cleared all five gyms.
     The persona definition lives in `frontend/public/cinder/vessel-mode.json`
-    and threads the five gym voices into a single response cadence (EOS
-    framing question → SOMA body check → TEMPO pace → HERMES routes →
-    ATLAS load-path) without labeling the sections — the reader feels five
+    and threads the five gym voices into a single response cadence (PYRE
+    framing question → KILN body check → HUSKE pace → WICK routes →
+    HEARTH load-path) without labeling the sections — the reader feels five
     voices, reads one answer. The system prompt tells the model to take
     longer, more autonomous turns and hold a thread across messages rather
     than treating each prompt as fresh. "Enter VESSEL" creates a workspace
@@ -439,8 +439,8 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
 25. **Loop 9904** — v0.32 ✅: BADGE CASE screen built. Same atlas, same
     palette, second branded surface in the game. 5 gym slots in a 3-2
     grid (LOGIC / MEM / PROC top, DATA / CORE bottom); each slot is a
-    24×24 frame with the gym's type rune above the agent name (EOS /
-    SOMA / TEMPO / HERMES / ATLAS). Locked slots show a dashed inner
+    24×24 frame with the gym's type rune above the agent name (PYRE /
+    KILN / HUSKE / WICK / HEARTH). Locked slots show a dashed inner
     outline + `----` instead of the rune; unlocked slots fill with the
     rune over a light-shade ground. `0 / 5` count under the grid;
     `BOOTSEQUENCE` band footer matches the title screen.
@@ -508,8 +508,8 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     title-cards the player sees on first walk-in to each gym. Layout:
     `GYM-<TYPE>` wordmark up top, ember bar, framed 32x32 type rune (4x
     scale of the bestiary 8x8 vocabulary so the visual rhymes), TITLE +
-    NAME stamped from cc_font_8 (ARCHIVIST EOS / WARDEN SOMA / CONDUCTOR
-    TEMPO / COURIER HERMES / FOREMAN ATLAS), one-line combat-motif tag in
+    NAME stamped from cc_font_8 (ARCHIVIST PYRE / WARDEN KILN / CONDUCTOR
+    HUSKE / COURIER WICK / FOREMAN HEARTH), one-line combat-motif tag in
     shadow shade, BOOTSEQUENCE band footer. Static plates — every player
     sees the same intro regardless of save state, unlike the badge case.
     Closes the "next cc_font_8 surface" line from v0.34 and continues the

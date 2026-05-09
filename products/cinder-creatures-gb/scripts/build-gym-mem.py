@@ -199,7 +199,7 @@ def trainer_script(idx, trg_id):
         "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
         "atkVar": ID_VAR_OPP_ATK, "defVar": ID_VAR_OPP_DEF,
     }))
-    # SOMA-flavored fight beats — slow, status-heavy
+    # KILN-flavored fight beats — slow, status-heavy
     s.append(text(eid(5), f"You attack.\n{cname} takes it\nin stride."))
     s.append(text(eid(6), f"{cname} inflicts\nLEAK. Slow drain."))
     s.append(text(eid(7), f"You press through.\n{cname} fainted."))
