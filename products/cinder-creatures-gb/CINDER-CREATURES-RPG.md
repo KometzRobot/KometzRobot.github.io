@@ -348,13 +348,25 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     unlocks are connected vs only displayed) is visible at a glance.
     Files: `frontend/src/pages/Cinder/Journal/index.jsx`,
     `frontend/src/pages/Cinder/Achievements/index.jsx`.
-20. **Next** — wire the remaining five unlocks (first_badge → persona theme,
+20. **Loop 9896** — v0.27 ✅: Save sidecar emitter shipped. `scripts/cinder-save-decoder.py`
+    grew a `--shim` mode that reads a hand-authored sidecar JSON and writes
+    the live `/cinder/cinder-creatures.json` consumed by the React app.
+    Three sample shims (`samples/sidecar-shim-empty.json`,
+    `sidecar-shim-first-catch.json`, `sidecar-shim-mid-game.json`) cover the
+    locked / first-unlock / mid-game states so the wired Journal panel can be
+    exercised before a real ROM exists. Strict schema validation in
+    `parse_shim` rejects unknown keys, bad badges, and non-int dex IDs so a
+    typo never silently disables a template gate. Default `--out` points at
+    the AnythingLLM-fork public folder; the emitted JSON is gitignored
+    (player save state shouldn't follow the branch). README at
+    `scripts/SIDECAR.md`. The biggest lever called out in the v0.26 next-step
+    is now pulled — unlocks fire on demand.
+21. **Next** — wire the remaining five unlocks (first_badge → persona theme,
     ten_caught → vault widget on journal, all_badges → VESSEL chat mode,
     full_dex → PROFESSOR CINDER persona, beat_void → persistent memory).
-    Also: ship the save sidecar — `cinder-save-decoder.py` exists as a stub
-    but nothing currently emits `/cinder/cinder-creatures.json`, so unlocks
-    only fire if a sidecar is hand-placed. That's the single biggest lever
-    for actually exercising any of this.
+    Also: replace the `parse_sav` stub with the real GB Studio 4 binary
+    parser once the ROM compiles and emits variable offsets to
+    `build/<name>/build/Sav/data.h`.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
