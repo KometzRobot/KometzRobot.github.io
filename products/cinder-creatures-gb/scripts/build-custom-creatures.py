@@ -244,6 +244,30 @@ CUSTOM[5] = ("MUTEXEL", [
     "......####......",
 ])
 
+# id 2 — DAEMONET (PROC, common, FORKLING's shadow companion). "Runs in the
+# background." Multi-eyed lurker with four splayed legs — reads as a hovering
+# watcher: three eyes across the top, three down the middle of the body,
+# central pip suggesting a process id. Same head silhouette family as FORKLING
+# so they share a pen.
+CUSTOM[2] = ("DAEMONET", [
+    "................",
+    ".....#####......",
+    "....#-----#.....",
+    "...#--+++--#....",
+    "...#-+###+-#....",
+    "..#--#-#-#--#...",
+    "..#--#####--#...",
+    "..#--#-#-#--#...",
+    "..#---+++---#...",
+    "..#----+----#...",
+    "...#--###--#....",
+    "....##---##.....",
+    "...#.#---#.#....",
+    "..#..#---#..#...",
+    "..#.........#...",
+    "................",
+])
+
 # id 11 — NULLPUP (BYTEFLY -> ). Type-shift DATA -> MEM. "A pointer to
 # nothing." Pup-shaped four-leg body, head is a hollow circle (empty addr).
 CUSTOM[11] = ("NULLPUP", [
