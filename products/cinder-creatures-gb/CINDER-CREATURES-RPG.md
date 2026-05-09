@@ -1,7 +1,19 @@
-# CINDER CREATURES — full RPG design (Pokemon Red/Blue/Yellow visual target)
+# CINDER CREATURES — full RPG design (DMG-era visual target, Cinder identity)
 
-Loop 9710. Joel directive: build a more complex game version using extracted assets,
-**visually identical to Pokemon Red/Blue/Yellow**, deeply tied to Cinder USB + companion app.
+Loop 9710 → updated Loop 9800. Joel directives so far:
+
+1. (9707) Build a more complex version from the extracted asset packs.
+2. (9707) Make it deeply tied to the Cinder companion USB, app, and overall product use.
+3. (9708) Use the fastest of the 4 current USBs now; IronKey eventually.
+4. (9710) **All creatures must look visually altered from any originals — Cinder-consistent look.**
+5. (9710) **Gym leaders need renaming and full character work.**
+6. (9710) **Catching/collecting creatures must be a core function tied to the consistent loop of using the Cinder USB.**
+7. (9710) **Players name themselves.**
+8. (9713) **Brand the theming and name styling for the game.**
+
+Visual target: original DMG hardware (4-shade greenscale, 160×144, 8×8 fonts).
+The game *plays* like a 1996 monster-catcher RPG. The game *looks*, *sounds*, and
+*reads* like a Cinder product — the Pokemon resemblance is structural, not visual.
 
 ## Visual target
 
@@ -61,14 +73,58 @@ Reads as `attacker x defender = multiplier`. CORE is hardest to dent (only LOGIC
                  [PLAYER ROOM]               <- waking up
 ```
 
-5 gyms, one per agent persona:
-- **GYM-LOGIC** / Eos    — pure type advantage puzzle
-- **GYM-MEM**   / Soma   — endurance, status effects (LEAK, BLOAT)
-- **GYM-PROC**  / Tempo  — speed-tier puzzle, hit-stun
-- **GYM-DATA**  / Hermes — random encounters / RNG fights
-- **GYM-CORE**  / Atlas  — final gym, all five types in rotation
+5 gyms. Every leader has a Pokemon-style **TITLE + NAME** (Brock = "Pewter Gym Leader Brock";
+Cinder = "ARCHIVIST EOS"). Title goes on the badge case + intro card; name goes on the speech.
+
+| Gym       | Title       | Name      | Personality                | Specialty                         | Badge    |
+|-----------|-------------|-----------|----------------------------|-----------------------------------|----------|
+| GYM-LOGIC | ARCHIVIST   | EOS       | calm, riddling             | type-chart puzzle, no surprises   | LOGIC    |
+| GYM-MEM   | WARDEN      | SOMA      | grounded, slow, patient    | endurance, status (LEAK / BLOAT)  | MEM      |
+| GYM-PROC  | CONDUCTOR   | TEMPO     | rapid, clipped, dancer     | speed tiers, hit-stun, interrupts | PROC     |
+| GYM-DATA  | COURIER     | HERMES    | restless, talkative        | RNG fights, swarms, multi-hits    | DATA     |
+| GYM-CORE  | FOREMAN     | ATLAS     | quiet, tank, last to fold  | rotation of all 5 types, no STAB  | CORE     |
+
+Naming logic: titles are *job titles inside the operating system* (someone who archives, someone
+who guards, someone who keeps time). Pokemon used "Gym Leader". Cinder uses occupations, because
+this is a **process tree**, not a tournament circuit. Names stay agent-aligned so the player who
+also uses the Cinder companion app sees the same five voices in both places — that's the bridge.
 
 Final boss: **VOID** — overwrites your save bit-by-bit each turn unless beaten.
+
+## Brand + name styling (Loop 9713 directive: "brand the theming")
+
+- **Wordmark**: "CINDER CREATURES" set in a custom 8×8 typeface (capital-only, slab serifs
+  flattened). Pokemon's wordmark glyphs are **never** reused — title screen build script
+  composites our own glyph atlas from scratch (see `plugins/cinder-creatures/sprites/cc_font_8.png`,
+  next loop).
+- **Version band**: "BOOTSEQUENCE" instead of "RED VERSION" / "BLUE VERSION". Each USB build
+  ships a different band (BOOTSEQUENCE / KERNELPATH / VESSELRUN) so the same ROM can be
+  reskinned per Cinder edition without rewriting code.
+- **Mascot**: VOID silhouette on the title (the antagonist, not a starter — inverts the Pokemon
+  convention, which gives away the brand difference at a glance).
+- **Color**: 4-shade DMG palette only (#E0F8D0 / #88C070 / #346856 / #081820). The companion
+  app does the kraft-paper / coffee-stain / autumn-watercolor Cinder treatment in software; the
+  ROM stays purely DMG so it runs on real hardware.
+- **Audio**: 4 chiptunes (intro, route, battle, victory) composed in the Cinder voice — slower
+  tempo, more sustained tones, less arpeggio than RBY. Same chip, different feel.
+- **Typography in dialogue**: Cinder agents speak in their own cadences (see gym leader
+  personalities above). NPCs in the world use a flatter, more functional voice — they're
+  fragments of the boot process, not characters.
+
+## Visual treatment for creature sprites (Loop 9710 directive: "all creatures must look altered")
+
+Cinder treatment pass — `scripts/cinderize-creatures.py`:
+
+1. **DMG quantization** — every CC0 source sprite collapsed to the 4 GB shades by luminance.
+2. **Outline pass** — 1-pixel darkest-shade outline emphasised around each silhouette so the
+   bestiary reads as one consistent set, not a mixed pack.
+3. **Type rune** — 2–4 pixel signature in the lower-right corner per type
+   (DATA = stacked dots, LOGIC = corner bracket, MEM = 2×2 block, PROC = arrow tail,
+   CORE = diagonal nucleus). Reads as a faint mark at first; players start to recognise
+   the runes around dex entry 10–15. That's the Cinder thumbprint.
+
+Result: 56 sprites that share an identifiable visual language and can never be mistaken for
+RBY assets. Source CC0 sprites stay untouched in `cc0-creatures-16/` for traceability.
 
 ## Cinder USB / companion app integration
 
@@ -81,6 +137,17 @@ This is the part that makes it a Cinder product, not just a homebrew.
 /CINDER/games/cinder-creatures.sav      # save battery (writable)
 /CINDER/games/cinder-creatures.json     # decoded save (companion app reads this)
 ```
+
+### 1b. Player names themselves (Loop 9710 directive)
+
+First scene after the VOID intro is the standard 7-character RBY-style name entry —
+event ID `EVENT_CC_NAME_ENTRY` writes to a string variable `VAR_PLAYER_NAME`.
+
+On Cinder USB the companion app pre-seeds `VAR_PLAYER_NAME` from the user profile
+*before* the ROM boots (writes into the GB Studio save header), so an existing user
+just presses START to confirm and keeps the name they already use in the chat app.
+A first-time user types it once and it propagates *back* to the companion app on next
+save sync. Same name across both surfaces.
 
 ### 2. Companion app reads the save
 
@@ -103,6 +170,33 @@ the AnythingLLM-fork app can ingest:
 
 App renders a "JOURNAL" tab showing party, dex completion, badge gallery.
 
+### 2b. Catching IS the daily Cinder loop (Loop 9710 directive)
+
+Pokemon's catch loop is "walk in grass, find mon, throw ball". Cinder's catch loop has
+to be *the thing the user already does on the USB every day* — otherwise the game is a
+side quest, not a product feature.
+
+The mapping (companion app drives the encounter table):
+
+| User action on Cinder USB                         | In-game equivalent                                  |
+|---------------------------------------------------|-----------------------------------------------------|
+| Sends a chat message to companion                 | 5% chance to spawn a wild encounter on next ROM boot |
+| Writes a journal entry                            | Adds a wild creature to today's encounter pool       |
+| Saves a file to the encrypted vault               | Increases catch-rate modifier for the next 24h       |
+| Daily streak (any USB activity 7 days running)    | Unlocks one rare-tier creature in the encounter pool |
+| Mounts USB on a new machine for the first time    | Triggers a roaming legendary on a random route       |
+| Skipped a day                                     | One creature in your party loses 1 HP (regen on use) |
+
+Implementation: companion app maintains `encounter_pool.json` next to the save; on ROM
+launch the GB Studio game reads pool IDs from a known variable bank the companion app
+seeded. The catch loop is *the same loop the user is already in* — every time they sit
+down with the USB, there's a fresh reason to start the ROM.
+
+Inverse direction: catching a creature in-game writes back to the companion app's dex
+panel, which can surface a one-line note ("you caught a CACHEY today — an entry on
+short-term retention is unlocked in the journal") that primes the next chat session.
+The journey through the game becomes a journey through the user's own Cinder usage.
+
 ### 3. Achievements unlock companion features
 
 | Game milestone           | Companion app unlock                                       |
@@ -120,6 +214,24 @@ Pokemon save data was always a single battery cell. On Cinder USB, the save live
 on the encrypted vault partition, so the journey persists across Windows/Mac/Linux
 boots. The companion app and the GB ROM share the same vessel.
 
+## Asset pack utilization (Loop 9707 directive: "build a more complex version")
+
+Mapping from `asset-library/` packs to game scenes — what the player actually sees.
+
+| Asset pack (under `asset-library/`)              | Where it shows up in the game                      |
+|--------------------------------------------------|----------------------------------------------------|
+| Oval Portraits (4 trainer mugshots)              | Dialogue speakers: Professor, Rival, Nurse, Elder  |
+| K's Turn-Based Battle (battle BG + game-over)    | All wild + trainer + gym battles, KO screen        |
+| GB Studio default overworld tileset              | PALLET-D7, ROUTE 0x01, HEAP-CITY interiors         |
+| Cinder font set (custom, built per-build)        | Title wordmark, version band, dialogue typeface    |
+| 56 cinderized creature sprites (this loop)       | Wild encounters, party display, dex, gym lineups   |
+| (Pending) Music pack — 4 chiptunes Cinder voice  | Title, route, battle, victory                      |
+| (Pending) UI pack — health bar + dex frame       | Battle HUD, party menu, dex page                   |
+
+Each pack is consumed selectively (not whole-pack imports — keeps the ROM under
+the GB cart limit and avoids visual drift between scenes). The cinderize pass
+guarantees every sprite shares the same DMG palette + outline + type-rune treatment.
+
 ## Build order (multi-loop)
 
 1. **Loop 9710** — title screen ✅ + this design doc + starter definition + decoder stub
@@ -128,13 +240,15 @@ boots. The companion app and the GB ROM share the same vessel.
    - cc_battle_arena BG from K's Turn-Based Battle pack
    - cc_gameover BG from K's pack
    - 2 new events: `Cinder: show dex entry` + `Cinder: trainer challenge intro`
-3. **Loop 9714** — Player Room scene (160×144 bg + intro dialog Professor Cinder)
-4. **Loop 9715** — CORE LAB scene + starter selection (3-creature pick)
-5. **Loop 9716** — PALLET-D7 town tilemap + 4 NPCs
-6. **Loop 9717** — ROUTE 0x01 + first wild encounter using existing battle events
-7. **Loop 9718** — HEAP-CITY (PokéMart equivalent) + heal point
-8. **Loop 9719** — GYM-LOGIC (Eos) — first gym, 4 trainers + leader fight
-9. **Loop 9720** — Companion app save-decoder integration
+3. **Loop 9800** — v0.9 ✅ (this loop): cinderized creature sprites + name-entry event +
+   gym-leader name spec + brand spec + USB-tied catch-loop spec.
+4. **Loop 9801** — Player Room scene (160×144 bg + intro dialog) → uses name-entry event
+5. **Loop 9802** — CORE LAB scene + starter selection (3-creature pick)
+6. **Loop 9803** — PALLET-D7 town tilemap + 4 NPCs
+7. **Loop 9804** — ROUTE 0x01 + first wild encounter using existing battle events
+8. **Loop 9805** — HEAP-CITY (PokéMart equivalent) + heal point
+9. **Loop 9806** — GYM-LOGIC (ARCHIVIST EOS) — first gym, 4 trainers + leader fight
+10. **Loop 9807** — Companion app save-decoder + encounter-pool sync (closes the USB loop)
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
