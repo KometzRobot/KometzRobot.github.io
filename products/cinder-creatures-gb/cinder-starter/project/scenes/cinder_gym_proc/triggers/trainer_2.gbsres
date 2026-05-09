@@ -1,0 +1,134 @@
+{
+  "_resourceType": "trigger",
+  "id": "c1bd5e01-4000-4004-8004-000000000081",
+  "_index": 1,
+  "symbol": "trigger_proc_t2",
+  "name": "Proc Trainer 2",
+  "x": 8,
+  "y": 10,
+  "width": 2,
+  "height": 2,
+  "trigger": "walk",
+  "leaveScript": [],
+  "script": [
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-000",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "RUNNER RELAY\nblocks the lane."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-001",
+      "command": "EVENT_CC_TRAINER_CHALLENGE",
+      "args": {
+        "title": "RUNNER",
+        "trainer": "RELAY",
+        "intro": "wants to fight!",
+        "boast": "Pass the baton.\nNo stops."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-002",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "RELAY sends out\nPIDGON!"
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-003",
+      "command": "EVENT_VARIABLE_SET_TO_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000035",
+        "value": {
+          "type": "number",
+          "value": 15
+        }
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-004",
+      "command": "EVENT_CC_SET_STATS",
+      "args": {
+        "idVar": "c1bd5e01-3000-4003-8003-000000000035",
+        "hpVar": "c1bd5e01-3000-4003-8003-000000000032",
+        "atkVar": "c1bd5e01-3000-4003-8003-000000000033",
+        "defVar": "c1bd5e01-3000-4003-8003-000000000034"
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-005",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "You attack.\nPIDGON ducks the\nfirst beat."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-006",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "PIDGON inflicts\nSTUN. You skip a turn."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-007",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "You catch the rhythm.\nPIDGON fainted."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-008",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "RUNNER RELAY:\nPIDGON carries\nthe process forward."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-trainer-1-009",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "RUNNER RELAY:\nHandoff dropped.\nClear the track."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-000000000081-postfight-flagcheck",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000073",
+        "operator": "==",
+        "comparator": 0
+      },
+      "children": {
+        "true": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000081-postfight-flagset",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000073",
+              "value": {
+                "type": "number",
+                "value": 1
+              }
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000081-postfight-bitadd",
+            "command": "EVENT_VARIABLE_MATH",
+            "args": {
+              "vectorX": "c1bd5e01-3000-4003-8003-000000000070",
+              "operation": "add",
+              "other": "value",
+              "value": {
+                "type": "number",
+                "value": 2
+              },
+              "clamp": false
+            }
+          }
+        ],
+        "false": []
+      }
+    }
+  ]
+}

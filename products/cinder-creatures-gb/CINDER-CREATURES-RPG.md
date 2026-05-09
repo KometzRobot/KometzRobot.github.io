@@ -254,7 +254,16 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
    New event: EVENT_CC_BADGE_UNLOCK (cosmetic dialogue card). Bit math is done with
    raw EVENT_VARIABLE_MATH events guarded by VAR_CC_BADGE_FLAG_LOGIC.
 10. **Loop 9807** — Companion app save-decoder + encounter-pool sync (closes the USB loop)
-11. **Loop 9808+** — GYM-MEM (WARDEN SOMA), GYM-PROC (CONDUCTOR TEMPO), etc.
+11. **Loop 9808** — v0.13 ✅: GYM-MEM (WARDEN SOMA) playable.
+12. **Loop 9810** — v0.14 ✅: GYM-MEM end-to-end checked.
+13. **Loop 9811** — v0.15 ✅: GYM-PROC (CONDUCTOR TEMPO) playable. Background
+    (cc_gym_proc.png — running lanes + conductor's stage), 4 RUNNER-trainer
+    triggers (PULSE/RELAY/TICK/QUANT, status motif STUN), CONDUCTOR TEMPO
+    leader trigger with 3-creature team (SIGNAUR/ZYBORG/FORKLING), entry sign.
+    Leader gate requires VAR_CC_PROC_TRAINERS == 15 (1+2+4+8). Awards PROC
+    badge bit (4). Hint to next gym (HERMES).
+14. **Next** — GYM-DATA (COURIER HERMES), then GYM-CORE (FOREMAN ATLAS), then
+    final CINDER fight.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
