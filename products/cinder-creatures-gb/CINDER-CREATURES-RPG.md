@@ -1,6 +1,6 @@
 # CINDER CREATURES — full RPG design (DMG-era visual target, Cinder identity)
 
-Loop 9710 → updated Loop 9800. Joel directives so far:
+Loop 9710 → updated Loop 9815. Joel directives so far:
 
 1. (9707) Build a more complex version from the extracted asset packs.
 2. (9707) Make it deeply tied to the Cinder companion USB, app, and overall product use.
@@ -148,6 +148,25 @@ On Cinder USB the companion app pre-seeds `VAR_PLAYER_NAME` from the user profil
 just presses START to confirm and keeps the name they already use in the chat app.
 A first-time user types it once and it propagates *back* to the companion app on next
 save sync. Same name across both surfaces.
+
+### 1c. Companion-app Codex tab (Loop 9815)
+
+The Cinder companion app (cinder-anythingllm fork) now has a `/settings/cinder/codex`
+route that renders all 56 species as cards. Each card is silhouetted (greyed-out
+sprite + dashed name) until the corresponding `creature_id` appears in
+`save.dex.caught` from `cinder-creatures.json`. Then it lights up in full color,
+shows the species note, and reveals HP/ATK/DEF.
+
+This is the visible half of directive #6 ("catching = core USB loop"): the player
+*plays* the ROM, but they *see their progress* in the same chat app they use for
+journaling, dreams, and agent conversations. One identity, one progression
+across both surfaces.
+
+Files (Loop 9815):
+- `products/cinder-anythingllm/frontend/src/pages/Cinder/Codex/index.jsx`
+- `products/cinder-anythingllm/frontend/public/cinder/creatures.json` (mirrored from plugin data)
+- `products/cinder-anythingllm/frontend/public/cinder/creatures/creature_NN.png` × 56
+- Sidebar entry under "Cinder Identity" → "Codex" + path `paths.cinder.codex()`
 
 ### 2. Companion app reads the save
 
