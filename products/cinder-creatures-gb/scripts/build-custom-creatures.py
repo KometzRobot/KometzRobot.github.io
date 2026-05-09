@@ -172,6 +172,77 @@ CUSTOM[6] = ("BYTEFLY", [
     "................",
 ])
 
+# Starter evolutions — Loop 9954. Each evolved form must read as the SAME
+# silhouette family as its base (visual lineage) with one new feature that
+# encodes the evolution's stat/lore twist.
+#   KERNITE -> CISCOTL   (CORE tank gets bigger, two nuclei)
+#   RECURSE -> MUTEXEL   (LOGIC ring gains keyhole/lock at center)
+#   BYTEFLY -> NULLPUP   (DATA swarm grounds into MEM-typed pup w/ hollow head)
+
+# id 21 — CISCOTL (KERNITE -> ). CORE tank, def 9, "every instruction in one
+# body." Two stacked diamond nuclei, broader base, thicker outline. Reads as
+# KERNITE that GREW UP, not a different creature.
+CUSTOM[21] = ("CISCOTL", [
+    "................",
+    ".....######.....",
+    "....#------#....",
+    "...#--####--#...",
+    "..##-+####+-##..",
+    ".##---####---##.",
+    "##----+##+----##",
+    "#----+####+----#",
+    "#----+####+----#",
+    "##----+##+----##",
+    ".##---####---##.",
+    "..##-+####+-##..",
+    "...#--####--#...",
+    "....#------#....",
+    "....##----##....",
+    "....##....##....",
+])
+
+# id 5 — MUTEXEL (RECURSE -> ). LOGIC, atk 6 def 6, "locks one move per
+# turn." Keeps RECURSE's nested rings; the inner core is a padlock keyhole.
+CUSTOM[5] = ("MUTEXEL", [
+    "................",
+    ".....######.....",
+    "....#------#....",
+    "...#-######-#...",
+    "..#-#------#-#..",
+    "..#-#-#++#-#-#..",
+    "..#-#-+##+-#-#..",
+    "..#-#-+##+-#-#..",
+    "..#-#-#++#-#-#..",
+    "..#-#-####-#-#..",
+    "..#-#-#--#-#-#..",
+    "..#-#-####-#-#..",
+    "...#-######-#...",
+    "....#------#....",
+    ".....######.....",
+    "......####......",
+])
+
+# id 11 — NULLPUP (BYTEFLY -> ). Type-shift DATA -> MEM. "A pointer to
+# nothing." Pup-shaped four-leg body, head is a hollow circle (empty addr).
+CUSTOM[11] = ("NULLPUP", [
+    "................",
+    "....######......",
+    "...#------#.....",
+    "..#--####--#....",
+    "..#-##++##-####.",
+    "..#--####--#--#.",
+    "..#--+--+--####.",
+    "..#---++---#....",
+    "..#--+--+--#....",
+    "..##-+--+-##....",
+    "...########.....",
+    "...##.##.##.....",
+    "...##.##.##.....",
+    "...##.##.##.....",
+    "..####.####.....",
+    "................",
+])
+
 
 def render(grid: list[str]) -> Image.Image:
     img = Image.new("RGB", (16, 16), DMG['.'])
