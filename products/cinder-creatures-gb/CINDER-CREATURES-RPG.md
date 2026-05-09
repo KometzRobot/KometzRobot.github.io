@@ -333,11 +333,28 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     appears in the companion app. Closes the loop on directive #6 in the
     other direction — the more they play the ROM, the more the companion
     app opens up.
-19. **Next** — wiring each unlock to actually open up the corresponding feature
-    when its flag flips (journal entry template, persona themes, vault widget,
-    VESSEL mode, PROFESSOR CINDER persona, persistent memory). Currently the
-    Achievements page reflects state; next loops connect each unlock to the
-    feature it gates.
+19. **Loop 9895** — v0.26 ✅: First unlock wired end-to-end (`first_catch` →
+    Journal entry template). Companion Journal grew an "Unlocked from Cinder
+    Creatures" panel above the search bar that only renders when at least one
+    template is unlocked by the GB save sidecar. The first template, "the day
+    I caught my first daemon," opens a modal prefilled with a structured
+    prompt — `What I noticed about it: / Why I went after this one: / What it
+    tells me about the kind of player I'll be:` — and auto-substitutes the
+    species name + note from `creatures.json` based on `save.dex.caught[0]`.
+    Saving POSTs to `/api/journal` with topics `[cinder-creatures, first-catch]`
+    and mood `discovery` so the new entry threads back into the journal
+    timeline like any other. Achievements page now also shows a
+    `wired` / `reflected` chip per milestone so the design intent (which
+    unlocks are connected vs only displayed) is visible at a glance.
+    Files: `frontend/src/pages/Cinder/Journal/index.jsx`,
+    `frontend/src/pages/Cinder/Achievements/index.jsx`.
+20. **Next** — wire the remaining five unlocks (first_badge → persona theme,
+    ten_caught → vault widget on journal, all_badges → VESSEL chat mode,
+    full_dex → PROFESSOR CINDER persona, beat_void → persistent memory).
+    Also: ship the save sidecar — `cinder-save-decoder.py` exists as a stub
+    but nothing currently emits `/cinder/cinder-creatures.json`, so unlocks
+    only fire if a sidecar is hand-placed. That's the single biggest lever
+    for actually exercising any of this.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
