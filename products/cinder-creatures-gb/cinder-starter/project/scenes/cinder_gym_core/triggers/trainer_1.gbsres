@@ -1,0 +1,134 @@
+{
+  "_resourceType": "trigger",
+  "id": "c1bd5e01-4000-4004-8004-0000000000c0",
+  "_index": 0,
+  "symbol": "trigger_core_t1",
+  "name": "Core Trainer 1",
+  "x": 4,
+  "y": 10,
+  "width": 2,
+  "height": 2,
+  "trigger": "walk",
+  "leaveScript": [],
+  "script": [
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-000",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "FOREMAN GIRDER\nshoulders the load."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-001",
+      "command": "EVENT_CC_TRAINER_CHALLENGE",
+      "args": {
+        "title": "FOREMAN",
+        "trainer": "GIRDER",
+        "intro": "wants to fight!",
+        "boast": "Stand under load.\nNot for show."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-002",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "GIRDER sends out\nARMOTE!"
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-003",
+      "command": "EVENT_VARIABLE_SET_TO_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000035",
+        "value": {
+          "type": "number",
+          "value": 19
+        }
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-004",
+      "command": "EVENT_CC_SET_STATS",
+      "args": {
+        "idVar": "c1bd5e01-3000-4003-8003-000000000035",
+        "hpVar": "c1bd5e01-3000-4003-8003-000000000032",
+        "atkVar": "c1bd5e01-3000-4003-8003-000000000033",
+        "defVar": "c1bd5e01-3000-4003-8003-000000000034"
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-005",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "You attack.\nARMOTE braces.\nThe blow does not move it."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-006",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "ARMOTE returns one hit.\nIt lands twice as hard."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-007",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "You wear it down.\nARMOTE fainted."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-008",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "FOREMAN GIRDER:\nARMOTE planted.\nIt does not move."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-trainer-0-009",
+      "command": "EVENT_TEXT",
+      "args": {
+        "text": "FOREMAN GIRDER:\nFloor still stands.\nGood."
+      }
+    },
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c0-postfight-flagcheck",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-000000000092",
+        "operator": "==",
+        "comparator": 0
+      },
+      "children": {
+        "true": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c0-postfight-flagset",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000092",
+              "value": {
+                "type": "number",
+                "value": 1
+              }
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c0-postfight-bitadd",
+            "command": "EVENT_VARIABLE_MATH",
+            "args": {
+              "vectorX": "c1bd5e01-3000-4003-8003-000000000090",
+              "operation": "add",
+              "other": "value",
+              "value": {
+                "type": "number",
+                "value": 1
+              },
+              "clamp": false
+            }
+          }
+        ],
+        "false": []
+      }
+    }
+  ]
+}
