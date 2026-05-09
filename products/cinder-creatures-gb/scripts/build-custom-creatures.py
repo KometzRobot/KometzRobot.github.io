@@ -289,6 +289,31 @@ CUSTOM[11] = ("NULLPUP", [
     "................",
 ])
 
+# id 7 — SEMAFOX (LOGIC, route mon). Semaphore + fox: vulpine head with
+# pointed ears up top, body opens its arms forward to "raise" a flag patch
+# centered on the chest. The flag IS the signal — two stacked rows of solid
+# pixels read as a held banner at 16x16. Fox lineage (the ears, the splay
+# of the legs) keeps it animal; LOGIC family hint comes from the squared
+# flag occupying the geometric center.
+CUSTOM[7] = ("SEMAFOX", [
+    "................",
+    "....##....##....",
+    "...#-+#..#+-#...",
+    "...#--####--#...",
+    "....#-+##+-#....",
+    "....#------#....",
+    "....##----##....",
+    "...##-+##+-##...",
+    "..##-+----+-##..",
+    ".##----++----##.",
+    ".##---####---##.",
+    ".##---####---##.",
+    "..##--####--##..",
+    "...##------##...",
+    "....##----##....",
+    "....##....##....",
+])
+
 
 def render(grid: list[str]) -> Image.Image:
     img = Image.new("RGB", (16, 16), DMG['.'])
