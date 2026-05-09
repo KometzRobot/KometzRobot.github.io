@@ -247,8 +247,14 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
 6. **Loop 9803** — PALLET-D7 town tilemap + 4 NPCs
 7. **Loop 9804** — ROUTE 0x01 + first wild encounter using existing battle events
 8. **Loop 9805** — HEAP-CITY (PokéMart equivalent) + heal point
-9. **Loop 9806** — GYM-LOGIC (ARCHIVIST EOS) — first gym, 4 trainers + leader fight
+9. **Loop 9806** — v0.12 ✅: GYM-LOGIC scene built. Background (cc_gym_logic.png),
+   GYM-LOGIC scene resource, 4 LOGIC-trainer triggers + ARCHIVIST EOS leader trigger
+   + entry sign with type-chart riddle. Leader gate requires VAR_CC_TRAINERS_DEFEATED == 15.
+   Per-trainer flag vars guard double-fire on bitfield additions.
+   New event: EVENT_CC_BADGE_UNLOCK (cosmetic dialogue card). Bit math is done with
+   raw EVENT_VARIABLE_MATH events guarded by VAR_CC_BADGE_FLAG_LOGIC.
 10. **Loop 9807** — Companion app save-decoder + encounter-pool sync (closes the USB loop)
+11. **Loop 9808+** — GYM-MEM (WARDEN SOMA), GYM-PROC (CONDUCTOR TEMPO), etc.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
