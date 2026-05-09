@@ -94,12 +94,15 @@ Final boss: **VOID** — overwrites your save bit-by-bit each turn unless beaten
 ## Brand + name styling (Loop 9713 directive: "brand the theming")
 
 - **Wordmark**: "CINDER CREATURES" set in a custom 8×8 typeface (capital-only, slab serifs
-  flattened). Pokemon's wordmark glyphs are **never** reused — title screen build script
-  composites our own glyph atlas from scratch (see `plugins/cinder-creatures/sprites/cc_font_8.png`,
-  next loop).
+  flattened). Pokemon's wordmark glyphs are **never** reused — `scripts/build-cc-font.py`
+  emits our own glyph atlas at `plugins/cinder-creatures/sprites/cc_font_8.png`
+  (Loop 9903 ✅, 64 glyphs covering 0x20–0x5F, 128×32 DMG). Title screen, version band,
+  and footer all render from this atlas; gym intro plates and badge case will too.
 - **Version band**: "BOOTSEQUENCE" instead of "RED VERSION" / "BLUE VERSION". Each USB build
   ships a different band (BOOTSEQUENCE / KERNELPATH / VESSELRUN) so the same ROM can be
-  reskinned per Cinder edition without rewriting code.
+  reskinned per Cinder edition without rewriting code. `build-title-screen.py` reads
+  `CC_VERSION_BAND` env var (Loop 9903) — set it per-edition build to swap the band
+  text without touching the script.
 - **Mascot**: VOID silhouette on the title (the antagonist, not a starter — inverts the Pokemon
   convention, which gives away the brand difference at a glance).
 - **Color**: 4-shade DMG palette only (#E0F8D0 / #88C070 / #346856 / #081820). The companion

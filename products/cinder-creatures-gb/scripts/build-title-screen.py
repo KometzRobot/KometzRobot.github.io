@@ -144,9 +144,60 @@ for ex in range(24, W - 24, 8):
     d.point((ex, bar_y - 1), fill=PAL[2])
 d.rectangle([(20, bar_y + 3), (W - 21, bar_y + 4)], fill=PAL[2])
 
+
+# === cc_font_8.png loader ==========================================
+# Loop 9903: shared glyph atlas built by build-cc-font.py. Used here for
+# the version band + footer so brand typography matches across screens.
+FONT_DIR = os.path.join(
+    os.path.dirname(__file__), "..", "plugins", "cinder-creatures", "sprites"
+)
+_font_img = None
+_font_layout = None
+
+
+def _load_font():
+    global _font_img, _font_layout
+    if _font_img is not None:
+        return
+    _font_img = Image.open(os.path.join(FONT_DIR, "cc_font_8.png")).convert("RGB")
+    with open(os.path.join(FONT_DIR, "cc_font_8.layout.txt")) as f:
+        _font_layout = f.read()
+
+
+def stamp_text_font(target, text, x, y, color):
+    """Render text from cc_font_8.png at scale 1, recoloring ink to `color`."""
+    _load_font()
+    for ch in text:
+        idx = _font_layout.find(ch.upper())
+        if idx < 0:
+            x += 8
+            continue
+        gx = (idx % 16) * 8
+        gy = (idx // 16) * 8
+        for ry in range(8):
+            for rx in range(8):
+                r, g, b = _font_img.getpixel((gx + rx, gy + ry))
+                if (r, g, b) == PAL[3]:
+                    target.putpixel((x + rx, y + ry), color)
+        x += 8
+
+
+def stamp_text_font_centered(target, text, y, color):
+    width = len(text) * 8
+    stamp_text_font(target, text, (W - width) // 2, y, color)
+
+
+# === Version band (BOOTSEQUENCE) — Loop 9903 ======================
+# Spec from CINDER-CREATURES-RPG.md: replaces RBY's "RED VERSION" /
+# "BLUE VERSION" band. Each USB build can swap the band string without
+# rebuilding the title art.
+VERSION_BAND = os.environ.get("CC_VERSION_BAND", "BOOTSEQUENCE")
+band_y = bar_y + 9
+stamp_text_font_centered(img, VERSION_BAND, band_y, PAL[3])
+
 # === Footer ========================================================
-stamp_centered(d, "MERIDIAN 2026", 130, 1, PAL[2])
-stamp_centered(d, "PRESS START", 138, 1, PAL[3])
+stamp_text_font_centered(img, "MERIDIAN 2026", 124, PAL[2])
+stamp_text_font_centered(img, "PRESS START", 134, PAL[3])
 
 
 # === Final: snap every pixel to nearest of the 4 DMG shades ========
