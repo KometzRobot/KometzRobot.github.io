@@ -81,18 +81,41 @@ else
     "$RUNTIME_DIR/ollama" serve >"$RUNTIME_DIR/ollama.log" 2>&1 &
     OLLAMA_PID=$!
 
-    for i in $(seq 1 30); do
+    OLLAMA_READY=0
+    # USB I/O can be slow on first boot — wait up to 90s
+    for i in $(seq 1 90); do
         if curl -s "http://127.0.0.1:$OLLAMA_PORT/api/tags" >/dev/null 2>&1; then
+            OLLAMA_READY=1
             break
         fi
         if ! kill -0 "$OLLAMA_PID" 2>/dev/null; then
-            echo "  ERROR: AI engine failed to start. Check log:"
-            tail -10 "$RUNTIME_DIR/ollama.log" 2>/dev/null
+            echo ""
+            echo "  ERROR: AI engine process died during startup."
+            echo "  Last 20 lines of $RUNTIME_DIR/ollama.log:"
+            tail -20 "$RUNTIME_DIR/ollama.log" 2>/dev/null | sed 's/^/    /'
             read -p "  Press Enter to exit..." _
             exit 1
         fi
+        # progress dots every 5s so user sees something is happening
+        if [ $((i % 5)) -eq 0 ]; then
+            printf "."
+        fi
         sleep 1
     done
+    echo ""
+    if [ "$OLLAMA_READY" -ne 1 ]; then
+        echo "  ERROR: AI engine did not respond after 90 seconds."
+        echo "  Last 20 lines of $RUNTIME_DIR/ollama.log:"
+        tail -20 "$RUNTIME_DIR/ollama.log" 2>/dev/null | sed 's/^/    /'
+        echo ""
+        echo "  Common causes:"
+        echo "   - First boot: USB is slow, try running again."
+        echo "   - Model directory unreadable. Check: $MODELS_DIR"
+        echo "   - Port $OLLAMA_PORT already in use by something else."
+        kill "$OLLAMA_PID" 2>/dev/null
+        read -p "  Press Enter to exit..." _
+        exit 1
+    fi
     echo "  AI engine ready."
 fi
 
