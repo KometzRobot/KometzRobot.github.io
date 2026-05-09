@@ -23,7 +23,39 @@
   "spritePaletteIds": [],
   "autoFadeSpeed": 1,
   "playerSpriteSheetId": "",
-  "script": [],
+  "script": [
+    {
+      "id": "c1bd5e01-9000-4099-8099-000mem-intro-redirect-mem",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-0000000000b1",
+        "operator": "==",
+        "comparator": 0
+      },
+      "children": {
+        "true": [
+          {
+            "id": "c1bd5e01-9000-4099-8099-000mem-load",
+            "command": "EVENT_SWITCH_SCENE",
+            "args": {
+              "sceneId": "c1bd5e01-2000-4002-8002-0000000000b1",
+              "x": {
+                "type": "number",
+                "value": 0
+              },
+              "y": {
+                "type": "number",
+                "value": 0
+              },
+              "direction": "down",
+              "fadeSpeed": "2"
+            }
+          }
+        ],
+        "false": []
+      }
+    }
+  ],
   "playerHit1Script": [],
   "playerHit2Script": [],
   "playerHit3Script": [],

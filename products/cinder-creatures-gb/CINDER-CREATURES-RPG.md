@@ -518,16 +518,39 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     `plugins/cinder-creatures/backgrounds/cc_intro_*.png` (×5),
     starter mirror in `cinder-starter/plugins/cinder-creatures/...`.
 
-29. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
+29. **Loop 9945** — v0.36 ✅: intro plates from v0.35 are WIRED into the
+    five gym scenes. First walk-in shows the plate (gated on
+    `var_cc_intro_<type>_seen`); press A advances; subsequent visits skip
+    the plate. Mechanism: each gym scene's on-init `script` gets a guard
+    prepended — `EVENT_IF_VALUE intro_seen == 0` → `EVENT_SWITCH_SCENE` to
+    a new intro card scene. Each intro card (5 new scenes:
+    `cinder_intro_logic/mem/proc/data/core`) uses the plate as its
+    backgroundId, runs `EVENT_TEXT "..." → set intro_seen=1 →
+    EVENT_SWITCH_SCENE back to gym at (9,16) facing up`. On second entry
+    the false branch (empty) is taken and play proceeds normally. Five
+    new variables added (`var_cc_intro_<type>_seen` at vars b0..b4); five
+    plate PNGs copied from `plugins/cinder-creatures/backgrounds/` into
+    `cinder-starter/assets/backgrounds/` with `.gbsres` metadata so GB
+    Studio sees them as project backgrounds. Idempotent build script:
+    `scripts/build-gym-intro-wiring.py` — safe to re-run, only patches
+    scenes that don't already carry the redirect marker. Closes the
+    "next" item from v0.35. Files:
+    `scripts/build-gym-intro-wiring.py`,
+    `cinder-starter/project/variables.gbsres`,
+    `cinder-starter/assets/backgrounds/cc_intro_*.png{,.gbsres}` (×5),
+    `cinder-starter/project/scenes/cinder_intro_*/scene.gbsres` (×5),
+    `cinder-starter/project/scenes/cinder_gym_*/scene.gbsres` (×5
+    patched).
+
+30. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
     parser once the ROM compiles and emits variable offsets to
     `build/<name>/build/Sav/data.h`. Vault sealing currently writes to
     localStorage; swap to vault.js v2 once the wrap-key auto-unlock flow is
     on the partition (this is what MEMORY VESSEL actually plugs into when
-    the ROM is real). Wire the intro plates into the gym-LOGIC / MEM / PROC
-    / DATA / CORE scenes as a one-frame fade-in trigger before the leader
-    encounter. With every milestone's companion-app side wired, the work
-    is now mostly ROM-side: scenes, encounters, balancing, and the actual
-    VOID fight feeling like a fight.
+    the ROM is real). With every milestone's companion-app side wired and
+    the intro plates connected, the work is now ROM-side: route maps
+    between PALLET-D7 and the gym towns, NPC trainer scatter on routes,
+    encounter balancing, and the actual VOID fight feeling like a fight.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
