@@ -62,6 +62,7 @@ const STATS = [
 ];
 
 const id = "EVENT_CC_SET_STATS";
+const name = "Cinder: set stats from creature ID";
 const groups = ["EVENT_GROUP_VARIABLES"];
 const subGroups = {
   EVENT_GROUP_VARIABLES: "Cinder Creatures",
@@ -129,6 +130,7 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
+  name,
   description:
     "Cinder Creatures: set HP/ATK/DEF variables from a creature ID (1..56).",
   autoLabel,

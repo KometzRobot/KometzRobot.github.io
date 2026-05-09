@@ -3,6 +3,7 @@
 // Use after Cinder: set stats so you have ATK/DEF in variables.
 
 const id = "EVENT_CC_DAMAGE_FORMULA";
+const name = "Cinder: damage formula";
 const groups = ["EVENT_GROUP_VARIABLES"];
 const subGroups = {
   EVENT_GROUP_VARIABLES: "Cinder Creatures",
@@ -53,6 +54,7 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
+  name,
   description: "Cinder Creatures: compute damage = ATK + rnd(0..variance) - DEF (clamped >= 0).",
   autoLabel,
   groups,

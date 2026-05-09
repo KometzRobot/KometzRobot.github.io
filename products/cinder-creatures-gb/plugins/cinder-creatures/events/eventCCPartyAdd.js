@@ -4,6 +4,7 @@
 // stops at the first slot that equals 0 (empty).
 
 const id = "EVENT_CC_PARTY_ADD";
+const name = "Cinder: party add";
 const groups = ["EVENT_GROUP_VARIABLES"];
 const subGroups = {
   EVENT_GROUP_VARIABLES: "Cinder Creatures",
@@ -38,4 +39,5 @@ const compile = (input, helpers) => {
   }
 };
 
-module.exports = { id, groups, subGroups, autoLabel, fields, compile };
+module.exports = { id,
+  name, groups, subGroups, autoLabel, fields, compile };

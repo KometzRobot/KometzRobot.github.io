@@ -20,6 +20,7 @@ const SPECIES = [
 ];
 
 const id = "EVENT_CC_ENCOUNTER";
+const name = "Cinder: encounter (random + show name)";
 const groups = ["EVENT_GROUP_DIALOGUE"];
 const subGroups = {
   EVENT_GROUP_DIALOGUE: "Cinder Creatures",
@@ -88,6 +89,7 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
+  name,
   description: "Cinder Creatures: roll a random encounter and show the creature name in one step.",
   autoLabel,
   groups,

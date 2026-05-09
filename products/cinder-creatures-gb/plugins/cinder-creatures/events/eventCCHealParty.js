@@ -3,6 +3,7 @@
 // Use after visiting a "Cinder Center" tile.
 
 const id = "EVENT_CC_HEAL_PARTY";
+const name = "Cinder: heal party";
 const groups = ["EVENT_GROUP_VARIABLES"];
 const subGroups = {
   EVENT_GROUP_VARIABLES: "Cinder Creatures",
@@ -28,4 +29,5 @@ const compile = (input, helpers) => {
   variableCopy(input.hp3, input.max3);
 };
 
-module.exports = { id, groups, subGroups, autoLabel, fields, compile };
+module.exports = { id,
+  name, groups, subGroups, autoLabel, fields, compile };

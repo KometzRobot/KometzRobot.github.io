@@ -20,6 +20,7 @@ const SPECIES = [
 ];
 
 const id = "EVENT_CC_SHOW_NAME";
+const name = "Cinder: show creature name";
 const groups = ["EVENT_GROUP_DIALOGUE"];
 const subGroups = {
   EVENT_GROUP_DIALOGUE: "Cinder Creatures",
@@ -74,6 +75,7 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
+  name,
   description:
     "Cinder Creatures: show the creature name matching a creature ID variable (1..56).",
   autoLabel,

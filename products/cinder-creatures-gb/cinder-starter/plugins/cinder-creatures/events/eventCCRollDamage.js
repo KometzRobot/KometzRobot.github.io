@@ -3,6 +3,7 @@
 // Designed for quick combat prototyping without a full formula yet.
 
 const id = "EVENT_CC_ROLL_DAMAGE";
+const name = "Cinder: roll damage";
 const groups = ["EVENT_GROUP_VARIABLES"];
 const subGroups = {
   EVENT_GROUP_VARIABLES: "Cinder Creatures",
@@ -53,6 +54,7 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
+  name,
   description:
     "Cinder Creatures: roll a random damage value into a variable (min..max).",
   autoLabel,

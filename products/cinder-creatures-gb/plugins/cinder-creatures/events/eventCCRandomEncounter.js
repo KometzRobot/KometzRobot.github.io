@@ -3,6 +3,7 @@
 // Default range 1..12 (the named starter pool); raise max to 56 for the full roster.
 
 const id = "EVENT_CC_RANDOM_ENCOUNTER";
+const name = "Cinder: random encounter";
 const groups = ["EVENT_GROUP_VARIABLES"];
 const subGroups = {
   EVENT_GROUP_VARIABLES: "Cinder Creatures",
@@ -47,6 +48,7 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
+  name,
   description: "Cinder Creatures: pick a random creature ID in [min..max] and store it.",
   autoLabel,
   groups,

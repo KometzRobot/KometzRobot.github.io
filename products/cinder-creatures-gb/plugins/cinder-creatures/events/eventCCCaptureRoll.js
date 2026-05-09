@@ -4,6 +4,7 @@
 // Sets caught=1 if rnd(0..255) < chance, else 0.
 
 const id = "EVENT_CC_CAPTURE_ROLL";
+const name = "Cinder: capture roll";
 const groups = ["EVENT_GROUP_VARIABLES"];
 const subGroups = {
   EVENT_GROUP_VARIABLES: "Cinder Creatures",
@@ -37,4 +38,5 @@ const compile = (input, helpers) => {
   });
 };
 
-module.exports = { id, groups, subGroups, autoLabel, fields, compile };
+module.exports = { id,
+  name, groups, subGroups, autoLabel, fields, compile };

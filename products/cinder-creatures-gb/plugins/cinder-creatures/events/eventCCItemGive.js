@@ -2,6 +2,7 @@
 // Adds N of an item ID to a bag-slot count variable (cap 99).
 
 const id = "EVENT_CC_ITEM_GIVE";
+const name = "Cinder: item give";
 const groups = ["EVENT_GROUP_VARIABLES"];
 const subGroups = {
   EVENT_GROUP_VARIABLES: "Cinder Creatures",
@@ -24,4 +25,5 @@ const compile = (input, helpers) => {
   });
 };
 
-module.exports = { id, groups, subGroups, autoLabel, fields, compile };
+module.exports = { id,
+  name, groups, subGroups, autoLabel, fields, compile };

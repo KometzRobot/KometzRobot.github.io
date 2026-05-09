@@ -2,6 +2,7 @@
 // Hardcodes the CINDER boss stats and shows the boss intro line.
 
 const id = "EVENT_CC_BOSS";
+const name = "Cinder: BOSS encounter";
 const groups = ["EVENT_GROUP_DIALOGUE"];
 const subGroups = {
   EVENT_GROUP_DIALOGUE: "Cinder Creatures",
@@ -50,6 +51,7 @@ const compile = (input, helpers) => {
 
 module.exports = {
   id,
+  name,
   description: "Cinder Creatures: set CINDER boss stats (HP 80 / ATK 12 / DEF 8) and show intro line.",
   autoLabel,
   groups,
