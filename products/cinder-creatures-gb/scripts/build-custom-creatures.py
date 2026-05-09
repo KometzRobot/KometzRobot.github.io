@@ -42,6 +42,28 @@ DMG = {
 # species id -> (NAME, 16-row grid)
 CUSTOM = {}
 
+# id 1 — FORKLING (PROC, common). "Cleaves into two on hit." First creature in
+# the dex — visual lineage twin-head with a single torso so the cleave is read
+# at a glance: the heads literally split when struck.
+CUSTOM[1] = ("FORKLING", [
+    "................",
+    "....##....##....",
+    "...#--#..#--#...",
+    "...#-+#..#+-#...",
+    "...#--####--#...",
+    "....##-##-##....",
+    ".....######.....",
+    "....##----##....",
+    "....#------#....",
+    "....#-+##+-#....",
+    "....#--##--#....",
+    "....##----##....",
+    ".....######.....",
+    "......####......",
+    ".....##..##.....",
+    "................",
+])
+
 # id 8 — REGEXEL (DATA type, gym leader Carrier Wick's signature).
 # Pattern-matcher: anchor caret eyes, slash bands across the body, $-tail.
 CUSTOM[8] = ("REGEXEL", [
