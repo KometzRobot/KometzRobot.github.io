@@ -398,10 +398,32 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     `frontend/src/pages/Cinder/Achievements/index.jsx`,
     `samples/sidecar-shim-ten-caught.json`,
     `scripts/SIDECAR.md`.
-23. **Next** — wire the remaining three unlocks (all_badges → VESSEL chat mode,
-    full_dex → PROFESSOR CINDER persona, beat_void → persistent memory).
-    Also: replace the `parse_sav` stub with the real GB Studio 4 binary
-    parser once the ROM compiles and emits variable offsets to
+23. **Loop 9900** — v0.30 ✅: `all_badges` unlock wired end-to-end. VESSEL
+    chat mode now appears as a full-width persona panel at the top of
+    `/settings/cinder/agents` once the player has cleared all five gyms.
+    The persona definition lives in `frontend/public/cinder/vessel-mode.json`
+    and threads the five gym voices into a single response cadence (EOS
+    framing question → SOMA body check → TEMPO pace → HERMES routes →
+    ATLAS load-path) without labeling the sections — the reader feels five
+    voices, reads one answer. The system prompt tells the model to take
+    longer, more autonomous turns and hold a thread across messages rather
+    than treating each prompt as fresh. "Enter VESSEL" creates a workspace
+    pre-loaded with the assembled prompt; opens the existing one if it
+    exists. The single-gym persona panel (`first_badge`) still renders below
+    when both unlocks are active. Achievements page flips `all_badges` to
+    `wired: true` with a refreshed unlockNote describing the actual UX. New
+    shim `samples/sidecar-shim-all-badges.json` (all 5 badges, 20 caught,
+    SECTOR-9 approach scene) exercises the panel without a real ROM.
+    SIDECAR.md bumped to six shims. Files:
+    `frontend/public/cinder/vessel-mode.json`,
+    `frontend/src/pages/Cinder/Agents/index.jsx`,
+    `frontend/src/pages/Cinder/Achievements/index.jsx`,
+    `samples/sidecar-shim-all-badges.json`,
+    `scripts/SIDECAR.md`.
+24. **Next** — wire the remaining two unlocks (full_dex → PROFESSOR CINDER
+    persona, beat_void → persistent memory across USB ejections). Also:
+    replace the `parse_sav` stub with the real GB Studio 4 binary parser
+    once the ROM compiles and emits variable offsets to
     `build/<name>/build/Sav/data.h`. Vault sealing currently writes to
     localStorage; swap to vault.js v2 once the wrap-key auto-unlock flow is
     on the partition.
