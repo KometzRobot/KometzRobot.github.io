@@ -502,17 +502,32 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     `samples/sidecar-shim-beat-void.json`,
     `scripts/cinder-save-decoder.py`,
     `scripts/SIDECAR.md`.
-28. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
+28. **Loop 9944** — v0.35 ✅: per-gym INTRO PLATES drawn. Five 160x144
+    backgrounds shipped (`cc_intro_logic.png`, `cc_intro_mem.png`,
+    `cc_intro_proc.png`, `cc_intro_data.png`, `cc_intro_core.png`) — the
+    title-cards the player sees on first walk-in to each gym. Layout:
+    `GYM-<TYPE>` wordmark up top, ember bar, framed 32x32 type rune (4x
+    scale of the bestiary 8x8 vocabulary so the visual rhymes), TITLE +
+    NAME stamped from cc_font_8 (ARCHIVIST EOS / WARDEN SOMA / CONDUCTOR
+    TEMPO / COURIER HERMES / FOREMAN ATLAS), one-line combat-motif tag in
+    shadow shade, BOOTSEQUENCE band footer. Static plates — every player
+    sees the same intro regardless of save state, unlike the badge case.
+    Closes the "next cc_font_8 surface" line from v0.34 and continues the
+    brand chain title -> badge case -> gym intros. Files:
+    `scripts/build-gym-intros.py`,
+    `plugins/cinder-creatures/backgrounds/cc_intro_*.png` (×5),
+    starter mirror in `cinder-starter/plugins/cinder-creatures/...`.
+
+29. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
     parser once the ROM compiles and emits variable offsets to
     `build/<name>/build/Sav/data.h`. Vault sealing currently writes to
     localStorage; swap to vault.js v2 once the wrap-key auto-unlock flow is
     on the partition (this is what MEMORY VESSEL actually plugs into when
-    the ROM is real). Per-gym intro plates (the title-card the player sees
-    when they first walk into a gym) are the next cc_font_8 surface after
-    the badge case — that's where ARCHIVIST / WARDEN / CONDUCTOR / COURIER
-    / FOREMAN finally show up in-screen. With every milestone's companion-app
-    side wired, the work is now mostly ROM-side: scenes, encounters,
-    balancing, and the actual VOID fight feeling like a fight.
+    the ROM is real). Wire the intro plates into the gym-LOGIC / MEM / PROC
+    / DATA / CORE scenes as a one-frame fade-in trigger before the leader
+    encounter. With every milestone's companion-app side wired, the work
+    is now mostly ROM-side: scenes, encounters, balancing, and the actual
+    VOID fight feeling like a fight.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
