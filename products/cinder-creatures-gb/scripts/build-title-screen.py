@@ -2,102 +2,164 @@
 """
 Build a Pokemon-Red/Blue-style title screen for CINDER CREATURES at 160x144.
 
-Pokemon RBY title layout:
-  Top 80px   : Mascot (CISCOTL — legendary CORE)
-  88-104     : "CINDER  CREATURES" wordmark
-  108-120    : "BOOTSEQUENCE" subtitle
-  124-138    : copyright + press start
+v0.21 Loop 9817 rebuild — Joel directive: "Brand the theming and name styling
+for the game". Replaces the DejaVu-rendered placeholder with a hand-pixel
+wordmark + flame/ember motif so the title reads as a real Cinder brand.
 
-GB Studio expects a 160x144 PNG using the 4-shade GB palette so the engine
-keeps it as one big background image (the engine handles the GB tile decomp).
+Layout (160x144 GB DMG):
+  Top 56px       : CISCOTL mascot (legendary CORE) at 3x scale, ember sparks
+  Row 58-78      : "CINDER" hand-pixel wordmark (scale 3) with flame caps
+  Row 84-97      : "CREATURES" sub-wordmark (scale 2)
+  Row 116-121    : ember bar (kraft accent — closest GB analogue)
+  Row 130-138    : MERIDIAN 2026 / PRESS START
+
+GB Studio reads it as a single 160x144 background PNG quantized to 4 DMG shades.
 """
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import os
 
-# Authentic Game Boy DMG palette (greenscale)
 PAL = {
     0: (224, 248, 208),   # lightest (off-white)
     1: (136, 192, 112),   # light
     2: (52, 104, 86),     # dark
-    3: (8, 24, 32),       # darkest (near-black)
+    3: (8, 24, 32),       # darkest
 }
 
 W, H = 160, 144
+
+# === Hand-pixel font (5w x 7h, 1px gap) ===========================
+# Chunky uppercase glyphs. '#' = ink, '.' = bg.
+GLYPH_5x7 = {
+    "A": ["..#..", ".#.#.", "#...#", "#####", "#...#", "#...#", "#...#"],
+    "C": [".####", "#....", "#....", "#....", "#....", "#....", ".####"],
+    "D": ["####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."],
+    "E": ["#####", "#....", "#....", "###..", "#....", "#....", "#####"],
+    "I": ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"],
+    "M": ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],
+    "N": ["#...#", "##..#", "##..#", "#.#.#", "#..##", "#..##", "#...#"],
+    "P": ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
+    "R": ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
+    "S": [".####", "#....", "#....", ".###.", "....#", "....#", "####."],
+    "T": ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
+    "U": ["#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+    "0": [".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###."],
+    "2": [".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####"],
+    "6": [".###.", "#....", "#....", "####.", "#...#", "#...#", ".###."],
+    " ": [".....", ".....", ".....", ".....", ".....", ".....", "....."],
+}
+
+
+def stamp_glyph(d, ch, x, y, scale, color):
+    g = GLYPH_5x7.get(ch.upper())
+    if not g:
+        return
+    for ry, row in enumerate(g):
+        for rx, c in enumerate(row):
+            if c == "#":
+                d.rectangle(
+                    [(x + rx * scale, y + ry * scale),
+                     (x + (rx + 1) * scale - 1, y + (ry + 1) * scale - 1)],
+                    fill=color,
+                )
+
+
+def stamp_text(d, text, x, y, scale, color):
+    cx = x
+    for ch in text:
+        stamp_glyph(d, ch, cx, y, scale, color)
+        cx += (5 + 1) * scale
+    return cx
+
+
+def text_width(text, scale):
+    return len(text) * (5 + 1) * scale - scale
+
+
+def stamp_centered(d, text, y, scale, color):
+    tw = text_width(text, scale)
+    stamp_text(d, text, (W - tw) // 2, y, scale, color)
+
+
+# ===================================================================
 img = Image.new("RGB", (W, H), PAL[0])
 d = ImageDraw.Draw(img)
 
-# === Mascot frame (scaled-up CISCOTL silhouette) ===
-# Read the 16x16 sprite, find dark pixels, scale 4x to 64x64, center top.
+# === Mascot frame: CISCOTL silhouette, 3x scale, top-centered =====
 mascot_path = os.path.join(
     os.path.dirname(__file__), "..", "plugins", "cinder-creatures", "sprites", "creature_21.png"
 )
 mascot = Image.open(mascot_path).convert("RGB")
-# Convert greenscale -> 4-shade GB palette by luminance
 mw, mh = mascot.size
 mq = Image.new("RGB", (mw, mh), PAL[0])
 for y in range(mh):
     for x in range(mw):
         r, g, b = mascot.getpixel((x, y))
-        lum = (r * 0.299 + g * 0.587 + b * 0.114)
+        lum = r * 0.299 + g * 0.587 + b * 0.114
         if lum < 40:
-            shade = PAL[3]
+            mq.putpixel((x, y), PAL[3])
         elif lum < 90:
-            shade = PAL[2]
+            mq.putpixel((x, y), PAL[2])
         elif lum < 160:
-            shade = PAL[1]
+            mq.putpixel((x, y), PAL[1])
         else:
-            shade = PAL[0]
-        mq.putpixel((x, y), shade)
-# Scale up 4x with nearest-neighbor for crisp pixel art
-mq = mq.resize((mw * 4, mh * 4), Image.NEAREST)
-# Place at x=48 (centered horizontally), y=8
-img.paste(mq, ((W - mq.width) // 2, 8))
+            mq.putpixel((x, y), PAL[0])
+mq = mq.resize((mw * 3, mh * 3), Image.NEAREST)  # 48x48
+img.paste(mq, ((W - mq.width) // 2, 4))
 
-# === Wordmark "CINDER CREATURES" in chunky pixel font ===
-# Hand-rolled 8x8 letter glyphs (subset). Each glyph is 5 wide x 7 tall + 1 spacing.
-# To stay reliable, use PIL default font scaled. Then re-quantize to GB palette.
-try:
-    FONT = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 8)
-except Exception:
-    FONT = ImageFont.load_default()
+# === Ember sparks flanking the mascot ==============================
+def spark(x, y):
+    d.point((x, y), fill=PAL[3])
+    d.rectangle([(x - 1, y + 1), (x + 1, y + 1)], fill=PAL[2])
+    d.point((x, y + 2), fill=PAL[1])
 
-def render_text(text, scale=2, color=PAL[3]):
-    """Render text to a fresh transparent-bg image, return image."""
-    bbox = FONT.getbbox(text)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    tmp = Image.new("RGB", (tw + 2, th + 2), PAL[0])
-    td = ImageDraw.Draw(tmp)
-    td.text((1 - bbox[0], 1 - bbox[1]), text, fill=color, font=FONT)
-    if scale != 1:
-        tmp = tmp.resize((tmp.width * scale, tmp.height * scale), Image.NEAREST)
-    return tmp
+for sy, sx_l, sx_r in [(8, 18, 142), (22, 12, 148), (38, 22, 138)]:
+    spark(sx_l, sy)
+    spark(sx_r, sy)
 
-def paste_centered(text, y, scale=2, color=PAL[3]):
-    t = render_text(text, scale=scale, color=color)
-    img.paste(t, ((W - t.width) // 2, y))
+# === CINDER wordmark — chunky, scale 3 ============================
+title_y = 58
+title_text = "CINDER"
+title_scale = 3
+stamp_centered(d, title_text, title_y, title_scale, PAL[3])
 
-# Title wordmark (two lines)
-paste_centered("CINDER",    78, scale=2)
-paste_centered("CREATURES", 92, scale=2)
+# Flame caps on top of each letter
+title_w = text_width(title_text, title_scale)
+title_x0 = (W - title_w) // 2
+for i in range(len(title_text)):
+    glyph_x = title_x0 + i * (5 + 1) * title_scale
+    fx = glyph_x + 2 * title_scale
+    fy = title_y - 5
+    d.point((fx + title_scale // 2, fy), fill=PAL[3])
+    d.rectangle([(fx, fy + 1), (fx + title_scale - 1, fy + 2)], fill=PAL[2])
+    d.rectangle([(fx - 1, fy + 3), (fx + title_scale, fy + 4)], fill=PAL[1])
 
-# Subtitle band
-d.rectangle([(28, 108), (W - 28, 118)], fill=PAL[1], outline=PAL[3])
-paste_centered("BOOTSEQUENCE", 109, scale=1, color=PAL[3])
+# === CREATURES sub-wordmark — scale 2 ==============================
+sub_y = title_y + 26
+stamp_centered(d, "CREATURES", sub_y, 2, PAL[2])
 
-# Footer
-paste_centered("(c) MERIDIAN 2026", 124, scale=1, color=PAL[2])
-paste_centered("PRESS START",       134, scale=1, color=PAL[3])
+# === Ember bar (kraft accent) ======================================
+bar_y = sub_y + 18
+d.rectangle([(20, bar_y), (W - 21, bar_y + 1)], fill=PAL[3])
+for ex in range(24, W - 24, 8):
+    d.point((ex, bar_y - 1), fill=PAL[2])
+d.rectangle([(20, bar_y + 3), (W - 21, bar_y + 4)], fill=PAL[2])
 
-# Quantize the entire image strictly to 4 GB shades (some font edges may have intermediate values)
+# === Footer ========================================================
+stamp_centered(d, "MERIDIAN 2026", 130, 1, PAL[2])
+stamp_centered(d, "PRESS START", 138, 1, PAL[3])
+
+
+# === Final: snap every pixel to nearest of the 4 DMG shades ========
 def gb_quantize(image):
     out = Image.new("RGB", image.size)
-    palette_rgb = [PAL[i] for i in range(4)]
+    pal = [PAL[i] for i in range(4)]
     for y in range(image.height):
         for x in range(image.width):
             r, g, b = image.getpixel((x, y))
-            best = min(palette_rgb, key=lambda p: (p[0]-r)**2 + (p[1]-g)**2 + (p[2]-b)**2)
+            best = min(pal, key=lambda p: (p[0] - r) ** 2 + (p[1] - g) ** 2 + (p[2] - b) ** 2)
             out.putpixel((x, y), best)
     return out
+
 
 img = gb_quantize(img)
 
