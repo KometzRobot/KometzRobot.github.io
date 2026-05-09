@@ -1,4 +1,4 @@
-# Cinder Creatures - GB Studio plugin v0.4
+# Cinder Creatures - GB Studio plugin v0.11
 
 Drop-in plugin for GB Studio 4.x. Adds:
 
@@ -34,13 +34,17 @@ Common mistakes:
 After copying, in GB Studio: **File → Reload Project** (or quit + reopen).
 You should see new entries when adding events under sub-group **"Cinder Creatures"**.
 
-## Custom events (11)
+## Custom events (15)
 
 | Event | Group | Purpose |
 |-------|-------|---------|
 | Cinder: random encounter | Variables | Pick a random creature ID into a variable |
+| Cinder: pool encounter (USB-driven) | Variables | Pick from the 16-slot pool the companion app seeded from your USB activity (NEW v0.11) |
+| Cinder: name entry | Dialogue | 7-character RBY-style name entry into a string variable (v0.9) |
 | Cinder: show name | Dialogue | Show "A wild FORKLING appeared!" |
 | Cinder: encounter (combo) | Dialogue | random encounter + show name |
+| Cinder: dex entry | Dialogue | Show creature dex card (v0.8) |
+| Cinder: trainer challenge | Dialogue | Trainer intro card (v0.8) |
 | Cinder: set stats | Variables | Write HP/ATK/DEF from creature ID |
 | Cinder: roll damage | Variables | Random damage in range |
 | Cinder: damage formula | Variables | dmg = ATK + rnd(0..variance) - DEF |
@@ -49,6 +53,48 @@ You should see new entries when adding events under sub-group **"Cinder Creature
 | Cinder: capture roll | Variables | Calculate capture success based on HP + base rate |
 | Cinder: heal party | Variables | Restore HP variables to max (Cinder Center) |
 | Cinder: item give | Variables | Add to item count, capped at 99 |
+
+## USB-driven catch loop (v0.11) — what makes this a Cinder product
+
+Joel directive (Loop 9710): *"Catching/collecting must be a core function tied
+to the consistent loop of using the Cinder USB."* This shipped end-to-end in v0.11.
+
+How it works:
+
+1. **Companion app side** — `scripts/cc-encounter-pool.py` runs from the USB
+   (or as a sidecar inside the cinder-anythingllm fork). It reads the user's
+   recent activity from `cinder.db` (chats, journal, vault saves, new-machine
+   mounts, daily streak) and writes a **16-slot encounter pool** to
+   `/CINDER/games/cinder-creatures.pool.json`.
+
+2. **Pool composition rules** (see `CINDER-CREATURES-RPG.md` §2b):
+   - slots 0..11 — common encounters (more chats/journal -> more variety)
+   - slot 12 — uncommon if vault save in last 24h
+   - slot 13 — uncommon if 3+ chats in last 24h
+   - slot 14 — rare if 7-day activity streak
+   - slot 15 — legendary if USB mounted on a new machine
+   - catch-rate +10% per recent vault save (cap +30%)
+   - skipping a day -> party_decay flag (1 HP drain)
+
+3. **ROM side** — drop the new event into your encounter script:
+   ```
+   Cinder: pool encounter (USB-driven) -> $foeId$
+   Cinder: set stats from $foeId$ -> $foeHp$ $foeAtk$ $foeDef$
+   Cinder: show name from $foeId$
+   ```
+   The 16 slot variables (`$cc_pool_0$..$cc_pool_15$`) are pre-seeded by the
+   companion app's save-syncer. Falls back to `Cinder: random encounter` if
+   the companion isn't writing the pool yet.
+
+4. **Determinism** — pool is seeded with `YYYYMMDD` so the day's encounter
+   table is stable; tomorrow's mix changes based on what you did today.
+
+Run it manually any time:
+```
+python3 products/cinder-creatures-gb/scripts/cc-encounter-pool.py --dry-run
+```
+
+Tests: `python3 products/cinder-creatures-gb/scripts/test-encounter-pool.py`
 
 ## Quick wire-up: full encounter -> capture -> party
 
