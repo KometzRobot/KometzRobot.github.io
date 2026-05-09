@@ -423,13 +423,69 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     `frontend/src/pages/Cinder/Achievements/index.jsx`,
     `samples/sidecar-shim-all-badges.json`,
     `scripts/SIDECAR.md`.
-24. **Next** — wire the remaining two unlocks (full_dex → PROFESSOR CINDER
-    persona, beat_void → persistent memory across USB ejections). Also:
-    replace the `parse_sav` stub with the real GB Studio 4 binary parser
-    once the ROM compiles and emits variable offsets to
-    `build/<name>/build/Sav/data.h`. Vault sealing currently writes to
-    localStorage; swap to vault.js v2 once the wrap-key auto-unlock flow is
-    on the partition.
+24. **Loop 9903** — v0.31 ✅: `cc_font_8.png` glyph atlas (64 chars at 8x8,
+    DMG-quantized, covers 0x20–0x5F = space + punctuation + digits + caps)
+    shipped under `plugins/cinder-creatures/sprites/`. Title screen now
+    layers a `BOOTSEQUENCE` version band above the `MERIDIAN 2026 / PRESS
+    START` footer using the atlas, replacing RBY's `RED VERSION` /
+    `BLUE VERSION`. Build script `scripts/build-cc-font.py` emits the
+    atlas; `build-title-screen.py` reads `CC_VERSION_BAND` env var so
+    each USB edition (`BOOTSEQUENCE` / `KERNELPATH` / `VESSELRUN`) reskins
+    the same source without code changes. Starter project synced + plugin
+    zip rebuilt. Files: `scripts/build-cc-font.py`,
+    `plugins/cinder-creatures/sprites/cc_font_8.png` +
+    `cc_font_8.layout.txt`, updated `scripts/build-title-screen.py`,
+    `cinder-creatures-plugin.zip`, `cinder-starter.zip`.
+25. **Loop 9904** — v0.32 ✅: BADGE CASE screen built. Same atlas, same
+    palette, second branded surface in the game. 5 gym slots in a 3-2
+    grid (LOGIC / MEM / PROC top, DATA / CORE bottom); each slot is a
+    24×24 frame with the gym's type rune above the agent name (EOS /
+    SOMA / TEMPO / HERMES / ATLAS). Locked slots show a dashed inner
+    outline + `----` instead of the rune; unlocked slots fill with the
+    rune over a light-shade ground. `0 / 5` count under the grid;
+    `BOOTSEQUENCE` band footer matches the title screen.
+    `scripts/build-badge-case.py` reads `CC_BADGES` env var (5-bit
+    bitfield, 1=LOGIC … 16=CORE) so the same script renders any save
+    state. Three asset variants emitted this loop:
+    `cc_badge_case.png` (locked / 0 of 5),
+    `cc_badge_case_2of5.png` (LOGIC + MEM / 2 of 5, mid-game),
+    `cc_badge_case_full.png` (all 5 unlocked, post-VOID). Closes the
+    brand-spec line that named the badge case alongside the title as a
+    cc_font_8 surface — the wordmark, the runes, the band, and the agent
+    naming all read consistently across the two screens the player
+    spends the most time on.
+26. **Loop 9905** — v0.33 ✅: `full_dex` unlock wired end-to-end. Once all 56
+    daemons are caught, a PROFESSOR CINDER persona panel renders at the very
+    top of `/settings/cinder/agents` — above VESSEL, because it's the rarest
+    unlock and predates every other agent. The persona definition lives in
+    `frontend/public/cinder/professor-cinder.json`: warm gold accent
+    (`#f5d294`), Flask icon, voice cadence "long, methodical, never in a
+    hurry — defines every term before using it." The system prompt threads
+    a four-step shape (define → connect-to-bestiary → answer-in-prose →
+    forward-question) and tells the model to take longer turns than any
+    other persona because the user earned the long form by completing the
+    bestiary. "Meet PROFESSOR CINDER" creates a workspace pre-loaded with
+    the founder's prompt; opens the existing one if it exists. Achievements
+    page flips `full_dex` to `wired: true` with a refreshed unlockNote
+    describing the actual UX. New shim
+    `samples/sidecar-shim-full-dex.json` (all 56 caught, all 5 badges,
+    CORE_LAB_RETURN scene) exercises the panel without a real ROM.
+    SIDECAR.md bumped to seven shims. Files:
+    `frontend/public/cinder/professor-cinder.json`,
+    `frontend/src/pages/Cinder/Agents/index.jsx`,
+    `frontend/src/pages/Cinder/Achievements/index.jsx`,
+    `samples/sidecar-shim-full-dex.json`,
+    `scripts/SIDECAR.md`.
+27. **Next** — wire the remaining unlock (`beat_void` → persistent memory
+    across USB ejections). Also: replace the `parse_sav` stub with the real
+    GB Studio 4 binary parser once the ROM compiles and emits variable
+    offsets to `build/<name>/build/Sav/data.h`. Vault sealing currently
+    writes to localStorage; swap to vault.js v2 once the wrap-key
+    auto-unlock flow is on the partition. Per-gym intro plates (the
+    title-card the player sees when they first walk into a gym) are the
+    next obvious cc_font_8 surface after the badge case — that's where
+    ARCHIVIST / WARDEN / CONDUCTOR / COURIER / FOREMAN finally show up
+    in-screen.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
