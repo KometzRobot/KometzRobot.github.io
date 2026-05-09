@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build GYM-PROC scene — third gym, CONDUCTOR TEMPO, 4 trainers + leader.
+"""Build GYM-PROC scene — third gym, FOREMAN HUSKE, 4 trainers + leader.
 
 Generates:
   cinder-starter/assets/backgrounds/cc_gym_proc.png  (160x144 DMG)
@@ -13,7 +13,7 @@ Run from repo root:
 Idempotent — stable UUIDs, safe to re-run.
 
 Design (CINDER-CREATURES-RPG.md):
-  - GYM-PROC, leader CONDUCTOR TEMPO, badge PROC, bit value = 4.
+  - GYM-PROC, leader FOREMAN HUSKE, badge PROC, bit value = 4.
   - Personality: rapid, clipped, dancer. Specialty: speed + interrupts (STUN).
   - Floor layout: running lanes / metronome motif. 4 RUNNER trainer pads on lanes.
   - Trainers fight PROC creatures (THREDLE / PIDGON / NICEKIT / SCHEDOG).
@@ -49,7 +49,7 @@ TRG_TRAINER = [f"c1bd5e01-4000-4004-8004-0000000000{80+i:02d}" for i in range(4)
 TRG_LEADER = "c1bd5e01-4000-4004-8004-000000000090"
 TRG_RIDDLE = "c1bd5e01-4000-4004-8004-000000000091"
 
-# CONDUCTOR TEMPO — rapid, clipped, dancer. Speed + interrupts (STUN).
+# FOREMAN HUSKE — rapid, clipped, dancer. Speed + interrupts (STUN).
 # Trainers wear "RUNNER" titles — they pace the lanes.
 TRAINERS = [
     ("RUNNER", "PULSE", 13, "THREDLE",
@@ -226,7 +226,7 @@ def write_trainer_flags(idx, eid_base):
 def _leader_battle_block(eid, base, team_entry, beat_lines):
     cid, cname = team_entry
     return [
-        text(eid(base + 0), f"TEMPO sends out\n{cname}!"),
+        text(eid(base + 0), f"HUSKE sends out\n{cname}!"),
         set_var(eid(base + 1), ID_VAR_OPP_ID, cid),
         evt(eid(base + 2), "EVENT_CC_SET_STATS", {
             "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
@@ -246,12 +246,12 @@ def leader_script(trg_id):
         "variable": ID_VAR_PROC_TRAINERS, "operator": "<", "comparator": 15,
     }, {"true": [
         text(eid(1),
-             "CONDUCTOR TEMPO:\nFinish the lanes.\nThen the stage."),
+             "FOREMAN HUSKE:\nThe shift's not done.\nFinish the line."),
     ], "false": [
         text(eid(2),
-             "CONDUCTOR TEMPO:\nOn time. Good.\nKeep up."),
+             "FOREMAN HUSKE:\nClock's clean.\nStep into the heat."),
         evt(eid(3), "EVENT_CC_TRAINER_CHALLENGE", {
-            "title": "CONDUCTOR", "trainer": "TEMPO",
+            "title": "FOREMAN", "trainer": "HUSKE",
             "intro": "challenges you!",
             "boast": "Three beats. Three falls.\nGo.",
         }),
@@ -271,7 +271,7 @@ def leader_script(trg_id):
             "You finish the line.\nFORKLING fainted.",
         ]),
         text(eid(60),
-             "CONDUCTOR TEMPO:\nYou kept tempo.\nThat's rare. Move on."),
+             "FOREMAN HUSKE:\nKept pace. Good.\nThe PROC type stalls."),
         evt(eid(61), "EVENT_IF_VALUE", {
             "variable": ID_VAR_BADGE_FLAG_PROC,
             "operator": "==", "comparator": 0,
@@ -287,10 +287,10 @@ def leader_script(trg_id):
         ], "false": []}),
         evt(eid(64), "EVENT_CC_BADGE_UNLOCK", {
             "badge": "PROC",
-            "leaderName": "CONDUCTOR TEMPO",
+            "leaderName": "FOREMAN HUSKE",
         }),
         text(eid(65),
-             "CONDUCTOR TEMPO:\nFind HERMES next.\nThey talk fast. Listen."),
+             "FOREMAN HUSKE:\nShift handed off.\nCARRIER WICK has your envelope."),
     ]}))
     return s
 
@@ -300,7 +300,7 @@ def riddle_script(trg_id):
     eid = lambda i: f"{base}-{i:03d}"
     return [
         text(eid(0),
-             "GYM SIGN:\nGYM-PROC.\nLeader: CONDUCTOR TEMPO."),
+             "GYM SIGN:\nGYM-PROC.\nLeader: FOREMAN HUSKE."),
         text(eid(1),
              "Status note:\nPROC moves use STUN\nand INTERRUPT — skip turns."),
         text(eid(2),
@@ -400,7 +400,7 @@ def main():
         trigger_files.append((f"trainer_{i+1}.gbsres", tf))
 
     tf_leader = trigger_file(
-        TRG_LEADER, "Proc Leader TEMPO", "trigger_proc_leader",
+        TRG_LEADER, "Proc Leader HUSKE", "trigger_proc_leader",
         leader_tile[0], leader_tile[1], 2, 2, 4,
         leader_script(TRG_LEADER),
     )

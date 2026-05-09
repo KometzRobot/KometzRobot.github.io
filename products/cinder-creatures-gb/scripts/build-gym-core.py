@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build GYM-CORE scene — fifth and final gym, FOREMAN ATLAS, 4 trainers + leader.
+"""Build GYM-CORE scene — fifth and final gym, STOKER HEARTH, 4 trainers + leader.
 
 Generates:
   cinder-starter/assets/backgrounds/cc_gym_core.png  (160x144 DMG)
@@ -13,7 +13,7 @@ Run from repo root:
 Idempotent — stable UUIDs, safe to re-run.
 
 Design (CINDER-CREATURES-RPG.md):
-  - GYM-CORE, leader FOREMAN ATLAS, badge CORE, bit value = 16.
+  - GYM-CORE, leader STOKER HEARTH, badge CORE, bit value = 16.
   - Personality: quiet, tank, last to fold.
   - Combat: rotation of all 5 types, no STAB advantage — the foundation type.
   - Floor layout: foundry / load-bearing scaffolds. 4 anvil pads.
@@ -52,7 +52,7 @@ TRG_TRAINER = [f"c1bd5e01-4000-4004-8004-0000000000{0xc0+i:02x}" for i in range(
 TRG_LEADER = "c1bd5e01-4000-4004-8004-0000000000d0"
 TRG_RIDDLE = "c1bd5e01-4000-4004-8004-0000000000d1"
 
-# FOREMAN ATLAS — quiet, tank, last to fold. Steady. No flourishes.
+# STOKER HEARTH — quiet, tank, last to fold. Steady. No flourishes.
 # Trainers wear "FOREMAN" titles — they hold the floor up.
 TRAINERS = [
     ("FOREMAN", "GIRDER", 19, "ARMOTE",
@@ -242,7 +242,7 @@ def write_trainer_flags(idx, eid_base):
 def _leader_battle_block(eid, base, team_entry, beat_lines):
     cid, cname, ctype = team_entry
     return [
-        text(eid(base + 0), f"ATLAS rotates in\n{cname} ({ctype})."),
+        text(eid(base + 0), f"HEARTH rotates in\n{cname} ({ctype})."),
         set_var(eid(base + 1), ID_VAR_OPP_ID, cid),
         evt(eid(base + 2), "EVENT_CC_SET_STATS", {
             "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
@@ -262,12 +262,12 @@ def leader_script(trg_id):
         "variable": ID_VAR_CORE_TRAINERS, "operator": "<", "comparator": 15,
     }, {"true": [
         text(eid(1),
-             "FOREMAN ATLAS:\nFloor first.\nFour pillars. Then me."),
+             "STOKER HEARTH:\nThe coals aren't ready.\nTalk to the bench first."),
     ], "false": [
         text(eid(2),
-             "FOREMAN ATLAS:\nQuiet enough now.\nFive types. No favorites."),
+             "STOKER HEARTH:\nBed is hot enough.\nFive types in the embers. Bring them."),
         evt(eid(3), "EVENT_CC_TRAINER_CHALLENGE", {
-            "title": "FOREMAN", "trainer": "ATLAS",
+            "title": "STOKER", "trainer": "HEARTH",
             "intro": "challenges you!",
             "boast": "I lean on every type.\nFind the one that bends.",
         }),
@@ -297,7 +297,7 @@ def leader_script(trg_id):
             "You sever the graph.\nGRAFTLE fainted.",
         ]),
         text(eid(100),
-             "FOREMAN ATLAS:\nFloor still standing.\nGo see the VOID."),
+             "STOKER HEARTH:\nThe core admits it.\nThe ember stays awake."),
         evt(eid(101), "EVENT_IF_VALUE", {
             "variable": ID_VAR_BADGE_FLAG_CORE,
             "operator": "==", "comparator": 0,
@@ -313,10 +313,10 @@ def leader_script(trg_id):
         ], "false": []}),
         evt(eid(104), "EVENT_CC_BADGE_UNLOCK", {
             "badge": "CORE",
-            "leaderName": "FOREMAN ATLAS",
+            "leaderName": "STOKER HEARTH",
         }),
         text(eid(105),
-             "FOREMAN ATLAS:\nFive badges.\nThe save bit hums.\nVOID waits in SECTOR-9."),
+             "STOKER HEARTH:\nFive badges. The fire is yours.\nVOID waits in SECTOR-9."),
     ]}))
     return s
 
@@ -326,7 +326,7 @@ def riddle_script(trg_id):
     eid = lambda i: f"{base}-{i:03d}"
     return [
         text(eid(0),
-             "GYM SIGN:\nGYM-CORE.\nLeader: FOREMAN ATLAS."),
+             "GYM SIGN:\nGYM-CORE.\nLeader: STOKER HEARTH."),
         text(eid(1),
              "Note:\nCORE has no STAB advantage.\nIt is the floor everything\nelse stands on."),
         text(eid(2),
@@ -426,7 +426,7 @@ def main():
         trigger_files.append((f"trainer_{i+1}.gbsres", tf))
 
     tf_leader = trigger_file(
-        TRG_LEADER, "Core Leader ATLAS", "trigger_core_leader",
+        TRG_LEADER, "Core Leader HEARTH", "trigger_core_leader",
         leader_tile[0], leader_tile[1], 2, 2, 4,
         leader_script(TRG_LEADER),
     )

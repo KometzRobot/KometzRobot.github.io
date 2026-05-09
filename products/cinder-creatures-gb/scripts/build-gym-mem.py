@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build GYM-MEM scene — second gym, WARDEN SOMA, 4 trainers + leader.
+"""Build GYM-MEM scene — second gym, KEEPER KILN, 4 trainers + leader.
 
 Generates:
   cinder-starter/assets/backgrounds/cc_gym_mem.png  (160x144 DMG)
@@ -13,7 +13,7 @@ Run from repo root:
 Idempotent — stable UUIDs, safe to re-run.
 
 Design (CINDER-CREATURES-RPG.md):
-  - GYM-MEM, leader WARDEN SOMA, badge MEM, bit value = 2.
+  - GYM-MEM, leader KEEPER KILN, badge MEM, bit value = 2.
   - Personality: grounded, slow, patient. Specialty: endurance + status (LEAK / BLOAT).
   - Floor layout: stockroom motif. 4 storage-keeper trainer pads, leader bench at north.
   - Trainers fight MEM-type creatures (STACKAT/CACHEY/PAGYL/MALLOCK).
@@ -49,7 +49,7 @@ TRG_TRAINER = [f"c1bd5e01-4000-4004-8004-0000000000{40+i:02d}" for i in range(4)
 TRG_LEADER = "c1bd5e01-4000-4004-8004-000000000050"
 TRG_RIDDLE = "c1bd5e01-4000-4004-8004-000000000051"
 
-# WARDEN SOMA — grounded, slow, patient. Endurance + status (LEAK / BLOAT).
+# KEEPER KILN — grounded, slow, patient. Endurance + status (LEAK / BLOAT).
 # Trainers wear "KEEPER" titles — they tend the storage tiers.
 TRAINERS = [
     ("KEEPER", "STACK", 40, "STACKAT",
@@ -230,7 +230,7 @@ def write_trainer_flags(idx, eid_base):
 def _leader_battle_block(eid, base, team_entry, beat_lines):
     cid, cname = team_entry
     return [
-        text(eid(base + 0), f"SOMA sends out\n{cname}!"),
+        text(eid(base + 0), f"KILN sends out\n{cname}!"),
         set_var(eid(base + 1), ID_VAR_OPP_ID, cid),
         evt(eid(base + 2), "EVENT_CC_SET_STATS", {
             "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
@@ -250,12 +250,12 @@ def leader_script(trg_id):
         "variable": ID_VAR_MEM_TRAINERS, "operator": "<", "comparator": 15,
     }, {"true": [
         text(eid(1),
-             "WARDEN SOMA:\nClear the keepers first.\nI take my time."),
+             "KEEPER KILN:\nNothing's been fired yet.\nTry the kiln-hands first."),
     ], "false": [
         text(eid(2),
-             "WARDEN SOMA:\nYou're patient.\nGood. So am I."),
+             "KEEPER KILN:\nThe wares are baked.\nWill yours hold the heat?"),
         evt(eid(3), "EVENT_CC_TRAINER_CHALLENGE", {
-            "title": "WARDEN", "trainer": "SOMA",
+            "title": "KEEPER", "trainer": "KILN",
             "intro": "challenges you!",
             "boast": "Endurance is honest.\nYou'll feel each round.",
         }),
@@ -275,7 +275,7 @@ def leader_script(trg_id):
             "You finish it.\nNULLPUP fainted.",
         ]),
         text(eid(60),
-             "WARDEN SOMA:\nYou outlasted me.\nThat is rare."),
+             "KEEPER KILN:\nIntact, no cracks.\nThe MEM type yields."),
         evt(eid(61), "EVENT_IF_VALUE", {
             "variable": ID_VAR_BADGE_FLAG_MEM,
             "operator": "==", "comparator": 0,
@@ -291,10 +291,10 @@ def leader_script(trg_id):
         ], "false": []}),
         evt(eid(64), "EVENT_CC_BADGE_UNLOCK", {
             "badge": "MEM",
-            "leaderName": "WARDEN SOMA",
+            "leaderName": "KEEPER KILN",
         }),
         text(eid(65),
-             "WARDEN SOMA:\nFind TEMPO next.\nThey will not wait."),
+             "KEEPER KILN:\nHeat-tested. Logged.\nFOREMAN HUSKE waits."),
     ]}))
     return s
 
@@ -304,7 +304,7 @@ def riddle_script(trg_id):
     eid = lambda i: f"{base}-{i:03d}"
     return [
         text(eid(0),
-             "GYM SIGN:\nGYM-MEM.\nLeader: WARDEN SOMA."),
+             "GYM SIGN:\nGYM-MEM.\nLeader: KEEPER KILN."),
         text(eid(1),
              "Status note:\nMEM moves use LEAK\nand BLOAT — slow drains."),
         text(eid(2),
@@ -405,7 +405,7 @@ def main():
         trigger_files.append((f"trainer_{i+1}.gbsres", tf))
 
     tf_leader = trigger_file(
-        TRG_LEADER, "Mem Leader SOMA", "trigger_mem_leader",
+        TRG_LEADER, "Mem Leader KILN", "trigger_mem_leader",
         leader_tile[0], leader_tile[1], 2, 2, 4,
         leader_script(TRG_LEADER),
     )

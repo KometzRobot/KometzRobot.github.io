@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build GYM-DATA scene — fourth gym, COURIER HERMES, 4 trainers + leader.
+"""Build GYM-DATA scene — fourth gym, CARRIER WICK, 4 trainers + leader.
 
 Generates:
   cinder-starter/assets/backgrounds/cc_gym_data.png  (160x144 DMG)
@@ -13,7 +13,7 @@ Run from repo root:
 Idempotent — stable UUIDs, safe to re-run.
 
 Design (CINDER-CREATURES-RPG.md):
-  - GYM-DATA, leader COURIER HERMES, badge DATA, bit value = 8.
+  - GYM-DATA, leader CARRIER WICK, badge DATA, bit value = 8.
   - Personality: restless, talkative. Specialty: RNG fights, swarms, multi-hits.
   - Floor layout: parcel sort station / pneumatic tubes. 4 sorting-table pads.
   - Trainers fight DATA creatures (BYTEFLY / CACHEBIT / CSVOLE / JSONIA).
@@ -49,7 +49,7 @@ TRG_TRAINER = [f"c1bd5e01-4000-4004-8004-0000000000{0xa0+i:02x}" for i in range(
 TRG_LEADER = "c1bd5e01-4000-4004-8004-0000000000b0"
 TRG_RIDDLE = "c1bd5e01-4000-4004-8004-0000000000b1"
 
-# COURIER HERMES — restless, talkative. Swarm + multi-hit + RNG.
+# CARRIER WICK — restless, talkative. Swarm + multi-hit + RNG.
 # Trainers wear "COURIER" titles — they sort the mail.
 TRAINERS = [
     ("COURIER", "PACKET", 6, "BYTEFLY",
@@ -232,7 +232,7 @@ def write_trainer_flags(idx, eid_base):
 def _leader_battle_block(eid, base, team_entry, beat_lines):
     cid, cname = team_entry
     return [
-        text(eid(base + 0), f"HERMES sends out\n{cname}!"),
+        text(eid(base + 0), f"WICK sends out\n{cname}!"),
         set_var(eid(base + 1), ID_VAR_OPP_ID, cid),
         evt(eid(base + 2), "EVENT_CC_SET_STATS", {
             "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
@@ -252,12 +252,12 @@ def leader_script(trg_id):
         "variable": ID_VAR_DATA_TRAINERS, "operator": "<", "comparator": 15,
     }, {"true": [
         text(eid(1),
-             "COURIER HERMES:\nSort the floor first.\nFour packets, four lanes."),
+             "CARRIER WICK:\nThere are letters out.\nRead the room first."),
     ], "false": [
         text(eid(2),
-             "COURIER HERMES:\nFinally. Three at once.\nKeep me talking."),
+             "CARRIER WICK:\nManifest is settled.\nFeed me into the flame."),
         evt(eid(3), "EVENT_CC_TRAINER_CHALLENGE", {
-            "title": "COURIER", "trainer": "HERMES",
+            "title": "CARRIER", "trainer": "WICK",
             "intro": "challenges you!",
             "boast": "I send. You receive.\nThree messages. Go.",
         }),
@@ -277,7 +277,7 @@ def leader_script(trg_id):
             "You finish the message.\nSTRTERM fainted.",
         ]),
         text(eid(60),
-             "COURIER HERMES:\nQuiet on the line. New.\nYou ride this far."),
+             "CARRIER WICK:\nDelivered. Receipt signed.\nThe DATA type holds."),
         evt(eid(61), "EVENT_IF_VALUE", {
             "variable": ID_VAR_BADGE_FLAG_DATA,
             "operator": "==", "comparator": 0,
@@ -293,10 +293,10 @@ def leader_script(trg_id):
         ], "false": []}),
         evt(eid(64), "EVENT_CC_BADGE_UNLOCK", {
             "badge": "DATA",
-            "leaderName": "COURIER HERMES",
+            "leaderName": "CARRIER WICK",
         }),
         text(eid(65),
-             "COURIER HERMES:\nFind ATLAS next.\nThey speak rarely. Listen harder."),
+             "CARRIER WICK:\nSealed and stamped.\nSTOKER HEARTH closes the loop."),
     ]}))
     return s
 
@@ -306,7 +306,7 @@ def riddle_script(trg_id):
     eid = lambda i: f"{base}-{i:03d}"
     return [
         text(eid(0),
-             "GYM SIGN:\nGYM-DATA.\nLeader: COURIER HERMES."),
+             "GYM SIGN:\nGYM-DATA.\nLeader: CARRIER WICK."),
         text(eid(1),
              "Status note:\nDATA moves use SWARM\nand MISDIRECT — multi-hit RNG."),
         text(eid(2),
@@ -406,7 +406,7 @@ def main():
         trigger_files.append((f"trainer_{i+1}.gbsres", tf))
 
     tf_leader = trigger_file(
-        TRG_LEADER, "Data Leader HERMES", "trigger_data_leader",
+        TRG_LEADER, "Data Leader WICK", "trigger_data_leader",
         leader_tile[0], leader_tile[1], 2, 2, 4,
         leader_script(TRG_LEADER),
     )

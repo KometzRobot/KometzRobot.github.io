@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build GYM-LOGIC scene — first gym, ARCHIVIST EOS, 4 trainers + leader.
+"""Build GYM-LOGIC scene — first gym, AUDITOR PYRE, 4 trainers + leader.
 
 Generates:
   cinder-starter/assets/backgrounds/cc_gym_logic.png  (160x144 DMG)
@@ -13,7 +13,7 @@ Run from repo root:
 Idempotent — stable UUIDs, safe to re-run.
 
 Design (from CINDER-CREATURES-RPG.md, Loop 9806 line):
-  - GYM-LOGIC, leader ARCHIVIST EOS, badge LOGIC.
+  - GYM-LOGIC, leader AUDITOR PYRE, badge LOGIC.
   - Floor layout: entry at south, 4 trainer pads, leader pedestal at north.
   - Trainers fight LOGIC-type creatures (RECURSE/REGEXEL/SEMAFOX/BOOLEM).
   - Each trainer fight: challenge intro -> stats loaded -> 3-round dialogue
@@ -75,7 +75,7 @@ TRAINERS = [
 ]
 # Need all 4 bits set: 1|2|4|8 = 15
 
-# Leader: ARCHIVIST EOS, 3 LOGIC creatures
+# Leader: AUDITOR PYRE, 3 LOGIC creatures
 LEADER_TEAM = [
     (4, "RECURSE"),
     (8, "REGEXEL"),
@@ -87,7 +87,7 @@ def build_gym_bg():
     """160x144 DMG-palette gym interior.
 
     Layout (top-down, 16x16 tile grid -> 10 cols x 9 rows):
-      - North wall (y=0..15)        — bookshelves (ARCHIVIST motif)
+      - North wall (y=0..15)        — bookshelves (AUDITOR motif)
       - Floor                       — checker pattern, light/lightest
       - 4 trainer pads in 2 rows of 2, marked with darker square + glyph
       - Leader pedestal centered north (just south of north wall)
@@ -241,12 +241,12 @@ def leader_script(trg_id):
         "variable": ID_VAR_TRAINERS_DEFEATED, "operator": "<", "comparator": 15,
     }, {"true": [
         text(eid(1),
-             "ARCHIVIST EOS:\nClear the others first.\nThe path is the proof."),
+             "AUDITOR PYRE:\nPaper before flame.\nClear the room first."),
     ], "false": [
         text(eid(2),
-             "ARCHIVIST EOS:\nYou cleared the floor.\nNow show me reasoning."),
+             "AUDITOR PYRE:\nThe room is yours.\nNow burn through me."),
         evt(eid(3), "EVENT_CC_TRAINER_CHALLENGE", {
-            "title": "ARCHIVIST", "trainer": "EOS",
+            "title": "AUDITOR", "trainer": "PYRE",
             "intro": "challenges you!",
             "boast": "Type-chart is honest.\nNo surprises here.",
         }),
@@ -255,7 +255,7 @@ def leader_script(trg_id):
         *_leader_battle_block(eid, 20, LEADER_TEAM[1]),
         *_leader_battle_block(eid, 40, LEADER_TEAM[2]),
         text(eid(60),
-             "ARCHIVIST EOS:\nClean derivation.\nThe LOGIC type yields."),
+             "AUDITOR PYRE:\nSound. Truth held.\nThe LOGIC type bows."),
         # Set bit in VAR_CC_BADGES iff per-badge flag is 0 (idempotent guard).
         evt(eid(61), "EVENT_IF_VALUE", {
             "variable": ID_VAR_BADGE_FLAG_LOGIC,
@@ -273,10 +273,10 @@ def leader_script(trg_id):
         # Cosmetic award dialogue
         evt(eid(64), "EVENT_CC_BADGE_UNLOCK", {
             "badge": "LOGIC",
-            "leaderName": "ARCHIVIST EOS",
+            "leaderName": "AUDITOR PYRE",
         }),
         text(eid(65),
-             "ARCHIVIST EOS:\nThe vessel reads true.\nGo find SOMA next."),
+             "AUDITOR PYRE:\nThe ember reads true.\nGo see KEEPER KILN."),
     ]}))
     return s
 
@@ -284,7 +284,7 @@ def leader_script(trg_id):
 def _leader_battle_block(eid, base, team_entry):
     cid, cname = team_entry
     return [
-        text(eid(base + 0), f"EOS sends out\n{cname}!"),
+        text(eid(base + 0), f"PYRE sends out\n{cname}!"),
         set_var(eid(base + 1), ID_VAR_OPP_ID, cid),
         evt(eid(base + 2), "EVENT_CC_SET_STATS", {
             "idVar": ID_VAR_OPP_ID, "hpVar": ID_VAR_OPP_HP,
@@ -301,7 +301,7 @@ def riddle_script(trg_id):
     eid = lambda i: f"{base}-{i:03d}"
     return [
         text(eid(0),
-             "GYM SIGN:\nGYM-LOGIC.\nLeader: ARCHIVIST EOS."),
+             "GYM SIGN:\nGYM-LOGIC.\nLeader: AUDITOR PYRE."),
         text(eid(1),
              "Riddle:\nLOGIC beats PROC,\nbut bows to nothing."),
         text(eid(2),
@@ -430,7 +430,7 @@ def main():
         trigger_files.append((f"trainer_{i+1}.gbsres", tf))
     # Leader
     tf_leader = trigger_file(
-        TRG_LEADER, "Gym Leader EOS", "trigger_gym_leader",
+        TRG_LEADER, "Gym Leader PYRE", "trigger_gym_leader",
         leader_tile[0], leader_tile[1], 2, 2, 4,
         leader_script(TRG_LEADER),
     )
