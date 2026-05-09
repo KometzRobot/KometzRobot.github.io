@@ -315,10 +315,29 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     second flag is what the companion app reads to enable persistent memory mode
     across USB ejections — finishing the ROM unlocks a real product feature, not
     a credits screen. Replay-safe (already-defeated branch skips the fight).
-17. **Next** — companion-app side of the VOID unlock:
-    - `cc-dex-sync.py` reads `VAR_CC_PERSIST_UNLOCK` from the decoded save and
-      flips the corresponding flag the AnythingLLM-fork sidecar respects.
-    - Hall-of-Fame style party snapshot on the journal page when defeated.
+17. **Loop 9815** — v0.19 ✅: Codex tab on companion app side. /settings/cinder/codex
+    renders all 56 species as cards, silhouetted until caught, lights up from the
+    GB save sidecar. Filter by type, search by name/note. Closes the visible half
+    of directive #6 — players see their progression in the same chat app they
+    journal in.
+18. **Loop 9816** — v0.20 ✅: Achievements page on companion app side.
+    /settings/cinder/achievements renders the six milestone unlock chain:
+      - First catch    -> journal entry template
+      - First badge    -> chat persona theme matched to gym
+      - 10 caught      -> vault widget on journal
+      - All 5 badges   -> VESSEL chat mode
+      - Full dex (56)  -> hidden PROFESSOR CINDER persona
+      - Beat VOID      -> persistent memory across USB ejections
+    Each card reads the same save sidecar as Codex; shows a progress bar, the
+    unlock the player is working toward, and the unlock note explaining what
+    appears in the companion app. Closes the loop on directive #6 in the
+    other direction — the more they play the ROM, the more the companion
+    app opens up.
+19. **Next** — wiring each unlock to actually open up the corresponding feature
+    when its flag flips (journal entry template, persona themes, vault widget,
+    VESSEL mode, PROFESSOR CINDER persona, persistent memory). Currently the
+    Achievements page reflects state; next loops connect each unlock to the
+    feature it gates.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
