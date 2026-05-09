@@ -542,7 +542,59 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     `cinder-starter/project/scenes/cinder_gym_*/scene.gbsres` (×5
     patched).
 
-30. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
+30. **Loop 9947** — v0.37 ✅: ROUTE 0x01 scene shipped. `cc_route1_bg.png`
+    copied into `cinder-starter/assets/backgrounds/` with `.gbsres`
+    metadata; `cinder_route_0x01` scene registered (UUID slot 0xc0,
+    20×18 topdown, on-init flavour text); 4×3 grass trigger (UUID 0xc0)
+    fires `EVENT_CC_ENCOUNTER` (range 1..56) into `CC Creature Buf`.
+    First walkable patch of grass — the catch-loop plumbing finally has
+    a place to fire. Build script `scripts/build-route-0x01.py`.
+
+31. **Loop 9948** — v0.38 ✅: ROUTE 0x01 has stakes. The empty grass
+    patch from v0.37 grew two more triggers to match the gym layout
+    convention. `trainer_echo.gbsres` (UUID 0xc1): TRAINER ECHO with
+    MIRRORLING (foe id 0x07), full `EVENT_CC_TRAINER_CHALLENGE` →
+    `EVENT_CC_SET_STATS` chain, one-shot via `VAR_ROUTE_TRAINER_FLAG`,
+    increments `TRAINERS_BEATEN`, post-win callback line on revisit.
+    `route_sign.gbsres` (UUID 0xc2): three-page lore sign — *GRASS
+    BUFFER / Wild creatures spawn from your USB activity / Use it more,
+    the pool gets stranger.* Build script
+    `scripts/build-route-trainer.py`.
+
+32. **Loop 9949** — v0.39 ✅: ROUTE 0x01 grass is USB-driven. The
+    16-slot pool that the companion app composes from `cinder.db`
+    activity (chats, journal, vault saves, streak, new-machine flag)
+    is no longer a spec — it's wired into the grass trigger. Three
+    moves this loop:
+
+    1. 17 new variables added to `cinder-starter/project/variables.gbsres`
+       on UUID slab 0xd0..0xe0 — `var_cc_pool_00..15` (slots) +
+       `var_cc_pool_idx` (temp index).
+    2. `grass_a.gbsres` rewritten so its script is now
+       `EVENT_CC_POOL_ENCOUNTER` → `CC Creature Buf`, then a guard:
+       if `Buf == 0` (companion has not seeded yet) it falls back to
+       `EVENT_CC_ENCOUNTER 1..56` so a fresh-boot ROM still works
+       without a USB; otherwise `EVENT_CC_SHOW_NAME` announces the
+       pool spawn. The same scene reads differently depending on USB
+       state — empty boot = uniform random, busy day = pool-driven.
+    3. Two pool fixtures shipped under `samples/` so the wiring can be
+       exercised without a real Cinder USB:
+       `pool-shim-empty.json` (zeroed slots, exercises fallback),
+       `pool-shim-active.json` (RECURSE/BYTEFLY-heavy commons + 2
+       uncommons + rare + legendary, exercises pool path).
+
+    Build script `scripts/build-pool-encounter-wiring.py` is idempotent
+    (re-runs only patch what's missing). Closes the wiring direction
+    on directive #6 — the player stepping into grass on a busy USB day
+    meets different daemons than on a fresh boot. The remaining piece
+    is the `.sav` pre-boot writer (companion app writes pool slot
+    values into the GB Studio save header so the ROM reads them on
+    next launch); plumbing in `cc-encounter-pool.py` already emits
+    `cinder-creatures.pool.json` next to the save, so the save-writer
+    just has to copy slot values into the right offsets in `.sav`
+    once `build/<rom>/build/Sav/data.h` is available.
+
+33. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
     parser once the ROM compiles and emits variable offsets to
     `build/<name>/build/Sav/data.h`. Vault sealing currently writes to
     localStorage; swap to vault.js v2 once the wrap-key auto-unlock flow is
