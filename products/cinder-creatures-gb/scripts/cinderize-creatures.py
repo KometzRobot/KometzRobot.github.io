@@ -17,6 +17,9 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(ROOT, "cc0-creatures-16")
 DATA_FILE = os.path.join(ROOT, "plugins", "cinder-creatures", "data", "creatures.json")
+# Hand-drawn overrides (Joel directive Loop 9951): any id with a file in this
+# directory shadows the cinderized CC0 sprite. Built by build-custom-creatures.py.
+CUSTOM_DIR = os.path.join(ROOT, "custom-creatures")
 
 # Write the cinderized sprite to every place GB Studio might load it from.
 # Tuples are (target_dir, filename_template) — template gets a 2-digit id.
@@ -140,18 +143,30 @@ def main() -> int:
     for dst_dir, _ in DST_TARGETS:
         os.makedirs(dst_dir, exist_ok=True)
 
+    custom_ids = set()
+    if os.path.isdir(CUSTOM_DIR):
+        for fn in os.listdir(CUSTOM_DIR):
+            if fn[:2].isdigit():
+                custom_ids.add(int(fn[:2]))
+
     n = 0
+    skipped = 0
     for fn in sorted(os.listdir(SRC_DIR)):
         if not fn.startswith("creature_") or not fn.endswith(".png"):
             continue
         cid = int(fn[9:11])
+        if cid in custom_ids:
+            skipped += 1
+            continue
         species = by_id.get(cid)
         ctype = species["type"] if species else "CORE"
         src_path = os.path.join(SRC_DIR, fn)
         for dst_dir, name_tmpl in DST_TARGETS:
             cinderize(src_path, os.path.join(dst_dir, name_tmpl.format(cid)), ctype)
         n += 1
-    print(f"cinderized {n} creatures -> {len(DST_TARGETS)} target dirs")
+    print(f"cinderized {n} creatures -> {len(DST_TARGETS)} target dirs"
+          f" (skipped {skipped} custom)" if skipped else
+          f"cinderized {n} creatures -> {len(DST_TARGETS)} target dirs")
     for dst_dir, _ in DST_TARGETS:
         print(f"  {os.path.relpath(dst_dir, ROOT)}")
     return 0
