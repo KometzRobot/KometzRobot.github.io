@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Add a CINDER CACHE one-shot item drop to ROUTE 0x01 (v0.40).
+"""Add an EMBER CACHE one-shot item drop to ROUTE 0x01 (v0.40, renamed v0.45).
 
 Loop 9950. v0.39 closed the USB-driven catch loop in grass. The route
 now had wild encounters, a trainer, and a sign — but no item rewards
 between fights. Pokemon routes always have a hidden Potion or Pokeball
-on the ground. This script adds the Cinder equivalent: a one-shot
-CINDER CACHE tile that gives BYTE-SHARDs (always) plus an ECHO-WAFER
+on the ground. This script adds the equivalent: a one-shot
+EMBER CACHE tile that gives BYTE-SHARDs (always) plus an ECHO-WAFER
 (only if the USB pool has been seeded). The cache reading the pool is
 the same multi-direction USB tie-in v0.39 shipped — what's in the
 brush depends on what the player did with the USB.
@@ -89,7 +89,7 @@ def write_cache_trigger() -> None:
         {
             "id": f"{TRIG_ID}-flavor",
             "command": "EVENT_TEXT",
-            "args": {"text": "A CINDER CACHE\nin the brush..."},
+            "args": {"text": "AN EMBER CACHE\nin the brush..."},
         },
         {
             "id": f"{TRIG_ID}-sum-reset",
@@ -161,7 +161,7 @@ def write_cache_trigger() -> None:
         "id": TRIG_ID,
         "_index": 3,
         "symbol": "trigger_route_cache_a",
-        "name": "Cinder Cache A",
+        "name": "Ember Cache A",
         "x": 16,
         "y": 4,
         "width": 1,
@@ -198,4 +198,4 @@ def write_cache_trigger() -> None:
 if __name__ == "__main__":
     ensure_cache_vars()
     write_cache_trigger()
-    print("v0.40 — Cinder Cache armed.")
+    print("v0.40 — Ember Cache armed.")
