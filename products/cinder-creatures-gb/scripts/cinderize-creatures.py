@@ -16,8 +16,23 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(ROOT, "cc0-creatures-16")
-DST_DIR = os.path.join(ROOT, "plugins", "cinder-creatures", "sprites")
 DATA_FILE = os.path.join(ROOT, "plugins", "cinder-creatures", "data", "creatures.json")
+
+# Write the cinderized sprite to every place GB Studio might load it from.
+# Tuples are (target_dir, filename_template) — template gets a 2-digit id.
+# Until v0.24 only the plugin dirs were updated, so the game was still
+# loading raw CC0 sprites from assets/. v0.25 fixes that by syncing all
+# four locations on every run.
+DST_TARGETS = [
+    (os.path.join(ROOT, "plugins", "cinder-creatures", "sprites"),
+     "creature_{:02d}.png"),
+    (os.path.join(ROOT, "cinder-starter", "plugins", "cinder-creatures", "sprites"),
+     "creature_{:02d}.png"),
+    (os.path.join(ROOT, "cinder-starter", "assets", "sprites"),
+     "creature_{:02d}.png"),
+    (os.path.join(ROOT, "assets", "sprites"),
+     "cinder_{:02d}.png"),
+]
 
 # GB Studio DMG palette (lightest -> darkest)
 DMG = [(224, 248, 208), (136, 192, 112), (52, 104, 86), (8, 24, 32)]
@@ -122,7 +137,8 @@ def main() -> int:
     if not os.path.isdir(SRC_DIR):
         print(f"missing src: {SRC_DIR}", file=sys.stderr)
         return 1
-    os.makedirs(DST_DIR, exist_ok=True)
+    for dst_dir, _ in DST_TARGETS:
+        os.makedirs(dst_dir, exist_ok=True)
 
     n = 0
     for fn in sorted(os.listdir(SRC_DIR)):
@@ -131,13 +147,13 @@ def main() -> int:
         cid = int(fn[9:11])
         species = by_id.get(cid)
         ctype = species["type"] if species else "CORE"
-        cinderize(
-            os.path.join(SRC_DIR, fn),
-            os.path.join(DST_DIR, fn),
-            ctype,
-        )
+        src_path = os.path.join(SRC_DIR, fn)
+        for dst_dir, name_tmpl in DST_TARGETS:
+            cinderize(src_path, os.path.join(dst_dir, name_tmpl.format(cid)), ctype)
         n += 1
-    print(f"cinderized {n} creatures -> {DST_DIR}")
+    print(f"cinderized {n} creatures -> {len(DST_TARGETS)} target dirs")
+    for dst_dir, _ in DST_TARGETS:
+        print(f"  {os.path.relpath(dst_dir, ROOT)}")
     return 0
 
 
