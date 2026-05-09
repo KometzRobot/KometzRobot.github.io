@@ -1,0 +1,135 @@
+{
+  "_resourceType": "trigger",
+  "id": "c1bd5e01-4000-4004-8004-0000000000c1",
+  "_index": 1,
+  "symbol": "trigger_route_trainer_echo",
+  "name": "Route Trainer ECHO",
+  "x": 4,
+  "y": 6,
+  "width": 2,
+  "height": 2,
+  "trigger": "walk",
+  "leaveScript": [],
+  "script": [
+    {
+      "id": "c1bd5e01-4000-4004-8004-0000000000c1-flagcheck",
+      "command": "EVENT_IF_VALUE",
+      "args": {
+        "variable": "c1bd5e01-3000-4003-8003-0000000000c1",
+        "operator": "==",
+        "comparator": 0
+      },
+      "children": {
+        "true": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-block",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "TRAINER ECHO\nblocks the path."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-challenge",
+            "command": "EVENT_CC_TRAINER_CHALLENGE",
+            "args": {
+              "title": "TRAINER",
+              "trainer": "ECHO",
+              "intro": "wants to fight!",
+              "boast": "Whatever you send,\nI send right back."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-send",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "ECHO sends out\nMIRRORLING!"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-foe-id",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000035",
+              "value": {
+                "type": "number",
+                "value": 7
+              }
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-foe-stats",
+            "command": "EVENT_CC_SET_STATS",
+            "args": {
+              "idVar": "c1bd5e01-3000-4003-8003-000000000035",
+              "hpVar": "c1bd5e01-3000-4003-8003-000000000032",
+              "atkVar": "c1bd5e01-3000-4003-8003-000000000033",
+              "defVar": "c1bd5e01-3000-4003-8003-000000000034"
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-hit-1",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "You attack.\nMIRRORLING blinks."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-hit-2",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "MIRRORLING reflects.\nYour creature shrugs."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-hit-3",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "You finish it.\nMIRRORLING fainted."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-payoff",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "TRAINER ECHO:\nFair. The road\nis yours."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-flagset",
+            "command": "EVENT_VARIABLE_SET_TO_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-0000000000c1",
+              "value": {
+                "type": "number",
+                "value": 1
+              }
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-counter",
+            "command": "EVENT_VARIABLE_MATH",
+            "args": {
+              "vectorX": "c1bd5e01-3000-4003-8003-000000000031",
+              "operation": "add",
+              "other": "value",
+              "value": {
+                "type": "number",
+                "value": 1
+              },
+              "clamp": false
+            }
+          }
+        ],
+        "false": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-0000000000c1-postwin",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "TRAINER ECHO:\nThe grass remembers\nyou now."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
