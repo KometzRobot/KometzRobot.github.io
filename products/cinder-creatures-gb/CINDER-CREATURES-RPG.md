@@ -594,7 +594,25 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     just has to copy slot values into the right offsets in `.sav`
     once `build/<rom>/build/Sav/data.h` is available.
 
-33. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
+33. **Loop 9950** — v0.40 ✅: ROUTE 0x01 has a CINDER CACHE — the route's
+    first one-shot item drop. Walking onto the cache tile (16,4) checks a
+    one-shot flag. If untaken: 16 EVENT_VARIABLE_MATH adds sum the pool
+    slot variables (0xd0..0xdf) into a temp var, the player gets +3
+    BYTE-SHARDS unconditionally, and if the pool sum is non-zero (USB
+    seeded) they ALSO get +1 ECHO-WAFER with "the USB hummed" flavor;
+    otherwise "the cache was stale". The flag flips so subsequent walk-ins
+    show "The cache here is empty." That's the same multi-direction USB
+    tie-in v0.39 introduced — what's in the brush AND what's on the
+    ground both depend on what the player did with the USB. Four new
+    variables on slab 0xf0 (`var_cc_cache_taken_a`, `var_cc_byte_shards`,
+    `var_cc_echo_wafers`, `var_cc_temp_sum`); trigger UUID slab 0xc3
+    (route trigger _index 3, alongside grass 0, trainer 1, sign 2).
+    Build script `scripts/build-route-cache.py` is idempotent — patches
+    only what's missing. Files: `scripts/build-route-cache.py`,
+    `cinder-starter/project/scenes/cinder_route_0x01/triggers/cache_a.gbsres`,
+    `cinder-starter/project/variables.gbsres` (+4).
+
+34. **Next** — replace the `parse_sav` stub with the real GB Studio 4 binary
     parser once the ROM compiles and emits variable offsets to
     `build/<name>/build/Sav/data.h`. Vault sealing currently writes to
     localStorage; swap to vault.js v2 once the wrap-key auto-unlock flow is
