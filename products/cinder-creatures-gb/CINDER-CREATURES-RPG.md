@@ -379,12 +379,32 @@ guarantees every sprite shares the same DMG palette + outline + type-rune treatm
     `frontend/src/pages/Cinder/Agents/index.jsx`,
     `frontend/src/pages/Cinder/Achievements/index.jsx`,
     `samples/sidecar-shim-first-badge.json`.
-22. **Next** — wire the remaining four unlocks (ten_caught → vault widget on
-    journal, all_badges → VESSEL chat mode, full_dex → PROFESSOR CINDER
-    persona, beat_void → persistent memory).
+22. **Loop 9899** — v0.29 ✅: `ten_caught` unlock wired end-to-end. Vault drop
+    zone now renders at the top of the Companion Journal page once the player
+    has caught 10+ daemons. Each journal entry becomes draggable while the
+    vault is unlocked; dropping an entry on the vault tile seals it (Phosphor
+    `LockKey` indicator, accent `#9ec0d8`). Sealed IDs persist in
+    `localStorage` under `cinder_creatures_sealed_ids` so seals survive
+    reloads — when the encrypted-partition migration ships (vault.js v2 wrap-key),
+    only the read/write pair changes, not the UI. Sealed entries hide the
+    Delete affordance and surface an Unseal action instead, so nothing gets
+    accidentally lost. Drop zone has a hover-state (#9ec0d8 border) and a
+    short pulse on successful seal so the gesture has feedback. Achievements
+    page flips `ten_caught` to `wired: true` with a refreshed unlockNote
+    describing the actual UX. New shim `samples/sidecar-shim-ten-caught.json`
+    (10 creatures, 2 badges, GYM_PROC scene) exercises the panel without a
+    real ROM. SIDECAR.md bumped to five shims. Files:
+    `frontend/src/pages/Cinder/Journal/index.jsx`,
+    `frontend/src/pages/Cinder/Achievements/index.jsx`,
+    `samples/sidecar-shim-ten-caught.json`,
+    `scripts/SIDECAR.md`.
+23. **Next** — wire the remaining three unlocks (all_badges → VESSEL chat mode,
+    full_dex → PROFESSOR CINDER persona, beat_void → persistent memory).
     Also: replace the `parse_sav` stub with the real GB Studio 4 binary
     parser once the ROM compiles and emits variable offsets to
-    `build/<name>/build/Sav/data.h`.
+    `build/<name>/build/Sav/data.h`. Vault sealing currently writes to
+    localStorage; swap to vault.js v2 once the wrap-key auto-unlock flow is
+    on the partition.
 
 Per-loop scope kept tight: one scene + assets + tested in GB Studio before next loop.
 
