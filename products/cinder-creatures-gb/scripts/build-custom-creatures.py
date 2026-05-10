@@ -289,6 +289,31 @@ CUSTOM[11] = ("NULLPUP", [
     "................",
 ])
 
+# id 9 — SCOPEWVR (MEM, "scope weaver"). Spider/loom hybrid that weaves
+# variable scopes. Eight legs splay symmetrically (top pair raised, bottom
+# pair planted) so the silhouette reads as a weaver at rest. Center of body
+# carries a woven knot motif: a + nested in dark pixels — the literal
+# memory cell being patterned. Eye dots flank the upper knot. MEM family
+# hint: stationary, geometric center, not the kinetic stretch of PROC.
+CUSTOM[9] = ("SCOPEWVR", [
+    "................",
+    "....##....##....",
+    "...#-#....#-#...",
+    "....#-#..#-#....",
+    ".....##--##.....",
+    "....##----##....",
+    "...#--+##+--#...",
+    "..##-+####+-##..",
+    "..##--+##+--##..",
+    "..##--####--##..",
+    "...#--####--#...",
+    "....##----##....",
+    "....#-#--#-#....",
+    "...#-#....#-#...",
+    "....##....##....",
+    "................",
+])
+
 # id 7 — SEMAFOX (LOGIC, route mon). Semaphore + fox: vulpine head with
 # pointed ears up top, body opens its arms forward to "raise" a flag patch
 # centered on the chest. The flag IS the signal — two stacked rows of solid
