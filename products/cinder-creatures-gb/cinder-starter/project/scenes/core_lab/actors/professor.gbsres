@@ -44,28 +44,76 @@
       }
     },
     {
-      "id": "c1bd5e01-4000-4004-8004-000000000012",
-      "command": "EVENT_TEXT",
+      "id": "c1bd5e01-4000-4004-8004-000000000020",
+      "command": "EVENT_SWITCH",
       "args": {
-        "text": "KERNITE -- CORE type.\\nTough and patient.\\nHits late, hits hard."
+        "variable": "c1bd5e01-3000-4003-8003-000000000001",
+        "choices": 3,
+        "__collapseCase0": false,
+        "value0": { "type": "number", "value": 1 },
+        "__collapseCase1": false,
+        "value1": { "type": "number", "value": 2 },
+        "__collapseCase2": false,
+        "value2": { "type": "number", "value": 3 },
+        "__collapseElse": true,
+        "__disableElse": true
+      },
+      "children": {
+        "true0": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000021",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "KERNITE -- CORE type.\\nTough and patient.\\nHits late, hits hard."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000022",
+            "command": "EVENT_SET_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000010",
+              "value": { "type": "number", "value": 3 }
+            }
+          }
+        ],
+        "true1": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000023",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "RECURSE -- LOGIC type.\\nFast and sharp.\\nHigh damage, low guard."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000024",
+            "command": "EVENT_SET_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000010",
+              "value": { "type": "number", "value": 4 }
+            }
+          }
+        ],
+        "true2": [
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000025",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "BYTEFLY -- DATA type.\\nQuick and slippery.\\nMoves first, dodges well."
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000026",
+            "command": "EVENT_SET_VALUE",
+            "args": {
+              "variable": "c1bd5e01-3000-4003-8003-000000000010",
+              "value": { "type": "number", "value": 6 }
+            }
+          }
+        ]
       }
     },
     {
-      "id": "c1bd5e01-4000-4004-8004-000000000013",
-      "command": "EVENT_TEXT",
-      "args": {
-        "text": "RECURSE -- LOGIC type.\\nFast and sharp.\\nHigh damage, low guard."
-      }
-    },
-    {
-      "id": "c1bd5e01-4000-4004-8004-000000000014",
-      "command": "EVENT_TEXT",
-      "args": {
-        "text": "BYTEFLY -- DATA type.\\nQuick and slippery.\\nMoves first, dodges well."
-      }
-    },
-    {
-      "id": "c1bd5e01-4000-4004-8004-000000000015",
+      "id": "c1bd5e01-4000-4004-8004-000000000030",
       "command": "EVENT_TEXT",
       "args": {
         "text": "PROFESSOR:\\nGo on. Fill the dex.\\nThe routes are open."
