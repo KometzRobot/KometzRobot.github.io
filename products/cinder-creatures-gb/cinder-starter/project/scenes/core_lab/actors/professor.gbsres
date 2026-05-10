@@ -22,101 +22,126 @@
   "prefabScriptOverrides": {},
   "script": [
     {
-      "id": "c1bd5e01-4000-4004-8004-000000000010",
-      "command": "EVENT_TEXT",
+      "id": "c1bd5e01-4000-4004-8004-000000000005",
+      "command": "EVENT_IF",
       "args": {
-        "text": "PROFESSOR:\\nGood, you made it.\\nPick your first\\ncreature."
-      }
-    },
-    {
-      "id": "c1bd5e01-4000-4004-8004-000000000011",
-      "command": "EVENT_MENU",
-      "args": {
-        "variable": "c1bd5e01-3000-4003-8003-000000000001",
-        "items": [
-          { "text": "KERNITE  (CORE)" },
-          { "text": "RECURSE  (LOGIC)" },
-          { "text": "BYTEFLY  (DATA)" }
-        ],
-        "layout": "menu",
-        "cancelOnLastOption": false,
-        "cancelOnB": false
-      }
-    },
-    {
-      "id": "c1bd5e01-4000-4004-8004-000000000020",
-      "command": "EVENT_SWITCH",
-      "args": {
-        "variable": "c1bd5e01-3000-4003-8003-000000000001",
-        "choices": 3,
-        "__collapseCase0": false,
-        "value0": { "type": "number", "value": 1 },
-        "__collapseCase1": false,
-        "value1": { "type": "number", "value": 2 },
-        "__collapseCase2": false,
-        "value2": { "type": "number", "value": 3 },
-        "__collapseElse": true,
-        "__disableElse": true
+        "variable": "c1bd5e01-3000-4003-8003-000000000010",
+        "__collapseElse": false,
+        "condition": {
+          "type": "variable",
+          "value": "c1bd5e01-3000-4003-8003-000000000010"
+        }
       },
       "children": {
-        "true0": [
+        "true": [
           {
-            "id": "c1bd5e01-4000-4004-8004-000000000021",
+            "id": "c1bd5e01-4000-4004-8004-000000000040",
             "command": "EVENT_TEXT",
             "args": {
-              "text": "KERNITE -- CORE type.\\nTough and patient.\\nHits late, hits hard."
-            }
-          },
-          {
-            "id": "c1bd5e01-4000-4004-8004-000000000022",
-            "command": "EVENT_SET_VALUE",
-            "args": {
-              "variable": "c1bd5e01-3000-4003-8003-000000000010",
-              "value": { "type": "number", "value": 3 }
+              "text": "PROFESSOR:\\nThe routes are open.\\nGo fill the dex."
             }
           }
         ],
-        "true1": [
+        "false": [
           {
-            "id": "c1bd5e01-4000-4004-8004-000000000023",
+            "id": "c1bd5e01-4000-4004-8004-000000000010",
             "command": "EVENT_TEXT",
             "args": {
-              "text": "RECURSE -- LOGIC type.\\nFast and sharp.\\nHigh damage, low guard."
+              "text": "PROFESSOR:\\nGood, you made it.\\nPick your first\\ncreature."
             }
           },
           {
-            "id": "c1bd5e01-4000-4004-8004-000000000024",
-            "command": "EVENT_SET_VALUE",
+            "id": "c1bd5e01-4000-4004-8004-000000000011",
+            "command": "EVENT_MENU",
             "args": {
-              "variable": "c1bd5e01-3000-4003-8003-000000000010",
-              "value": { "type": "number", "value": 4 }
-            }
-          }
-        ],
-        "true2": [
-          {
-            "id": "c1bd5e01-4000-4004-8004-000000000025",
-            "command": "EVENT_TEXT",
-            "args": {
-              "text": "BYTEFLY -- DATA type.\\nQuick and slippery.\\nMoves first, dodges well."
+              "variable": "c1bd5e01-3000-4003-8003-000000000001",
+              "items": [
+                { "text": "KERNITE  (CORE)" },
+                { "text": "RECURSE  (LOGIC)" },
+                { "text": "BYTEFLY  (DATA)" }
+              ],
+              "layout": "menu",
+              "cancelOnLastOption": false,
+              "cancelOnB": false
             }
           },
           {
-            "id": "c1bd5e01-4000-4004-8004-000000000026",
-            "command": "EVENT_SET_VALUE",
+            "id": "c1bd5e01-4000-4004-8004-000000000020",
+            "command": "EVENT_SWITCH",
             "args": {
-              "variable": "c1bd5e01-3000-4003-8003-000000000010",
-              "value": { "type": "number", "value": 6 }
+              "variable": "c1bd5e01-3000-4003-8003-000000000001",
+              "choices": 3,
+              "__collapseCase0": false,
+              "value0": { "type": "number", "value": 1 },
+              "__collapseCase1": false,
+              "value1": { "type": "number", "value": 2 },
+              "__collapseCase2": false,
+              "value2": { "type": "number", "value": 3 },
+              "__collapseElse": true,
+              "__disableElse": true
+            },
+            "children": {
+              "true0": [
+                {
+                  "id": "c1bd5e01-4000-4004-8004-000000000021",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "KERNITE -- CORE type.\\nTough and patient.\\nHits late, hits hard."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-000000000022",
+                  "command": "EVENT_SET_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000010",
+                    "value": { "type": "number", "value": 3 }
+                  }
+                }
+              ],
+              "true1": [
+                {
+                  "id": "c1bd5e01-4000-4004-8004-000000000023",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "RECURSE -- LOGIC type.\\nFast and sharp.\\nHigh damage, low guard."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-000000000024",
+                  "command": "EVENT_SET_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000010",
+                    "value": { "type": "number", "value": 4 }
+                  }
+                }
+              ],
+              "true2": [
+                {
+                  "id": "c1bd5e01-4000-4004-8004-000000000025",
+                  "command": "EVENT_TEXT",
+                  "args": {
+                    "text": "BYTEFLY -- DATA type.\\nQuick and slippery.\\nMoves first, dodges well."
+                  }
+                },
+                {
+                  "id": "c1bd5e01-4000-4004-8004-000000000026",
+                  "command": "EVENT_SET_VALUE",
+                  "args": {
+                    "variable": "c1bd5e01-3000-4003-8003-000000000010",
+                    "value": { "type": "number", "value": 6 }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "c1bd5e01-4000-4004-8004-000000000030",
+            "command": "EVENT_TEXT",
+            "args": {
+              "text": "PROFESSOR:\\nGo on. Fill the dex.\\nThe routes are open."
             }
           }
         ]
-      }
-    },
-    {
-      "id": "c1bd5e01-4000-4004-8004-000000000030",
-      "command": "EVENT_TEXT",
-      "args": {
-        "text": "PROFESSOR:\\nGo on. Fill the dex.\\nThe routes are open."
       }
     }
   ],
