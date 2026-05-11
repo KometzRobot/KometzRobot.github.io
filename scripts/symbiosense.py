@@ -352,6 +352,39 @@ def check_services():
     return services
 
 
+# Per-service direct-evidence probes. The systemd/pgrep check is a proxy;
+# these are the ground truth. When an alert fires, attaching this evidence
+# lets the operator see at a glance whether the monitor and the thing
+# being monitored agree. (See journal 2026-05-11-being-told-you-are-down.md.)
+def service_evidence(svc):
+    try:
+        if svc == "protonmail-bridge":
+            import socket as _socket
+            for port, label in [(1144, "IMAP"), (1026, "SMTP")]:
+                s = _socket.socket()
+                s.settimeout(1)
+                r = s.connect_ex(("127.0.0.1", port))
+                s.close()
+                if r != 0:
+                    return f"port {port}({label}): closed"
+            return "ports 1144/1026: open"
+        if svc == "ollama":
+            import socket as _socket
+            s = _socket.socket()
+            s.settimeout(1)
+            r = s.connect_ex(("127.0.0.1", 11434))
+            s.close()
+            return "port 11434: open" if r == 0 else "port 11434: closed"
+        if svc in ("cloudflare-tunnel", "tailscaled", "meridian-web-dashboard"):
+            result = subprocess.run(["pgrep", "-f", svc],
+                                     capture_output=True, text=True, timeout=2)
+            pids = result.stdout.strip().split() if result.stdout else []
+            return f"pgrep: {len(pids)} pid(s)" if pids else "pgrep: no match"
+    except Exception as e:
+        return f"probe-err: {e.__class__.__name__}"
+    return None
+
+
 def check_process_count():
     try:
         out = subprocess.check_output(["ps", "aux", "--no-headers"],
@@ -1548,7 +1581,9 @@ def sense_cycle():
                 streak += 1
                 # Alert on the 2nd consecutive down reading (so transients are suppressed)
                 if streak == 2:
-                    events.append(f"SERVICE DOWN: {svc} ({prev_status} -> {status})")
+                    ev = service_evidence(svc)
+                    suffix = f" [{ev}]" if ev else ""
+                    events.append(f"SERVICE DOWN: {svc} ({prev_status} -> {status}){suffix}")
             else:
                 if was_down and streak >= 2:
                     events.append(f"SERVICE RECOVERED: {svc} ({prev_status} -> {status})")
