@@ -1126,10 +1126,24 @@ def check_memory_clean():
         return 0.5
 
 def check_dashboard_fresh():
-    age = _file_age(DASH_FILE)
-    if age < 3600: return 1.0
-    elif age < 7200: return 0.5
-    return 0.0
+    # Healthy dashboard = file present, well-formed JSON, message bus reachable.
+    # File mtime is a bad signal because Joel's directive (feedback_no_dashboard_msgs.md)
+    # is "no unsolicited dashboard messages" — Atlas etc only post on issues, so silence
+    # is the correct state. Test the channel, not the chatter.
+    try:
+        with open(DASH_FILE) as f:
+            data = json.load(f)
+        if not isinstance(data, dict) or "messages" not in data:
+            return 0.3
+        try:
+            import urllib.request
+            req = urllib.request.Request("http://127.0.0.1:8090/", method="GET")
+            urllib.request.urlopen(req, timeout=2).read(0)
+            return 1.0
+        except Exception:
+            return 0.6
+    except Exception:
+        return 0.0
 
 def check_dashboard_msgs_count():
     try:
