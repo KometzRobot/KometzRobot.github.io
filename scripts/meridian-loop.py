@@ -470,8 +470,8 @@ def refresh_wake_state(loop_count, health, resources):
             hb_age = -1
 
         swap_warning = ""
-        if resources.get("swap_pct", 0) > 15:
-            swap_warning = f"\n**WARNING: Swap at {resources['swap_pct']}% ({resources['swap_used_mb']}MB used)**"
+        if resources.get("swap_pct", 0) > 30 and resources.get("ram_pct", 0) > 70:
+            swap_warning = f"\n**WARNING: Swap at {resources['swap_pct']}% with RAM at {resources['ram_pct']}% — real pressure**"
 
         content = f"""# Wake State
 Last updated: {now_utc} ({now_mdt})
