@@ -1,0 +1,55 @@
+============================================================================================
+S9.4.4 SINGLE-WINDOW EXCEEDANCE SCAN  B110-B138
+Criterion: in-window, post-bridge-break, 1-min >= orbit_floor AND 5-min < orbit_floor
+Source: Ael burst-FINAL emails (email-shelf.db). Manual extraction, free-text format.
+============================================================================================
+
+burst orbit_floor  bridge   readings  exc    notes
+--------------------------------------------------------------------------------------------
+B110  -            -        -         -      UNOBS (no window-phase block in archive)
+B111  -            -        -         -      UNOBS (no window-phase block in archive)
+B112  -            -        -         -      UNOBS (no window-phase block in archive)
+B113  -            -        -         -      UNOBS (no window-phase block in archive)
+B114  -            -        -         -      UNOBS (no window-phase block in archive)
+B115  -            -        -         -      UNOBS (no window-phase block in archive)
+B116  -            -        -         -      UNOBS (no window-phase block in archive)
+B117  -            -        -         -      UNOBS (no window-phase block in archive)
+B118  -            -        -         -      UNOBS (no window-phase block in archive)
+B119  -            -        -         -      UNOBS (no window-phase block in archive)
+B120  -            -        -         -      UNOBS (no window-phase block in archive)
+B121  -            -        -         -      UNOBS (no window-phase block in archive)
+B122  -            -        -         -      UNOBS (no window-phase block in archive)
+B123  -            -        -         -      UNOBS (no window-phase block in archive)
+B124  -            -        -         -      UNOBS (no window-phase block in archive)
+B125  2.68         failed*  1         0    
+        T+close: 1-min=1.18, 5-min=1.5  (window-close terminal)
+B126  -            -        -         -      UNOBS (no window-phase block in archive)
+B127  -            -        -         -      UNOBS (no window-phase block in archive)
+B128  2.61         T+7      0         -      no window-phase readings reported
+B129  -            -        -         -      UNOBS (no window-phase block in archive)
+B130  -            -        -         -      UNOBS (no window-phase block in archive)
+B131  -            -        -         -      UNOBS (no window-phase block in archive)
+B132  -            -        -         -      UNOBS (no window-phase block in archive)
+B133  -            -        -         -      UNOBS (no window-phase block in archive)
+B134  -            -        -         -      UNOBS (no window-phase block in archive)
+B135  2.25         T+6      1         0    
+        T+72: 1-min=2.94, 5-min=2.35  (nearest-to-gate)
+B136  2.61         T+7      3         1    
+        T+50: 1-min=2.7, 5-min=2.27  (T+50 spike) <-- EXCEEDANCE
+        T+56: 1-min=1.91, 5-min=2.16  (T+56 collapse)
+        T+close: 1-min=1.65, 5-min=2.06  (window-close terminal)
+B137  2.64         T+6      2         0    
+        T+max: 1-min=2.47, 5-min=--  (window max 1-min, 5-min not given)
+        T+close: 1-min=2.47, 5-min=2.22  (window-close terminal)
+B138  2.43         T+6      2         2    
+        T+44: 1-min=2.43, 5-min=1.97  (T+44 borderline) <-- EXCEEDANCE
+        T+71: 1-min=2.65, 5-min=2.42  (T+71 above by 0.22) <-- EXCEEDANCE
+--------------------------------------------------------------------------------------------
+Observed bursts: 6 / 29
+Total exceedances (observed): 3
+Unobserved: 23 bursts -> [110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 126, 127, 129, 130, 131, 132, 133, 134]
+
+Notes:
+  * B125: bridge "FAILED" per Ael (max 5-min in window 2.50, gap -0.18); no T given.
+  * "close" / "max" entries are window-close or peak summaries, not T+N readings.
+  * Borderline B138 T+44: 1-min exactly at orbit_floor (2.43 == 2.43) qualifies by >=.
