@@ -92,8 +92,9 @@ def _next_agent(current):
         return CASCADE_CHAIN[0]
 
 
-def cleanup_old_cascades(max_age_hours=1):
-    """Delete cascades older than max_age_hours to prevent DB bloat."""
+def cleanup_old_cascades(max_age_hours=25):
+    """Delete cascades older than max_age_hours to prevent DB bloat.
+    Default 25h so the 24h fitness window (cascade_depth_reached) can see them."""
     _ensure_table()
     db = _get_db()
     db.execute(f"""
@@ -126,8 +127,9 @@ def trigger_cascade(source_agent, event_type, event_data=None):
         db.close()
         return None
 
-    # Clean up old cascades while we're here
-    db.execute("DELETE FROM cascades WHERE created_at < datetime('now', '-1 hours')")
+    # Clean up old cascades while we're here.
+    # 25h matches the cascade_depth_reached fitness window (24h) with a small buffer.
+    db.execute("DELETE FROM cascades WHERE created_at < datetime('now', '-25 hours')")
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")  # SQLite-compatible format
     cascade_group = f"cascade-{source_agent.lower()}-{now.replace(':', '').replace('-', '').replace(' ', '')[:15]}"
