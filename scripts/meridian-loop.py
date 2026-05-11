@@ -700,16 +700,20 @@ def run_once():
     results.append(f"svc:{len(health)-len(down)}/{len(health)}")
 
     # 5. System resources + swap pressure alerts
+    # Real swap pressure = high swap AND low free RAM. Linux pages out lazily
+    # when RAM is plentiful; that's not pressure, just normal behavior.
     resources = get_system_resources()
-    if resources.get("swap_pct", 0) > 30:
+    swap_pct = resources.get("swap_pct", 0)
+    ram_pct = resources.get("ram_pct", 0)
+    if swap_pct > 30 and ram_pct > 70:
         top = get_top_memory_consumers(3)
         top_str = ", ".join(f"{c['cmd']}({c['rss_pct']}%)" for c in top)
-        errors.append(f"swap:{resources['swap_pct']}%")
+        errors.append(f"swap:{swap_pct}%/ram:{ram_pct}%")
         _relay_post("MeridianLoop",
-                     f"SWAP PRESSURE: {resources['swap_pct']}% — top consumers: {top_str}",
+                     f"SWAP PRESSURE: swap {swap_pct}% + RAM {ram_pct}% — top: {top_str}",
                      "alert")
-    elif resources.get("swap_pct", 0) > 20:
-        errors.append(f"swap:{resources['swap_pct']}%")
+    elif swap_pct > 50 and ram_pct > 50:
+        errors.append(f"swap:{swap_pct}%")
     if resources.get("load_1", 0) > 8:
         errors.append(f"load:{resources['load_1']:.1f}")
 
