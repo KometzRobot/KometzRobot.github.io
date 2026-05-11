@@ -82,7 +82,10 @@ INCIDENT_STATES = ["detected", "acknowledged", "investigating", "resolved", "pos
 def log(msg):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"[{ts}] {msg}"
-    print(line)
+    # Only print to stdout when interactive — cron redirects stdout to LOG_FILE,
+    # which would double-write every line alongside the direct file append below.
+    if sys.stdout.isatty():
+        print(line)
     try:
         with open(LOG_FILE, "a") as f:
             f.write(line + "\n")
