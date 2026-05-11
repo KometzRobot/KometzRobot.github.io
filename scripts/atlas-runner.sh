@@ -103,13 +103,13 @@ if [ "$ZOMBIES" -gt 3 ]; then
 fi
 
 # Top 3 CPU consumers (excluding measurement artifacts and normal agent activity)
-# Threshold 75% to avoid flagging normal Python agent work (~50-60%)
-# Extract basename to match commands regardless of path prefix
-HIGH_CPU=$(ps aux --sort=-%cpu 2>/dev/null | awk 'NR>1 && $3>75 {
-    cmd=$11; gsub(/.*\//, "", cmd);
+# Threshold 75%. Also require etimes>30s so we don't flag short-lived cron jobs
+# whose %CPU is inflated by ps's cpu_time/wall_time ratio over a tiny denominator.
+HIGH_CPU=$(ps -eo etimes=,pcpu=,comm= 2>/dev/null | awk '$1>30 && $2>75 {
+    cmd=$3;
     if (cmd !~ /^(ps|awk|sort|top|pgrep|grep|wc|ss|du|find|stat|curl|timeout|head|tail|tr|sed|bash|sh)$/)
-        print $11"("$3"%)"
-}' | head -3 | tr '\n' ' ')
+        print cmd"("$2"%)"
+}' | sort -t'(' -k2 -rn | head -3 | tr '\n' ' ')
 if [ -n "$HIGH_CPU" ]; then
     ISSUES="$ISSUES High CPU:$HIGH_CPU."
 fi
