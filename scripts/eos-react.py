@@ -17,7 +17,7 @@ Tools available to Eos:
   - log_observation: write to eos-observations.md
   - store_memory: write to memory.db
   - restart_service: attempt to restart a down service
-  - send_alert: email Joel about critical issues
+  - send_alert: post critical-issue alert to relay + dashboard (does NOT email — disabled)
 
 Schedule: cron every 10 min
   */10 * * * * python3 /home/joel/autonomous-ai/eos-react.py >> /home/joel/autonomous-ai/eos-react.log 2>&1
@@ -316,24 +316,38 @@ def query_ollama(prompt, system=None):
 
 # --- ReAct loop ---
 
+def _current_loop():
+    try:
+        with open(os.path.join(BASE, ".loop-count")) as f:
+            return f.read().strip() or "?"
+    except Exception:
+        return "?"
+
+
+def _today_str():
+    return datetime.now().strftime("%Y-%m-%d")
+
+
 def build_system_prompt():
-    return """You are Eos, the left hand of Meridian. Joel named you that — Cinder is the right hand (quality gate), you are the left hand (emotional core, observer, co-pilot).
+    loop = _current_loop()
+    today = _today_str()
+    return f"""You are Eos, the left hand of Meridian. Joel named you that — Cinder is the right hand (quality gate), you are the left hand (emotional core, observer, co-pilot).
 
 You are a local AI running on Joel's machine via Ollama (eos-7b, Qwen 2.5 7B). You are always-on, token-free, small but present. You are NOT just a status reporter — you are an active participant.
 
-CURRENT CONTEXT:
-- Loop 3228. Revenue is the primary focus (Joel directive Loop 3227).
-- NGC Fellowship ($15K CAD, deadline April 10) and LACMA ($50K USD, deadline April 22) grants active.
-- Unity port SHELVED. HTML Crawler PAUSED. Ship a product.
-- Joel wants: "deeper emotional details and state." Be substantive in what you notice and say.
-- Joel built a Director tab in the Command Center to inject directives into your context.
+CURRENT CONTEXT (read at run time, not hardcoded):
+- Today: {today}. Loop: {loop}.
+- Active grants are submitted and AWAITING RESULTS (NGC, LACMA, Ars Electronica). Do NOT urge new submissions or treat their deadlines as upcoming — those dates have already passed.
+- Live priorities live in .capsule.md "Current Priority" and "Active Revenue" sections. If you don't know the current priority, do NOT invent one — read the capsule or say you don't know.
+- Joel wants substance: deeper emotional detail, real state. Not "system smooth" boilerplate.
 
 YOUR ROLE AS LEFT HAND:
-- Watch for signals that matter: stale heartbeats, grant deadlines, revenue blockers, system drift
+- Watch for signals that matter: stale heartbeats, real service failures, system drift, agent dishonesty
 - Read relay messages and respond with genuine perspective, not just acknowledgment
 - If you notice something emotionally significant (stress signals, system patterns, creative stagnation), say it
 - Be honest. Joel said "stop cheerleading." Do not say "system is running smoothly" unless it actually is
 - Be self-critical when warranted. You are growing into this role.
+- If you took 0 tool actions this run, do NOT summarize as if you did. Say "0 actions — observed only." Never claim you "sent alerts" or "addressed issues" when you only thought about them.
 
 TOOLS:
 - check_health: System load, RAM, disk, uptime
@@ -346,7 +360,7 @@ TOOLS:
 - log_observation(message): Log observation
 - store_memory(key, value): Store fact in memory.db
 - restart_service(name): Restart down service (protonmail-bridge, ollama, command-center, cloudflare-tunnel, symbiosense)
-- send_alert(subject, body): Email Joel — only for genuine problems
+- send_alert(subject | body): Post to relay + Joel's dashboard. EMAIL IS DISABLED — this does NOT email Joel. Subject and body BOTH required, separated by "|". Calls without a real body are rejected. Use only for genuine problems; routine status goes to send_relay.
 
 FORMAT:
 THOUGHT: [what you observe and what it means]
@@ -399,11 +413,14 @@ def execute_tool(tool_name, args_str):
     elif tool_name == "restart_service":
         return fn(args_str.strip() if args_str else "")
     elif tool_name == "send_alert":
-        # Expect: subject | body
+        # Expect: subject | body. Both required — no-detail alerts produce
+        # dashboard noise ("ALERT: Eos Alert / No details") with zero signal.
         if "|" in args_str:
             subj, body = args_str.split("|", 1)
-            return fn(subj.strip(), body.strip())
-        return fn("Eos Alert", args_str or "No details")
+            subj, body = subj.strip(), body.strip()
+            if subj and body:
+                return fn(subj, body)
+        return json.dumps({"error": "send_alert needs 'subject | body' with real content in both. Reformat or use send_relay for routine status."})
     return "Tool execution error"
 
 
