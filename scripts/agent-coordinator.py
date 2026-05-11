@@ -284,6 +284,15 @@ def detect_incidents(messages):
     source_messages = [m for m in messages if m["agent"] != "Coordinator"
                        and "[inner]" not in m.get("message", "")]
 
+    # Collapse steady-state repeats so pattern detectors count distinct events, not
+    # the same condition re-reported by routine status posts every loop. Without this,
+    # MeridianLoop's per-loop "swap:46%" status line gets counted as 30+ separate
+    # "high memory" incidents in a 2-hour window when it's actually one unchanging fact.
+    # Window matches the full message scan (2 h) since for incident counting we want
+    # one ongoing condition to register once, not once per 10-min cluster.
+    dup_ids = {id(m) for m in find_duplicates(source_messages, window_sec=7200)}
+    source_messages = [m for m in source_messages if id(m) not in dup_ids]
+
     # For alert keyword counting, also exclude routine audit/analysis agents whose
     # messages contain alert keywords in non-alert contexts (e.g., Atlas "Stale crons"
     # is an informational audit, Eos "critical services running" is a positive status,
@@ -291,6 +300,8 @@ def detect_incidents(messages):
     alert_excluded_agents = {"Coordinator", "Atlas", "Predictive", "SelfImprove", "Hermes", "DreamEngine"}
     alert_source = [m for m in messages if m["agent"] not in alert_excluded_agents
                      and "[inner]" not in m.get("message", "")]
+    alert_dup_ids = {id(m) for m in find_duplicates(alert_source, window_sec=7200)}
+    alert_source = [m for m in alert_source if id(m) not in alert_dup_ids]
 
     alert_keywords = {
         "critical": ["CRITICAL", "EMERGENCY", " DOWN ", "FAILED", "CRASH"],
