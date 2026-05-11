@@ -240,10 +240,17 @@ def touch_heartbeat():
 
 def sentinel_status_note(state):
     """Have Sentinel write a brief status note to relay (uses local Ollama model)."""
-    cycles_since_claude = state.get("cycles_held_by_sentinel", state.get("cycles_handled_by_cinder", 0))
+    last_claude = state.get("last_claude_run", 0)
+    secs = int(time.time() - last_claude) if last_claude else 0
+    if secs < 120:
+        since = "just now"
+    elif secs < 3600:
+        since = f"{secs // 60}m ago"
+    else:
+        since = f"{secs // 3600}h{(secs % 3600) // 60}m ago"
     prompt = (
         f"You are Sentinel, the gatekeeper maintaining the system between Claude loops. "
-        f"It has been {cycles_since_claude} cycles since Claude ran. "
+        f"Claude last ran {since}. "
         f"Write a ONE-LINE status note for the agent relay. Keep it brief and factual. "
         f"No preamble, just the note."
     )
