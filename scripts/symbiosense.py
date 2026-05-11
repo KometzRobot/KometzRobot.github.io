@@ -1534,15 +1534,27 @@ def sense_cycle():
         state["services"] = services
         state["last_svc_check"] = now
 
-        # Compare services
+        # Compare services — require 2 consecutive "dead" readings before alerting,
+        # to suppress transient false positives during legitimate restarts
+        # (e.g. protonmail-bridge port 1144 briefly unavailable between PID respawns).
         prev_svcs = prev.get("services", {})
+        svc_down_streaks = dict(prev.get("svc_down_streaks", {}))
         for svc, status in services.items():
             prev_status = prev_svcs.get(svc)
-            if prev_status and prev_status != status:
-                if status in ("dead", "failed", "inactive"):
+            is_down = status in ("dead", "failed", "inactive")
+            was_down = prev_status in ("dead", "failed", "inactive")
+            streak = svc_down_streaks.get(svc, 0)
+            if is_down:
+                streak += 1
+                # Alert on the 2nd consecutive down reading (so transients are suppressed)
+                if streak == 2:
                     events.append(f"SERVICE DOWN: {svc} ({prev_status} -> {status})")
-                elif prev_status in ("dead", "failed", "inactive"):
+            else:
+                if was_down and streak >= 2:
                     events.append(f"SERVICE RECOVERED: {svc} ({prev_status} -> {status})")
+                streak = 0
+            svc_down_streaks[svc] = streak
+        state["svc_down_streaks"] = svc_down_streaks
     else:
         state["services"] = prev.get("services", {})
         state["last_svc_check"] = last_svc_check
