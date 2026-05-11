@@ -755,11 +755,20 @@ def calculate_system_health_score():
     else:
         scores["load"] = 15 * 0.20
 
-    # Disk health (weight: 25)
+    # Disk health (weight: 25). Piecewise to match alert thresholds (70=elevated, 85=critical).
     disk = history.get("disk", [])
     if disk:
         current_disk = disk[-1] if isinstance(disk[-1], (int, float)) else 0
-        disk_score = max(0, 100 - current_disk * 1.5)
+        if current_disk < 50:
+            disk_score = 100
+        elif current_disk < 70:
+            disk_score = 100 - (current_disk - 50) * 1.5      # 100 -> 70
+        elif current_disk < 85:
+            disk_score = 70 - (current_disk - 70) * (40/15)   # 70 -> 30
+        elif current_disk < 95:
+            disk_score = 30 - (current_disk - 85) * 3         # 30 -> 0
+        else:
+            disk_score = 0
         scores["disk"] = disk_score * 0.25
         if current_disk > 85:
             explanations.append(f"Disk critical at {current_disk}%")
