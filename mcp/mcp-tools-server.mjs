@@ -189,16 +189,24 @@ stats['disk'] = f"{parts[2]} / {parts[1]} ({parts[4]})"
 with open('/proc/uptime') as f:
     secs = float(f.read().split()[0])
     stats['uptime'] = f"{int(secs/3600)}h {int((secs%3600)/60)}m"
-# Services
-for svc in ['symbiosense', 'command-center', 'ollama']:
-    r = subprocess.run(['pgrep', '-f', svc], capture_output=True, timeout=2)
-    stats[f'svc_{svc}'] = 'up' if r.returncode == 0 else 'down'
-# Bridge: check by IMAP port (process is /usr/lib/protonmail/bridge/bridge, not "protonmail-bridge")
+# Services — pgrep -f matches command-line text (including Claude's wake prompt),
+# so use exe-name / state-file / port checks instead of substring-matching.
 import socket as _sock
-try:
-    _s = _sock.create_connection(('127.0.0.1', 1144), timeout=2); _s.close(); stats['svc_protonmail-bridge'] = 'up'
-except Exception:
-    stats['svc_protonmail-bridge'] = 'down'
+def _port_up(p):
+    try: _s=_sock.create_connection(('127.0.0.1', p), timeout=2); _s.close(); return True
+    except Exception: return False
+def _statefile_fresh(path, max_age=300):
+    try: return (time.time() - os.path.getmtime(path)) < max_age
+    except Exception: return False
+# Soma: writes .symbiosense-state.json every cycle (~30s)
+stats['svc_symbiosense'] = 'up' if _statefile_fresh('${BASE}/.symbiosense-state.json') else 'down'
+# Command center: HTTP on 8090 (hub-v2) OR check by exact script path
+r = subprocess.run(['pgrep', '-f', 'command-center.py'], capture_output=True, timeout=2)
+stats['svc_command-center'] = 'up' if r.returncode == 0 else 'down'
+# Ollama: API on 11434
+stats['svc_ollama'] = 'up' if _port_up(11434) else 'down'
+# Bridge: IMAP port (process is /usr/lib/protonmail/bridge/bridge, not "protonmail-bridge")
+stats['svc_protonmail-bridge'] = 'up' if _port_up(1144) else 'down'
 # Loop count
 try:
     with open('${BASE}/.loop-count') as f:
