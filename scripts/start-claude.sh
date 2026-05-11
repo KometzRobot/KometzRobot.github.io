@@ -59,6 +59,11 @@ while true; do
     # even when this wake bypassed sentinel escalation (e.g. crash recovery, watchdog).
     python3 -c "import json,time,os; p=os.path.join('$WORKING_DIR','.gatekeeper-state.json'); s=json.load(open(p)) if os.path.exists(p) else {}; s['last_claude_run']=int(time.time()); json.dump(s,open(p,'w'),indent=2)" 2>/dev/null
 
+    # Wake pulse: post "I'm back" to dashboard BEFORE Claude initializes,
+    # so Joel sees Meridian alive within ~1s instead of waiting 30+s for
+    # the first substantive output (journal 978).
+    python3 "$WORKING_DIR/scripts/wake-pulse.py" >> "$LOG" 2>&1
+
     # Run Claude (NOT exec — we need the loop to continue after it exits)
     "$CLAUDE_BIN" --dangerously-skip-permissions -p "$(cat "$WAKEUP_PROMPT")"
     EXIT_CODE=$?
