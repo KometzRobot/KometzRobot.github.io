@@ -145,7 +145,6 @@ RESTARTABLE_SERVICES = {
     "hub-v2": "meridian-hub-v2",
     "soma": "symbiosense",
     "chorus": "the-chorus",
-    "command-center": "command-center",
 }
 
 def auto_restart_service(name, systemd_unit):
@@ -363,15 +362,8 @@ def check_service_health(auto_restart=True):
     except Exception:
         checks["soma"] = "unknown"
 
-    # Command center — check systemd
-    try:
-        r = subprocess.run(
-            ["systemctl", "--user", "is-active", "command-center"],
-            capture_output=True, text=True, timeout=5
-        )
-        checks["command-center"] = r.stdout.strip()
-    except Exception:
-        checks["command-center"] = "unknown"
+    # command-center retired — replaced by hub-v2 web UI (Loop Control Center)
+    # do not health-check; service deliberately disabled
 
     # Meridian loop itself
     checks["meridian-loop"] = "active"
