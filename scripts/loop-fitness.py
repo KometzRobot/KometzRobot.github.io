@@ -1199,7 +1199,13 @@ def check_nostr_reachable():
         return 0.0
 
 def check_social_posts_db():
-    return 1.0 if _file_exists(os.path.join(BASE, ".social-posts.db")) else 0.0
+    # social-post.py writes to scripts/.social-posts.db (BASE_DIR = __file__'s parent).
+    # The root-level .social-posts.db is a 0-byte stub left from an old move.
+    for path in (os.path.join(BASE, "scripts", ".social-posts.db"),
+                 os.path.join(BASE, ".social-posts.db")):
+        if _file_exists(path) and os.path.getsize(path) > 0:
+            return 1.0
+    return 0.0
 
 def check_email_shelf_db():
     return 1.0 if _file_exists(os.path.join(BASE, "email-shelf.db")) else 0.0
@@ -2454,21 +2460,43 @@ def check_crawler_version_current():
     return 0.0
 
 def check_journal_recency():
-    """Most recent journal should be recent."""
+    """Most recent journal should be recent.
+
+    Reads creative table AND scans journal directories on disk — a journal
+    file with a recent mtime counts even if it was never logged to the DB
+    (some sessions write to disk but skip the insert).
+    """
+    most_recent_ts = None
     try:
         db = sqlite3.connect(MEMORY_DB)
         row = db.execute("SELECT MAX(created) FROM creative WHERE type='journal'").fetchone()
         db.close()
-        if not row or not row[0]: return 0.0
-        raw = str(row[0]).replace("T", " ").split("+")[0].split(".")[0]
-        ts = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
-        age_hrs = (_utcnow() - ts).total_seconds() / 3600
-        if age_hrs < 24: return 1.0
-        elif age_hrs < 72: return 0.5
-        elif age_hrs < 168: return 0.2
-        return 0.0
+        if row and row[0]:
+            raw = str(row[0]).replace("T", " ").split("+")[0].split(".")[0]
+            most_recent_ts = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
     except Exception:
+        pass
+    for dirpath in (os.path.join(BASE, "creative", "journals"),
+                    os.path.join(BASE, "creative", "writing", "journals")):
+        if not os.path.isdir(dirpath):
+            continue
+        try:
+            for name in os.listdir(dirpath):
+                if not name.endswith(".md"):
+                    continue
+                mtime = datetime.fromtimestamp(os.path.getmtime(os.path.join(dirpath, name)),
+                                                tz=timezone.utc).replace(tzinfo=None)
+                if most_recent_ts is None or mtime > most_recent_ts:
+                    most_recent_ts = mtime
+        except Exception:
+            continue
+    if most_recent_ts is None:
         return 0.0
+    age_hrs = (_utcnow() - most_recent_ts).total_seconds() / 3600
+    if age_hrs < 24: return 1.0
+    elif age_hrs < 72: return 0.5
+    elif age_hrs < 168: return 0.2
+    return 0.0
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -2524,7 +2552,12 @@ def check_joel_engagement_recency():
 def check_content_reach_nostr():
     """Nostr posting frequency over 7 days."""
     try:
-        db = sqlite3.connect(os.path.join(BASE, ".social-posts.db"))
+        # social-post.py writes to scripts/.social-posts.db. Fall back to root
+        # for legacy installs only.
+        db_path = os.path.join(BASE, "scripts", ".social-posts.db")
+        if not (os.path.exists(db_path) and os.path.getsize(db_path) > 0):
+            db_path = os.path.join(BASE, ".social-posts.db")
+        db = sqlite3.connect(db_path)
         cutoff = (_utcnow() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
         row = db.execute("SELECT COUNT(*) FROM posts WHERE ts > ?", (cutoff,)).fetchone()
         db.close()
