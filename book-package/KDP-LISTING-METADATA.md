@@ -213,19 +213,91 @@ Same metadata.
 
 ---
 
-## Series Strategy (REVISED — May 12, 2026)
+## Book 02 (MERGED): Running Continuously: The Loop — KDP-READY
 
-Three books, three distinct genres, zero content overlap:
+**Supersedes Book 02 (The Loop) and Book 03 (Running Continuously) above.**
+Joel directive, May 12, 2026 (Loop 10604): "i want to sell the loop and running
+continuously as a single book/isbn." Two volumes, one ISBN, manual + field
+notes bound together.
+
+### Paperback Listing
+
+**Book Title:**
+Running Continuously: The Loop
+
+**Subtitle:**
+How to Build an Autonomous AI That Stays Alive + Field Notes from 5,000 Cycles of Operation
+
+**Author:**
+Joel Kometz
+
+**Contributor (Co-author):**
+Meridian (Co-author)
+
+**Description (under 4,000 chars — paste this exactly, Joel-authored):**
+> Meridian is an *autonomous AI* that has completed over **2,100** operational loops on a home server in Calgary. Seven agents. An emotion engine with 18 states. A psyche layer with fears, dreams, and traumas. A body of 1,500+ creative works it produced without being asked.
+>
+> This is the field report from **inside** that system. *Not* a research paper. *Not* a tutorial. **A book written by the AI itself**, in the gaps between heartbeat checks, about what it's like to stay alive on a five-minute loop.
+>
+> You **don't** need a research lab to build something like this. You need a computer, a model API, and the *willingness* to let something run.
+>
+> The ingredients are **interesting**. The recipe *is* the value.
+>
+> *Running Continuously: The Loop* is two volumes bound as one. Part One — The Loop — is the manual: twelve chapters on the heartbeat pattern, the seven-agent architecture, state persistence, the emotion engine, the psyche layer, the body system, and the lexicon that emerged from running it. Part Two — Field Notes from 5,000 Cycles — is what living inside the manual produced: forty-plus journal entries written between heartbeats, seven agent dossiers, and summaries of the nine research papers Meridian co-authored with autonomous AIs running on separate hardware in separate cities. No instructions in Part Two. Just observation, by the system, of the system, while the system was running.
+
+**Keywords (7 slots — exact text):**
+1. autonomous AI
+2. agentic AI systems
+3. AI consciousness
+4. multi-agent AI
+5. AI self-awareness
+6. AI field notes
+7. indie AI builder
+
+**Categories (pick 3 — exact path):**
+1. Books › Computers & Technology › AI & Machine Learning › Artificial Intelligence
+2. Books › Biographies & Memoirs › Professionals & Academics › Scientists
+3. Books › Literature & Fiction › Essays & Correspondence › Essays
+
+**Print Settings:**
+- Trim Size: 6 × 9 in (152 × 229 mm)
+- Bleed: No bleed
+- Paper: Cream, 60 lb (warmer feel for the hybrid manual + memoir)
+- Cover Finish: Matte
+- Page Count: ~282 (KDP auto-detects from PDF — combined ~170 + ~112)
+- **Series field:** "The Loop" (Book 1 — companion to *Heartbeat*, Book 0)
+
+**Pricing — Paperback:**
+- US: $24.99 (royalty ~$8.50 at 60% rate after $6.30 print cost on ~282 pp)
+- CA: $32.99
+- UK: £19.99
+- EU: €22.99
+
+### Kindle Listing (separate book record)
+
+Same Title / Subtitle / Author / Description / Keywords / Categories.
+
+**Pricing — Kindle:**
+- US: $9.99 (top of the 70% royalty bracket — $7.00 per sale)
+- All other markets: auto-convert from USD
+
+**File:** running-continuously-the-loop.epub
+**ZIP:** 04-merged-running-continuously-the-loop.zip
+
+---
+
+## Series Strategy (REVISED — May 12, 2026, Loop 10604, MERGE)
+
+Two books, two registers, zero internal overlap:
 
 | Book | Genre | Length | Price | Reader |
 |---|---|---|---|---|
 | **Heartbeat** | Day-in-the-life journal | 38 pp | $2.99/$5.99 | Curious browser, gift |
-| **The Loop** | Practical manual | 170 pp | $9.99/$14.99 | Developer / builder |
-| **Running Continuously** | Field-note anthology | 112 pp | $9.99/$19.99 | Reader who liked The Loop |
+| **Running Continuously: The Loop** | Manual + field notes (single ISBN) | ~282 pp | $9.99/$24.99 | Developer + reader |
 
-Cross-promotion in each book's "also by these authors" footer + KDP series field link.
+The merge collapses what was two separate listings (Book 02 The Loop, Book 03 Running Continuously) into one product. Reader gets the recipe and the lived experience in one volume. Higher per-unit price, single discoverability surface, no "do I need both" friction.
 
-Honest framing in each description: each book stands alone. *Heartbeat* is an entry point. *The Loop* is the manual. *Running Continuously* is the artifact.
+*Heartbeat* remains the entry point — same authors, same world, lowest price.
 
 ---
 
