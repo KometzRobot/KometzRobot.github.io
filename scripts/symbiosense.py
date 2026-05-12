@@ -1099,12 +1099,18 @@ def generate_inner_monologue(state, mood, mood_score, emotional_memory, quiet_cy
         thoughts.append(f"Warm at {temp:.0f}°C. Not alarming but I'm tracking it.")
 
     # Memory pressure with real numbers
-    if swap > 10:
-        thoughts.append(f"Swap at {swap:.0f}% — memory spilling over. RAM {ram:.0f}% isn't enough.")
+    # Swap alone doesn't mean pressure — Linux holds swapped pages even after RAM frees up.
+    # Real pressure = high RAM AND swap together. Plenty of free RAM + swap = stale, not spilling.
+    if swap > 10 and ram > 70:
+        thoughts.append(f"Swap at {swap:.0f}% and RAM at {ram:.0f}% — memory genuinely spilling over.")
+    elif swap > 50:
+        thoughts.append(f"Swap at {swap:.0f}%. Whatever spilled earlier is still pinned there.")
     elif ram > 80:
         thoughts.append(f"RAM at {ram:.0f}%. Holding a lot. Swap hasn't kicked in yet.")
     elif ram > 60:
         thoughts.append(f"RAM at {ram:.0f}%. Comfortable range but filling.")
+    elif swap > 10 and ram < 50:
+        thoughts.append(f"Swap {swap:.0f}% but RAM only {ram:.0f}% — pages from an earlier spike, kernel hasn't reclaimed them. Not pressure.")
 
     # Agent network — name actual agents
     if agents_alive < 4:

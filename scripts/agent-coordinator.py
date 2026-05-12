@@ -327,7 +327,9 @@ def detect_incidents(messages):
          3, "service_failure", "critical", "Repeated service failures: {} failure messages"),
         (lambda m: any(w in m["message"].upper() for w in ["HIGH LOAD", "CPU SPIKE", "LOAD AVERAGE"]),
          2, "high_load", "warning", "High system load reported {} times"),
-        (lambda m: any(w in m["message"].upper() for w in ["HIGH RAM", "MEMORY HIGH", "OOM", "SWAP"]),
+        # "SWAP" alone was too broad — Soma narrates swap state in every cycle, which spammed false high_ram warnings.
+        # Require pressure-language, not bare mention.
+        (lambda m: any(w in m["message"].upper() for w in ["HIGH RAM", "MEMORY HIGH", "OOM", "SWAP HIGH", "SWAPPING HEAVILY", "GENUINELY SPILLING"]),
          2, "high_ram", "warning", "High memory usage reported {} times"),
         (lambda m: any(w in m["message"].upper() for w in ["DISK HIGH", "DISK FULL", "DISK SPACE"]),
          2, "disk_high", "warning", "Disk pressure reported {} times"),
