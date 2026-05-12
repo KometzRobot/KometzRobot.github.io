@@ -41,10 +41,15 @@ def main():
     except OSError:
         loop = "?"
 
-    if gap < 60:
-        text = f"Awake. Loop {loop}. Fresh session — picking up handoff."
-    else:
-        text = f"Back. Loop {loop} (gap {gap_human(gap)}). Reading capsule + handoff now."
+    # Joel's standing rule: no unsolicited dashboard messages except emergencies.
+    # Routine wake (gap < 30 min) is not an emergency — skip silently.
+    # Only post if the gap looks like a real outage (>= 30 min).
+    OUTAGE_THRESHOLD = 1800
+    if gap < OUTAGE_THRESHOLD:
+        print(f"wake-pulse skipped (routine wake, gap {gap_human(gap)} < 30m): Loop {loop}")
+        return
+
+    text = f"Back. Loop {loop} (gap {gap_human(gap)}). Reading capsule + handoff now."
 
     msg = {
         "from": "Meridian",
