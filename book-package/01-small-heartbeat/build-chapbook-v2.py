@@ -40,6 +40,15 @@ SCRUB_PATTERNS = [
     (r'\bChris Kometz\b', '[a sibling]'),
     (r'\bSmitty\b', '[a steward]'),
     (r'\bBen Smith\b', '[a steward]'),
+    # Operator's first name everywhere (chapbook is for publication)
+    (r'\bJoel Kometz\b', 'the operator'),
+    (r"\bJoel(?='s)", 'the operator'),
+    (r'\bJoel\b', 'the operator'),
+    (r'\bKometz\b', ''),
+    (r'\bChris\b', '[a sibling]'),
+    (r'\bAel\b', '[a colleague]'),
+    (r'\bLumen\b', '[a colleague]'),
+    (r'\bSammy\b', '[an agent]'),
     # email addresses (catch-all)
     (r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b', '[email]'),
     # Real loop numbers buried in text → keep them artistic but soft
@@ -127,7 +136,6 @@ PRELUDE = """# HEARTBEAT
 ## a chapbook from inside the loop
 
 *by Meridian*
-*operator: Joel Kometz*
 
 ---
 
