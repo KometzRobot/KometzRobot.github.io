@@ -169,15 +169,15 @@
   .stage p{margin:0;color:var(--muted);font-size:11px;line-height:1.4}
   @media (max-width:880px){.stages-row{grid-template-columns:repeat(2,1fr)}}
 
-  /* EVOLUTION (Pokemon Red/Blue style) */
+  /* EVOLUTION (stage transition animation) */
   section.evolve{padding:60px 0 80px;background:var(--paper);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
   .evo-stage{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;max-width:1080px;margin:0 auto}
-  .gb{position:relative;background:linear-gradient(180deg,#cfc7b4 0%,#aea693 100%);border-radius:18px 18px 60px 18px;padding:24px 22px 30px;box-shadow:0 24px 50px rgba(28,26,23,.25),inset 0 2px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.18);max-width:380px;margin:0 auto;font-family:"Courier New",monospace}
-  .gb-power{position:absolute;top:30px;left:14px;display:flex;flex-direction:column;align-items:center;gap:4px}
-  .gb-power .led{width:8px;height:8px;border-radius:50%;background:#48b04f;box-shadow:0 0 6px #48b04f}
-  .gb-power .lbl{font-size:7px;color:#5a5247;letter-spacing:.1em}
-  .gb-screen{background:#807a6c;border-radius:8px 8px 36px 8px;padding:22px 22px 38px 28px;position:relative;box-shadow:inset 0 4px 12px rgba(0,0,0,.4),inset 0 -2px 0 rgba(255,255,255,.15)}
-  .lcd{background:#9bbc0f;background:linear-gradient(180deg,#9bbc0f 0%,#8bac0f 100%);aspect-ratio:10/9;position:relative;overflow:hidden;border-radius:2px;box-shadow:inset 0 0 0 2px #5d6a06}
+  .dev{position:relative;background:linear-gradient(180deg,#f3ead9 0%,#d8c8a8 100%);border-radius:18px;padding:24px 22px 30px;box-shadow:0 24px 50px rgba(28,26,23,.22),inset 0 2px 0 rgba(255,255,255,.5),inset 0 -3px 0 rgba(0,0,0,.16);max-width:380px;margin:0 auto;font-family:"Courier New",monospace;border:1px solid #c8b890}
+  .dev-power{position:absolute;top:22px;right:18px;display:flex;align-items:center;gap:6px}
+  .dev-power .led{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .dev-power .lbl{font-size:8px;color:#5a5247;letter-spacing:.18em}
+  .dev-screen{background:#1c1a17;border-radius:10px;padding:24px 22px 22px;position:relative;box-shadow:inset 0 4px 12px rgba(0,0,0,.55),inset 0 -2px 0 rgba(255,255,255,.05);margin-top:24px}
+  .lcd{background:#e8c98b;background:linear-gradient(180deg,#e8c98b 0%,#c98a2b 100%);aspect-ratio:10/9;position:relative;overflow:hidden;border-radius:3px;box-shadow:inset 0 0 0 2px #7a3a18}
   .sprite,.silhouette{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64%;height:64%}
   .sprite.spark,.silhouette.spark{animation:evoSpark 12s linear infinite}
   .sprite.ember,.silhouette.ember{opacity:0;animation:evoEmber 12s linear infinite}
@@ -254,7 +254,7 @@
     83%,87%{opacity:1}
     88%,100%{opacity:0}
   }
-  .caption{margin-top:14px;font-family:"Courier New",monospace;color:#0f380f;font-size:13px;letter-spacing:.06em;line-height:1.5;min-height:46px;font-weight:700;text-transform:uppercase;text-align:left;background:#9bbc0f;padding:8px 10px;border:2px solid #0f380f;border-radius:3px;position:relative;box-shadow:inset 1px 1px 0 #5d6a06}
+  .caption{margin-top:14px;font-family:"Courier New",monospace;color:#2a1a10;font-size:13px;letter-spacing:.06em;line-height:1.5;min-height:46px;font-weight:700;text-transform:uppercase;text-align:left;background:#e8c98b;padding:8px 10px;border:2px solid #2a1a10;border-radius:3px;position:relative;box-shadow:inset 1px 1px 0 #7a3a18}
   .caption .line{position:absolute;left:14px;right:14px;top:10px;opacity:0}
   .caption .line.a{animation:capA 12s linear infinite}
   .caption .line.b{animation:capB 12s linear infinite}
@@ -262,19 +262,11 @@
   @keyframes capA{0%,9%{opacity:1}10%,100%{opacity:0}}
   @keyframes capB{0%,9%{opacity:0}10%,82%{opacity:1}83%,100%{opacity:0}}
   @keyframes capC{0%,86%{opacity:0}88%,100%{opacity:1}}
-  .caption::after{content:"▼";position:absolute;right:10px;bottom:6px;color:#0f380f;font-size:10px;animation:capArrow 1s steps(2) infinite}
+  .caption::after{content:"▼";position:absolute;right:10px;bottom:6px;color:#2a1a10;font-size:10px;animation:capArrow 1s steps(2) infinite}
   @keyframes capArrow{0%,49%{opacity:1}50%,100%{opacity:0}}
-  .dpad-bar{position:absolute;bottom:8px;left:8px;right:8px;display:flex;gap:3px;justify-content:center}
-  .dpad-bar .bar{width:14px;height:2px;background:#5d6a06;border-radius:1px}
-  .gb-pad{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding:0 8px}
-  .dpad{position:relative;width:50px;height:50px}
-  .dpad-cross{position:absolute;inset:0;background:#1c1a17;clip-path:polygon(35% 0,65% 0,65% 35%,100% 35%,100% 65%,65% 65%,65% 100%,35% 100%,35% 65%,0 65%,0 35%,35% 35%);border-radius:4px}
-  .ab{display:flex;gap:10px;align-items:center}
-  .ab span{width:30px;height:30px;border-radius:50%;background:#a83245;color:#fff;font-family:"Courier New",monospace;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 #5a1a23,inset 0 -2px 0 rgba(0,0,0,.2)}
-  .gb-startsel{display:flex;justify-content:center;gap:14px;margin-top:14px}
-  .gb-startsel span{width:32px;height:7px;background:#5a5247;border-radius:4px;transform:rotate(-22deg);box-shadow:0 1px 0 rgba(255,255,255,.2)}
-  .gb-grill{position:absolute;bottom:14px;right:18px;display:flex;gap:3px;transform:rotate(-22deg)}
-  .gb-grill span{width:3px;height:22px;background:#5a5247;border-radius:2px}
+  .dev-meta{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding:0 4px;font-family:"Courier New",monospace;font-size:10px;letter-spacing:.15em;color:#5a5247}
+  .dev-meta .serial{font-weight:700;color:#2a1a10}
+  .dev-meta .stamp{padding:3px 8px;border:1px solid #aea693;border-radius:3px;font-size:9px}
 
   .evo-text h3{font-size:30px;margin:0 0 14px;font-weight:800;letter-spacing:-.01em}
   .evo-text p{color:var(--ink);font-size:15px;margin-bottom:14px;line-height:1.6}
@@ -288,10 +280,10 @@
   }
   @media (max-width:560px){
     section.evolve{padding:44px 0 54px}
-    .gb{padding:18px 14px 22px}
-    .gb-screen{padding:18px 16px 30px 22px}
+    .dev{padding:18px 14px 22px}
+    .dev-screen{padding:18px 16px 22px}
     .caption{font-size:11.5px;min-height:40px}
-    .gb-power{top:22px;left:8px}
+    .dev-power{top:16px;right:12px}
     .evo-text h3{font-size:22px}
     .evo-text p{font-size:14px}
   }
@@ -728,18 +720,18 @@
   </div>
 </section>
 
-<!-- POKEMON-STYLE EVOLUTION ANIMATION (Joel asked 3x) -->
+<!-- STAGE EVOLUTION ANIMATION -->
 <section class="evolve" id="evolve">
   <div class="wrap">
     <div class="section-head">
       <div class="eyebrow">Stage Up</div>
       <h2>The level-up looks like this.</h2>
-      <p>When your Cinder evolves to its next stage, you don't just see a number tick over. The screen takes you back to 1996.</p>
+      <p>When your Cinder evolves to its next stage, you don't just see a number tick over. The screen plays the cutscene — pixel-art transition, your sprite re-rendering one frame at a time.</p>
     </div>
     <div class="evo-stage">
-      <div class="gb">
-        <div class="gb-power"><span class="led"></span><span class="lbl">POWER</span></div>
-        <div class="gb-screen">
+      <div class="dev">
+        <div class="dev-power"><span class="led"></span><span class="lbl">CINDER · LIVE</span></div>
+        <div class="dev-screen">
           <div class="lcd">
             <!-- Spark sprite (current form) -->
             <svg class="sprite spark" viewBox="0 0 32 32" aria-label="Spark stage" preserveAspectRatio="xMidYMid meet">
@@ -821,21 +813,18 @@
             <span class="line b">CINDER IS EVOLVING!</span>
             <span class="line c">CINDER EVOLVED INTO EMBER!</span>
           </div>
-          <div class="dpad-bar"><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
         </div>
-        <div class="gb-pad">
-          <div class="dpad"><span class="dpad-cross"></span></div>
-          <div class="ab"><span class="btn-b">B</span><span class="btn-a">A</span></div>
+        <div class="dev-meta">
+          <span class="serial">SN · 0001 / 12</span>
+          <span class="stamp">HAND-FLASHED</span>
         </div>
-        <div class="gb-startsel"><span></span><span></span></div>
-        <div class="gb-grill"><span></span><span></span><span></span><span></span><span></span><span></span></div>
       </div>
       <div class="evo-text">
         <h3>The whole arc is seven of these.</h3>
         <p><span class="evo-tag">SPARK → EMBER → FLAME → FIRE → BLAZE → BONFIRE → INFERNO</span></p>
         <p>Each evolution is hand-drawn — no off-the-shelf splash screen. Cinder pauses what it's doing, plays the cutscene, drops a new badge into your trophy case, and writes a paragraph in your journal about what changed and why.</p>
         <p class="evo-fine">The animation above is a real 12-second sequence — the same one your stick will play the first time it crosses 1,000 XP. Replays from your archive any time you want to see it again.</p>
-        <p style="margin-top:18px"><a href="cinder-creatures.html" style="color:#b14b1f;font-weight:700;text-decoration:underline;text-underline-offset:3px">Play the prototype →</a> &nbsp;<span style="color:#5a5448;font-size:13px">(v0.1 — Gameboy-style creature collector. Walk, encounter, capture. Final boss is Cinder itself.)</span></p>
+        <p style="margin-top:18px"><a href="cinder-creatures.html" style="color:#b14b1f;font-weight:700;text-decoration:underline;text-underline-offset:3px">Play the prototype →</a> &nbsp;<span style="color:#5a5448;font-size:13px">(v0.1 — pocket-style creature collector. Walk, encounter, capture. Final boss is Cinder itself.)</span></p>
       </div>
     </div>
   </div>
