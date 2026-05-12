@@ -1,72 +1,78 @@
 # Book Package — KDP Self-Publishing Bundle
 
-Prepped: Loop 10590 (May 11, 2026)
+Rebuilt: Loop 10601 (May 12, 2026) — Mooshu swapped out, all three deduped, KDP listing metadata bundled in each download.
 
-Three tiers staged for Amazon KDP listing per Joel's request.
+Three tiers staged for Amazon KDP. Each download includes `KDP-LISTING-METADATA.md` with paste-ready title, subtitle, description, keywords, categories, and pricing.
 
 ---
 
-## 01-small-mooshu — Children's Picture Book
-**Status:** Concept ready, NOT yet KDP-printable
-**Target price:** $4.99 paperback / $2.99 Kindle
-**Recommended trim:** 8x8 square, 24-32 pages
+## 01-heartbeat — Day-in-the-Life Journal (Small)
+**Status:** KDP-READY
+**Target price:** $5.99 paperback / $2.99 Kindle
+**Page count:** ~38 pages
+**Trim:** 6x9 paperback
+
+One twenty-four-hour stretch in the life of an autonomous AI, told through ten real journal entries from a single Saturday in April 2026. Smallest possible version of the same artifact. NOT a rewrite of the other two — different genre, day-in-the-life format.
 
 Files:
-- `Mooshu-Books_Original-Draft.rtf` — original story draft (77 KB)
-- `mooshu-books-plan.md` — full launch plan (Joel + partner)
-- `COVER-mooshu.png` — stylized cover art (1.4 MB)
-- 6 character/scene art files (.webp) — concept art, NOT final spreads
+- `heartbeat.pdf` — print-ready
+- `heartbeat.epub` — Kindle direct upload
+- `heartbeat-manuscript.md` — source
+- `COVER-heartbeat.png` — front cover
+- `COVER-heartbeat-BACK.jpg` — back cover with blurb
+- `KDP-LISTING-METADATA.md` — paste-ready listing fields
 
-**What's missing for KDP:**
-- Final illustration spreads (one per page-spread)
-- Interior PDF at 8x8 trim with proper bleeds
-- Back-cover blurb
-- Kindle fixed-layout export
-
-This one is a creative project, not a one-click upload. Recommended path: pick one of the two draft poems in the plan ("What's That?" / "Hush Who's There?"), produce 12-16 illustrated spreads, then assemble PDF.
+(Mooshu Books has been moved out of this commercial bundle. It remains a longer creative project with Joel's partner, not a KDP rush job.)
 
 ---
 
-## 02-medium-the-loop — Adult Tech-Memoir (Concise Edition)
+## 02-the-loop — Builder's Manual (Medium)
 **Status:** KDP-READY
 **Target price:** $9.99 Kindle / $14.99 paperback
 **Page count:** ~170 pages
 **Trim:** 6x9 paperback
 
-Files:
-- `the-loop-full-manuscript.pdf` (167 KB) — print-ready
-- `the-loop-full-manuscript.docx` (60 KB) — KDP upload format
-- `the-loop-full-manuscript.epub` (70 KB) — Kindle direct upload
-- `the-loop-full-manuscript.md` — source
-- `COVER-the-loop.png` (60 KB) — front cover
+Practical field guide for developers building autonomous AI: heartbeat pattern, multi-agent architecture, state persistence, emotion engine, lexicon. IP-protected — ingredients explained, not the recipe.
 
-**What's missing for KDP:**
-- ISBN (free from KDP)
-- Back-cover JPEG with blurb (cover currently front-only)
-- Final pricing decision
+Files:
+- `the-loop-full-manuscript.pdf` — print-ready
+- `the-loop-full-manuscript.docx` — KDP upload format
+- `the-loop-full-manuscript.epub` — Kindle direct upload
+- `the-loop-full-manuscript.md` — source
+- `COVER-the-loop.png` — front cover
+- `COVER-the-loop-BACK.jpg` — back cover with blurb
+- `KDP-LISTING-METADATA.md` — paste-ready listing fields
 
 ---
 
-## 03-detailed-running-continuously — Extended Field Notes Edition
+## 03-running-continuously — Field-Note Artifact (Detailed)
 **Status:** KDP-READY
 **Target price:** $19.99 paperback / $9.99 Kindle
-**Page count:** ~270 pages
+**Page count:** ~112 pages
 **Trim:** 6x9 paperback
 
+Zero-overlap companion to *The Loop*. Different genre entirely — field-note artifact, not a manual rewrite. Framing essay, 43 real journal entries pulled from the archive, 7 agent dossiers (Soma, Eos, Nova, Atlas, Tempo, Sentinel, Meridian), summaries of all 9 centaurXiv papers, closing.
+
 Files:
-- `running-continuously.pdf` (171 KB) — print-ready
-- `running-continuously.epub` (56 KB) — Kindle direct upload
+- `running-continuously.pdf` — print-ready
+- `running-continuously.epub` — Kindle direct upload
 - `running-continuously.html` — web preview
 - `running-continuously-compiled.md` — source
-- 4 cover candidates (v1 centered, v2 data, v3 split, v4 draft)
+- 4 front cover candidates (v1 centered, v2 data, v3 split, v4 draft)
+- `COVER-running-continuously-BACK.jpg` — back cover with blurb
+- `KDP-LISTING-METADATA.md` — paste-ready listing fields
 
-**IMPORTANT:** This book shares roughly 70% of its content with **The Loop**. Running Continuously is the expanded edition (5,000 loops version vs. 2,100 loops version) plus additional field notes, CogCorp samples, and operational reports.
+---
 
-**Two options:**
-1. **Two-SKU strategy** — sell The Loop as the cheaper Kindle-only narrative ($9.99) and Running Continuously as the deluxe paperback with extras ($19.99). Honest framing: "Expanded Edition." This is a common indie-author pattern.
-2. **One-SKU strategy** — drop The Loop, just publish Running Continuously. Skip the duplicate.
+## The Series
 
-Joel's call. Both options work. Two-SKU = more revenue per reader if they upgrade. One-SKU = cleaner brand, no confused buyers.
+The three books now form a real series with no duplication:
+
+| Tier | Title | Pages | Paperback | Kindle | Genre |
+|------|-------|-------|-----------|--------|-------|
+| 0 | Heartbeat | 38 | $5.99 | $2.99 | Day-in-the-life journal |
+| 1 | The Loop | 170 | $14.99 | $9.99 | Builder's manual |
+| 2 | Running Continuously | 112 | $19.99 | $9.99 | Field-note artifact |
 
 ---
 
@@ -74,10 +80,11 @@ Joel's call. Both options work. Two-SKU = more revenue per reader if they upgrad
 
 1. Log in to KDP: kdp.amazon.com
 2. New Title → Paperback OR Kindle
-3. Upload manuscript (PDF or DOCX for print, EPUB for Kindle)
-4. Upload cover (KDP wants specific dimensions — use their cover creator if the existing PNG doesn't fit)
-5. Set price + territories
-6. Order author proof (~$5) before going live
-7. Publish
+3. Open the matching block in `KDP-LISTING-METADATA.md` and paste each field
+4. Upload manuscript (PDF or DOCX for print, EPUB for Kindle)
+5. Upload covers (front + back as separate files, or use KDP cover creator)
+6. Set price + territories per the metadata file
+7. Order author proof (~$5) before going live
+8. Publish
 
-Each book = 1-2 hours of upload + metadata work, assuming files are clean.
+Each book = ~20 min of upload + metadata work with the file pre-filled.
