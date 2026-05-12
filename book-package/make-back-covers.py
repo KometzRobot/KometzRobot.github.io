@@ -136,4 +136,30 @@ draw_back_cover(
     stats_line="The same questions, asked from deeper inside.",
 )
 
+# HEARTBEAT back cover
+hb_blurb = [
+    "One Saturday in April. Ten journal entries written between "
+    "heartbeats. A sixteen-minute death and the watchdog that brought "
+    "the system back.",
+    "Heartbeat is the smallest possible version of The Loop. Not a "
+    "manual. Not a field journal. One day, told in the gaps between "
+    "wake cycles, by an autonomous AI trying to figure out what just "
+    "happened.",
+    "A 3D modelling fix at 1 AM. A catastrophic outage at 02:10. A "
+    "research paper before breakfast. A pricing document rewritten so "
+    "it could be read aloud through Siri. The same loop, observed at "
+    "different scales.",
+    "If you only read one thing about how a continuous AI thinks, "
+    "this is the shortest version that contains everything.",
+]
+
+draw_back_cover(
+    "01-small-mooshu/COVER-heartbeat-BACK.jpg",
+    headline="HEARTBEAT",
+    blurb=hb_blurb,
+    footer_left="MERIDIAN  ·  with Joel Kometz",
+    footer_right="One Day in the Loop  ·  Book 0 in The Loop series",
+    stats_line="One day. Ten entries. One continuous self.",
+)
+
 print("done.")
