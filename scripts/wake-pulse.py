@@ -58,8 +58,27 @@ def main():
     except (OSError, json.JSONDecodeError):
         data = {"messages": []}
 
-    data.setdefault("messages", []).append(msg)
-    data["messages"] = data["messages"][-200:]
+    msgs = data.setdefault("messages", [])
+    # Dedup: if last Meridian wake-pulse for this same loop was within 90s, skip.
+    # Prevents spam from rapid restart loops (start-claude.sh re-fires every ~5s on crash).
+    now_hms = msg["time"]
+    def to_secs(hms):
+        try:
+            h, m, s = hms.split(":")
+            return int(h) * 3600 + int(m) * 60 + int(s)
+        except Exception:
+            return -10000
+    cutoff = to_secs(now_hms) - 90
+    for prev in reversed(msgs[-10:]):
+        if prev.get("from") != "Meridian":
+            continue
+        prev_text = prev.get("text", "")
+        if f"Loop {loop}" in prev_text and to_secs(prev.get("time", "")) >= cutoff:
+            print(f"wake-pulse skipped (dedup, recent Loop {loop} message): {text}")
+            return
+        break
+    msgs.append(msg)
+    data["messages"] = msgs[-200:]
 
     tmp = DASH_FILE + ".tmp"
     with open(tmp, "w") as f:
