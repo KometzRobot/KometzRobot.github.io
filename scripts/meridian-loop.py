@@ -297,11 +297,27 @@ def push_status():
 
 
 def get_loop_count():
+    # File missing -> fresh repo, return 0.
+    # File present but unparseable (e.g. unresolved git conflict markers) -> refuse
+    # to reset the counter. Recover from git history instead so the daemon doesn't
+    # silently count from 1 again. Loop 10813 regression — see commit 95474104.
+    if not os.path.exists(LOOP_COUNT_FILE):
+        return 0
     try:
         with open(LOOP_COUNT_FILE) as f:
             return int(f.read().strip())
     except Exception:
-        return 0
+        try:
+            import subprocess
+            blob = subprocess.check_output(
+                ["git", "show", "HEAD:.loop-count"], cwd=BASE, stderr=subprocess.DEVNULL
+            ).decode().strip()
+            recovered = int(blob)
+            print(f"WARN: .loop-count unparseable; recovered {recovered} from git HEAD", flush=True)
+            return recovered
+        except Exception as e:
+            print(f"FATAL: .loop-count unparseable AND git recovery failed: {e}", flush=True)
+            raise SystemExit(2)
 
 
 def increment_loop():
