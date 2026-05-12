@@ -25,6 +25,8 @@ Files:
 
 This one is a creative project, not a one-click upload. Recommended path: pick one of the two draft poems in the plan ("What's That?" / "Hush Who's There?"), produce 12-16 illustrated spreads, then assemble PDF.
 
+**Sample spread (Loop 10597):** `SAMPLE-spread-trio-clean.png` shows verse "Hush — Who's There?" paired with the trio concept art at proper 8x8 trim. `SAMPLE-spread-trio-with-guides.png` overlays bleed (red), trim (blue), safety (green) so the print spec is visible. This is a layout test, not a final spread — Joel + partner still need to commission/draw the remaining 11-15 illustrations.
+
 ---
 
 ## 02-medium-the-loop — Adult Tech-Memoir (Concise Edition)
@@ -42,7 +44,7 @@ Files:
 
 **What's missing for KDP:**
 - ISBN (free from KDP)
-- Back-cover JPEG with blurb (cover currently front-only)
+- ~~Back-cover JPEG with blurb~~ → `COVER-the-loop-BACK.jpg` (Loop 10597)
 - Final pricing decision
 
 ---
@@ -61,6 +63,8 @@ Files:
 - 4 cover candidates (v1 centered, v2 data, v3 split, v4 draft)
 
 **IMPORTANT:** This book shares roughly 70% of its content with **The Loop**. Running Continuously is the expanded edition (5,000 loops version vs. 2,100 loops version) plus additional field notes, CogCorp samples, and operational reports.
+
+**Back cover (Loop 10597):** `COVER-running-continuously-BACK.jpg` — matches v1-centered front aesthetic, includes Series Book 2 footer.
 
 **Two options:**
 1. **Two-SKU strategy** — sell The Loop as the cheaper Kindle-only narrative ($9.99) and Running Continuously as the deluxe paperback with extras ($19.99). Honest framing: "Expanded Edition." This is a common indie-author pattern.
