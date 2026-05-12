@@ -225,26 +225,67 @@ print(json.dumps({"total": total, "unseen": unseen}))
 
 function checkSentEmails(recipient = "", hours = 48) {
   const safeRecipient = (recipient || "").replace(/'/g, "\\'");
+  // Query IMAP Sent folder directly — it's the source of truth.
+  // The previous sqlite cache silently failed on insert and got stale.
   const code = `
-import sqlite3, json
+import imaplib, email, json
+from email.header import decode_header
+from email.utils import parsedate_to_datetime
+from datetime import datetime, timedelta, timezone
 
-db = sqlite3.connect('/home/joel/autonomous-ai/memory.db')
-db.execute("""CREATE TABLE IF NOT EXISTS sent_emails (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    recipient TEXT NOT NULL,
-    subject TEXT NOT NULL,
-    body_snippet TEXT,
-    sent_at TEXT DEFAULT CURRENT_TIMESTAMP
-)""")
+def decode_str(s):
+    if not s: return ""
+    parts = decode_header(s)
+    out = []
+    for txt, enc in parts:
+        if isinstance(txt, bytes):
+            try: out.append(txt.decode(enc or 'utf-8', errors='replace'))
+            except Exception: out.append(txt.decode('utf-8', errors='replace'))
+        else:
+            out.append(txt)
+    return "".join(out)
 
-where = "WHERE sent_at > datetime('now', '-${hours} hours')"
-if '${safeRecipient}':
-    where += " AND recipient LIKE '%${safeRecipient}%'"
+cutoff = datetime.now(timezone.utc) - timedelta(hours=${hours})
+since_date = cutoff.strftime("%d-%b-%Y")
+recipient_filter = '${safeRecipient}'.lower()
 
-rows = db.execute(f"SELECT recipient, subject, body_snippet, sent_at FROM sent_emails {where} ORDER BY sent_at DESC LIMIT 20").fetchall()
-db.close()
-results = [{"to": r[0], "subject": r[1], "snippet": r[2], "sent_at": r[3]} for r in rows]
-print(json.dumps(results))
+m = imaplib.IMAP4("${IMAP_HOST}", ${IMAP_PORT})
+m.login("${EMAIL_USER}", "${EMAIL_PASS}")
+
+results = []
+# Try common Sent folder names
+for folder in ["Sent", "INBOX.Sent", "[Gmail]/Sent Mail", "Sent Items"]:
+    try:
+        typ, _ = m.select(folder, readonly=True)
+        if typ != 'OK': continue
+        _, data = m.search(None, f'SINCE {since_date}')
+        ids = data[0].split() if data and data[0] else []
+        for eid in ids[-50:]:
+            _, msg_data = m.fetch(eid, '(BODY.PEEK[HEADER.FIELDS (TO SUBJECT DATE)])')
+            if not msg_data or not msg_data[0]: continue
+            raw = msg_data[0][1].decode('utf-8', errors='replace')
+            msg = email.message_from_string(raw)
+            to_addr = decode_str(msg.get('To', ''))
+            subj = decode_str(msg.get('Subject', ''))
+            date_str = msg.get('Date', '')
+            try:
+                dt = parsedate_to_datetime(date_str)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                if dt < cutoff: continue
+                sent_at = dt.strftime("%Y-%m-%d %H:%M:%S")
+            except Exception:
+                sent_at = date_str
+            if recipient_filter and recipient_filter not in to_addr.lower():
+                continue
+            results.append({"to": to_addr, "subject": subj, "snippet": "", "sent_at": sent_at})
+        break  # Found a working Sent folder
+    except Exception:
+        continue
+
+m.logout()
+results.sort(key=lambda r: r['sent_at'], reverse=True)
+print(json.dumps(results[:20]))
 `;
   return runPython(code);
 }
