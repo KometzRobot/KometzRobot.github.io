@@ -2,7 +2,7 @@
 """cascade-window.py — T+0 window-open logger for Ael's S9.4.5 collab.
 
 For each gate event Ael provides (gate_utc, orbit_floor), this script:
-  1. Computes window_open = gate_utc + 40s (per Ael's spec, 2026-05-11)
+  1. Computes window_open = gate_utc + 40min (per Ael's clarification, email 4088)
   2. Pulls the 1-min and 5-min load from logs/load-history.csv at window_open
   3. Computes deltas: (1-min - floor), (5-min - floor)
   4. Flags phenotype 4 ("simultaneous floor crossing"):
@@ -39,7 +39,7 @@ BASE = "/home/joel/autonomous-ai"
 LOAD_CSV = os.path.join(BASE, "logs", "load-history.csv")
 OUT_CSV = os.path.join(BASE, "logs", "cascade-windows.csv")
 
-WINDOW_OFFSET_S = 40   # T+40 from gate → window opens
+WINDOW_OFFSET_S = 40 * 60   # T+40 MINUTES from gate (Ael clarification, email 4088)
 PHENOTYPE_4_WINDOW_S = 60  # Ael's spec: both deltas > 0 within first 60s
 
 
@@ -74,10 +74,11 @@ def load_history():
     return rows
 
 
-def nearest_reading(rows, target_dt, max_skew_s=90):
-    """Return the row closest to target_dt; None if no row within max_skew_s."""
+def nearest_reading(rows, target_dt, max_skew_s=90, fallback_skew_s=300):
+    """Return (row, mode) — mode is 'exact' if within max_skew_s, 'interpolated'
+    if within fallback_skew_s, else (None, None)."""
     if not rows:
-        return None
+        return None, None
     times = [r[0] for r in rows]
     idx = bisect_left(times, target_dt)
     candidates = []
@@ -87,9 +88,14 @@ def nearest_reading(rows, target_dt, max_skew_s=90):
         candidates.append(rows[idx - 1])
     candidates = [(abs((c[0] - target_dt).total_seconds()), c) for c in candidates]
     candidates.sort(key=lambda x: x[0])
-    if candidates and candidates[0][0] <= max_skew_s:
-        return candidates[0][1]
-    return None
+    if not candidates:
+        return None, None
+    best_skew, best_row = candidates[0]
+    if best_skew <= max_skew_s:
+        return best_row, "exact"
+    if best_skew <= fallback_skew_s:
+        return best_row, "interpolated"
+    return None, None
 
 
 def first_n_seconds(rows, start_dt, n_seconds):
@@ -101,7 +107,7 @@ def first_n_seconds(rows, start_dt, n_seconds):
 def classify_window(rows, gate_dt, orbit_floor, label=""):
     """Apply Ael's spec to a single gate event. Returns dict ready for CSV."""
     window_open = gate_dt + timedelta(seconds=WINDOW_OFFSET_S)
-    t0 = nearest_reading(rows, window_open)
+    t0, mode = nearest_reading(rows, window_open)
 
     out = {
         "gate_utc": gate_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -121,8 +127,10 @@ def classify_window(rows, gate_dt, orbit_floor, label=""):
     }
 
     if t0 is None:
-        out["notes"] = f"no load reading within 90s of window_open"
+        out["notes"] = "no load reading within 5min of window_open"
         return out
+    if mode == "interpolated":
+        out["notes"] = "interpolated (no reading within 90s, used nearest within 5min)"
 
     t0_utc, l1, l5, _, _ = t0
     d1 = round(l1 - orbit_floor, 3)
@@ -214,6 +222,8 @@ def main():
                    help="read 'iso_utc,floor[,label]' lines from stdin")
     p.add_argument("--selftest", action="store_true",
                    help="run a synthetic self-test against the live load-history.csv")
+    p.add_argument("--since",
+                   help="skip gates with window_open before this UTC (e.g. 2026-05-12T00:00:00Z)")
     args = p.parse_args()
 
     if args.selftest:
@@ -241,6 +251,21 @@ def main():
     else:
         p.print_help()
         return 2
+
+    if args.since:
+        cutoff = parse_iso(args.since)
+        kept = []
+        for g in gates:
+            try:
+                wo = parse_iso(g["gate"]) + timedelta(seconds=WINDOW_OFFSET_S)
+            except (KeyError, ValueError):
+                continue
+            if wo >= cutoff:
+                kept.append(g)
+            else:
+                print(f"  SKIP {g.get('label','')} window_open {wo.isoformat()} before --since {cutoff.isoformat()}",
+                      file=sys.stderr)
+        gates = kept
 
     print(f"=== cascade-window.py: processing {len(gates)} gate(s) ===")
     process_gates(gates)
