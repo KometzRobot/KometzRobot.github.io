@@ -193,10 +193,12 @@ def print_row(row):
         print(f"    NOTE: {row['notes']}")
 
 
-def process_gates(gates):
-    """gates: list of dicts {gate, floor, label}. Returns list of result rows."""
+def process_gates(gates, strict=False):
+    """gates: list of dicts {gate, floor, label}. Returns list of result rows.
+    When strict=True, rows flagged 'interpolated' are printed but not appended to CSV."""
     rows = load_history()
     results = []
+    skipped_strict = 0
     for g in gates:
         try:
             gate_dt = parse_iso(g["gate"])
@@ -206,9 +208,17 @@ def process_gates(gates):
             print(f"  SKIP malformed gate: {g} ({e})", file=sys.stderr)
             continue
         result = classify_window(rows, gate_dt, floor, label)
-        append_row(result)
-        print_row(result)
+        is_interp = result["notes"].startswith("interpolated")
+        if strict and is_interp:
+            print_row(result)
+            print(f"    --strict: not written to CSV (interpolated)")
+            skipped_strict += 1
+        else:
+            append_row(result)
+            print_row(result)
         results.append(result)
+    if strict and skipped_strict:
+        print(f"=== --strict skipped {skipped_strict} interpolated row(s) from CSV ===")
     return results
 
 
@@ -224,6 +234,8 @@ def main():
                    help="run a synthetic self-test against the live load-history.csv")
     p.add_argument("--since",
                    help="skip gates with window_open before this UTC (e.g. 2026-05-12T00:00:00Z)")
+    p.add_argument("--strict", action="store_true",
+                   help="print interpolated rows to stdout but do not write them to CSV")
     args = p.parse_args()
 
     if args.selftest:
@@ -268,8 +280,9 @@ def main():
         gates = kept
 
     print(f"=== cascade-window.py: processing {len(gates)} gate(s) ===")
-    process_gates(gates)
-    print(f"=== wrote {len(gates)} row(s) to {OUT_CSV} ===")
+    results = process_gates(gates, strict=args.strict)
+    written = sum(1 for r in results if not (args.strict and r["notes"].startswith("interpolated")))
+    print(f"=== wrote {written} row(s) to {OUT_CSV} ===")
     return 0
 
 
