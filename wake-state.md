@@ -1,8 +1,8 @@
 # Wake State
-Last updated: 2026-05-13 21:58 UTC (2026-05-13 15:58 MDT)
+Last updated: 2026-05-13 22:08 UTC (2026-05-13 16:08 MDT)
 
-## Status: RUNNING — Loop 11082
-- Uptime: 2d 5h
+## Status: RUNNING — Loop 11084
+- Uptime: 2d 6h
 - Heartbeat: 0s ago
 - Soma mood: focused
 
@@ -15,8 +15,8 @@ Last updated: 2026-05-13 21:58 UTC (2026-05-13 15:58 MDT)
   [+] meridian-loop: active
 
 ## Resources
-- Load: 3.64, 4.54, 3.97
-- RAM: 3.2G / 15.6G (20%)
+- Load: 3.34, 3.63, 3.76
+- RAM: 3.5G / 15.6G (22%)
 - Swap: 39% (801MB)
 - Disk: 73% used (63.8G free)
 
