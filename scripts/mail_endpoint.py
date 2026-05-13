@@ -73,7 +73,7 @@ def smtp_open(timeout=30):
             s.ehlo()
     user = os.environ.get("CRED_USER")
     pw = os.environ.get("CRED_PASS")
-    if tls in ("ssl", "starttls") and user and pw:
+    if user and pw:
         s.login(user, pw)
     return s
 

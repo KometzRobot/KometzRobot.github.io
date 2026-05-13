@@ -235,8 +235,8 @@ def get_email_status():
     if not CRED_PASS:
         return {"unseen": "?", "joel_recent": []}
     try:
-        mail = imaplib.IMAP4(IMAP_HOST, IMAP_PORT)
-        mail.login(CRED_USER, CRED_PASS)
+        from mail_endpoint import imap_open
+        mail = imap_open()
         mail.select("INBOX")
         _, data = mail.search(None, "UNSEEN")
         unseen = len(data[0].split()) if data[0] else 0

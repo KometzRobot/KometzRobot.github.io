@@ -196,9 +196,8 @@ def get_agent_relay_messages(n=10):
 
 def get_email_count():
     try:
-        import imaplib
-        m = imaplib.IMAP4("127.0.0.1", 1144)
-        m.login(CRED_USER, CRED_PASS)
+        from mail_endpoint import imap_open
+        m = imap_open()
         m.select("INBOX")
         _, d = m.search(None, "ALL")
         total = len(d[0].split()) if d[0] else 0
@@ -292,9 +291,8 @@ def get_recent_activity(n=8):
 
     # Recent emails received (just count last hour)
     try:
-        import imaplib
-        m = imaplib.IMAP4("127.0.0.1", 1144)
-        m.login(CRED_USER, CRED_PASS)
+        from mail_endpoint import imap_open
+        m = imap_open()
         m.select("INBOX")
         # Get last 3 email subjects
         _, d = m.search(None, "ALL")
