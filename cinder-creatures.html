@@ -496,56 +496,129 @@ function tickClaimAnim(){
   if(performance.now() - claimAnim.ts > 1700){ claimAnim = null; }
 }
 
-// ---------- save / load (localStorage) ----------
+// ---------- save / load (localStorage + optional Cinder server bridge) ----------
 const SAVE_KEY = "cinder.creatures.save.v2";
 const SAVE_KEY_V1 = "cinder.creatures.save.v1";
+
+// When running inside the Cinder app, /api/game/save is reachable on the
+// same origin. When opened standalone (file:// or website), it isn't — we
+// silently fall back to localStorage only. Detected once on boot.
+let cinderBridge = { available:false, base:"/api" };
+function buildSaveData(){
+  return {
+    v:2,
+    worldSeed,
+    zone: currentZone,
+    player:{
+      tx:player.tx, ty:player.ty, dir:player.dir,
+      tokens:player.tokens, keys:player.keys, steps:player.steps,
+      cinderDefeated: !!player.cinderDefeated,
+      party: player.party.map(c=>({
+        seed:c.seed, level:c.level, hp:c.hp, maxhp:c.maxhp,
+        atk:c.atk, def:c.def, name:c.name,
+        moves:c.moves.map(m=>({name:m.name,pwr:m.pwr,acc:m.acc,heal:m.heal||0,pp:m.pp})),
+        species:c.species,
+      }))
+    }
+  };
+}
+function applySaveData(d){
+  if(!d || (d.v !== 1 && d.v !== 2)) return false;
+  worldSeed = d.worldSeed >>> 0;
+  currentZone = (d.zone|0) || 0;
+  player.tx = d.player.tx; player.ty = d.player.ty; player.dir = d.player.dir || "down";
+  player.px = player.tx*TILE; player.py = player.ty*TILE;
+  player.tokens = d.player.tokens; player.keys = d.player.keys; player.steps = d.player.steps;
+  player.cinderDefeated = !!d.player.cinderDefeated;
+  player.party = d.player.party.map(c=>({ ...c, sprite:null }));
+  return true;
+}
+async function detectCinderBridge(){
+  try{
+    const r = await fetch(cinderBridge.base + "/game/state", { method:"GET", credentials:"same-origin" });
+    cinderBridge.available = r.ok;
+  }catch(e){ cinderBridge.available = false; }
+}
+async function pushSaveToBridge(data){
+  if(!cinderBridge.available) return;
+  try{
+    await fetch(cinderBridge.base + "/game/save", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      credentials:"same-origin",
+      body: JSON.stringify({ save:data }),
+    });
+  }catch(e){/* offline — localStorage is source of truth */}
+}
+async function pullSaveFromBridge(){
+  if(!cinderBridge.available) return null;
+  try{
+    const r = await fetch(cinderBridge.base + "/game/save", { credentials:"same-origin" });
+    if(!r.ok) return null;
+    const j = await r.json();
+    return j && j.save ? j.save : null;
+  }catch(e){ return null; }
+}
+
+let _saveTimer = null;
 function saveGame(){
   try{
-    const data = {
-      v:2,
-      worldSeed,
-      zone: currentZone,
-      player:{
-        tx:player.tx, ty:player.ty, dir:player.dir,
-        tokens:player.tokens, keys:player.keys, steps:player.steps,
-        cinderDefeated: !!player.cinderDefeated,
-        party: player.party.map(c=>({
-          seed:c.seed, level:c.level, hp:c.hp, maxhp:c.maxhp,
-          atk:c.atk, def:c.def, name:c.name,
-          moves:c.moves.map(m=>({name:m.name,pwr:m.pwr,acc:m.acc,heal:m.heal||0,pp:m.pp})),
-          species:c.species,
-        }))
-      }
-    };
+    const data = buildSaveData();
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    if(cinderBridge.available){
+      // Debounce server writes — saveGame() fires on every step/battle event.
+      if(_saveTimer) clearTimeout(_saveTimer);
+      _saveTimer = setTimeout(()=>pushSaveToBridge(data), 1500);
+    }
   }catch(e){/* private mode etc — silent */}
 }
 function loadGame(){
+  // Synchronous load from localStorage — keeps boot fast. Server-side
+  // reconciliation happens in loadGameFromBridge() after detection.
   try{
     let raw = localStorage.getItem(SAVE_KEY);
     if(!raw){
-      // migrate v1 -> v2 (zone 0 default)
       const old = localStorage.getItem(SAVE_KEY_V1);
       if(!old) return false;
       raw = old;
     }
-    const d = JSON.parse(raw);
-    if(d.v !== 1 && d.v !== 2) return false;
-    worldSeed = d.worldSeed >>> 0;
-    currentZone = (d.zone|0) || 0;
-    player.tx = d.player.tx; player.ty = d.player.ty; player.dir = d.player.dir || "down";
-    player.px = player.tx*TILE; player.py = player.ty*TILE;
-    player.tokens = d.player.tokens; player.keys = d.player.keys; player.steps = d.player.steps;
-    player.cinderDefeated = !!d.player.cinderDefeated;
-    player.party = d.player.party.map(c=>({
-      ...c,
-      sprite:null,
-    }));
-    return true;
+    return applySaveData(JSON.parse(raw));
   }catch(e){ return false; }
+}
+async function loadGameFromBridge(){
+  // If the server has a newer save (different machine, same Cinder USB),
+  // prefer it. Heuristic: more steps wins. Tie → server wins (canonical).
+  const serverSave = await pullSaveFromBridge();
+  if(!serverSave) return false;
+  try{
+    const localRaw = localStorage.getItem(SAVE_KEY);
+    const localSave = localRaw ? JSON.parse(localRaw) : null;
+    const ls = (localSave?.player?.steps)|0;
+    const ss = (serverSave?.player?.steps)|0;
+    if(ss >= ls){
+      if(applySaveData(serverSave)){
+        localStorage.setItem(SAVE_KEY, JSON.stringify(serverSave));
+        return true;
+      }
+    } else {
+      // local is newer — push it up
+      pushSaveToBridge(buildSaveData());
+    }
+  }catch(e){}
+  return false;
 }
 function resetGame(){
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  if(cinderBridge.available){
+    try{
+      fetch(cinderBridge.base + "/game/save", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        credentials:"same-origin",
+        body: JSON.stringify({ save:{ v:2, reset:true, ts:Date.now() } }),
+      });
+    }catch(e){}
+  }
 }
 
 // ---------- map render ----------
@@ -1415,6 +1488,22 @@ player.party[0].sprite = spriteCanvas(player.party[0].seed);
 // try to load a save before kicking off the loop
 const _loaded = loadGame();
 loadQuests();
+// If running inside Cinder, reconcile with server save after first paint.
+// Quick detection probe runs in background; resolution doesn't block boot.
+detectCinderBridge().then(()=>{
+  if(!cinderBridge.available) return;
+  loadGameFromBridge().then(updated=>{
+    if(updated){
+      questSet("first_step", player.steps);
+      questSet("first_catch", Math.max(0, player.party.length-1));
+      questSet("five_caught", Math.max(0, player.party.length-1));
+      questSet("first_key", player.keys>0?1:0);
+      if(currentZone>=1) questSet("gate_zone1", 1);
+      if(currentZone>=2) questSet("gate_zone2", 1);
+      if(player.cinderDefeated) questSet("cinder_fall", 1);
+    }
+  });
+});
 // retro-fill quest progress for resumed saves
 questSet("first_step", player.steps);
 questSet("first_catch", Math.max(0, player.party.length-1));
