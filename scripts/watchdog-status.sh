@@ -135,7 +135,7 @@ check_cron() {
     fi
 }
 
-check_cron "Eos Watchdog" "$WORKING_DIR/.eos-watchdog-state.json" 300
+check_cron "Eos Watchdog" "$WORKING_DIR/.eos-watchdog-state.json" 420
 check_cron "Nova" "$WORKING_DIR/.nova-state.json" 1200
 check_cron "Push Live Status" "/tmp/KometzRobot.github.io/status.json" 600
 
