@@ -1969,6 +1969,65 @@ function renderCodex() {
 const SAVE_KEY = 'cogcorp_crawler_checkpoint';
 const SAVE_VERSION = 2;
 
+// ─── Cinder Bridge ──────────────────────────────────────────────────
+// Optional sync to a running Cinder server. Same-origin only (e.g. when
+// the crawler is served by Cinder's local server). On github.io / file://
+// fetches will fail silently and the game falls back to localStorage.
+const CINDER_BRIDGE = {
+    available: false,
+    base: '',
+    slot: 'cogcorp',
+    debounceTimer: null,
+    lastSync: 0,
+    async probe() {
+        try {
+            // Try same-origin /api/game/state first; if not, no bridge.
+            const r = await fetch('/api/game/state', { method: 'GET', credentials: 'same-origin' });
+            if (r.ok) { this.available = true; this.base = ''; return true; }
+        } catch (_) {}
+        this.available = false;
+        return false;
+    },
+    async loadServerSave() {
+        if (!this.available) return null;
+        try {
+            const r = await fetch(`${this.base}/api/game/save/${this.slot}`, { credentials: 'same-origin' });
+            if (!r.ok) return null;
+            const { save } = await r.json();
+            return save || null;
+        } catch (_) { return null; }
+    },
+    pushSave(checkpoint) {
+        if (!this.available) return;
+        if (this.debounceTimer) clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(async () => {
+            try {
+                await fetch(`${this.base}/api/game/save/${this.slot}`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ save: checkpoint }),
+                });
+                this.lastSync = Date.now();
+            } catch (_) { /* offline / unreachable — localStorage remains source of truth */ }
+        }, 1500);
+    },
+    pushEvent(type, data) {
+        if (!this.available) return;
+        // Map crawler events to the Cinder game-event vocabulary.
+        // Unknown events are silently dropped server-side.
+        fetch(`${this.base}/api/game/event`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, data: data || {} }),
+        }).catch(() => {});
+    },
+};
+// Best-effort probe at script load. We don't await — the game starts on its
+// own, the bridge just lights up if the probe wins.
+CINDER_BRIDGE.probe().catch(() => {});
+
 function saveCheckpoint(silent) {
     try {
         const checkpoint = {
@@ -2002,6 +2061,8 @@ function saveCheckpoint(silent) {
             };
         }
         localStorage.setItem(SAVE_KEY, JSON.stringify(checkpoint));
+        // Mirror to Cinder if a local Cinder server is reachable. No-op otherwise.
+        CINDER_BRIDGE.pushSave(checkpoint);
         if (!silent) showMessage('CHECKPOINT SAVED — FLOOR ' + (currentFloor + 1), 2000);
     } catch (e) {
         // localStorage may be full or disabled — fail silently
@@ -2109,31 +2170,65 @@ function hasSavedCheckpoint() {
 
 function deleteSave() {
     localStorage.removeItem(SAVE_KEY);
+    // Best-effort: drop the server slot too. No spinner — bridge is optional.
+    if (CINDER_BRIDGE.available) {
+        CINDER_BRIDGE.pushSave({ version: SAVE_VERSION, timestamp: 0, deleted: true });
+    }
+}
+
+// Reconcile localStorage against the Cinder server save. Picks the one with
+// the newer timestamp (server wins ties). Writes the winner to localStorage
+// before loadCheckpoint reads it. Silent no-op if bridge isn't available.
+async function reconcileCheckpointWithCinder() {
+    if (!CINDER_BRIDGE.available) {
+        // One more probe attempt in case the bridge came online late.
+        await CINDER_BRIDGE.probe().catch(() => {});
+        if (!CINDER_BRIDGE.available) return;
+    }
+    const serverSave = await CINDER_BRIDGE.loadServerSave();
+    if (!serverSave || serverSave.deleted) return;
+    if (serverSave.version !== SAVE_VERSION) return;
+    let localTs = 0;
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (raw) {
+            const cp = JSON.parse(raw);
+            localTs = cp?.timestamp || 0;
+        }
+    } catch (_) {}
+    const serverTs = serverSave.timestamp || 0;
+    if (serverTs > localTs) {
+        try { localStorage.setItem(SAVE_KEY, JSON.stringify(serverSave)); } catch (_) {}
+    }
 }
 
 function loadAndResume() {
     document.getElementById('death-screen').style.display = 'none';
-    const loaded = loadCheckpoint();
-    if (loaded) {
-        gameStarted = true;
-        stopTuningTone(); // prevent oscillator leak on reload
-        deskOpen = false; deskEnemy = null;
-        encounterOpen = false; encounterEnemy = null; encounterLog = [];
-        chatOpen = false; chatNPC = null; wallOpen = false;
-        dialogOpen = false; choiceCallback = null;
-        document.getElementById('processing-desk').style.display = 'none';
-        document.getElementById('combat-encounter').style.display = 'none';
-        document.getElementById('npc-chat').style.display = 'none';
-        document.getElementById('moirai-wall').style.display = 'none';
-        document.getElementById('dialog-box').style.display = 'none';
-        document.getElementById('doc-codex').style.display = 'none';
-        codexOpen = false; codexExpanded = null;
-        lastTime = performance.now();
-        requestAnimationFrame(gameLoop);
-        showMessage('CHECKPOINT LOADED — FLOOR ' + (currentFloor + 1), 3000);
-    } else {
-        respawn(); // fallback if checkpoint corrupted
-    }
+    // Try Cinder server save first (async); fall through to localStorage if
+    // bridge is unreachable or the local save is newer.
+    reconcileCheckpointWithCinder().finally(() => {
+        const loaded = loadCheckpoint();
+        if (loaded) finishResume(); else respawn();
+    });
+}
+
+function finishResume() {
+    gameStarted = true;
+    stopTuningTone(); // prevent oscillator leak on reload
+    deskOpen = false; deskEnemy = null;
+    encounterOpen = false; encounterEnemy = null; encounterLog = [];
+    chatOpen = false; chatNPC = null; wallOpen = false;
+    dialogOpen = false; choiceCallback = null;
+    document.getElementById('processing-desk').style.display = 'none';
+    document.getElementById('combat-encounter').style.display = 'none';
+    document.getElementById('npc-chat').style.display = 'none';
+    document.getElementById('moirai-wall').style.display = 'none';
+    document.getElementById('dialog-box').style.display = 'none';
+    document.getElementById('doc-codex').style.display = 'none';
+    codexOpen = false; codexExpanded = null;
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+    showMessage('CHECKPOINT LOADED — FLOOR ' + (currentFloor + 1), 3000);
 }
 
 function showDeathScreen() {
@@ -3203,6 +3298,8 @@ function interact(obj) {
                 return;
             }
             const newFloor = currentFloor + 1;
+            // Tell Cinder we cleared a floor (used by quest engine / XP awards).
+            CINDER_BRIDGE.pushEvent('world_cleared', { floor: currentFloor, ascending: true });
             startFloorTransition(newFloor, 'up');
         } else {
             showDialog('STAIRS', 'There is no higher floor.');
