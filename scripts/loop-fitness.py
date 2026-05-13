@@ -2299,7 +2299,7 @@ def check_memory_db_backup():
     """Critical data should have backups."""
     backup_patterns = [
         "memory.db.bak", "memory-backup-*.db",
-        "data/memory.db.backup.*",
+        "memory.db.backup.*",
     ]
     youngest = None
     for pattern in backup_patterns:
