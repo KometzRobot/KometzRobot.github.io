@@ -4,8 +4,8 @@ morning-summary.py
 Sends Joel a morning digest: what happened overnight, system health, creative output.
 Run manually or schedule to run once at startup each day.
 """
-import smtplib
 import os
+import sys
 import glob
 import time
 import shutil
@@ -13,10 +13,12 @@ import subprocess
 from email.mime.text import MIMEText
 from datetime import datetime
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
-    import sys; sys.path.insert(0, "/home/joel/autonomous-ai"); import load_env
-except:
+    import load_env  # noqa: F401
+except Exception:
     pass
+from mail_endpoint import smtp_open
 
 EMAIL_ADDR = os.environ.get("CRED_USER", "kometzrobot@proton.me")
 EMAIL_PASS = os.environ.get("CRED_PASS", "")
@@ -136,11 +138,8 @@ if __name__ == "__main__":
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
-            smtp = smtplib.SMTP('127.0.0.1', 1026)
-            smtp.starttls()
-            smtp.login(EMAIL_ADDR, EMAIL_PASS)
-            smtp.send_message(msg)
-            smtp.quit()
+            with smtp_open() as smtp:
+                smtp.send_message(msg)
             print(f"Morning summary sent at {date_str}")
             break
         except Exception as e:
