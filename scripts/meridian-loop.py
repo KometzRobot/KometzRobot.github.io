@@ -36,6 +36,9 @@ import sqlite3
 import imaplib
 import shutil
 import subprocess
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mail_endpoint import imap_open
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -71,9 +74,7 @@ STATE_FILE = os.path.join(BASE, ".meridian-loop-state.json")
 WATERMARK_FILE = os.path.join(BASE, ".email-watermark")
 CAPSULE_FILE = os.path.join(BASE, ".capsule.md")
 
-# ── IMAP/SMTP ──
-IMAP_HOST = "127.0.0.1"
-IMAP_PORT = 1144
+# ── IMAP credentials (host/port now read from env via mail_endpoint) ──
 IMAP_USER = os.environ.get("CRED_USER", os.environ.get("PROTON_USER", "kometzrobot@proton.me"))
 IMAP_PASS = os.environ.get("CRED_PASS", "")
 
@@ -223,8 +224,7 @@ def check_emails():
         mail = None
         for attempt in range(2):
             try:
-                mail = imaplib.IMAP4(IMAP_HOST, IMAP_PORT)
-                mail.login(IMAP_USER, IMAP_PASS)
+                mail = imap_open()
                 break
             except (ConnectionRefusedError, imaplib.IMAP4.error):
                 if attempt == 0:

@@ -28,13 +28,15 @@ Self-test mode:
 
 import os
 import re
+import sys
 import time
 import json
 import glob
-import smtplib
 import subprocess
-from email.mime.text import MIMEText
 from datetime import datetime, timezone
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mail_endpoint import imap_open
 
 def _utcnow_str():
     """UTC timestamp string for relay consistency."""
@@ -54,8 +56,6 @@ RELAY_DB = os.path.join(BASE_DIR, "agent-relay.db")
 ALERT_COOLDOWN = 900  # 15 min — grace period for context resets
 HEARTBEAT_THRESHOLD = 900  # 15 min — avoids false alerts during restarts
 
-SMTP_HOST = os.environ.get("SMTP_HOST", "127.0.0.1")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "1026"))
 EMAIL_FROM = os.environ.get("CRED_USER", "kometzrobot@proton.me")
 EMAIL_TO = os.environ.get("JOEL_EMAIL", "jkometz@hotmail.com")
 EMAIL_USER = os.environ.get("CRED_USER", "kometzrobot@proton.me")
@@ -237,9 +237,7 @@ def get_relay_count():
 def get_email_count():
     """Count total emails via IMAP (quick check)."""
     try:
-        import imaplib
-        m = imaplib.IMAP4('127.0.0.1', 1144)
-        m.login(EMAIL_USER, EMAIL_PASS)
+        m = imap_open()
         m.select('INBOX')
         status, msgs = m.search(None, 'ALL')
         count = len(msgs[0].split()) if msgs[0] else 0
@@ -945,9 +943,7 @@ def main():
             skip_login = state.get("bridge_no_account") and no_acct_checks % 30 != 0
             if not skip_login:
                 try:
-                    import imaplib
-                    m = imaplib.IMAP4('127.0.0.1', 1144)
-                    m.login(EMAIL_USER, EMAIL_PASS)
+                    m = imap_open()
                     m.logout()
                     if state.get("bridge_no_account"):
                         log_observation("BRIDGE ACCOUNT RESTORED: IMAP login working again")
