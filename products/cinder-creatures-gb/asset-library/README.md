@@ -1,11 +1,9 @@
 # Cinder GB Studio Asset Library
 
-Curated from ~/Downloads on 2026-05-09.
-Total entries: 118
-
-Each category is symlinks to the original archive in `~/Downloads`.
-When you find one you want, extract it into `plugins/` (for GB Studio plugins)
-or `assets/` (for art/sound). Then re-open the project so GB Studio re-scans.
+Curated from ~/Downloads on 2026-05-09, symlink index removed Loop 11087
+(no more pointers — extracted content lives under `extracted/` and
+`<cat>/_unpacked/` directories below). The lists below remain as a manifest
+of what was indexed; raw archives stay in `~/Downloads`.
 
 ## plugins (13)
 
