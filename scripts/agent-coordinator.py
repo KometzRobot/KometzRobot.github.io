@@ -135,16 +135,33 @@ def ensure_task_table():
 
 
 def create_task(task, requested_by="Coordinator", priority="normal", capability_needed=None):
-    """Create a task and optionally auto-assign based on capability match."""
+    """Create a task and optionally auto-assign based on capability match.
+
+    Dedupes identical tasks: if the same task text already exists in
+    pending/assigned state within the last 30 minutes, skip the insert.
+    Without this, a recurring incident (e.g. high_load+high_ram correlation)
+    produced one new row per coordination cycle — 288 zombie rows from a
+    single false-positive cascade before the upstream high_ram filter landed.
+    """
     ensure_task_table()
     now = datetime.now(timezone.utc).isoformat()
-    assigned = None
-    if capability_needed and capability_needed in CAPABILITY_TO_AGENTS:
-        candidates = CAPABILITY_TO_AGENTS[capability_needed]
-        if candidates:
-            assigned = candidates[0]
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
     try:
         db = sqlite3.connect(RELAY_DB, timeout=5)
+        existing = db.execute(
+            """SELECT id FROM coordinator_tasks
+               WHERE task=? AND status IN ('pending','assigned')
+               AND REPLACE(SUBSTR(created_at, 1, 19), 'T', ' ') >= ?
+               LIMIT 1""", (task, cutoff)).fetchone()
+        if existing:
+            db.close()
+            log(f"Task dedup: '{task[:60]}' already open (id={existing[0]}), skipping")
+            return
+        assigned = None
+        if capability_needed and capability_needed in CAPABILITY_TO_AGENTS:
+            candidates = CAPABILITY_TO_AGENTS[capability_needed]
+            if candidates:
+                assigned = candidates[0]
         db.execute(
             """INSERT INTO coordinator_tasks
                (task, assigned_agent, requested_by, priority, status, created_at, updated_at)
