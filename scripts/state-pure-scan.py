@@ -19,6 +19,7 @@ Usage:
 """
 import os, sys, sqlite3, argparse
 from collections import defaultdict
+from datetime import datetime, timezone
 
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(_script_dir) if os.path.basename(_script_dir) in ("scripts", "tools") else _script_dir
@@ -73,13 +74,25 @@ def main():
               f"(prefix={args.prefix_len}, threshold={args.threshold}).")
         return 0
 
+    now = datetime.now(timezone.utc)
     print(f"State-pure emitter candidates (last {args.hours}h, prefix={args.prefix_len}):\n")
     for f in findings:
+        try:
+            last = datetime.fromisoformat(f["last_ts"].replace(" ", "T"))
+            if last.tzinfo is None:
+                last = last.replace(tzinfo=timezone.utc)
+            mins_since = int((now - last).total_seconds() // 60)
+            age = f"{mins_since}m ago" if mins_since < 120 else f"{mins_since // 60}h ago"
+            active_tag = "ACTIVE" if mins_since <= 15 else "stale"
+        except (ValueError, AttributeError):
+            age, active_tag = "?", "?"
         print(f"  [{f['repeat_ratio']:.2f}] {f['agent']}/{f['topic']} "
               f"— {f['emissions']} emissions, "
-              f"{f['first_ts'][:16]} → {f['last_ts'][:16]}")
+              f"{f['first_ts'][:16]} → {f['last_ts'][:16]} "
+              f"({active_tag}, last {age})")
         print(f"        last stem: {f['sample']!r}")
-    print(f"\n{len(findings)} group(s) flagged. Investigate each: does it need a dedup gate?")
+    print(f"\n{len(findings)} group(s) flagged. ACTIVE = still firing (≤15m). "
+          f"stale = fix likely landed; will age out of window.")
     return 0
 
 
