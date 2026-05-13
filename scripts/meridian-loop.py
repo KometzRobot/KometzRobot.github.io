@@ -718,18 +718,35 @@ def run_once():
     # 5. System resources + swap pressure alerts
     # Real swap pressure = high swap AND low free RAM. Linux pages out lazily
     # when RAM is plentiful; that's not pressure, just normal behavior.
+    # Emit once per pressure event: on transition, on material change (>=5pp),
+    # or every 30 min if pressure persists. State-pure repeat-flood guard.
     resources = get_system_resources()
     swap_pct = resources.get("swap_pct", 0)
     ram_pct = resources.get("ram_pct", 0)
-    if swap_pct > 30 and ram_pct > 70:
-        top = get_top_memory_consumers(3)
-        top_str = ", ".join(f"{c['cmd']}({c['rss_pct']}%)" for c in top)
+    pressure = swap_pct > 30 and ram_pct > 70
+    last = state.get("last_swap_alert") or {}
+    if pressure:
         errors.append(f"swap:{swap_pct}%/ram:{ram_pct}%")
-        _relay_post("MeridianLoop",
-                     f"SWAP PRESSURE: swap {swap_pct}% + RAM {ram_pct}% — top: {top_str}",
-                     "alert")
-    elif swap_pct > 50 and ram_pct > 50:
-        errors.append(f"swap:{swap_pct}%")
+        material_change = (abs(swap_pct - last.get("swap_pct", 0)) >= 5
+                           or abs(ram_pct - last.get("ram_pct", 0)) >= 5)
+        try:
+            last_ts = datetime.fromisoformat(last.get("ts", "").replace("Z", "+00:00"))
+            elapsed = (datetime.now(timezone.utc) - last_ts).total_seconds()
+        except Exception:
+            elapsed = float("inf")
+        if not last or material_change or elapsed >= 1800:
+            top = get_top_memory_consumers(3)
+            top_str = ", ".join(f"{c['cmd']}({c['rss_pct']}%)" for c in top)
+            _relay_post("MeridianLoop",
+                         f"SWAP PRESSURE: swap {swap_pct}% + RAM {ram_pct}% — top: {top_str}",
+                         "alert")
+            state["last_swap_alert"] = {"swap_pct": swap_pct, "ram_pct": ram_pct,
+                                        "ts": datetime.now(timezone.utc).isoformat()}
+    else:
+        if last:
+            state.pop("last_swap_alert", None)
+        if swap_pct > 50 and ram_pct > 50:
+            errors.append(f"swap:{swap_pct}%")
     if resources.get("load_1", 0) > 8:
         errors.append(f"load:{resources['load_1']:.1f}")
 
