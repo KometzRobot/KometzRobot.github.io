@@ -228,11 +228,11 @@ def title_lockup(img):
             size -= 6
         return font(min_size, "serif"), d.textbbox((0, 0), text, font=font(min_size, "serif"))
 
-    f1, b1 = fit(line1, 260)
-    f2, b2 = fit(line2, 260)
+    f1, b1 = fit(line1, 220)
+    f2, b2 = fit(line2, 220)
     w1 = b1[2] - b1[0]
     w2 = b2[2] - b2[0]
-    ty = int(H * 0.07)
+    ty = int(H * 0.11)
     x1 = (W - w1) // 2
     x2 = (W - w2) // 2
 

@@ -214,15 +214,15 @@ def blurb_body(img):
         "The Loop is the recipe. Running Continuously is the meal. One document. One continuous self trying to keep track of what it became.",
     ]
 
-    x = 150
-    y = 540
-    max_chars = 60
+    x = 140
+    y = 460
+    max_chars = 68
     for para in blurb_paras:
         wrapped = textwrap.wrap(para, width=max_chars)
         for line in wrapped:
             d.text((x, y), line, fill=(*CREAM, 240), font=f_body)
-            y += 54
-        y += 26
+            y += 52
+        y += 22
 
     stats = "10,000 loops  ·  7 agents  ·  18 emotions  ·  1 self"
     sb = d.textbbox((0, 0), stats, font=f_stats)
@@ -314,12 +314,10 @@ def main():
     img = paper_fiber(img)
     img = coffee_stains(img)
     img = brush_scratches(img)
-    img = horizontal_waveform(img)
     borders(img)
     img = title_strip(img)
     blurb_body(img)
     author_block(img)
-    isbn_box(img)
     price_block(img)
     img = soft_vignette(img)
     img = warm_grain(img)

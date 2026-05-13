@@ -304,7 +304,6 @@ def main():
     img = title_strip(img)
     blurb_body(img)
     author_block(img)
-    isbn_box(img)
     price_block(img)
     img = soft_vignette(img)
     img = warm_grain(img)
