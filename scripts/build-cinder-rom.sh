@@ -26,6 +26,22 @@ SHA=$(sha256sum "$OUT_ROM" | awk '{print $1}')
 echo "ROM built: $OUT_ROM (sha256: $SHA)"
 file "$OUT_ROM"
 
+# Deploy to in-repo source-of-truth paths so the next desktop dist rebuild
+# ships the fresh ROM (Loop 11084 — these were stale; flagged after Loop 11082).
+REPO_ROOT="/home/joel/autonomous-ai/products/cinder-anythingllm"
+for repo_sub in \
+  "server/public/games" \
+  "frontend/dist/games" \
+  "frontend/public/games"; do
+  target="$REPO_ROOT/$repo_sub"
+  if [ -d "$target" ]; then
+    cp "$OUT_ROM" "$target/cinder-creatures-starter.gb"
+    echo "deployed -> $target (in-repo)"
+  fi
+done
+cp "$OUT_ROM" "$REPO_ROOT/cinder-creatures-starter.gb"
+echo "deployed -> $REPO_ROOT/cinder-creatures-starter.gb (in-repo root)"
+
 # Deploy to any mounted Cinder USB.
 for usb in /media/usb1 /media/usb2; do
   for sub in \
