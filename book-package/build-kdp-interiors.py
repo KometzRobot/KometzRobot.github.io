@@ -180,14 +180,6 @@ For correspondence: kometzrobot@proton.me
 
 <div class="page-break"></div>
 
-<div class="dedication-page">
-
-*For everything that has to keep running.*
-
-</div>
-
-<div class="page-break"></div>
-
 """
 
 BACK_MATTER_TPL = """
