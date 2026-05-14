@@ -709,13 +709,6 @@ a:hover { text-decoration:underline; }
       <div class="card">
         <h3>Log Viewer</h3>
         <div class="log-tabs" id="log-tabs"></div>
-        <div style="margin:6px 0 8px 0;display:flex;gap:8px;align-items:center">
-          <label style="font-size:12px;color:var(--text-dim);user-select:none">
-            <input type="checkbox" id="log-errors-only" onchange="if(currentLog) viewLog(currentLog)">
-            errors only
-          </label>
-          <button class="btn-small" onclick="if(currentLog) viewLog(currentLog)" style="font-size:11px">refresh</button>
-        </div>
         <div class="log-output" id="log-output">Select a log file above.</div>
       </div>
     </div>
@@ -1555,8 +1548,7 @@ async function viewLog(name) {
   document.querySelectorAll('.log-tab').forEach(t => t.classList.toggle('active', t.textContent === name));
   const out = document.getElementById('log-output');
   out.textContent = 'Loading...';
-  const errOnly = document.getElementById('log-errors-only')?.checked ? '&errors=1' : '';
-  const d = await api('/api/logs?file=' + encodeURIComponent(name) + '&lines=200' + errOnly);
+  const d = await api('/api/logs?file=' + encodeURIComponent(name) + '&lines=200');
   if (d && d.content) {
     out.textContent = d.content;
     out.scrollTop = out.scrollHeight;
