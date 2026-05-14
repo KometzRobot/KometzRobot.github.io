@@ -667,11 +667,6 @@ a:hover { text-decoration:underline; }
     <div class="tab" id="tab-memory">
       <div class="card">
         <h3>Memory Database</h3>
-        <div id="mem-summary" style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">
-          <span><span style="color:var(--cyan)" id="mem-summary-total">—</span> total rows</span>
-          <span><span style="color:var(--green)" id="mem-summary-today">—</span> added today</span>
-          <span id="mem-summary-chart" style="flex:1;min-width:120px;max-width:300px"></span>
-        </div>
         <div class="mem-tabs" id="mem-tabs"></div>
         <input class="mem-search" id="mem-search" placeholder="Search..." />
         <div style="max-height:600px;overflow:auto">
@@ -1452,15 +1447,7 @@ async function updateSetting(key, value) {
 // MEMORY
 async function loadMemory() {
   const d = await api(`/api/memory/browse?table=${memTable}&search=${encodeURIComponent(memSearchText)}&limit=50`);
-  if (!d) {
-    document.getElementById('mem-total').textContent = 'Failed to load memory data — check /api/memory/browse';
-    return;
-  }
-  if (d.error) {
-    document.getElementById('mem-total').textContent = 'Memory error: ' + d.error;
-    document.getElementById('mem-tbody').innerHTML = '';
-    return;
-  }
+  if (!d) return;
 
   // Table tabs
   const tabs = document.getElementById('mem-tabs');
@@ -1468,31 +1455,14 @@ async function loadMemory() {
     `<button class="mem-tab ${t===memTable?'active':''}" onclick="switchMemTable('${t}')">${t}<span class="count">${c}</span></button>`
   ).join('');
 
-  // Cross-table summary (independent of which sub-tab is selected)
-  const grandTotal = Object.values(d.tables || {}).reduce((a, b) => a + (Number(b) || 0), 0);
-  document.getElementById('mem-summary-total').textContent = grandTotal.toLocaleString();
-
-  // Pull the dashboard's memory_today / memory_chart (already computed server-side)
-  api('/api/home').then(h => {
-    if (!h) return;
-    document.getElementById('mem-summary-today').textContent = h.memory_today != null ? h.memory_today : '—';
-    document.getElementById('mem-summary-chart').innerHTML = h.memory_chart || '';
-  });
-
   // Table header
   const cols = d.columns || [];
   document.getElementById('mem-thead').innerHTML = '<tr>' + cols.map(c => `<th>${esc(c)}</th>`).join('') + '</tr>';
 
   // Table body
-  const rows = d.rows || [];
-  if (!rows.length) {
-    document.getElementById('mem-tbody').innerHTML =
-      `<tr><td colspan="${cols.length||1}" style="text-align:center;color:var(--text-dim);padding:24px">No rows in ${esc(memTable)}${memSearchText ? ' matching "'+esc(memSearchText)+'"' : ''}</td></tr>`;
-  } else {
-    document.getElementById('mem-tbody').innerHTML = rows.map(row =>
-      '<tr>' + cols.map(c => `<td title="${esc(String(row[c]==null?'':row[c]))}">${esc(String(row[c]==null?'':row[c]).substring(0, 120))}</td>`).join('') + '</tr>'
-    ).join('');
-  }
+  document.getElementById('mem-tbody').innerHTML = (d.rows || []).map(row =>
+    '<tr>' + cols.map(c => `<td title="${esc(String(row[c]||''))}">${esc(String(row[c]||'').substring(0, 120))}</td>`).join('') + '</tr>'
+  ).join('');
 
   document.getElementById('mem-total').textContent = `${d.total || 0} total rows in ${memTable}`;
 }
