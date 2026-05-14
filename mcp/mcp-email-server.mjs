@@ -63,8 +63,12 @@ function runPython(code) {
 
 // --- Tool implementations ---
 
-function readEmails(count = 5, unseenOnly = false) {
+function readEmails(count = 5, unseenOnly = false, autoMark = true) {
   const searchCriteria = unseenOnly ? "UNSEEN" : "ALL";
+  // Joel directive (Loop 11185): "mark your fucking emails" — when the agent reads
+  // an email it must mark it Seen so it disappears from his phone's unread list.
+  // Use BODY[] (not BODY.PEEK[]) so the fetch itself sets the Seen flag.
+  const fetchSpec = autoMark ? "BODY[]" : "BODY.PEEK[]";
   const code = `
 import imaplib, email, json
 from email.header import decode_header
@@ -77,7 +81,7 @@ ids = d[0].split() if d[0] else []
 ids = ids[-${count}:]  # Last N
 results = []
 for eid in ids:
-    _, msg_data = m.fetch(eid, '(BODY.PEEK[])')
+    _, msg_data = m.fetch(eid, '(${fetchSpec})')
     raw = msg_data[0][1]
     msg = email.message_from_bytes(raw)
     subj_raw = msg.get('Subject', '')
@@ -310,7 +314,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "read_emails",
         description:
-          "Read recent emails from Meridian's inbox. Returns subject, from, date, and body text.",
+          "Read recent emails from Meridian's inbox. Returns subject, from, date, and body text. By default marks fetched emails as \\Seen so they don't stay unread on Joel's phone after the agent has handled them. Set auto_mark=false for a true peek.",
         inputSchema: {
           type: "object",
           properties: {
@@ -323,6 +327,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "boolean",
               description: "Only return unseen/unread emails",
               default: false,
+            },
+            auto_mark: {
+              type: "boolean",
+              description: "Mark fetched emails as \\Seen during the fetch (default true)",
+              default: true,
             },
           },
         },
@@ -427,7 +436,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "read_emails":
         result = readEmails(
           Math.min(args?.count || 5, 20),
-          args?.unseen_only || false
+          args?.unseen_only || false,
+          args?.auto_mark === undefined ? true : !!args.auto_mark
         );
         break;
       case "send_email":

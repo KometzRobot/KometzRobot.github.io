@@ -815,18 +815,38 @@ def _get_today_summary_inner():
         result["activity_peak"] = 0
 
     # Memory growth (last 7 days)
+    # Loop 11186 — Joel "mem tab still brokebn": vector_memory has 0 rows so this
+    # chart was always empty. Sum the writable knowledge tables instead so the
+    # chart reflects actual memory accumulation.
     try:
         mem_db = sqlite3.connect(os.path.join(BASE, "memory.db"), timeout=3)
-        growth = mem_db.execute(
-            "SELECT date(created) as d, COUNT(*) FROM vector_memory GROUP BY d ORDER BY d DESC LIMIT 7"
-        ).fetchall()
-        total_mem = mem_db.execute("SELECT COUNT(*) FROM vector_memory").fetchone()[0]
+        growth_union = """
+            SELECT date(created) AS d, COUNT(*) AS n FROM (
+                SELECT created FROM facts WHERE created IS NOT NULL
+                UNION ALL SELECT created FROM observations WHERE created IS NOT NULL
+                UNION ALL SELECT created FROM events WHERE created IS NOT NULL
+                UNION ALL SELECT created FROM decisions WHERE created IS NOT NULL
+                UNION ALL SELECT created FROM creative WHERE created IS NOT NULL
+            )
+            WHERE date(created) >= date('now', '-6 days')
+            GROUP BY d ORDER BY d ASC
+        """
+        growth_rows = mem_db.execute(growth_union).fetchall()
+        # Fill missing days with 0 so the bar chart shows a real 7-day window.
+        from datetime import timedelta as _td
+        end = datetime.now().date()
+        days = [(end - _td(days=i)).isoformat() for i in range(6, -1, -1)]
+        bucket = {d: n for d, n in growth_rows}
+        growth_vals = [bucket.get(d, 0) for d in days]
+        total_mem = mem_db.execute(
+            "SELECT (SELECT COUNT(*) FROM facts) + (SELECT COUNT(*) FROM observations)"
+            " + (SELECT COUNT(*) FROM events) + (SELECT COUNT(*) FROM decisions)"
+            " + (SELECT COUNT(*) FROM creative)"
+        ).fetchone()[0]
         mem_db.close()
-        # Reverse to chronological
-        growth_vals = [r[1] for r in reversed(growth)]
         result["memory_chart"] = _svg_bar_chart(growth_vals, w=300, h=40, color="#22d3ee")
         result["memory_total"] = total_mem
-        result["memory_today"] = dict(growth).get(today, 0) if growth else 0
+        result["memory_today"] = bucket.get(today, 0)
     except Exception:
         result["memory_chart"] = ""
         result["memory_total"] = 0
@@ -1329,7 +1349,14 @@ def _get_inner_world():
 
 def _get_memory_browse(table="facts", search="", limit=50):
     """Browse memory database entries."""
-    allowed = {"facts", "observations", "events", "decisions", "creative", "connections", "dossiers"}
+    # Loop 11186 — Joel "mem tab still brokebn": expose the tables that actually
+    # accumulate data so the browser isn't permanently stuck on the 7 small ones.
+    allowed = {
+        "facts", "observations", "events", "decisions", "creative",
+        "connections", "dossiers",
+        "vector_memory", "skills", "contacts", "sent_emails",
+        "loop_fitness", "errors",
+    }
     if table not in allowed:
         table = "facts"
     try:
