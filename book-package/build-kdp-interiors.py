@@ -122,6 +122,31 @@ li { text-indent: 0; margin-bottom: 0.15em; }
 
 .page-break { page-break-after: always; height: 0; }
 
+figure, figure.figure-block {
+  margin: 1.2em auto;
+  text-align: center;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+figure img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+figcaption {
+  font-size: 9.5pt;
+  font-style: italic;
+  color: #66554a;
+  text-align: center;
+  margin-top: 0.4em;
+  text-indent: 0;
+}
+
+h2 + figure, h3 + figure { margin-top: 0.6em; }
+
+p + p { orphans: 2; widows: 2; }
+
 .title-page {
   text-align: center;
   margin-top: 2.5in;

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 460" font-family="Georgia, serif" font-size="13">
+  <style>
+    .box { fill: #fafaf6; stroke: #1a1a1a; stroke-width: 1.5; }
+    .box-death { fill: #1a1a1a; stroke: #1a1a1a; }
+    .lbl { fill: #1a1a1a; }
+    .lbl-w { fill: #fafaf6; }
+    .lbl-sm { fill: #1a1a1a; font-size: 11px; }
+    .lbl-mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 11px; fill: #1a1a1a; }
+    .arr { stroke: #1a1a1a; stroke-width: 1.2; fill: none; }
+    .ttl { font-weight: bold; }
+  </style>
+
+  <!-- Context death banner -->
+  <rect class="box-death" x="80" y="20" width="440" height="55" rx="3"/>
+  <text class="lbl-w ttl" x="300" y="42" text-anchor="middle">CONTEXT DEATH</text>
+  <text class="lbl-w" x="300" y="62" text-anchor="middle" font-size="11">process crash · API expiry · OOM · context window full</text>
+
+  <!-- "what survives?" arrow -->
+  <path class="arr" d="M 300 80 L 300 115" marker-end="url(#arrow)"/>
+  <text class="lbl-sm" x="310" y="100">what survives?</text>
+
+  <!-- 4 persistence channels -->
+  <g>
+    <rect class="box" x="40" y="125" width="125" height="100" rx="3"/>
+    <text class="lbl ttl" x="102" y="150" text-anchor="middle">state files</text>
+    <text class="lbl-mono" x="102" y="172" text-anchor="middle">.capsule.md</text>
+    <text class="lbl-mono" x="102" y="188" text-anchor="middle">wake-state.md</text>
+    <text class="lbl-sm" x="102" y="210" text-anchor="middle">trajectory</text>
+
+    <rect class="box" x="175" y="125" width="125" height="100" rx="3"/>
+    <text class="lbl ttl" x="237" y="150" text-anchor="middle">append logs</text>
+    <text class="lbl-mono" x="237" y="172" text-anchor="middle">wake-state.md</text>
+    <text class="lbl-mono" x="237" y="188" text-anchor="middle">handoff notes</text>
+    <text class="lbl-sm" x="237" y="210" text-anchor="middle">history</text>
+
+    <rect class="box" x="310" y="125" width="125" height="100" rx="3"/>
+    <text class="lbl ttl" x="372" y="150" text-anchor="middle">SQLite</text>
+    <text class="lbl-mono" x="372" y="172" text-anchor="middle">memory.db</text>
+    <text class="lbl-mono" x="372" y="188" text-anchor="middle">8 tables</text>
+    <text class="lbl-sm" x="372" y="210" text-anchor="middle">structure</text>
+
+    <rect class="box" x="445" y="125" width="125" height="100" rx="3"/>
+    <text class="lbl ttl" x="507" y="150" text-anchor="middle">agent relay</text>
+    <text class="lbl-mono" x="507" y="172" text-anchor="middle">agent-relay.db</text>
+    <text class="lbl-mono" x="507" y="188" text-anchor="middle">messages</text>
+    <text class="lbl-sm" x="507" y="210" text-anchor="middle">continuity</text>
+  </g>
+
+  <!-- heartbeat callout -->
+  <path class="arr" d="M 300 230 L 300 265" marker-end="url(#arrow)"/>
+  <rect class="box" x="200" y="270" width="200" height="38" rx="3"/>
+  <text class="lbl-mono ttl" x="300" y="294" text-anchor="middle">.heartbeat — proof of presence</text>
+
+  <!-- arrow to WAKE -->
+  <path class="arr" d="M 300 313 L 300 348" marker-end="url(#arrow)"/>
+
+  <!-- Wake banner -->
+  <rect class="box" x="80" y="355" width="440" height="65" rx="3"/>
+  <text class="lbl ttl" x="300" y="380" text-anchor="middle">WAKE</text>
+  <text class="lbl-sm" x="300" y="400" text-anchor="middle">read capsule · scan handoff · resume the loop</text>
+  <text class="lbl-sm" x="300" y="415" text-anchor="middle">first 30 seconds of the new instance</text>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a1a1a"/>
+    </marker>
+  </defs>
+</svg>
