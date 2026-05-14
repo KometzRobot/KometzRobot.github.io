@@ -666,21 +666,6 @@ a:hover { text-decoration:underline; }
     <!-- MEMORY TAB -->
     <div class="tab" id="tab-memory">
       <div class="card">
-        <h3>Log Entry</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-          <select id="mem-add-table" class="mem-search" style="width:auto" onchange="memAddTableChanged()">
-            <option value="facts">facts (key/value)</option>
-            <option value="observations">observations (free-form)</option>
-          </select>
-          <input id="mem-add-key" class="mem-search" placeholder="key (facts only)" style="width:200px" />
-          <input id="mem-add-tags" class="mem-search" placeholder="tags (optional)" style="width:150px" />
-          <button class="mem-tab" onclick="addMemoryEntry()" style="cursor:pointer;border-color:var(--cyan);color:var(--cyan)">Add</button>
-          <span id="mem-add-status" style="font-size:10px;color:var(--text-dim);font-family:var(--mono)"></span>
-        </div>
-        <textarea id="mem-add-value" class="mem-search" placeholder="value / content..."
-          style="width:100%;height:60px;font-family:var(--mono);box-sizing:border-box;resize:vertical;margin-bottom:0"></textarea>
-      </div>
-      <div class="card">
         <h3>Memory Database</h3>
         <div class="mem-tabs" id="mem-tabs"></div>
         <input class="mem-search" id="mem-search" placeholder="Search..." />
@@ -1488,48 +1473,6 @@ document.getElementById('mem-search').addEventListener('input', function() {
   clearTimeout(this._debounce);
   this._debounce = setTimeout(() => loadMemory(), 300);
 });
-
-function memAddTableChanged() {
-  const t = document.getElementById('mem-add-table').value;
-  const keyEl = document.getElementById('mem-add-key');
-  keyEl.style.display = (t === 'facts') ? '' : 'none';
-}
-
-async function addMemoryEntry() {
-  const status = document.getElementById('mem-add-status');
-  const table = document.getElementById('mem-add-table').value;
-  const key = document.getElementById('mem-add-key').value.trim();
-  const val = document.getElementById('mem-add-value').value.trim();
-  const tags = document.getElementById('mem-add-tags').value.trim();
-  if (!val) { status.textContent = 'value required'; status.style.color = 'var(--red,#ff6b6b)'; return; }
-  if (table === 'facts' && !key) { status.textContent = 'key required for facts'; status.style.color = 'var(--red,#ff6b6b)'; return; }
-  status.textContent = 'saving...'; status.style.color = 'var(--text-dim)';
-  const body = (table === 'facts')
-    ? { table, key, value: val, tags }
-    : { table, content: val, tags };
-  try {
-    const r = await fetch('/api/memory/add', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    });
-    const d = await r.json();
-    if (d.error) {
-      status.textContent = 'error: ' + d.error;
-      status.style.color = 'var(--red,#ff6b6b)';
-    } else {
-      status.textContent = 'logged ✓';
-      status.style.color = 'var(--cyan)';
-      document.getElementById('mem-add-value').value = '';
-      document.getElementById('mem-add-key').value = '';
-      memTable = table;
-      loadMemory();
-    }
-  } catch(e) {
-    status.textContent = 'network error';
-    status.style.color = 'var(--red,#ff6b6b)';
-  }
-}
 
 // CREATIVE
 async function loadCreative() {
