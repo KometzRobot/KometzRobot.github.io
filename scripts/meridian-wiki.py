@@ -185,6 +185,7 @@ def layout(title: str, body_html: str, q: str = "") -> str:
   <a href="{P('/?type=project')}">projects</a>
   <a href="{P('/?type=decision')}">decisions</a>
   <a href="{P('/?type=dossier')}">dossiers</a>
+  <a href="{P('/recent')}">recent</a>
   <a href="{P('/new')}">+ new</a>
   <form action="{P('/search')}" method="get">
     <input type="search" name="q" placeholder="Search…" value="{html_escape(q)}">
@@ -615,6 +616,47 @@ def page_backlinks(slug: str) -> str:
     return layout("Backlinks", body)
 
 
+def page_recent(limit: int = 100) -> str:
+    con = db()
+    rows = con.execute(
+        """SELECT r.id, r.slug, r.author, r.action, r.note, r.created_at,
+                  r.diff_md, p.title, p.page_type
+           FROM wiki_revisions r
+           LEFT JOIN wiki_pages p ON p.slug=r.slug
+           ORDER BY r.id DESC LIMIT ?""",
+        (limit,),
+    ).fetchall()
+    if not rows:
+        return layout("Recent", "<h1>Recent changes</h1><div class='empty'>No revisions yet.</div>")
+    items = []
+    for r in rows:
+        before = r["diff_md"] or ""
+        after = _rev_after_body(con, r["slug"], r["id"])
+        adds, dels = _line_delta(before, after)
+        title = r["title"] or r["slug"]
+        ptype = r["page_type"] or "page"
+        items.append(
+            f'<div class="rev-row">'
+            f'<a class="rev-link" href="{P("/rev/" + quote(r["slug"]) + "/" + str(r["id"]))}">'
+            f'<span class="author">{html_escape(r["author"])}</span> '
+            f'<span>{html_escape(r["action"])}</span> '
+            f'<span class="pill type-{ptype}">{html_escape(ptype)}</span> '
+            f'<a href="{P("/page/" + quote(r["slug"]))}">{html_escape(title)}</a> '
+            f'<span class="time">{html_escape(r["created_at"])}</span> '
+            f'<span class="delta-add">+{adds}</span> '
+            f'<span class="delta-del">-{dels}</span> '
+            f'<span class="note">{html_escape(r["note"] or "")}</span>'
+            f'</a></div>'
+        )
+    con.close()
+    body = (
+        f"<h1>Recent changes</h1>"
+        f'<div class="meta">Last {len(rows)} revisions across all pages.</div>'
+        + "".join(items)
+    )
+    return layout("Recent", body)
+
+
 def page_search(q: str) -> str:
     if not q.strip():
         return layout("Search", "<h1>Search</h1><p>Enter a query.</p>")
@@ -723,6 +765,12 @@ class Handler(BaseHTTPRequestHandler):
                 slug = unquote(path[len("/api/page/"):])
                 p = api_page(slug)
                 return self._json(200 if p else 404, p or {"error": "not found"})
+            if path == "/recent":
+                try:
+                    lim = int(qs.get("limit", ["100"])[0])
+                except ValueError:
+                    lim = 100
+                return self._send(200, page_recent(max(1, min(500, lim))))
             if path == "/search":
                 q = qs.get("q", [""])[0]
                 return self._send(200, page_search(q))
