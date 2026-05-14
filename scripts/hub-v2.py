@@ -1386,6 +1386,64 @@ def _get_memory_browse(table="facts", search="", limit=50):
         return {"error": str(e), "tables": {t: 0 for t in sorted(allowed)}}
 
 
+def _get_memory_search_all(q: str, per_table: int = 8):
+    """Cross-table memory search (Loop 11649 — Joel: 'mem tab better palace').
+    Returns top hits per table for query q, ranked by recency within each table."""
+    q = (q or "").strip()
+    if not q:
+        return {"query": "", "hits": [], "total": 0}
+    spec = [
+        ("facts",        ["key", "value", "tags", "note"],  "key,value"),
+        ("observations", ["content", "agent", "tags"],      "content"),
+        ("decisions",    ["title", "body", "rationale"],    "title"),
+        ("creative",     ["title", "content", "type"],      "title"),
+        ("events",       ["title", "description"],          "title"),
+        ("dossiers",     ["topic", "summary", "key_facts"], "topic"),
+        ("contacts",     ["name", "email", "notes"],        "name,email"),
+        ("skills",       ["name", "description"],           "name"),
+        ("errors",       ["error_type", "message", "source"], "error_type"),
+        ("sent_emails",  ["subject", "to_addr"],            "subject"),
+    ]
+    out = []
+    total = 0
+    try:
+        db = sqlite3.connect(MEMORY_DB, timeout=3)
+        db.row_factory = sqlite3.Row
+        for table, search_cols, _ in spec:
+            try:
+                cols_actual = [r[1] for r in db.execute(f"PRAGMA table_info({table})").fetchall()]
+                search_cols = [c for c in search_cols if c in cols_actual]
+                if not search_cols:
+                    continue
+                conditions = " OR ".join(f'"{c}" LIKE ?' for c in search_cols)
+                # ORDER BY id DESC for recency; some tables have created instead
+                order = "id" if "id" in cols_actual else search_cols[0]
+                sql = (f'SELECT * FROM "{table}" WHERE {conditions} '
+                       f'ORDER BY {order} DESC LIMIT ?')
+                params = [f"%{q}%"] * len(search_cols) + [per_table]
+                rows = db.execute(sql, params).fetchall()
+                for row in rows:
+                    r = dict(row)
+                    # Build a 1-line snippet from the search columns
+                    snippet_parts = []
+                    for c in search_cols:
+                        v = r.get(c)
+                        if v:
+                            snippet_parts.append(f"{c}: {str(v)[:180]}")
+                    out.append({
+                        "table": table,
+                        "id": r.get("id"),
+                        "snippet": " | ".join(snippet_parts),
+                    })
+                    total += 1
+            except Exception as ee:
+                out.append({"table": table, "error": str(ee)})
+        db.close()
+    except Exception as e:
+        return {"error": str(e), "query": q, "hits": out, "total": total}
+    return {"query": q, "hits": out, "total": total}
+
+
 def _get_quick_actions():
     """Available quick actions with categories."""
     return {
@@ -2175,6 +2233,8 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             except (ValueError, TypeError):
                 limit = 50
             self._send_json(_get_memory_browse(table, search, limit))
+        elif path.path == "/api/memory/search":
+            self._send_json(_get_memory_search_all(qs.get("q", ""), per_table=8))
         elif path.path == "/api/quick-actions":
             self._send_json(_get_quick_actions())
         elif path.path == "/api/loop-summary":
