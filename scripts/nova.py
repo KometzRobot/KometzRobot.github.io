@@ -188,13 +188,12 @@ def check_port_conflicts():
     expected_ports = {
         8090: ("hub-v2.py", "The Signal"),
         8091: ("the-chorus.py", "The Chorus"),
+        8092: ("meridian-wiki.py", "Meridian Wiki"),
         1144: ("bridge", "IMAP"),
         1026: ("bridge", "SMTP"),
     }
     # Ports that should NOT be occupied
-    forbidden_ports = {
-        8092: "loop-control-center (killed, should stay dead)",
-    }
+    forbidden_ports = {}
 
     for port, (expected, desc) in expected_ports.items():
         try:
