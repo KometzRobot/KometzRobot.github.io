@@ -24,11 +24,26 @@ Architecture:
 """
 
 import os
+# Silence ChromaDB 0.6.x telemetry warnings — must be set before chromadb import.
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+os.environ.setdefault("CHROMA_TELEMETRY", "False")
 import sys
 import json
 import sqlite3
 import glob
 from datetime import datetime, timezone
+
+# ChromaDB 0.6.3 emits "Failed to send telemetry event ... capture() takes 1
+# positional argument but 3 were given" on every Client* and Collection* call.
+# Known upstream bug; harmless but spams logs. Suppress via logging filter.
+import logging
+class _NoTelemetrySpam(logging.Filter):
+    def filter(self, record):
+        msg = record.getMessage()
+        return "telemetry event" not in msg and "capture()" not in msg
+for _name in ("chromadb", "chromadb.telemetry", "chromadb.telemetry.product",
+              "chromadb.telemetry.product.posthog"):
+    logging.getLogger(_name).addFilter(_NoTelemetrySpam())
 
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(_script_dir) if os.path.basename(_script_dir) in ("scripts", "tools") else _script_dir
@@ -60,8 +75,12 @@ def get_embedding(text):
 def get_chroma_client():
     """Get or create persistent ChromaDB client."""
     import chromadb
+    from chromadb.config import Settings
     os.makedirs(CHROMA_DIR, exist_ok=True)
-    return chromadb.PersistentClient(path=CHROMA_DIR)
+    return chromadb.PersistentClient(
+        path=CHROMA_DIR,
+        settings=Settings(anonymized_telemetry=False),
+    )
 
 
 def index_table(client, table_name, rows, id_prefix=""):
