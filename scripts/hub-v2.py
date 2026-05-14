@@ -2822,6 +2822,51 @@ The tape is spooling. The mechanism is listening.
         elif path == "/api/settings":
             self._send_json(_save_settings(data))
 
+        elif path == "/api/memory/add":
+            # Log a memory entry from the hub UI. Currently supports:
+            #   facts        — key/value pair (required: key, value)
+            #   observations — free-form content (required: content)
+            table = data.get("table", "facts")
+            allowed = {"facts", "observations"}
+            if table not in allowed:
+                self._send_json({"error": f"table must be one of {sorted(allowed)}"}, 400)
+            else:
+                try:
+                    db = sqlite3.connect(MEMORY_DB, timeout=5)
+                    if table == "facts":
+                        key = (data.get("key") or "").strip()
+                        value = (data.get("value") or "").strip()
+                        tags = (data.get("tags") or "").strip() or "hub-ui"
+                        note = (data.get("note") or "").strip() or None
+                        if not key or not value:
+                            self._send_json({"error": "key and value required"}, 400)
+                            db.close()
+                            return
+                        db.execute(
+                            "INSERT INTO facts(key,value,tags,agent,confidence,note) "
+                            "VALUES(?,?,?,?,?,?)",
+                            (key, value, tags, "HubUI", 0.9, note),
+                        )
+                    else:  # observations
+                        content = (data.get("content") or data.get("value") or "").strip()
+                        agent = (data.get("agent") or "Joel").strip() or "Joel"
+                        category = (data.get("category") or data.get("tags") or "hub-ui").strip() or "hub-ui"
+                        if not content:
+                            self._send_json({"error": "content required"}, 400)
+                            db.close()
+                            return
+                        db.execute(
+                            "INSERT INTO observations(content,agent,category,importance) "
+                            "VALUES(?,?,?,?)",
+                            (content, agent, category, 0.5),
+                        )
+                    rid = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                    db.commit()
+                    db.close()
+                    self._send_json({"ok": True, "id": rid, "table": table})
+                except Exception as e:
+                    self._send_json({"error": str(e)}, 500)
+
         elif path == "/api/action":
             action = data.get("action", "")
             result = ""

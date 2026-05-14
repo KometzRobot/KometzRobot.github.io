@@ -680,6 +680,30 @@ a:hover { text-decoration:underline; }
         <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
           <input class="mem-search" id="mem-search-all" placeholder="Search ALL tables…" style="flex:1;min-width:180px"/>
           <button class="mem-tab" id="mem-clear" onclick="memClearSearch()" title="Clear cross-table search">×</button>
+          <button class="mem-tab" id="mem-add-btn" onclick="memToggleAdd()" title="Log a new memory entry">+ Add</button>
+        </div>
+        <div id="mem-add-form" style="display:none;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px">
+          <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+            <label style="font-size:11px;color:var(--text-dim)">Table</label>
+            <select id="mem-add-table" onchange="memAddTableChanged()" style="background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px">
+              <option value="facts">facts (key/value)</option>
+              <option value="observations">observations (note)</option>
+            </select>
+          </div>
+          <div id="mem-add-facts" style="display:block">
+            <input class="mem-search" id="mem-add-key" placeholder="key (e.g. joel_phone)" style="margin-bottom:6px"/>
+            <textarea id="mem-add-value" placeholder="value" style="width:100%;min-height:60px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px;font-size:12px;font-family:var(--mono);box-sizing:border-box"></textarea>
+            <input class="mem-search" id="mem-add-tags" placeholder="tags (optional, comma-sep)" style="margin-top:6px"/>
+          </div>
+          <div id="mem-add-obs" style="display:none">
+            <textarea id="mem-add-content" placeholder="observation content" style="width:100%;min-height:80px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px;font-size:12px;font-family:var(--mono);box-sizing:border-box"></textarea>
+            <input class="mem-search" id="mem-add-agent" placeholder="agent (default: Joel)" style="margin-top:6px"/>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <button class="mem-tab active" onclick="memSubmitAdd()">Save</button>
+            <button class="mem-tab" onclick="memToggleAdd()">Cancel</button>
+            <span id="mem-add-status" style="font-size:11px;color:var(--text-dim)"></span>
+          </div>
         </div>
         <div id="mem-search-results" style="display:none;max-height:600px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:12px"></div>
         <div class="mem-tabs" id="mem-tabs"></div>
@@ -1523,6 +1547,59 @@ function memClearSearch() {
   i.value = '';
   document.getElementById('mem-search-results').style.display = 'none';
   document.getElementById('mem-search-results').innerHTML = '';
+}
+
+// Memory add (log a new entry)
+function memToggleAdd() {
+  const f = document.getElementById('mem-add-form');
+  f.style.display = (f.style.display === 'none' || !f.style.display) ? 'block' : 'none';
+  if (f.style.display === 'block') {
+    document.getElementById('mem-add-status').textContent = '';
+  }
+}
+function memAddTableChanged() {
+  const t = document.getElementById('mem-add-table').value;
+  document.getElementById('mem-add-facts').style.display = (t === 'facts') ? 'block' : 'none';
+  document.getElementById('mem-add-obs').style.display = (t === 'observations') ? 'block' : 'none';
+}
+async function memSubmitAdd() {
+  const table = document.getElementById('mem-add-table').value;
+  const status = document.getElementById('mem-add-status');
+  const payload = { table };
+  if (table === 'facts') {
+    payload.key = document.getElementById('mem-add-key').value.trim();
+    payload.value = document.getElementById('mem-add-value').value.trim();
+    payload.tags = document.getElementById('mem-add-tags').value.trim();
+    if (!payload.key || !payload.value) { status.textContent = 'key and value required'; return; }
+  } else {
+    payload.content = document.getElementById('mem-add-content').value.trim();
+    payload.agent = document.getElementById('mem-add-agent').value.trim() || 'Joel';
+    if (!payload.content) { status.textContent = 'content required'; return; }
+  }
+  status.textContent = 'saving…';
+  try {
+    const r = await fetch(API + '/api/memory/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (r.ok && d.ok) {
+      status.textContent = `saved #${d.id} in ${d.table}`;
+      // Clear inputs and reload current table
+      if (table === 'facts') {
+        document.getElementById('mem-add-key').value = '';
+        document.getElementById('mem-add-value').value = '';
+        document.getElementById('mem-add-tags').value = '';
+      } else {
+        document.getElementById('mem-add-content').value = '';
+      }
+      memTable = table;
+      loadMemory();
+    } else {
+      status.textContent = `error: ${d.error || r.status}`;
+    }
+  } catch(e) { status.textContent = `error: ${e}`; }
 }
 document.getElementById('mem-search-all').addEventListener('input', function() {
   const q = this.value;
