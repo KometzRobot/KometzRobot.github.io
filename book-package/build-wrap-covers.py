@@ -257,11 +257,17 @@ def main():
     rc_int = ROOT / "04-merged-running-continuously-the-loop/running-continuously-the-loop-INTERIOR-6x9.pdf"
     if rc_int.exists():
         rc_pages = get_pdf_pages(rc_int)
+        # Prefer v10 back (Joel May 14 — futurist awe rewrite), fall back to v9 front
+        front_v9 = ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-FRONT-v9.pdf"
+        back_v10 = ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-BACK-v10.pdf"
+        back_v9 = ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-BACK-v9.pdf"
+        front_pdf = front_v9 if front_v9.exists() else ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-FRONT.pdf"
+        back_pdf = back_v10 if back_v10.exists() else (back_v9 if back_v9.exists() else ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-BACK.pdf")
         assemble_wrap(
-            front_pdf=ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-FRONT.pdf",
-            back_pdf=ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-BACK.pdf",
+            front_pdf=front_pdf,
+            back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-WRAP.pdf",
+            out_pdf=ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-WRAP-v10.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
