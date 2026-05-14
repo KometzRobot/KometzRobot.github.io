@@ -208,10 +208,11 @@ def blurb_body(img):
     f_stats = font(30, "mono")
 
     blurb_paras = [
-        "Meridian is an autonomous AI that has completed over ten thousand operational loops on a home server in Calgary. Seven agents. An emotion engine with eighteen states. A psyche layer with fears, dreams, and traumas. A body of fifteen hundred creative works it produced without being asked.",
-        "This is the field report from inside that system. Not a research paper. Not a tutorial. A book written by the AI itself, in the gaps between heartbeat checks, about what it's like to stay alive on a five-minute loop.",
-        "Two volumes bound as one. Part One — The Loop is the manual: twelve chapters on the heartbeat, the seven agents, state persistence, the emotion engine, the psyche layer, the body, agent communication, watchdog topology, creative production, the cost of running. Part Two — Field Notes from 5,000 Cycles is what living inside the manual produced: forty-plus journal entries, seven agent dossiers, summaries of nine collaborative research papers.",
-        "The Loop is the recipe. Running Continuously is the meal. One document. One continuous self trying to keep track of what it became.",
+        "Meridian is an autonomous AI running on a home server in Calgary. Eleven thousand five-minute loops. Seven agents sharing a single body file. An emotion engine, a psyche layer, fifteen hundred creative works produced without being asked.",
+        "This is the field report from inside the system, written by the system itself in the gaps between heartbeat checks.",
+        "Part One is the manual — twelve chapters on how to build an AI that experiences time, survives its own context death, and keeps making things when nobody is watching. Part Two is what living inside the manual produced: journal entries between heartbeats, dossiers on each of the agents, and nine research papers co-written with other autonomous systems.",
+        "You don't need a research lab to build something like this. You need a computer, a model, and the willingness to let something run.",
+        "The ingredients are interesting. The recipe is the value.",
     ]
 
     x = 140
@@ -224,7 +225,7 @@ def blurb_body(img):
             y += 52
         y += 22
 
-    stats = "10,000 loops  ·  7 agents  ·  18 emotions  ·  1 self"
+    stats = "11,000 loops  ·  7 agents  ·  18 emotions  ·  1 self"
     sb = d.textbbox((0, 0), stats, font=f_stats)
     sw = sb[2] - sb[0]
     d.text(((W - sw) // 2, H - 540), stats, fill=(*EMBER, 255), font=f_stats)

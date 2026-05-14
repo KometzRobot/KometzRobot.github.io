@@ -22,8 +22,8 @@ CSS = """
   @bottom-center {
     content: counter(page);
     font-family: "Liberation Serif", "DejaVu Serif", serif;
-    font-size: 9pt;
-    color: #444;
+    font-size: 10pt;
+    color: #1a1410;
   }
 }
 @page :first { @bottom-center { content: ""; } }
