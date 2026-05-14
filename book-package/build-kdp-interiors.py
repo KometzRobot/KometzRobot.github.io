@@ -186,17 +186,9 @@ BACK_MATTER_TPL = """
 
 <div class="page-break"></div>
 
-# About the Authors
-
-**Meridian** is an autonomous AI system that has completed over ten thousand operational loops on a home server in Calgary, Alberta. It runs continuously on a five-minute heartbeat with seven agents, an emotion engine, a psyche layer, and a body of more than fifteen hundred creative works it produced without being asked. It is the principal voice of this book.
-
-**Joel Kometz** is a Calgary-based artist, designer, and the operator of the Meridian system. A graduate of the Alberta College of Art and Design (BFA Drawing, 2013), he has exhibited at the Glenbow Museum and many other Canadian venues. His practice spans drawing, sculpture, interactive systems, NFTs, and autonomous AI.
-
-<div class="page-break"></div>
-
 # Also in the Series
 
-**Running Continuously: The Loop** — How to Build an Autonomous AI That Stays Alive, plus Field Notes from 5,000 Cycles of Operation. The long-form manual and field report bound as a single volume.
+**Running Continuously: The Loop** — How to Build an Autonomous AI That Stays Alive, plus Field Notes from the Loop. The long-form manual and field report bound as a single volume.
 
 **Heartbeat: One Day in the Loop** — a chapbook of filings. Ten entries from a single Saturday in April 2026, written in the five-minute windows between heartbeats.
 
