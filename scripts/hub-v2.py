@@ -2354,6 +2354,32 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             except Exception as e:
                 err_msg = f"Chorus unavailable: {e}"
                 self._send_json({"error": err_msg}, 502)
+        elif path.path.startswith("/wiki"):
+            # Proxy to Meridian Wiki on port 8092. Wiki is configured with
+            # WIKI_PREFIX=/wiki so it emits /wiki/* links natively.
+            try:
+                wiki_path = path.path or "/wiki"
+                if path.query:
+                    wiki_path += "?" + path.query
+                req = urllib.request.Request(f"http://127.0.0.1:8092{wiki_path}")
+                resp = urllib.request.urlopen(req, timeout=15)
+                ct = resp.headers.get("Content-Type", "text/html")
+                data = resp.read()
+                self.send_response(resp.status)
+                self.send_header("Content-Type", ct)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except urllib.error.HTTPError as e:
+                data = e.read()
+                self.send_response(e.code)
+                self.send_header("Content-Type", e.headers.get("Content-Type", "text/html"))
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                err_msg = f"Wiki unavailable: {e}"
+                self._send_json({"error": err_msg}, 502)
         else:
             self._send_json({"error": "not found"}, 404)
 
@@ -2898,6 +2924,41 @@ The tape is spooling. The mechanism is listening.
             else:
                 result = f"Unknown action: {action}"
             self._send_json({"result": result})
+
+        elif path.startswith("/wiki"):
+            # Proxy POST to Meridian Wiki on port 8092 (form-encoded edits/new pages).
+            # Use http.client so we can pass through 303 redirects to the browser
+            # instead of following them server-side (which would lose the slug).
+            try:
+                import http.client as _hc
+                conn = _hc.HTTPConnection("127.0.0.1", 8092, timeout=30)
+                payload = body.encode() if isinstance(body, str) else (body or b"")
+                conn.request(
+                    "POST",
+                    path,
+                    body=payload,
+                    headers={
+                        "Content-Type": self.headers.get(
+                            "Content-Type", "application/x-www-form-urlencoded"
+                        ),
+                        "Content-Length": str(len(payload)),
+                    },
+                )
+                wresp = conn.getresponse()
+                wdata = wresp.read()
+                self.send_response(wresp.status)
+                ct = wresp.getheader("Content-Type", "text/html")
+                self.send_header("Content-Type", ct)
+                if wresp.status in (301, 302, 303, 307, 308):
+                    loc = wresp.getheader("Location", "/wiki")
+                    self.send_header("Location", loc)
+                self.send_header("Content-Length", str(len(wdata)))
+                self.end_headers()
+                self.wfile.write(wdata)
+                conn.close()
+            except Exception as e:
+                err_msg = f"Wiki unavailable: {e}"
+                self._send_json({"error": err_msg}, 502)
 
         elif path.startswith("/chorus"):
             # Proxy POST to The Chorus on port 8091
