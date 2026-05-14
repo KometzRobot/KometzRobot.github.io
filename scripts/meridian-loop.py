@@ -53,6 +53,11 @@ except ImportError:
     log_error = lambda *a, **kw: None
     log_exception = lambda **kw: None
 
+try:
+    from retrieval_tracker import log_retrieval
+except ImportError:
+    log_retrieval = lambda *a, **kw: None
+
 # Load .env
 try:
     from load_env import load_env
@@ -272,6 +277,14 @@ def check_emails():
             _relay_post("MeridianLoop",
                         f"{unprocessed_count} email(s) read by phone before agent — check recent inbox",
                         "alert")
+
+        try:
+            _loop_n = int(open(LOOP_COUNT_FILE).read().strip()) if os.path.exists(LOOP_COUNT_FILE) else None
+        except Exception:
+            _loop_n = None
+        log_retrieval("IMAP/INBOX", trigger="loop-cycle",
+                      query="UNSEEN scan + watermark", result_count=total_unseen,
+                      session_loop=_loop_n, context="meridian-loop email check")
         return total_unseen, joel_count, None
     except imaplib.IMAP4.error as e:
         return 0, 0, f"IMAP error: {e}"
