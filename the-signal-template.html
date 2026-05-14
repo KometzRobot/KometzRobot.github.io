@@ -666,9 +666,38 @@ a:hover { text-decoration:underline; }
     <!-- MEMORY TAB -->
     <div class="tab" id="tab-memory">
       <div class="card">
-        <h3>Memory Database</h3>
+        <h3>21-Layer Memory Stack <span id="mem-layers-summary" style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-left:8px"></span></h3>
+        <div id="mem-layers-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;font-size:11px"></div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:8px">Green=fresh / Cyan=live / Amber=stale / Red=missing. Click a layer for details.</div>
+      </div>
+
+      <div class="card">
+        <h3>Add Memory</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="mem-add-table" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px">
+            <option value="facts">facts (key + value)</option>
+            <option value="observations">observations (free text)</option>
+          </select>
+          <input id="mem-add-key" placeholder="key (facts only)" style="flex:1;min-width:140px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:11px" />
+          <input id="mem-add-tags" placeholder="tags (optional)" style="flex:0 0 140px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:11px" />
+        </div>
+        <textarea id="mem-add-value" placeholder="value / content..." rows="2" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;resize:vertical"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <button onclick="memAdd()" style="padding:6px 14px;background:var(--cyan);color:var(--bg);border:none;border-radius:6px;font-weight:600;cursor:pointer">Save</button>
+          <span id="mem-add-status" style="font-size:11px;color:var(--text-dim);font-family:var(--mono)"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Global Search <span style="font-size:11px;color:var(--text-dim);font-weight:normal">— across all tables</span></h3>
+        <input id="mem-global-search" placeholder="search facts, observations, decisions, dossiers, contacts, errors, sent_emails..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px" />
+        <div id="mem-global-results" style="margin-top:10px;max-height:300px;overflow-y:auto;font-size:11px"></div>
+      </div>
+
+      <div class="card">
+        <h3>Table Browser</h3>
         <div class="mem-tabs" id="mem-tabs"></div>
-        <input class="mem-search" id="mem-search" placeholder="Search..." />
+        <input class="mem-search" id="mem-search" placeholder="filter current table..." />
         <div style="max-height:600px;overflow:auto">
           <table class="mem-table" id="mem-table">
             <thead id="mem-thead"></thead>
@@ -1446,32 +1475,108 @@ async function updateSetting(key, value) {
 
 // MEMORY
 async function loadMemory() {
+  loadMemoryLayers();
+  loadMemoryBrowse();
+}
+
+async function loadMemoryLayers() {
+  const d = await api('/api/memory/layers');
+  if (!d) return;
+  document.getElementById('mem-layers-summary').textContent = d.summary || '';
+  const grid = document.getElementById('mem-layers-grid');
+  const colorFor = (l) => {
+    if (l.status === 'fresh' || l.status === 'live' || l.status === 'available') return 'var(--green)';
+    if (l.status === 'stale' || l.status === 'empty') return 'var(--amber)';
+    return 'var(--red)';
+  };
+  grid.innerHTML = (d.layers || []).map(l => {
+    const detail = l.rows != null ? `${l.rows} rows` :
+                   l.age_min != null ? `${l.age_min < 60 ? l.age_min + 'm' : (l.age_min/60).toFixed(1)+'h'} old` :
+                   l.status;
+    const tip = `${l.role || ''} — ${l.source || ''} — ${l.status}${l.latest ? ' — last: ' + l.latest : ''}`;
+    return `<div title="${esc(tip)}" style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colorFor(l)};flex-shrink:0"></span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);width:18px;text-align:right">${l.num}</span>
+      <span style="flex:1;font-weight:500;font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)}</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">${esc(detail)}</span>
+    </div>`;
+  }).join('');
+}
+
+async function loadMemoryBrowse() {
   const d = await api(`/api/memory/browse?table=${memTable}&search=${encodeURIComponent(memSearchText)}&limit=50`);
   if (!d) return;
 
-  // Table tabs
   const tabs = document.getElementById('mem-tabs');
   tabs.innerHTML = Object.entries(d.tables || {}).map(([t, c]) =>
     `<button class="mem-tab ${t===memTable?'active':''}" onclick="switchMemTable('${t}')">${t}<span class="count">${c}</span></button>`
   ).join('');
 
-  // Table header
   const cols = d.columns || [];
   document.getElementById('mem-thead').innerHTML = '<tr>' + cols.map(c => `<th>${esc(c)}</th>`).join('') + '</tr>';
-
-  // Table body
   document.getElementById('mem-tbody').innerHTML = (d.rows || []).map(row =>
     '<tr>' + cols.map(c => `<td title="${esc(String(row[c]||''))}">${esc(String(row[c]||'').substring(0, 120))}</td>`).join('') + '</tr>'
   ).join('');
-
   document.getElementById('mem-total').textContent = `${d.total || 0} total rows in ${memTable}`;
 }
 
-function switchMemTable(t) { memTable = t; loadMemory(); }
+async function memGlobalSearch(q) {
+  const box = document.getElementById('mem-global-results');
+  if (!q || q.length < 2) { box.innerHTML = ''; return; }
+  const d = await api('/api/memory/search?q=' + encodeURIComponent(q));
+  if (!d) { box.innerHTML = '<div style="color:var(--red)">search failed</div>'; return; }
+  const hits = d.hits || [];
+  if (!hits.length) { box.innerHTML = '<div style="color:var(--text-dim)">No matches</div>'; return; }
+  box.innerHTML = `<div style="margin-bottom:6px;color:var(--text-dim)">${d.total} hits across ${new Set(hits.map(h=>h.table)).size} tables</div>` +
+    hits.map(h => `<div style="padding:6px 8px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:flex-start">
+      <span style="font-family:var(--mono);font-size:9px;color:var(--purple);background:rgba(124,92,252,.12);padding:2px 6px;border-radius:4px;flex-shrink:0">${esc(h.table)}#${h.id}</span>
+      <span style="color:var(--text);line-height:1.4">${esc(h.snippet || '')}</span>
+    </div>`).join('');
+}
+
+async function memAdd() {
+  const table = document.getElementById('mem-add-table').value;
+  const key = document.getElementById('mem-add-key').value.trim();
+  const value = document.getElementById('mem-add-value').value.trim();
+  const tags = document.getElementById('mem-add-tags').value.trim();
+  const status = document.getElementById('mem-add-status');
+  if (!value) { status.textContent = 'value/content required'; status.style.color = 'var(--red)'; return; }
+  if (table === 'facts' && !key) { status.textContent = 'key required for facts'; status.style.color = 'var(--red)'; return; }
+  status.textContent = 'saving...';
+  status.style.color = 'var(--text-dim)';
+  try {
+    const r = await fetch(API + '/api/memory/add', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({table, key, value, content: value, tags})
+    });
+    const j = await r.json();
+    if (j.ok) {
+      status.textContent = `saved id ${j.id} into ${j.table}`;
+      status.style.color = 'var(--green)';
+      document.getElementById('mem-add-key').value = '';
+      document.getElementById('mem-add-value').value = '';
+      loadMemoryBrowse();
+    } else {
+      status.textContent = j.error || 'save failed';
+      status.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    status.textContent = 'error: ' + e;
+    status.style.color = 'var(--red)';
+  }
+}
+
+function switchMemTable(t) { memTable = t; loadMemoryBrowse(); }
 document.getElementById('mem-search').addEventListener('input', function() {
   memSearchText = this.value;
   clearTimeout(this._debounce);
-  this._debounce = setTimeout(() => loadMemory(), 300);
+  this._debounce = setTimeout(() => loadMemoryBrowse(), 300);
+});
+document.getElementById('mem-global-search').addEventListener('input', function() {
+  clearTimeout(this._debounce);
+  const q = this.value;
+  this._debounce = setTimeout(() => memGlobalSearch(q), 250);
 });
 
 // CREATIVE

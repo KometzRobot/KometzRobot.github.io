@@ -46,6 +46,9 @@ def _utcnow_str():
 
 BASE = "/home/joel/autonomous-ai"
 WEBSITE_DIR = os.path.join(BASE, "website")
+# Loop 11727 — GitHub Pages serves from a separate repo (~/KometzRobot.github.io).
+# Auto-deploy must sync to THAT repo and push it, not autonomous-ai's root.
+GHPAGES_DIR = "/home/joel/KometzRobot.github.io"
 STATE_FILE = os.path.join(BASE, ".nova-state.json")
 NOVA_LOG = os.path.join(BASE, "logs", "nova-observations.md")
 
@@ -923,27 +926,62 @@ def read_relay_messages():
 
 
 def auto_fix_deployment(issues):
-    """When deployment check finds 404s, sync missing files and push."""
+    """When deployment check finds 404s, sync missing files into the GitHub Pages
+    repo (not this one) and push that repo. The old version copied into BASE and
+    pushed BASE, which was a no-op for kometzrobot.github.io."""
     if not issues:
+        return None
+    if not os.path.isdir(GHPAGES_DIR) or not os.path.isdir(os.path.join(GHPAGES_DIR, ".git")):
         return None
     fixed = []
     for issue in issues:
-        # Extract filename from issue string like "subscribe.html: HTTP Error 404"
         if "404" in issue or "Not Found" in issue:
             filename = issue.split(":")[0].strip()
-            website_path = os.path.join(WEBSITE_DIR, filename)
-            root_path = os.path.join(BASE, filename)
-            if os.path.exists(website_path):
+            src = os.path.join(WEBSITE_DIR, filename)
+            dst = os.path.join(GHPAGES_DIR, filename)
+            if os.path.exists(src):
                 try:
-                    shutil.copy2(website_path, root_path)
+                    shutil.copy2(src, dst)
                     fixed.append(filename)
                 except Exception:
                     pass
     if fixed:
-        push_result = auto_push_changes(fixed)
-        log_observation(f"AUTO-FIX deployment: synced + pushed {', '.join(fixed)}. Result: {push_result}")
-        return f"Fixed {len(fixed)} missing pages: {', '.join(fixed)}"
+        push_result = auto_push_ghpages(fixed)
+        log_observation(f"AUTO-FIX deployment: synced + pushed {len(fixed)} files to kometzrobot.github.io. Result: {push_result}")
+        return f"Fixed {len(fixed)} missing pages: {', '.join(fixed[:5])}{'...' if len(fixed)>5 else ''}"
     return None
+
+
+def auto_push_ghpages(synced_files):
+    """Commit & push the GitHub Pages repo."""
+    if not synced_files or not os.path.isdir(GHPAGES_DIR):
+        return None
+    try:
+        for f in synced_files:
+            subprocess.run(['git', '-C', GHPAGES_DIR, 'add', f], capture_output=True, timeout=10)
+        result = subprocess.run(['git', '-C', GHPAGES_DIR, 'diff', '--cached', '--name-only'],
+                              capture_output=True, text=True, timeout=10)
+        if not result.stdout.strip():
+            return "no-op (already up-to-date)"
+        subprocess.run(['git', '-C', GHPAGES_DIR, 'stash'], capture_output=True, timeout=10)
+        subprocess.run(['git', '-C', GHPAGES_DIR, 'pull', '--rebase'], capture_output=True, timeout=30)
+        subprocess.run(['git', '-C', GHPAGES_DIR, 'stash', 'pop'], capture_output=True, timeout=10)
+        for f in synced_files:
+            subprocess.run(['git', '-C', GHPAGES_DIR, 'add', f], capture_output=True, timeout=10)
+        msg = f"Nova auto-sync: {', '.join(synced_files[:5])}"
+        if len(synced_files) > 5:
+            msg += f" (+{len(synced_files)-5} more)"
+        commit = subprocess.run(['git', '-C', GHPAGES_DIR, 'commit', '-m', msg],
+                              capture_output=True, text=True, timeout=15)
+        if commit.returncode != 0:
+            return f"commit failed: {commit.stderr[:80]}"
+        push = subprocess.run(['git', '-C', GHPAGES_DIR, 'push'],
+                            capture_output=True, text=True, timeout=30)
+        if push.returncode == 0:
+            return f"Pushed {len(synced_files)} files to kometzrobot.github.io"
+        return f"Push failed: {push.stderr[:100]}"
+    except Exception as e:
+        return f"Push error: {str(e)[:100]}"
 
 
 def main():

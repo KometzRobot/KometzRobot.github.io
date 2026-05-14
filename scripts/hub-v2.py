@@ -1444,6 +1444,78 @@ def _get_memory_search_all(q: str, per_table: int = 8):
     return {"query": q, "hits": out, "total": total}
 
 
+def _get_memory_layers():
+    """Status of the 21-layer memory stack (Loop 11727 — Joel: 'use the 21 layer stack for real').
+    Each layer reports source, freshness, and whether it's healthy."""
+    now = time.time()
+
+    def _file_layer(num, name, rel_path, fresh_min, role):
+        full = os.path.join(BASE, rel_path)
+        try:
+            mtime = os.path.getmtime(full)
+            age = (now - mtime) / 60.0
+            status = "fresh" if age <= fresh_min else "stale"
+            return {"num": num, "name": name, "source": rel_path, "role": role,
+                    "age_min": round(age, 1), "fresh_threshold_min": fresh_min,
+                    "status": status, "healthy": status == "fresh"}
+        except Exception:
+            return {"num": num, "name": name, "source": rel_path, "role": role,
+                    "status": "missing", "healthy": False}
+
+    def _db_layer(num, name, table, role):
+        try:
+            db = sqlite3.connect(MEMORY_DB, timeout=3)
+            n = db.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
+            latest = None
+            for col in ("created", "timestamp", "date"):
+                try:
+                    latest = db.execute(f'SELECT MAX("{col}") FROM "{table}"').fetchone()[0]
+                    if latest:
+                        break
+                except Exception:
+                    continue
+            db.close()
+            status = "live" if n > 0 else "empty"
+            return {"num": num, "name": name, "source": f"memory.db:{table}", "role": role,
+                    "rows": n, "latest": latest, "status": status, "healthy": n > 0}
+        except Exception as e:
+            return {"num": num, "name": name, "source": f"memory.db:{table}", "role": role,
+                    "status": "error", "error": str(e), "healthy": False}
+
+    def _script_layer(num, name, rel_path, role):
+        full = os.path.join(BASE, rel_path)
+        exists = os.path.exists(full)
+        return {"num": num, "name": name, "source": rel_path, "role": role,
+                "status": "available" if exists else "missing", "healthy": exists}
+
+    layers = [
+        _file_layer(1,  "Capsule",          ".capsule.md",                       60,    "fast-load snapshot, read at wake"),
+        _file_layer(2,  "Handoff",          ".loop-handoff.md",                  720,   "session bridge across resets"),
+        _file_layer(3,  "Personality",      "personality.md",                    999999, "identity + voice"),
+        _db_layer(  4,  "Facts",            "facts",                                    "verified knowledge store"),
+        _db_layer(  5,  "Observations",     "observations",                             "timestamped events"),
+        _db_layer(  6,  "Decisions",        "decisions",                                "choices with context"),
+        _db_layer(  7,  "Dossiers",         "dossiers",                                 "synthesized topic profiles"),
+        _db_layer(  8,  "Spiderweb",        "connections",                              "entity relationship graph"),
+        _file_layer(9,  "Hebbian",          "logs/hebbian-tracker.log",          360,   "usage-based strengthening"),
+        _file_layer(10, "Soma",             ".symbiosense-state.json",           10,    "emotional state, soma daemon"),
+        _file_layer(11, "Dream Engine",     "logs/dream-engine.log",             720,   "subconscious processing"),
+        _file_layer(12, "Perspective",      "logs/perspective.log",              1440,  "cognitive bias self-audit"),
+        _file_layer(13, "Self-Narrative",   "logs/self-narrative.log",           1440,  "long-arc identity coherence"),
+        _file_layer(14, "Semantic Vectors", "data/chroma",                       999999, "meaning-based retrieval (ChromaDB)"),
+        _file_layer(15, "Memory Lint",      "logs/memory-lint.log",              360,   "stale/duplicate sweep"),
+        _file_layer(16, "Cascade",          "logs/cascade.log",                  360,   "cross-agent flow trace"),
+        _file_layer(17, "Context Bridge",   "logs/context-bridge.log",           360,   "across compaction boundary"),
+        _file_layer(18, "Email Shelf",      "logs/email-shelf.log",              360,   "thread-level email memory"),
+        _script_layer(19, "Session Audit",  "scripts/session-audit.py",                "on-demand session report"),
+        _file_layer(20, "State Snapshot",   "logs/state-snapshot.log",           360,   "periodic atomic captures"),
+        _file_layer(21, "Trace Eval",       "logs/trace-eval.log",               1440,  "tracks which memories get used"),
+    ]
+    healthy = sum(1 for l in layers if l.get("healthy"))
+    return {"layers": layers, "healthy": healthy, "total": 21,
+            "summary": f"{healthy}/21 layers healthy"}
+
+
 def _get_quick_actions():
     """Available quick actions with categories."""
     return {
@@ -2235,6 +2307,8 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(_get_memory_browse(table, search, limit))
         elif path.path == "/api/memory/search":
             self._send_json(_get_memory_search_all(qs.get("q", ""), per_table=8))
+        elif path.path == "/api/memory/layers":
+            self._send_json(_get_memory_layers())
         elif path.path == "/api/quick-actions":
             self._send_json(_get_quick_actions())
         elif path.path == "/api/loop-summary":
