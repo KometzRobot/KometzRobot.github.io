@@ -77,6 +77,8 @@ CAPSULE_FILE = os.path.join(BASE, ".capsule.md")
 # ── IMAP credentials (host/port now read from env via mail_endpoint) ──
 IMAP_USER = os.environ.get("CRED_USER", os.environ.get("PROTON_USER", "kometzrobot@proton.me"))
 IMAP_PASS = os.environ.get("CRED_PASS", "")
+IMAP_HOST = os.environ.get("IMAP_HOST", "127.0.0.1")
+IMAP_PORT = int(os.environ.get("IMAP_PORT", "1144"))
 
 
 def _log(msg):
