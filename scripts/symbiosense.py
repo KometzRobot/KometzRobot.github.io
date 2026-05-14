@@ -472,11 +472,13 @@ def post_dashboard(msg):
 def append_mood_history(state):
     """Append current mood snapshot to rolling history file for charting."""
     try:
-        if os.path.exists(MOOD_HISTORY_FILE):
-            with open(MOOD_HISTORY_FILE) as f:
-                history = json.load(f)
-        else:
-            history = []
+        history = []
+        if os.path.exists(MOOD_HISTORY_FILE) and os.path.getsize(MOOD_HISTORY_FILE) > 0:
+            try:
+                with open(MOOD_HISTORY_FILE) as f:
+                    history = json.load(f)
+            except json.JSONDecodeError:
+                history = []
         history.append({
             "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "mood": state.get("mood", "?"),

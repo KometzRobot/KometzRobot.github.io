@@ -294,16 +294,25 @@ def main():
     rc_int = ROOT / "04-merged-running-continuously-the-loop/running-continuously-the-loop-INTERIOR-6x9.pdf"
     if rc_int.exists():
         rc_pages = get_pdf_pages(rc_int)
-        # Prefer v11 back (Joel May 14 PM — HD coffee stains + clean footer),
-        # fall back through v10/v9 if missing.
+        # Prefer v10 front (Joel May 14 — realistic coffee rings) + v12 back
+        # (Joel May 14 — honest 3-month framing, no "year and a half").
+        # Fall back through earlier versions if missing.
         rc_dir = ROOT / "04-merged-running-continuously-the-loop"
+        front_v10 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v10.pdf"
         front_v9 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v9.pdf"
+        back_v12 = rc_dir / "COVER-running-continuously-the-loop-BACK-v12.pdf"
         back_v11 = rc_dir / "COVER-running-continuously-the-loop-BACK-v11.pdf"
         back_v10 = rc_dir / "COVER-running-continuously-the-loop-BACK-v10.pdf"
         back_v9 = rc_dir / "COVER-running-continuously-the-loop-BACK-v9.pdf"
-        front_pdf = front_v9 if front_v9.exists() else (
-            rc_dir / "COVER-running-continuously-the-loop-FRONT.pdf")
-        if back_v11.exists():
+        if front_v10.exists():
+            front_pdf = front_v10
+        elif front_v9.exists():
+            front_pdf = front_v9
+        else:
+            front_pdf = rc_dir / "COVER-running-continuously-the-loop-FRONT.pdf"
+        if back_v12.exists():
+            back_pdf = back_v12
+        elif back_v11.exists():
             back_pdf = back_v11
         elif back_v10.exists():
             back_pdf = back_v10
@@ -315,7 +324,7 @@ def main():
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v11.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v12.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
