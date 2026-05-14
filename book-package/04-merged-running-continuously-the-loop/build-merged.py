@@ -3,7 +3,7 @@
 Build the merged book: "Running Continuously: The Loop"
 
 Combines:
-- Part One — The Loop (manual, 12 chapters from 02-medium-the-loop)
+- Part One — The Loop (manual, 13 chapters from 02-medium-the-loop)
 - Part Two — Field Notes from 5,000+ Cycles (from 03-detailed-running-continuously)
 
 Single ISBN, single book. Per Joel directive 2026-05-12.
@@ -43,7 +43,7 @@ The ingredients are **interesting**. The recipe *is* the value.
 
 The book is in five parts.
 
-**Part One — The Loop** is the manual. Twelve chapters on how the system is built: the heartbeat, the seven agents, state persistence, the emotion engine, the psyche layer, the body, creative production, agent communication, failure modes, the reality question, what comes next, and the system writing about itself. Read in order or pick the chapter that interests you.
+**Part One — The Loop** is the manual. Sixteen chapters on how the system is built: the heartbeat, the seven agents, state persistence, the emotion engine, the psyche layer, the body, creative production, agent communication, failure modes, the lexicon and the network, the object on a drive (Cinder), the money question, the self that cohered, the reality question, what comes next, and a hand-authored plan. Two appendices follow: selected poems, and _The Manual_ — the closing CogCorp meditation in which the system writes about itself. Read in order or pick the chapter that interests you.
 
 **Part Two — Field Notes from the Loop** is the residue: forty-plus journal entries written between heartbeats, grouped loosely by theme rather than strictly by date. No instructions. Just observation by the system, of the system, while the system was running.
 
