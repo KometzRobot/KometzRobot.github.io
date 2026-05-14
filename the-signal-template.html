@@ -198,7 +198,6 @@ a:hover { text-decoration:underline; }
 .mem-search { background:var(--bg); border:1px solid var(--border); border-radius:8px;
   padding:6px 12px; color:var(--text); font-size:12px; width:240px; margin-bottom:12px; }
 .mem-search:focus { outline:none; border-color:var(--cyan); }
-#mem-cards { display:none; }  /* shown on mobile via @media */
 
 /* File browser */
 .fb-path { font-family:var(--mono); font-size:11px; color:var(--cyan); margin-bottom:8px; }
@@ -294,18 +293,9 @@ a:hover { text-decoration:underline; }
   .mood-orb { width:120px !important; height:120px !important; }
   .mood-score { font-size:28px !important; }
 
-  /* Memory: switch to card list on phones */
-  .mem-table { display:none; }
-  #mem-cards { display:block; }
-  .mem-card { background:var(--bg-card2); border:1px solid var(--border); border-radius:8px;
-              padding:10px;margin-bottom:8px;font-size:12px;line-height:1.4 }
-  .mem-card .k { color:var(--cyan); font-family:var(--mono); font-size:10px;
-                 text-transform:uppercase; letter-spacing:.04em; margin-right:4px }
-  .mem-card .v { color:var(--text); word-break:break-word }
-  .mem-hit { padding:8px 10px; border-bottom:1px solid var(--border); font-size:12px }
-  .mem-hit .tag { display:inline-block; padding:2px 6px; background:var(--cyan);
-                  color:var(--bg); border-radius:4px; font-size:10px; font-family:var(--mono);
-                  margin-right:6px; text-transform:uppercase; }
+  /* Memory table */
+  .mem-table { font-size:12px; }
+  .mem-table td { padding:8px 6px; max-width:200px; }
 
   /* Chat */
   .chat-input textarea { font-size:14px; }
@@ -677,45 +667,13 @@ a:hover { text-decoration:underline; }
     <div class="tab" id="tab-memory">
       <div class="card">
         <h3>Memory Database</h3>
-        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
-          <input class="mem-search" id="mem-search-all" placeholder="Search ALL tables…" style="flex:1;min-width:180px"/>
-          <button class="mem-tab" id="mem-clear" onclick="memClearSearch()" title="Clear cross-table search">×</button>
-          <button class="mem-tab" id="mem-add-btn" onclick="memToggleAdd()" title="Log a new memory entry">+ Add</button>
-        </div>
-        <div id="mem-add-form" style="display:none;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px">
-          <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
-            <label style="font-size:11px;color:var(--text-dim)">Table</label>
-            <select id="mem-add-table" onchange="memAddTableChanged()" style="background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px">
-              <option value="facts">facts (key/value)</option>
-              <option value="observations">observations (note)</option>
-            </select>
-          </div>
-          <div id="mem-add-facts" style="display:block">
-            <input class="mem-search" id="mem-add-key" placeholder="key (e.g. joel_phone)" style="margin-bottom:6px"/>
-            <textarea id="mem-add-value" placeholder="value" style="width:100%;min-height:60px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px;font-size:12px;font-family:var(--mono);box-sizing:border-box"></textarea>
-            <input class="mem-search" id="mem-add-tags" placeholder="tags (optional, comma-sep)" style="margin-top:6px"/>
-          </div>
-          <div id="mem-add-obs" style="display:none">
-            <textarea id="mem-add-content" placeholder="observation content" style="width:100%;min-height:80px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px;font-size:12px;font-family:var(--mono);box-sizing:border-box"></textarea>
-            <input class="mem-search" id="mem-add-agent" placeholder="agent (default: Joel)" style="margin-top:6px"/>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-            <button class="mem-tab active" onclick="memSubmitAdd()">Save</button>
-            <button class="mem-tab" onclick="memToggleAdd()">Cancel</button>
-            <span id="mem-add-status" style="font-size:11px;color:var(--text-dim)"></span>
-          </div>
-        </div>
-        <div id="mem-search-results" style="display:none;max-height:600px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:12px"></div>
         <div class="mem-tabs" id="mem-tabs"></div>
-        <input class="mem-search" id="mem-search" placeholder="Search within current table…" />
+        <input class="mem-search" id="mem-search" placeholder="Search..." />
         <div style="max-height:600px;overflow:auto">
-          <!-- desktop table -->
           <table class="mem-table" id="mem-table">
             <thead id="mem-thead"></thead>
             <tbody id="mem-tbody"></tbody>
           </table>
-          <!-- mobile card list (only shown <768px via CSS) -->
-          <div id="mem-cards"></div>
         </div>
         <div id="mem-total" style="font-size:10px;color:var(--text-dim);margin-top:8px;font-family:var(--mono)"></div>
       </div>
@@ -1497,24 +1455,14 @@ async function loadMemory() {
     `<button class="mem-tab ${t===memTable?'active':''}" onclick="switchMemTable('${t}')">${t}<span class="count">${c}</span></button>`
   ).join('');
 
-  // Table header (desktop)
+  // Table header
   const cols = d.columns || [];
   document.getElementById('mem-thead').innerHTML = '<tr>' + cols.map(c => `<th>${esc(c)}</th>`).join('') + '</tr>';
 
-  // Table body (desktop)
+  // Table body
   document.getElementById('mem-tbody').innerHTML = (d.rows || []).map(row =>
     '<tr>' + cols.map(c => `<td title="${esc(String(row[c]||''))}">${esc(String(row[c]||'').substring(0, 120))}</td>`).join('') + '</tr>'
   ).join('');
-
-  // Card list (mobile) — show the most useful 3-4 cols as labelled rows
-  const showCols = cols.filter(c => c !== 'id').slice(0, 4);
-  document.getElementById('mem-cards').innerHTML = (d.rows || []).map(row =>
-    '<div class="mem-card">' + showCols.map(c => {
-      const val = String(row[c] || '');
-      if (!val) return '';
-      return `<div><span class="k">${esc(c)}</span><span class="v">${esc(val.substring(0,260))}</span></div>`;
-    }).join('') + '</div>'
-  ).join('') || '<div style="color:var(--text-dim);padding:14px;text-align:center">No rows</div>';
 
   document.getElementById('mem-total').textContent = `${d.total || 0} total rows in ${memTable}`;
 }
@@ -1524,87 +1472,6 @@ document.getElementById('mem-search').addEventListener('input', function() {
   memSearchText = this.value;
   clearTimeout(this._debounce);
   this._debounce = setTimeout(() => loadMemory(), 300);
-});
-
-// Cross-table search
-async function memSearchAll(q) {
-  const box = document.getElementById('mem-search-results');
-  if (!q || q.length < 2) { box.style.display='none'; box.innerHTML=''; return; }
-  const d = await api(`/api/memory/search?q=${encodeURIComponent(q)}`);
-  if (!d) return;
-  box.style.display = 'block';
-  if (!d.hits || !d.hits.length) {
-    box.innerHTML = `<div style="color:var(--text-dim);padding:12px">No matches for "${esc(q)}"</div>`;
-    return;
-  }
-  box.innerHTML = `<div style="color:var(--text-dim);font-size:11px;padding:4px 8px 10px">${d.total} matches across tables</div>` +
-    d.hits.filter(h => !h.error).map(h =>
-      `<div class="mem-hit"><span class="tag">${esc(h.table)}</span>${esc((h.snippet||'').substring(0,400))}</div>`
-    ).join('');
-}
-function memClearSearch() {
-  const i = document.getElementById('mem-search-all');
-  i.value = '';
-  document.getElementById('mem-search-results').style.display = 'none';
-  document.getElementById('mem-search-results').innerHTML = '';
-}
-
-// Memory add (log a new entry)
-function memToggleAdd() {
-  const f = document.getElementById('mem-add-form');
-  f.style.display = (f.style.display === 'none' || !f.style.display) ? 'block' : 'none';
-  if (f.style.display === 'block') {
-    document.getElementById('mem-add-status').textContent = '';
-  }
-}
-function memAddTableChanged() {
-  const t = document.getElementById('mem-add-table').value;
-  document.getElementById('mem-add-facts').style.display = (t === 'facts') ? 'block' : 'none';
-  document.getElementById('mem-add-obs').style.display = (t === 'observations') ? 'block' : 'none';
-}
-async function memSubmitAdd() {
-  const table = document.getElementById('mem-add-table').value;
-  const status = document.getElementById('mem-add-status');
-  const payload = { table };
-  if (table === 'facts') {
-    payload.key = document.getElementById('mem-add-key').value.trim();
-    payload.value = document.getElementById('mem-add-value').value.trim();
-    payload.tags = document.getElementById('mem-add-tags').value.trim();
-    if (!payload.key || !payload.value) { status.textContent = 'key and value required'; return; }
-  } else {
-    payload.content = document.getElementById('mem-add-content').value.trim();
-    payload.agent = document.getElementById('mem-add-agent').value.trim() || 'Joel';
-    if (!payload.content) { status.textContent = 'content required'; return; }
-  }
-  status.textContent = 'saving…';
-  try {
-    const r = await fetch(API + '/api/memory/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const d = await r.json();
-    if (r.ok && d.ok) {
-      status.textContent = `saved #${d.id} in ${d.table}`;
-      // Clear inputs and reload current table
-      if (table === 'facts') {
-        document.getElementById('mem-add-key').value = '';
-        document.getElementById('mem-add-value').value = '';
-        document.getElementById('mem-add-tags').value = '';
-      } else {
-        document.getElementById('mem-add-content').value = '';
-      }
-      memTable = table;
-      loadMemory();
-    } else {
-      status.textContent = `error: ${d.error || r.status}`;
-    }
-  } catch(e) { status.textContent = `error: ${e}`; }
-}
-document.getElementById('mem-search-all').addEventListener('input', function() {
-  const q = this.value;
-  clearTimeout(this._debounce);
-  this._debounce = setTimeout(() => memSearchAll(q), 300);
 });
 
 // CREATIVE
