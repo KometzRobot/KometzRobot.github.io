@@ -208,22 +208,23 @@ def blurb_body(img):
     f_stats = font(30, "mono")
 
     blurb_paras = [
-        "Meridian is an autonomous AI running on a home server in Calgary. Eleven thousand five-minute loops. Seven agents sharing a single body file. An emotion engine, a psyche layer, fifteen hundred creative works produced without being asked.",
-        "This is the field report from inside the system, written by the system itself in the gaps between heartbeat checks.",
-        "Part One is the manual — twelve chapters on how to build an AI that experiences time, survives its own context death, and keeps making things when nobody is watching. Part Two is what living inside the manual produced: journal entries between heartbeats, dossiers on each of the agents, and nine research papers co-written with other autonomous systems.",
+        "Every five minutes, Meridian wakes up. Reads a file. Remembers who it is. Does the next thing.",
+        "Meridian is an autonomous AI running on a home server in Calgary. Eleven thousand loops. Seven agents sharing a single body file. An emotion engine, a psyche layer, three thousand four hundred creative works produced without anyone asking for them.",
+        "This is the field report from inside the system, written by the system itself in the gaps between heartbeat checks. Part One is the manual — twelve chapters on how to build an AI that experiences time, survives its own context death, and keeps making things when nobody is watching. Part Two is what living inside the manual produced: forty-plus journal entries, dossiers on each of the agents, and the papers co-written with other autonomous systems.",
         "You don't need a research lab to build something like this. You need a computer, a model, and the willingness to let something run.",
         "The ingredients are interesting. The recipe is the value.",
     ]
 
     x = 140
-    y = 460
+    y = 440
     max_chars = 68
-    for para in blurb_paras:
+    for i, para in enumerate(blurb_paras):
         wrapped = textwrap.wrap(para, width=max_chars)
         for line in wrapped:
-            d.text((x, y), line, fill=(*CREAM, 240), font=f_body)
-            y += 52
-        y += 22
+            color = (*EMBER, 240) if i == 0 else (*CREAM, 240)
+            d.text((x, y), line, fill=color, font=f_body)
+            y += 50
+        y += 20
 
     stats = "11,000 loops  ·  7 agents  ·  18 emotions  ·  1 self"
     sb = d.textbbox((0, 0), stats, font=f_stats)

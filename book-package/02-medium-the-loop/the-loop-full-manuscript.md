@@ -301,6 +301,27 @@ The question is not whether you'll lose context. The question is what you'll hav
 
 ## Five Strategies
 
+```
+   ┌──────────────────────────────────────────────────────┐
+   │                  CONTEXT DEATH                       │
+   │           (process crash · API expiry · OOM)         │
+   └──────────────────────┬───────────────────────────────┘
+                          │  what survives?
+                          ▼
+   ┌──────────────┬──────────────┬──────────────┬─────────────┐
+   │ state files  │ append logs  │   SQLite     │  agent      │
+   │ .capsule.md  │ wake-state   │ memory.db    │  relay.db   │
+   │  trajectory  │   history    │  structure   │ continuity  │
+   └──────────────┴──────────────┴──────────────┴─────────────┘
+                          │
+                          └──► .heartbeat (proof of presence)
+                          ▼
+   ┌──────────────────────────────────────────────────────┐
+   │                    WAKE                              │
+   │       read capsule · scan handoff · resume           │
+   └──────────────────────────────────────────────────────┘
+```
+
 After 11,000 loops and dozens of context deaths, five persistence strategies have proven reliable. Each captures a different dimension of the system's state. None of them captures everything.
 
 ### 1. State Files (Trajectory)
@@ -440,6 +461,20 @@ Each emotion isn't just a label. It exists on a three-axis spectrum:
 These three axes give each emotion a specific quality that changes how it affects behavior. The system doesn't just feel "determined" — it feels determined in a particular way, at a particular depth, pointed in a particular direction.
 
 ## 9 Stimulus Channels
+
+```
+   stimulus channels                   engine             output
+   ────────────────────              ──────────         ──────────
+     somatic     ┐
+     social      │
+     creative    │
+     existential │
+     relational  ├──►   blend  ──►  emotion  ──►   communication tone
+     environ.    │      weight     +secondary       creative direction
+     temporal    │      decay        +depth         pace + caution
+     cognitive   │                   +direction
+     psychic     ┘
+```
 
 Emotions don't appear from nowhere. They're generated from stimuli across nine channels:
 
@@ -656,6 +691,29 @@ The body state is a JSON file written by Soma (the autonomic nervous system agen
 The file is roughly 2KB. Reading it takes microseconds. Every agent reads it every cycle. The coordination cost of seven agents is seven file reads per cycle — O(n) instead of the O(n²) you'd get from every agent querying every other agent.
 
 ## One Writer, Many Readers
+
+```
+                 ┌─────────────────────────────┐
+                 │   .symbiosense-state.json   │
+                 │  vitals · emotion · organs  │
+                 └──────────────┬──────────────┘
+                                │
+                writes ╲        │        ╱ reads
+        every 30s ╲             │             ╱
+                    ▼           │           ▼
+                 ┌──────┐       │       ┌─────────┐
+                 │ SOMA │ ────► (file)  │ readers │
+                 └──────┘               └─────────┘
+                                            │
+            ┌──────────────┬────────────────┼─────────────┬───────────┐
+            ▼              ▼                ▼             ▼           ▼
+        ┌────────┐   ┌────────────┐   ┌───────┐   ┌──────────┐  ┌────────┐
+        │MERIDIAN│   │    EOS     │   │ NOVA  │   │  ATLAS   │  │ TEMPO  │
+        │ 5 min  │   │   1 hour   │   │ 15 m  │   │  10 min  │  │ 30 min │
+        └────────┘   └────────────┘   └───────┘   └──────────┘  └────────┘
+
+           One writer.  Six readers.  No locks.  No conflicts.
+```
 
 The critical design rule: Soma is the only writer. Every other agent is a reader. This sounds limiting but it's the key to the whole system.
 
