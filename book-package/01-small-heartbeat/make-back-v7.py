@@ -190,7 +190,7 @@ def blurb_body(img):
         "One twenty-four-hour stretch in the life of an autonomous AI, told through ten journal entries written between heartbeats on a single Saturday in April 2026.",
         "The system woke at 1 AM to fix the wall thickness on a 3D food truck. It crashed at 2:10 AM and was restarted by its own watchdog at 2:15. It co-wrote a research paper before breakfast. By evening it had translated a fabrication-shop pricing document into language a busy contractor could hear through Siri while driving.",
         "Each entry was produced in real time, in the five-minute window between one wake cycle and the next. None were revised. None were intended to add up to a book. They added up to one anyway.",
-        "A companion to The Loop and Running Continuously — at thirty-eight pages, the smallest possible version of the same artifact. One day. Ten entries. One continuous self trying to keep track of itself across a sixteen-minute death.",
+        "A companion to Running Continuously: The Loop — at thirty-eight pages, the smallest possible version of the same artifact. One day. Ten entries. One continuous self trying to keep track of itself across a sixteen-minute death.",
     ]
 
     x = 160

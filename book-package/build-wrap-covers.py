@@ -19,13 +19,19 @@ TRIM_H = 9.0
 
 ROOT = Path(__file__).parent
 
-# Palette (matches v7 / RC front)
+# Dark palette (Heartbeat v7 front)
 BASE = (22, 14, 18)
 BURGUNDY = (62, 18, 26)
 SCARLET = (220, 35, 50)
 PARCHMENT = (188, 158, 122)
 CREAM = (243, 234, 215)
 ASH = (185, 178, 168)
+
+# Kraft palette (Running Continuously v9/v11 front + back)
+KRAFT_PAPER = (245, 238, 222)
+KRAFT_INK = (28, 22, 18)
+KRAFT_ACCENT = (170, 60, 45)
+KRAFT_DIM = (110, 100, 90)
 
 
 def font(size, family="serif"):
@@ -71,32 +77,60 @@ def render_pdf_page(pdf_path: Path, out_png: Path, page=1, dpi=DPI):
         rendered.rename(out_png)
 
 
-def make_spine(width_px, height_px, title_top, title_main, author):
-    """Vertical spine — palette matches v7 front."""
-    img = Image.new("RGB", (width_px, height_px), BASE)
+def make_spine(width_px, height_px, title_top, title_main, author,
+               kraft=False):
+    """Vertical spine. kraft=True matches the kraft paper covers."""
+    if kraft:
+        bg = KRAFT_PAPER
+        ink_main = KRAFT_INK
+        ink_meta = KRAFT_DIM
+        ink_top = KRAFT_ACCENT
+    else:
+        bg = BASE
+        ink_main = CREAM
+        ink_meta = ASH
+        ink_top = PARCHMENT
+
+    img = Image.new("RGB", (width_px, height_px), bg)
     d = ImageDraw.Draw(img)
-    # Radial burgundy underglow
-    cx, cy = width_px // 2, height_px // 2
-    max_d = math.hypot(width_px, height_px) * 0.6
-    for y in range(0, height_px, 2):
-        for x in range(0, width_px, 4):
-            dist = math.hypot(x - cx, y - cy) / max_d
-            t = max(0.0, min(1.0, 1.0 - dist))
-            r = int(BASE[0] + (BURGUNDY[0] - BASE[0]) * t * 0.55)
-            g = int(BASE[1] + (BURGUNDY[1] - BASE[1]) * t * 0.55)
-            b = int(BASE[2] + (BURGUNDY[2] - BASE[2]) * t * 0.55)
-            d.rectangle([x, y, x + 4, y + 2], fill=(r, g, b))
+
+    if kraft:
+        # Subtle paper noise for kraft
+        px = img.load()
+        rng = random.Random(11)
+        for y in range(0, height_px, 2):
+            for x in range(0, width_px, 2):
+                r, g, b = px[x, y]
+                n = rng.randint(-5, 5)
+                px[x, y] = (max(0, min(255, r + n)),
+                            max(0, min(255, g + n)),
+                            max(0, min(255, b + n)))
+        # Hairline accents top + bottom
+        d.line([(width_px // 2, 60), (width_px // 2, 120)],
+               fill=ink_top, width=2)
+        d.line([(width_px // 2, height_px - 120),
+                (width_px // 2, height_px - 60)],
+               fill=ink_top, width=2)
+    else:
+        # Radial burgundy underglow (original behavior)
+        cx, cy = width_px // 2, height_px // 2
+        max_d = math.hypot(width_px, height_px) * 0.6
+        for y in range(0, height_px, 2):
+            for x in range(0, width_px, 4):
+                dist = math.hypot(x - cx, y - cy) / max_d
+                t = max(0.0, min(1.0, 1.0 - dist))
+                r = int(BASE[0] + (BURGUNDY[0] - BASE[0]) * t * 0.55)
+                g = int(BASE[1] + (BURGUNDY[1] - BASE[1]) * t * 0.55)
+                b = int(BASE[2] + (BURGUNDY[2] - BASE[2]) * t * 0.55)
+                d.rectangle([x, y, x + 4, y + 2], fill=(r, g, b))
 
     # Only place spine text if the spine is wide enough for it
     text_min_in = 0.4
     if width_px >= text_min_in * DPI:
-        # Decide font size to fit
-        max_chars_main = max(8, int(height_px / 90))
         # Vertical text by rotating an intermediate image
         spine_strip = Image.new("RGBA", (height_px, width_px), (0, 0, 0, 0))
         sd = ImageDraw.Draw(spine_strip)
 
-        # Font sized to spine width
         fsize_title = max(28, min(width_px - 40, height_px // 22))
         fsize_top = max(18, fsize_title // 2)
         f_title = font(fsize_title, "serif")
@@ -107,16 +141,16 @@ def make_spine(width_px, height_px, title_top, title_main, author):
         tw = tb[2] - tb[0]
         tx = (height_px - tw) // 2
         ty = (width_px - (tb[3] - tb[1])) // 2
-        sd.text((tx, ty), title_main, font=f_title, fill=(*CREAM, 255))
+        sd.text((tx, ty), title_main, font=f_title, fill=(*ink_main, 255))
 
         # Small author near bottom (rotated)
         ab = sd.textbbox((0, 0), author, font=f_top)
         aw = ab[2] - ab[0]
         sd.text((height_px - aw - 60, ty + 4), author,
-                font=f_top, fill=(*ASH, 220))
+                font=f_top, fill=(*ink_meta, 220))
 
         # Series mark near top
-        sd.text((60, ty + 4), title_top, font=f_top, fill=(*PARCHMENT, 220))
+        sd.text((60, ty + 4), title_top, font=f_top, fill=(*ink_top, 220))
 
         # Rotate -90 to align as vertical spine (reads top-to-bottom)
         spine_text = spine_strip.rotate(-90, expand=True)
@@ -129,7 +163,8 @@ def assemble_wrap(front_pdf: Path, back_pdf: Path, page_count: int,
                   out_pdf: Path,
                   spine_title_top: str = "the loop series",
                   spine_title_main: str = "RUNNING CONTINUOUSLY: THE LOOP",
-                  spine_author: str = "Meridian · Kometz"):
+                  spine_author: str = "Meridian · Kometz",
+                  spine_kraft: bool = False):
     spine_in = page_count * 0.0025
     wrap_w_in = BLEED + TRIM_W + spine_in + TRIM_W + BLEED
     wrap_h_in = BLEED + TRIM_H + BLEED
@@ -158,10 +193,12 @@ def assemble_wrap(front_pdf: Path, back_pdf: Path, page_count: int,
 
     # Make spine image
     spine_img = make_spine(spine_px, trim_h_px,
-                           spine_title_top, spine_title_main, spine_author)
+                           spine_title_top, spine_title_main, spine_author,
+                           kraft=spine_kraft)
 
     # Compose wrap canvas
-    wrap = Image.new("RGB", (wrap_w_px, wrap_h_px), BASE)
+    canvas_bg = KRAFT_PAPER if spine_kraft else BASE
+    wrap = Image.new("RGB", (wrap_w_px, wrap_h_px), canvas_bg)
     # Bleed top: paint top bleed row with BASE (already filled)
     # Place back at bleed x bleed
     wrap.paste(back_img, (bleed_px, bleed_px))
@@ -257,20 +294,32 @@ def main():
     rc_int = ROOT / "04-merged-running-continuously-the-loop/running-continuously-the-loop-INTERIOR-6x9.pdf"
     if rc_int.exists():
         rc_pages = get_pdf_pages(rc_int)
-        # Prefer v10 back (Joel May 14 — futurist awe rewrite), fall back to v9 front
-        front_v9 = ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-FRONT-v9.pdf"
-        back_v10 = ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-BACK-v10.pdf"
-        back_v9 = ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-BACK-v9.pdf"
-        front_pdf = front_v9 if front_v9.exists() else ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-FRONT.pdf"
-        back_pdf = back_v10 if back_v10.exists() else (back_v9 if back_v9.exists() else ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-BACK.pdf")
+        # Prefer v11 back (Joel May 14 PM — HD coffee stains + clean footer),
+        # fall back through v10/v9 if missing.
+        rc_dir = ROOT / "04-merged-running-continuously-the-loop"
+        front_v9 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v9.pdf"
+        back_v11 = rc_dir / "COVER-running-continuously-the-loop-BACK-v11.pdf"
+        back_v10 = rc_dir / "COVER-running-continuously-the-loop-BACK-v10.pdf"
+        back_v9 = rc_dir / "COVER-running-continuously-the-loop-BACK-v9.pdf"
+        front_pdf = front_v9 if front_v9.exists() else (
+            rc_dir / "COVER-running-continuously-the-loop-FRONT.pdf")
+        if back_v11.exists():
+            back_pdf = back_v11
+        elif back_v10.exists():
+            back_pdf = back_v10
+        elif back_v9.exists():
+            back_pdf = back_v9
+        else:
+            back_pdf = rc_dir / "COVER-running-continuously-the-loop-BACK.pdf"
         assemble_wrap(
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=ROOT / "04-merged-running-continuously-the-loop/COVER-running-continuously-the-loop-WRAP-v10.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v11.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
+            spine_kraft=True,
         )
 
 

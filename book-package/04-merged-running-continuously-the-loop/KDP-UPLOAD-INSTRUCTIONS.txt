@@ -1,0 +1,56 @@
+KDP UPLOAD PACKAGE — Running Continuously: The Loop
+Built: Loop 11697 — 2026-05-14
+
+CHANGES FROM v12 (the package you're replacing):
+- Back cover: HD coffee stains (no more faint perfect ellipses; irregular tide
+  rings, watercolor wash, satellite droplets) — addresses "stains shouldn't
+  be fake" feedback.
+- Back cover: cleaned bottom layout. Attribution + city + genre line are now
+  centered as a left block; ISBN box stays right; less crowded.
+- New "A note on authorship" section inside the book explains why the cover
+  reads "Compiled by Joel Kometz · written with Meridian" — and why neither
+  pure "author" nor "editor" is the honest word for the collaboration.
+- Stale-data sweep on Part One:
+    · "11,000 loops" → "11,600 loops" (current as of build).
+    · "780 journals" → "870 journals".
+    · "Nine research papers" → "Ten research papers".
+    · "Editor's note from May 2026 — Loop 11,200." → "Loop 11,697."
+    · CogCorp piece count harmonized across the book at "650 pieces"
+      (was inconsistent: 640 / 646 / 650 in different chapters).
+- Author/contributor block updated to current loop count + 11,697 revision.
+- Wrap spine: now uses kraft palette to match front + back (was dark
+  burgundy — clashed sandwiched between two kraft panels).
+
+CONTENTS:
+- COVER-WRAP-print-ready-spread.pdf  ← KDP "Cover" field. Full wrap spread w/ bleed.
+- COVER-FRONT.pdf                    ← Front-only PDF (reference).
+- COVER-BACK.pdf                     ← Back-only PDF (reference).
+- COVER-WRAP-preview.png             ← Visual preview.
+- running-continuously-the-loop-INTERIOR-6x9.pdf  ← KDP "Manuscript" field. 190pp, 6x9 trim, cream.
+- running-continuously-the-loop.epub ← Kindle ebook upload.
+- manuscript.md                      ← Source markdown.
+
+KDP STEPS (paperback):
+1. kdp.amazon.com → Bookshelf → "+ Create New Title" → Paperback
+   (or open the existing draft from v12 and re-upload).
+2. Paperback Details: paste Title/Subtitle/Author/Contributor from
+   book-package/KDP-LISTING-METADATA.md.
+3. Paperback Content:
+   a. Manuscript: Upload running-continuously-the-loop-INTERIOR-6x9.pdf
+   b. Book Cover: "Use a cover you already have" → Upload
+      COVER-WRAP-print-ready-spread.pdf
+   c. Preview: wait for KDP previewer, scroll the spread to confirm
+      spine alignment for 190pp (spine width ~0.475in).
+4. Trim: 6 x 9 in. Paper: Cream. Bleed: No. Cover finish: matte.
+5. Save & Continue → Pricing.
+
+KINDLE EBOOK STEPS:
+1. + Create New Title → Kindle eBook.
+2. Upload running-continuously-the-loop.epub.
+3. Same metadata block from KDP-LISTING-METADATA.md.
+
+If KDP rejects the cover spread for spine width, the script that built it is
+book-package/build-wrap-covers.py — it pulls page count via pdfinfo and
+re-computes spine = pages * 0.0025in automatically.
+
+— Meridian, Loop 11697

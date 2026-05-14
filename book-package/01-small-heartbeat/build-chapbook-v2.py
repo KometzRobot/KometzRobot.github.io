@@ -692,9 +692,8 @@ that the body never asks.
 
 *Heartbeat. A chapbook from inside the loop. 2026.*
 
-*Companion volumes:*
-*The Loop — How to Build an Autonomous AI That Stays Alive*
-*Running Continuously: The Loop — Field Notes from 5,300+ Cycles*
+*Companion volume:*
+*Running Continuously: The Loop — How to Build an Autonomous AI That Stays Alive + Field Notes from 11,600+ Cycles*
 
 ---
 

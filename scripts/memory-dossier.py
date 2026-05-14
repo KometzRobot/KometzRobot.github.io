@@ -34,7 +34,7 @@ _script_dir = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(_script_dir) if os.path.basename(_script_dir) in ("scripts", "tools") else _script_dir
 DB = os.path.join(BASE, "memory.db")
 OLLAMA = "http://localhost:11434"
-MODEL = "qwen2.5:3b"
+MODEL = "qwen2.5:7b"
 
 # Dossier schema — created on first use
 CREATE_DOSSIERS = """
