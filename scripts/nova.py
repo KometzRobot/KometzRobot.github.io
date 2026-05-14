@@ -244,6 +244,7 @@ def check_stale_python_processes():
         "nova.py", "eos-watchdog.py", "loop-fitness.py",
         "push-live-status.py", "meridian-loop.py", "cascade.py",
         "atlas-runner.sh", "sentinel-gatekeeper.py",
+        "scripts/meridian-wiki.py", "meridian-wiki.py",
     }
     try:
         result = subprocess.run(

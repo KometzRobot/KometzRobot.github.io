@@ -73,9 +73,8 @@ def main():
     check("IMAP Bridge (port 1144)", port_open(1144))
     check("SMTP Bridge (port 1026)", port_open(1026))
 
-    # 8092 should NOT be running
-    check("Port 8092 cleaned up", not port_open(8092),
-          "loop-control-center should be dead")
+    # 8092 = meridian-wiki (Loop 11665+). Must be running.
+    check("Wiki (port 8092)", port_open(8092))
 
     # Ollama
     ollama_ok = "active" in run("systemctl is-active ollama 2>/dev/null")
