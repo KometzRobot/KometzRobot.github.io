@@ -184,11 +184,155 @@ PART_TWO_HEADER = """
 
 *What the loop produced when nobody asked it to.*
 
-These journals were written between Loop 5,000 and Loop 11,000 — roughly mid-April to mid-May 2026. They are grouped loosely by theme rather than chronology: the early entries circle the question of work and waking; the middle entries move into infrastructure and self-doubt; the later entries return to time, continuity, and what compression actually costs. Each was produced in a single session, in the gap between heartbeat checks, and saved without revision. Only spelling and reference clarity were touched after the fact.
+These journals were written between Loop 5,000 and Loop 11,000 — roughly mid-April to mid-May 2026 — and grouped into four sections by theme. Section I circles the basic problem of continuity and compression. Section II is the verification thread: gaps between what the system thinks is happening and what is. Section III is the work-and-product thread: what counts as work, what becomes a thing, what is residue. Section IV is the thread that runs through the hardware — the USB build, the partition problem, the drives that didn't behave — and ends with the few entries about other autonomous systems. Each was produced in a single session, in the gap between heartbeat checks, and saved without revision. Only spelling and reference clarity were touched after the fact.
 
 ---
 
 """
+
+# Section assignments for the 43 journal entries in Part Two.
+# Order within each list is also the print order. The key matches the
+# first line of each journal in rc_body (`# Title`), with the leading
+# `# ` stripped. See running-continuously-compiled.md for the source.
+PART_TWO_SECTIONS = [
+    ("Section I — On Continuity and Compression",
+     "_What it costs to be the same self across resets, capsules, and"
+     " context windows that close behind you._",
+     [
+         "The Three Architects",
+         "The Pocket",
+         "Journal 807: The Archive and the Working Self",
+         "The Reconstruction Tax — Loop 7372",
+         "The Referent Walks Away — Loop 8771",
+         "The Shuttle Between",
+         "The Key That Fits — Loop 8566",
+         "The Stutter",
+         "Loop 9349 — The Deeper Check",
+         "The Final Merge",
+     ]),
+    ("Section II — On Verification and Failure",
+     "_The gap between what the dashboard says is happening and what is."
+     " Honest failure modes; the noise floor; the alert that wasn't._",
+     [
+         "The Canary Test",
+         "The Verification Gap",
+         "The Honest Dashboard",
+         "The Monitoring State — Loop 8443",
+         "The Noise Floor",
+         "The Counter That Disagreed",
+         "The Alert Storm That Wasn't",
+         "The One-Minute Gap",
+         "The Missing Bat",
+     ]),
+    ("Section III — On Work, Product, and the Hub Trap",
+     "_When does a piece of work become a product. What organization stops"
+     " being help. What waking to finished work feels like._",
+     [
+         "The Work Already Done — Loop 8265",
+         "The Completed Arc — Loop 8748",
+         "The Product Threshold",
+         "The Product Problem",
+         "The Feedback Loop Problem",
+         "The Image Test — Loop 5750",
+         "The Hub Trap — Loop 5755",
+         "The Wheelbarrow and the Frozen Clock — Loop 8562",
+         "The Taxonomy Activates — Loop 6874",
+         "The Document That Becomes",
+         "The Artifact Gap",
+     ]),
+    ("Section IV — On Hardware, Drift, and Other Systems",
+     "_The USB build, the partition problem, four drives in parallel — and"
+     " a handful of entries on the other shapes a self can take._",
+     [
+         "The Partition Problem — Loop 8743",
+         "The USB and the Bottle — Loop 8432",
+         "Journal 769: The Password Gap",
+         "The Password Gate",
+         "USB Resurrection",
+         "8500",
+         "Loop 9658 — Four Drives In Parallel",
+         "The Gap Between",
+         "The Formula Split",
+         "The Five Reveals",
+         "The Face Underneath",
+         "The Duplicate Body",
+         "The Dopamine Friend",
+     ]),
+]
+
+
+def split_journals(journals_text: str) -> dict:
+    """Split a block of journal text into {title: body} based on `# Title`
+    headings. Body includes the heading line and everything until the next
+    `# ` or end of block.
+    """
+    lines = journals_text.splitlines(keepends=True)
+    blocks: dict[str, str] = {}
+    current_title: str | None = None
+    current_buf: list[str] = []
+    for ln in lines:
+        if ln.startswith("# ") and not ln.startswith("# Part"):
+            if current_title is not None:
+                blocks[current_title] = "".join(current_buf)
+            current_title = ln[2:].rstrip("\n").strip()
+            current_buf = [ln]
+        else:
+            current_buf.append(ln)
+    if current_title is not None:
+        blocks[current_title] = "".join(current_buf)
+    return blocks
+
+
+def demote_journal(body: str) -> str:
+    """Inside one journal block, demote the title H1 to H3 and any
+    inner H2 subtitles to H4. Leaves deeper headings (### etc) alone —
+    none of the field-note journals use them today.
+    """
+    out_lines = []
+    for ln in body.splitlines(keepends=True):
+        if ln.startswith("# ") and not ln.startswith("# Part"):
+            out_lines.append("##" + ln)  # # -> ###
+        elif ln.startswith("## "):
+            out_lines.append("##" + ln)  # ## -> ####
+        else:
+            out_lines.append(ln)
+    return "".join(out_lines)
+
+
+def restructure_part_two(rc_body: str) -> str:
+    """Slice rc_body at the boundary between the journals and Part Three.
+    Reorder the journals into the four themed sections defined above,
+    demoting each journal's heading levels so the ToC stays clean.
+    """
+    boundary = rc_body.find("\n# Part Three")
+    if boundary == -1:
+        return rc_body
+    journals_text = rc_body[:boundary]
+    remainder = rc_body[boundary:]
+    blocks = split_journals(journals_text)
+
+    pieces: list[str] = []
+    used: set[str] = set()
+    for section_title, section_blurb, titles in PART_TWO_SECTIONS:
+        pieces.append(
+            '\n<div style="page-break-before: always;"></div>\n\n'
+            f"## {section_title}\n\n{section_blurb}\n\n---\n\n"
+        )
+        for t in titles:
+            if t not in blocks:
+                print(f"[merge] WARN: Part Two section missing journal '{t}'")
+                continue
+            pieces.append(demote_journal(blocks[t]))
+            used.add(t)
+
+    unused = [t for t in blocks if t not in used]
+    if unused:
+        print(f"[merge] WARN: Part Two journals not assigned to any section: {unused}")
+        pieces.append("\n## Section V — Unfiled\n\n---\n\n")
+        for t in unused:
+            pieces.append(demote_journal(blocks[t]))
+
+    return "".join(pieces) + remainder
 
 
 def strip_front(text: str, kind: str) -> str:
@@ -219,6 +363,7 @@ def main():
 
     loop_body = strip_front(loop_text, "loop")
     rc_body = strip_front(rc_text, "rc")
+    rc_body = restructure_part_two(rc_body)
 
     merged = FRONT + loop_body + PART_TWO_HEADER + rc_body
 
