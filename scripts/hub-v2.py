@@ -2259,11 +2259,23 @@ class HubHandler(http.server.BaseHTTPRequestHandler):
                 lines = min(int(qs.get("lines", 50)), 500)
             except (ValueError, TypeError):
                 lines = 50
+            errors_only = qs.get("errors", "") in ("1", "true", "yes")
             if fname in LOG_FILES:
                 fpath = os.path.join(BASE, LOG_FILES[fname])
                 try:
-                    result = _run(f"tail -n {lines} {fpath}", timeout=5)
-                    self._send_json({"content": result})
+                    if errors_only:
+                        # Show last N lines with error/exception/traceback/critical,
+                        # plus 2 trailing lines of context for tracebacks.
+                        cmd = (
+                            f"grep -iE 'error|traceback|exception|critical|warn' "
+                            f"-A 2 --no-group-separator {fpath} | tail -n {lines}"
+                        )
+                    else:
+                        cmd = f"tail -n {lines} {fpath}"
+                    result = _run(cmd, timeout=5)
+                    if not result.strip():
+                        result = "(no matching lines)" if errors_only else "(empty)"
+                    self._send_json({"content": result, "errors_only": errors_only})
                 except Exception as e:
                     self._send_json({"error": str(e)})
             else:
