@@ -145,7 +145,7 @@ def index_all():
     # Index creative works
     print("Indexing creative works...")
     rows = db.execute("SELECT id, type, title, content, agent, created FROM creative").fetchall()
-    cre_rows = [(f"cre_{r[0]}", f"[{r[1]}] {r[2]}: {r[3][:500]}",
+    cre_rows = [(f"cre_{r[0]}", f"[{r[1] or ''}] {r[2] or ''}: {(r[3] or '')[:500]}",
                  {"table": "creative", "type": r[1] or "", "title": r[2] or "",
                   "agent": r[4] or "", "created": r[5] or ""})
                 for r in rows]
