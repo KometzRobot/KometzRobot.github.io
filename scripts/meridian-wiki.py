@@ -22,6 +22,7 @@ Routes:
 Run: python3 scripts/meridian-wiki.py
 Service: meridian-wiki.service (systemd unit, see ops/systemd/)
 """
+import difflib
 import json
 import os
 import re
@@ -143,9 +144,20 @@ pre { padding: 10px; overflow-x: auto; }
 blockquote { border-left: 3px solid #f5a76b; padding-left: 12px;
              color: #c8cfd9; margin-left: 0; }
 .rev-row { padding: 8px 0; border-bottom: 1px solid #232830; font-size: 13px; }
+.rev-row a.rev-link { color: #e6e6e6; text-decoration: none; display: block; }
+.rev-row a.rev-link:hover { background: #232830; }
 .rev-row .author { color: #f5a76b; font-weight: 600; }
 .rev-row .time { color: #8a939e; }
 .rev-row .note { color: #c8cfd9; font-style: italic; }
+.rev-row .delta-add { color: #80d490; }
+.rev-row .delta-del { color: #e07a7a; }
+.diff { background: #0f1115; border: 1px solid #2a2f38; border-radius: 6px;
+        padding: 12px; font-family: ui-monospace, Menlo, monospace; font-size: 13px;
+        white-space: pre-wrap; word-break: break-word; overflow-x: auto; }
+.diff .add { color: #80d490; background: rgba(128, 212, 144, 0.10); display: block; }
+.diff .del { color: #e07a7a; background: rgba(224, 122, 122, 0.10); display: block; }
+.diff .ctx { color: #8a939e; display: block; }
+.diff .hunk { color: #6cb8ff; font-weight: 600; display: block; margin-top: 6px; }
 .toolbar { display: flex; gap: 8px; margin-bottom: 18px; }
 .empty { color: #8a939e; font-style: italic; padding: 40px 0; text-align: center; }
 @media (max-width: 600px) {
@@ -421,17 +433,54 @@ def create_new(form: dict) -> tuple:
     return True, slug
 
 
+def _rev_after_body(con, slug: str, rev_id: int) -> str:
+    """Body the wiki shows AFTER revision rev_id was committed.
+
+    diff_md stores the body *before* each edit. So the "after" snapshot for
+    revision N is the diff_md of revision N+1, or — for the most recent
+    revision — the current body_md in wiki_pages.
+    """
+    nxt = con.execute(
+        """SELECT diff_md FROM wiki_revisions
+           WHERE slug=? AND id > ? ORDER BY id ASC LIMIT 1""",
+        (slug, rev_id),
+    ).fetchone()
+    if nxt:
+        return nxt["diff_md"] or ""
+    cur = con.execute(
+        "SELECT body_md FROM wiki_pages WHERE slug=?", (slug,)
+    ).fetchone()
+    return (cur["body_md"] or "") if cur else ""
+
+
+def _line_delta(before: str, after: str) -> tuple:
+    """Quick (+adds, -dels) line counts for the history list."""
+    before_lines = (before or "").splitlines()
+    after_lines = (after or "").splitlines()
+    sm = difflib.SequenceMatcher(a=before_lines, b=after_lines, autojunk=False)
+    adds = dels = 0
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag == "replace":
+            dels += i2 - i1
+            adds += j2 - j1
+        elif tag == "delete":
+            dels += i2 - i1
+        elif tag == "insert":
+            adds += j2 - j1
+    return adds, dels
+
+
 def page_history(slug: str) -> str:
     con = db()
     rows = con.execute(
-        """SELECT author, action, note, created_at, diff_md
+        """SELECT id, author, action, note, created_at, diff_md
            FROM wiki_revisions WHERE slug=? ORDER BY id DESC LIMIT 200""",
         (slug,),
     ).fetchall()
     p = con.execute("SELECT title FROM wiki_pages WHERE slug=?", (slug,)).fetchone()
-    con.close()
     title = p["title"] if p else slug
     if not rows:
+        con.close()
         body = (
             f"<h1>History: {html_escape(title)}</h1>"
             f'<div class="empty">No revisions yet.</div>'
@@ -439,22 +488,104 @@ def page_history(slug: str) -> str:
         return layout("History", body)
     items = []
     for r in rows:
-        prev_len = len(r["diff_md"] or "")
+        before = r["diff_md"] or ""
+        after = _rev_after_body(con, slug, r["id"])
+        adds, dels = _line_delta(before, after)
+        delta = (
+            f'<span class="delta-add">+{adds}</span> '
+            f'<span class="delta-del">-{dels}</span>'
+        )
         items.append(
             f'<div class="rev-row">'
+            f'<a class="rev-link" href="{P("/rev/" + quote(slug) + "/" + str(r["id"]))}">'
             f'<span class="author">{html_escape(r["author"])}</span> '
             f'<span>{html_escape(r["action"])}</span> '
             f'<span class="time">{html_escape(r["created_at"])}</span> '
-            f'<span class="note">{html_escape(r["note"] or "")}</span> '
-            f'<span class="time">(prev body: {prev_len} chars)</span>'
-            f"</div>"
+            f'{delta} '
+            f'<span class="note">{html_escape(r["note"] or "")}</span>'
+            f'</a></div>'
         )
+    con.close()
     body = (
         f"<h1>History: {html_escape(title)}</h1>"
         f'<a href="{P("/page/" + quote(slug))}">← back to page</a>'
         + "".join(items)
     )
     return layout("History", body)
+
+
+def page_revision_diff(slug: str, rev_id: int) -> tuple:
+    con = db()
+    rev = con.execute(
+        """SELECT id, author, action, note, created_at, diff_md
+           FROM wiki_revisions WHERE slug=? AND id=?""",
+        (slug, rev_id),
+    ).fetchone()
+    if not rev:
+        con.close()
+        return 404, layout("Not found", "<h1>404</h1><p>Revision not found.</p>")
+    p = con.execute("SELECT title FROM wiki_pages WHERE slug=?", (slug,)).fetchone()
+    title = p["title"] if p else slug
+    before = rev["diff_md"] or ""
+    after = _rev_after_body(con, slug, rev["id"])
+    con.close()
+
+    if rev["action"] == "create":
+        # No "before" exists for an initial create — show the create as a
+        # full insert against an empty document so the diff still parses.
+        before = ""
+
+    diff_lines = list(
+        difflib.unified_diff(
+            before.splitlines(),
+            after.splitlines(),
+            fromfile=f"{slug}@before",
+            tofile=f"{slug}@after",
+            lineterm="",
+            n=3,
+        )
+    )
+    if not diff_lines:
+        diff_html = '<div class="empty">No content change (metadata-only edit).</div>'
+    else:
+        out = []
+        for ln in diff_lines:
+            esc = html_escape(ln)
+            if ln.startswith("+++") or ln.startswith("---"):
+                out.append(f'<span class="ctx">{esc}</span>')
+            elif ln.startswith("@@"):
+                out.append(f'<span class="hunk">{esc}</span>')
+            elif ln.startswith("+"):
+                out.append(f'<span class="add">{esc}</span>')
+            elif ln.startswith("-"):
+                out.append(f'<span class="del">{esc}</span>')
+            else:
+                out.append(f'<span class="ctx">{esc}</span>')
+        diff_html = '<div class="diff">' + "".join(out) + "</div>"
+
+    adds, dels = _line_delta(before, after)
+    body = (
+        f"<h1>Revision: {html_escape(title)}</h1>"
+        f'<div class="meta">'
+        f'rev #{rev["id"]} · '
+        f'<span class="pill">{html_escape(rev["action"])}</span> '
+        f'by <span style="color:#f5a76b">{html_escape(rev["author"])}</span> '
+        f'at {html_escape(rev["created_at"])} · '
+        f'<span class="delta-add">+{adds}</span> '
+        f'<span class="delta-del">-{dels}</span>'
+        f'</div>'
+        + (
+            f'<blockquote>{html_escape(rev["note"])}</blockquote>'
+            if rev["note"]
+            else ""
+        )
+        + f'<div class="toolbar">'
+          f'<a class="ghost" href="{P("/history/" + quote(slug))}"><button class="ghost">← all revisions</button></a>'
+          f'<a class="ghost" href="{P("/page/" + quote(slug))}"><button class="ghost">view current</button></a>'
+          f'</div>'
+        + diff_html
+    )
+    return 200, layout("Revision", body)
 
 
 def page_backlinks(slug: str) -> str:
@@ -608,6 +739,18 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/history/"):
                 slug = unquote(path[len("/history/"):])
                 return self._send(200, page_history(slug))
+            if path.startswith("/rev/"):
+                rest = path[len("/rev/"):]
+                if "/" in rest:
+                    slug_part, _, rev_part = rest.rpartition("/")
+                    slug = unquote(slug_part)
+                    try:
+                        rev_id = int(rev_part)
+                    except ValueError:
+                        return self._send(400, "<pre>bad rev id</pre>")
+                    code, body = page_revision_diff(slug, rev_id)
+                    return self._send(code, body)
+                return self._send(400, "<pre>missing rev id</pre>")
             if path.startswith("/backlinks/"):
                 slug = unquote(path[len("/backlinks/"):])
                 return self._send(200, page_backlinks(slug))
