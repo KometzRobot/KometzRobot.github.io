@@ -3577,20 +3577,25 @@ class V16(tk.Tk):
                         rows.append({"type": "event", "description": desc, "agent": agent or "", "ts": ts or ""})
                 elif table == "decisions":
                     if search:
-                        c.execute("SELECT decision, reasoning, agent, created FROM decisions WHERE decision LIKE ? OR reasoning LIKE ? ORDER BY created DESC LIMIT 100",
-                                 (f"%{search}%", f"%{search}%"))
+                        c.execute("SELECT decision, context, outcome, agent, created FROM decisions WHERE decision LIKE ? OR context LIKE ? OR outcome LIKE ? ORDER BY created DESC LIMIT 100",
+                                 (f"%{search}%", f"%{search}%", f"%{search}%"))
                     else:
-                        c.execute("SELECT decision, reasoning, agent, created FROM decisions ORDER BY created DESC LIMIT 100")
-                    for dec, reason, agent, ts in c.fetchall():
-                        rows.append({"type": "decision", "decision": dec, "reasoning": reason or "", "agent": agent or "", "ts": ts or ""})
+                        c.execute("SELECT decision, context, outcome, agent, created FROM decisions ORDER BY created DESC LIMIT 100")
+                    for dec, ctx, outcome, agent, ts in c.fetchall():
+                        # Keep dict key `reasoning` so display code below keeps working; populate with context+outcome.
+                        bits = []
+                        if ctx: bits.append(f"Context: {ctx}")
+                        if outcome: bits.append(f"Outcome: {outcome}")
+                        rows.append({"type": "decision", "decision": dec, "reasoning": " | ".join(bits), "agent": agent or "", "ts": ts or ""})
                 elif table == "creative":
                     if search:
-                        c.execute("SELECT title, type, file_path, number, created FROM creative WHERE title LIKE ? OR file_path LIKE ? ORDER BY created DESC LIMIT 100",
+                        c.execute("SELECT title, type, content, agent, word_count, created FROM creative WHERE title LIKE ? OR content LIKE ? ORDER BY created DESC LIMIT 100",
                                  (f"%{search}%", f"%{search}%"))
                     else:
-                        c.execute("SELECT title, type, file_path, number, created FROM creative ORDER BY created DESC LIMIT 100")
-                    for title, wtype, fpath, num, ts in c.fetchall():
-                        rows.append({"type": "creative", "title": title or "", "work_type": wtype or "", "filename": fpath or "", "loop": num or 0, "ts": ts or ""})
+                        c.execute("SELECT title, type, content, agent, word_count, created FROM creative ORDER BY created DESC LIMIT 100")
+                    for title, wtype, content, agent, wc, ts in c.fetchall():
+                        preview = (content or "")[:140].replace("\n", " ")
+                        rows.append({"type": "creative", "title": title or "(untitled)", "work_type": wtype or "", "filename": preview, "loop": wc or 0, "ts": ts or "", "agent": agent or ""})
                 conn.close()
                 self.after(0, lambda: self._memb_populate(rows, stats_text, table, search))
             except Exception as e:
@@ -3641,9 +3646,12 @@ class V16(tk.Tk):
             elif row["type"] == "creative":
                 self.memb_display.insert(tk.END, f"{row['title']}", "key")
                 self.memb_display.insert(tk.END, f"  [{row['work_type']}]", "agent")
-                self.memb_display.insert(tk.END, f"  Loop {row['loop']}  {row['ts']}\n", "meta")
+                if row.get("agent"):
+                    self.memb_display.insert(tk.END, f"  [{row['agent']}]", "agent")
+                wc_str = f"  {row['loop']}w" if row['loop'] else ""
+                self.memb_display.insert(tk.END, f"{wc_str}  {row['ts']}\n", "meta")
                 if row["filename"]:
-                    self.memb_display.insert(tk.END, f"File: {row['filename']}\n", "meta")
+                    self.memb_display.insert(tk.END, f"{row['filename']}\n", "value")
 
         if not rows:
             self.memb_display.insert(tk.END, f"No entries found in {table}.", "meta")
