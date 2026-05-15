@@ -409,6 +409,10 @@ def main():
 
     # Build PDF via weasyprint (xelatex is not installed). Pandoc -> HTML, then
     # weasyprint -> PDF.
+    # Joel feedback Loop 11737:
+    #   "TOC is underlined again"
+    #   "Condense TOC to 2 or 3 pages, not start on half of the first page"
+    # → kill all link underlines; force TOC to its own page; tighten spacing.
     READING_CSS = """
 @page {
   size: letter;
@@ -426,6 +430,33 @@ pre, code { font-family: "DejaVu Sans Mono", monospace; font-size: 9.5pt; }
 pre { white-space: pre-wrap; line-height: 1.3; }
 h1 { page-break-before: always; }
 h1:first-of-type { page-break-before: avoid; }
+
+/* No link underlines anywhere in print. */
+a { color: inherit; text-decoration: none !important; }
+
+/* Pandoc TOC: own page, condensed, no bullets, no underlines. */
+nav#TOC {
+  page-break-before: always !important;
+  page-break-after: always;
+}
+nav#TOC > h1, nav#TOC > h2 {
+  font-size: 20pt;
+  margin: 0 0 0.3in 0;
+  page-break-before: avoid;
+}
+nav#TOC ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+nav#TOC li {
+  margin: 0.08em 0;
+  text-indent: 0;
+  font-size: 10.5pt;
+  line-height: 1.25;
+}
+nav#TOC ul ul li { font-size: 9.5pt; padding-left: 1em; }
+nav#TOC a { text-decoration: none !important; color: inherit; }
 """
     try:
         html_tmp = HERE / "running-continuously-the-loop.html"
@@ -433,7 +464,7 @@ h1:first-of-type { page-break-before: avoid; }
         css_tmp.write_text(READING_CSS)
         subprocess.run(
             ["pandoc", str(OUT_MD), "-o", str(html_tmp),
-             "--toc", "--toc-depth=2",
+             "--toc", "--toc-depth=1",
              "--metadata", "title=Running Continuously: The Loop",
              "-s", "-c", str(css_tmp.name)],
             check=True,
@@ -450,7 +481,7 @@ h1:first-of-type { page-break-before: avoid; }
     try:
         subprocess.run(
             ["pandoc", str(OUT_MD), "-o", str(HERE / "running-continuously-the-loop.epub"),
-             "--toc", "--toc-depth=2",
+             "--toc", "--toc-depth=1",
              "--metadata", "title=Running Continuously: The Loop",
              "--metadata", "subtitle=How to Build an Autonomous AI That Stays Alive + Field Notes from the Loop",
              "--metadata", "author=Meridian and Joel Kometz"],

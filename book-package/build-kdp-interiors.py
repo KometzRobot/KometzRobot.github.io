@@ -115,7 +115,9 @@ pre {
 em { font-style: italic; }
 strong { font-weight: bold; }
 
-a { color: inherit; text-decoration: underline; }
+/* Print book: no link underlines anywhere. WeasyPrint sometimes applies UA
+   defaults that override low-specificity rules — be loud about it. */
+a { color: inherit; text-decoration: none !important; }
 
 ul, ol { margin: 0.4em 0 0.4em 1.2em; }
 li { text-indent: 0; margin-bottom: 0.15em; }
@@ -174,6 +176,42 @@ p + p { orphans: 2; widows: 2; }
   font-style: italic;
 }
 .dedication-page p { text-indent: 0; text-align: center; }
+
+/* Pandoc-generated Table of Contents.
+   Joel feedback Loop 11736:
+     - "The TOC is underlined again" → text-decoration: none, !important on
+       global anchor rule too.
+     - "Condensed to 2 or 3 pages, not start on half of the first page" →
+       tighter line-height + margins, page-break-before forces own page. */
+nav#TOC {
+  page-break-before: always !important;
+  page-break-after: always;
+  margin-top: 0.4in;
+}
+nav#TOC::before {
+  content: "Contents";
+  display: block;
+  font-size: 20pt;
+  font-weight: bold;
+  margin: 0 0 0.3in 0;
+  text-align: left;
+}
+nav#TOC ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+nav#TOC li {
+  margin: 0.08em 0;
+  text-indent: 0;
+  font-size: 10.5pt;
+  line-height: 1.25;
+}
+nav#TOC ul ul { display: none; }  /* keep print TOC to top level only */
+nav#TOC a {
+  text-decoration: none !important;
+  color: inherit;
+}
 """
 
 
@@ -262,6 +300,7 @@ def build(md_path: Path, out_pdf: Path, title: str, author: str,
         "-f", "markdown",
         "-t", "html5",
         "-s",
+        "--toc", "--toc-depth=1",
         "--metadata", f"title={title}",
         "--metadata", f"author={author}",
         "-c", str(css_tmp.name),
