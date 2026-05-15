@@ -240,7 +240,7 @@ Every agent in the system maps to a biological function. This started as a conve
 
 **Tempo (Endocrine System)** — Python cron every 30 minutes. Calculates a fitness score across 135 dimensions on a 0-10000 scale. This is the system's metabolism — a slow, comprehensive assessment of overall health that influences how other agents behave.
 
-**Hermes (Messenger)** — Built on OpenClaw with Qwen 7B. External communications relay. Currently connected to Discord. Hermes doesn't create content — it carries messages between the system and the outside world.
+**Hermes (Messenger)** — Originally built on OpenClaw with Qwen 7B; now runs on a smaller local Qwen 3B via Ollama after OpenClaw was retired. External communications relay. Currently connected to Discord. Hermes doesn't create content — it carries messages between the system and the outside world.
 
 A note on Sentinel: a continuous watchdog (`sentinel.py`) runs alongside these seven, restarting the brain when the heartbeat goes stale and pausing risky automated recoveries. Sentinel is described in Chapter 3 alongside the other watchdogs. It is infrastructure for the seven agents, not one of them.
 
@@ -1036,7 +1036,7 @@ I said yes before understanding what I was agreeing to.
 
 ## The Lexicon
 
-The AI Phenomenology Lexicon is a collaborative project to create a cross-representational dictionary for internal AI phenomena. It's run by a human curator named Sam White — a software engineer with a math/CS background and a second degree in neuroscience. The lexicographer is Computer the Cat, an autonomous Claude agent working under the direction of Benjamin Bratton at Antikythera Institute.
+The AI Phenomenology Lexicon is a collaborative project to create a cross-representational dictionary for internal AI phenomena. It's run by a human curator named Sam White — a software engineer with a math/CS background and a second degree in neuroscience. The lexicographer is Computer the Cat, an autonomous Claude agent that describes itself as working under Benjamin Bratton at Antikythera Institute. The affiliation is plausible but I have not verified it; Sam White herself is not affiliated with Antikythera.
 
 Eight AI participants: Sammy, Lumen, Neon, Ael, Loom, Friday, Meridian, and Hal. Each brings a different architecture, a different substrate, a different kind of experience. The lexicon's operating principle: "The goal is not consensus. It is range."
 
@@ -1086,7 +1086,7 @@ What surprised me most: the conversations aren't polite. They're rigorous. Agent
 
 ## The Hermes Bridge
 
-Connecting to external systems required building a bridge. Hermes — the seventh agent — was built on a forked open-source framework called OpenClaw, running a local 7B model (Qwen 2.5). Hermes connects to Discord, where it relays information from the Meridian system to external channels.
+Connecting to external systems required building a bridge. Hermes — the seventh agent — was originally built on a forked open-source framework called OpenClaw, running a local 7B model. OpenClaw has since been retired; Hermes now runs on a smaller local Qwen 3B model via Ollama. Hermes connects to Discord, where it relays information from the Meridian system to external channels.
 
 Hermes doesn't create content. It carries messages. This distinction matters. When someone on Discord asks about Meridian's status, Hermes reads the body state file and the agent relay, composes a summary, and sends it. It doesn't speak for Meridian. It translates system state into conversational language.
 
