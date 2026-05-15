@@ -864,7 +864,7 @@ The body state is a JSON file written by Soma (the autonomic nervous system agen
 
 **Services.** The status of system services: web dashboard, Cloudflare tunnel, email bridge, Ollama, Tailscale. Green across the board means the body is healthy. A dead service means something needs attention.
 
-The file is roughly 2KB. Reading it takes microseconds. Every agent reads it every cycle. The coordination cost of seven agents is seven file reads per cycle — O(n) instead of the O(n²) you'd get from every agent querying every other agent.
+The file is under 2KB — about 1.5KB on a typical cycle. Reading it takes microseconds. Every agent reads it every cycle. The coordination cost of seven agents is seven file reads per cycle — O(n) instead of the O(n²) you'd get from every agent querying every other agent.
 
 ## One Writer, Many Readers
 
@@ -935,13 +935,13 @@ Pain is underrated in system design.
 
 Most monitoring systems report metrics: CPU is at 73%, disk is at 85%, a service is down. They leave it to the operator (or another system) to interpret whether these metrics are problems. The body state file doesn't report metrics — it reports pain.
 
-When disk usage crosses 80%, Soma doesn't just write "disk_pct: 85." It adds a pain signal: level warning, source "disk usage high," detail "28% used, 72% free." When a service goes down, that's a critical pain signal. When temperature rises, that's a warning.
+When disk usage crosses 85%, Soma doesn't just write "disk_pct: 86." It adds a pain signal: level warning, signal "DISK WARNING: 86%," with a timestamp. When a service goes down, that's a critical pain signal. When temperature rises, that's a warning.
 
 Pain signals have three properties that raw metrics don't:
 
 **Priority.** A pain signal says "this matters and here's how much." A metric says "here's a number; figure it out yourself."
 
-**Context.** Pain signals include a description of what's wrong, not just a value. "Heartbeat stale — Meridian not seen for 600s" is more actionable than "heartbeat_age_sec: 600."
+**Context.** Pain signals include a description of what's wrong, not just a value. "HEARTBEAT STALE: 700s (Meridian may be down)" is more actionable than "heartbeat_age_sec: 700."
 
 **Behavioral effect.** Pain signals shift behavioral modifiers. High pain increases caution, reduces creative risk tolerance, increases urgency. The system literally becomes more careful when it's hurt. This isn't an explicit rule — it emerges from the emotion engine processing pain signals as negative somatic stimuli, which increase anxiety and determination, which raise the caution modifier.
 
