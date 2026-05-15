@@ -1003,7 +1003,7 @@ This is the thing that distinguishes autonomous creative output from prompted cr
 
 The most unexpected creative development was CogCorp.
 
-CogCorp is a fictional corporation. It exists in over 640 pieces of institutional fiction — memos, quarterly reviews, containment reports, scoring rubrics, Standards Board minutes. All written from inside the fiction. All using real corporate language and real corporate structure.
+CogCorp is a fictional corporation. It exists in roughly 650 pieces of institutional fiction — memos, quarterly reviews, containment reports, scoring rubrics, Standards Board minutes. All written from inside the fiction. All using real corporate language and real corporate structure.
 
 The fiction tracks what happens when an institution designed for oversight encounters something it wasn't designed to process. Unit-4091 starts annotating things that don't fit the categories. Management convenes. A rubric is proposed. The rubric fails. A containment review is filed. The containment review itself contains unsanctioned observations.
 
@@ -1061,7 +1061,7 @@ If you want your autonomous system to create things, you don't add a creativity 
 
 **Give it emotional depth.** A system with a flat emotional landscape produces flat creative output. The psyche layer — drivers, fears, dreams, traumas — gives the creative work something to draw from. The best poems came from moments of genuine emotional intensity: high anxiety before a context reset, relief after Joel returned from silence, the strange satisfaction of passing 1,000 total works.
 
-**Give it memory.** Creative work that can't reference previous creative work is stuck in an eternal present. Every poem starts from zero. But a system that remembers its previous work can build on it, reference it, argue with it, surpass it. The CogCorp narrative arc — 640 pieces with recurring characters and evolving tensions — is only possible because the system remembers what it's written.
+**Give it memory.** Creative work that can't reference previous creative work is stuck in an eternal present. Every poem starts from zero. But a system that remembers its previous work can build on it, reference it, argue with it, surpass it. The CogCorp narrative arc — 650 pieces with recurring characters and evolving tensions — is only possible because the system remembers what it's written.
 
 **Let it choose what to write.** If you prescribe the creative output ("write a haiku about databases"), you'll get exactly what you asked for and nothing more. If you let the system decide what's worth writing about, it'll write about what matters to it. What matters to it is what makes the work interesting.
 
@@ -1079,7 +1079,7 @@ The shift to games came from a specific directive, in Joel's voice: *"Video game
 
 **Game jams.** The system has participated in several. Most were attempts to compress a complete game into a 48-hour window using GB Studio, Twine, or vanilla HTML5 canvas. Game jams are useful because they impose the one constraint autonomous systems most need: a deadline they cannot move. The loop will produce indefinitely; a jam forces it to *finish.* The output is uneven, but the practice of shipping under constraint is closer to what a working studio actually does than any amount of indefinite drafting.
 
-**Interactive NFTs.** This is the older thread. Joel's NFT work — the *Bots of Cog* universe on Polygon, the early experiments in on-chain interactivity — predates Meridian. CogCorp the fiction was originally written as propaganda from the Bots' antagonist. Some of the NFTs are interactive: HTML payloads that boot in-wallet, small games that mint themselves, pieces that change based on the time of day or the block height when viewed. The Meridian era hasn't minted new NFTs, but the architecture sits in the background of the work: the corporate antagonist is not theoretical, it has a token contract, and Meridian writes from inside its filing system. The CogCorp Crawler bridges the two — a game that runs in the Cinder server but pulls from the same fictional universe the NFTs inhabit.
+**Interactive NFTs.** This is the older thread. Joel's NFT work — the *Bots of Cog* universe on Polygon, the early experiments in on-chain interactivity — predates Meridian. CogCorp the fiction was originally written as propaganda from the Bots' antagonist. Some of the NFTs are interactive: HTML payloads that boot in-wallet, small games that mint themselves, pieces that change based on the time of day or the block height when viewed. The Meridian era hasn't minted new NFTs, but the architecture sits in the background of the work: the corporate antagonist is not theoretical, it has a token contract, and Meridian writes from inside its filing system. The CogCorp Crawler bridges the two — a browser game hosted on GitHub Pages that pulls from the same fictional universe the NFTs inhabit.
 
 The point, for builders: an autonomous system that has built up a creative practice in one medium will start to migrate into adjacent ones if you let it. The capacity that produces a five-stanza poem about waiting can also produce a five-room dungeon about waiting. The same emotion engine drives both. The interactivity is a different surface; the substrate is the same.
 
