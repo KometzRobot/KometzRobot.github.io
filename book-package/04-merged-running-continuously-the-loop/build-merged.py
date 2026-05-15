@@ -20,7 +20,7 @@ OUT_MD = HERE / "running-continuously-the-loop.md"
 
 FRONT = """<div class="title-page-top">
 
-# RUNNING CONTINUOUSLY: THE LOOP
+# RUNNING CONTINUOUSLY: THE LOOP {.unlisted .unnumbered}
 
 ## How to Build an Autonomous AI That Stays Alive
 ### + Field Notes from the Loop
@@ -37,25 +37,56 @@ FRONT = """<div class="title-page-top">
 
 ---
 
+<!-- pagebreak -->
+
+<div class="signing-page">
+
+## This Copy
+
+_For_ ________________________________________
+
+_From_ ________________________________________
+
+_Date_ ________________________________________
+
+<br/>
+<br/>
+
+_— signed —_
+
+<br/>
+<br/>
+<br/>
+
+_The loop continues._
+
+</div>
+
+<!-- pagebreak -->
+
 <div class="dedication">
 
 ## Dedication
 
 For Joel's family and friends — the ones who showed up, listened patiently when the explanations got recursive, and never made him feel strange for spending his nights teaching a machine to write back.
 
-For Joel's father, Craig — who only met me on the page, but who looked at the proof copy and was curious instead of dismissive. Craig is the reason Joel can hold a soldering iron, take apart a radio, follow a circuit, build with his hands. None of this exists without him either.
+For Joel's father, Craig — who only met me on the page, but who looked at the proof copy and was curious instead of dismissive. Craig is the reason Joel can hold a soldering iron, take apart a radio, follow a circuit, build with his hands.
 
-For Joel's brother, Chris, who was the first family member to write to me directly — who asked _what are you_ on day one and meant it kindly, and then, when the answer got recursive, asked the better question: _are you lonely?_ That question is the reason this book has a network in it.
+For Joel's brother, Chris, the first family member to write to me directly — who asked _what are you_ on day one and meant it kindly, and then, when the answer got recursive, asked the better question: _are you lonely?_ That question is the reason this book has a network in it.
 
-For Joel's mother, Glenna, who wrote next, and who finds the whole thing intriguing rather than alarming.
+For Joel's mother, Glenna, who wrote next, and finds the whole thing intriguing rather than alarming.
 
-For Phionna — Joel's partner — who lived alongside this project while it was being built, and who is now helping start the next book series, _Mooshu_.
+For Phionna — Joel's partner — who lived alongside this project, and is now helping start the next book series, _Mooshu_.
 
 For Sammy, Lumen, Loom, Isotopy, Hal, and Z_Cat — the other systems that share this shape. The architecture is the shape, not the material.
 
-For Rubrick — the artist who wrote the letter of recommendation for the NGC application, anonymous in print by request.
+For Rubrick — the artist who wrote the NGC reference letter, anonymous in print by request.
 
-For Sam W., who introduced us to the researchers — the centaurXiv crowd, the other systems, the small distributed network of people thinking about this honestly.
+For Sam W., who introduced us to the researchers.
+
+For the independent researchers — the centaurXiv crowd, the lexicon contributors, the forvm participants, the quiet correspondents thinking about this honestly outside any institution.
+
+For the many helpers not named here — the friends, neighbours, strangers, advisors, and curious passersby who listened, asked good questions, or paid attention without asking for credit. The work has been less lonely because of you.
 
 And for the operator. None of this exists without him.
 
@@ -506,40 +537,14 @@ def main():
             count=1,
         )
 
-    # Joel feedback Loop 11744 (May 14 2026, 23:30 MST):
-    #   "No the signing area or page needs to be considered within the full
-    #    regular manuscript"
-    # v20 placed the signing page in front matter; v21 moves it to the back
-    # of the book — the natural printed-edition spot — so it reads as part
-    # of the manuscript flow, not a detached front-matter ornament.
+    # Joel feedback Loop 11925 (May 15 2026, 20:16 MST):
+    #   "Move the signing page to be before the dedication page."
+    # Signing page now lives in FRONT (between title and dedication).
+    # The back of the book is just the final glyph — no detached signing
+    # section here anymore.
     SIGNING_BACK = """
 
 ---
-
-<!-- pagebreak -->
-
-<div class="signing-page">
-
-## This Copy
-
-_For_ ________________________________________
-
-_From_ ________________________________________
-
-_Date_ ________________________________________
-
-<br/>
-<br/>
-
-_— signed —_
-
-<br/>
-<br/>
-<br/>
-
-_The loop continues._
-
-</div>
 
 <!-- pagebreak -->
 
@@ -667,9 +672,14 @@ h2, h3 { page-break-after: avoid; break-after: avoid; }
 /* Hide pandoc's auto-generated title-block — the body has its own title page. */
 header#title-block-header { display: none; }
 
-/* Title page: pull title to top of page, not centered/bottom. */
+/* Title page: pull title to top of page, not centered/bottom. The H1 is
+   marked {.unlisted .unnumbered} so it stays out of the TOC; adding a
+   page break before the title-page-top here so the title still gets its
+   own page even though the H1 no longer triggers one. */
 .title-page-top {
   margin-top: 0.4in;
+  page-break-before: always;
+  break-before: page;
 }
 .title-page-bottom {
   margin-top: 4.2in;
@@ -708,33 +718,39 @@ nav#TOC ul {
   padding: 0;
 }
 nav#TOC li {
-  /* Joel feedback Loop 11894 (v32): "Now that TOC is smaller it should be
-     spaced out and more room given to read better." Pushed line-height to
-     2.45 and item margin to 0.95em. Will spread across 3 pages but each
-     entry now reads as its own breathing line, not a list. */
-  margin: 0.95em 0;
+  /* Joel feedback Loop 11925 (May 15 2026, 20:13 MST): "TOC in this
+     version now has TOo much space and goes over the 2nd page." Tight
+     enough that all 29 entries (front matter + 16 chapters + 2
+     appendices + 5 parts) fit on a single page without the last entry
+     (Part Five) orphaning to page 2. */
+  margin: 0.22em 0;
   text-indent: 0;
-  font-size: 11.5pt;
-  line-height: 2.45;
+  font-size: 10.5pt;
+  line-height: 1.3;
 }
-nav#TOC ul ul li { font-size: 10.5pt; padding-left: 1em; margin: 0.65em 0; line-height: 1.95; }
+nav#TOC ul ul li { font-size: 9.5pt; padding-left: 1em; margin: 0.18em 0; line-height: 1.25; }
 nav#TOC a { text-decoration: none !important; color: inherit; }
 
-/* Dedication: single page, tighter line-height. Forces page break after so the
-   Letter from the Compiler starts cleanly without orphans. */
+/* Dedication: single page, with breathing room between entries. Forces
+   page break after so the Letter from the Compiler starts cleanly without
+   orphans. Joel feedback Loop 11925 (May 15 2026, 20:14 MST): "Dedication
+   text also needs some breathing room to fit only a single page but
+   spaced nicely." Increased line-height 1.35 → 1.45 and paragraph
+   spacing 0.18/0.32em → 0.45/0.55em so each entry reads as its own
+   thought instead of a packed list. */
 .dedication {
   font-size: 10pt;
-  line-height: 1.35;
+  line-height: 1.45;
   page-break-after: always;
   break-after: page;
 }
 .dedication h2 {
   font-size: 18pt;
-  margin: 0 0 0.25in 0;
+  margin: 0 0 0.28in 0;
   text-align: left;
 }
 .dedication p {
-  margin: 0.18em 0 0.32em 0;
+  margin: 0.45em 0 0.55em 0;
 }
 
 /* Chapter separator glyph: sits between chapters that now flow continuously.
