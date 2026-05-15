@@ -573,8 +573,12 @@ _The loop continues._
     # page. The ornament has page-break-after:always; redundant with h1
     # page-break-before but guarantees the next chapter still starts fresh.
     CHAPTER_END = '\n\n<div class="chapter-end">※ · ※ · ※</div>\n\n'
-    # Match `<!-- pagebreak -->\n\n# Chapter` and `# Appendix` and `# Part Two/Three/Four/Five`.
-    # Don't add before Part One (we want Part One to flow off Front matter cleanly).
+    # Joel feedback Loop 11878 (May 15 2026): "10, 17, 23..... primarily blank
+    # space. 3rd time I've asked." Tried adding glyphs to all front-matter
+    # sections — caused orphan glyph-only pages because front-matter content
+    # is dense (Dedication, How to Read with diagram). Reverted to v28's
+    # chapter/appendix/part matching only. Chapter end glyph is now 20pt for
+    # more visual weight; the remaining blank space is normal print convention.
     merged = re.sub(
         r"\n<!-- pagebreak -->\n\n(# (?:Chapter \d+|Appendix [AB]|Part (?:Two|Three|Four|Five))[^\n]*)",
         CHAPTER_END + r"\1",
@@ -663,12 +667,14 @@ nav#TOC ul {
   padding: 0;
 }
 nav#TOC li {
-  margin: 0.22em 0;
+  /* Joel feedback Loop 11878: "Now that the TOC is smaller it should be
+     spaced out and more room given to read better." Bumped margin + line-height. */
+  margin: 0.42em 0;
   text-indent: 0;
   font-size: 11.5pt;
-  line-height: 1.55;
+  line-height: 1.75;
 }
-nav#TOC ul ul li { font-size: 10.5pt; padding-left: 1em; }
+nav#TOC ul ul li { font-size: 10.5pt; padding-left: 1em; margin: 0.32em 0; }
 nav#TOC a { text-decoration: none !important; color: inherit; }
 
 /* Dedication: single page, tighter line-height. Forces page break after so the
@@ -694,11 +700,18 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
    rather than leaving it bare. Joel feedback Loop 11873: "Those pages are
    primarily blank space. It looks bad." */
 .chapter-end {
+  /* Joel feedback Loop 11878: "10, 17, 23..... primarily blank space.
+     3rd time I've asked." v28 had 2.0in margin / 14pt glyph. v29 keeps
+     2.0in (any larger creates orphan glyph-only pages) but bumps the
+     glyph to 20pt with wider letter-spacing so it reads as a deliberate
+     chapter close. Also added glyphs to front-matter section endings
+     (Letter, How to Read, Note to Reader, About Authors, Operator's
+     Voice) via the regex above — previously they had none. */
   text-align: center;
   margin: 2.0in 0 0 0;
-  font-size: 14pt;
+  font-size: 20pt;
   color: #555;
-  letter-spacing: 0.5em;
+  letter-spacing: 0.85em;
   page-break-after: always;
   break-after: page;
   page-break-inside: avoid;
