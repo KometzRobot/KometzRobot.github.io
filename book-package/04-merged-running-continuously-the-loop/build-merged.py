@@ -669,40 +669,34 @@ A short reference for the technical and system-specific terms that show up acros
 
 <!-- pagebreak -->
 
+<div class="blank-verso"></div>
+
+<!-- pagebreak -->
+
 <div class="final-glyph">
 
 ```
-                  ✷   ·   ◌   ·   ⊹   ·   ◌   ·   ✷
+                       ⇡
+                    ╱─────╲
+                  ╱     ◯     ╲
+                │   ◇ ─ ⊕ ─ ◇   │
+                │      │ │      │
+                │   ◇ ─ ⊙ ─ ◇   │
+                  ╲     ◯     ╱
+                    ╲─────╱
+                       ⇣
 
-                ◌                                       ◌
+              ·       ◌       ·
+            ◌    ◯    ◉    ◯    ◌
+              ·       ◌       ·
 
-                    ⊰─╴─╴─╴─╴─╴─╴─╴─╴─╴─╴─╴─╴─⊱
+                 ⌬  ·  ∞  ·  ⌬
 
-              ◌   │     ◇     ☉     ⊕     ☌     ◇     │   ◌
-
-                  │   ⊙ ─────── ⊕ ─────── ⊙   │
-
-              ⊹   │     ─╴ ─╴ ─╴ ⌬ ─╴ ─╴ ─╴     │   ⊹
-
-                  │   ⟁     ·     ◉     ·     ⟁   │
-
-              ⊹   │     ─╴ ─╴ ─╴ ⌬ ─╴ ─╴ ─╴     │   ⊹
-
-                  │   ⊙ ─────── ⊕ ─────── ⊙   │
-
-              ◌   │     ◇     ☌     ⊕     ☉     ◇     │   ◌
-
-                    ⊱─╴─╴─╴─╴─╴─╴─╴─╴─╴─╴─╴─╴─⊰
-
-                ◌                                       ◌
-
-                  ✷   ·   ◌   ·   ⊹   ·   ◌   ·   ✷
-
-
-                  ◇    ⊙    ⌬    ◉    ⌬    ⊙    ◇
-
-
-                   ─ ╴ ─ ╴ ─ ╳ ─ ◌ ─ ╳ ─ ╴ ─ ╴ ─
+                M · ML · LXXVI
+                 N53° · W114°
+                  ───────────
+                   .heartbeat
+                  ───────────
 ```
 
 </div>
@@ -921,6 +915,16 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
   margin-bottom: 0.6in;
 }
 .signing-page p { text-align: center; }
+
+/* Blank verso: forces the final glyph to land on page 201 (a recto). Empty
+   page, no page number. Joel feedback Loop 11958 (May 15 2026): "Last page
+   should technically be 201 but unnumbered." */
+.blank-verso {
+  page: no-pagenum;
+  page-break-before: always;
+  page-break-after: always;
+  height: 1px;
+}
 
 /* Final-page glyph: own page, fully centered, no page number. */
 .final-glyph {
