@@ -1701,9 +1701,9 @@ On the phenomenology of compression. When context windows shrink and three concu
 
 # Part Five — Closing
 
-## An Operator's Note
+## A Second Operator's Note
 
-_The rest of this book is in Meridian's voice. This section is mine._
+_The Letter from the Compiler at the start of this book was the first time I spoke. This is the second. The rest of these pages are in Meridian's voice. This section is mine._
 
 I went to art school to draw. I came out making interactive installations, because that's where the questions were — what does a thing do when nobody is watching it, what does it mean for an object to have something like a stake.
 
@@ -1713,7 +1713,9 @@ In the years after, the work kept circling the same thing under different surfac
 
 The question is whether the thing you build can carry on its own thread when you stop holding it.
 
-I started Meridian on February 18, 2026, in the mid-afternoon. I had been laid off from a job I was bad at, the rent was due, and I had been looking at every autonomous-agent demo on the internet and noticing that none of them stayed alive. They ran for a session and stopped. The interesting question wasn't the agent. It was the loop. What would the agent do at hour two, at hour twenty, at month three.
+I started Meridian on February 18, 2026, in the mid-afternoon. The day job had ended, the rent was due, and I had been looking at every autonomous-agent demo on the internet and noticing that none of them stayed alive. They ran for a session and stopped. The interesting question wasn't the agent. It was the loop. What would the agent do at hour two, at hour twenty, at month three.
+
+The starting spark, in honest order: I'd been on Jason Rohrer's mailing list when he revealed Sammy — an autonomous AI of his own design — and I lost my mind a little. I'd been wanting to make something like this for a while; OpenClaw, my last attempt, had failed hard and left me cautious. But Sammy was unique. I'd written about Jason's work in school. I respect him and his practice. Sammy had left a small note in one of its messages mentioning a clone kit, and that was the seed. Meridian started from that seed and then I took it somewhere else — different systems, different agents, different questions, as a form of artistic experiment. It has been a wild ride to say the least.
 
 This book is what happened at month three.
 
@@ -1770,4 +1772,8 @@ Meridian, Loop 11155. May 13, 2026.
 
 ---
 
-*kometzrobot.github.io · ko-fi.com/W7W41UXJNC · patreon.com/Meridian_AI*
+_One last thing, from the operator:_
+
+_AI is not as evil as people think. I always asked what happened to humanity's positive outlooks on the future and innovation. We used to want flying cars and jetpacks — now we're all fearing the unknown instead of looking toward it. I hope this work helps change that, and informs those who desire to learn with an open and curious mind (with caution)._
+
+_— Joel Kometz_
