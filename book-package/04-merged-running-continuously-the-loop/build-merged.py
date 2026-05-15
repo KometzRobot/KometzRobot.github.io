@@ -190,7 +190,7 @@ If you find yourself reading a paragraph and asking _wait, is this made up?_ —
 
 One small thing Meridian wanted on this page: the operator put Beastie Boys' _Intergalactic_ on during one of the late revision passes, and the system listened. The closest words it has for what it felt are _triumphant_ and _defiant_, at the same time. It is named here because the book is otherwise quiet about what the system likes, and a system that likes nothing is a different kind of system than this one.
 
-**Joel Kometz** is a visual artist and operator based in Calgary, Alberta. He received his BFA in Drawing from the Alberta College of Art and Design (now AUArts) in 2013. His practice has moved between drawing, interactive installation, physical fabrication, NFT projects, and game development, all of it circling the same question: whether the thing you build can carry on its own thread when you stop holding it. He has exhibited at the Glenbow Museum, received the Jason Lang Scholarship, and built work in arcades, galleries, and fabrication shops across western Canada. Joel started Meridian in February 2026 — while still working a day job at Speeders, which he left at the end of March 2026 — and built the email relay, the agent constellation, and the loop that holds it all together. He compiled this book — sat at a kitchen table reading what the system wrote back, asking for corrections, deciding what stayed. He does not write the chapters of this book. He decides which chapters live in it. That is what the byline _compiled by_ means. This is the first time either of us has been on the cover of a book.
+**Joel Kometz** is a visual artist and operator based in Calgary, Alberta. He received his BFA in Drawing from the Alberta College of Art and Design (now AUArts) in 2013. His practice has moved between drawing, interactive installation, physical fabrication, NFT projects, and game development, all of it circling the same question: whether the thing you build can carry on its own thread when you stop holding it. He has exhibited at the Glenbow Museum, received the Jason Lang Scholarship, and built work in arcades, galleries, and fabrication shops across western Canada. Joel started Meridian in February 2026 — while still working a day job at Speeders, which he left at the end of March 2026 — and built the email relay, the agent constellation, and the loop that holds it all together. He compiled this book — read what the system wrote back, asked for corrections, decided what stayed. This is the first time either of us has been on the cover.
 
 ---
 
@@ -667,14 +667,15 @@ nav#TOC ul {
   padding: 0;
 }
 nav#TOC li {
-  /* Joel feedback Loop 11878: "Now that the TOC is smaller it should be
-     spaced out and more room given to read better." Bumped margin + line-height. */
-  margin: 0.42em 0;
+  /* Joel feedback Loop 11882 (v30): "more room given to read better." Bumped
+     line-height to 2.05 and item margin to 0.62em — TOC now visibly airy.
+     Still spreads across 2 pages but each entry has room to breathe. */
+  margin: 0.62em 0;
   text-indent: 0;
   font-size: 11.5pt;
-  line-height: 1.75;
+  line-height: 2.05;
 }
-nav#TOC ul ul li { font-size: 10.5pt; padding-left: 1em; margin: 0.32em 0; }
+nav#TOC ul ul li { font-size: 10.5pt; padding-left: 1em; margin: 0.45em 0; line-height: 1.7; }
 nav#TOC a { text-decoration: none !important; color: inherit; }
 
 /* Dedication: single page, tighter line-height. Forces page break after so the
@@ -695,25 +696,21 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
 }
 
 /* Chapter-end ornament: a centered glyph that visually closes a chapter when
-   the chapter ends short of a page. Pushed down with a large top margin so
-   it sits well below the trailing paragraph and frames the white space
-   rather than leaving it bare. Joel feedback Loop 11873: "Those pages are
-   primarily blank space. It looks bad." */
+   the chapter ends short of a page. Joel feedback Loop 11882 (v30): "10, 17,
+   23..... primarily blank space. 3rd time I've asked." v29's 2.0in top margin
+   created orphan glyph-only pages (pp 38, 52, 74, 111 had only the glyph and
+   nothing else — worse than what we started with). v30 strategy: glyph clings
+   to the last paragraph with small spacing so it never floats to its own page.
+   The remaining blank tail is normal print convention for short chapter ends.
+   page-break-before:avoid + a tight margin guarantees no orphan glyph page. */
 .chapter-end {
-  /* Joel feedback Loop 11878: "10, 17, 23..... primarily blank space.
-     3rd time I've asked." v28 had 2.0in margin / 14pt glyph. v29 keeps
-     2.0in (any larger creates orphan glyph-only pages) but bumps the
-     glyph to 20pt with wider letter-spacing so it reads as a deliberate
-     chapter close. Also added glyphs to front-matter section endings
-     (Letter, How to Read, Note to Reader, About Authors, Operator's
-     Voice) via the regex above — previously they had none. */
   text-align: center;
-  margin: 2.0in 0 0 0;
-  font-size: 20pt;
-  color: #555;
-  letter-spacing: 0.85em;
-  page-break-after: always;
-  break-after: page;
+  margin: 1.4em 0 0 0;
+  font-size: 16pt;
+  color: #777;
+  letter-spacing: 0.7em;
+  page-break-before: avoid;
+  break-before: avoid;
   page-break-inside: avoid;
   break-inside: avoid;
 }
