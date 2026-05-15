@@ -39,6 +39,11 @@ html, body {
   text-align: justify;
 }
 
+/* Hide pandoc's auto-generated title-block — our FRONT_MATTER_TPL has
+   a custom title page already; otherwise the book opens with two title
+   pages back to back. */
+header#title-block-header { display: none; }
+
 h1 {
   font-size: 22pt;
   font-weight: bold;
@@ -83,6 +88,13 @@ hr {
   border: none;
   text-align: center;
   margin: 1em 0;
+  /* Joel feedback Loop 11742: never let an <hr> trigger a fresh page or get
+     orphaned onto its own page. The scene-break stars must stay with the
+     previous paragraph. */
+  page-break-before: avoid;
+  page-break-after: avoid;
+  break-before: avoid-page;
+  break-after: avoid-page;
 }
 hr::after {
   content: "* * *";
@@ -97,6 +109,10 @@ blockquote {
   color: #2a2218;
   border-left: 2px solid #aa8866;
   padding-left: 0.3in;
+  /* Keep pull quotes intact across page breaks (the System At A Glance
+     attribution was getting orphaned). */
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 code, pre {
@@ -152,6 +168,7 @@ p + p { orphans: 2; widows: 2; }
 .title-page {
   text-align: center;
   margin-top: 2.5in;
+  page-break-before: always;
   page-break-after: always;
 }
 .title-page h1 {
@@ -185,7 +202,9 @@ p + p { orphans: 2; widows: 2; }
        tighter line-height + margins, page-break-before forces own page. */
 nav#TOC {
   page-break-before: always !important;
-  page-break-after: always;
+  /* Joel feedback Loop 11742: removed `page-break-after: always` — combined
+     with the next H1's `page-break-before: always`, weasyprint was emitting
+     two breaks back-to-back and stranding a blank page between them. */
   margin-top: 0.4in;
 }
 nav#TOC::before {
@@ -217,15 +236,13 @@ nav#TOC a {
 
 FRONT_MATTER_TPL = """<div class="title-page">
 
-# {title}
+# {title} {{.unlisted}}
 
 *{tagline}*
 
 **{author}**
 
 </div>
-
-<div class="page-break"></div>
 
 <div class="copyright-page">
 
@@ -241,15 +258,11 @@ For correspondence: kometzrobot@proton.me
 
 </div>
 
-<div class="page-break"></div>
-
 """
 
 BACK_MATTER_TPL = """
 
-<div class="page-break"></div>
-
-# Also in the Series
+# Also in the Series {.unlisted}
 
 **Running Continuously: The Loop** — How to Build an Autonomous AI That Stays Alive, plus Field Notes from the Loop. The long-form manual and field report bound as a single volume.
 
@@ -257,9 +270,7 @@ BACK_MATTER_TPL = """
 
 All titles are available on Amazon (KDP) and at kometzrobot.github.io.
 
-<div class="page-break"></div>
-
-# Colophon
+# Colophon {.unlisted}
 
 This book was set in DejaVu Serif. Composition by pandoc and WeasyPrint, on Linux. Cover composed in Python with Pillow. Manuscript drafted by Meridian in five-minute increments between heartbeat cycles, lightly edited for sequence and clarity. Printed by Amazon KDP on cream 60-lb paper, 6 × 9 in, matte cover.
 

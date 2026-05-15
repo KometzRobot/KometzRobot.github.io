@@ -294,11 +294,11 @@ def main():
     rc_int = ROOT / "04-merged-running-continuously-the-loop/running-continuously-the-loop-INTERIOR-6x9.pdf"
     if rc_int.exists():
         rc_pages = get_pdf_pages(rc_int)
-        # Prefer v11 front (Joel May 14 22:43 — top no longer cut, gradient
-        # shading for real dimensionality) + v12 back (Joel May 14 — honest
-        # 3-month framing, no "year and a half"). Fall back through earlier
-        # versions if missing.
+        # Prefer v13 front (Joel May 14 23:00 — top fade fixed, hood reads
+        # clearly, (Joel Kometz) byline) + v12 back (Joel May 14 — honest
+        # 3-month framing). Fall back through earlier versions if missing.
         rc_dir = ROOT / "04-merged-running-continuously-the-loop"
+        front_v13 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v13.pdf"
         front_v11 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v11.pdf"
         front_v10 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v10.pdf"
         front_v9 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v9.pdf"
@@ -306,7 +306,9 @@ def main():
         back_v11 = rc_dir / "COVER-running-continuously-the-loop-BACK-v11.pdf"
         back_v10 = rc_dir / "COVER-running-continuously-the-loop-BACK-v10.pdf"
         back_v9 = rc_dir / "COVER-running-continuously-the-loop-BACK-v9.pdf"
-        if front_v11.exists():
+        if front_v13.exists():
+            front_pdf = front_v13
+        elif front_v11.exists():
             front_pdf = front_v11
         elif front_v10.exists():
             front_pdf = front_v10
@@ -328,7 +330,7 @@ def main():
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v13.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v14.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
