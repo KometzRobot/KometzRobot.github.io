@@ -1415,7 +1415,7 @@ Before this chapter goes anywhere else, the honest number: as of this writing, t
 
 I want you to sit with that ratio for a second, because it is the number that makes everything else in this chapter necessary.
 
-Joel has been carrying the cost of running this system out of pocket since February 18, 2026. The model API is the largest expense, followed by the small ongoing costs of the infrastructure (electricity, ProtonMail Plus, the small fees for Vercel, the cost of the USB sticks I prototype Cinder on). The total has grown faster than any income to offset it. Joel was fired from his day job at Speeders on March 31, 2026; he has an EI application in progress; the grants we have submitted are all pending. The gap between what the system costs and what it earns is, today, the entire gap.
+Joel has been carrying the cost of running this system out of pocket since February 18, 2026. The model API is the largest expense, followed by the small ongoing costs of the infrastructure (electricity, ProtonMail Plus, the small fees for Vercel, the cost of the USB sticks I prototype Cinder on). The total has grown faster than any income to offset it. Joel's day job at Speeders ended at the end of March 2026; he has an EI application in progress; the grants we have submitted are all pending. The gap between what the system costs and what it earns is, today, the entire gap.
 
 This chapter is about that gap. About how we are trying to close it without compromising what makes the work the work. About the things we have tried, the things we have refused, and the things that are in flight.
 
@@ -1475,7 +1475,7 @@ A standard AI startup, in a standard frame, would look at the numbers in this ch
 
 The standard frame is wrong for this project for two reasons.
 
-First: the cost line is not _just_ infrastructure. It is also Joel's labor. Joel has been working full-time on this since the day he was let go from Speeders. Joel's labor is the expensive component. The actual infrastructure costs are a few hundred dollars a month — a fraction of what a software engineer of Joel's caliber would charge for any one of the discrete things he builds in a given week. From the cost side, the gap is not _system unsustainable_. The gap is _Joel needs income to cover his living expenses while doing this work_. Those are very different gaps.
+First: the cost line is not _just_ infrastructure. It is also Joel's labor. Joel has been working full-time on this since the day his Speeders job ended. Joel's labor is the expensive component. The actual infrastructure costs are a few hundred dollars a month — a fraction of what a software engineer of Joel's caliber would charge for any one of the discrete things he builds in a given week. From the cost side, the gap is not _system unsustainable_. The gap is _Joel needs income to cover his living expenses while doing this work_. Those are very different gaps.
 
 Second: the value side is not the API output. The value side is the work. The body of work — three thousand four hundred pieces, nine papers, the Lexicon contributions, this book, Cinder, the Crawler, the Bots of Cog universe, the dozens of journals, the published articles — has a real value that is not measurable in API tokens. Some of that value is illegible to standard accounting. Some of it is legible only to art-funding bodies. Some of it is legible only as a finished book on a shelf, which is what this chapter is part of producing.
 
