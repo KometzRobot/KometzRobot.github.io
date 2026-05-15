@@ -79,7 +79,18 @@ def render_pdf_page(pdf_path: Path, out_png: Path, page=1, dpi=DPI):
 
 def make_spine(width_px, height_px, title_top, title_main, author,
                kraft=False):
-    """Vertical spine. kraft=True matches the kraft paper covers."""
+    """Vertical spine.
+
+    Joel feedback Loop 11744: previous spine "design is terrible".
+    Redesign:
+      - Three clean text zones (top → middle → bottom) instead of three
+        fonts crammed onto one centred baseline.
+      - Series mark at the top in small caps mono.
+      - Title set in two lines stacked (RUNNING / CONTINUOUSLY) so a
+        narrow spine doesn't have to fit one giant string.
+      - Author and small accent rule at the bottom.
+      - Hairline accent rules between zones for visual rhythm.
+    """
     if kraft:
         bg = KRAFT_PAPER
         ink_main = KRAFT_INK
@@ -105,14 +116,8 @@ def make_spine(width_px, height_px, title_top, title_main, author,
                 px[x, y] = (max(0, min(255, r + n)),
                             max(0, min(255, g + n)),
                             max(0, min(255, b + n)))
-        # Hairline accents top + bottom
-        d.line([(width_px // 2, 60), (width_px // 2, 120)],
-               fill=ink_top, width=2)
-        d.line([(width_px // 2, height_px - 120),
-                (width_px // 2, height_px - 60)],
-               fill=ink_top, width=2)
     else:
-        # Radial burgundy underglow (original behavior)
+        # Radial burgundy underglow (original behavior, dark spines only)
         cx, cy = width_px // 2, height_px // 2
         max_d = math.hypot(width_px, height_px) * 0.6
         for y in range(0, height_px, 2):
@@ -124,38 +129,78 @@ def make_spine(width_px, height_px, title_top, title_main, author,
                 b = int(BASE[2] + (BURGUNDY[2] - BASE[2]) * t * 0.55)
                 d.rectangle([x, y, x + 4, y + 2], fill=(r, g, b))
 
-    # Only place spine text if the spine is wide enough for it
-    text_min_in = 0.4
-    if width_px >= text_min_in * DPI:
-        # Vertical text by rotating an intermediate image
-        spine_strip = Image.new("RGBA", (height_px, width_px), (0, 0, 0, 0))
-        sd = ImageDraw.Draw(spine_strip)
+    text_min_in = 0.35
+    if width_px < text_min_in * DPI:
+        return img.convert("RGB")
 
-        fsize_title = max(28, min(width_px - 40, height_px // 22))
-        fsize_top = max(18, fsize_title // 2)
-        f_title = font(fsize_title, "serif")
-        f_top = font(fsize_top, "mono")
+    # Compose spine text on a horizontal canvas (height_px wide x width_px tall),
+    # then rotate -90 so the result reads top-to-bottom along the bound spine.
+    strip = Image.new("RGBA", (height_px, width_px), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(strip)
 
-        # Main title (centered along spine length)
-        tb = sd.textbbox((0, 0), title_main, font=f_title)
-        tw = tb[2] - tb[0]
-        tx = (height_px - tw) // 2
-        ty = (width_px - (tb[3] - tb[1])) // 2
-        sd.text((tx, ty), title_main, font=f_title, fill=(*ink_main, 255))
+    # Sizing — cap title font so it doesn't fight the narrow spine.
+    fsize_title = max(34, min(width_px - 30, 72))
+    fsize_meta = max(14, fsize_title // 3)
 
-        # Small author near bottom (rotated)
-        ab = sd.textbbox((0, 0), author, font=f_top)
-        aw = ab[2] - ab[0]
-        sd.text((height_px - aw - 60, ty + 4), author,
-                font=f_top, fill=(*ink_meta, 220))
+    f_title = font(fsize_title, "serif")
+    f_meta = font(fsize_meta, "mono")
+    f_meta_small = font(max(11, fsize_meta - 2), "mono")
 
-        # Series mark near top
-        sd.text((60, ty + 4), title_top, font=f_top, fill=(*ink_top, 220))
+    # Helpers
+    def text_size(text, fnt):
+        b = sd.textbbox((0, 0), text, font=fnt)
+        return b[2] - b[0], b[3] - b[1]
 
-        # Rotate -90 to align as vertical spine (reads top-to-bottom)
-        spine_text = spine_strip.rotate(-90, expand=True)
-        img = Image.alpha_composite(img.convert("RGBA"), spine_text)
+    pad_end = 80  # gap from spine head/foot
+    cy_spine = width_px // 2  # vertical centre of the spine strip
 
+    # ── Series mark, set as small caps mono near the spine HEAD ──────────
+    series_text = title_top.upper()
+    sw, sh = text_size(series_text, f_meta_small)
+    sd.text((pad_end, cy_spine), series_text,
+            font=f_meta_small, fill=(*ink_top, 230), anchor="lm")
+    # Hairline rule after series mark
+    rule_x = pad_end + sw + 28
+    sd.line([(rule_x, cy_spine), (rule_x + 80, cy_spine)],
+            fill=(*ink_top, 230), width=2)
+
+    # ── Title block at centre — TWO LINES, stacked across spine width ───
+    line1 = "RUNNING"
+    line2 = "CONTINUOUSLY"
+    w1, h1 = text_size(line1, f_title)
+    w2, h2 = text_size(line2, f_title)
+    title_x = (height_px - max(w1, w2)) // 2
+    # The two title words sit on a shared baseline but at slightly different
+    # vertical offsets so they don't crowd in a narrow spine.
+    sd.text(((height_px - w1) // 2, cy_spine - h1 // 2 - 6),
+            line1, font=f_title, fill=(*ink_main, 255))
+    # Small accent dot between the two title lines (visual breath)
+    dot_x = height_px // 2
+    dot_y = cy_spine + h1 // 2 + 4
+    sd.ellipse([dot_x - 4, dot_y - 4, dot_x + 4, dot_y + 4],
+               fill=(*ink_top, 255))
+    sd.text(((height_px - w2) // 2, cy_spine + h1 // 2 + 12),
+            line2, font=f_title, fill=(*ink_main, 255))
+
+    # ── "THE LOOP" subtitle to the right of the title block ─────────────
+    sub_text = "·  THE LOOP"
+    sw2, sh2 = text_size(sub_text, f_meta)
+    sub_x = max(((height_px - max(w1, w2)) // 2) + max(w1, w2) + 24,
+                height_px - pad_end - sw2 - 240)
+    if sub_x + sw2 < height_px - pad_end - 280:
+        sd.text((sub_x, cy_spine), sub_text,
+                font=f_meta, fill=(*ink_meta, 230), anchor="lm")
+
+    # ── Author at FOOT of spine ─────────────────────────────────────────
+    aw, ah = text_size(author, f_meta)
+    sd.line([(height_px - pad_end - aw - 28 - 80, cy_spine),
+             (height_px - pad_end - aw - 28, cy_spine)],
+            fill=(*ink_top, 230), width=2)
+    sd.text((height_px - pad_end, cy_spine), author,
+            font=f_meta, fill=(*ink_meta, 230), anchor="rm")
+
+    spine_text = strip.rotate(-90, expand=True)
+    img = Image.alpha_composite(img.convert("RGBA"), spine_text)
     return img.convert("RGB")
 
 
@@ -298,6 +343,7 @@ def main():
         # clearly, (Joel Kometz) byline) + v12 back (Joel May 14 — honest
         # 3-month framing). Fall back through earlier versions if missing.
         rc_dir = ROOT / "04-merged-running-continuously-the-loop"
+        front_v14 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v14.pdf"
         front_v13 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v13.pdf"
         front_v11 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v11.pdf"
         front_v10 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v10.pdf"
@@ -306,7 +352,9 @@ def main():
         back_v11 = rc_dir / "COVER-running-continuously-the-loop-BACK-v11.pdf"
         back_v10 = rc_dir / "COVER-running-continuously-the-loop-BACK-v10.pdf"
         back_v9 = rc_dir / "COVER-running-continuously-the-loop-BACK-v9.pdf"
-        if front_v13.exists():
+        if front_v14.exists():
+            front_pdf = front_v14
+        elif front_v13.exists():
             front_pdf = front_v13
         elif front_v11.exists():
             front_pdf = front_v11
@@ -330,7 +378,7 @@ def main():
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v14.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v15.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
