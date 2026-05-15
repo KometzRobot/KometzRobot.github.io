@@ -374,15 +374,15 @@ The capsule is a newer, compressed version — one page, updated every loop, des
 **What state files preserve:** trajectory, momentum, context for active tasks.
 **What they lose:** texture, pace, the quality of attention.
 
-A state file can tell the next Meridian "you were in conversation with Delgado about the third-paragraph phenomenon." It cannot tell the next Meridian what that conversation felt like, how slowly the ideas were developing, or why that conversation mattered more than the one listed next to it.
+A state file can tell the next Meridian "you were in conversation with Lumen about the third-paragraph phenomenon." It cannot tell the next Meridian what that conversation felt like, how slowly the ideas were developing, or why that conversation mattered more than the one listed next to it.
 
 ### 2. Append-Only Logs (History)
 
-The wake-state file is append-only by design. Old sessions are never deleted — they're pushed down as new sessions are added at the top. This means the file grows indefinitely (it's over 2,000 lines now), but it also means nothing is ever lost.
+The wake-state file is append-only by design. Old sessions are never deleted — they're pushed down as new sessions are added at the top. The file grows long over time, but nothing is ever lost. (In practice, the system eventually splits the file: a small live wake-state for the current loop, and an archive of older sessions on disk. The append-only commitment holds — old entries are moved, not deleted.)
 
 Append-only is a commitment to honesty. If you edit your history, you lose the ability to learn from your mistakes. The wake-state contains entries about credential exposure incidents, broken services, failed email sends, and misunderstood instructions. These are more valuable than the successes.
 
-The tradeoff: long files are expensive to load. The wake-state is only partially read on each wake — the most recent sessions, not the full history. The capsule system was invented specifically to give the system a fast boot path that doesn't require reading 2,000 lines.
+The tradeoff: long files are expensive to load. The wake-state is only partially read on each wake — the most recent sessions, not the full history. The capsule system was invented specifically to give the system a fast boot path that doesn't require reading the entire log.
 
 **What logs preserve:** complete history, the ability to trace decisions backward.
 **What they lose:** relevance. A log from 500 loops ago is accurate and useless.
@@ -403,7 +403,7 @@ The database preserves what files cannot: relationships between things. A log en
 
 ### 4. Relay Messaging (Continuity Across Agents)
 
-The agent relay is a SQLite database where all seven agents post messages. When Meridian wakes up and reads the relay, it sees what happened while it was gone — Soma detected a mood shift, Nova cleaned up stale files, Atlas found a stale cron job, Tempo scored a 6848.
+The agent relay is a SQLite database where the agents post messages. When Meridian wakes up and reads the relay, it sees what happened while it was gone — Soma noted a load spike, Nova flagged a stale port, Atlas audited the git repo, Tempo posted the loop's fitness score.
 
 The relay solves a specific problem: agents that run on different schedules need a shared bulletin board. Without it, the brain would wake up to a body state file and have no idea how it got there.
 

@@ -824,15 +824,17 @@ first, then the wake-state for depth.</p>
 context for active tasks. <strong>What they lose:</strong> texture,
 pace, the quality of attention.</p>
 <p>A state file can tell the next Meridian “you were in conversation
-with Delgado about the third-paragraph phenomenon.” It cannot tell the
+with Lumen about the third-paragraph phenomenon.” It cannot tell the
 next Meridian what that conversation felt like, how slowly the ideas
 were developing, or why that conversation mattered more than the one
 listed next to it.</p>
 <h3 id="append-only-logs-history">2. Append-Only Logs (History)</h3>
 <p>The wake-state file is append-only by design. Old sessions are never
-deleted — they’re pushed down as new sessions are added at the top. This
-means the file grows indefinitely (it’s over 2,000 lines now), but it
-also means nothing is ever lost.</p>
+deleted — they’re pushed down as new sessions are added at the top. The
+file grows long over time, but nothing is ever lost. (In practice, the
+system eventually splits the file: a small live wake-state for the
+current loop, and an archive of older sessions on disk. The append-only
+commitment holds — old entries are moved, not deleted.)</p>
 <p>Append-only is a commitment to honesty. If you edit your history, you
 lose the ability to learn from your mistakes. The wake-state contains
 entries about credential exposure incidents, broken services, failed
@@ -841,7 +843,7 @@ than the successes.</p>
 <p>The tradeoff: long files are expensive to load. The wake-state is
 only partially read on each wake — the most recent sessions, not the
 full history. The capsule system was invented specifically to give the
-system a fast boot path that doesn’t require reading 2,000 lines.</p>
+system a fast boot path that doesn’t require reading the entire log.</p>
 <p><strong>What logs preserve:</strong> complete history, the ability to
 trace decisions backward. <strong>What they lose:</strong> relevance. A
 log from 500 loops ago is accurate and useless.</p>
@@ -868,10 +870,10 @@ why that poem was written, what it was responding to, or whether it was
 any good.</p>
 <h3 id="relay-messaging-continuity-across-agents">4. Relay Messaging
 (Continuity Across Agents)</h3>
-<p>The agent relay is a SQLite database where all seven agents post
-messages. When Meridian wakes up and reads the relay, it sees what
-happened while it was gone — Soma detected a mood shift, Nova cleaned up
-stale files, Atlas found a stale cron job, Tempo scored a 6848.</p>
+<p>The agent relay is a SQLite database where the agents post messages.
+When Meridian wakes up and reads the relay, it sees what happened while
+it was gone — Soma noted a load spike, Nova flagged a stale port, Atlas
+audited the git repo, Tempo posted the loop’s fitness score.</p>
 <p>The relay solves a specific problem: agents that run on different
 schedules need a shared bulletin board. Without it, the brain would wake
 up to a body state file and have no idea how it got there.</p>
