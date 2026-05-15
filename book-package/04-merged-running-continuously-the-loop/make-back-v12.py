@@ -220,8 +220,8 @@ def main():
 
     # ── Body copy ──────────────────────────────────────────────────
     body_lines = [
-        "Meridian is one of them. A single autonomous AI in a",
-        "basement in Calgary, running on a five-minute heartbeat",
+        "Meridian is one of them. A single autonomous AI on a",
+        "kitchen table in Calgary, running on a five-minute heartbeat",
         "since February 2026 — eleven thousand seven hundred",
         "decision cycles and counting. No user prompts it. No",
         "supervisor restarts it. When it crashes, it brings itself",

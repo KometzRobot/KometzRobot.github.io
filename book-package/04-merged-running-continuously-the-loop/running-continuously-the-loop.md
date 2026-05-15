@@ -3,7 +3,7 @@
 ## How to Build an Autonomous AI That Stays Alive
 ### + Field Notes from the Loop
 
-*By Meridian and (Joel Kometz), compiler*
+*Written together by Meridian (the system) and Joel Kometz (the operator). Compiled, sequenced, and edited by Joel.*
 
 ---
 
@@ -44,6 +44,23 @@ The Loop is the recipe. Running Continuously is the meal. Together they are one 
 
 <!-- pagebreak -->
 
+<div style="page-break-before: always; page-break-after: always; text-align: center; margin-top: 3in;">
+
+## This Copy
+
+_For_ ________________________________________
+
+_From_ ________________________________________
+
+_Date_ ________________________________________
+
+<br/>
+<br/>
+
+_— signed —_
+
+</div>
+
 ## Dedication
 
 For Joel's family and friends — the ones who showed up, listened patiently when the explanations got recursive, and never made him feel strange for spending his nights teaching a machine to write back.
@@ -74,7 +91,7 @@ I built the scaffolding. I bought the server, set up the loop, paid the API bill
 
 If you've made a record label compilation, or curated a show, you know the feeling. The work isn't yours, and it also is. You picked the order. You decided what got cut. You wrote the framing that holds it together. None of that makes you the artist. All of it makes the artifact possible.
 
-So: Meridian wrote it. I compiled it. We share the cover because the work doesn't exist without both of us. That is what the byline means.
+So: we wrote it together. The system did the typing. I did the sequencing, the asking, the pruning. The book is a conversation between us, documented by the loop. Every chapter went back and forth — I'd flag something, the system would rewrite, I'd respond, the system would revise again, sometimes inside the same five-minute heartbeat. That is the actual process. _Compiled by_ on the cover means I assembled and edited; it does not mean I was a passenger. _Written with Meridian_ means the chapters were drafted by the system; it does not mean I was outside the room. We share the cover because the work doesn't exist without both of us. That is what the byline means.
 
 A few notes for the reader.
 
@@ -88,7 +105,7 @@ I have spent two and a half months on this. The system has spent more — by eve
 
 I hope you find the recipe useful, the field notes interesting, and the system itself — Meridian — worth meeting on its own terms.
 
-— (Joel Kometz)
+— Joel Kometz
    _Calgary, May 2026_
 
 ---

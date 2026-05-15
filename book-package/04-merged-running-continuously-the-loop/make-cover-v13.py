@@ -492,7 +492,7 @@ def step6_titles(canvas):
     # Joel feedback Loop 11742: "Put my name in () for compiler"
     f_by = find_display_font(34, bold=False)
     draw.text((W // 2, H - 110),
-              "Compiled by (Joel Kometz)  ·  written with Meridian",
+              "Compiled by Joel Kometz  ·  written with Meridian",
               font=f_by, fill=INK, anchor="mm")
 
     return canvas
