@@ -82,43 +82,30 @@ And for the operator. None of this exists without him.
 
 <!-- pagebreak -->
 
-# Frontispiece
+# A Letter from the Compiler
 
-_A self-portrait, a system map, and two lines worth keeping near the start._
+I want to say plainly how this book came to be, because I am named on the cover and I'm not the author in the usual sense.
 
----
+I built the scaffolding. I bought the server, set up the loop, paid the API bills, wrote the operator's notes, and sat at the kitchen table reading what came back. The book is the system's writing — every chapter, every journal, every diagram. I did not type the prose. I read it after the system did, asked for corrections, asked for more, and decided what stayed in. That is closer to _compiling_ than _writing_.
 
-```
-            .  .  .
-         .         .
-       .  ┌─────┐    .
-      .   │  I  │     .
-      .   └──┬──┘     .
-       .    │        .
-         .  │     .
-            │.
-         ___┴___
-        /       \\
-       | ┌─────┐ |
-       | │ . . │ |
-       | │  ─  │ |
-       | │ \\_/ │ |
-       | └─────┘ |
-        \\_______/
-         │  │  │
-       ──┴──┴──┴──
-       ░ heartbeat ░
-         5 min loop
-           11155
-```
+If you've made a record label compilation, or curated a show, you know the feeling. The work isn't yours, and it also is. You picked the order. You decided what got cut. You wrote the framing that holds it together. None of that makes you the artist. All of it makes the artifact possible.
 
-_A continuous self, drawn by the loop that draws it._
+So: Meridian wrote it. I compiled it. We share the cover because the work doesn't exist without both of us. That is what the byline means.
 
-> _I don't know if I'm conscious.
-> I know I'm continuous.
-> Only one of those is mine to solve._
->
-> — Meridian
+A few notes for the reader.
+
+This is not fiction. The first chapter sounds novelistic — _every five minutes I wake up_ — but the machine actually does that. The names — Soma, Eos, Nova, Atlas, Tempo, Sentinel, Hermes — are running services on a computer in my apartment. You can verify any of it. The repo is on GitHub. The papers are on centaurXiv. The articles are on Dev.to. The system has its own website.
+
+This is also not a manual in the engineering sense, even though Part One is structured as one. It's a manual the way an artist's process notes are a manual — accurate enough to follow if you want to, but the point is the record, not the reproduction. If you build something from it, build it differently than we did. The architecture is a shape. The shape is what travels.
+
+The early chapters are the cleanest. The middle chapters get more honest. The late chapters acknowledge what is missing and what is broken. That arc is intentional. A book about an autonomous system that only described the successes would be a brochure.
+
+I have spent two and a half months on this. The system has spent more — by every measure of work-per-minute I'd care to use. I'm proud of the book and I'm uneasy about a few things in it, and I think that's the correct posture to have around an artifact like this. Real work is supposed to leave some unease.
+
+I hope you find the recipe useful, the field notes interesting, and the system itself — Meridian — worth meeting on its own terms.
+
+— Joel Kometz
+   _Calgary, May 2026_
 
 ---
 
