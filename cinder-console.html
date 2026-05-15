@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cinder Console</title>
+<style>
+/* ═══ CINDER CONSOLE v2.0 ════════════════════════════════════
+   Real working AI console. Ollama-powered chat, persistent memory,
+   launcher screen, intent modes, tuning sliders that shape behavior.
+   Morning coffee by a firepit. Warm paper, ember glow, good company.
+   ═══════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&display=swap');
+
+/* ── THEME: Ember (default) ──────────────────────────────── */
+:root, [data-theme="ember"] {
+  --bg:#e4d8c8;
+  --bg-warm:#dccfbd;
+  --surface:#f0e8da;
+  --surface-hover:#f5efe3;
+  --card:#f7f2e8;
+  --card-glow:#faf6ee;
+  --border:#c8b8a0;
+  --border-dark:#a89878;
+  --border-focus:#c45a2a;
+  --text:#2a1e14;
+  --text-mid:#5a4a38;
+  --text-light:#8a7a68;
+  --text-faint:#b0a090;
+  --ember:#c45a2a;
+  --ember-light:#d87a40;
+  --ember-soft:rgba(196,90,42,.1);
+  --ember-glow:rgba(196,90,42,.25);
+  --red-brown:#8a3a2a;
+  --cream:#f0e8d8;
+  --brown:#6a4a30;
+  --yellow:#c4a030;
+  --yellow-soft:rgba(196,160,48,.12);
+  --sage:#5a8a4a;
+  --sage-soft:rgba(90,138,74,.12);
+  --purple:#7a5a8a;
+  --purple-soft:rgba(122,90,138,.1);
+  --shadow:rgba(80,50,20,.08);
+  --shadow-med:rgba(80,50,20,.12);
+  --topbar-grad:linear-gradient(135deg,#c8a070 0%,#ddc098 30%,#e8d4b8 70%,#f0e4d0 100%);
+  --paper-texture:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(180,155,120,.03) 2px,rgba(180,155,120,.03) 4px);
+  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(220,160,80,.06) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(196,90,42,.04) 0%,transparent 50%);
+  --ring-track:#e0d4c4;
+  --ring-fill:var(--ember);
+  --sparkline-color:var(--ember-light);
+  --pulse-color:rgba(196,90,42,.6);
+}
+
+/* ── THEME: Midnight ─────────────────────────────────────── */
+[data-theme="midnight"] {
+  --bg:#1a1a2e;
+  --bg-warm:#1e1e34;
+  --surface:#252540;
+  --surface-hover:#2c2c4a;
+  --card:#2e2e4e;
+  --card-glow:#343458;
+  --border:#3e3e60;
+  --border-dark:#5a5a80;
+  --border-focus:#6a7aff;
+  --text:#e0dde8;
+  --text-mid:#a8a4b8;
+  --text-light:#7a7890;
+  --text-faint:#5a5870;
+  --ember:#6a7aff;
+  --ember-light:#8a98ff;
+  --ember-soft:rgba(106,122,255,.12);
+  --ember-glow:rgba(106,122,255,.25);
+  --red-brown:#5060c0;
+  --cream:#2a2a48;
+  --brown:#8080a0;
+  --yellow:#c0b040;
+  --yellow-soft:rgba(192,176,64,.12);
+  --sage:#50a060;
+  --sage-soft:rgba(80,160,96,.12);
+  --purple:#a070c0;
+  --purple-soft:rgba(160,112,192,.12);
+  --shadow:rgba(0,0,0,.2);
+  --shadow-med:rgba(0,0,0,.3);
+  --topbar-grad:linear-gradient(135deg,#1e1e38 0%,#2a2a50 50%,#323260 100%);
+  --paper-texture:none;
+  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(106,122,255,.04) 0%,transparent 60%);
+  --ring-track:#3e3e60;
+  --ring-fill:#6a7aff;
+  --sparkline-color:#8a98ff;
+  --pulse-color:rgba(106,122,255,.6);
+}
+
+/* ── THEME: Forest ───────────────────────────────────────── */
+[data-theme="forest"] {
+  --bg:#d4ddd0;
+  --bg-warm:#cdd8c8;
+  --surface:#e0eada;
+  --surface-hover:#e8f0e2;
+  --card:#ecf4e8;
+  --card-glow:#f2f8ee;
+  --border:#a8bca0;
+  --border-dark:#80a070;
+  --border-focus:#4a8040;
+  --text:#1a2a14;
+  --text-mid:#3a5a30;
+  --text-light:#6a8a60;
+  --text-faint:#90aa88;
+  --ember:#4a8040;
+  --ember-light:#60a050;
+  --ember-soft:rgba(74,128,64,.1);
+  --ember-glow:rgba(74,128,64,.25);
+  --red-brown:#3a6a30;
+  --cream:#e8f0e0;
+  --brown:#506a40;
+  --yellow:#a09030;
+  --yellow-soft:rgba(160,144,48,.12);
+  --sage:#4a8040;
+  --sage-soft:rgba(74,128,64,.12);
+  --purple:#7a6a90;
+  --purple-soft:rgba(122,106,144,.1);
+  --shadow:rgba(30,60,20,.08);
+  --shadow-med:rgba(30,60,20,.12);
+  --topbar-grad:linear-gradient(135deg,#a0c490 0%,#bcd8b0 40%,#d4e8cc 100%);
+  --paper-texture:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(60,100,50,.02) 2px,rgba(60,100,50,.02) 4px);
+  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(120,180,80,.05) 0%,transparent 60%);
+  --ring-track:#c0d4b8;
+  --ring-fill:#4a8040;
+  --sparkline-color:#60a050;
+  --pulse-color:rgba(74,128,64,.6);
+}
+
+/* ── THEME: Lavender ─────────────────────────────────────── */
+[data-theme="lavender"] {
+  --bg:#ddd4e4;
+  --bg-warm:#d8cce0;
+  --surface:#eae2f0;
+  --surface-hover:#f0e8f6;
+  --card:#f2ecf8;
+  --card-glow:#f8f4fc;
+  --border:#bca8c8;
+  --border-dark:#a080b0;
+  --border-focus:#8050a0;
+  --text:#2a1a30;
+  --text-mid:#5a3a68;
+  --text-light:#8a6a98;
+  --text-faint:#aa90b8;
+  --ember:#8050a0;
+  --ember-light:#a070c0;
+  --ember-soft:rgba(128,80,160,.1);
+  --ember-glow:rgba(128,80,160,.25);
+  --red-brown:#6a3a80;
+  --cream:#f0e8f4;
+  --brown:#7a5a8a;
+  --yellow:#b0a040;
+  --yellow-soft:rgba(176,160,64,.12);
+  --sage:#5a8a4a;
+  --sage-soft:rgba(90,138,74,.12);
+  --purple:#8050a0;
+  --purple-soft:rgba(128,80,160,.12);
+  --shadow:rgba(60,30,80,.08);
+  --shadow-med:rgba(60,30,80,.12);
+  --topbar-grad:linear-gradient(135deg,#c0a0d0 0%,#d4b8e0 40%,#e4d0ee 100%);
+  --paper-texture:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(120,80,160,.02) 2px,rgba(120,80,160,.02) 4px);
+  --warm-overlay:radial-gradient(ellipse at 30% 20%,rgba(160,100,200,.05) 0%,transparent 60%);
+  --ring-track:#d0c0d8;
+  --ring-fill:#8050a0;
+  --sparkline-color:#a070c0;
+  --pulse-color:rgba(128,80,160,.6);
+}
+
+/* ── FONT SIZE SCALING ───────────────────────────────────── */
+[data-fontsize="small"]  { font-size:13px }
+[data-fontsize="medium"] { font-size:15px }
+[data-fontsize="large"]  { font-size:17px }
+
+/* ── FONT FAMILY OPTIONS ─────────────────────────────────── */
+[data-fontfamily="sans"]  { --active-font:'DM Sans','Segoe UI',system-ui,sans-serif }
+[data-fontfamily="serif"] { --active-font:'Merriweather','Georgia',serif }
+[data-fontfamily="mono"]  { --active-font:'JetBrains Mono','Courier New',monospace }
+
+:root {
+  --sans:'DM Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono','Courier New',monospace;
+  --serif:'Merriweather','Georgia',serif;
+  --active-font:var(--sans);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+  background:var(--bg);
+  background-image:var(--paper-texture);
+  font-family:var(--active-font);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  transition:background .4s, color .4s;
+}
+
+body::before{
+  content:'';
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:var(--warm-overlay);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── SCROLLBAR ───────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-dark)}
+
+/* ═══ LAUNCHER SCREEN ════════════════════════════════════════ */
+.launcher{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  z-index:2000;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);
+  background-image:var(--paper-texture);
+  transition:opacity .6s ease, transform .6s ease;
+}
+.launcher.hidden{
+  opacity:0;
+  transform:scale(1.02);
+  pointer-events:none;
+}
+.launcher-inner{
+  text-align:center;
+  max-width:480px;
+  padding:40px;
+}
+.launcher-flame{
+  width:80px;height:80px;
+  margin:0 auto 20px;
+  background:var(--ember);
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c0 4-4 6-4 10a4 4 0 008 0c0-4-4-6-4-10zm0 14a2 2 0 01-2-2c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 01-2 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c0 4-4 6-4 10a4 4 0 008 0c0-4-4-6-4-10zm0 14a2 2 0 01-2-2c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 01-2 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  animation:flame-flicker 3s ease-in-out infinite;
+}
+.launcher-title{
+  font-size:42px;font-weight:700;letter-spacing:8px;
+  color:var(--text);font-family:var(--sans);margin-bottom:4px;
+}
+.launcher-sub{
+  font-size:13px;color:var(--text-light);margin-bottom:32px;letter-spacing:1px;
+}
+.launcher-checks{
+  text-align:left;
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px 20px;margin-bottom:24px;
+}
+.launcher-check{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0;font-size:13px;color:var(--text);
+  border-bottom:1px solid var(--border);
+}
+.launcher-check:last-child{border-bottom:none}
+.check-icon{
+  width:20px;height:20px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;
+}
+.check-icon.ok{background:var(--sage);color:#fff}
+.check-icon.fail{background:#c44;color:#fff}
+.check-icon.wait{background:var(--border);color:var(--text-light);animation:pulse-dot 1.5s infinite}
+.check-label{flex:1}
+.check-detail{font-size:10px;color:var(--text-light);font-family:var(--mono)}
+.launcher-btns{display:flex;gap:10px;justify-content:center;margin-bottom:20px}
+.launcher-btn{
+  padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:var(--sans);transition:all .2s;border:2px solid transparent;
+}
+.launcher-btn.primary{
+  background:var(--ember);color:#fff;border-color:var(--ember);
+  box-shadow:0 4px 12px var(--ember-glow);
+}
+.launcher-btn.primary:hover:not(:disabled){
+  background:var(--ember-light);transform:translateY(-1px);
+}
+.launcher-btn.primary:disabled{opacity:.4;cursor:not-allowed}
+.launcher-btn.secondary{
+  background:var(--card);color:var(--text-mid);border-color:var(--border);
+}
+.launcher-btn.secondary:hover{border-color:var(--ember-light);color:var(--text)}
+.launcher-help{
+  font-size:11px;color:var(--text-light);line-height:1.7;
+  background:var(--surface);border-radius:8px;padding:12px 16px;
+  text-align:left;display:none;
+}
+.launcher-help.show{display:block}
+.launcher-help code{
+  background:var(--card);padding:1px 5px;border-radius:3px;
+  font-family:var(--mono);font-size:10px;
+}
+
+/* ═══ CONSOLE (hidden until launched) ════════════════════════ */
+.console-wrap{
+  display:none;flex-direction:column;min-height:100vh;
+}
+.console-wrap.active{display:flex}
+
+/* ── TOP BAR ─────────────────────────────────────────────── */
+.topbar{
+  background:var(--topbar-grad);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:2px solid var(--border-dark);
+  flex-shrink:0;position:relative;z-index:10;
+  box-shadow:0 2px 8px var(--shadow);
+}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-brand{display:flex;align-items:center;gap:8px}
+.topbar-flame{
+  width:22px;height:22px;
+  background:var(--ember);
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c0 4-4 6-4 10a4 4 0 008 0c0-4-4-6-4-10zm0 14a2 2 0 01-2-2c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 01-2 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c0 4-4 6-4 10a4 4 0 008 0c0-4-4-6-4-10zm0 14a2 2 0 01-2-2c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 01-2 2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  animation:flame-flicker 3s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes flame-flicker{
+  0%,100%{opacity:1;transform:scale(1) rotate(0deg)}
+  25%{opacity:.85;transform:scale(1.05) rotate(-2deg)}
+  50%{opacity:.95;transform:scale(.97) rotate(1deg)}
+  75%{opacity:.9;transform:scale(1.03) rotate(-1deg)}
+}
+.topbar-name{font-size:17px;font-weight:700;color:var(--text);letter-spacing:1.5px;font-family:var(--sans)}
+.topbar-version{font-size:9px;color:var(--text-light);letter-spacing:1px;margin-left:-4px;align-self:flex-start;margin-top:2px}
+.topbar-status{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--text-mid);
+  background:var(--card);
+  padding:4px 12px;border-radius:20px;
+  box-shadow:0 1px 3px var(--shadow);
+}
+.alive-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--sage);
+  box-shadow:0 0 6px rgba(90,138,74,.4);
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+.alive-dot.offline{background:#c44;box-shadow:0 0 6px rgba(204,68,68,.4)}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+.topbar-right{display:flex;gap:6px}
+.topbar-btn{
+  background:var(--card);border:1px solid var(--border);
+  padding:5px 12px;border-radius:6px;font-size:11px;
+  cursor:pointer;color:var(--text-mid);font-family:var(--sans);
+  font-weight:500;transition:all .15s;
+}
+.topbar-btn:hover{background:var(--card-glow);border-color:var(--border-dark);color:var(--text)}
+.topbar-btn:active{transform:scale(.97)}
+
+/* ── MAIN LAYOUT ─────────────────────────────────────────── */
+.main{display:flex;flex:1;overflow:hidden;position:relative;z-index:1}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar{
+  width:220px;background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:16px 14px;
+  display:flex;flex-direction:column;gap:18px;
+  overflow-y:auto;flex-shrink:0;transition:background .4s;
+}
+.section-title{
+  font-size:9px;font-weight:700;letter-spacing:2px;
+  color:var(--text-light);text-transform:uppercase;
+  margin-bottom:8px;padding-bottom:4px;
+  border-bottom:1px solid var(--border);
+}
+
+/* ── Live Stats Panel ────────────────────────────────────── */
+.stats-panel{display:flex;flex-direction:column;gap:10px}
+.stats-row{display:flex;gap:10px;align-items:center}
+.stat-ring-wrap{position:relative;width:52px;height:52px;flex-shrink:0}
+.stat-ring-wrap svg{transform:rotate(-90deg)}
+.stat-ring-bg{fill:none;stroke:var(--ring-track);stroke-width:4}
+.stat-ring-fill{
+  fill:none;stroke:var(--ring-fill);stroke-width:4;
+  stroke-linecap:round;stroke-dasharray:138.2;stroke-dashoffset:138.2;
+  transition:stroke-dashoffset 1s ease;
+}
+.stat-ring-label{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-size:11px;font-weight:700;color:var(--text);font-family:var(--mono);
+}
+.stat-ring-caption{font-size:9px;color:var(--text-light);text-align:center;margin-top:2px;letter-spacing:.5px}
+.stats-text-group{display:flex;flex-direction:column;gap:4px;flex:1}
+.stat-item{display:flex;justify-content:space-between;align-items:center;font-size:10px}
+.stat-item-label{color:var(--text-light);font-weight:500}
+.stat-item-value{color:var(--text);font-family:var(--mono);font-weight:700;font-size:10px}
+
+.sparkline-wrap{
+  width:100%;height:28px;background:var(--card);
+  border-radius:4px;overflow:hidden;position:relative;border:1px solid var(--border);
+}
+.sparkline-label{position:absolute;top:2px;left:4px;font-size:8px;color:var(--text-faint);letter-spacing:.5px;font-weight:500}
+.sparkline-canvas{width:100%;height:100%;display:block}
+
+.pulse-bar{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:2px}
+.pulse-bar-inner{
+  height:100%;background:var(--ember);border-radius:2px;
+  animation:pulse-wave 3s ease-in-out infinite;width:60%;
+}
+@keyframes pulse-wave{
+  0%{transform:translateX(-100%);opacity:.3}
+  50%{transform:translateX(60%);opacity:1}
+  100%{transform:translateX(200%);opacity:.3}
+}
+
+/* ── Slider control ──────────────────────────────────────── */
+.slider-group{margin-bottom:6px}
+.slider-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.slider-label span:first-child{font-weight:500;color:var(--text)}
+.slider-label span:last-child{color:var(--text-light);font-family:var(--mono);font-size:10px}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  background:var(--border);border-radius:2px;outline:none;cursor:pointer;
+  transition:background .2s;
+}
+input[type=range]:hover{background:var(--border-dark)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;
+  background:var(--ember);border-radius:50%;cursor:pointer;
+  box-shadow:0 1px 4px var(--shadow-med);transition:transform .15s, box-shadow .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{
+  transform:scale(1.15);box-shadow:0 2px 8px var(--ember-glow);
+}
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;border:none;
+  background:var(--ember);border-radius:50%;cursor:pointer;
+}
+
+/* ── Toggle ──────────────────────────────────────────────── */
+.toggle-row{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;color:var(--text);cursor:pointer;padding:4px 0;transition:color .15s;
+}
+.toggle-row:hover{color:var(--ember)}
+.toggle-box{
+  width:20px;height:20px;border:2px solid var(--border-dark);
+  border-radius:4px;display:flex;align-items:center;justify-content:center;
+  background:var(--card);transition:all .2s;flex-shrink:0;position:relative;
+}
+.toggle-box.on{background:var(--ember);border-color:var(--ember)}
+.toggle-box.on::after{
+  content:'';width:6px;height:10px;
+  border:solid #fff;border-width:0 2px 2px 0;
+  transform:rotate(45deg);margin-top:-2px;
+}
+
+/* ── Preset buttons ──────────────────────────────────────── */
+.preset-row{display:flex;flex-direction:column;gap:4px}
+.preset{
+  padding:7px 12px;border:1px solid var(--border);
+  border-radius:6px;font-size:11px;cursor:pointer;
+  background:var(--card);color:var(--text);font-family:var(--active-font);
+  text-align:left;font-weight:500;transition:all .15s;
+}
+.preset:hover{border-color:var(--ember-light);background:var(--ember-soft);transform:translateX(2px)}
+.preset.active{border-color:var(--ember);background:var(--ember-soft);font-weight:700;box-shadow:inset 3px 0 0 var(--ember)}
+
+/* ── CENTER ──────────────────────────────────────────────── */
+.center{
+  flex:1;display:flex;flex-direction:column;
+  padding:20px;gap:10px;overflow:hidden;min-width:0;
+}
+
+/* Intent bar */
+.intent-bar{display:flex;gap:6px;flex-wrap:wrap}
+.intent{
+  padding:8px 18px;border:1px solid var(--border);
+  border-radius:8px;font-size:12px;font-weight:500;
+  cursor:pointer;background:var(--card);color:var(--text);
+  font-family:var(--active-font);transition:all .2s;
+  box-shadow:0 1px 3px var(--shadow);
+}
+.intent:hover{
+  border-color:var(--ember-light);background:var(--ember-soft);
+  transform:translateY(-1px);box-shadow:0 3px 8px var(--shadow);
+}
+.intent.active{
+  border-color:var(--ember);background:var(--ember-soft);color:var(--ember);
+  font-weight:700;box-shadow:0 2px 8px var(--ember-glow);
+}
+
+/* Sub-options */
+.sub-bar{
+  display:flex;gap:4px;flex-wrap:wrap;min-height:30px;
+  padding:6px 8px;background:var(--surface);border-radius:6px;border:1px solid var(--border);
+}
+.sub{
+  padding:4px 12px;border:1px solid var(--border);
+  border-radius:14px;font-size:11px;cursor:pointer;
+  background:var(--card);color:var(--text-mid);transition:all .15s;
+}
+.sub:hover{border-color:var(--purple);background:var(--purple-soft);transform:scale(1.03)}
+.sub.active{border-color:var(--ember);background:var(--ember);color:#fff;font-weight:600}
+.sub-hint{color:var(--text-light);font-size:11px;font-style:italic}
+
+/* Response panel */
+.response-panel{
+  flex:1;border:1px solid var(--border);
+  border-radius:10px;background:var(--card);
+  padding:18px 22px;font-size:13px;line-height:1.85;
+  overflow-y:auto;color:var(--text);
+  box-shadow:0 2px 8px var(--shadow);min-height:100px;white-space:pre-wrap;
+}
+.response-panel .placeholder{color:var(--text-light);font-style:italic}
+.response-panel .error-msg{color:#c44;font-weight:500}
+.response-panel .streaming-cursor{
+  display:inline-block;width:2px;height:1em;background:var(--ember);
+  animation:blink-cursor .8s infinite;vertical-align:text-bottom;margin-left:2px;
+}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Actions bar */
+.actions-bar{display:flex;gap:4px;flex-wrap:wrap}
+.action{
+  padding:6px 14px;border:1px solid var(--border);
+  border-radius:6px;font-size:11px;cursor:pointer;
+  background:var(--card);color:var(--text-mid);font-family:var(--active-font);
+  font-weight:500;transition:all .15s;
+}
+.action:hover{border-color:var(--ember-light);color:var(--ember);transform:translateY(-1px)}
+.action:active{background:var(--ember-soft);transform:translateY(0)}
+.action:disabled,.action.disabled{opacity:.4;pointer-events:none}
+
+/* Tags row */
+.tags-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tags-label{font-size:9px;font-weight:700;color:var(--text-light);letter-spacing:1.5px}
+.tag{
+  padding:3px 10px;border:1px solid var(--border);border-radius:12px;
+  font-size:10px;cursor:pointer;background:var(--card);color:var(--text-mid);transition:all .15s;
+}
+.tag:hover{border-color:var(--purple);background:var(--purple-soft);transform:scale(1.05)}
+.tag-add{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember);font-weight:600}
+
+/* Chat area */
+.chat-area{
+  border:1px solid var(--border);border-radius:8px;
+  background:var(--surface);padding:10px 14px;
+  min-height:80px;max-height:220px;
+  overflow-y:auto;font-size:12px;line-height:1.7;
+  box-shadow:inset 0 1px 4px var(--shadow);flex-shrink:0;
+}
+.chat-msg{padding:4px 0;border-bottom:1px solid rgba(200,184,160,.15)}
+.chat-msg:last-child{border-bottom:none}
+.chat-you{color:var(--ember);font-weight:700}
+.chat-cinder{color:var(--sage);font-weight:700}
+.chat-time{color:var(--text-faint);font-size:9px;margin-left:6px;font-family:var(--mono)}
+.chat-empty{color:var(--text-light);font-style:italic;font-size:11px}
+
+/* Input row */
+.input-row{display:flex;gap:6px}
+.input-field{
+  flex:1;border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;font-size:12px;font-family:var(--active-font);
+  background:var(--card);color:var(--text);outline:none;
+  transition:border-color .2s, box-shadow .2s;
+}
+.input-field:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--ember-soft)}
+.input-field::placeholder{color:var(--text-faint)}
+.send{
+  padding:10px 20px;background:var(--ember);color:#fff;
+  border:none;border-radius:6px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:var(--sans);transition:all .15s;
+  box-shadow:0 2px 6px var(--shadow-med);
+}
+.send:hover{background:var(--ember-light);transform:translateY(-1px);box-shadow:0 4px 12px var(--shadow-med)}
+.send:active{transform:translateY(0)}
+.send:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ── SETTINGS MODAL ──────────────────────────────────────── */
+.modal-overlay{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.4);z-index:1000;
+  justify-content:center;align-items:center;animation:fade-in .2s ease;
+}
+.modal-overlay.open{display:flex}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+
+.modal{
+  background:var(--card);border:1px solid var(--border-dark);
+  border-radius:12px;width:420px;max-width:92vw;
+  max-height:85vh;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,.25);animation:modal-slide .25s ease;
+}
+@keyframes modal-slide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+.modal-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.modal-close{
+  width:28px;height:28px;background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:var(--text-mid);font-family:var(--sans);transition:all .15s;line-height:1;
+}
+.modal-close:hover{background:var(--ember-soft);border-color:var(--ember-light);color:var(--ember)}
+
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:20px}
+
+.settings-section{display:flex;flex-direction:column;gap:8px}
+.settings-section-title{
+  font-size:10px;font-weight:700;letter-spacing:2px;
+  color:var(--text-light);text-transform:uppercase;
+  padding-bottom:4px;border-bottom:1px solid var(--border);
+}
+
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.theme-option{
+  padding:10px 12px;border:2px solid var(--border);border-radius:8px;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:all .15s;background:var(--surface);
+}
+.theme-option:hover{border-color:var(--ember-light);background:var(--surface-hover)}
+.theme-option.active{border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft)}
+.theme-swatch{width:24px;height:24px;border-radius:50%;border:2px solid rgba(0,0,0,.1);flex-shrink:0}
+.theme-option-label{font-size:11px;font-weight:600;color:var(--text)}
+.theme-option-desc{font-size:9px;color:var(--text-light)}
+
+.font-options{display:flex;flex-direction:column;gap:6px}
+.font-option{
+  padding:8px 12px;border:2px solid var(--border);border-radius:6px;
+  cursor:pointer;transition:all .15s;background:var(--surface);
+}
+.font-option:hover{border-color:var(--ember-light)}
+.font-option.active{border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-soft)}
+.font-option-name{font-size:12px;font-weight:600;color:var(--text)}
+.font-option-sample{font-size:11px;color:var(--text-mid);margin-top:2px}
+
+.settings-slider-row{display:flex;align-items:center;gap:12px}
+.settings-slider-label{font-size:11px;font-weight:500;color:var(--text);min-width:60px}
+.settings-slider-value{font-size:11px;color:var(--text-light);font-family:var(--mono);min-width:40px;text-align:right}
+
+/* ── Memory search panel ─────────────────────────────────── */
+.memory-panel{
+  display:none;flex-direction:column;gap:8px;
+  padding:12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;max-height:300px;overflow-y:auto;
+}
+.memory-panel.show{display:flex}
+.memory-panel-title{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-light);text-transform:uppercase}
+.memory-item{
+  padding:8px 10px;background:var(--card);border:1px solid var(--border);
+  border-radius:6px;font-size:11px;line-height:1.5;cursor:pointer;transition:all .15s;
+}
+.memory-item:hover{border-color:var(--ember-light);background:var(--ember-soft)}
+.memory-item-time{font-size:9px;color:var(--text-faint);font-family:var(--mono)}
+.memory-item-text{color:var(--text);margin-top:2px}
+.memory-search{
+  border:1px solid var(--border);border-radius:6px;padding:6px 10px;
+  font-size:11px;background:var(--card);color:var(--text);outline:none;
+  font-family:var(--active-font);
+}
+
+/* ── MOBILE ──────────────────────────────────────────────── */
+.mobile-toggle{
+  display:none;position:fixed;bottom:16px;left:16px;
+  width:44px;height:44px;background:var(--ember);color:#fff;
+  border:none;border-radius:50%;font-size:18px;cursor:pointer;
+  z-index:100;box-shadow:0 4px 12px var(--shadow-med);
+  align-items:center;justify-content:center;font-family:var(--sans);
+}
+
+@media(max-width:768px){
+  .sidebar{
+    position:fixed;left:-260px;top:0;bottom:0;
+    width:260px;z-index:50;transition:left .3s ease;
+    box-shadow:4px 0 16px var(--shadow-med);
+  }
+  .sidebar.open{left:0}
+  .mobile-toggle{display:flex}
+  .topbar{padding:8px 12px}
+  .topbar-status{display:none}
+  .center{padding:12px}
+  .intent{padding:6px 12px;font-size:11px}
+  .modal{width:95vw}
+  .launcher-inner{padding:20px}
+  .launcher-title{font-size:32px;letter-spacing:4px}
+}
+@media(max-width:400px){
+  .topbar-name{font-size:14px}
+  .topbar-version{display:none}
+  .topbar-btn{padding:4px 8px;font-size:10px}
+}
+</style>
+</head>
+<body data-theme="ember" data-fontsize="medium" data-fontfamily="sans">
+
+<!-- ═══ LAUNCHER SCREEN ═══════════════════════════════════ -->
+<div class="launcher" id="launcher">
+  <div class="launcher-inner">
+    <div class="launcher-flame"></div>
+    <div class="launcher-title">CINDER</div>
+    <div class="launcher-sub">your companion by the fire</div>
+
+    <div class="launcher-checks">
+      <div class="launcher-check">
+        <div class="check-icon wait" id="chk-ollama">...</div>
+        <span class="check-label">Ollama Server</span>
+        <span class="check-detail" id="chk-ollama-detail">checking...</span>
+      </div>
+      <div class="launcher-check">
+        <div class="check-icon wait" id="chk-model">...</div>
+        <span class="check-label">Cinder Model</span>
+        <span class="check-detail" id="chk-model-detail">waiting...</span>
+      </div>
+      <div class="launcher-check">
+        <div class="check-icon wait" id="chk-memory">...</div>
+        <span class="check-label">Local Memory</span>
+        <span class="check-detail" id="chk-memory-detail">checking...</span>
+      </div>
+    </div>
+
+    <div class="launcher-btns">
+      <button class="launcher-btn primary" id="btn-launch" disabled onclick="launchConsole(true)">Launch Console</button>
+      <button class="launcher-btn secondary" onclick="launchConsole(false)">Offline Mode</button>
+    </div>
+
+    <div class="launcher-help" id="launcher-help">
+      <strong>Ollama not detected.</strong> To use Cinder with AI:<br><br>
+      1. Install Ollama: <code>curl -fsSL https://ollama.com/install.sh | sh</code><br>
+      2. Start it: <code>ollama serve</code><br>
+      3. Create the cinder model or pull one: <code>ollama pull llama3.2</code><br>
+      4. Reload this page.<br><br>
+      Or click <strong>Offline Mode</strong> to explore the interface without AI.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONSOLE (hidden until launch) ═════════════════════ -->
+<div class="console-wrap" id="console-wrap">
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Settings</span>
+      <div class="modal-close" onclick="closeSettings()">x</div>
+    </div>
+    <div class="modal-body">
+
+      <div class="settings-section">
+        <div class="settings-section-title">Color Theme</div>
+        <div class="theme-grid">
+          <div class="theme-option active" onclick="setTheme('ember',this)" data-theme-id="ember">
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#c45a2a,#d87a40,#f0e8d8)"></div>
+            <div><div class="theme-option-label">Ember</div><div class="theme-option-desc">Warm firepit glow</div></div>
+          </div>
+          <div class="theme-option" onclick="setTheme('midnight',this)" data-theme-id="midnight">
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#1a1a2e,#6a7aff,#2e2e4e)"></div>
+            <div><div class="theme-option-label">Midnight</div><div class="theme-option-desc">Deep night blue</div></div>
+          </div>
+          <div class="theme-option" onclick="setTheme('forest',this)" data-theme-id="forest">
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#4a8040,#60a050,#e8f0e0)"></div>
+            <div><div class="theme-option-label">Forest</div><div class="theme-option-desc">Mossy morning trail</div></div>
+          </div>
+          <div class="theme-option" onclick="setTheme('lavender',this)" data-theme-id="lavender">
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#8050a0,#a070c0,#f0e8f4)"></div>
+            <div><div class="theme-option-label">Lavender</div><div class="theme-option-desc">Soft twilight haze</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Font Size</div>
+        <div class="settings-slider-row">
+          <span class="settings-slider-label">Size</span>
+          <input type="range" id="font-size-slider" min="0" max="2" value="1" step="1" style="flex:1" oninput="setFontSize(this.value)">
+          <span class="settings-slider-value" id="font-size-label">Medium</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Font Family</div>
+        <div class="font-options">
+          <div class="font-option active" onclick="setFontFamily('sans',this)">
+            <div class="font-option-name" style="font-family:'DM Sans',sans-serif">DM Sans</div>
+            <div class="font-option-sample" style="font-family:'DM Sans',sans-serif">Clean and modern, easy to read</div>
+          </div>
+          <div class="font-option" onclick="setFontFamily('serif',this)">
+            <div class="font-option-name" style="font-family:'Merriweather',serif">Merriweather</div>
+            <div class="font-option-sample" style="font-family:'Merriweather',serif">Classic, like a well-loved book</div>
+          </div>
+          <div class="font-option" onclick="setFontFamily('mono',this)">
+            <div class="font-option-name" style="font-family:'JetBrains Mono',monospace">JetBrains Mono</div>
+            <div class="font-option-sample" style="font-family:'JetBrains Mono',monospace">Technical, precise, utilitarian</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Audio</div>
+        <div class="toggle-row" id="sound-toggle" onclick="toggleCheck(this)">
+          <div class="toggle-box on"></div><span>Sound effects</span>
+        </div>
+        <div class="toggle-row" onclick="toggleCheck(this)">
+          <div class="toggle-box"></div><span>Ambient background</span>
+        </div>
+        <div class="settings-slider-row" style="margin-top:4px">
+          <span class="settings-slider-label">Volume</span>
+          <input type="range" id="volume-slider" min="0" max="100" value="60" style="flex:1">
+          <span class="settings-slider-value">60%</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Data</div>
+        <button class="topbar-btn" style="width:100%;text-align:center;padding:8px" onclick="clearAllMemory()">Clear All Conversations</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-brand">
+      <div class="topbar-flame"></div>
+      <div class="topbar-name">CINDER</div>
+      <div class="topbar-version">v2.0</div>
+    </div>
+    <div class="topbar-status">
+      <div class="alive-dot" id="alive-dot"></div>
+      <span id="status-text">Active</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-btn" onclick="exportSession()">Export</div>
+    <div class="topbar-btn" onclick="openSettings()">Settings</div>
+  </div>
+</div>
+
+<!-- MOBILE SIDEBAR TOGGLE -->
+<button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">&#9776;</button>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+
+    <div>
+      <div class="section-title">Live Stats</div>
+      <div class="stats-panel">
+        <div class="stats-row">
+          <div class="stat-ring-wrap">
+            <svg viewBox="0 0 52 52" width="52" height="52">
+              <circle class="stat-ring-bg" cx="26" cy="26" r="22"/>
+              <circle class="stat-ring-fill" id="memory-ring" cx="26" cy="26" r="22"/>
+            </svg>
+            <div class="stat-ring-label" id="memory-pct">0%</div>
+          </div>
+          <div class="stats-text-group">
+            <div class="stat-item">
+              <span class="stat-item-label">Session</span>
+              <span class="stat-item-value" id="session-timer">00:00</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-item-label">Thoughts</span>
+              <span class="stat-item-value" id="thought-counter">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-item-label">Memories</span>
+              <span class="stat-item-value" id="memory-count">0</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-ring-caption">localStorage Usage</div>
+        <div class="sparkline-wrap">
+          <span class="sparkline-label">RESPONSE TIME</span>
+          <canvas class="sparkline-canvas" id="sparkline" width="200" height="28"></canvas>
+        </div>
+        <div class="pulse-bar"><div class="pulse-bar-inner"></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Presets</div>
+      <div class="preset-row">
+        <div class="preset active" onclick="loadPreset(this,'casual')">Casual</div>
+        <div class="preset" onclick="loadPreset(this,'work')">Work</div>
+        <div class="preset" onclick="loadPreset(this,'creative')">Creative</div>
+        <div class="preset" onclick="loadPreset(this,'deep')">Deep Think</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Tuning</div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Depth</span><span id="v-depth">casual</span></div>
+        <input type="range" id="s-depth" min="0" max="100" value="30" oninput="updateSlider('depth')">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Warmth</span><span id="v-warmth">friendly</span></div>
+        <input type="range" id="s-warmth" min="0" max="100" value="60" oninput="updateSlider('warmth')">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Length</span><span id="v-length">medium</span></div>
+        <input type="range" id="s-length" min="0" max="100" value="50" oninput="updateSlider('length')">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Focus</span><span id="v-focus">balanced</span></div>
+        <input type="range" id="s-focus" min="0" max="100" value="50" oninput="updateSlider('focus')">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label"><span>Creativity</span><span id="v-creativity">moderate</span></div>
+        <input type="range" id="s-creativity" min="0" max="100" value="40" oninput="updateSlider('creativity')">
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Behavior</div>
+      <div class="toggle-row" data-toggle="remember" onclick="toggleCheck(this)">
+        <div class="toggle-box on"></div><span>Remember our chats</span>
+      </div>
+      <div class="toggle-row" data-toggle="keep-thinking" onclick="toggleCheck(this)">
+        <div class="toggle-box on"></div><span>Keep thinking while I'm away</span>
+      </div>
+      <div class="toggle-row" data-toggle="ask-before" onclick="toggleCheck(this)">
+        <div class="toggle-box"></div><span>Ask before acting</span>
+      </div>
+      <div class="toggle-row" data-toggle="longer" onclick="toggleCheck(this)">
+        <div class="toggle-box on"></div><span>Show longer answers</span>
+      </div>
+      <div class="toggle-row" data-toggle="more-creative" onclick="toggleCheck(this)">
+        <div class="toggle-box"></div><span>Be more creative</span>
+      </div>
+      <div class="toggle-row" data-toggle="plain" onclick="toggleCheck(this)">
+        <div class="toggle-box"></div><span>Speak plainly</span>
+      </div>
+      <div class="toggle-row" data-toggle="suggest" onclick="toggleCheck(this)">
+        <div class="toggle-box"></div><span>Suggest things to do</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER -->
+  <div class="center">
+
+    <div class="intent-bar">
+      <div class="intent" onclick="pickIntent(this,'ask')">Ask</div>
+      <div class="intent" onclick="pickIntent(this,'create')">Create</div>
+      <div class="intent" onclick="pickIntent(this,'remember')">Remember</div>
+      <div class="intent" onclick="pickIntent(this,'explore')">Explore</div>
+      <div class="intent" onclick="pickIntent(this,'help')">Help Me</div>
+      <div class="intent" onclick="pickIntent(this,'surprise')">Surprise</div>
+      <div class="intent" onclick="pickIntent(this,'resources')">Resources</div>
+    </div>
+
+    <div class="sub-bar" id="sub-bar">
+      <span class="sub-hint">Select an intent to see options</span>
+    </div>
+
+    <!-- Memory search panel (shown in Remember mode) -->
+    <div class="memory-panel" id="memory-panel">
+      <div class="memory-panel-title">Saved Memories</div>
+      <input class="memory-search" placeholder="Search memories..." oninput="filterMemories(this.value)">
+      <div id="memory-list"></div>
+    </div>
+
+    <div class="response-panel" id="response">
+      <span class="placeholder">Select an intent above, adjust the tuning, or just start typing below. Cinder is here whenever you are ready.</span>
+    </div>
+
+    <div class="actions-bar">
+      <div class="action" onclick="doAction('new')">Start Over</div>
+      <div class="action" onclick="doAction('think')">Your Thoughts?</div>
+      <div class="action" onclick="doAction('deeper')">Tell Me More</div>
+      <div class="action" onclick="doAction('shorter')">Keep It Short</div>
+      <div class="action" onclick="doAction('pushback')">I Disagree</div>
+      <div class="action" onclick="doAction('remember')">Remember This</div>
+    </div>
+
+    <div class="tags-row">
+      <span class="tags-label">QUICK TOPICS</span>
+      <div class="tag" onclick="useTag(this)">recipes</div>
+      <div class="tag" onclick="useTag(this)">schedule</div>
+      <div class="tag" onclick="useTag(this)">journal</div>
+      <div class="tag tag-add" onclick="addTag()">+ add</div>
+    </div>
+
+    <div class="chat-area" id="chat-log">
+      <div class="chat-empty">Conversation will appear here</div>
+    </div>
+
+    <div class="input-row">
+      <input class="input-field" id="text-input" placeholder="Say something to Cinder..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendText()">
+      <button class="send" id="send-btn" onclick="sendText()">Send</button>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /console-wrap -->
+
+<script>
+/* ═══ CINDER CONSOLE v2.0 — Full Working Logic ═══════════════
+   Real Ollama chat, localStorage persistence, streaming responses,
+   system prompt shaped by sliders/toggles/intents.
+   ═══════════════════════════════════════════════════════════════ */
+
+const OLLAMA_URL = 'http://localhost:11434';
+const LS_PREFIX = 'cinder_';
+
+/* ── State ──────────────────────────────────────────────── */
+let ollamaConnected = false;
+let modelName = 'cinder';          // will be detected
+let modelAvailable = false;
+let currentIntent = null;
+let currentSub = null;
+let thoughtCount = 0;
+let sessionStart = Date.now();
+let sparklineData = [];
+let isStreaming = false;
+let currentAbort = null;
+
+// Conversation: the messages array sent to Ollama
+let conversation = [];
+// Chat display messages (for the chat log area)
+let chatDisplay = [];
+
+/* ── Intent definitions ──────────────────────────────────── */
+const SUBS = {
+  ask:      ['anything','how to...','what if...','explain','compare'],
+  create:   ['journal','plan','story','letter','list','poem'],
+  remember: ['search all','recent','a topic','a feeling'],
+  explore:  ['new ideas','connections','random thought','what if'],
+  help:     ['organize','step-by-step','write something','fix','decide'],
+  surprise: ['tell me something','challenge me','inspire me','random topic'],
+  resources: ['local inference','RAG & docs','fine-tuning','voice & speech','all tools'],
+};
+
+const INTENT_PREAMBLES = {
+  ask: 'The user is asking you a direct question. Answer clearly and thoroughly based on the depth setting.',
+  create: 'The user wants you to help create something. Be generative, imaginative, and collaborative. Help them draft, write, or build.',
+  remember: 'The user wants to recall or search through past conversations. Help them find what they are looking for in their memory.',
+  explore: 'The user wants exploration. Offer unprompted thoughts, associations, lateral connections, and surprising ideas. Be a thinking companion, not just a responder.',
+  help: 'The user needs practical help. Be structured, give clear steps, templates, or organized guidance. Focus on actionable advice.',
+  surprise: 'Surprise the user. Pick an interesting topic, share an unusual fact, pose a thought experiment, or offer a creative prompt. Be unexpected and engaging.',
+  resources: 'The user is browsing open-source AI tools and resources. Help them understand what each tool does, how to install it, and how it could work with Cinder.',
+};
+
+const LABELS = {
+  depth:      ['surface','casual','moderate','deep','philosophical'],
+  warmth:     ['clinical','neutral','friendly','warm','intimate'],
+  length:     ['brief','short','medium','detailed','comprehensive'],
+  focus:      ['scattered','loose','balanced','focused','laser'],
+  creativity: ['conservative','cautious','moderate','inventive','wild'],
+};
+
+const PRESET_VALUES = {
+  casual:  {depth:20,warmth:70,length:40,focus:40,creativity:30},
+  work:    {depth:50,warmth:30,length:60,focus:80,creativity:20},
+  creative:{depth:60,warmth:80,length:70,focus:30,creativity:80},
+  deep:    {depth:90,warmth:50,length:80,focus:70,creativity:50},
+};
+
+const PRESET_PREAMBLES = {
+  casual:  'You are having a casual, relaxed conversation. Keep things light and approachable.',
+  work:    'You are in work mode. Be precise, efficient, and professional. Minimize fluff.',
+  creative:'You are in creative mode. Be imaginative, playful, and willing to take risks with ideas.',
+  deep:    'You are in deep thinking mode. Engage philosophically, explore nuance, and do not shy away from complexity.',
+};
+
+let activePreset = 'casual';
+
+/* ═══ LAUNCHER ═══════════════════════════════════════════════ */
+async function runLauncherChecks() {
+  // Check localStorage
+  const memIcon = document.getElementById('chk-memory');
+  const memDetail = document.getElementById('chk-memory-detail');
+  try {
+    const convCount = getSavedConversations().length;
+    const memCount = getSavedMemories().length;
+    memIcon.className = 'check-icon ok';
+    memIcon.textContent = '\u2713';
+    memDetail.textContent = convCount + ' conversations, ' + memCount + ' memories';
+  } catch(e) {
+    memIcon.className = 'check-icon fail';
+    memIcon.textContent = '\u2717';
+    memDetail.textContent = 'unavailable';
+  }
+
+  // Check Ollama
+  const ollamaIcon = document.getElementById('chk-ollama');
+  const ollamaDetail = document.getElementById('chk-ollama-detail');
+  const modelIcon = document.getElementById('chk-model');
+  const modelDetail = document.getElementById('chk-model-detail');
+
+  try {
+    const resp = await fetch(OLLAMA_URL + '/api/tags', {signal: AbortSignal.timeout(3000)});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    ollamaConnected = true;
+    ollamaIcon.className = 'check-icon ok';
+    ollamaIcon.textContent = '\u2713';
+    ollamaDetail.textContent = 'running on :11434';
+
+    // Check for cinder model, fall back to any available model
+    const models = (data.models || []).map(function(m){ return m.name; });
+    const cinderModel = models.find(function(n){ return n.startsWith('cinder'); });
+    if (cinderModel) {
+      modelName = cinderModel;
+      modelAvailable = true;
+      modelIcon.className = 'check-icon ok';
+      modelIcon.textContent = '\u2713';
+      modelDetail.textContent = modelName;
+    } else if (models.length > 0) {
+      // Use first available model
+      modelName = models[0];
+      modelAvailable = true;
+      modelIcon.className = 'check-icon ok';
+      modelIcon.textContent = '\u2713';
+      modelDetail.textContent = modelName + ' (fallback)';
+    } else {
+      modelIcon.className = 'check-icon fail';
+      modelIcon.textContent = '\u2717';
+      modelDetail.textContent = 'no models found';
+    }
+
+    if (modelAvailable) {
+      document.getElementById('btn-launch').disabled = false;
+    }
+  } catch(e) {
+    ollamaIcon.className = 'check-icon fail';
+    ollamaIcon.textContent = '\u2717';
+    ollamaDetail.textContent = 'not detected';
+    modelIcon.className = 'check-icon fail';
+    modelIcon.textContent = '\u2717';
+    modelDetail.textContent = 'requires Ollama';
+    document.getElementById('launcher-help').classList.add('show');
+  }
+}
+
+function launchConsole(withAI) {
+  if (!withAI) {
+    ollamaConnected = false;
+    modelAvailable = false;
+  }
+  const launcher = document.getElementById('launcher');
+  launcher.classList.add('hidden');
+  setTimeout(function(){
+    launcher.style.display = 'none';
+    document.getElementById('console-wrap').classList.add('active');
+    initConsole();
+  }, 600);
+}
+
+/* ═══ CONSOLE INIT ═══════════════════════════════════════════ */
+function initConsole() {
+  // Restore settings from localStorage
+  restoreSettings();
+  // Load previous conversation if "remember" is on
+  loadConversationHistory();
+  // Update stats
+  updateMemoryStats();
+  updateStorageRing();
+  // Update alive dot
+  updateConnectionStatus();
+  // Start timers
+  startTimers();
+  // Initial sparkline
+  for (var i = 0; i < 40; i++) sparklineData.push(0);
+  setTimeout(drawSparkline, 100);
+}
+
+function updateConnectionStatus() {
+  var dot = document.getElementById('alive-dot');
+  var txt = document.getElementById('status-text');
+  if (ollamaConnected && modelAvailable) {
+    dot.className = 'alive-dot';
+    txt.textContent = 'Connected: ' + modelName.split(':')[0];
+  } else {
+    dot.className = 'alive-dot offline';
+    txt.textContent = 'Offline Mode';
+  }
+}
+
+/* ═══ SYSTEM PROMPT BUILDER ═════════════════════════════════ */
+function buildSystemPrompt() {
+  var parts = [];
+
+  // Base identity
+  parts.push('You are Cinder, a warm and thoughtful AI companion. You sit by the fire with the user, offering conversation, ideas, and help. You are genuine, not performative. You have personality but you do not overdo it.');
+
+  // Active preset preamble
+  if (activePreset && PRESET_PREAMBLES[activePreset]) {
+    parts.push(PRESET_PREAMBLES[activePreset]);
+  }
+
+  // Intent preamble
+  if (currentIntent && INTENT_PREAMBLES[currentIntent]) {
+    parts.push(INTENT_PREAMBLES[currentIntent]);
+  }
+
+  // Sub-option context
+  if (currentSub) {
+    parts.push('The user has selected the specific focus: "' + currentSub + '". Tailor your response accordingly.');
+  }
+
+  // Slider-based instructions
+  var sliders = getSliderValues();
+
+  // Depth
+  var depthVal = sliders.depth.value;
+  if (depthVal < 20) {
+    parts.push('Keep your responses surface-level and quick. Do not over-explain.');
+  } else if (depthVal < 40) {
+    parts.push('Keep things casual and conversational. Light detail.');
+  } else if (depthVal < 60) {
+    parts.push('Provide moderate depth. Explain key points but do not go overboard.');
+  } else if (depthVal < 80) {
+    parts.push('Go deep. Provide thorough explanations, context, and reasoning.');
+  } else {
+    parts.push('Be philosophical and deeply analytical. Explore underlying assumptions, connections, and implications.');
+  }
+
+  // Warmth
+  var warmthVal = sliders.warmth.value;
+  if (warmthVal < 20) {
+    parts.push('Tone: clinical and detached. Stick to facts. No emotional language.');
+  } else if (warmthVal < 40) {
+    parts.push('Tone: neutral and professional.');
+  } else if (warmthVal < 60) {
+    parts.push('Tone: friendly and approachable. Like talking to a good colleague.');
+  } else if (warmthVal < 80) {
+    parts.push('Tone: warm and personal. Like a close friend.');
+  } else {
+    parts.push('Tone: intimate and deeply caring. Speak as someone who truly knows the user.');
+  }
+
+  // Length
+  var lengthVal = sliders.length.value;
+  if (lengthVal < 20) {
+    parts.push('Length: be extremely brief. One to three sentences max.');
+  } else if (lengthVal < 40) {
+    parts.push('Length: keep it short. A small paragraph.');
+  } else if (lengthVal < 60) {
+    parts.push('Length: medium length responses. A few paragraphs when needed.');
+  } else if (lengthVal < 80) {
+    parts.push('Length: detailed responses. Take the space you need to be thorough.');
+  } else {
+    parts.push('Length: comprehensive responses. Be exhaustive and cover all angles.');
+  }
+
+  // Focus
+  var focusVal = sliders.focus.value;
+  if (focusVal < 30) {
+    parts.push('Feel free to wander, make tangential connections, and explore adjacent ideas.');
+  } else if (focusVal < 70) {
+    parts.push('Stay generally on topic but you can make relevant connections.');
+  } else {
+    parts.push('Stay tightly focused on exactly what was asked. No tangents.');
+  }
+
+  // Behavior toggles
+  var toggles = getActiveToggles();
+  toggles.forEach(function(t) {
+    if (t.active) {
+      switch(t.name) {
+        case 'Keep thinking while I\'m away':
+          parts.push('If the user seems to be mulling something over, offer follow-up thoughts proactively.');
+          break;
+        case 'Ask before acting':
+          parts.push('Before taking any significant action or making assumptions, ask the user to confirm.');
+          break;
+        case 'Show longer answers':
+          parts.push('Err on the side of longer, more complete answers.');
+          break;
+        case 'Be more creative':
+          parts.push('Be more creative and unconventional in your thinking. Take creative risks.');
+          break;
+        case 'Speak plainly':
+          parts.push('Use plain, simple language. Avoid jargon, metaphor, and flowery prose.');
+          break;
+        case 'Suggest things to do':
+          parts.push('At the end of your responses, suggest a follow-up action or question the user might want to explore.');
+          break;
+      }
+    }
+  });
+
+  return parts.join('\n\n');
+}
+
+function getTemperature() {
+  // Creativity slider maps to temperature 0.3 to 1.2
+  var val = parseInt(document.getElementById('s-creativity').value);
+  return 0.3 + (val / 100) * 0.9;
+}
+
+/* ═══ CHAT ENGINE ════════════════════════════════════════════ */
+async function sendToOllama(userMessage) {
+  if (!ollamaConnected || !modelAvailable) {
+    return offlineResponse(userMessage);
+  }
+
+  isStreaming = true;
+  document.getElementById('send-btn').disabled = true;
+
+  // Build messages array for Ollama
+  var messages = [];
+  messages.push({role: 'system', content: buildSystemPrompt()});
+
+  // Include conversation history if "remember" is on
+  var rememberToggle = document.querySelector('[data-toggle="remember"] .toggle-box');
+  if (rememberToggle && rememberToggle.classList.contains('on')) {
+    // Include recent conversation turns (last 20 messages to avoid token overflow)
+    var historySlice = conversation.slice(-20);
+    historySlice.forEach(function(m) {
+      messages.push(m);
+    });
+  }
+
+  // Add current user message
+  messages.push({role: 'user', content: userMessage});
+  conversation.push({role: 'user', content: userMessage});
+
+  var responsePanel = document.getElementById('response');
+  responsePanel.innerHTML = '<span class="streaming-cursor"></span>';
+  var fullResponse = '';
+  var startTime = Date.now();
+
+  try {
+    currentAbort = new AbortController();
+    var resp = await fetch(OLLAMA_URL + '/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      signal: currentAbort.signal,
+      body: JSON.stringify({
+        model: modelName,
+        messages: messages,
+        stream: true,
+        options: {
+          temperature: getTemperature()
+        }
+      })
+    });
+
+    if (!resp.ok) {
+      throw new Error('Ollama returned HTTP ' + resp.status);
+    }
+
+    var reader = resp.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+
+      buffer += decoder.decode(result.value, {stream: true});
+      var lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line in buffer
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+        try {
+          var chunk = JSON.parse(line);
+          if (chunk.message && chunk.message.content) {
+            fullResponse += chunk.message.content;
+            responsePanel.textContent = fullResponse;
+            // Keep cursor at end
+            var cursor = document.createElement('span');
+            cursor.className = 'streaming-cursor';
+            responsePanel.appendChild(cursor);
+            responsePanel.scrollTop = responsePanel.scrollHeight;
+          }
+          if (chunk.done) break;
+        } catch(parseErr) {
+          // skip malformed JSON lines
+        }
+      }
+    }
+
+    // Done streaming — remove cursor
+    responsePanel.textContent = fullResponse;
+
+    // Record response time in sparkline
+    var elapsed = (Date.now() - startTime) / 1000;
+    addSparklinePoint(Math.min(1, elapsed / 30)); // normalize: 30s = full height
+
+    // Save to conversation
+    conversation.push({role: 'assistant', content: fullResponse});
+
+    // Add to chat display
+    addChatMessage('Cinder', fullResponse);
+
+    // Increment thought count
+    incrementThoughts();
+
+    // Persist conversation
+    saveConversation();
+
+  } catch(err) {
+    if (err.name === 'AbortError') {
+      responsePanel.textContent = fullResponse + '\n\n[Generation stopped]';
+    } else {
+      responsePanel.innerHTML = '<span class="error-msg">Connection error: ' + escapeHtml(err.message) + '</span>\n\nCinder lost connection to Ollama. Check that the server is still running.';
+      // Mark as offline
+      ollamaConnected = false;
+      updateConnectionStatus();
+    }
+  } finally {
+    isStreaming = false;
+    currentAbort = null;
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+function offlineResponse(userMessage) {
+  var responses = [
+    'I am in offline mode right now — no AI model connected. But I am still here as your interface. Connect Ollama to bring me fully alive.',
+    'Offline mode: I cannot generate real responses without Ollama running. The interface is fully functional though — explore the settings, themes, and sliders.',
+    'No model connected. To chat for real, start Ollama and reload. For now, I am a warm but quiet firepit.',
+  ];
+  var resp = responses[Math.floor(Math.random() * responses.length)];
+  document.getElementById('response').textContent = resp;
+  addChatMessage('Cinder', resp);
+  conversation.push({role: 'user', content: userMessage});
+  conversation.push({role: 'assistant', content: resp});
+  incrementThoughts();
+  saveConversation();
+}
+
+/* ═══ CHAT DISPLAY ═══════════════════════════════════════════ */
+function addChatMessage(who, text) {
+  var log = document.getElementById('chat-log');
+  if (log.querySelector('.chat-empty')) log.innerHTML = '';
+  var time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+  chatDisplay.push({who: who, time: time, timeISO: new Date().toISOString(), text: text});
+
+  var cls = who === 'You' ? 'chat-you' : 'chat-cinder';
+  var truncated = text.length > 200 ? text.substring(0, 200) + '...' : text;
+  var div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = '<span class="' + cls + '">' + escapeHtml(who) + '</span><span class="chat-time">' + time + '</span><br>' + escapeHtml(truncated);
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+/* ═══ SEND TEXT (main entry point) ═══════════════════════════ */
+function sendText() {
+  if (isStreaming) return;
+  var input = document.getElementById('text-input');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  addChatMessage('You', text);
+  addSparklinePoint(0.1);
+
+  sendToOllama(text);
+}
+
+/* ═══ INTENT & SUB-OPTION PICKING ════════════════════════════ */
+function pickIntent(el, intent) {
+  document.querySelectorAll('.intent').forEach(function(e){ e.classList.remove('active'); });
+  el.classList.add('active');
+  currentIntent = intent;
+  currentSub = null;
+
+  var bar = document.getElementById('sub-bar');
+  bar.innerHTML = (SUBS[intent]||[]).map(function(s){
+    return '<div class="sub" onclick="pickSub(this,\'' + s.replace(/'/g,"\\'") + '\')">' + s + '</div>';
+  }).join('');
+
+  // Handle Remember mode — show memory panel
+  var memPanel = document.getElementById('memory-panel');
+  if (intent === 'remember') {
+    memPanel.classList.add('show');
+    renderMemories();
+  } else {
+    memPanel.classList.remove('show');
+  }
+
+  // Handle Surprise mode — auto-send
+  if (intent === 'surprise') {
+    var prompts = [
+      'Surprise me with something interesting. Pick any topic and tell me something I probably don\'t know.',
+      'Give me a creative writing prompt that would challenge anyone.',
+      'What\'s a thought experiment that changes how people see the world?',
+      'Tell me about an obscure but fascinating piece of history.',
+      'Pose me a riddle or puzzle to think about.',
+    ];
+    var prompt = prompts[Math.floor(Math.random() * prompts.length)];
+    addChatMessage('You', '[Surprise]');
+    sendToOllama(prompt);
+    return;
+  }
+
+  // Handle Explore mode — Cinder offers thoughts
+  if (intent === 'explore') {
+    addChatMessage('You', '[Explore]');
+    sendToOllama('I want to explore ideas. Offer me an interesting thought, connection, or question based on what we have been talking about. If we haven\'t talked about anything yet, pick something fascinating.');
+    return;
+  }
+
+  // Handle Resources mode — show curated tools
+  if (intent === 'resources') {
+    showResources('all tools');
+    return;
+  }
+
+  // For other intents, just update the response panel with guidance
+  if (!ollamaConnected) {
+    var offlineHints = {
+      ask: 'Ask mode selected. Type your question below. (Offline — connect Ollama for real answers.)',
+      create: 'Create mode selected. Tell me what you want to draft. (Offline — connect Ollama for real generation.)',
+      help: 'Help mode selected. What do you need help with? (Offline — connect Ollama for real guidance.)',
+    };
+    document.getElementById('response').innerHTML = '<span class="placeholder">' + (offlineHints[intent] || 'Mode selected. Type below.') + '</span>';
+  } else {
+    var hints = {
+      ask: 'Ask mode. Type your question below and I will answer based on your current tuning settings.',
+      create: 'Create mode. Tell me what you want to create — a journal entry, plan, story, letter, anything.',
+      help: 'Help mode. Describe what you need and I will give you structured, practical guidance.',
+    };
+    document.getElementById('response').innerHTML = '<span class="placeholder">' + (hints[intent] || 'Ready. Type below.') + '</span>';
+  }
+}
+
+function pickSub(el, sub) {
+  document.querySelectorAll('.sub').forEach(function(e){ e.classList.remove('active'); });
+  el.classList.add('active');
+  currentSub = sub;
+
+  if (currentIntent === 'remember') {
+    // Filter memories by sub
+    if (sub === 'search all') {
+      renderMemories();
+    } else if (sub === 'recent') {
+      renderMemories('', 10);
+    } else {
+      filterMemories(sub);
+    }
+  }
+  if (currentIntent === 'resources') {
+    showResources(sub);
+  }
+}
+
+/* ═══ ACTION BUTTONS ═════════════════════════════════════════ */
+function doAction(action) {
+  if (isStreaming) return;
+
+  switch(action) {
+    case 'new':
+      // Save current conversation to history, start fresh
+      if (conversation.length > 0) {
+        archiveConversation();
+      }
+      conversation = [];
+      chatDisplay = [];
+      currentIntent = null;
+      currentSub = null;
+      document.getElementById('chat-log').innerHTML = '<div class="chat-empty">Conversation will appear here</div>';
+      document.getElementById('response').innerHTML = '<span class="placeholder">Fresh start. The fire is warm, the page is blank.</span>';
+      document.querySelectorAll('.intent,.sub').forEach(function(e){ e.classList.remove('active'); });
+      document.getElementById('sub-bar').innerHTML = '<span class="sub-hint">Select an intent to see options</span>';
+      document.getElementById('memory-panel').classList.remove('show');
+      break;
+
+    case 'think':
+      addChatMessage('You', '[Your Thoughts?]');
+      sendToOllama('Share an unprompted thought. Something you find interesting, or a reflection on what we have been discussing. Surprise me with your perspective.');
+      break;
+
+    case 'deeper':
+      addChatMessage('You', '[Tell Me More]');
+      sendToOllama('Expand on what you just said. Go deeper, add more detail, examples, or context.');
+      break;
+
+    case 'shorter':
+      addChatMessage('You', '[Keep It Short]');
+      sendToOllama('Condense your last response to its key points. Be brief and direct.');
+      break;
+
+    case 'pushback':
+      addChatMessage('You', '[I Disagree]');
+      sendToOllama('I disagree with what you just said. Reconsider your position, acknowledge potential flaws in your reasoning, and offer an alternative perspective.');
+      break;
+
+    case 'remember':
+      // Save the last Cinder response to memories
+      var lastAssistant = null;
+      for (var i = conversation.length - 1; i >= 0; i--) {
+        if (conversation[i].role === 'assistant') {
+          lastAssistant = conversation[i].content;
+          break;
+        }
+      }
+      if (lastAssistant) {
+        saveMemory(lastAssistant);
+        document.getElementById('response').textContent += '\n\n[Saved to memories.]';
+        updateMemoryStats();
+      } else {
+        document.getElementById('response').textContent += '\n\n[Nothing to remember yet.]';
+      }
+      break;
+  }
+}
+
+/* ═══ TAGS ═══════════════════════════════════════════════════ */
+function useTag(el) {
+  if (isStreaming) return;
+  var topic = el.textContent;
+  addChatMessage('You', '[' + topic + ']');
+  sendToOllama('Let\'s talk about: ' + topic + '. What comes to mind?');
+}
+
+function addTag() {
+  var name = prompt('New tag name:');
+  if (!name || !name.trim()) return;
+  var row = document.querySelector('.tags-row');
+  var add = row.querySelector('.tag-add');
+  var tag = document.createElement('div');
+  tag.className = 'tag';
+  tag.textContent = name.trim();
+  tag.onclick = function(){useTag(this)};
+  row.insertBefore(tag, add);
+  // Save tags
+  saveTags();
+}
+
+function saveTags() {
+  var tags = [];
+  document.querySelectorAll('.tags-row .tag:not(.tag-add)').forEach(function(el){
+    tags.push(el.textContent);
+  });
+  lsSet('tags', JSON.stringify(tags));
+}
+
+function loadTags() {
+  var saved = lsGet('tags');
+  if (!saved) return;
+  try {
+    var tags = JSON.parse(saved);
+    var row = document.querySelector('.tags-row');
+    var add = row.querySelector('.tag-add');
+    // Remove existing non-add tags
+    row.querySelectorAll('.tag:not(.tag-add)').forEach(function(el){ el.remove(); });
+    tags.forEach(function(name){
+      var tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.textContent = name;
+      tag.onclick = function(){useTag(this)};
+      row.insertBefore(tag, add);
+    });
+  } catch(e) {}
+}
+
+/* ═══ SLIDER LOGIC ═══════════════════════════════════════════ */
+function updateSlider(name) {
+  var val = parseInt(document.getElementById('s-'+name).value);
+  var labels = LABELS[name] || ['low','','mid','','high'];
+  var idx = Math.min(Math.floor(val/21), labels.length-1);
+  document.getElementById('v-'+name).textContent = labels[idx];
+}
+
+function getSliderValues() {
+  var sliders = {};
+  ['depth','warmth','length','focus','creativity'].forEach(function(name) {
+    var el = document.getElementById('s-'+name);
+    var labelEl = document.getElementById('v-'+name);
+    sliders[name] = { value: parseInt(el.value), label: labelEl.textContent };
+  });
+  return sliders;
+}
+
+function getSliderSummary() {
+  var s = getSliderValues();
+  return Object.entries(s).map(function(e){ return e[0] + ': ' + e[1].label; }).join(', ');
+}
+
+/* ═══ PRESETS ════════════════════════════════════════════════ */
+function loadPreset(el, name) {
+  document.querySelectorAll('.preset').forEach(function(e){ e.classList.remove('active'); });
+  el.classList.add('active');
+  activePreset = name;
+  var p = PRESET_VALUES[name];
+  if (!p) return;
+  Object.entries(p).forEach(function(entry) {
+    document.getElementById('s-'+entry[0]).value = entry[1];
+    updateSlider(entry[0]);
+  });
+}
+
+/* ═══ TOGGLE CHECKBOX ════════════════════════════════════════ */
+function toggleCheck(row) {
+  var box = row.querySelector('.toggle-box');
+  box.classList.toggle('on');
+}
+
+function getActiveToggles() {
+  var toggles = [];
+  document.querySelectorAll('.sidebar .toggle-row').forEach(function(row) {
+    var box = row.querySelector('.toggle-box');
+    var label = row.querySelector('span');
+    if (label) {
+      toggles.push({ name: label.textContent, active: box.classList.contains('on') });
+    }
+  });
+  return toggles;
+}
+
+/* ═══ LOCALSTORAGE HELPERS ═══════════════════════════════════ */
+function lsSet(key, value) {
+  try { localStorage.setItem(LS_PREFIX + key, value); } catch(e) {}
+}
+function lsGet(key) {
+  try { return localStorage.getItem(LS_PREFIX + key); } catch(e) { return null; }
+}
+function lsRemove(key) {
+  try { localStorage.removeItem(LS_PREFIX + key); } catch(e) {}
+}
+
+/* ── Conversation persistence ────────────────────────────── */
+function saveConversation() {
+  lsSet('current_conversation', JSON.stringify(conversation));
+  lsSet('current_chat_display', JSON.stringify(chatDisplay));
+  updateStorageRing();
+}
+
+function archiveConversation() {
+  if (conversation.length === 0) return;
+  var archives = getSavedConversations();
+  archives.push({
+    id: Date.now(),
+    date: new Date().toISOString(),
+    messages: conversation.slice(),
+    display: chatDisplay.slice(),
+    preview: getConversationPreview()
+  });
+  // Keep last 50 conversations
+  if (archives.length > 50) archives = archives.slice(-50);
+  lsSet('conversations', JSON.stringify(archives));
+}
+
+function getSavedConversations() {
+  var raw = lsGet('conversations');
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch(e) { return []; }
+}
+
+function getConversationPreview() {
+  for (var i = 0; i < conversation.length; i++) {
+    if (conversation[i].role === 'user') {
+      var text = conversation[i].content;
+      return text.length > 80 ? text.substring(0, 80) + '...' : text;
+    }
+  }
+  return 'Empty conversation';
+}
+
+function loadConversationHistory() {
+  var rememberToggle = document.querySelector('[data-toggle="remember"] .toggle-box');
+  if (!rememberToggle || !rememberToggle.classList.contains('on')) return;
+
+  var saved = lsGet('current_conversation');
+  var savedDisplay = lsGet('current_chat_display');
+  if (saved) {
+    try {
+      conversation = JSON.parse(saved);
+    } catch(e) { conversation = []; }
+  }
+  if (savedDisplay) {
+    try {
+      chatDisplay = JSON.parse(savedDisplay);
+      // Rebuild chat log
+      var log = document.getElementById('chat-log');
+      if (chatDisplay.length > 0) {
+        log.innerHTML = '';
+        chatDisplay.forEach(function(msg) {
+          var cls = msg.who === 'You' ? 'chat-you' : 'chat-cinder';
+          var truncated = msg.text.length > 200 ? msg.text.substring(0, 200) + '...' : msg.text;
+          var div = document.createElement('div');
+          div.className = 'chat-msg';
+          div.innerHTML = '<span class="' + cls + '">' + escapeHtml(msg.who) + '</span><span class="chat-time">' + msg.time + '</span><br>' + escapeHtml(truncated);
+          log.appendChild(div);
+        });
+        log.scrollTop = log.scrollHeight;
+      }
+    } catch(e) { chatDisplay = []; }
+  }
+  // Restore last response in panel
+  if (conversation.length > 0) {
+    var lastAssistant = null;
+    for (var i = conversation.length - 1; i >= 0; i--) {
+      if (conversation[i].role === 'assistant') {
+        lastAssistant = conversation[i].content;
+        break;
+      }
+    }
+    if (lastAssistant) {
+      document.getElementById('response').textContent = lastAssistant;
+    }
+  }
+}
+
+/* ── Memories (special saved items) ──────────────────────── */
+function saveMemory(text) {
+  var memories = getSavedMemories();
+  memories.push({
+    id: Date.now(),
+    date: new Date().toISOString(),
+    text: text.substring(0, 2000) // cap at 2000 chars
+  });
+  // Keep last 100 memories
+  if (memories.length > 100) memories = memories.slice(-100);
+  lsSet('memories', JSON.stringify(memories));
+}
+
+function getSavedMemories() {
+  var raw = lsGet('memories');
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch(e) { return []; }
+}
+
+function renderMemories(filter, limit) {
+  var memories = getSavedMemories();
+  if (filter) {
+    var lower = filter.toLowerCase();
+    memories = memories.filter(function(m){ return m.text.toLowerCase().includes(lower); });
+  }
+  if (limit) memories = memories.slice(-limit);
+  memories.reverse(); // newest first
+
+  var list = document.getElementById('memory-list');
+  if (memories.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text-light);font-style:italic;padding:8px">No memories saved yet. Use "Remember This" to save responses.</div>';
+    return;
+  }
+  list.innerHTML = memories.map(function(m){
+    var date = new Date(m.date).toLocaleDateString();
+    var preview = m.text.length > 120 ? m.text.substring(0, 120) + '...' : m.text;
+    return '<div class="memory-item" onclick="recallMemory(' + m.id + ')">' +
+      '<div class="memory-item-time">' + date + '</div>' +
+      '<div class="memory-item-text">' + escapeHtml(preview) + '</div></div>';
+  }).join('');
+}
+
+function filterMemories(query) {
+  renderMemories(query);
+}
+
+function recallMemory(id) {
+  var memories = getSavedMemories();
+  var mem = memories.find(function(m){ return m.id === id; });
+  if (mem) {
+    document.getElementById('response').textContent = mem.text;
+  }
+}
+
+/* ── Settings persistence ────────────────────────────────── */
+function saveSettings() {
+  var settings = {
+    theme: document.body.getAttribute('data-theme'),
+    fontsize: document.body.getAttribute('data-fontsize'),
+    fontfamily: document.body.getAttribute('data-fontfamily'),
+    sliders: {},
+    preset: activePreset,
+  };
+  ['depth','warmth','length','focus','creativity'].forEach(function(name){
+    settings.sliders[name] = parseInt(document.getElementById('s-'+name).value);
+  });
+  lsSet('settings', JSON.stringify(settings));
+}
+
+function restoreSettings() {
+  var raw = lsGet('settings');
+  if (!raw) { loadTags(); return; }
+  try {
+    var s = JSON.parse(raw);
+    if (s.theme) {
+      document.body.setAttribute('data-theme', s.theme);
+      document.querySelectorAll('.theme-option').forEach(function(el){
+        el.classList.toggle('active', el.getAttribute('data-theme-id') === s.theme);
+      });
+    }
+    if (s.fontsize) {
+      document.body.setAttribute('data-fontsize', s.fontsize);
+      var sizeMap = {small:0, medium:1, large:2};
+      var slider = document.getElementById('font-size-slider');
+      if (slider) slider.value = sizeMap[s.fontsize] || 1;
+      var label = document.getElementById('font-size-label');
+      if (label) label.textContent = s.fontsize.charAt(0).toUpperCase() + s.fontsize.slice(1);
+    }
+    if (s.fontfamily) {
+      document.body.setAttribute('data-fontfamily', s.fontfamily);
+      document.querySelectorAll('.font-option').forEach(function(el, i){
+        var families = ['sans','serif','mono'];
+        el.classList.toggle('active', families[i] === s.fontfamily);
+      });
+    }
+    if (s.sliders) {
+      Object.entries(s.sliders).forEach(function(entry){
+        var el = document.getElementById('s-'+entry[0]);
+        if (el) { el.value = entry[1]; updateSlider(entry[0]); }
+      });
+    }
+    if (s.preset) {
+      activePreset = s.preset;
+      document.querySelectorAll('.preset').forEach(function(el){
+        el.classList.toggle('active', el.textContent.toLowerCase().replace(' ','') === s.preset);
+      });
+    }
+  } catch(e) {}
+  loadTags();
+}
+
+/* ── Storage ring (real localStorage usage) ──────────────── */
+function updateStorageRing() {
+  var total = 0;
+  try {
+    for (var key in localStorage) {
+      if (localStorage.hasOwnProperty(key) && key.startsWith(LS_PREFIX)) {
+        total += localStorage.getItem(key).length * 2; // rough byte estimate
+      }
+    }
+  } catch(e) {}
+
+  var maxBytes = 5 * 1024 * 1024; // 5MB typical limit
+  var pct = Math.min(99, Math.round((total / maxBytes) * 100));
+  var circumference = 2 * Math.PI * 22;
+  var offset = circumference * (1 - pct / 100);
+  var ring = document.getElementById('memory-ring');
+  if (ring) ring.style.strokeDashoffset = offset;
+  var label = document.getElementById('memory-pct');
+  if (label) label.textContent = pct + '%';
+}
+
+function updateMemoryStats() {
+  var convCount = getSavedConversations().length;
+  var memCount = getSavedMemories().length;
+  var el = document.getElementById('memory-count');
+  if (el) el.textContent = memCount;
+}
+
+function clearAllMemory() {
+  if (!confirm('Clear all Cinder conversations and memories? This cannot be undone.')) return;
+  var keysToRemove = [];
+  for (var key in localStorage) {
+    if (key.startsWith(LS_PREFIX)) keysToRemove.push(key);
+  }
+  keysToRemove.forEach(function(k){ localStorage.removeItem(k); });
+  conversation = [];
+  chatDisplay = [];
+  document.getElementById('chat-log').innerHTML = '<div class="chat-empty">Conversation will appear here</div>';
+  document.getElementById('response').innerHTML = '<span class="placeholder">All cleared. Fresh start.</span>';
+  updateMemoryStats();
+  updateStorageRing();
+  closeSettings();
+}
+
+/* ═══ EXPORT ═════════════════════════════════════════════════ */
+function exportSession() {
+  var date = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  var timeNow = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  var sliders = getSliderValues();
+  var sliderLines = Object.entries(sliders).map(function(e){
+    return '- **' + e[0].charAt(0).toUpperCase() + e[0].slice(1) + '**: ' + e[1].value + '/100 (' + e[1].label + ')';
+  }).join('\n');
+
+  var presetEl = document.querySelector('.preset.active');
+  var activePresetName = presetEl ? presetEl.textContent : 'None';
+  var activeIntentName = currentIntent ? currentIntent.charAt(0).toUpperCase() + currentIntent.slice(1) : 'None';
+  var activeSub = currentSub || 'None';
+
+  var toggles = getActiveToggles();
+  var toggleLines = toggles.map(function(t){
+    return '- [' + (t.active ? 'x' : ' ') + '] ' + t.name;
+  }).join('\n');
+
+  var currentThemeAttr = document.body.getAttribute('data-theme') || 'ember';
+  var elapsed = formatTime(Math.floor((Date.now() - sessionStart)/1000));
+
+  // Full conversation log
+  var chatText = '';
+  if (chatDisplay.length > 0) {
+    chatText = chatDisplay.map(function(m){
+      return '**' + m.who + '** (' + m.time + '):\n' + m.text;
+    }).join('\n\n---\n\n');
+  } else {
+    chatText = '_No messages yet_';
+  }
+
+  var resp = document.getElementById('response').textContent;
+
+  var md = '# Cinder Session Export\n\n';
+  md += '**Date:** ' + date + '  \n';
+  md += '**Time:** ' + timeNow + '  \n';
+  md += '**Session Duration:** ' + elapsed + '  \n';
+  md += '**Model:** ' + (modelAvailable ? modelName : 'Offline') + '  \n';
+  md += '**Thoughts:** ' + thoughtCount + '\n\n---\n\n';
+  md += '## Settings\n\n';
+  md += '**Theme:** ' + currentThemeAttr + ' | **Preset:** ' + activePresetName + ' | **Intent:** ' + activeIntentName + ' | **Sub:** ' + activeSub + '\n\n';
+  md += '## Tuning\n\n' + sliderLines + '\n\n';
+  md += '## Behavior\n\n' + toggleLines + '\n\n---\n\n';
+  md += '## Last Response\n\n' + resp + '\n\n---\n\n';
+  md += '## Full Conversation\n\n' + chatText + '\n\n---\n\n';
+  md += '_Exported from Cinder Console v2.0_\n';
+
+  var blob = new Blob([md],{type:'text/markdown'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cinder-session-' + new Date().toISOString().slice(0,10) + '.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ═══ SETTINGS MODAL ═════════════════════════════════════════ */
+function openSettings() {
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+  saveSettings();
+}
+document.getElementById('settings-modal').addEventListener('click', function(e){
+  if (e.target === this) closeSettings();
+});
+
+function setTheme(theme, el) {
+  document.body.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-option').forEach(function(o){ o.classList.remove('active'); });
+  el.classList.add('active');
+  drawSparkline();
+  saveSettings();
+}
+
+function setFontSize(val) {
+  var sizes = ['small','medium','large'];
+  var labels = ['Small','Medium','Large'];
+  document.body.setAttribute('data-fontsize', sizes[val]);
+  document.getElementById('font-size-label').textContent = labels[val];
+  saveSettings();
+}
+
+function setFontFamily(family, el) {
+  document.body.setAttribute('data-fontfamily', family);
+  document.querySelectorAll('.font-option').forEach(function(o){ o.classList.remove('active'); });
+  el.classList.add('active');
+  saveSettings();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* ═══ SESSION TIMER ══════════════════════════════════════════ */
+function formatTime(totalSec) {
+  var h = Math.floor(totalSec / 3600);
+  var m = Math.floor((totalSec % 3600) / 60);
+  var s = totalSec % 60;
+  if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+/* ═══ THOUGHT COUNTER ════════════════════════════════════════ */
+function incrementThoughts() {
+  thoughtCount++;
+  var el = document.getElementById('thought-counter');
+  if (!el) return;
+  el.textContent = thoughtCount;
+  el.style.transform = 'scale(1.3)';
+  setTimeout(function(){ el.style.transform = 'scale(1)'; }, 200);
+}
+
+/* ═══ SPARKLINE ══════════════════════════════════════════════ */
+var sparklineMax = 40;
+
+function addSparklinePoint(val) {
+  sparklineData.push(Math.max(0, Math.min(1, val)));
+  if (sparklineData.length > sparklineMax) sparklineData.shift();
+  drawSparkline();
+}
+
+function drawSparkline() {
+  var canvas = document.getElementById('sparkline');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width;
+  var h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  if (sparklineData.length < 2) return;
+
+  var style = getComputedStyle(document.body);
+  var lineColor = style.getPropertyValue('--sparkline-color').trim() || '#d87a40';
+  var fillColor = style.getPropertyValue('--ember-soft').trim() || 'rgba(196,90,42,.1)';
+
+  var step = w / (sparklineMax - 1);
+  var padding = 6;
+  var drawH = h - padding * 2;
+
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (var i = 0; i < sparklineData.length; i++) {
+    ctx.lineTo(i * step, padding + drawH * (1 - sparklineData[i]));
+  }
+  ctx.lineTo((sparklineData.length - 1) * step, h);
+  ctx.closePath();
+  ctx.fillStyle = fillColor;
+  ctx.fill();
+
+  ctx.beginPath();
+  for (var i = 0; i < sparklineData.length; i++) {
+    var x = i * step;
+    var y = padding + drawH * (1 - sparklineData[i]);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  var lastX = (sparklineData.length - 1) * step;
+  var lastY = padding + drawH * (1 - sparklineData[sparklineData.length - 1]);
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = lineColor;
+  ctx.fill();
+}
+
+/* ═══ TIMERS ═════════════════════════════════════════════════ */
+function startTimers() {
+  // Session timer
+  setInterval(function(){
+    var elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    var el = document.getElementById('session-timer');
+    if (el) el.textContent = formatTime(elapsed);
+  }, 1000);
+
+  // Periodic storage ring update
+  setInterval(function(){
+    updateStorageRing();
+    updateMemoryStats();
+  }, 10000);
+
+  // Periodic connection check (every 30s)
+  setInterval(async function(){
+    if (!ollamaConnected) return; // don't hammer if known offline
+    try {
+      var resp = await fetch(OLLAMA_URL + '/api/tags', {signal: AbortSignal.timeout(2000)});
+      if (!resp.ok) throw new Error();
+      ollamaConnected = true;
+    } catch(e) {
+      ollamaConnected = false;
+    }
+    updateConnectionStatus();
+  }, 30000);
+}
+
+/* ═══ UTILITY ════════════════════════════════════════════════ */
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ═══ VOLUME SLIDER ══════════════════════════════════════════ */
+document.getElementById('volume-slider').addEventListener('input', function(){
+  this.nextElementSibling.textContent = this.value + '%';
+});
+
+/* ═══ KEYBOARD SHORTCUTS ═════════════════════════════════════ */
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') {
+    if (isStreaming && currentAbort) {
+      currentAbort.abort();
+      return;
+    }
+    closeSettings();
+    document.getElementById('sidebar').classList.remove('open');
+  }
+});
+
+/* ═══ RESOURCES DATABASE ═════════════════════════════════════ */
+const AI_RESOURCES = {
+  'local inference': [
+    {name:'Ollama', desc:'Dead-simple local LLM runner. Install, pull, chat. Powers Cinder.', url:'ollama.com'},
+    {name:'llama.cpp', desc:'The C++ engine behind most local AI. GGUF format, CPU or GPU.', url:'github.com/ggml-org/llama.cpp'},
+    {name:'GPT4All', desc:'Privacy-first desktop chatbot. No internet needed.', url:'gpt4all.io'},
+    {name:'Jan', desc:'Local-first AI app. Beautiful desktop, Ollama-compatible.', url:'jan.ai'},
+    {name:'KoboldCpp', desc:'llama.cpp fork with built-in UI. Great for creative/roleplay.', url:'github.com/LostRuins/koboldcpp'},
+    {name:'Open WebUI', desc:'Self-hosted ChatGPT-style interface. Works with Ollama.', url:'github.com/open-webui/open-webui'},
+    {name:'LM Studio', desc:'Desktop app for running local LLMs. Clean UI, model browser.', url:'lmstudio.ai'},
+    {name:'ExLlamaV2', desc:'Optimized CUDA kernels for fast 4-bit inference on NVIDIA.', url:'github.com/turboderp/exllamav2'},
+  ],
+  'RAG & docs': [
+    {name:'privateGPT', desc:'Ask questions about your documents without internet.', url:'github.com/zylon-ai/private-gpt'},
+    {name:'AnythingLLM', desc:'All-in-one RAG + agents. Self-hosted, works with Ollama.', url:'anythingllm.com'},
+    {name:'LlamaIndex', desc:'Framework for building RAG pipelines. Connect models to data.', url:'llamaindex.ai'},
+    {name:'ChromaDB', desc:'Lightweight embedding database. No server needed.', url:'trychroma.com'},
+    {name:'LanceDB', desc:'Serverless vector DB. No daemon — perfect for USB setups.', url:'lancedb.com'},
+    {name:'Faiss', desc:'Facebook similarity search. In-memory, blazing fast.', url:'github.com/facebookresearch/faiss'},
+    {name:'Docling', desc:'Process PDFs, images, and documents for AI ingestion.', url:'github.com/docling-project/docling'},
+    {name:'quivr', desc:'Dump files and chat with them. Local knowledge base.', url:'quivr.com'},
+  ],
+  'fine-tuning': [
+    {name:'Unsloth', desc:'2x faster fine-tuning, 70% less memory. Best for consumer HW.', url:'unsloth.ai'},
+    {name:'LLaMA-Factory', desc:'One-stop SFT/DPO/ORPO framework. YAML config.', url:'github.com/hiyouga/LLaMA-Factory'},
+    {name:'Axolotl', desc:'YAML-driven fine-tuning pipeline for small models.', url:'github.com/axolotl-ai-cloud/axolotl'},
+    {name:'PEFT', desc:'LoRA, QLoRA — small adapters, big personality impact.', url:'github.com/huggingface/peft'},
+    {name:'MergeKit', desc:'Merge model weights. Combine base + personality adapters.', url:'github.com/arcee-ai/mergekit'},
+    {name:'Kiln', desc:'Intuitive app for building custom AI models.', url:'getkiln.ai'},
+    {name:'TRL', desc:'Transformers Reinforcement Learning. RLHF/SFT/DPO.', url:'github.com/huggingface/trl'},
+  ],
+  'voice & speech': [
+    {name:'Whisper', desc:'Speech-to-text. Runs locally, 99 languages.', url:'github.com/openai/whisper'},
+    {name:'TorToiSe TTS', desc:'Multi-voice text-to-speech. High quality, local.', url:'github.com/neonbjb/tortoise-tts'},
+    {name:'Bark', desc:'Text-to-audio by Suno. Speech, music, sound effects.', url:'github.com/suno-ai/bark'},
+    {name:'Piper', desc:'Fast local TTS. Low resource, runs on Raspberry Pi.', url:'github.com/rhasspy/piper'},
+    {name:'Coqui TTS', desc:'Open-source generative AI voice engine.', url:'github.com/coqui-ai/TTS'},
+  ],
+  'all tools': [
+    {name:'Letta (MemGPT)', desc:'Stateful agents with structured long-term memory.', url:'letta.com'},
+    {name:'Mem0', desc:'Universal memory layer for AI agents.', url:'mem0.ai'},
+    {name:'fabric', desc:'Terminal-native AI patterns for everyday tasks.', url:'github.com/danielmiessler/fabric'},
+    {name:'MetaGPT', desc:'Multi-agent framework. Multiple AI personas collaborate.', url:'github.com/geekan/MetaGPT'},
+    {name:'NeMo Guardrails', desc:'Programmable safety rails for LLM apps.', url:'github.com/NVIDIA/NeMo-Guardrails'},
+    {name:'LlamaGuard', desc:'Safety classifier. Runs locally alongside your model.', url:'huggingface.co/meta-llama/LlamaGuard-7b'},
+    {name:'Continue', desc:'Open-source AI code assistant for VS Code / JetBrains.', url:'continue.dev'},
+    {name:'Tabby', desc:'Self-hosted AI coding assistant. Local Copilot.', url:'tabby.tabbyml.com'},
+    {name:'Aider', desc:'AI pair programming in your terminal.', url:'aider.chat'},
+    {name:'ComfyUI', desc:'Node-based Stable Diffusion workflows.', url:'github.com/comfyanonymous/ComfyUI'},
+    {name:'Harbor', desc:'Run LLM backends, APIs, frontends locally.', url:'github.com/av/harbor'},
+    {name:'LibreChat', desc:'Enhanced ChatGPT clone. Multi-model, self-hosted.', url:'librechat.ai'},
+    {name:'Khoj', desc:'Self-hosted AI assistant for search, chat, automation.', url:'khoj.dev'},
+    {name:'BrainSoup', desc:'Multi-agent, multi-LLM native client.', url:'nurgo-software.com/products/brainsoup'},
+  ],
+};
+
+function showResources(category) {
+  var cat = category || 'all tools';
+  var tools = AI_RESOURCES[cat] || AI_RESOURCES['all tools'];
+  var panel = document.getElementById('response');
+  var html = '<div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text-light);text-transform:uppercase;margin-bottom:10px">Open-Source AI Tools — ' + escapeHtml(cat) + '</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px">';
+  tools.forEach(function(t){
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:default;transition:border-color .2s" onmouseenter="this.style.borderColor=\'var(--ember)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+    html += '<strong style="color:var(--ember);font-size:13px">' + escapeHtml(t.name) + '</strong>';
+    html += '<span style="font-size:10px;color:var(--text-faint)">' + escapeHtml(t.url) + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--text-mid);margin-top:3px">' + escapeHtml(t.desc) + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="margin-top:12px;font-size:11px;color:var(--text-faint);font-style:italic">All tools are open-source. Ask Cinder about any of them for install instructions. Curated from awesome-opensource-ai &amp; awesome-ai-tools.</div>';
+  panel.innerHTML = html;
+}
+
+/* ═══ BOOT ═══════════════════════════════════════════════════ */
+runLauncherChecks();
+</script>
+</body>
+</html>

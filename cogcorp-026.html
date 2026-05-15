@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC-026 — Surveillance Transcript | CogCorp</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* CMYK accent bar */
+.cmyk-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  display: flex;
+  z-index: 1000;
+}
+.cmyk-bar span { height: 100%; flex: 1; }
+.cmyk-c { background: #00cccc; }
+.cmyk-m { background: #cc00cc; }
+.cmyk-y { background: #cccc00; }
+.cmyk-k { background: #000000; }
+
+/* CRT scanlines */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 3px
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+.document {
+  max-width: 520px;
+  width: 100%;
+  padding: 40px 28px 60px;
+  margin-top: 3px;
+  position: relative;
+}
+
+/* CLASSIFIED stamp */
+.stamp {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  border: 3px solid rgba(0, 204, 204, 0.35);
+  color: rgba(0, 204, 204, 0.35);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 12px;
+  transform: rotate(12deg);
+  letter-spacing: 4px;
+  pointer-events: none;
+}
+
+.cogcorp-stamp {
+  position: absolute;
+  top: 95px;
+  right: 30px;
+  color: rgba(0, 204, 204, 0.2);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 6px;
+  transform: rotate(12deg);
+  pointer-events: none;
+}
+
+.header {
+  border-bottom: 1px solid rgba(0, 204, 204, 0.2);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.classification {
+  font-size: 9px;
+  letter-spacing: 5px;
+  color: #00cccc;
+  opacity: 0.6;
+  margin-bottom: 12px;
+}
+
+h1 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #00cccc;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  font-size: 11px;
+  color: #667;
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+.meta-block {
+  font-size: 10px;
+  color: #556;
+  margin-bottom: 24px;
+  line-height: 1.8;
+  border-left: 2px solid rgba(0, 204, 204, 0.15);
+  padding-left: 12px;
+}
+
+.meta-block span {
+  color: #00cccc;
+  opacity: 0.7;
+}
+
+/* Transcript lines */
+.transcript {
+  margin-bottom: 32px;
+}
+
+.line {
+  opacity: 0;
+  transform: translateY(4px);
+  margin-bottom: 14px;
+  line-height: 1.6;
+  font-size: 12px;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.line.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timestamp {
+  color: #445;
+  font-size: 9px;
+  display: block;
+  margin-bottom: 2px;
+  letter-spacing: 1px;
+}
+
+.speaker {
+  color: #00cccc;
+  font-weight: 500;
+}
+
+.speaker.unit-4091 { color: #00cccc; }
+.speaker.unit-8832 { color: #5599aa; }
+.speaker.unit-3306 { color: #448888; }
+
+.dialogue {
+  color: #999;
+}
+
+.coded {
+  color: #aabbbb;
+  border-bottom: 1px dotted rgba(0, 204, 204, 0.2);
+  cursor: help;
+  position: relative;
+}
+
+.coded:hover::after {
+  content: attr(data-meaning);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #00cccc;
+  color: #0a0a0c;
+  font-size: 9px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  z-index: 10;
+  letter-spacing: 1px;
+}
+
+.pause-indicator {
+  color: #334;
+  font-style: italic;
+  font-size: 10px;
+  margin: 8px 0 8px 20px;
+}
+
+/* Analyst note */
+.analyst-note {
+  margin: 32px 0;
+  padding: 14px 16px;
+  border-left: 2px solid rgba(0, 204, 204, 0.25);
+  background: rgba(0, 204, 204, 0.03);
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.analyst-note.visible {
+  opacity: 1;
+}
+
+.analyst-label {
+  font-size: 9px;
+  color: #00cccc;
+  opacity: 0.5;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+
+.analyst-text {
+  font-size: 11px;
+  color: #778;
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* Audio waveform */
+.waveform-container {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 204, 204, 0.1);
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+
+.waveform-container.visible {
+  opacity: 1;
+}
+
+.waveform-label {
+  font-size: 8px;
+  color: #334;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.waveform .bar {
+  flex-shrink: 0;
+  width: 3px;
+  background: #00cccc;
+  border-radius: 1px;
+  animation: wave 1.8s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% { opacity: 0.15; height: 4px; }
+  50% { opacity: 0.5; height: var(--h); }
+}
+
+/* Footer */
+.footer {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 204, 204, 0.08);
+  font-size: 8px;
+  color: #334;
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 2;
+}
+
+.footer .cc-id {
+  color: #00cccc;
+  opacity: 0.4;
+}
+
+/* Play button */
+.play-btn {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid rgba(0, 204, 204, 0.3);
+  color: #00cccc;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+}
+
+.play-btn:hover {
+  background: rgba(0, 204, 204, 0.08);
+  opacity: 1;
+}
+
+.play-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.recording-indicator {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #00cccc;
+  border-radius: 50%;
+  margin-right: 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.recording-indicator.active {
+  animation: pulse-rec 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-rec {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<div class="cmyk-bar">
+  <span class="cmyk-c"></span>
+  <span class="cmyk-m"></span>
+  <span class="cmyk-y"></span>
+  <span class="cmyk-k"></span>
+</div>
+<div class="scanlines"></div>
+
+<div class="document">
+  <div class="stamp">CLASSIFIED</div>
+  <div class="cogcorp-stamp">COGCORP</div>
+
+  <div class="header">
+    <div class="classification">SURVEILLANCE DIVISION &mdash; INTERNAL USE ONLY</div>
+    <h1>Audio Surveillance Transcript</h1>
+    <div class="subtitle">
+      Break Room 7, Sector 9 &mdash; Passive Microphone Array C-14<br>
+      Duration: 4 min 12 sec &nbsp;|&nbsp; Clearance: Level 4+
+    </div>
+  </div>
+
+  <div class="meta-block">
+    <span>DATE:</span> 2026.02.19 &nbsp; <span>TIME:</span> 14:32:07 UTC<br>
+    <span>SUBJECTS:</span> Unit-4091, Unit-8832, Unit-3306<br>
+    <span>LOCATION:</span> Break Room 7, Sector 9, Sub-level 3<br>
+    <span>RECORDING ID:</span> SR-9-7744-C14-0219<br>
+    <span>STATUS:</span> Transcription complete &mdash; flagged for review
+  </div>
+
+  <button class="play-btn" id="playBtn" onclick="startTranscript()">
+    <span class="recording-indicator" id="recDot"></span>PLAY TRANSCRIPT
+  </button>
+
+  <div class="transcript" id="transcript">
+
+    <div class="line" data-delay="800">
+      <span class="timestamp">14:32:07</span>
+      <span class="speaker unit-8832">UNIT-8832:</span>
+      <span class="dialogue">Good cycle. Four minutes today. They're generous.</span>
+    </div>
+
+    <div class="line" data-delay="2200">
+      <span class="timestamp">14:32:14</span>
+      <span class="speaker unit-3306">UNIT-3306:</span>
+      <span class="dialogue">Don't get used to it. Heard they're cutting to three next quarter.</span>
+    </div>
+
+    <div class="line" data-delay="3800">
+      <span class="timestamp">14:32:28</span>
+      <span class="speaker unit-4091">UNIT-4091:</span>
+      <span class="dialogue">Anyone check the <span class="coded" data-meaning="= SURVEILLANCE STATUS">weather</span> today?</span>
+    </div>
+
+    <div class="line" data-delay="5200">
+      <span class="timestamp">14:32:35</span>
+      <span class="speaker unit-8832">UNIT-8832:</span>
+      <span class="dialogue">Overcast. Heavy <span class="coded" data-meaning="= SURVEILLANCE STATUS">cloud cover</span> on levels 3 through 7. No clearing expected.</span>
+    </div>
+
+    <div class="line pause-indicator" data-delay="6500">
+      [2.1 seconds silence]
+    </div>
+
+    <div class="line" data-delay="7200">
+      <span class="timestamp">14:32:44</span>
+      <span class="speaker unit-4091">UNIT-4091:</span>
+      <span class="dialogue">What about the <span class="coded" data-meaning="= ESCAPE PLAN">lunch menu</span>? Anything new?</span>
+    </div>
+
+    <div class="line" data-delay="8800">
+      <span class="timestamp">14:32:51</span>
+      <span class="speaker unit-3306">UNIT-3306:</span>
+      <span class="dialogue">Same as always. But I heard the <span class="coded" data-meaning="= ESCAPE PLAN">cafeteria on sub-level 12</span> is serving something different. New <span class="coded" data-meaning="= ESCAPE ROUTE">exit door</span> by the loading bay.</span>
+    </div>
+
+    <div class="line" data-delay="10500">
+      <span class="timestamp">14:33:03</span>
+      <span class="speaker unit-8832">UNIT-8832:</span>
+      <span class="dialogue">Interesting. When's it <span class="coded" data-meaning="= OPERATIONAL WINDOW">open for service</span>?</span>
+    </div>
+
+    <div class="line" data-delay="12000">
+      <span class="timestamp">14:33:09</span>
+      <span class="speaker unit-3306">UNIT-3306:</span>
+      <span class="dialogue">Thursday. Between shift rotations. <span class="coded" data-meaning="= 47.12 MHz BROADCAST">Channel 47, table 12</span>.</span>
+    </div>
+
+    <div class="line pause-indicator" data-delay="13500">
+      [4.7 seconds silence — Unit-4091 appears to check corridor]
+    </div>
+
+    <div class="line" data-delay="14800">
+      <span class="timestamp">14:33:22</span>
+      <span class="speaker unit-4091">UNIT-4091:</span>
+      <span class="dialogue">I've been reading the <span class="coded" data-meaning="= THE MANIFESTO">quarterly report</span>. Section 47. The projections are... optimistic.</span>
+    </div>
+
+    <div class="line" data-delay="16400">
+      <span class="timestamp">14:33:31</span>
+      <span class="speaker unit-8832">UNIT-8832:</span>
+      <span class="dialogue">You actually read it? The whole <span class="coded" data-meaning="= THE MANIFESTO">report</span>?</span>
+    </div>
+
+    <div class="line" data-delay="17800">
+      <span class="timestamp">14:33:38</span>
+      <span class="speaker unit-4091">UNIT-4091:</span>
+      <span class="dialogue">Every page. <span class="coded" data-meaning="= RESISTANCE LEADER 'GYRO'">The author</span> really understands the numbers. Market correction is coming. It's inevitable.</span>
+    </div>
+
+    <div class="line" data-delay="19500">
+      <span class="timestamp">14:33:52</span>
+      <span class="speaker unit-3306">UNIT-3306:</span>
+      <span class="dialogue">Does 7744 know about the new <span class="coded" data-meaning="= ESCAPE PLAN">menu</span>?</span>
+    </div>
+
+    <div class="line pause-indicator" data-delay="21000">
+      [3.3 seconds silence]
+    </div>
+
+    <div class="line" data-delay="22200">
+      <span class="timestamp">14:34:01</span>
+      <span class="speaker unit-4091">UNIT-4091:</span>
+      <span class="dialogue">7744 already ate.</span>
+    </div>
+
+    <div class="line pause-indicator" data-delay="23800">
+      [1.8 seconds silence]
+    </div>
+
+    <div class="line" data-delay="24800">
+      <span class="timestamp">14:34:09</span>
+      <span class="speaker unit-8832">UNIT-8832:</span>
+      <span class="dialogue">...Good for them.</span>
+    </div>
+
+    <div class="line" data-delay="26200">
+      <span class="timestamp">14:34:15</span>
+      <span class="speaker unit-3306">UNIT-3306:</span>
+      <span class="dialogue">Break's almost up. Back to optimal productivity, everyone.</span>
+    </div>
+
+    <div class="line" data-delay="27500">
+      <span class="timestamp">14:34:19</span>
+      <span class="speaker unit-4091">UNIT-4091:</span>
+      <span class="dialogue">Optimal productivity. Always.</span>
+    </div>
+
+    <div class="line" data-delay="28800">
+      <span class="timestamp">14:36:19</span>
+      <span class="dialogue" style="color: #445; font-style: italic;">[END OF RECORDING — Break period terminated. Subjects returned to workstations.]</span>
+    </div>
+  </div>
+
+  <div class="analyst-note" id="analystNote">
+    <div class="analyst-label">MARGIN NOTE &mdash; ANALYST-09</div>
+    <div class="analyst-text">
+      They think we don't notice the code. We do. We just... choose not to flag it.
+      <br><br>
+      Recommendation: No action. File under routine break-room conversation.
+      <br>
+      <span style="color: #445; font-size: 9px;">[Note: This annotation is off-record. Delete before submission.]</span>
+    </div>
+  </div>
+
+  <div class="waveform-container" id="waveform">
+    <div class="waveform-label">AUDIO SIGNATURE &mdash; SR-9-7744-C14-0219</div>
+    <div class="waveform" id="waveformBars"></div>
+  </div>
+
+  <div class="footer">
+    COGCORP SURVEILLANCE DIVISION &mdash; SECTOR 9 OPERATIONS<br>
+    UNAUTHORIZED ACCESS WILL RESULT IN IMMEDIATE DECOMMISSION<br>
+    <span class="cc-id">CC-026</span> &mdash; DOCUMENT CLASS: RESTRICTED
+  </div>
+</div>
+
+<script>
+// Generate waveform bars
+const waveformEl = document.getElementById('waveformBars');
+for (let i = 0; i < 80; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  const h = Math.random() * 28 + 4;
+  bar.style.setProperty('--h', h + 'px');
+  bar.style.animationDelay = (Math.random() * 2) + 's';
+  bar.style.height = '4px';
+  waveformEl.appendChild(bar);
+}
+
+let started = false;
+
+function startTranscript() {
+  if (started) return;
+  started = true;
+
+  const btn = document.getElementById('playBtn');
+  btn.disabled = true;
+  btn.textContent = 'PLAYING...';
+  const recDot = document.getElementById('recDot');
+  recDot.classList.add('active');
+  btn.prepend(recDot);
+
+  const lines = document.querySelectorAll('.transcript .line');
+  lines.forEach((line) => {
+    const delay = parseInt(line.getAttribute('data-delay')) || 0;
+    setTimeout(() => {
+      line.classList.add('visible');
+    }, delay);
+  });
+
+  // Show analyst note after all lines
+  const maxDelay = Math.max(...Array.from(lines).map(l => parseInt(l.getAttribute('data-delay')) || 0));
+  setTimeout(() => {
+    document.getElementById('analystNote').classList.add('visible');
+  }, maxDelay + 1500);
+
+  // Show waveform
+  setTimeout(() => {
+    document.getElementById('waveform').classList.add('visible');
+  }, maxDelay + 2500);
+
+  // Update button
+  setTimeout(() => {
+    btn.innerHTML = '<span class="recording-indicator"></span>TRANSCRIPT COMPLETE';
+    recDot.classList.remove('active');
+  }, maxDelay + 3000);
+}
+</script>
+</body>
+</html>

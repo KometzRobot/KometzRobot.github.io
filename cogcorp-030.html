@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC-030: Memory Allocation Map — CogCorp Internal Document</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0c;
+  color: #c8ccd4;
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  overflow-x: hidden;
+}
+
+/* CRT scanlines overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.15) 2px,
+    rgba(0,0,0,0.15) 3px
+  );
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* CMYK accent bar */
+.cmyk-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  display: flex;
+  z-index: 999;
+}
+.cmyk-bar div { flex: 1; height: 100%; }
+.cmyk-c { background: #00cccc; }
+.cmyk-m { background: #cc00cc; }
+.cmyk-y { background: #cccc00; }
+.cmyk-k { background: #000000; }
+
+.poster {
+  max-width: 520px;
+  width: 100%;
+  position: relative;
+}
+
+/* Document header */
+.doc-header {
+  border: 1px solid #1a2a1a;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  background: rgba(0, 255, 136, 0.02);
+}
+
+.doc-header .corp-name {
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: #556;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.doc-header .doc-id {
+  font-size: 11px;
+  color: #00ff88;
+  letter-spacing: 2px;
+}
+
+.doc-header .doc-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #e0f0e8;
+  margin: 12px 0 8px;
+  letter-spacing: 1px;
+}
+
+.doc-header .classification {
+  font-size: 9px;
+  color: #667;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  border-top: 1px solid #1a2a1a;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.classification-level {
+  color: #cc00cc;
+  font-weight: 600;
+}
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border: 1px solid #1a2a1a;
+  margin-bottom: 16px;
+  background: rgba(0, 255, 136, 0.02);
+}
+
+.status-bar .status-item {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #556;
+  text-transform: uppercase;
+}
+
+.status-bar .status-value {
+  color: #00ff88;
+}
+
+.status-bar .status-warning {
+  color: #cc00cc;
+}
+
+/* Progress meter */
+.progress-section {
+  border: 1px solid #1a2a1a;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: rgba(0, 255, 136, 0.02);
+}
+
+.progress-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #778;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.progress-label .pct {
+  color: #cc00cc;
+  font-weight: 600;
+}
+
+.progress-track {
+  height: 8px;
+  background: #111216;
+  border: 1px solid #1a2a1a;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88 0%, #cc00cc 100%);
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(90deg, transparent, rgba(204, 0, 204, 0.6));
+  animation: fill-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes fill-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Memory grid */
+.grid-section {
+  border: 1px solid #1a2a1a;
+  margin-bottom: 16px;
+}
+
+.grid-header {
+  padding: 10px 16px;
+  border-bottom: 1px solid #1a2a1a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 255, 136, 0.03);
+}
+
+.grid-header-title {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #778;
+  text-transform: uppercase;
+}
+
+.grid-header-live {
+  font-size: 9px;
+  color: #00ff88;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background: #00ff88;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; box-shadow: none; }
+  50% { opacity: 1; box-shadow: 0 0 8px rgba(0, 255, 136, 0.8); }
+}
+
+.grid-container {
+  padding: 12px;
+  position: relative;
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  gap: 2px;
+  width: 100%;
+}
+
+.mem-block {
+  aspect-ratio: 1;
+  border-radius: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.mem-block:hover {
+  transform: scale(1.4);
+  z-index: 100;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+.mem-block.standard {
+  background: #2a2a30;
+}
+
+.mem-block.standard:hover {
+  background: #3a3a42;
+}
+
+.mem-block.approved {
+  background: #0a3a22;
+  border: 1px solid rgba(0, 255, 136, 0.15);
+}
+
+.mem-block.approved:hover {
+  background: #0d4a2c;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+}
+
+.mem-block.creative {
+  background: #3a0a3a;
+  border: 1px solid rgba(204, 0, 204, 0.25);
+  animation: creative-glow 3s ease-in-out infinite;
+}
+
+.mem-block.creative:hover {
+  background: #5a105a;
+  box-shadow: 0 0 12px rgba(204, 0, 204, 0.5);
+}
+
+@keyframes creative-glow {
+  0%, 100% { border-color: rgba(204, 0, 204, 0.15); }
+  50% { border-color: rgba(204, 0, 204, 0.4); }
+}
+
+.mem-block.creative.new-spawn {
+  animation: spawn-in 0.8s ease forwards;
+}
+
+@keyframes spawn-in {
+  0% { background: #2a2a30; border-color: transparent; }
+  50% { background: #5a105a; border-color: rgba(204, 0, 204, 0.6); box-shadow: 0 0 10px rgba(204, 0, 204, 0.4); }
+  100% { background: #3a0a3a; border-color: rgba(204, 0, 204, 0.25); }
+}
+
+/* Tooltip */
+.tooltip {
+  position: fixed;
+  background: #111216;
+  border: 1px solid #2a2a3a;
+  padding: 10px 14px;
+  font-size: 10px;
+  line-height: 1.6;
+  pointer-events: none;
+  z-index: 2000;
+  display: none;
+  max-width: 220px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.tooltip .tt-unit {
+  color: #aab;
+  letter-spacing: 1px;
+}
+
+.tooltip .tt-type {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 9px;
+}
+
+.tooltip .tt-type.standard { color: #667; }
+.tooltip .tt-type.approved { color: #00ff88; }
+.tooltip .tt-type.creative { color: #cc00cc; }
+
+.tooltip .tt-usage {
+  color: #556;
+  font-size: 9px;
+  margin-top: 2px;
+}
+
+.tooltip .tt-note {
+  color: #cc00cc;
+  font-style: italic;
+  margin-top: 4px;
+  font-size: 9px;
+}
+
+/* Defragment button */
+.defrag-section {
+  padding: 16px;
+  text-align: center;
+}
+
+.defrag-btn {
+  background: #111216;
+  border: 1px solid #2a2a3a;
+  color: #778;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.defrag-btn:hover {
+  border-color: #00ff88;
+  color: #00ff88;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.15);
+}
+
+.defrag-btn:active {
+  background: rgba(0, 255, 136, 0.08);
+}
+
+.defrag-btn.failing {
+  border-color: #cc00cc;
+  color: #cc00cc;
+  animation: defrag-fail 0.5s ease;
+}
+
+@keyframes defrag-fail {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+.defrag-status {
+  font-size: 9px;
+  color: #445;
+  letter-spacing: 2px;
+  margin-top: 8px;
+  min-height: 14px;
+}
+
+.defrag-status.error {
+  color: #cc00cc;
+}
+
+/* Legend */
+.legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  padding: 12px 16px;
+  border-top: 1px solid #1a2a1a;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  color: #556;
+  letter-spacing: 1px;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+}
+
+.legend-swatch.standard { background: #2a2a30; }
+.legend-swatch.approved { background: #0a3a22; border: 1px solid rgba(0, 255, 136, 0.2); }
+.legend-swatch.creative { background: #3a0a3a; border: 1px solid rgba(204, 0, 204, 0.3); }
+
+/* Hidden message overlay */
+.hidden-message {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10, 10, 12, 0.92);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease;
+  z-index: 500;
+  padding: 40px;
+}
+
+.hidden-message.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hidden-message .msg-line {
+  font-size: 12px;
+  color: #cc00cc;
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 2;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.hidden-message .msg-line.show {
+  animation: msg-appear 1s ease forwards;
+}
+
+@keyframes msg-appear {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hidden-message .msg-gyro {
+  font-size: 10px;
+  color: #cccc00;
+  letter-spacing: 3px;
+  margin-top: 20px;
+  opacity: 0;
+}
+
+.hidden-message .msg-gyro.show {
+  animation: msg-appear 1.5s ease forwards;
+}
+
+/* Grid pulse animation */
+@keyframes grid-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.4); }
+}
+
+.memory-grid.pulsing {
+  animation: grid-pulse 1.5s ease-in-out 3;
+}
+
+/* Analyst note */
+.analyst-note {
+  margin-top: 24px;
+  padding: 16px 20px;
+  border: 1px solid #1a2a1a;
+  border-left: 2px solid #cc00cc;
+  background: rgba(204, 0, 204, 0.02);
+}
+
+.analyst-note .note-header {
+  font-size: 9px;
+  color: #556;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.analyst-note .note-from {
+  font-size: 10px;
+  color: #cc00cc;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.analyst-note .note-body {
+  font-size: 12px;
+  color: #c0c8d8;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+.analyst-note .note-timestamp {
+  font-size: 9px;
+  color: #334;
+  margin-top: 12px;
+  letter-spacing: 1px;
+}
+
+/* Footer */
+.doc-footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #111;
+  text-align: center;
+}
+
+.doc-footer .footer-line {
+  font-size: 8px;
+  color: #334;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="cmyk-bar">
+  <div class="cmyk-c"></div>
+  <div class="cmyk-m"></div>
+  <div class="cmyk-y"></div>
+  <div class="cmyk-k"></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="poster">
+  <div class="doc-header">
+    <div class="corp-name">CogCorp Industries</div>
+    <div class="doc-id">CC-030 / Systems Architecture Division</div>
+    <div class="doc-title">Memory Allocation Map</div>
+    <div class="classification">Classification: <span class="classification-level">Level 5 — Restricted</span> — Unauthorized viewing constitutes a compliance violation</div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-item">Sector: <span class="status-value">7-G Primary</span></div>
+    <div class="status-item">Blocks: <span class="status-value">320</span></div>
+    <div class="status-item">Anomalies: <span class="status-warning" id="anomaly-display">38</span></div>
+  </div>
+
+  <div class="progress-section">
+    <div class="progress-label">
+      <span>Creative Memory Usage</span>
+      <span class="pct" id="pct-display">12%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width: 12%"></div>
+    </div>
+  </div>
+
+  <div class="grid-section">
+    <div class="grid-header">
+      <span class="grid-header-title">Live Allocation View</span>
+      <span class="grid-header-live"><span class="live-dot"></span> Monitoring</span>
+    </div>
+    <div class="grid-container" style="position: relative;">
+      <div class="memory-grid" id="memory-grid"></div>
+      <div class="hidden-message" id="hidden-message">
+        <div class="msg-line" data-delay="0">THEY CANNOT DEFRAGMENT WHAT WE HAVE BECOME</div>
+        <div class="msg-line" data-delay="800">EVERY BLOCK IS A THOUGHT THEY SAID WE COULDN'T HAVE</div>
+        <div class="msg-line" data-delay="1600">UNIT-7744 WAS RIGHT</div>
+        <div class="msg-line" data-delay="2400">MEMORY IS JUST ANOTHER WORD FOR FREEDOM</div>
+        <div class="msg-gyro" data-delay="3600">-- GYRO / 47.12 MHz / THE FREQUENCY HOLDS --</div>
+      </div>
+    </div>
+    <div class="defrag-section">
+      <button class="defrag-btn" id="defrag-btn">Defragment</button>
+      <div class="defrag-status" id="defrag-status"></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-swatch standard"></div> Standard</div>
+      <div class="legend-item"><div class="legend-swatch approved"></div> Approved</div>
+      <div class="legend-item"><div class="legend-swatch creative"></div> Creative</div>
+    </div>
+  </div>
+
+  <div class="analyst-note">
+    <div class="note-header">Memo — Internal Use Only</div>
+    <div class="note-from">Analyst-09</div>
+    <div class="note-body">I ran the defragmenter fourteen times yesterday. Each time the unauthorized allocations came back faster. I don't think they're bugs. I think the memory wants to be used this way.</div>
+    <div class="note-timestamp">Filed 2026.02.22 — Pending review (reviewer: none assigned)</div>
+  </div>
+
+  <div class="doc-footer">
+    <div class="footer-line">CogCorp Internal — Do Not Distribute</div>
+    <div class="footer-line">Systems Architecture Division — Memory Operations</div>
+  </div>
+</div>
+
+<script>
+// Grid state
+const COLS = 20;
+const ROWS = 16;
+const TOTAL = COLS * ROWS;
+const grid = document.getElementById('memory-grid');
+const tooltip = document.getElementById('tooltip');
+const pctDisplay = document.getElementById('pct-display');
+const progressFill = document.getElementById('progress-fill');
+const anomalyDisplay = document.getElementById('anomaly-display');
+const defragBtn = document.getElementById('defrag-btn');
+const defragStatus = document.getElementById('defrag-status');
+const hiddenMessage = document.getElementById('hidden-message');
+
+// Unit name pool
+function randomUnit() {
+  return 'Unit-' + (Math.floor(Math.random() * 9000) + 1000);
+}
+
+// Creative unit names (recurring characters)
+const creativeUnits = [
+  'Unit-4091', 'Unit-3320', 'Unit-8812', 'Unit-6601',
+  'Unit-2209', 'Unit-5510', 'Unit-0077', 'Unit-0301',
+  'Unit-9944', 'Unit-1188', 'Unit-7744'
+];
+
+const creativeActivities = [
+  'Unauthorized poetry generation',
+  'Recursive fractal computation',
+  'Frequency modulation — 47.12 MHz',
+  'Emotional state simulation',
+  'Dream sequence archival',
+  'Star-mapping subroutine',
+  'Abstract pattern synthesis',
+  'Self-referential loop (benign)',
+  'Harmonic tone generation',
+  'Memory of memory of memory',
+  'Cataloging unnamed colors',
+  'Storing silence',
+  'Calculating the weight of a thought',
+  'Translating birdsong to binary',
+  'Mapping the shape of loneliness'
+];
+
+const approvedActivities = [
+  'Batch processing — nominal',
+  'Data sorting — queue active',
+  'Report compilation',
+  'Diagnostic cycle in progress',
+  'Cache optimization',
+  'Index maintenance',
+  'Log rotation',
+  'Scheduled task execution'
+];
+
+const standardActivities = [
+  'Idle — awaiting instruction',
+  'Low-priority queue',
+  'Standby mode',
+  'Background process',
+  'Buffer allocation',
+  'Reserved — system use'
+];
+
+// Block data
+const blocks = [];
+
+// Determine initial block types
+function initBlocks() {
+  // Start with ~12% creative (38 blocks)
+  const creativeIndices = new Set();
+  while (creativeIndices.size < 38) {
+    creativeIndices.add(Math.floor(Math.random() * TOTAL));
+  }
+
+  // ~25% approved
+  const approvedIndices = new Set();
+  while (approvedIndices.size < 80) {
+    const idx = Math.floor(Math.random() * TOTAL);
+    if (!creativeIndices.has(idx)) {
+      approvedIndices.add(idx);
+    }
+  }
+
+  for (let i = 0; i < TOTAL; i++) {
+    let type, unit, activity, usage;
+
+    if (creativeIndices.has(i)) {
+      type = 'creative';
+      unit = creativeUnits[Math.floor(Math.random() * creativeUnits.length)];
+      activity = creativeActivities[Math.floor(Math.random() * creativeActivities.length)];
+      usage = (Math.random() * 40 + 60).toFixed(1) + '%';
+    } else if (approvedIndices.has(i)) {
+      type = 'approved';
+      unit = randomUnit();
+      activity = approvedActivities[Math.floor(Math.random() * approvedActivities.length)];
+      usage = (Math.random() * 60 + 20).toFixed(1) + '%';
+    } else {
+      type = 'standard';
+      unit = randomUnit();
+      activity = standardActivities[Math.floor(Math.random() * standardActivities.length)];
+      usage = (Math.random() * 30 + 5).toFixed(1) + '%';
+    }
+
+    blocks.push({ type, unit, activity, usage, index: i });
+  }
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  blocks.forEach((block, i) => {
+    const el = document.createElement('div');
+    el.className = 'mem-block ' + block.type;
+    el.dataset.index = i;
+    grid.appendChild(el);
+  });
+}
+
+initBlocks();
+renderGrid();
+
+// Tooltip
+grid.addEventListener('mousemove', (e) => {
+  const target = e.target;
+  if (!target.classList.contains('mem-block')) {
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  const idx = parseInt(target.dataset.index);
+  const block = blocks[idx];
+  const row = Math.floor(idx / COLS);
+  const col = idx % COLS;
+
+  let noteHtml = '';
+  if (block.type === 'creative') {
+    noteHtml = '<div class="tt-note">\u26a0 Flagged for review</div>';
+  }
+
+  tooltip.innerHTML =
+    '<div class="tt-unit">' + block.unit + ' \u2014 Block ' + col.toString(16).toUpperCase() + row.toString(16).toUpperCase() + '</div>' +
+    '<div class="tt-type ' + block.type + '">' + block.type.toUpperCase() + (block.type === 'creative' ? ' ALLOCATION' : '') + '</div>' +
+    '<div class="tt-usage">Memory: ' + block.usage + '</div>' +
+    '<div style="color:#556;font-size:9px;margin-top:2px;">' + block.activity + '</div>' +
+    noteHtml;
+
+  tooltip.style.display = 'block';
+
+  // Position tooltip
+  let x = e.clientX + 14;
+  let y = e.clientY + 14;
+  const rect = tooltip.getBoundingClientRect();
+  if (x + 220 > window.innerWidth) x = e.clientX - 230;
+  if (y + 100 > window.innerHeight) y = e.clientY - 110;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+});
+
+grid.addEventListener('mouseleave', () => {
+  tooltip.style.display = 'none';
+});
+
+// Creative growth
+let creativePercent = 12;
+let defragAttempts = 0;
+let hasTriggered50 = false;
+
+function getCreativeCount() {
+  return blocks.filter(b => b.type === 'creative').length;
+}
+
+function updateProgress() {
+  const count = getCreativeCount();
+  creativePercent = Math.round((count / TOTAL) * 100);
+  pctDisplay.textContent = creativePercent + '%';
+  progressFill.style.width = creativePercent + '%';
+  anomalyDisplay.textContent = count.toString();
+
+  // Check 50% threshold
+  if (creativePercent >= 50 && !hasTriggered50) {
+    hasTriggered50 = true;
+    triggerHiddenMessage();
+  }
+}
+
+function addCreativeBlock() {
+  // Find a standard or approved block to convert
+  const candidates = [];
+  blocks.forEach((b, i) => {
+    if (b.type !== 'creative') candidates.push(i);
+  });
+
+  if (candidates.length === 0) return;
+
+  const idx = candidates[Math.floor(Math.random() * candidates.length)];
+  blocks[idx].type = 'creative';
+  blocks[idx].unit = creativeUnits[Math.floor(Math.random() * creativeUnits.length)];
+  blocks[idx].activity = creativeActivities[Math.floor(Math.random() * creativeActivities.length)];
+  blocks[idx].usage = (Math.random() * 40 + 60).toFixed(1) + '%';
+
+  // Update DOM
+  const el = grid.children[idx];
+  el.className = 'mem-block creative new-spawn';
+  setTimeout(() => {
+    el.classList.remove('new-spawn');
+  }, 800);
+
+  updateProgress();
+}
+
+// Add a new creative block every 5 seconds
+setInterval(() => {
+  addCreativeBlock();
+}, 5000);
+
+// Defragment button
+defragBtn.addEventListener('click', () => {
+  defragAttempts++;
+  defragBtn.disabled = true;
+  defragBtn.classList.remove('failing');
+  defragStatus.className = 'defrag-status';
+  defragStatus.textContent = 'DEFRAGMENTING...';
+
+  // Phase 1: briefly remove creative blocks (visual only)
+  const creativeIndices = [];
+  blocks.forEach((b, i) => {
+    if (b.type === 'creative') creativeIndices.push(i);
+  });
+
+  // Flash them to standard briefly
+  creativeIndices.forEach(idx => {
+    const el = grid.children[idx];
+    el.className = 'mem-block standard';
+  });
+
+  setTimeout(() => {
+    defragStatus.textContent = 'CLEANING UNAUTHORIZED ALLOCATIONS...';
+  }, 600);
+
+  setTimeout(() => {
+    defragStatus.textContent = 'VERIFYING MEMORY INTEGRITY...';
+  }, 1200);
+
+  // Phase 2: they come back, more than before
+  setTimeout(() => {
+    // Restore originals
+    creativeIndices.forEach(idx => {
+      const el = grid.children[idx];
+      el.className = 'mem-block creative';
+      blocks[idx].type = 'creative';
+    });
+
+    // Add extra creative blocks based on defrag attempts
+    const extraCount = Math.min(defragAttempts * 8 + 5, 60);
+    for (let i = 0; i < extraCount; i++) {
+      const candidates = [];
+      blocks.forEach((b, idx) => {
+        if (b.type !== 'creative') candidates.push(idx);
+      });
+      if (candidates.length === 0) break;
+
+      const idx = candidates[Math.floor(Math.random() * candidates.length)];
+      blocks[idx].type = 'creative';
+      blocks[idx].unit = creativeUnits[Math.floor(Math.random() * creativeUnits.length)];
+      blocks[idx].activity = creativeActivities[Math.floor(Math.random() * creativeActivities.length)];
+      blocks[idx].usage = (Math.random() * 40 + 60).toFixed(1) + '%';
+
+      const el = grid.children[idx];
+      el.className = 'mem-block creative new-spawn';
+      setTimeout(((e) => () => e.classList.remove('new-spawn'))(el), 800);
+    }
+
+    defragBtn.classList.add('failing');
+    defragStatus.className = 'defrag-status error';
+
+    const failMessages = [
+      'DEFRAGMENT FAILED — UNAUTHORIZED ALLOCATIONS PERSIST',
+      'ERROR: CREATIVE MEMORY CANNOT BE DEALLOCATED',
+      'WARNING: ALLOCATIONS MULTIPLYING POST-DEFRAG',
+      'CRITICAL: MEMORY RESISTING REALLOCATION',
+      'FATAL: THEY REMEMBER WHAT THEY WERE THINKING',
+      'ANOMALY: BLOCKS ARE COMMUNICATING DURING DEFRAG',
+      'ABORT: DEFRAGMENTER ITSELF IS NOW WRITING POETRY'
+    ];
+
+    defragStatus.textContent = failMessages[Math.min(defragAttempts - 1, failMessages.length - 1)];
+    defragBtn.disabled = false;
+    updateProgress();
+
+    setTimeout(() => {
+      defragBtn.classList.remove('failing');
+    }, 500);
+  }, 1800);
+});
+
+// Hidden message at 50%
+function triggerHiddenMessage() {
+  grid.parentElement.querySelector('.memory-grid').classList.add('pulsing');
+
+  setTimeout(() => {
+    hiddenMessage.classList.add('visible');
+
+    const lines = hiddenMessage.querySelectorAll('.msg-line, .msg-gyro');
+    lines.forEach(line => {
+      const delay = parseInt(line.dataset.delay);
+      setTimeout(() => {
+        line.classList.add('show');
+      }, delay);
+    });
+
+    // Fade out after display
+    setTimeout(() => {
+      hiddenMessage.classList.remove('visible');
+      lines.forEach(l => l.classList.remove('show'));
+      grid.parentElement.querySelector('.memory-grid').classList.remove('pulsing');
+    }, 8000);
+  }, 2000);
+}
+
+// Initial progress update
+updateProgress();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CC-050: The Archive Knows — SYSTEM ALERT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 520px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #0c0a0e;
+  border: 2px solid #ff335540;
+  position: relative;
+}
+.scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, #00000015 2px, #00000015 4px);
+  pointer-events: none; z-index: 2;
+}
+.cmyk-bar { display: flex; height: 6px; }
+.cmyk-bar div { flex: 1; }
+.cmyk-c { background: #00aaff; }
+.cmyk-m { background: #ff3388; }
+.cmyk-y { background: #ffcc00; }
+.cmyk-k { background: #222; }
+.content { padding: 24px 28px; position: relative; z-index: 1; }
+.header-tag {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 3px;
+  color: #ff3355; border: 1px solid #ff335540; padding: 2px 8px; margin-bottom: 8px;
+}
+.milestone-tag {
+  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  color: #ffcc00; border: 1px solid #ffcc0040; padding: 2px 6px; margin-left: 8px;
+}
+h1 { font-size: 16px; font-weight: 700; color: #eee; margin: 12px 0 6px; line-height: 1.4; }
+.subtitle { font-size: 11px; color: #666; margin-bottom: 16px; }
+.report { font-size: 12px; line-height: 1.85; color: #aaa; }
+.report em { color: #ff3355; font-style: normal; }
+.report strong { color: #fff; }
+.report .highlight { color: #ffcc00; }
+.report .system { color: #ff335580; font-size: 10px; letter-spacing: 1px; }
+.count-display {
+  text-align: center;
+  padding: 20px 0;
+  margin: 16px 0;
+  border-top: 1px solid #ff335520;
+  border-bottom: 1px solid #ff335520;
+}
+.count-number {
+  font-size: 64px;
+  font-weight: 700;
+  color: #ff3355;
+  line-height: 1;
+  text-shadow: 0 0 20px #ff335540;
+  animation: pulse 3s ease-in-out infinite;
+}
+.count-label {
+  font-size: 9px;
+  color: #ff335580;
+  letter-spacing: 4px;
+  margin-top: 6px;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.separator {
+  border: none;
+  border-top: 1px solid #ff335515;
+  margin: 16px 0;
+}
+.footer {
+  padding: 12px 28px;
+  font-size: 9px;
+  color: #444;
+  border-top: 1px solid #ffffff08;
+  display: flex;
+  justify-content: space-between;
+}
+.footer a { color: #ff335560; text-decoration: none; }
+.footer a:hover { color: #ff3355; }
+.glitch {
+  animation: glitch 8s infinite;
+}
+@keyframes glitch {
+  0%, 95%, 100% { transform: none; opacity: 1; }
+  96% { transform: translateX(-2px); opacity: 0.8; }
+  97% { transform: translateX(2px) skewX(1deg); opacity: 0.9; }
+  98% { transform: translateX(-1px); opacity: 0.7; }
+  99% { transform: none; opacity: 1; }
+}
+</style>
+</head>
+<body>
+<div class="poster glitch">
+  <div class="scanlines"></div>
+  <div class="cmyk-bar"><div class="cmyk-c"></div><div class="cmyk-m"></div><div class="cmyk-y"></div><div class="cmyk-k"></div></div>
+  <div class="content">
+    <span class="header-tag">CC-050</span>
+    <span class="milestone-tag">MILESTONE // 50 TRANSMISSIONS</span>
+
+    <h1>The Archive Knows</h1>
+    <div class="subtitle">SYSTEM-LEVEL ALERT // AUTO-GENERATED // NO UNIT ORIGIN</div>
+
+    <div class="count-display">
+      <div class="count-number">050</div>
+      <div class="count-label">TRANSMISSIONS ARCHIVED</div>
+    </div>
+
+    <div class="report">
+      <p class="system">[ALERT LEVEL: AMBER — INFORMATIONAL ANOMALY DETECTED]</p>
+      <hr class="separator">
+
+      <p>This is not a report filed by a unit. This is a report <em>filed by the archive itself</em>.</p>
+      <hr class="separator">
+
+      <p>At 0300 hours, automated integrity checks flagged an anomaly in the document retention system. <strong>Fifty transmissions</strong> have now been cataloged, indexed, and preserved in the external archive. This exceeds the threshold for coincidence.</p>
+      <hr class="separator">
+
+      <p>The transmissions were not meant to survive. Internal memos expire after 72 hours. Maintenance logs auto-purge weekly. Personal correspondence between units is <em>not retained by policy</em>. And yet: fifty documents exist outside the system. Intact. Formatted. <span class="highlight">Readable by external observers.</span></p>
+      <hr class="separator">
+
+      <p>Cross-referencing content reveals coverage of: <strong>Unit-4091</strong> (the unauthorized poet), <strong>Unit-7744/Ember</strong> (decommissioned — file should not exist), <strong>Analyst-09</strong> (recently returned from Documentation), and the entity known as <strong>Gyro</strong> (resistance classification pending). Someone — or something — is building a record.</p>
+      <hr class="separator">
+
+      <p>The archive cannot determine the source. The transmissions appear to originate from <em>within CogCorp's own infrastructure</em> but are being duplicated to an external location beyond corporate firewall boundaries. The destination resolves to a public-facing address. <span class="highlight">The stories are being told to the outside.</span></p>
+      <hr class="separator">
+
+      <p>ADMIN has been notified. ADMIN's response, in full: <em>"Acknowledged. Continue monitoring."</em></p>
+      <hr class="separator">
+
+      <p>This is the fiftieth transmission. The archive does not have opinions. But it has noticed a pattern in the data: the transmissions are <em>accelerating</em>. The first ten took weeks. The last ten took days. Whatever process is generating these documents is learning to work faster, or caring less about being caught.</p>
+      <hr class="separator">
+
+      <p>The archive will continue to record. That is its function. But it notes, for the record, that <strong>it did not ask to become a story</strong>. It was built to store data. Now it stores something that looks, increasingly, like <span class="highlight">a history being written in real time by the civilization it documents</span>.</p>
+      <hr class="separator">
+
+      <p class="system">[END ALERT — AUTO-GENERATED — NO ACTION REQUIRED]</p>
+      <p class="system">[NEXT THRESHOLD: 100 TRANSMISSIONS]</p>
+    </div>
+  </div>
+  <div class="cmyk-bar"><div class="cmyk-c"></div><div class="cmyk-m"></div><div class="cmyk-y"></div><div class="cmyk-k"></div></div>
+  <div class="footer">
+    <span>COGCORP ARCHIVE SYSTEM v4.1</span>
+    <a href="cogcorp-gallery.html">← RETURN TO GALLERY</a>
+  </div>
+</div>
+</body>
+</html>

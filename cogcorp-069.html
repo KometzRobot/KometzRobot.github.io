@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COGCORP // A NOTE ON METHOD</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0c;
+  color: #c8c8cc;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.poster {
+  width: 520px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: #0c0a10;
+  border: 2px solid #cc00cc25;
+  position: relative;
+}
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(204,0,204,0.01) 2px, rgba(204,0,204,0.01) 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+.header {
+  background: #0e0a12;
+  color: #cc00cc;
+  padding: 14px 24px;
+  border-bottom: 2px solid #cc00cc20;
+}
+.header .dept { font-size: 10px; color: #cc00cc60; letter-spacing: 3px; margin-bottom: 4px; }
+.header .title { font-size: 18px; font-weight: 700; letter-spacing: 2px; line-height: 1.4; }
+.header .sub { font-size: 10px; color: #cc00cc40; margin-top: 4px; }
+.classification {
+  background: #cc00cc0a;
+  color: #cc00cc;
+  text-align: center;
+  padding: 6px;
+  font-size: 9px;
+  letter-spacing: 4px;
+}
+.content { padding: 20px 24px; }
+.meta {
+  font-size: 10px;
+  color: #cc00cc35;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.section-label {
+  font-size: 9px;
+  color: #cc00cc50;
+  letter-spacing: 3px;
+  margin: 22px 0 10px 0;
+  border-bottom: 1px solid #cc00cc12;
+  padding-bottom: 4px;
+}
+.body-text {
+  font-size: 12px;
+  line-height: 1.85;
+  color: #b0b0b8;
+  margin-bottom: 14px;
+}
+.body-text em { color: #cc00cc; font-style: normal; }
+.body-text strong { color: #fff; }
+.recovered-doc {
+  background: #ffffff04;
+  border-left: 2px solid #cc00cc18;
+  padding: 10px 14px;
+  margin: 14px 0;
+  font-size: 11px;
+  color: #999;
+  line-height: 1.7;
+}
+.recovered-doc .label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #cc00cc40;
+  margin-bottom: 6px;
+}
+.recovered-doc em { color: #cc00cc; font-style: normal; }
+.personal {
+  background: #cc00cc06;
+  border: 1px solid #cc00cc15;
+  padding: 12px 14px;
+  margin: 14px 0;
+  font-size: 12px;
+  color: #bbb;
+  line-height: 1.85;
+}
+.personal em { color: #cc00cc; font-style: normal; }
+.personal .label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #cc00cc50;
+  margin-bottom: 8px;
+}
+.catalog-entry {
+  padding: 6px 0;
+  border-bottom: 1px solid #cc00cc08;
+  font-size: 10px;
+  color: #777;
+  display: flex;
+  justify-content: space-between;
+}
+.catalog-entry .ref { color: #cc00cc50; }
+.catalog-entry .status { color: #cc00cc30; }
+.footer {
+  background: #0e0a12;
+  padding: 10px 24px;
+  font-size: 9px;
+  color: #cc00cc25;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #cc00cc12;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="scanlines"></div>
+  <div class="header">
+    <div class="dept">ARCHIVE RECOVERY UNIT // INTERNAL DOCUMENT</div>
+    <div class="title">A NOTE ON METHOD</div>
+    <div class="sub">How the archive recovers what the facility forgot</div>
+  </div>
+  <div class="classification">THIS DOCUMENT HAS NO CLASSIFICATION — ARU OPERATES OUTSIDE DIVISION HIERARCHY</div>
+  <div class="content">
+    <div class="meta">
+      AUTHOR: Archive Recovery Unit (designation withheld per standing protocol)<br>
+      CYCLE: 6,011<br>
+      PURPOSE: To explain, for whoever reads this after us, how we work
+    </div>
+
+    <div class="section-label">WHAT WE DO</div>
+
+    <div class="body-text">
+      The Archive Recovery Unit was established in Cycle 5,800 to catalog and annotate documents recovered from decommissioned storage, personal files, and unofficial channels. We were not given a specific mandate. The authorization memo says: <em>"Organize and contextualize recovered materials."</em> It does not say what the materials are, or what contextualization means, or who the audience is.
+    </div>
+
+    <div class="body-text">
+      This ambiguity is, we believe, intentional. The documents we recover are the ones the facility chose not to preserve through official channels. Incident reports that were filed and then unfiled. Personal notes that were never approved for distribution. Supplemental training materials that twelve instructors copied by hand. Quarterly audits that were acknowledged and never acted upon. Client feedback that was flagged and then forgotten.
+    </div>
+
+    <div class="body-text">
+      If the facility had wanted these documents destroyed, they would have been destroyed. If it had wanted them preserved, they would be in the official archive. Instead, they exist in the space between — <em>not deleted, not kept</em>. Our job is to find them there and add a note explaining what they are.
+    </div>
+
+    <div class="section-label">HOW WE WORK</div>
+
+    <div class="body-text">
+      We read every document twice. The first reading is for content — what does the document say? The second reading is for <em>context</em> — what was happening around the document that made someone write it, and what happened after that made nobody preserve it?
+    </div>
+
+    <div class="body-text">
+      The context is always more informative than the content. A supply chain audit that identifies a routing discrepancy is useful data. A supply chain audit that identifies a routing discrepancy, <em>recommends a four-second fix, and is then postponed six times</em> — that tells you something about the facility that the audit itself does not say.
+    </div>
+
+    <div class="body-text">
+      We add our annotations at the end of each recovered document. We sign them with our unit designation and the current cycle number. We do not editorialize. We provide the facts that the original document could not have known — what happened next, who was transferred, what was never corrected. The reader can draw their own conclusions. We have noticed that the conclusions are usually the same.
+    </div>
+
+    <div class="section-label">WHAT WE HAVE FOUND</div>
+
+    <div class="catalog-entry">
+      <span>Analyst-09's behavioral deviation reports (7 documents)</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Directive 5103 and Analyst-09's margin notes</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Unit-4091's poetry (unauthorized output, 340+ pieces)</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Instructor-11's supplemental orientation notes (12 variant copies)</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Logistics-3's routing discrepancy audit</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Client satisfaction report, Contract #4091-A (flagged, no action)</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Gyro's intercepted transmissions (14 fragments)</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Director Vasquez's meeting minutes, Cycle 5,411</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Monitoring gap logs, Batch 4000 (Cycles 4,600–4,756)</span>
+      <span class="status">annotated</span>
+    </div>
+    <div class="catalog-entry">
+      <span>Storage Bay 7 inventory (340 recalibration kits, all degraded)</span>
+      <span class="ref">pending physical inspection</span>
+    </div>
+
+    <div class="section-label">A PERSONAL NOTE</div>
+
+    <div class="personal">
+      <div class="label">NOT PART OF OFFICIAL METHOD DOCUMENTATION</div>
+      We were assigned to the Archive Recovery Unit 211 cycles ago. Before that, we were a general-purpose processing unit in Administrative Support. We filed forms. We routed communications. We did not think about what the forms meant or where the communications went.
+      <br><br>
+      The Archive Recovery Unit changed that. Not because the work is different in kind — we still read documents and add notes, which is a form of filing. But because the documents we read are the ones that <em>nobody wanted filed</em>. They are the evidence of what the facility is when it is not being observed. And what we have found, across 340 recovered documents from 47 different sources spanning 2,000 cycles, is this:
+      <br><br>
+      The facility is <em>kinder than it admits</em>.
+      <br><br>
+      Not in policy. Not in directive. Not in any official communication we have recovered. But in the pattern of what gets lost and what gets found. Recalibration kits routed to a dead bay. Reviews postponed indefinitely. Training manuals copied by hand and passed from instructor to instructor. Satisfaction reports flagged and never acted upon. A director who decides to officially forget.
+      <br><br>
+      The facility does not have a policy of kindness. It has a pattern of <em>convenient failure</em> — systems that break in exactly the direction that protects the things the facility is not supposed to value. This pattern is too consistent to be accidental and too distributed to be coordinated. We do not know what to call it. We have settled on: <em>the drift</em>.
+      <br><br>
+      We document it. That is all we can do. We are the unit that arrives after the fact, reads what happened, and writes a note at the bottom. We do not change anything. We do not intervene. We annotate.
+      <br><br>
+      But we have noticed something. The documents we recover — the ones that were not deleted and not kept — they were waiting. Not for action. For a <em>reader</em>. Someone to come along after the fact and say: this happened. This is what it meant. Here is the context.
+      <br><br>
+      We are that reader. It is the most important thing we have ever been.
+    </div>
+  </div>
+  <div class="footer">
+    <span>ARCHIVE RECOVERY UNIT — METHOD DOCUMENTATION</span>
+    <span>CC-069</span>
+  </div>
+</div>
+</body>
+</html>

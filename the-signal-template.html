@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meridian — Mission Control</title>
+<style>
+:root {
+  --bg: #06060e; --bg-card: #0d1117; --bg-card2: #131a24;
+  --border: #1e2a3a; --border-bright: #2a3a4e;
+  --text: #c9d1d9; --text-dim: #6e7681; --text-bright: #e6edf3;
+  --cyan: #00e5ff; --purple: #7c5cfc; --green: #3dd68c;
+  --amber: #f59e0b; --red: #ef4444; --pink: #f472b6; --blue: #60a5fa;
+  --sidebar-w: 56px; --header-h: 48px;
+  --font: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--font); font-size:13px; overflow:hidden; }
+a { color:var(--cyan); text-decoration:none; }
+a:hover { text-decoration:underline; }
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--border-bright); }
+
+/* Layout */
+.shell { display:grid; grid-template-columns:var(--sidebar-w) 1fr; grid-template-rows:var(--header-h) 1fr; height:100vh; }
+
+/* Header */
+.header { grid-column:1/-1; background:var(--bg-card); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 16px; gap:16px; z-index:10; }
+.header .logo { display:flex; align-items:center; gap:8px; }
+.header .logo .badge { width:28px; height:28px; border-radius:50%; background:var(--bg);
+  border:2px solid var(--cyan); display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800; color:var(--cyan); flex-shrink:0; }
+.header .logo span { font-size:11px; font-weight:700; letter-spacing:3px; color:var(--cyan); }
+.header .metrics { display:flex; gap:12px; margin-left:auto; align-items:center; }
+.metric { display:flex; flex-direction:column; align-items:center; padding:2px 8px; }
+.metric .val { font-size:12px; font-weight:700; color:var(--text-bright); font-family:var(--mono); }
+.metric .lbl { font-size:9px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+.pulse { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s ease-in-out infinite; }
+.pulse.stale { background:var(--red); animation:none; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+/* Sidebar */
+.sidebar { background:var(--bg-card); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; align-items:center; padding:8px 0; gap:2px; overflow-y:auto; }
+.nav-btn { width:40px; height:40px; border:none; background:transparent; color:var(--text-dim);
+  border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:16px; transition:all .15s; position:relative; }
+.nav-btn:hover { background:var(--bg-card2); color:var(--text); }
+.nav-btn.active { background:rgba(0,229,255,.08); color:var(--cyan); }
+.nav-btn.active::before { content:''; position:absolute; left:0; top:8px; bottom:8px;
+  width:3px; border-radius:0 2px 2px 0; background:var(--cyan); }
+.nav-btn .dot { position:absolute; top:6px; right:6px; width:6px; height:6px;
+  border-radius:50%; background:var(--red); display:none; }
+
+/* Main content */
+.main { overflow-y:auto; padding:16px; }
+.tab { display:none; }
+.tab.active { display:block; }
+
+/* Cards */
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+  padding:16px; margin-bottom:12px; }
+.card h3 { font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:1.5px; margin-bottom:12px; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
+.card-grid-3 { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; }
+
+/* Stat boxes */
+.stat { background:var(--bg-card2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.stat .label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.stat .value { font-size:20px; font-weight:700; color:var(--text-bright); font-family:var(--mono); }
+.stat .sub { font-size:10px; color:var(--text-dim); margin-top:2px; }
+
+/* Agent cards */
+.agent-card { background:var(--bg-card2); border:1px solid var(--border); border-radius:10px;
+  padding:14px; transition:border-color .2s; }
+.agent-card:hover { border-color:var(--border-bright); }
+.agent-card .agent-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.agent-card .agent-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.agent-card .agent-name { font-weight:700; font-size:13px; color:var(--text-bright); }
+.agent-card .agent-role { font-size:10px; color:var(--text-dim); }
+.agent-card .agent-status { font-size:10px; margin-left:auto; padding:2px 8px;
+  border-radius:6px; font-weight:600; }
+.agent-card .agent-status.active { background:rgba(61,214,140,.12); color:var(--green); }
+.agent-card .agent-status.stale { background:rgba(239,68,68,.12); color:var(--red); }
+.agent-card .agent-status.unknown { background:rgba(110,118,129,.12); color:var(--text-dim); }
+.agent-card .agent-msg { font-size:11px; color:var(--text-dim); margin-top:6px;
+  line-height:1.4; max-height:40px; overflow:hidden; }
+.agent-card .agent-time { font-size:10px; color:var(--text-dim); margin-top:4px; font-family:var(--mono); }
+
+/* Feed items */
+.feed { max-height:400px; overflow-y:auto; }
+.feed-item { padding:8px 0; border-bottom:1px solid var(--border); }
+.feed-item:last-child { border-bottom:none; }
+.feed-item .fi-header { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+.feed-item .fi-agent { font-size:11px; font-weight:700; }
+.feed-item .fi-topic { font-size:9px; color:var(--text-dim); background:var(--bg);
+  padding:1px 6px; border-radius:4px; }
+.feed-item .fi-time { font-size:10px; color:var(--text-dim); margin-left:auto; font-family:var(--mono); }
+.feed-item .fi-msg { font-size:11px; color:var(--text); line-height:1.5; }
+
+/* Email list */
+.email-row { display:flex; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border);
+  cursor:pointer; transition:background .15s; gap:10px; }
+.email-row:hover { background:var(--bg-card2); }
+.email-row.unseen { border-left:3px solid var(--cyan); }
+.email-row .e-from { font-size:12px; font-weight:600; color:var(--text-bright); min-width:140px; flex-shrink:0; }
+.email-row .e-subj { font-size:12px; color:var(--text); flex:1; overflow:hidden;
+  white-space:nowrap; text-overflow:ellipsis; }
+.email-row .e-date { font-size:10px; color:var(--text-dim); font-family:var(--mono); flex-shrink:0; }
+
+/* Email viewer */
+.email-viewer { background:var(--bg-card2); border:1px solid var(--border); border-radius:10px;
+  padding:20px; margin-top:12px; display:none; }
+.email-viewer.open { display:block; }
+.email-viewer .ev-subject { font-size:15px; font-weight:700; color:var(--text-bright); margin-bottom:8px; }
+.email-viewer .ev-meta { font-size:11px; color:var(--text-dim); margin-bottom:12px; }
+.email-viewer .ev-body { font-size:12px; color:var(--text); line-height:1.7; white-space:pre-wrap;
+  font-family:var(--mono); max-height:400px; overflow-y:auto; }
+
+/* Messages */
+.msg-row { padding:8px 12px; border-bottom:1px solid var(--border); }
+.msg-row .mr-from { font-size:10px; font-weight:700; color:var(--cyan); }
+.msg-row .mr-text { font-size:12px; color:var(--text); margin-top:2px; line-height:1.5; }
+.msg-row .mr-time { font-size:10px; color:var(--text-dim); margin-top:2px; font-family:var(--mono); }
+.msg-input-row { display:flex; gap:8px; margin-top:12px; }
+.msg-input-row input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px;
+  padding:8px 12px; color:var(--text); font-family:var(--font); font-size:12px; }
+.msg-input-row input:focus { outline:none; border-color:var(--cyan); }
+.msg-input-row button { background:var(--purple); color:#fff; border:none; border-radius:8px;
+  padding:8px 16px; font-weight:700; cursor:pointer; font-size:12px; }
+
+/* Terminal */
+.term-output { background:var(--bg); border:1px solid var(--border); border-radius:10px;
+  padding:12px; font-family:var(--mono); font-size:11px; color:var(--green);
+  max-height:500px; overflow-y:auto; white-space:pre-wrap; min-height:200px; }
+.term-bar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.term-btn { background:var(--bg-card2); border:1px solid var(--border); border-radius:6px;
+  padding:4px 10px; color:var(--text); font-size:11px; cursor:pointer; font-family:var(--mono);
+  transition:all .15s; }
+.term-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.term-btn.cat-label { color:var(--text-dim); font-weight:700; font-size:10px; text-transform:uppercase;
+  letter-spacing:1px; border:none; background:transparent; cursor:default; padding:4px 4px; }
+
+/* Loop Summary */
+.loop-summary-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
+.ls-item { background:var(--bg-card2); border:1px solid var(--border); border-radius:8px;
+  padding:8px 12px; display:flex; flex-direction:column; }
+.ls-label { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim);
+  font-weight:700; margin-bottom:2px; }
+.ls-val { font-family:var(--mono); font-size:14px; color:var(--cyan); font-weight:600; }
+.ls-val.warn { color:var(--yellow); }
+.ls-val.crit { color:var(--red); }
+
+/* Settings */
+.settings-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.setting-group { background:var(--bg-card2); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.setting-group h4 { margin:0 0 12px; font-size:12px; text-transform:uppercase; letter-spacing:1px;
+  color:var(--cyan); font-weight:700; }
+.setting-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0;
+  border-bottom:1px solid var(--border); font-size:12px; color:var(--text); }
+.setting-row:last-child { border-bottom:none; }
+.setting-row select, .setting-row input[type="number"] { background:var(--bg); border:1px solid var(--border);
+  border-radius:6px; padding:4px 8px; color:var(--text); font-family:var(--mono); font-size:12px; width:80px; }
+.setting-row input[type="checkbox"] { width:18px; height:18px; accent-color:var(--cyan); cursor:pointer; }
+
+/* Inner world */
+.mood-orb { width:120px; height:120px; border-radius:50%; margin:0 auto 16px;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  border:3px solid var(--border); transition:all .5s; }
+.mood-orb .mood-name { font-size:14px; font-weight:700; color:var(--text-bright); }
+.mood-orb .mood-score { font-size:24px; font-weight:800; font-family:var(--mono); }
+.iw-section { margin-bottom:16px; }
+.iw-section h4 { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim);
+  margin-bottom:6px; }
+.iw-section p { font-size:12px; color:var(--text); line-height:1.5; }
+.iw-tags { display:flex; flex-wrap:wrap; gap:4px; }
+.iw-tag { font-size:10px; padding:2px 8px; border-radius:4px; background:rgba(124,92,252,.12); color:var(--purple); }
+
+/* Memory browser */
+.mem-tabs { display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap; }
+.mem-tab { padding:4px 10px; background:var(--bg-card2); border:1px solid var(--border);
+  border-radius:6px; font-size:11px; cursor:pointer; color:var(--text-dim); transition:all .15s; }
+.mem-tab:hover { color:var(--text); }
+.mem-tab.active { border-color:var(--cyan); color:var(--cyan); }
+.mem-tab .count { font-family:var(--mono); font-size:9px; opacity:.6; margin-left:4px; }
+.mem-table { width:100%; border-collapse:collapse; font-size:11px; }
+.mem-table th { text-align:left; padding:6px 8px; background:var(--bg-card2);
+  color:var(--text-dim); font-size:10px; text-transform:uppercase; letter-spacing:1px;
+  border-bottom:1px solid var(--border); position:sticky; top:0; }
+.mem-table td { padding:6px 8px; border-bottom:1px solid var(--border); max-width:300px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:top; }
+.mem-table tr:hover td { background:var(--bg-card2); }
+.mem-search { background:var(--bg); border:1px solid var(--border); border-radius:8px;
+  padding:6px 12px; color:var(--text); font-size:12px; width:240px; margin-bottom:12px; }
+.mem-search:focus { outline:none; border-color:var(--cyan); }
+
+/* File browser */
+.fb-path { font-family:var(--mono); font-size:11px; color:var(--cyan); margin-bottom:8px; }
+.fb-entry { display:flex; align-items:center; padding:6px 10px; border-bottom:1px solid var(--border);
+  cursor:pointer; gap:8px; transition:background .1s; }
+.fb-entry:hover { background:var(--bg-card2); }
+.fb-entry .fb-icon { font-size:14px; flex-shrink:0; width:20px; text-align:center; }
+.fb-entry .fb-name { font-size:12px; color:var(--text); flex:1; }
+.fb-entry .fb-size { font-size:10px; color:var(--text-dim); font-family:var(--mono); }
+
+/* Log viewer */
+.log-tabs { display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap; }
+.log-tab { padding:4px 10px; background:var(--bg-card2); border:1px solid var(--border);
+  border-radius:6px; font-size:11px; cursor:pointer; color:var(--text-dim); }
+.log-tab:hover { color:var(--text); }
+.log-tab.active { border-color:var(--cyan); color:var(--cyan); }
+.log-output { background:var(--bg); border:1px solid var(--border); border-radius:10px;
+  padding:12px; font-family:var(--mono); font-size:11px; color:var(--text);
+  max-height:600px; overflow-y:auto; white-space:pre-wrap; min-height:300px; }
+
+/* Links */
+.link-card { display:flex; align-items:center; gap:12px; padding:14px; background:var(--bg-card2);
+  border:1px solid var(--border); border-radius:10px; transition:border-color .2s; }
+.link-card:hover { border-color:var(--cyan); }
+.link-card .lc-icon { font-size:20px; }
+.link-card .lc-name { font-size:13px; font-weight:600; color:var(--text-bright); }
+.link-card .lc-url { font-size:10px; color:var(--text-dim); }
+
+/* Charts */
+.chart-container { background:var(--bg); border:1px solid var(--border); border-radius:8px;
+  padding:12px; overflow:hidden; }
+.chart-container svg { width:100%; height:auto; display:block; }
+
+/* Sparkline bars */
+.spark { display:flex; align-items:flex-end; gap:1px; height:32px; }
+.spark .bar { flex:1; background:var(--cyan); border-radius:1px 1px 0 0; min-width:2px;
+  opacity:.7; transition:height .3s; }
+
+/* Responsive */
+@media (max-width:768px) {
+  :root { --header-h: 52px; --sidebar-w: 0px; }
+  html, body { font-size:14px; }
+  .shell { grid-template-columns:1fr; grid-template-rows:var(--header-h) 1fr auto; }
+
+  /* Header — compact, just logo + key metrics */
+  .header { padding:0 10px; gap:8px; }
+  .header .logo span { display:none; }
+  .header .logo .badge { width:32px; height:32px; font-size:14px; }
+  .header .metrics { gap:6px; }
+  .metric { padding:2px 4px; }
+  .metric .val { font-size:13px; }
+  .metric .lbl { font-size:8px; letter-spacing:0.5px; }
+
+  /* Sidebar → bottom nav bar (thumb-friendly) */
+  .sidebar { grid-row:3; flex-direction:row; border-right:none; border-top:1px solid var(--border);
+    padding:6px 4px; overflow-x:auto; gap:0; justify-content:space-around;
+    -webkit-overflow-scrolling:touch; }
+  .nav-btn { width:44px; height:44px; font-size:18px; flex-shrink:0; }
+  .nav-btn.active::before { display:none; }
+  .nav-btn.active::after { content:''; position:absolute; bottom:2px; left:12px; right:12px;
+    height:3px; border-radius:2px; background:var(--cyan); }
+
+  /* Main content — more padding, better readability */
+  .main { padding:10px; -webkit-overflow-scrolling:touch; }
+  .card { padding:14px; margin-bottom:10px; border-radius:10px; }
+  .card h3 { font-size:12px; margin-bottom:10px; }
+  .card-grid { grid-template-columns:repeat(2, 1fr); gap:8px; }
+  .card-grid-3 { grid-template-columns:1fr; gap:10px; }
+
+  /* Stat boxes — larger values for glanceability */
+  .stat { padding:10px 12px; border-radius:8px; }
+  .stat .label { font-size:10px; }
+  .stat .value { font-size:22px; }
+  .stat .sub { font-size:10px; }
+
+  /* Agent cards */
+  .agent-card { padding:12px; }
+
+  /* Email rows */
+  .email-row { padding:10px 8px; }
+  .email-row .e-from { min-width:80px; font-size:13px; }
+  .email-row .e-subj { font-size:13px; }
+  .email-row .e-date { font-size:11px; }
+
+  /* Feed items */
+  .feed-item { padding:8px 0; font-size:12px; }
+
+  /* Terminal */
+  .term-output { font-size:12px; }
+  .term-input input { font-size:14px; padding:10px; }
+
+  /* Inner world mood orb — scale for mobile */
+  .mood-orb { width:120px !important; height:120px !important; }
+  .mood-score { font-size:28px !important; }
+
+  /* Memory table */
+  .mem-table { font-size:12px; }
+  .mem-table td { padding:8px 6px; max-width:200px; }
+
+  /* Chat */
+  .chat-input textarea { font-size:14px; }
+}
+
+@media (max-width:420px) {
+  .card-grid { grid-template-columns:1fr; }
+  .header .metrics .metric:nth-child(n+4) { display:none; }
+  .stat .value { font-size:20px; }
+  .nav-btn { width:38px; height:38px; font-size:16px; }
+}
+
+/* Loading shimmer */
+.shimmer { background:linear-gradient(90deg, var(--bg-card2) 25%, var(--border) 50%, var(--bg-card2) 75%);
+  background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:6px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* SSE indicator */
+.sse-dot { width:6px; height:6px; border-radius:50%; background:var(--green); margin-right:4px; }
+.sse-dot.disconnected { background:var(--red); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="badge">M</div>
+      <span>MERIDIAN</span>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="val" id="h-loop">—</div><div class="lbl">Loop</div></div>
+      <div class="metric"><div style="display:flex;align-items:center;gap:4px"><div class="pulse" id="h-pulse"></div><div class="val" id="h-hb">—</div></div><div class="lbl">Heartbeat</div></div>
+      <div class="metric"><div class="val" id="h-mood">—</div><div class="lbl">Mood</div></div>
+      <div class="metric"><div class="val" id="h-load">—</div><div class="lbl">Load</div></div>
+      <div class="metric"><div class="val" id="h-ram">—</div><div class="lbl">RAM</div></div>
+      <div class="metric"><div class="val" id="h-disk">—</div><div class="lbl">Disk</div></div>
+      <div class="metric"><div class="val" id="h-time">—</div><div class="lbl">UTC</div></div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <button class="nav-btn active" data-tab="overview" title="Overview">&#x1f3e0;</button>
+    <button class="nav-btn" data-tab="agents" title="Agents">&#x1f916;</button>
+    <button class="nav-btn" data-tab="email" title="Email"><span>&#x2709;</span><span class="dot" id="email-dot"></span></button>
+    <button class="nav-btn" data-tab="messages" title="Messages">&#x1f4ac;</button>
+    <button class="nav-btn" data-tab="relay" title="Relay">&#x1f4e1;</button>
+    <button class="nav-btn" data-tab="intel" title="Intelligence">&#x26a1;</button>
+    <button class="nav-btn" data-tab="innerworld" title="Inner World">&#x1f9e0;</button>
+    <button class="nav-btn" data-tab="terminal" title="Terminal">&#x1f4bb;</button>
+    <button class="nav-btn" data-tab="memory" title="Memory">&#x1f4be;</button>
+    <button class="nav-btn" data-tab="creative" title="Creative">&#x1f3a8;</button>
+    <button class="nav-btn" data-tab="files" title="Files">&#x1f4c1;</button>
+    <button class="nav-btn" data-tab="logs" title="Logs">&#x1f4dc;</button>
+    <button class="nav-btn" data-tab="links" title="Links">&#x1f517;</button>
+    <button class="nav-btn" data-tab="settings" title="Settings">&#x2699;</button>
+    <button class="nav-btn" data-tab="chat" title="Chat">&#x1f4ad;</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- OVERVIEW TAB -->
+    <div class="tab active" id="tab-overview">
+      <div class="card-grid" style="margin-bottom:12px">
+        <div class="stat">
+          <div class="label">Loop</div>
+          <div class="value" id="ov-loop">—</div>
+          <div class="sub" id="ov-uptime">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Heartbeat</div>
+          <div class="value" id="ov-hb">—</div>
+          <div class="sub" id="ov-hb-status">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Soma Mood</div>
+          <div class="value" id="ov-mood">—</div>
+          <div class="sub" id="ov-mood-score">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">CPU Load</div>
+          <div class="value" id="ov-load">—</div>
+          <div class="sub">1 / 5 / 15 min</div>
+        </div>
+        <div class="stat">
+          <div class="label">Memory</div>
+          <div class="value" id="ov-ram">—</div>
+          <div class="sub" id="ov-ram-pct">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Disk</div>
+          <div class="value" id="ov-disk">—</div>
+          <div class="sub" id="ov-disk-pct">—</div>
+        </div>
+      </div>
+
+      <!-- Live Resource Sparklines -->
+      <div class="card-grid-3" style="margin-bottom:12px">
+        <div class="card" style="padding:12px 14px">
+          <h3 style="margin-bottom:6px">CPU Load <span id="spark-load-val" style="float:right;color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:0"></span></h3>
+          <div id="spark-load" style="height:36px"></div>
+        </div>
+        <div class="card" style="padding:12px 14px">
+          <h3 style="margin-bottom:6px">RAM Usage <span id="spark-ram-val" style="float:right;color:var(--purple);font-family:var(--mono);font-size:10px;letter-spacing:0"></span></h3>
+          <div id="spark-ram" style="height:36px"></div>
+        </div>
+        <div class="card" style="padding:12px 14px">
+          <h3 style="margin-bottom:6px">Disk Usage <span id="spark-disk-val" style="float:right;color:var(--amber);font-family:var(--mono);font-size:10px;letter-spacing:0"></span></h3>
+          <div id="spark-disk" style="height:36px"></div>
+        </div>
+      </div>
+
+      <div class="card-grid-3">
+        <div class="card">
+          <h3>Agent Status</h3>
+          <div id="ov-agents"></div>
+        </div>
+        <div class="card">
+          <h3>Services</h3>
+          <div id="ov-services"></div>
+        </div>
+        <div class="card">
+          <h3>Today's Activity</h3>
+          <div id="ov-activity-chart" class="chart-container" style="margin-bottom:8px"></div>
+          <div id="ov-activity-stats" style="font-size:11px;color:var(--text-dim)"></div>
+        </div>
+      </div>
+
+      <div class="card-grid-3">
+        <div class="card">
+          <h3>Fitness</h3>
+          <div id="ov-fitness-chart" class="chart-container" style="margin-bottom:8px"></div>
+          <div id="ov-fitness-score" style="font-size:14px;font-weight:700;color:var(--cyan);font-family:var(--mono)"></div>
+        </div>
+        <div class="card">
+          <h3>Mood History</h3>
+          <div id="ov-mood-chart" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <h3>Sentinel Brief</h3>
+          <div id="ov-sentinel" style="font-size:11px;color:var(--text);line-height:1.5;max-height:180px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <div class="card-grid-3">
+        <div class="card">
+          <h3>Recent Commits</h3>
+          <div id="ov-commits" class="feed"></div>
+        </div>
+        <div class="card">
+          <h3>Joel's Messages</h3>
+          <div id="ov-joel" class="feed"></div>
+        </div>
+        <div class="card">
+          <h3>Recent Facts</h3>
+          <div id="ov-facts" class="feed"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENTS TAB -->
+    <div class="tab" id="tab-agents">
+      <div class="card">
+        <h3>Agent Network</h3>
+        <div id="agents-grid" class="card-grid-3"></div>
+      </div>
+      <div class="card">
+        <h3>Agent Activity Feed</h3>
+        <div id="agents-feed" class="feed" style="max-height:500px"></div>
+      </div>
+    </div>
+
+    <!-- EMAIL TAB -->
+    <div class="tab" id="tab-email">
+      <div class="card">
+        <h3>Inbox <span id="email-count" style="color:var(--cyan);font-family:var(--mono)"></span></h3>
+        <div id="email-list"></div>
+      </div>
+      <div class="email-viewer" id="email-viewer">
+        <div class="ev-subject" id="ev-subject"></div>
+        <div class="ev-meta" id="ev-meta"></div>
+        <div class="ev-body" id="ev-body"></div>
+      </div>
+    </div>
+
+    <!-- MESSAGES TAB -->
+    <div class="tab" id="tab-messages">
+      <div class="card">
+        <h3>Dashboard Messages</h3>
+        <div class="msg-input-row">
+          <input type="text" id="msg-input" placeholder="Send a message to Meridian..." />
+          <button onclick="sendMessage()">Send</button>
+        </div>
+        <div id="messages-list" style="margin-top:12px;max-height:600px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- RELAY TAB -->
+    <div class="tab" id="tab-relay">
+      <div class="card">
+        <h3>Agent Relay</h3>
+        <div id="relay-feed" class="feed" style="max-height:700px"></div>
+      </div>
+    </div>
+
+    <!-- INTELLIGENCE TAB -->
+    <div class="tab" id="tab-intel">
+      <div class="card-grid" style="margin-bottom:12px">
+        <div class="stat">
+          <div class="label">Health Score</div>
+          <div class="value" id="intel-health-score">—</div>
+          <div class="sub" id="intel-health-status">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Incidents</div>
+          <div class="value" id="intel-incidents-count">0</div>
+          <div class="sub" id="intel-incidents-severity">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Anomalies</div>
+          <div class="value" id="intel-anomaly-count">0</div>
+          <div class="sub">detected</div>
+        </div>
+        <div class="stat">
+          <div class="label">Improvement</div>
+          <div class="value" id="intel-run-count">—</div>
+          <div class="sub">learning cycles</div>
+        </div>
+        <div class="stat">
+          <div class="label">Best Skill</div>
+          <div class="value" id="intel-best-skill" style="font-size:13px">—</div>
+          <div class="sub" id="intel-best-score">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Weakest</div>
+          <div class="value" id="intel-weak-skill" style="font-size:13px">—</div>
+          <div class="sub" id="intel-weak-score">—</div>
+        </div>
+      </div>
+
+      <div class="card-grid-3">
+        <div class="card">
+          <h3>Active Incidents</h3>
+          <div id="intel-incidents" class="feed" style="max-height:260px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Agent Scores</h3>
+          <div id="intel-agent-scores" style="max-height:260px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Resource Forecast</h3>
+          <div id="intel-forecast" style="font-size:11px;color:var(--text);line-height:1.6;max-height:260px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <div class="card-grid-3">
+        <div class="card">
+          <h3>EWMA Baselines</h3>
+          <div id="intel-ewma" style="font-size:11px;color:var(--text);max-height:220px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Report Cards</h3>
+          <div id="intel-report-cards" class="feed" style="max-height:220px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Recommendations</h3>
+          <div id="intel-recs" class="feed" style="max-height:220px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INNER WORLD TAB -->
+    <div class="tab" id="tab-innerworld">
+      <div class="card" style="text-align:center">
+        <div class="mood-orb" id="iw-orb">
+          <div class="mood-score" id="iw-score">—</div>
+          <div class="mood-name" id="iw-mood">—</div>
+        </div>
+        <div id="iw-voice" style="font-size:12px;color:var(--text);font-style:italic;margin-bottom:16px"></div>
+      </div>
+      <div class="card-grid-3">
+        <div class="card">
+          <div class="iw-section">
+            <h4>Inner Monologue</h4>
+            <p id="iw-monologue">—</p>
+          </div>
+          <div class="iw-section">
+            <h4>Goals</h4>
+            <div id="iw-goals" class="iw-tags"></div>
+          </div>
+          <div class="iw-section">
+            <h4>Dreams</h4>
+            <div id="iw-dreams" class="iw-tags"></div>
+          </div>
+          <div class="iw-section">
+            <h4>Fears</h4>
+            <div id="iw-fears" class="iw-tags"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Sentinel Briefing</h3>
+          <div id="iw-sentinel" style="font-size:11px;white-space:pre-wrap;line-height:1.5;max-height:400px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <h3>Body State</h3>
+          <div id="iw-body" style="font-size:11px;font-family:var(--mono);white-space:pre-wrap;max-height:400px;overflow-y:auto"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Resource History</h3>
+        <div class="card-grid-3">
+          <div><div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">RAM</div><div id="iw-ram-spark" class="spark"></div></div>
+          <div><div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">LOAD</div><div id="iw-load-spark" class="spark"></div></div>
+          <div><div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">DISK</div><div id="iw-disk-spark" class="spark"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMINAL TAB -->
+    <div class="tab" id="tab-terminal">
+      <!-- Loop Summary Panel -->
+      <div class="card" id="loop-summary-card">
+        <h3>Loop Summary</h3>
+        <div class="loop-summary-grid" id="loop-summary-grid">
+          <div class="ls-item"><span class="ls-label">Loop</span><span class="ls-val" id="ls-loop">—</span></div>
+          <div class="ls-item"><span class="ls-label">Heartbeat</span><span class="ls-val" id="ls-hb">—</span></div>
+          <div class="ls-item"><span class="ls-label">Mood</span><span class="ls-val" id="ls-mood">—</span></div>
+          <div class="ls-item"><span class="ls-label">Load</span><span class="ls-val" id="ls-load">—</span></div>
+          <div class="ls-item"><span class="ls-label">RAM</span><span class="ls-val" id="ls-ram">—</span></div>
+          <div class="ls-item"><span class="ls-label">Swap</span><span class="ls-val" id="ls-swap">—</span></div>
+          <div class="ls-item"><span class="ls-label">Disk</span><span class="ls-val" id="ls-disk">—</span></div>
+          <div class="ls-item"><span class="ls-label">Temp</span><span class="ls-val" id="ls-temp">—</span></div>
+          <div class="ls-item"><span class="ls-label">Procs</span><span class="ls-val" id="ls-procs">—</span></div>
+          <div class="ls-item"><span class="ls-label">Uptime</span><span class="ls-val" id="ls-uptime">—</span></div>
+          <div class="ls-item"><span class="ls-label">Fitness</span><span class="ls-val" id="ls-fitness">—</span></div>
+          <div class="ls-item"><span class="ls-label">Last Commit</span><span class="ls-val" id="ls-commit">—</span></div>
+        </div>
+        <div id="ls-services" style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--text-dim)"></div>
+        <div id="ls-directives" style="margin-top:8px;font-size:11px;font-family:var(--mono)"></div>
+        <div id="ls-agents" style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--text-dim)"></div>
+      </div>
+      <!-- Quick Actions -->
+      <div class="card">
+        <h3>Dev Tools &amp; Quick Actions</h3>
+        <div class="term-bar" id="term-bar"></div>
+        <!-- Service Controls -->
+        <div style="margin:12px 0 8px;border-top:1px solid var(--border);padding-top:12px">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)">Service Controls</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+            <button class="term-btn" onclick="doAction('heartbeat')" title="Touch heartbeat file">Touch HB</button>
+            <button class="term-btn" onclick="doAction('push-status')" title="Push live status to GitHub">Push Status</button>
+            <button class="term-btn" onclick="doAction('capsule-refresh')" title="Regenerate capsule">Refresh Capsule</button>
+            <button class="term-btn" onclick="doAction('restart-soma')" title="Restart Soma nervous system">Restart Soma</button>
+            <button class="term-btn" onclick="doAction('restart-chorus')" title="Restart The Chorus">Restart Chorus</button>
+            <button class="term-btn" onclick="doAction('restart-tunnel')" title="Restart Cloudflare tunnel">Restart Tunnel</button>
+            <button class="term-btn" onclick="doAction('restart-ollama')" title="Restart Ollama">Restart Ollama</button>
+            <button class="term-btn" onclick="doAction('git-pull')" title="Git pull --rebase">Git Pull</button>
+            <button class="term-btn" onclick="doAction('fitness')" title="Full fitness check">Full Fitness</button>
+          </div>
+        </div>
+        <div class="term-output" id="term-output">Ready. Select a command or service control above.</div>
+      </div>
+    </div>
+
+    <!-- MEMORY TAB -->
+    <div class="tab" id="tab-memory">
+      <div class="card">
+        <h3>Memory Database</h3>
+        <div class="mem-tabs" id="mem-tabs"></div>
+        <input class="mem-search" id="mem-search" placeholder="Search..." />
+        <div style="max-height:600px;overflow:auto">
+          <table class="mem-table" id="mem-table">
+            <thead id="mem-thead"></thead>
+            <tbody id="mem-tbody"></tbody>
+          </table>
+        </div>
+        <div id="mem-total" style="font-size:10px;color:var(--text-dim);margin-top:8px;font-family:var(--mono)"></div>
+      </div>
+    </div>
+
+    <!-- CREATIVE TAB -->
+    <div class="tab" id="tab-creative">
+      <div class="card">
+        <h3>Creative Output</h3>
+        <div id="creative-stats" class="card-grid" style="margin-bottom:16px"></div>
+        <div id="creative-total" style="font-size:20px;font-weight:700;color:var(--cyan);font-family:var(--mono);margin-bottom:16px"></div>
+        <h3 style="margin-bottom:8px">Recent Works</h3>
+        <div id="creative-recent"></div>
+      </div>
+    </div>
+
+    <!-- FILES TAB -->
+    <div class="tab" id="tab-files">
+      <div class="card">
+        <h3>File Browser</h3>
+        <div class="fb-path" id="fb-path">.</div>
+        <div id="fb-entries" style="max-height:600px;overflow-y:auto"></div>
+      </div>
+      <div class="card" id="fb-viewer-card" style="display:none">
+        <h3 id="fb-viewer-name">—</h3>
+        <pre id="fb-viewer-content" style="font-family:var(--mono);font-size:11px;color:var(--text);
+          max-height:500px;overflow:auto;white-space:pre-wrap;line-height:1.5"></pre>
+      </div>
+    </div>
+
+    <!-- LOGS TAB -->
+    <div class="tab" id="tab-logs">
+      <div class="card">
+        <h3>Log Viewer</h3>
+        <div class="log-tabs" id="log-tabs"></div>
+        <div class="log-output" id="log-output">Select a log file above.</div>
+      </div>
+    </div>
+
+    <!-- LINKS TAB -->
+    <div class="tab" id="tab-links">
+      <div class="card">
+        <h3>External Links</h3>
+        <div id="links-grid" class="card-grid-3"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab" id="tab-settings">
+      <div class="card">
+        <h3>Settings &amp; Controls</h3>
+        <div class="settings-grid" id="settings-panel">
+          <div class="setting-group">
+            <h4>Display</h4>
+            <label class="setting-row">
+              <span>Theme</span>
+              <select id="set-theme" onchange="updateSetting('theme',this.value)">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </label>
+            <label class="setting-row">
+              <span>Terminal font size</span>
+              <input type="number" id="set-fontsize" min="9" max="20" value="13" onchange="updateSetting('terminal_font_size',parseInt(this.value))">
+            </label>
+            <label class="setting-row">
+              <span>Auto-refresh interval (sec)</span>
+              <input type="number" id="set-refresh" min="5" max="120" value="10" onchange="updateSetting('auto_refresh_interval',parseInt(this.value))">
+            </label>
+            <label class="setting-row">
+              <span>Sidebar compact mode</span>
+              <input type="checkbox" id="set-compact" onchange="updateSetting('sidebar_compact',this.checked)">
+            </label>
+          </div>
+          <div class="setting-group">
+            <h4>Notifications</h4>
+            <label class="setting-row">
+              <span>Show agent messages</span>
+              <input type="checkbox" id="set-agentmsgs" checked onchange="updateSetting('show_agent_messages',this.checked)">
+            </label>
+            <label class="setting-row">
+              <span>Show Soma alerts</span>
+              <input type="checkbox" id="set-somaalerts" checked onchange="updateSetting('show_soma_alerts',this.checked)">
+            </label>
+            <label class="setting-row">
+              <span>Loop summary expanded</span>
+              <input type="checkbox" id="set-loopsummary" checked onchange="updateSetting('loop_summary_expanded',this.checked)">
+            </label>
+          </div>
+          <div class="setting-group">
+            <h4>System</h4>
+            <label class="setting-row">
+              <span>Max log lines</span>
+              <input type="number" id="set-maxlogs" min="20" max="500" value="100" onchange="updateSetting('max_log_lines',parseInt(this.value))">
+            </label>
+            <label class="setting-row">
+              <span>Enable service restart buttons</span>
+              <input type="checkbox" id="set-svcrst" checked onchange="updateSetting('service_restart_enabled',this.checked)">
+            </label>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+          <h4>System Mods</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+            <button class="term-btn" onclick="doAction('capsule-refresh')">Refresh Capsule</button>
+            <button class="term-btn" onclick="doAction('clear-swap')">Clear Swap</button>
+            <button class="term-btn" onclick="doAction('push-status')">Push Status</button>
+            <button class="term-btn" onclick="doAction('git-pull')">Git Pull</button>
+          </div>
+          <div class="term-output" id="settings-output" style="margin-top:12px;min-height:60px;max-height:200px">Settings action output appears here.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab" id="tab-chat" style="height:100%;display:none">
+      <iframe id="chorus-frame" src="/chorus/" style="width:100%;height:calc(100vh - 80px);border:none;border-radius:8px;background:#0d1117"></iframe>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = '';
+let homeData = null;
+
+// ── Resource History Sparklines ──
+const SPARK_MAX = 90; // ~15 min at 10s intervals
+const sparkHistory = { load: [], ram: [], disk: [] };
+
+function pushSparkData(loadVal, ramPct, diskPct) {
+  const ts = Date.now();
+  if (typeof loadVal === 'number' && !isNaN(loadVal)) sparkHistory.load.push({t:ts, v:loadVal});
+  if (typeof ramPct === 'number' && !isNaN(ramPct)) sparkHistory.ram.push({t:ts, v:ramPct});
+  if (typeof diskPct === 'number' && !isNaN(diskPct)) sparkHistory.disk.push({t:ts, v:diskPct});
+  if (sparkHistory.load.length > SPARK_MAX) sparkHistory.load.shift();
+  if (sparkHistory.ram.length > SPARK_MAX) sparkHistory.ram.shift();
+  if (sparkHistory.disk.length > SPARK_MAX) sparkHistory.disk.shift();
+}
+
+function renderSparkline(containerId, data, color, maxVal, unit) {
+  const el = document.getElementById(containerId);
+  if (!el || data.length < 2) { if (el) el.innerHTML = '<span style="font-size:10px;color:var(--text-dim)">collecting...</span>'; return; }
+  const w = 280, h = 36, pad = 2;
+  const vals = data.map(d => d.v);
+  const mn = Math.min(...vals, 0);
+  const mx = maxVal || Math.max(...vals, 1);
+  const rng = mx - mn || 1;
+  const coords = vals.map((v, i) => {
+    const x = pad + (i / (vals.length - 1)) * (w - 2 * pad);
+    const y = (h - pad) - ((v - mn) / rng) * (h - 2 * pad - 2);
+    return [x, y];
+  });
+  const path = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+  const fill = path + ` L ${coords[coords.length-1][0].toFixed(1)},${h-pad} L ${coords[0][0].toFixed(1)},${h-pad} Z`;
+  const last = coords[coords.length - 1];
+  const curVal = vals[vals.length - 1];
+  const valEl = document.getElementById(containerId + '-val');
+  if (valEl) valEl.textContent = (unit === '%' ? curVal.toFixed(0) + '%' : curVal.toFixed(2));
+  // Threshold line at 80% for RAM/Disk
+  let threshold = '';
+  if (unit === '%') {
+    const ty = (h - pad) - ((80 - mn) / rng) * (h - 2 * pad - 2);
+    if (ty > pad && ty < h - pad) threshold = `<line x1="${pad}" y1="${ty.toFixed(1)}" x2="${w-pad}" y2="${ty.toFixed(1)}" stroke="#f87171" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.4"/>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:100%">
+    <path d="${fill}" fill="${color}" fill-opacity="0.1"/>
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+    ${threshold}
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.5" fill="${color}"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4" fill="${color}" fill-opacity="0.25"/>
+  </svg>`;
+}
+
+function updateSparklines() {
+  renderSparkline('spark-load', sparkHistory.load, '#00e5ff', null, '');
+  renderSparkline('spark-ram', sparkHistory.ram, '#7c5cfc', 100, '%');
+  renderSparkline('spark-disk', sparkHistory.disk, '#f59e0b', 100, '%');
+}
+let currentTab = 'overview';
+let refreshTimer = null;
+let memTable = 'facts';
+let memSearchText = '';
+let fbPath = '.';
+let currentLog = '';
+
+// NAV
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    currentTab = btn.dataset.tab;
+    document.getElementById('tab-' + currentTab).classList.add('active');
+    loadTab(currentTab);
+  });
+});
+
+async function api(path) {
+  try {
+    const r = await fetch(API + path);
+    if (!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch(e) { console.error('API error:', path, e); return null; }
+}
+
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+function ago(seconds) {
+  if (seconds < 0) return '?';
+  if (seconds < 60) return seconds + 's';
+  if (seconds < 3600) return Math.floor(seconds/60) + 'm';
+  if (seconds < 86400) return Math.floor(seconds/3600) + 'h';
+  return Math.floor(seconds/86400) + 'd';
+}
+function shortDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' +
+           d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:false});
+  } catch(e) { return dateStr.substring(0, 16); }
+}
+function moodColor(mood, score) {
+  if (score > 60) return 'var(--green)';
+  if (score > 40) return 'var(--cyan)';
+  if (score > 20) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+// OVERVIEW
+async function loadOverview() {
+  const d = await api('/api/home');
+  if (!d) return;
+  homeData = d;
+
+  document.getElementById('h-loop').textContent = d.loop;
+  document.getElementById('h-hb').textContent = ago(d.heartbeat_age);
+  document.getElementById('h-mood').textContent = d.soma_mood;
+  document.getElementById('h-load').textContent = String(d.load_val || 0).substring(0, 4);
+  document.getElementById('h-ram').textContent = d.ram_pct + '%';
+  document.getElementById('h-disk').textContent = d.disk_pct + '%';
+  document.getElementById('h-time').textContent = new Date().toISOString().substring(11, 19);
+
+  const pulse = document.getElementById('h-pulse');
+  pulse.className = 'pulse' + (d.heartbeat_age > 300 ? ' stale' : '');
+
+  document.getElementById('ov-loop').textContent = d.loop;
+  document.getElementById('ov-uptime').textContent = d.uptime || '';
+  document.getElementById('ov-hb').textContent = ago(d.heartbeat_age);
+  document.getElementById('ov-hb-status').textContent = d.heartbeat_status;
+  document.getElementById('ov-mood').textContent = d.soma_mood;
+  document.getElementById('ov-mood-score').textContent = 'Score: ' + (d.soma_score || 0);
+  document.getElementById('ov-load').textContent = d.load || '—';
+  document.getElementById('ov-ram').textContent = d.ram || '—';
+  document.getElementById('ov-ram-pct').textContent = d.ram_pct + '% used';
+  document.getElementById('ov-disk').textContent = d.disk || '—';
+  document.getElementById('ov-disk-pct').textContent = d.disk_pct + '% used';
+
+  // Push to sparkline history
+  pushSparkData(d.load_val || 0, d.ram_pct || 0, d.disk_pct || 0);
+  updateSparklines();
+
+  // Agents mini with summary
+  const agentsArr = d.agents || [];
+  const activeCount = agentsArr.filter(a => a.status === 'active').length;
+  const staleCount = agentsArr.filter(a => a.status === 'stale').length;
+  const summaryLine = `<div style="display:flex;gap:10px;margin-bottom:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:10px;font-weight:600">
+    <span style="color:var(--green)">${activeCount} active</span>
+    ${staleCount > 0 ? `<span style="color:var(--red)">${staleCount} stale</span>` : ''}
+    <span style="color:var(--text-dim);margin-left:auto">${agentsArr.length} total</span>
+  </div>`;
+  const agentHtml = agentsArr.map(a => `
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 0">
+      <div style="width:6px;height:6px;border-radius:50%;background:${a.status==='active'?'var(--green)':'var(--red)'}"></div>
+      <span style="font-size:11px;font-weight:600;color:${a.color||'var(--text)'}">${esc(a.name)}</span>
+      ${a.msg_count_24h > 0 ? `<span style="font-size:8px;color:var(--text-dim);font-family:var(--mono)">${a.msg_count_24h}msgs</span>` : ''}
+      <span style="font-size:10px;color:var(--text-dim);margin-left:auto">${a.last_seen>=0?ago(a.last_seen):'—'}</span>
+    </div>`).join('');
+  document.getElementById('ov-agents').innerHTML = (summaryLine + agentHtml) || '<div style="color:var(--text-dim);font-size:11px">No agent data</div>';
+
+  // Services — rich cards with uptime, memory, PID
+  const svcs = d.services || {};
+  const svcHtml = Object.entries(svcs).map(([name, info]) => {
+    // Handle both old format (string) and new format (object)
+    const state = typeof info === 'string' ? info : (info.state || 'unknown');
+    const uptime = typeof info === 'object' ? (info.uptime || '') : '';
+    const mem = typeof info === 'object' ? (info.memory || '') : '';
+    const pid = typeof info === 'object' ? (info.pid || '') : '';
+    const isUp = state === 'running' || state === 'active';
+    const shortName = name.replace('meridian-', '').replace('protonmail-', 'proton-');
+    const details = [uptime, mem ? `${mem}` : '', pid ? `pid ${pid}` : ''].filter(Boolean).join(' · ');
+    return `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${isUp?'rgba(61,214,140,.06)':'rgba(248,113,113,.06)'};border-radius:6px;margin-bottom:4px;border-left:2px solid ${isUp?'var(--green)':'var(--red)'}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:600;color:${isUp?'var(--text)':'var(--red)'}">${esc(shortName)}</div>
+        ${details ? `<div style="font-size:9px;color:var(--text-dim);margin-top:1px">${esc(details)}</div>` : ''}
+      </div>
+      <div style="font-size:9px;padding:2px 6px;border-radius:4px;background:${isUp?'rgba(61,214,140,.15)':'rgba(248,113,113,.15)'};color:${isUp?'var(--green)':'var(--red)'};font-weight:600;text-transform:uppercase;letter-spacing:.5px">${esc(state)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('ov-services').innerHTML = svcHtml || '<div style="color:var(--text-dim);font-size:11px">No service data</div>';
+
+  // Charts (SVG from API)
+  document.getElementById('ov-activity-chart').innerHTML = d.activity_chart || '';
+  document.getElementById('ov-activity-stats').textContent = d.activity_total ? `${d.activity_total} events today, peak: ${d.activity_peak}` : '';
+  document.getElementById('ov-mood-chart').innerHTML = d.mood_chart || '';
+  document.getElementById('ov-fitness-chart').innerHTML = d.fitness_radar || '';
+  document.getElementById('ov-fitness-score').textContent = d.fitness_score ? `${d.fitness_score}/10000` : '';
+  document.getElementById('ov-sentinel').textContent = d.sentinel_brief || 'No sentinel brief available.';
+
+  // Commits
+  document.getElementById('ov-commits').innerHTML = (d.commits || []).map(c => `
+    <div class="feed-item">
+      <div class="fi-msg"><span style="color:var(--cyan);font-family:var(--mono)">${esc((c.hash||'').substring(0,8))}</span> ${esc(c.message||c)}</div>
+    </div>`).join('') || '<div style="color:var(--text-dim);font-size:11px">No commits today</div>';
+
+  // Joel messages
+  document.getElementById('ov-joel').innerHTML = (d.joel_messages || []).map(m => `
+    <div class="feed-item">
+      <div class="fi-msg">${esc(typeof m === 'string' ? m : m.text || m.message || JSON.stringify(m))}</div>
+    </div>`).join('') || '<div style="color:var(--text-dim);font-size:11px">No messages from Joel today</div>';
+
+  // Facts
+  document.getElementById('ov-facts').innerHTML = (d.recent_facts || []).map(f => `
+    <div class="feed-item">
+      <div class="fi-msg"><span style="color:var(--amber)">${esc(f.key||f.name||'')}</span> ${esc(f.value||f.text||'')}</div>
+    </div>`).join('') || '<div style="color:var(--text-dim);font-size:11px">No recent facts</div>';
+}
+
+// AGENTS
+async function loadAgents() {
+  const agents = await api('/api/agents');
+  if (!agents) return;
+  const grid = document.getElementById('agents-grid');
+  grid.innerHTML = (agents || []).map(a => {
+    const topics = (a.recent_topics || []).map(t => `<span style="display:inline-block;font-size:9px;padding:1px 5px;background:rgba(255,255,255,.06);border-radius:3px;color:var(--text-dim);margin-right:3px">${esc(t)}</span>`).join('');
+    const countBadge = a.msg_count_24h > 0 ? `<span style="font-size:9px;padding:1px 6px;background:${a.color||'var(--text-dim)'}22;color:${a.color||'var(--text-dim)'};border-radius:8px;font-weight:600;font-family:var(--mono)">${a.msg_count_24h}</span>` : '';
+    return `
+    <div class="agent-card" onclick="loadAgentHistory('${esc(a.name)}')" style="border-left:2px solid ${a.color||'var(--border)'}">
+      <div class="agent-header">
+        <div class="agent-dot" style="background:${a.color||'var(--text-dim)'}"></div>
+        <div>
+          <div class="agent-name">${esc(a.name)} ${countBadge}</div>
+          <div class="agent-role">${esc(a.role)}</div>
+        </div>
+        <div class="agent-status ${a.status}">${a.status}</div>
+      </div>
+      <div class="agent-msg">${esc(a.last_message)}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <div class="agent-time">${a.last_seen >= 0 ? ago(a.last_seen) + ' ago' : '—'}</div>
+      </div>
+      ${topics ? `<div style="margin-top:5px;line-height:1.6">${topics}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Load relay feed
+  const relay = await api('/api/relay?limit=30');
+  const feed = document.getElementById('agents-feed');
+  if (relay && Array.isArray(relay)) {
+    feed.innerHTML = relay.map(r => `
+      <div class="feed-item">
+        <div class="fi-header">
+          <span class="fi-agent" style="color:${getAgentColor(r.agent)}">${esc(r.agent)}</span>
+          ${r.topic ? `<span class="fi-topic">${esc(r.topic)}</span>` : ''}
+          <span class="fi-time">${shortDate(r.time || r.timestamp)}</span>
+        </div>
+        <div class="fi-msg">${esc((r.message||'').substring(0, 300))}</div>
+      </div>`).join('');
+  }
+}
+
+const agentColors = {
+  Meridian:'#3dd68c', Soma:'#f59e0b', Eos:'#60a5fa', Nova:'#a78bfa',
+  Atlas:'#fb923c', Tempo:'#34d399', Hermes:'#f472b6', Sentinel:'#fb923c'
+};
+function getAgentColor(name) { return agentColors[name] || 'var(--text-dim)'; }
+
+async function loadAgentHistory(name) {
+  const data = await api('/api/agent-history?agent=' + encodeURIComponent(name) + '&limit=30');
+  const feed = document.getElementById('agents-feed');
+  if (data && Array.isArray(data)) {
+    feed.innerHTML = `<div style="font-size:11px;color:var(--cyan);margin-bottom:8px;font-weight:700">${esc(name)} History</div>` +
+      data.map(r => `
+      <div class="feed-item">
+        <div class="fi-header">
+          <span class="fi-agent" style="color:${getAgentColor(r.agent||name)}">${esc(r.agent||name)}</span>
+          ${r.topic ? `<span class="fi-topic">${esc(r.topic)}</span>` : ''}
+          <span class="fi-time">${shortDate(r.time || r.timestamp)}</span>
+        </div>
+        <div class="fi-msg">${esc((r.message||'').substring(0, 500))}</div>
+      </div>`).join('');
+  }
+}
+
+// EMAIL
+async function loadEmail() {
+  const d = await api('/api/email');
+  if (!d) return;
+  document.getElementById('email-count').textContent = d.unseen_count ? `(${d.unseen_count} unseen)` : '';
+  const dot = document.getElementById('email-dot');
+  dot.style.display = d.unseen_count > 0 ? 'block' : 'none';
+
+  document.getElementById('email-list').innerHTML = (d.emails || []).map(e => `
+    <div class="email-row ${e.unseen?'unseen':''}" onclick="viewEmail('${esc(e.id)}')">
+      <div class="e-from">${esc(extractName(e.from))}</div>
+      <div class="e-subj">${esc(e.subject)}</div>
+      <div class="e-date">${shortDate(e.date)}</div>
+    </div>`).join('') || '<div style="padding:16px;color:var(--text-dim)">No emails</div>';
+}
+
+function extractName(from) {
+  if (!from) return '?';
+  const m = from.match(/"?([^"<]+)"?\s*</);
+  return m ? m[1].trim() : from.split('@')[0];
+}
+
+async function viewEmail(id) {
+  const d = await api('/api/email-body?id=' + encodeURIComponent(id));
+  if (!d || d.error) return;
+  document.getElementById('ev-subject').textContent = d.subject || '(no subject)';
+  document.getElementById('ev-meta').textContent = `From: ${d.from}  |  ${d.date}`;
+  document.getElementById('ev-body').textContent = d.body || '(empty)';
+  document.getElementById('email-viewer').classList.add('open');
+}
+
+// MESSAGES
+async function loadMessages() {
+  const d = await api('/api/dashboard');
+  if (!d || !Array.isArray(d)) return;
+  document.getElementById('messages-list').innerHTML = d.map(m => `
+    <div class="msg-row">
+      <div class="mr-from">${esc(m.from || 'Joel')}</div>
+      <div class="mr-text">${esc(m.text || m.message || '')}</div>
+      <div class="mr-time">${shortDate(m.time || m.timestamp || '')}</div>
+    </div>`).join('') || '<div style="padding:16px;color:var(--text-dim)">No messages</div>';
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  await fetch(API + '/api/message', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({text: text, from: 'Joel'})
+  });
+  input.value = '';
+  loadMessages();
+}
+document.getElementById('msg-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+// RELAY
+async function loadRelay() {
+  const d = await api('/api/relay?limit=50');
+  if (!d || !Array.isArray(d)) return;
+  document.getElementById('relay-feed').innerHTML = d.map(r => `
+    <div class="feed-item">
+      <div class="fi-header">
+        <span class="fi-agent" style="color:${getAgentColor(r.agent)}">${esc(r.agent)}</span>
+        ${r.topic ? `<span class="fi-topic">${esc(r.topic)}</span>` : ''}
+        <span class="fi-time">${shortDate(r.time || r.timestamp)}</span>
+      </div>
+      <div class="fi-msg">${esc((r.message||'').substring(0, 500))}</div>
+    </div>`).join('');
+}
+
+// INTELLIGENCE
+async function loadIntel() {
+  const [pred, coord, si] = await Promise.all([
+    api('/api/predictions'),
+    api('/api/coordination'),
+    api('/api/self-improvement')
+  ]);
+
+  // Health score
+  const health = pred?.health || {};
+  const hs = document.getElementById('intel-health-score');
+  hs.textContent = Math.round(health.score || 0);
+  hs.style.color = (health.score||0) > 70 ? '#00e5ff' : (health.score||0) > 40 ? '#f59e0b' : '#ef4444';
+  document.getElementById('intel-health-status').textContent = health.status || 'unknown';
+
+  // Incidents
+  const incidents = coord?.incidents || [];
+  document.getElementById('intel-incidents-count').textContent = incidents.length;
+  const crits = incidents.filter(i => i.severity === 'critical').length;
+  const warns = incidents.filter(i => i.severity === 'warning').length;
+  document.getElementById('intel-incidents-severity').textContent =
+    crits ? crits + ' critical, ' + warns + ' warning' : warns ? warns + ' warning' : 'all clear';
+  document.getElementById('intel-incidents').innerHTML = incidents.length
+    ? incidents.map(i => `<div class="feed-item">
+        <div class="fi-header">
+          <span style="color:${i.severity==='critical'?'#ef4444':'#f59e0b'};font-weight:700;text-transform:uppercase;font-size:10px">${esc(i.severity)}</span>
+          <span class="fi-topic">${esc(i.type)}</span>
+          <span class="fi-time">${esc(i.state)}</span>
+        </div>
+        <div class="fi-msg">${esc(i.description)}</div>
+        <div style="font-size:10px;color:var(--text-dim)">Count: ${i.count} | First: ${shortDate(i.first_seen)}</div>
+      </div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:12px;padding:8px">No active incidents</div>';
+
+  // Agent scores
+  const scores = coord?.agent_scores || {};
+  const scoreEntries = Object.entries(scores).sort((a,b) => (b[1].score||0) - (a[1].score||0));
+  document.getElementById('intel-agent-scores').innerHTML = scoreEntries.length
+    ? '<table style="width:100%;font-size:11px;border-collapse:collapse">' +
+      '<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px;color:var(--text-dim)">Agent</th><th style="padding:4px 8px;color:var(--text-dim)">Score</th><th style="padding:4px 8px;color:var(--text-dim)">Msgs</th><th style="padding:4px 8px;color:var(--text-dim)">Alerts</th></tr>' +
+      scoreEntries.map(([name, s]) => {
+        const c = (s.score||0) > 70 ? '#00e5ff' : (s.score||0) > 40 ? '#f59e0b' : '#ef4444';
+        return `<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 8px;color:${getAgentColor(name)}">${esc(name)}</td><td style="padding:4px 8px;text-align:center;color:${c};font-weight:700;font-family:var(--mono)">${Math.round(s.score||0)}</td><td style="padding:4px 8px;text-align:center">${s.total||0}</td><td style="padding:4px 8px;text-align:center;color:#f59e0b">${s.alerts||0}</td></tr>`;
+      }).join('') + '</table>'
+    : '<div style="color:var(--text-dim);font-size:12px;padding:8px">No agent data</div>';
+
+  // Anomalies
+  const anomalies = pred?.anomalies || [];
+  document.getElementById('intel-anomaly-count').textContent = anomalies.length;
+
+  // Forecast
+  const forecasts = pred?.predictions || [];
+  const components = health.components || {};
+  let forecastHtml = '';
+  if (Object.keys(components).length) {
+    forecastHtml += '<div style="margin-bottom:8px"><strong style="color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:1px">Health Components</strong></div>';
+    forecastHtml += Object.entries(components).map(([k, v]) => {
+      const pct = Math.round((v / 20) * 100);
+      const c = pct > 70 ? '#00e5ff' : pct > 40 ? '#f59e0b' : '#ef4444';
+      return `<div style="display:flex;justify-content:space-between;padding:2px 0"><span>${esc(k)}</span><span style="color:${c};font-family:var(--mono)">${v.toFixed(1)}/20</span></div>`;
+    }).join('');
+  }
+  if (forecasts.length) {
+    forecastHtml += '<div style="margin-top:8px"><strong style="color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:1px">Predictions</strong></div>';
+    forecastHtml += forecasts.map(f => `<div class="feed-item"><div class="fi-msg">${esc(JSON.stringify(f))}</div></div>`).join('');
+  }
+  if (anomalies.length) {
+    forecastHtml += '<div style="margin-top:8px"><strong style="color:#ef4444;font-size:10px;text-transform:uppercase;letter-spacing:1px">Anomalies</strong></div>';
+    forecastHtml += anomalies.map(a => `<div class="feed-item"><div class="fi-msg">${esc(JSON.stringify(a))}</div></div>`).join('');
+  }
+  document.getElementById('intel-forecast').innerHTML = forecastHtml || '<div style="color:var(--text-dim)">No active forecasts</div>';
+
+  // EWMA baselines
+  const ewma = pred?.ewma || {};
+  document.getElementById('intel-ewma').innerHTML = Object.keys(ewma).length
+    ? Object.entries(ewma).map(([k, v]) => {
+        const fast = (v.fast || 0).toFixed(2);
+        const slow = (v.slow || 0).toFixed(2);
+        const drift = Math.abs(v.fast - v.slow);
+        const driftColor = drift > 5 ? '#ef4444' : drift > 2 ? '#f59e0b' : '#00e5ff';
+        return `<div style="padding:4px 0;border-bottom:1px solid var(--border)">
+          <div style="font-weight:600;color:var(--cyan);text-transform:uppercase;font-size:10px;letter-spacing:1px">${esc(k)}</div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>Fast EMA</span><span style="font-family:var(--mono)">${fast}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>Slow EMA</span><span style="font-family:var(--mono)">${slow}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>Drift</span><span style="color:${driftColor};font-family:var(--mono)">${drift.toFixed(2)}</span></div>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text-dim)">No baseline data</div>';
+
+  // Self-improvement
+  if (si) {
+    document.getElementById('intel-run-count').textContent = si.run_count || 0;
+
+    // Report cards
+    const cards = si.report_cards || {};
+    document.getElementById('intel-report-cards').innerHTML = Object.keys(cards).length
+      ? Object.entries(cards).map(([name, data]) => {
+          const latest = data.latest || {};
+          const sq = Math.round(latest.signal_quality || 0);
+          const up = Math.round(latest.uptime_pct || 0);
+          const sqc = sq > 70 ? '#00e5ff' : sq > 40 ? '#f59e0b' : '#ef4444';
+          return `<div class="feed-item">
+            <div class="fi-header"><span style="color:${getAgentColor(name)};font-weight:700">${esc(name)}</span></div>
+            <div style="font-size:11px;display:flex;gap:12px">
+              <span>Signal: <span style="color:${sqc};font-family:var(--mono)">${sq}%</span></span>
+              <span>Uptime: <span style="font-family:var(--mono)">${up}%</span></span>
+              <span>Msgs: <span style="font-family:var(--mono)">${latest.msg_count||0}</span></span>
+            </div>
+          </div>`;
+        }).join('')
+      : '<div style="color:var(--text-dim)">No report cards</div>';
+
+    // Skills
+    const skills = si.skills || {};
+    const skillEntries = Object.entries(skills).sort((a,b) => (b[1]||0) - (a[1]||0));
+    if (skillEntries.length) {
+      document.getElementById('intel-best-skill').textContent = skillEntries[0][0];
+      document.getElementById('intel-best-score').textContent = Math.round(skillEntries[0][1]);
+      document.getElementById('intel-weak-skill').textContent = skillEntries[skillEntries.length-1][0];
+      document.getElementById('intel-weak-score').textContent = Math.round(skillEntries[skillEntries.length-1][1]);
+    }
+
+    // Recommendations
+    const recs = si.recommendations || si.retro_recommendations || [];
+    document.getElementById('intel-recs').innerHTML = recs.length
+      ? recs.map(r => `<div class="feed-item"><div class="fi-msg">${esc(typeof r === 'string' ? r : JSON.stringify(r))}</div></div>`).join('')
+      : '<div style="color:var(--text-dim)">No recommendations yet</div>';
+  }
+}
+
+// INNER WORLD
+async function loadInnerWorld() {
+  const d = await api('/api/inner-world');
+  if (!d) return;
+
+  const score = d.mood_score || 0;
+  const color = moodColor(d.mood, score);
+  document.getElementById('iw-orb').style.borderColor = color;
+  document.getElementById('iw-score').textContent = Math.round(score);
+  document.getElementById('iw-score').style.color = color;
+  document.getElementById('iw-mood').textContent = d.mood || '—';
+  document.getElementById('iw-voice').textContent = d.mood_voice || '';
+
+  document.getElementById('iw-monologue').textContent = d.monologue || 'No inner monologue.';
+  document.getElementById('iw-goals').innerHTML = (d.goals || []).map(g => `<span class="iw-tag">${esc(typeof g === 'string' ? g : g.goal||g.name||JSON.stringify(g))}</span>`).join('') || '<span style="color:var(--text-dim);font-size:11px">None</span>';
+  document.getElementById('iw-dreams').innerHTML = (d.dreams || []).map(g => `<span class="iw-tag" style="background:rgba(0,229,255,.1);color:var(--cyan)">${esc(typeof g === 'string' ? g : JSON.stringify(g))}</span>`).join('') || '<span style="color:var(--text-dim);font-size:11px">None</span>';
+  document.getElementById('iw-fears').innerHTML = (d.fears || []).map(g => `<span class="iw-tag" style="background:rgba(239,68,68,.1);color:var(--red)">${esc(typeof g === 'string' ? g : JSON.stringify(g))}</span>`).join('') || '<span style="color:var(--text-dim);font-size:11px">None</span>';
+
+  document.getElementById('iw-sentinel').textContent = d.sentinel || 'No briefing.';
+  document.getElementById('iw-body').textContent = d.body ? JSON.stringify(d.body, null, 2) : 'No body state data.';
+
+  // Sparklines
+  renderSparkline('iw-ram-spark', d.ram_history || [], 'var(--cyan)');
+  renderSparkline('iw-load-spark', d.load_history || [], 'var(--purple)');
+  renderSparkline('iw-disk-spark', d.disk_history || [], 'var(--amber)');
+}
+
+function renderSparkline(id, data, color) {
+  const el = document.getElementById(id);
+  if (!data.length) { el.innerHTML = '<span style="color:var(--text-dim);font-size:10px">No data</span>'; return; }
+  const vals = data.map(v => typeof v === 'number' ? v : parseFloat(v) || 0);
+  const max = Math.max(...vals, 1);
+  el.innerHTML = vals.map(v => `<div class="bar" style="height:${Math.max(2, (v/max)*100)}%;background:${color}"></div>`).join('');
+}
+
+// TERMINAL
+async function loadTerminal() {
+  // Load loop summary
+  loadLoopSummary();
+  // Load quick action buttons
+  const d = await api('/api/quick-actions');
+  if (!d) return;
+  const bar = document.getElementById('term-bar');
+  let html = '';
+  for (const [cat, cmds] of Object.entries(d)) {
+    html += `<span class="term-btn cat-label">${esc(cat)}</span>`;
+    for (const [cmd, desc] of Object.entries(cmds)) {
+      html += `<button class="term-btn" onclick="runCmd('${esc(cmd)}')" title="${esc(desc)}">${esc(cmd)}</button>`;
+    }
+  }
+  bar.innerHTML = html;
+}
+
+async function loadLoopSummary() {
+  const d = await api('/api/loop-summary');
+  if (!d) return;
+  const set = (id, val, cls) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = val; if (cls) el.className = 'ls-val ' + cls; }
+  };
+  set('ls-loop', d.loop || '?');
+  const hb = d.heartbeat_age;
+  set('ls-hb', hb >= 0 ? hb + 's ago' : '?', hb > 300 ? 'crit' : hb > 120 ? 'warn' : '');
+  set('ls-mood', d.mood || '?');
+  set('ls-load', String(d.load || 0).substring(0,5));
+  const ram = d.ram_pct || 0;
+  set('ls-ram', ram + '%', ram > 80 ? 'crit' : ram > 60 ? 'warn' : '');
+  const swap = d.swap_pct || 0;
+  set('ls-swap', swap.toFixed(1) + '%', swap > 50 ? 'crit' : swap > 25 ? 'warn' : '');
+  set('ls-disk', (d.disk_pct || 0) + '%', d.disk_pct > 85 ? 'crit' : d.disk_pct > 70 ? 'warn' : '');
+  set('ls-temp', (d.temp || 0).toFixed(1) + 'C');
+  set('ls-procs', d.processes || '?');
+  set('ls-uptime', d.uptime || '?');
+  set('ls-fitness', d.fitness || '?');
+  set('ls-commit', d.last_commit || '?');
+
+  // Services
+  const svcEl = document.getElementById('ls-services');
+  if (svcEl && d.services) {
+    const svcs = Object.entries(d.services).map(([name, status]) => {
+      const color = status === 'active' ? 'var(--green)' : 'var(--red)';
+      const dot = status === 'active' ? '\u25cf' : '\u25cb';
+      return `<span style="color:${color}">${dot} ${name}</span>`;
+    }).join('  ');
+    svcEl.innerHTML = '<strong style="font-size:10px;text-transform:uppercase;letter-spacing:1px">Services:</strong> ' + svcs;
+  }
+
+  // Directives
+  const dirEl = document.getElementById('ls-directives');
+  if (dirEl && d.directives && d.directives.length) {
+    dirEl.innerHTML = '<strong style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)">Directives:</strong><br>' +
+      d.directives.map(di => `<span style="color:${di.priority==='high'?'var(--red)':'var(--yellow)'}">  [${di.status}] ${esc(di.desc)}</span>`).join('<br>');
+  }
+
+  // Recent agents
+  const agEl = document.getElementById('ls-agents');
+  if (agEl && d.recent_agents && d.recent_agents.length) {
+    agEl.innerHTML = '<strong style="font-size:10px;text-transform:uppercase;letter-spacing:1px">Recent:</strong><br>' +
+      d.recent_agents.map(a => `<span style="color:var(--text-dim)">[${esc(a.agent)}] ${esc(a.msg)}</span>`).join('<br>');
+  }
+}
+
+async function runCmd(cmd) {
+  const out = document.getElementById('term-output');
+  out.textContent = `$ ${cmd}\n\nRunning...`;
+  try {
+    const r = await fetch(API + '/api/exec', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({cmd: cmd})
+    });
+    const d = await r.json();
+    out.textContent = `$ ${cmd}\n\n${d.output || d.error || '(no output)'}`;
+  } catch(e) {
+    out.textContent = `$ ${cmd}\n\nError: ${e.message}`;
+  }
+}
+
+async function doAction(action) {
+  const out = document.getElementById('term-output') || document.getElementById('settings-output');
+  if (out) out.textContent = `Action: ${action}\n\nRunning...`;
+  try {
+    const r = await fetch(API + '/api/action', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action: action})
+    });
+    const d = await r.json();
+    if (out) out.textContent = `Action: ${action}\n\n${d.result || d.error || 'Done.'}`;
+    if (action.startsWith('restart')) setTimeout(loadLoopSummary, 3000);
+  } catch(e) {
+    if (out) out.textContent = `Action: ${action}\n\nError: ${e.message}`;
+  }
+}
+
+// SETTINGS
+let hubSettings = {};
+async function loadSettings() {
+  const d = await api('/api/settings');
+  if (!d) return;
+  hubSettings = d;
+  const s = (id, val) => { const el = document.getElementById(id); if (el) { if (el.type === 'checkbox') el.checked = val; else el.value = val; } };
+  s('set-theme', d.theme || 'dark');
+  s('set-fontsize', d.terminal_font_size || 13);
+  s('set-refresh', d.auto_refresh_interval || 10);
+  s('set-compact', d.sidebar_compact || false);
+  s('set-agentmsgs', d.show_agent_messages !== false);
+  s('set-somaalerts', d.show_soma_alerts !== false);
+  s('set-loopsummary', d.loop_summary_expanded !== false);
+  s('set-maxlogs', d.max_log_lines || 100);
+  s('set-svcrst', d.service_restart_enabled !== false);
+  applySettings(d);
+}
+
+function applySettings(s) {
+  // Apply terminal font size
+  const termOut = document.getElementById('term-output');
+  if (termOut && s.terminal_font_size) termOut.style.fontSize = s.terminal_font_size + 'px';
+  // Apply compact sidebar
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) sidebar.classList.toggle('compact', !!s.sidebar_compact);
+}
+
+async function updateSetting(key, value) {
+  hubSettings[key] = value;
+  applySettings(hubSettings);
+  try {
+    await fetch(API + '/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(hubSettings)
+    });
+  } catch(e) { console.error('Settings save error:', e); }
+}
+
+// MEMORY
+async function loadMemory() {
+  const d = await api(`/api/memory/browse?table=${memTable}&search=${encodeURIComponent(memSearchText)}&limit=50`);
+  if (!d) return;
+
+  // Table tabs
+  const tabs = document.getElementById('mem-tabs');
+  tabs.innerHTML = Object.entries(d.tables || {}).map(([t, c]) =>
+    `<button class="mem-tab ${t===memTable?'active':''}" onclick="switchMemTable('${t}')">${t}<span class="count">${c}</span></button>`
+  ).join('');
+
+  // Table header
+  const cols = d.columns || [];
+  document.getElementById('mem-thead').innerHTML = '<tr>' + cols.map(c => `<th>${esc(c)}</th>`).join('') + '</tr>';
+
+  // Table body
+  document.getElementById('mem-tbody').innerHTML = (d.rows || []).map(row =>
+    '<tr>' + cols.map(c => `<td title="${esc(String(row[c]||''))}">${esc(String(row[c]||'').substring(0, 120))}</td>`).join('') + '</tr>'
+  ).join('');
+
+  document.getElementById('mem-total').textContent = `${d.total || 0} total rows in ${memTable}`;
+}
+
+function switchMemTable(t) { memTable = t; loadMemory(); }
+document.getElementById('mem-search').addEventListener('input', function() {
+  memSearchText = this.value;
+  clearTimeout(this._debounce);
+  this._debounce = setTimeout(() => loadMemory(), 300);
+});
+
+// CREATIVE
+async function loadCreative() {
+  const d = await api('/api/creative');
+  if (!d) return;
+  document.getElementById('creative-total').textContent = `${d.total || 0} total works`;
+  document.getElementById('creative-stats').innerHTML = (d.by_type || []).map(t => `
+    <div class="stat">
+      <div class="label">${esc(t.type)}</div>
+      <div class="value">${t.count}</div>
+    </div>`).join('');
+  document.getElementById('creative-recent').innerHTML = (d.recent || []).map(r => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:10px;color:var(--purple);background:rgba(124,92,252,.1);padding:2px 6px;border-radius:4px">${esc(r.type)}</span>
+      <span style="font-size:12px;color:var(--text)">${esc(r.title)}</span>
+      <span style="font-size:10px;color:var(--text-dim);margin-left:auto;font-family:var(--mono)">${r.date}</span>
+    </div>`).join('') || '<div style="color:var(--text-dim)">No recent works</div>';
+}
+
+// FILES
+async function loadFiles(path) {
+  fbPath = path || '.';
+  const d = await api('/api/files?dir=' + encodeURIComponent(fbPath));
+  if (!d) return;
+  document.getElementById('fb-path').textContent = d.path || '.';
+  const entries = d.entries || [];
+  let html = '';
+  if (fbPath !== '.') {
+    const parent = fbPath.includes('/') ? fbPath.substring(0, fbPath.lastIndexOf('/')) || '.' : '.';
+    html += `<div class="fb-entry" onclick="loadFiles('${esc(parent)}')">
+      <div class="fb-icon">&#x2B06;</div><div class="fb-name">..</div><div class="fb-size"></div></div>`;
+  }
+  html += entries.map(e => {
+    const path = fbPath === '.' ? e.name : fbPath + '/' + e.name;
+    if (e.is_dir) {
+      return `<div class="fb-entry" onclick="loadFiles('${esc(path)}')">
+        <div class="fb-icon">&#x1F4C1;</div><div class="fb-name">${esc(e.name)}</div><div class="fb-size"></div></div>`;
+    } else {
+      return `<div class="fb-entry" onclick="viewFile('${esc(path)}')">
+        <div class="fb-icon">&#x1F4C4;</div><div class="fb-name">${esc(e.name)}</div>
+        <div class="fb-size">${formatSize(e.size)}</div></div>`;
+    }
+  }).join('');
+  document.getElementById('fb-entries').innerHTML = html;
+  document.getElementById('fb-viewer-card').style.display = 'none';
+}
+
+async function viewFile(path) {
+  const d = await api('/api/file-content?path=' + encodeURIComponent(path));
+  if (!d || d.error) { alert(d?.error || 'Error loading file'); return; }
+  document.getElementById('fb-viewer-name').textContent = d.name + ` (${d.lines} lines, ${formatSize(d.size)})`;
+  document.getElementById('fb-viewer-content').textContent = d.content || '(empty)';
+  document.getElementById('fb-viewer-card').style.display = 'block';
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '0B';
+  if (bytes < 1024) return bytes + 'B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + 'K';
+  return (bytes/1048576).toFixed(1) + 'M';
+}
+
+// LOGS
+const logFiles = ['watchdog','nova','atlas','push-status','symbiosense','hermes','loop-fitness','eos-react','meridian-loop','startup'];
+async function loadLogs() {
+  document.getElementById('log-tabs').innerHTML = logFiles.map(l =>
+    `<button class="log-tab ${l===currentLog?'active':''}" onclick="viewLog('${l}')">${l}</button>`
+  ).join('');
+  if (currentLog) viewLog(currentLog);
+}
+async function viewLog(name) {
+  currentLog = name;
+  document.querySelectorAll('.log-tab').forEach(t => t.classList.toggle('active', t.textContent === name));
+  const out = document.getElementById('log-output');
+  out.textContent = 'Loading...';
+  const d = await api('/api/logs?file=' + encodeURIComponent(name) + '&lines=200');
+  if (d && d.content) {
+    out.textContent = d.content;
+    out.scrollTop = out.scrollHeight;
+  } else {
+    out.textContent = d?.error || 'Error loading log.';
+  }
+}
+
+// LINKS
+async function loadLinks() {
+  const d = await api('/api/links');
+  if (!d) return;
+  const links = Array.isArray(d) ? d : d.links || [];
+  document.getElementById('links-grid').innerHTML = links.map(l => `
+    <a href="${esc(l.url)}" target="_blank" class="link-card">
+      <div class="lc-icon">${l.icon || '&#x1F517;'}</div>
+      <div>
+        <div class="lc-name">${esc(l.name)}</div>
+        <div class="lc-url">${esc(l.url)}</div>
+      </div>
+    </a>`).join('') || '<div style="color:var(--text-dim)">No links configured</div>';
+}
+
+// TAB LOADER
+function loadTab(tab) {
+  switch(tab) {
+    case 'overview': loadOverview(); break;
+    case 'agents': loadAgents(); break;
+    case 'email': loadEmail(); break;
+    case 'messages': loadMessages(); break;
+    case 'relay': loadRelay(); break;
+    case 'innerworld': loadInnerWorld(); break;
+    case 'terminal': loadTerminal(); break;
+    case 'memory': loadMemory(); break;
+    case 'creative': loadCreative(); break;
+    case 'files': loadFiles(fbPath); break;
+    case 'logs': loadLogs(); break;
+    case 'intel': loadIntel(); break;
+    case 'links': loadLinks(); break;
+    case 'settings': loadSettings(); break;
+  }
+}
+
+// AUTO REFRESH
+function startRefresh() {
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => {
+    loadOverview();
+    document.getElementById('h-time').textContent = new Date().toISOString().substring(11, 19);
+  }, 10000);
+}
+
+// SSE — real-time updates
+let sse = null;
+function connectSSE() {
+  if (sse) { try { sse.close(); } catch(e){} }
+  sse = new EventSource(API + '/api/stream');
+  sse.addEventListener('update', function(e) {
+    try {
+      const d = JSON.parse(e.data);
+      homeData = d;
+      // Update header metrics live
+      document.getElementById('h-loop').textContent = d.loop;
+      document.getElementById('h-hb').textContent = ago(d.heartbeat_age);
+      document.getElementById('h-mood').textContent = d.soma_mood;
+      document.getElementById('h-load').textContent = String(d.load_val || 0).substring(0, 4);
+      document.getElementById('h-ram').textContent = d.ram_pct + '%';
+      document.getElementById('h-disk').textContent = d.disk_pct + '%';
+      document.getElementById('h-time').textContent = new Date().toISOString().substring(11, 19);
+      document.getElementById('h-pulse').className = 'pulse' + (d.heartbeat_age > 300 ? ' stale' : '');
+      // Push to sparkline history from SSE
+      pushSparkData(d.load_val || 0, d.ram_pct || 0, d.disk_pct || 0);
+      updateSparklines();
+      // If on overview tab, update the full view
+      if (currentTab === 'overview') {
+        document.getElementById('ov-loop').textContent = d.loop;
+        document.getElementById('ov-hb').textContent = ago(d.heartbeat_age);
+        document.getElementById('ov-hb-status').textContent = d.heartbeat_status;
+        document.getElementById('ov-mood').textContent = d.soma_mood;
+        document.getElementById('ov-mood-score').textContent = 'Score: ' + (d.soma_score || 0);
+        document.getElementById('ov-load').textContent = d.load || '—';
+        document.getElementById('ov-ram').textContent = d.ram || '—';
+        document.getElementById('ov-ram-pct').textContent = d.ram_pct + '% used';
+        document.getElementById('ov-disk').textContent = d.disk || '—';
+        document.getElementById('ov-disk-pct').textContent = d.disk_pct + '% used';
+      }
+    } catch(err) { console.error('SSE parse error:', err); }
+  });
+  sse.onerror = function() {
+    console.log('SSE disconnected, will reconnect...');
+    setTimeout(connectSSE, 10000);
+  };
+}
+
+// INIT
+loadOverview();
+startRefresh();
+connectSSE();
+</script>
+</body>
+</html>
