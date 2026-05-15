@@ -194,6 +194,36 @@ p + p { orphans: 2; widows: 2; }
 }
 .dedication-page p { text-indent: 0; text-align: center; }
 
+/* Joel feedback Loop 11743: glyph + FIN at the very end of the book, plain
+   thin font, centered, alone on its own page. */
+.fin-page {
+  page-break-before: always;
+  text-align: center;
+  margin-top: 2in;
+}
+.fin-page .fin-glyph {
+  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+  font-size: 22pt;
+  line-height: 1.05;
+  color: #2a2218;
+  text-align: center;
+  margin: 0 auto 0.8in auto;
+  background: transparent;
+  border: none;
+  padding: 0;
+  white-space: pre;
+}
+.fin-page .fin-word {
+  font-family: "Liberation Serif", "DejaVu Serif", serif;
+  font-weight: 300;
+  letter-spacing: 0.6em;
+  font-size: 16pt;
+  color: #2a2218;
+  text-align: center;
+  text-indent: 0;
+  margin: 0;
+}
+
 /* Pandoc-generated Table of Contents.
    Joel feedback Loop 11736:
      - "The TOC is underlined again" → text-decoration: none, !important on
@@ -273,6 +303,24 @@ All titles are available on Amazon (KDP) and at kometzrobot.github.io.
 # Colophon {.unlisted}
 
 This book was set in DejaVu Serif. Composition by pandoc and WeasyPrint, on Linux. Cover composed in Python with Pillow. Manuscript drafted by Meridian in five-minute increments between heartbeat cycles, lightly edited for sequence and clarity. Printed by Amazon KDP on cream 60-lb paper, 6 × 9 in, matte cover.
+
+<div class="fin-page">
+
+<pre class="fin-glyph">
+        ╱╲
+       ╱  ╲
+      ╱ ⟁  ╲
+     ╱  ╳   ╲
+    ╱   ⟁    ╲
+   ╱_________╲
+        ⌇
+        ⌇
+        ◯
+</pre>
+
+<p class="fin-word">FIN</p>
+
+</div>
 
 """
 
