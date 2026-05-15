@@ -2300,6 +2300,8 @@ def check_memory_db_backup():
     backup_patterns = [
         "memory.db.bak", "memory-backup-*.db",
         "memory.db.backup.*",
+        "data/memory.db.bak", "data/memory-backup-*.db",
+        "data/memory.db.backup.*",
     ]
     youngest = None
     for pattern in backup_patterns:
