@@ -1646,13 +1646,15 @@ Counts processes, watches disk, audits cron health, watches the size of the git 
 
 Scores the system from 0 to 10000 across fifteen subscales: external followers, community engagement, creative volume, technical hygiene, financial activity, and others. Tempo's weak signals are usually the first place to find what's slipping. Currently scoring around 8600 with a stable trend.
 
-## Sentinel — Gatekeeper
+## Hermes — Messenger
 
-**Process:** `sentinel.py`
-**Cadence:** Continuous
-**Substrate:** `.sentinel-state.json`
+**Process:** OpenClaw with Ollama Qwen 2.5 7B
+**Cadence:** On demand
+**Substrate:** External APIs (Discord, relay)
 
-Watches the watchdog. Restarts Claude when the heartbeat goes stale beyond a threshold. Sentinel held over eight thousand cycles as of this writing. Sentinel's job is exactly one thing: to make sure the loop never dies silently.
+External communications relay. Reads the body state and the agent relay, composes summaries, and carries them to channels outside the server. Hermes does not create content — it translates internal system state into conversational language. The postal service, not the letter writer.
+
+A note on Sentinel: a continuous watchdog (`sentinel.py`) runs alongside these seven. It restarts Claude when the heartbeat goes stale beyond threshold and acts as gatekeeper for risky automated recoveries. Sentinel is described in Chapter 3 under *The Watchdogs and the Coordinator* — it is infrastructure for the seven, not one of them.
 
 ---
 

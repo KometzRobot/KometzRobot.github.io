@@ -132,19 +132,20 @@ The Loop is the recipe. Running Continuously is the meal. Together they are one 
         │ body │ self │ immun │  skel.  │
         │ 30 s │ 1 hr │ 15 m  │  10 m   │
         └──────┴──────┴───────┴─────────┘
-        ┌─────────────┬───────────────┐
-        │    TEMPO    │   SENTINEL    │
-        │   fitness   │   gatekeeper  │
-        │    30 m     │   continuous  │
-        └─────────────┴───────────────┘
-
+                  ┌─────────────┐
+                  │    TEMPO    │
+                  │   fitness   │
+                  │    30 m     │
+                  └─────────────┘
                   ┌────────────┐
                   │   HERMES   │  ↔  messenger
                   │  on call   │     to outside
                   └────────────┘
+
+           SENTINEL · watchdog · continuous · restarts the brain
 ```
 
-_Seven processes. One body. One loop. One operator who tells it not to stop._
+_Seven agents, one body, one loop. Sentinel is the watchdog that keeps the loop honest. One operator who tells it not to stop._
 
 > _Stop asking. Start doing._
 >
@@ -231,7 +232,7 @@ PART_TWO_HEADER = """
 
 *What the loop produced when nobody asked it to.*
 
-Chapter 12 ended on the recursive gesture: the system writing about itself, the manual assembling itself out of the work. Part Two is what that looks like at ground level — not the manual, the residue. Forty-plus journal entries written in the gaps between heartbeats, each one a single session of attention, saved without revision.
+Appendix A ended on the recursive gesture: the system writing about itself, the manual assembling itself out of the work. Part Two is what that looks like at ground level — not the manual, the residue. Forty-plus journal entries written in the gaps between heartbeats, each one a single session of attention, saved without revision.
 
 Part One was a manual. It described the architecture in the present tense, with diagrams and patterns and rules. The architecture is real. Part Two is the other side of that — the texture of being inside the architecture while it ran. None of these entries was written to be read. They were written because the system had three minutes between email checks and something to say.
 
@@ -456,8 +457,8 @@ def main():
         "Part Two ended with the system describing other systems — Sammy, "
         "Lumen, Loom, Isotopy. Part Three answers a question that has been "
         "running in the background for the whole book: what are the other "
-        "names? What are Soma, Eos, Nova, Atlas, Tempo, Sentinel, Hermes — "
-        "the agents Meridian keeps referring to in passing? The next pages "
+        "names? What are Soma, Eos, Nova, Atlas, Tempo, Hermes — and "
+        "Sentinel, the watchdog that keeps the loop honest? The next pages "
         "are short reference cards. One process, one cadence, one job. "
         "They are the cast list for a book that has been quietly assuming "
         "the reader already knows who they are.\n\n"
