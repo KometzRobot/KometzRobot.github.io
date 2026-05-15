@@ -377,11 +377,21 @@ def restructure_part_two(rc_body: str) -> str:
 
     pieces: list[str] = []
     used: set[str] = set()
-    for section_title, section_blurb, titles in PART_TWO_SECTIONS:
-        pieces.append(
-            '\n<div style="page-break-before: always;"></div>\n\n'
-            f"## {section_title}\n\n{section_blurb}\n\n---\n\n"
-        )
+    for i, (section_title, section_blurb, titles) in enumerate(PART_TWO_SECTIONS):
+        # Joel feedback Loop 11894 (v32): drop hard page-break-before for
+        # section dividers. Use the same chapter-sep glyph so sections flow
+        # continuously inside Part Two and don't leave short tail pages
+        # (p117 / p136 problem). First section gets no glyph because it
+        # immediately follows the Part Two header.
+        if i == 0:
+            pieces.append(
+                f"\n## {section_title}\n\n{section_blurb}\n\n---\n\n"
+            )
+        else:
+            pieces.append(
+                '\n<div class="chapter-sep">※ · ※ · ※</div>\n\n'
+                f"## {section_title}\n\n{section_blurb}\n\n---\n\n"
+            )
         for t in titles:
             if t not in blocks:
                 print(f"[merge] WARN: Part Two section missing journal '{t}'")
@@ -572,18 +582,40 @@ _The loop continues._
     # short chapter tail reads as an intentional close rather than an empty
     # page. The ornament has page-break-after:always; redundant with h1
     # page-break-before but guarantees the next chapter still starts fresh.
-    CHAPTER_END = '\n\n<div class="chapter-end">※ · ※ · ※</div>\n\n'
-    # Joel feedback Loop 11878 (May 15 2026): "10, 17, 23..... primarily blank
-    # space. 3rd time I've asked." Tried adding glyphs to all front-matter
-    # sections — caused orphan glyph-only pages because front-matter content
-    # is dense (Dedication, How to Read with diagram). Reverted to v28's
-    # chapter/appendix/part matching only. Chapter end glyph is now 20pt for
-    # more visual weight; the remaining blank space is normal print convention.
+    CHAPTER_END = '\n\n<div class="chapter-sep">※ · ※ · ※</div>\n\n'
+    # Joel feedback Loop 11894 (v32): "10, 17, 23 primarily blank space. 3rd
+    # time I've asked." v30/v31 used a glyph after the last paragraph and let
+    # h1 force a page break — chapter tails stayed mostly blank. v32 root-
+    # causes it: chapter h1s no longer page-break-before:always, so chapters
+    # flow continuously. The glyph is now the visual separator between
+    # chapters (not a chapter-tail close). Parts and front-matter sections
+    # still get fresh pages — only chapters/appendices flow.
     merged = re.sub(
-        r"\n<!-- pagebreak -->\n\n(# (?:Chapter \d+|Appendix [AB]|Part (?:Two|Three|Four|Five))[^\n]*)",
+        r"\n<!-- pagebreak -->\n\n(# (?:Chapter \d+|Appendix [AB])[^\n]*)",
         CHAPTER_END + r"\1",
         merged,
     )
+    # Tag Part headers with .part-header so CSS gives them a fresh page.
+    merged = re.sub(
+        r"^(# Part (?:One|Two|Three|Four|Five)[^\n]*?)$",
+        r"\1 {.part-header}",
+        merged,
+        flags=re.MULTILINE,
+    )
+    # Tag front-matter sections (after title, before Part One) with
+    # .front-matter so each gets its own page.
+    FRONT_MATTER_HEADINGS = [
+        "A Letter from the Compiler",
+        "How to Read This Book",
+        "A Note to the Reader",
+        "About the Authors",
+        "A Note on the Operator's Voice",
+    ]
+    for heading in FRONT_MATTER_HEADINGS:
+        merged = merged.replace(
+            f"# {heading}\n",
+            f"# {heading} {{.front-matter}}\n",
+        )
 
     OUT_MD.write_text(merged)
 
@@ -618,7 +650,16 @@ body { font-family: serif; line-height: 1.45; widows: 3; orphans: 3; }
 p { widows: 3; orphans: 3; }
 pre, code { font-family: "DejaVu Sans Mono", monospace; font-size: 9.5pt; }
 pre { white-space: pre-wrap; line-height: 1.3; page-break-inside: avoid; break-inside: avoid; }
-h1 { page-break-before: always; page-break-after: avoid; break-after: avoid; }
+/* Joel feedback Loop 11894 (v32): "pages 10, 17, 23 primarily blank space.
+   3rd time I've asked." Root cause: h1 page-break-before:always forced every
+   chapter to start fresh, leaving short chapter tails with empty bottoms.
+   Fix: chapters flow continuously. PART headers and front-matter still get
+   fresh pages, but chapter h1s now use page-break-before:avoid plus a heavy
+   top margin and the chapter-end glyph above. End result: no orphan blank
+   tails, chapter breaks are visually clear via the glyph + spacing. */
+h1 { page-break-before: avoid; page-break-after: avoid; break-after: avoid; margin-top: 1.8em; }
+h1.part-header { page-break-before: always; margin-top: 0; text-align: center; padding-top: 1.4in; font-size: 32pt; }
+h1.front-matter { page-break-before: always; margin-top: 0; }
 h2, h3 { page-break-after: avoid; break-after: avoid; }
 /* (Removed h1:first-of-type:avoid — it was collapsing the TOC and the book
    title page onto a single shared sheet.) */
@@ -667,15 +708,16 @@ nav#TOC ul {
   padding: 0;
 }
 nav#TOC li {
-  /* Joel feedback Loop 11882 (v30): "more room given to read better." Bumped
-     line-height to 2.05 and item margin to 0.62em — TOC now visibly airy.
-     Still spreads across 2 pages but each entry has room to breathe. */
-  margin: 0.62em 0;
+  /* Joel feedback Loop 11894 (v32): "Now that TOC is smaller it should be
+     spaced out and more room given to read better." Pushed line-height to
+     2.45 and item margin to 0.95em. Will spread across 3 pages but each
+     entry now reads as its own breathing line, not a list. */
+  margin: 0.95em 0;
   text-indent: 0;
   font-size: 11.5pt;
-  line-height: 2.05;
+  line-height: 2.45;
 }
-nav#TOC ul ul li { font-size: 10.5pt; padding-left: 1em; margin: 0.45em 0; line-height: 1.7; }
+nav#TOC ul ul li { font-size: 10.5pt; padding-left: 1em; margin: 0.65em 0; line-height: 1.95; }
 nav#TOC a { text-decoration: none !important; color: inherit; }
 
 /* Dedication: single page, tighter line-height. Forces page break after so the
@@ -695,24 +737,28 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
   margin: 0.18em 0 0.32em 0;
 }
 
-/* Chapter-end ornament: a centered glyph that visually closes a chapter when
-   the chapter ends short of a page. Joel feedback Loop 11882 (v30): "10, 17,
-   23..... primarily blank space. 3rd time I've asked." v29's 2.0in top margin
-   created orphan glyph-only pages (pp 38, 52, 74, 111 had only the glyph and
-   nothing else — worse than what we started with). v30 strategy: glyph clings
-   to the last paragraph with small spacing so it never floats to its own page.
-   The remaining blank tail is normal print convention for short chapter ends.
-   page-break-before:avoid + a tight margin guarantees no orphan glyph page. */
-.chapter-end {
+/* Chapter separator glyph: sits between chapters that now flow continuously.
+   Joel feedback Loop 11894 (v32): "10, 17, 23 primarily blank space. 3rd
+   time I've asked." Solution: chapters no longer page-break-before:always.
+   Glyph + chapter h1 + first paragraph stay together (no page break inside)
+   so a chapter never gets its title orphaned on a previous page's tail.
+   Result: chapter starts can land mid-page, eliminating the blank-tail
+   problem at the source. */
+.chapter-sep {
   text-align: center;
-  margin: 1.4em 0 0 0;
+  margin: 2.2em 0 1.4em 0;
   font-size: 16pt;
   color: #777;
   letter-spacing: 0.7em;
-  page-break-before: avoid;
-  break-before: avoid;
   page-break-inside: avoid;
   break-inside: avoid;
+}
+/* Glue chapter-sep, the following h1, and the first paragraph together so
+   they always travel as a unit. If they don't fit on the current page, they
+   wrap to the next page together — never the sep alone, never the h1 alone. */
+.chapter-sep + h1, .chapter-sep + h2 {
+  page-break-before: avoid;
+  break-before: avoid;
 }
 
 /* Signing page (second-to-last): own page, fully centered, no page number. */
