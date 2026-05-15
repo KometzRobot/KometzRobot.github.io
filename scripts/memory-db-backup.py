@@ -3,7 +3,7 @@
 import os, sys, sqlite3, datetime, glob
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(REPO, 'data', 'memory.db')
+SRC = os.path.join(REPO, 'memory.db')
 KEEP = 7  # daily backups to retain
 
 
