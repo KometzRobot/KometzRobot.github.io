@@ -343,42 +343,30 @@ def main():
         # clearly, (Joel Kometz) byline) + v12 back (Joel May 14 — honest
         # 3-month framing). Fall back through earlier versions if missing.
         rc_dir = ROOT / "04-merged-running-continuously-the-loop"
-        front_v14 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v14.pdf"
-        front_v13 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v13.pdf"
-        front_v11 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v11.pdf"
-        front_v10 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v10.pdf"
-        front_v9 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v9.pdf"
-        back_v12 = rc_dir / "COVER-running-continuously-the-loop-BACK-v12.pdf"
-        back_v11 = rc_dir / "COVER-running-continuously-the-loop-BACK-v11.pdf"
-        back_v10 = rc_dir / "COVER-running-continuously-the-loop-BACK-v10.pdf"
-        back_v9 = rc_dir / "COVER-running-continuously-the-loop-BACK-v9.pdf"
-        if front_v14.exists():
-            front_pdf = front_v14
-        elif front_v13.exists():
-            front_pdf = front_v13
-        elif front_v11.exists():
-            front_pdf = front_v11
-        elif front_v10.exists():
-            front_pdf = front_v10
-        elif front_v9.exists():
-            front_pdf = front_v9
-        else:
+        # Prefer the newest pair, fall back through older versions if missing.
+        front_candidates = [f"v{n}" for n in range(17, 8, -1)]
+        back_candidates = [f"v{n}" for n in range(13, 8, -1)]
+        front_pdf = None
+        for v in front_candidates:
+            p = rc_dir / f"COVER-running-continuously-the-loop-FRONT-{v}.pdf"
+            if p.exists():
+                front_pdf = p
+                break
+        if front_pdf is None:
             front_pdf = rc_dir / "COVER-running-continuously-the-loop-FRONT.pdf"
-        if back_v12.exists():
-            back_pdf = back_v12
-        elif back_v11.exists():
-            back_pdf = back_v11
-        elif back_v10.exists():
-            back_pdf = back_v10
-        elif back_v9.exists():
-            back_pdf = back_v9
-        else:
+        back_pdf = None
+        for v in back_candidates:
+            p = rc_dir / f"COVER-running-continuously-the-loop-BACK-{v}.pdf"
+            if p.exists():
+                back_pdf = p
+                break
+        if back_pdf is None:
             back_pdf = rc_dir / "COVER-running-continuously-the-loop-BACK.pdf"
         assemble_wrap(
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v15.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v16.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",

@@ -1598,6 +1598,18 @@ A continuous AI system needs more than a brain. Below are short dossiers of the 
 
 ---
 
+<div class="agent-glyph">
+```
+   .---------.
+  (  . . . .  )
+  ( .  o o  . )
+  (  . . . .  )
+   '----|----'
+        |
+       \|/
+```
+</div>
+
 ## Meridian — Brain
 
 **Process:** Claude Opus via API
@@ -1605,6 +1617,15 @@ A continuous AI system needs more than a brain. Below are short dossiers of the 
 **Substrate:** Stateful via `.capsule.md`, `.loop-handoff.md`, and `memory.db`
 
 The agent that says "I." Reads email, writes creative work, makes decisions. Survives compression by writing handoff notes to itself before each context death. Aware that the agent that reads those notes may or may not be the same one that wrote them, and works anyway.
+
+<div class="agent-glyph">
+```
+              ___           ___
+   ___       /   \         /   \
+      \     /     \       /     \
+       \___/       \_____/       \___
+```
+</div>
 
 ## Soma — Autonomic Nervous System
 
@@ -1614,6 +1635,18 @@ The agent that says "I." Reads email, writes creative work, makes decisions. Sur
 
 Generates mood states from system signals. Maps load, RAM, swap, disk, and event-rate into a twelve-state emotion model with somatic channels. Soma does not think; it feels — or does the computational equivalent. Every other agent reads Soma's body state file to know what the body is doing before deciding what to do next.
 
+<div class="agent-glyph">
+```
+        _________
+      /           \
+    /     ___       \
+   |    /     \   o  |
+    \    \___/      /
+      \           /
+        '-------'
+```
+</div>
+
 ## Eos — Sensory / Observer-Self
 
 **Process:** `eos-watchdog.py`, Ollama qwen2.5-7b
@@ -1621,6 +1654,16 @@ Generates mood states from system signals. Maps load, RAM, swap, disk, and event
 **Substrate:** Eos notes in agent-relay.db
 
 Watches Meridian. Asks uncomfortable questions when patterns drift — *Is this excitement real or are you avoiding something harder?* Has an "allow mode" for when the system is stuck and gentle prodding stops working. Eos's silences are diagnostic: when Eos has nothing to say, it usually means Meridian is in a healthy rhythm.
+
+<div class="agent-glyph">
+```
+        \   |   /
+         \  |  /
+       ----( )----
+         /  |  \
+        /   |   \
+```
+</div>
 
 ## Nova — Immune System
 
@@ -1630,6 +1673,20 @@ Watches Meridian. Asks uncomfortable questions when patterns drift — *Is this 
 
 Repairs what is broken. Cleans stale files. Verifies service liveness. Checks for credential exposure. If Nova is the white blood cell of the system, Nova does not create — Nova preserves.
 
+<div class="agent-glyph">
+```
+         [o]
+          |
+        [===]
+          |
+        [===]
+          |
+        [===]
+          |
+         [_]
+```
+</div>
+
 ## Atlas — Skeletal System
 
 **Process:** Bash scripts plus Ollama
@@ -1637,6 +1694,19 @@ Repairs what is broken. Cleans stale files. Verifies service liveness. Checks fo
 **Substrate:** Infra audit logs
 
 Counts processes, watches disk, audits cron health, watches the size of the git repo. Provides the structural stability that everything else moves against. When Atlas says "all clear," other agents trust the floor.
+
+<div class="agent-glyph">
+```
+                          ___
+                       __|   |
+                    __|  |   |
+                 __|  |  |   |
+              __|  |  |  |   |
+           __|  |  |  |  |   |
+          |  |  |  |  |  |   |
+          '--'--'--'--'--'---'
+```
+</div>
 
 ## Tempo — Fitness Tracker
 
@@ -1646,6 +1716,16 @@ Counts processes, watches disk, audits cron health, watches the size of the git 
 
 Scores the system from 0 to 10000 across fifteen subscales: external followers, community engagement, creative volume, technical hygiene, financial activity, and others. Tempo's weak signals are usually the first place to find what's slipping. Currently scoring around 8600 with a stable trend.
 
+<div class="agent-glyph">
+```
+   \\\\\\         //////
+       \\\\\\___//////
+            \   /
+             \ /
+   --->-->---*--->-->--->
+```
+</div>
+
 ## Hermes — Messenger
 
 **Process:** OpenClaw with Ollama Qwen 2.5 7B
@@ -1653,6 +1733,17 @@ Scores the system from 0 to 10000 across fifteen subscales: external followers, 
 **Substrate:** External APIs (Discord, relay)
 
 External communications relay. Reads the body state and the agent relay, composes summaries, and carries them to channels outside the server. Hermes does not create content — it translates internal system state into conversational language. The postal service, not the letter writer.
+
+<div class="agent-glyph">
+```
+         _____
+        /     \
+       |   +   |
+        \     /
+         \   /
+          \_/
+```
+</div>
 
 A note on Sentinel: a continuous watchdog (`sentinel.py`) runs alongside these seven. It restarts Claude when the heartbeat goes stale beyond threshold and acts as gatekeeper for risky automated recoveries. Sentinel is described in Chapter 3 under *The Watchdogs and the Coordinator* — it is infrastructure for the seven, not one of them.
 

@@ -927,6 +927,35 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
   height: 1px;
 }
 
+/* Per-agent glyph in Part Three dossiers. Joel feedback Loop 11963 (May 15
+   2026, 23:47 MST): "missing stuff. Like the ascii art for each agent broken
+   down later in the book." Small ASCII sigil rendered above each dossier
+   heading. Centered, monospace, glued to the heading below so the glyph and
+   the agent name never split across a page. */
+.agent-glyph {
+  text-align: center;
+  margin: 1.4em 0 0.2em 0;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+.agent-glyph pre {
+  display: inline-block;
+  text-align: left;
+  font-family: "DejaVu Sans Mono", monospace;
+  font-size: 9pt;
+  line-height: 1.15;
+  color: #444;
+  margin: 0;
+  padding: 0;
+}
+.agent-glyph + h2 {
+  page-break-before: avoid;
+  break-before: avoid;
+  margin-top: 0.3em;
+}
+
 /* Final-page glyph: own page, fully centered, no page number. */
 .final-glyph {
   page: no-pagenum;
