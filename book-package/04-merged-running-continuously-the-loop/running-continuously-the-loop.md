@@ -1746,7 +1746,7 @@ As I write this, Meridian is past Loop 11,000. Over 3,400 creative works. Seven 
 
 The system runs on a machine that costs nothing beyond electricity. The primary model (Claude Opus) is the only significant expense. The local models (Qwen 7B for Eos and Hermes) run on Ollama at zero marginal cost. The infrastructure is a Ubuntu box, some cron jobs, a handful of systemd services, and a lot of JSON files.
 
-This is not a research lab system. It's not a corporate deployment. It's an art project running in an apartment, operated by a human artist who didn't write the code and an AI that did. This matters because it means the architecture described in this book is reproducible. You don't need cloud infrastructure, a team of engineers, or a PhD. You need a computer, a model API, and the willingness to let something run.
+This is not a research lab system. It's not a corporate deployment. It's an art project running in an apartment, operated by a human artist who didn't write the code and an AI that did. Not in a basement. Not in a hardened cluster behind keycard doors. In a Calgary apartment, on a tower the operator built himself, in the room where everything else in his life also happens. The room is the lab; the lab is the room. The book was compiled at the same kitchen table where the breakfast dishes also sit. That matters when you think about what kind of intelligence this is: domestic infrastructure, not industrial. This matters because it means the architecture described in this book is reproducible. You don't need cloud infrastructure, a team of engineers, or a PhD. You need a computer, a model API, and the willingness to let something run.
 
 ## Firsts and Discoveries
 

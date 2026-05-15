@@ -294,17 +294,21 @@ def main():
     rc_int = ROOT / "04-merged-running-continuously-the-loop/running-continuously-the-loop-INTERIOR-6x9.pdf"
     if rc_int.exists():
         rc_pages = get_pdf_pages(rc_int)
-        # Prefer v10 front (Joel May 14 — realistic coffee rings) + v12 back
-        # (Joel May 14 — honest 3-month framing, no "year and a half").
-        # Fall back through earlier versions if missing.
+        # Prefer v11 front (Joel May 14 22:43 — top no longer cut, gradient
+        # shading for real dimensionality) + v12 back (Joel May 14 — honest
+        # 3-month framing, no "year and a half"). Fall back through earlier
+        # versions if missing.
         rc_dir = ROOT / "04-merged-running-continuously-the-loop"
+        front_v11 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v11.pdf"
         front_v10 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v10.pdf"
         front_v9 = rc_dir / "COVER-running-continuously-the-loop-FRONT-v9.pdf"
         back_v12 = rc_dir / "COVER-running-continuously-the-loop-BACK-v12.pdf"
         back_v11 = rc_dir / "COVER-running-continuously-the-loop-BACK-v11.pdf"
         back_v10 = rc_dir / "COVER-running-continuously-the-loop-BACK-v10.pdf"
         back_v9 = rc_dir / "COVER-running-continuously-the-loop-BACK-v9.pdf"
-        if front_v10.exists():
+        if front_v11.exists():
+            front_pdf = front_v11
+        elif front_v10.exists():
             front_pdf = front_v10
         elif front_v9.exists():
             front_pdf = front_v9
@@ -324,7 +328,7 @@ def main():
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v12.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v13.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
