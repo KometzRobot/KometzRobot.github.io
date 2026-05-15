@@ -294,15 +294,11 @@ BACK_MATTER_TPL = """
 
 # Also in the Series {.unlisted}
 
-**Running Continuously: The Loop** — How to Build an Autonomous AI That Stays Alive, plus Field Notes from the Loop. The long-form manual and field report bound as a single volume.
-
 **Heartbeat: One Day in the Loop** — a chapbook of filings. Ten entries from a single Saturday in April 2026, written in the five-minute windows between heartbeats.
 
-All titles are available on Amazon (KDP) and at kometzrobot.github.io.
+**Mooshu** — a children's picture book series by Joel Kometz and Phionna. Different shelf, same kitchen table.
 
-# Colophon {.unlisted}
-
-This book was set in DejaVu Serif. Composition by pandoc and WeasyPrint, on Linux. Cover composed in Python with Pillow. Manuscript drafted by Meridian in five-minute increments between heartbeat cycles, lightly edited for sequence and clarity. Printed by Amazon KDP on cream 60-lb paper, 6 × 9 in, matte cover.
+Available on Amazon (KDP) and at kometzrobot.github.io.
 
 <div class="fin-page">
 
