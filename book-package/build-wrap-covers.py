@@ -87,24 +87,24 @@ def render_pdf_page(pdf_path: Path, out_png: Path, page=1, dpi=DPI):
 
 def make_spine(width_px, height_px, title_top, title_main, author,
                kraft=False):
-    """Vertical spine — single-line title, P052, conventional book layout.
+    """Vertical spine — conventional shelf layout, title stacked near
+    the head, author at the foot.
 
-    Joel feedback Loop 12022 reject of v17: "font sucks/too big/cut off."
-    Joel feedback Loop 12026: "i was not talking about the back cover at all
-    i was only talking about the design and typography and overall layout
-    of the SPINE!"
+    Joel feedback Loop 12039 #4472: spine "STILL FUCKING ASS". Six
+    centered redesigns in a row (v17/18/19/20/21/22) all parked the
+    title in the dead middle of the spine with rules flanking it. That
+    layout reads as floaty regardless of font size — there's nothing
+    anchoring the eye to head or foot.
 
-    Redesign:
-      - Single-line title set in P052 Bold (the serif Joel approved on the
-        back cover), reads top-to-bottom along the spine length when the
-        book sits on a shelf — standard book-spine orientation.
-      - Title automatically sized to fit within the printable spine length
-        with a generous margin from head and foot. No more "cut off".
-      - Series mark near the spine head, author near the foot, both in
-        Nimbus Mono — quiet metadata, no fighting the title.
-      - Hairline accent rules flank the title block; nothing else.
-      - Type sized PROPORTIONALLY to the spine width, never bigger than
-        the spine can carry. Less ink, more breath.
+    v23 (this) goes conventional:
+      - Series mark in small mono near the spine HEAD (top when shelved)
+      - Main title set BIG in P052 Bold, reading top-to-bottom, anchored
+        just below the series mark. If the title splits cleanly on a
+        colon (e.g. "RUNNING CONTINUOUSLY: THE LOOP"), each half gets
+        its own line — a stacked title is what most trade paperbacks
+        actually do for two-part titles.
+      - Author in small mono at the spine FOOT.
+      - No flanking rules. The type carries the spine.
     """
     if kraft:
         bg = KRAFT_PAPER
@@ -155,67 +155,76 @@ def make_spine(width_px, height_px, title_top, title_main, author,
         b = sd.textbbox((0, 0), text, font=fnt)
         return b[2] - b[0], b[3] - b[1]
 
-    # Margins from the spine head / foot (LEFT and RIGHT of the unrotated
-    # strip). Generous so the title can never reach trim.
-    pad_end = int(0.5 * DPI)  # 0.5" each end
+    pad_end = int(0.75 * DPI)   # 0.75" from spine head and foot
     cy_spine = width_px // 2
 
-    # Title clear-zone height: keep title under ~70% of spine width so the
-    # caps never touch the spine edges after trim.
-    title_max_h = int(width_px * 0.62)
+    # Single-line title. A 0.6" trade-paperback spine isn't wide enough
+    # to stack a title + subtitle as two columns of caps; the colon
+    # carries the break instead.
+    title_lines = [title_main.upper()]
 
-    # Auto-size title to fill the available run while staying within the
-    # height cap. Start large, shrink until both constraints satisfied.
-    title_text = title_main.upper()
-    avail_length = height_px - 2 * pad_end - int(0.8 * DPI)  # reserve for meta/rules
-    fsize_title = min(int(width_px * 0.78), 96)
-    while fsize_title >= 22:
+    # Each title line lives in a clear-zone <= 0.55 of spine width so the
+    # caps clear trim on both sides with room to spare. Auto-size to the
+    # widest line.
+    title_max_h_per_line = int(width_px * 0.55)
+
+    # Title placement: head margin + small gap below series mark, then
+    # title block, then everything else. Author lives at the foot.
+    # The available LENGTH for the title block = total - head pad -
+    # series clearance - foot pad - author clearance.
+    series_clearance = int(0.55 * DPI)
+    author_clearance = int(0.55 * DPI)
+    avail_length = height_px - 2 * pad_end - series_clearance - author_clearance
+
+    # Auto-size title font: start big and shrink until the widest line
+    # fits the avail_length and each line's height fits the clear zone.
+    fsize_title = min(int(width_px * 0.62), 72)
+    while fsize_title >= 26:
         f_title = font(fsize_title, "serif")
-        tw, th = text_size(title_text, f_title)
-        if tw <= avail_length and th <= title_max_h:
+        widths = [text_size(t, f_title)[0] for t in title_lines]
+        heights = [text_size(t, f_title)[1] for t in title_lines]
+        line_gap = int(fsize_title * 0.18)
+        block_w = max(widths)
+        block_h = sum(heights) + line_gap * (len(title_lines) - 1)
+        if block_w <= avail_length and max(heights) <= title_max_h_per_line:
             break
         fsize_title -= 2
     f_title = font(fsize_title, "serif")
-    tw, th = text_size(title_text, f_title)
+    widths = [text_size(t, f_title)[0] for t in title_lines]
+    heights = [text_size(t, f_title)[1] for t in title_lines]
+    line_gap = int(fsize_title * 0.18)
+    block_w = max(widths) if widths else 0
 
-    # Meta font scaled relative to title (about a quarter of its size,
-    # floored so it's always legible at print).
-    fsize_meta = max(13, fsize_title // 4)
+    # Meta font scaled relative to title.
+    fsize_meta = max(14, fsize_title // 4)
     f_meta = font(fsize_meta, "mono")
 
-    # Place title CENTERED along the spine length, vertically centred.
-    title_x = (height_px - tw) // 2
-    title_y = cy_spine - th // 2 - max(2, fsize_title // 18)
-    sd.text((title_x, title_y), title_text,
-            font=f_title, fill=(*ink_main, 255))
+    # Anchor title block JUST BELOW series mark, near the head — not the
+    # dead center. Start the block at pad_end + series_clearance.
+    title_block_x = pad_end + series_clearance
+    title_y = cy_spine
+    # We draw each line left-aligned with the block, vertically centered
+    # on the spine width. Each line's vertical offset is computed below.
+    x = title_block_x
+    for i, line in enumerate(title_lines):
+        lw = widths[i]
+        lh = heights[i]
+        # Stack lines vertically WITHIN the spine width (each below the
+        # previous in the rotated frame = right of the previous in the
+        # unrotated frame).
+        ly = title_y - lh // 2 - max(2, fsize_title // 18)
+        sd.text((x, ly), line, font=f_title, fill=(*ink_main, 255))
+        x += lw + line_gap
+        # If next line exists, treat the gap as horizontal in unrotated
+        # frame so the two title parts read in sequence head-to-foot.
 
-    # Hairline rules flanking the title block.
-    rule_gap = int(0.18 * DPI)
-    rule_len = int(0.45 * DPI)
-    rule_y = cy_spine
-    rule_thick = max(2, width_px // 60)
-    # Left rule (head-side)
-    rule_left_end = title_x - rule_gap
-    rule_left_start = rule_left_end - rule_len
-    if rule_left_start > pad_end + int(0.9 * DPI):
-        sd.line([(rule_left_start, rule_y), (rule_left_end, rule_y)],
-                fill=(*ink_top, 230), width=rule_thick)
-    # Right rule (foot-side)
-    rule_right_start = title_x + tw + rule_gap
-    rule_right_end = rule_right_start + rule_len
-    if rule_right_end < height_px - pad_end - int(0.9 * DPI):
-        sd.line([(rule_right_start, rule_y), (rule_right_end, rule_y)],
-                fill=(*ink_top, 230), width=rule_thick)
-
-    # Series mark near spine HEAD (left end of unrotated strip).
+    # Series mark right at the head.
     series_text = title_top.upper()
-    sw, sh = text_size(series_text, f_meta)
     sd.text((pad_end, cy_spine), series_text,
             font=f_meta, fill=(*ink_top, 230), anchor="lm")
 
-    # Author near spine FOOT (right end of unrotated strip).
+    # Author at the foot.
     author_text = author.upper()
-    aw, ah = text_size(author_text, f_meta)
     sd.text((height_px - pad_end, cy_spine), author_text,
             font=f_meta, fill=(*ink_meta, 230), anchor="rm")
 
@@ -361,10 +370,10 @@ def main():
         rc_pages = get_pdf_pages(rc_int)
         rc_dir = ROOT / "04-merged-running-continuously-the-loop"
         # Prefer the newest pair, fall back through older versions if missing.
-        # v19 FRONT = single joint byline (Loop 12029 fix of v18 mismatch).
-        # v16 BACK = matching joint byline + dropped "AI wrote itself".
-        front_candidates = [f"v{n}" for n in range(24, 8, -1)]
-        back_candidates = [f"v{n}" for n in range(22, 8, -1)]
+        # v20 FRONT = current Joel-approved front (kraft, MERIDIAN AI big).
+        # v19 BACK = book-voice rewrite of v18 (Loop 12039 fix of "weak as fuck").
+        front_candidates = [f"v{n}" for n in range(26, 8, -1)]
+        back_candidates = [f"v{n}" for n in range(24, 8, -1)]
         front_pdf = None
         for v in front_candidates:
             p = rc_dir / f"COVER-running-continuously-the-loop-FRONT-{v}.pdf"
@@ -385,7 +394,7 @@ def main():
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v22.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v24.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
