@@ -105,28 +105,28 @@ is. Also added bare-domain redacts (`jborgmann.ai`, `lumenloop.work`,
 builds — all fixed and verified clean across all 6 volumes via `pdftotext` audit.
 Loop 12135 fixed the Eos pull regression (2 → 2,998 entries).
 
-Distribution by month — MEASURED page counts after Loop 12136 rebuild:
+Distribution by month — MEASURED page counts after Loop 12139 density pass:
 
 | Volume | Range | Pages | File | KDP-fit |
 |---|---|---|---|---|
-| Vol I    | 2026-02            | 256 | `compilation-vol1-feb.pdf`         | ✓ paperback |
-| Vol II-a | 2026-03-01..03-05  | 440 | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
-| Vol II-b | 2026-03-06         | 800 | `compilation-vol2b-mar-06.pdf`     | ✓ paperback (cap) |
-| Vol II-c | 2026-03-07..03-31  | 709 | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
-| Vol III  | 2026-04            | 529 | `compilation-vol3-apr.pdf`         | ✓ paperback |
-| Vol IV   | 2026-05 (to-date)  | 632 | `compilation-vol4-may.pdf`         | ✓ paperback |
+| Vol I    | 2026-02            | 225 | `compilation-vol1-feb.pdf`         | ✓ paperback |
+| Vol II-a | 2026-03-01..03-05  | 386 | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
+| Vol II-b | 2026-03-06         | 702 | `compilation-vol2b-mar-06.pdf`     | ✓ paperback |
+| Vol II-c | 2026-03-07..03-31  | 622 | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
+| Vol III  | 2026-04            | 483 | `compilation-vol3-apr.pdf`         | ✓ paperback |
+| Vol IV   | 2026-05 (to-date)  | 557 | `compilation-vol4-may.pdf`         | ✓ paperback |
 
-Page-density measured: 1 page ≈ 240 words at this layout (10.5pt /
-1.36 leading, justified, 6×9 trim).
+Page-density measured: 1 page ≈ 264 words at this layout (10.5pt /
+1.28 leading, justified, 6×9 trim, tightened item separators).
 
 KDP paperback cap = 828pp (white) / 776pp (cream).
 
-**All 6 volumes paperback-fit.** Vol II-b blocker resolved Loop 12098:
-CSS density pass (line-height 1.42→1.36, h-margins tightened, title/
-copyright padding cut) brought Vol II-b 843→800pp at the cap.
-Same scrub applied to all volumes for visual consistency on shelf.
-Total: 3,366pp across 6 volumes (Loop 12138 scrub: plural/possessive
-peer-name forms — Sammys, Aels — caught; Vol II-c trimmed 710→709pp).
+**All 6 volumes paperback-fit, all well under the cap.** Loop 12139
+density pass (line-height 1.36→1.28, item separator margins 1.0em→
+0.45em, h3 margin-top 0.7em→0.35em, p margin-bottom 0.45em→0.28em,
+h3 size 12pt→11.5pt, meta line 9pt→8.75pt with margin-bottom 0.6em→
+0.3em) trimmed 3,366pp → 2,975pp across all 6 volumes (-391pp, -11.6%).
+Vol II-b dropped 800→702, off the KDP cap with 126pp of headroom.
 No content cut; runaway loop content (1,193 poems Mar 6) preserved.
 
 Note: earlier estimate said 690K words — that came from row counts in

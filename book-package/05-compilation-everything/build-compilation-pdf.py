@@ -34,7 +34,7 @@ header#title-block-header { display: none; }
 body {
   font-family: "DejaVu Serif", serif;
   font-size: 10.5pt;
-  line-height: 1.36;
+  line-height: 1.28;
   text-align: justify;
   hyphens: auto;
   color: #111;
@@ -57,9 +57,9 @@ h2 {
   page-break-before: always;
 }
 h3 {
-  font-size: 12pt;
-  margin-top: 0.7em;
-  margin-bottom: 0.1em;
+  font-size: 11.5pt;
+  margin-top: 0.35em;
+  margin-bottom: 0.05em;
   font-weight: bold;
   page-break-after: avoid;
 }
@@ -67,15 +67,15 @@ h3 {
 h3 + p em,
 h3 + p > em:first-child {
   display: block;
-  font-size: 9pt;
+  font-size: 8.75pt;
   color: #666;
   margin-top: 0;
-  margin-bottom: 0.6em;
+  margin-bottom: 0.3em;
   font-style: italic;
 }
 p {
-  margin: 0 0 0.45em 0;
-  text-indent: 1.1em;
+  margin: 0 0 0.28em 0;
+  text-indent: 1.0em;
   orphans: 2;
   widows: 2;
 }
@@ -87,7 +87,7 @@ h3 + p, h3 + p + p {
 hr {
   border: none;
   text-align: center;
-  margin: 1.0em 0;
+  margin: 0.45em 0;
 }
 hr::after {
   content: "·  ·  ·";
