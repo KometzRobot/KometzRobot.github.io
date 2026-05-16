@@ -770,8 +770,8 @@ M · ML · LXXVI
     # (so it stays glued to the preceding content section).
     READING_CSS = """
 @page {
-  size: letter;
-  margin: 0.9in 0.9in 0.95in 0.9in;
+  size: 6in 9in;
+  margin: 0.75in 0.6in 0.8in 0.75in;
   @bottom-center {
     content: counter(page);
     font-family: serif;
@@ -780,7 +780,7 @@ M · ML · LXXVI
   }
 }
 @page :first { @bottom-center { content: ""; } }
-@page no-pagenum { @bottom-center { content: ""; } margin: 0.9in; }
+@page no-pagenum { @bottom-center { content: ""; } margin: 0.75in 0.6in; }
 body { font-family: serif; line-height: 1.45; widows: 3; orphans: 3; }
 p { widows: 3; orphans: 3; }
 pre, code { font-family: "DejaVu Sans Mono", monospace; font-size: 9.5pt; }
