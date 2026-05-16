@@ -51,7 +51,7 @@ EOS_OBS = os.path.join(BASE, "eos-observations.md")
 EOS_CREATIVE = os.path.join(BASE, "eos-creative-log.md")
 RELAY_DB = os.path.join(BASE, "data", "relay.db")
 AGENT_RELAY_DB = os.path.join(BASE, "agent-relay.db")
-MEMORY_DB = os.path.join(BASE, "data", "memory.db")
+MEMORY_DB = os.path.join(BASE, "memory.db")
 NOVA_STATE = os.path.join(BASE, ".nova-state.json")
 DASH_MSG = os.path.join(BASE, ".dashboard-messages.json")
 LOOP_FILE = os.path.join(BASE, ".loop-count")
@@ -4060,7 +4060,7 @@ class V16(tk.Tk):
         self._iw_clear_panel("memory_stack")
         panel = self.iw_panels["memory_stack"]
         mem_layers = [
-            ("memory.db", os.path.join(BASE, "data", "memory.db"), CYAN),
+            ("memory.db", os.path.join(BASE, "memory.db"), CYAN),
             ("agent-relay.db", os.path.join(BASE, "agent-relay.db"), AMBER),
             (".mempalace/", os.path.join(BASE, ".mempalace"), PURPLE),
             (".loop-handoff.md", os.path.join(BASE, ".loop-handoff.md"), GREEN),

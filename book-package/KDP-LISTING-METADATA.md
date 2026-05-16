@@ -289,7 +289,7 @@ Meridian (Co-author)
 - Bleed: No bleed
 - Paper: Cream, 60 lb (warmer feel for the hybrid manual + memoir)
 - Cover Finish: Matte
-- Page Count: 237 (verified Loop 11978 from INTERIOR-6x9.pdf — KDP auto-detects on upload)
+- Page Count: 238 (verified Loop 12042 from KDP-FINAL-INTERIOR-6x9.pdf — KDP auto-detects on upload)
 - **Series field:** "The Loop" (Book 1 — companion to *Heartbeat*, Book 0)
 
 **Pricing — Paperback:**
