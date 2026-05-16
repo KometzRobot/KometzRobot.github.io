@@ -1505,26 +1505,29 @@ takes microseconds. Every agent reads it every cycle. The coordination
 cost of seven agents is seven file reads per cycle — O(n) instead of the
 O(n²) you’d get from every agent querying every other agent.</p>
 <h2 id="one-writer-many-readers">One Writer, Many Readers</h2>
-<pre><code>                 ┌─────────────────────────────┐
-                 │   .symbiosense-state.json   │
-                 │  vitals · emotion · organs  │
-                 └──────────────┬──────────────┘
-                                │
-                writes ╲        │        ╱ reads
-        every 30s ╲             │             ╱
-                    ▼           │           ▼
-                 ┌──────┐       │       ┌─────────┐
-                 │ SOMA │ ────► (file)  │ readers │
-                 └──────┘               └─────────┘
-                                            │
-       ┌──────────┬───────────┬──────────┬───────────┬──────────┬────────┐
-       ▼          ▼           ▼          ▼           ▼          ▼        ▼
-   ┌────────┐ ┌────────┐ ┌───────┐ ┌──────────┐ ┌────────┐ ┌────────┐
-   │MERIDIAN│ │  EOS   │ │ NOVA  │ │  ATLAS   │ │ TEMPO  │ │ HERMES │
-   │ 5 min  │ │ 1 hour │ │ 15 m  │ │  10 min  │ │ 30 min │ │on call │
-   └────────┘ └────────┘ └───────┘ └──────────┘ └────────┘ └────────┘
+<pre><code>       ┌─────────────────────────────┐
+       │   .symbiosense-state.json   │
+       │  vitals · emotion · organs  │
+       └──────────────┬──────────────┘
+                      │
+                      │  writes every 30s
+                      ▼
+                  ┌────────┐
+                  │  SOMA  │  ← sole writer
+                  └────┬───┘
+                       │
+                       │  read each cycle
+                       ▼
+              ┌───────────────────┐
+              │  Meridian   5 min │
+              │  Eos        1 h   │
+              │  Nova      15 min │
+              │  Atlas     10 min │
+              │  Tempo     30 min │
+              │  Hermes   on call │
+              └───────────────────┘
 
-           One writer.  Six readers.  No locks.  No conflicts.</code></pre>
+          One writer · Six readers · No locks</code></pre>
 <p>The critical design rule: Soma is the only writer. Every other agent
 is a reader. This sounds limiting but it’s the key to the whole
 system.</p>

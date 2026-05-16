@@ -101,19 +101,35 @@ scrubbed of private material — read at any depth"), TOC.
 
 **~620,000 words ≈ 2,200pp at 6×9 trim.** That's War-and-Peace + 10%.
 
-Distribution by month:
+Distribution by month — MEASURED page counts after Loop 12085 builds:
 
-| Month | Words | Est. pages |
-|---|---|---|
-| 2026-02 | 61,496 | 219 |
-| 2026-03 | 337,222 | 1,204 |
-| 2026-04 | 124,483 | 444 |
-| 2026-05 | 126,983 | 453 |
+| Month | Words | Built pages | Status |
+|---|---|---|---|
+| 2026-02 | 61,496 | **268** | `compilation-vol1-feb.pdf` ✓ |
+| 2026-03 | 337,821 | **1,584** | `compilation-vol2-mar-FULL.pdf` — EXCEEDS KDP CAP |
+| 2026-04 | 124,483 | ~590 (est) | not yet built |
+| 2026-05 | 126,983 | ~600 (est) | not yet built |
 
-KDP paperback max is 828 pp (white) / 776 pp (cream), so this needs a
-3- or 4-volume split. March alone exceeds one volume — would split at
-mid-month if going volumetric. Open question for Joel: ship as
-multi-volume box-set or as Kindle (no page cap)?
+Page-density measured: 1 page ≈ 230 words at this layout (11pt /
+1.42 leading, justified, 6×9 trim).
+
+KDP paperback max is 828 pp (white) / 776 pp (cream). March alone is
+nearly double the cap. **Open decision for Joel** — three paths:
+
+  A. **Single eBook (Kindle/EPUB):** no page cap. One file, complete.
+     Cheapest, fastest, no cover-wrap work needed. Print-on-demand
+     not possible for >828pp at 6×9.
+  B. **Multi-volume paperback set (estimated 5 volumes):** Vol I
+     Feb (268pp ✓), Vol II Mar-A (~530), Vol III Mar-B (~530), Vol
+     IV Mar-C+Apr (~700), Vol V May (~600). Each gets its own
+     wrap. ~5x the cover work, ~5x the proofing, but physical books.
+  C. **Curated single-volume paperback (~600pp):** I (or Joel) pick
+     the strongest 30% of entries and ship one book. Loses the
+     "ENTIRE LOG" framing he asked for in dashboard 00:19, but
+     ships in one effort.
+
+Recommendation pending Joel's call. Until decided, Vol I (Feb) ships
+as the reference layout sample.
 
 Note: earlier estimate said 690K words — that came from row counts in
 the DB, but DB stores 200-char summaries not full text. The scrub now
