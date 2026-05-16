@@ -18,7 +18,11 @@ ROOT = Path(__file__).parent
 CSS = """
 @page {
   size: 6in 9in;
-  margin: 0.75in 0.5in 0.75in 0.75in;
+  /* Joel feedback Loop 12085: "we could save so many pages by properly
+     spacing things." Tightened top/bottom from 0.75 → 0.6 to recover ~1
+     line/page (~3 pages off a 233-page book) while staying well inside
+     KDP's 0.375in non-bleed minimum. Inner/outer unchanged. */
+  margin: 0.6in 0.5in 0.6in 0.75in;
   @bottom-center {
     content: counter(page);
     font-family: "Liberation Serif", "DejaVu Serif", serif;
@@ -27,8 +31,8 @@ CSS = """
   }
 }
 @page :first { @bottom-center { content: ""; } }
-@page :left  { margin: 0.75in 0.75in 0.75in 0.5in; }
-@page :right { margin: 0.75in 0.5in 0.75in 0.75in; }
+@page :left  { margin: 0.6in 0.75in 0.6in 0.5in; }
+@page :right { margin: 0.6in 0.5in 0.6in 0.75in; }
 
 /* Joel feedback Loop 12026: "VERY last page should not have a footer number/
    page number of any kind." Named page for the FIN closing leaf. */
@@ -37,7 +41,9 @@ CSS = """
 html, body {
   font-family: "Liberation Serif", "DejaVu Serif", serif;
   font-size: 11pt;
-  line-height: 1.45;
+  /* Joel feedback Loop 12085: leading was 1.45 — loose. Tightened to 1.38
+     (~5% more lines/page) without crowding 11pt serif. */
+  line-height: 1.38;
   color: #1a1410;
   hyphens: auto;
   text-align: justify;
@@ -52,8 +58,13 @@ h1 {
   font-size: 22pt;
   font-weight: bold;
   text-align: left;
-  margin-top: 2in;
-  margin-bottom: 0.4in;
+  /* Joel feedback Loop 12085: "we could save so many pages by properly
+     spacing things." Was 2in — pushed every chapter title to mid-page,
+     leaving ~40% white space above it. Dropped to 0.35in so titles sit
+     near the top of the new page; saves ~1.6in × 17 chapter openers
+     ≈ 5 pages of recovered body. */
+  margin-top: 0.35in;
+  margin-bottom: 0.3in;
   page-break-before: always;
   page-break-after: avoid;
   letter-spacing: 0.01em;
@@ -63,8 +74,9 @@ h1:first-of-type { page-break-before: avoid; }
 h2 {
   font-size: 15pt;
   font-weight: bold;
-  margin-top: 1.4em;
-  margin-bottom: 0.3em;
+  /* 1.4em → 1.0em — section heads were getting too much breathing room. */
+  margin-top: 1.0em;
+  margin-bottom: 0.25em;
   page-break-after: avoid;
   text-align: left;
 }
@@ -528,8 +540,12 @@ def build(md_path: Path, out_pdf: Path, title: str, author: str,
     css_tmp = md_path.parent / "_kdp.css"
     css = CSS
     if larger_body:
-        css = css.replace("font-size: 11pt;\n  line-height: 1.45;",
-                          "font-size: 13pt;\n  line-height: 1.7;")
+        # Heartbeat is a chapbook of poems; loose leading reads as breath and
+        # also keeps page count above KDP's 24-page paperback minimum. Loop
+        # 12085: tightening main-body line-height pushed Heartbeat below 24
+        # pages, so bumped the chapbook leading 1.7 → 1.85 to restore it.
+        css = css.replace("font-size: 11pt;\n  /* Joel feedback Loop 12085: leading was 1.45 — loose. Tightened to 1.38\n     (~5% more lines/page) without crowding 11pt serif. */\n  line-height: 1.38;",
+                          "font-size: 13pt;\n  line-height: 1.85;")
     css_tmp.write_text(css)
 
     if add_front_matter:
