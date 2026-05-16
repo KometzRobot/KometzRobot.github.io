@@ -61,6 +61,8 @@ h3 {
   margin-top: 0.35em;
   margin-bottom: 0.05em;
   font-weight: bold;
+  text-align: left;
+  hyphens: none;
   page-break-after: avoid;
 }
 /* Meta line: _2026-02-20 21:40 · memory.db_ */
