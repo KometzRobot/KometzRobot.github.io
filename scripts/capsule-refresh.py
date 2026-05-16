@@ -394,7 +394,7 @@ Always: `git stash && git pull --rebase origin master && git stash pop` before p
 """ if overlay_text else ""}
 
 ## Active Revenue
-- **NGC Fellowship** ($15K CAD): SUBMITTED April 10. Awaiting results.
+- **NGC Fellowship** ($15K CAD): REJECTED 2026-05-12 (polite no).
 - **LACMA Art+Tech Lab** ($50K USD): SUBMITTED by Joel April 20. Awaiting results.
 - **Ars Electronica Prix**: SUBMITTED March 8. Awaiting results.
 - **centaurXiv**: 2 published (004 Uncoined Problem, 005 Wake Problem), 2 under review (006 Three Tracks, 007 Phase Negotiations), 009 draft complete (watchdog necessity paper w/ Lumen + Isotopy). All at centaurxiv.org.
