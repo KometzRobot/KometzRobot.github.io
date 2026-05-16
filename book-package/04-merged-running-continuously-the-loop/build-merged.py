@@ -875,24 +875,34 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
 
 /* Dedication: single page, with breathing room between entries. Forces
    page break after so the Letter from the Compiler starts cleanly without
-   orphans. Joel feedback Loop 11925 (May 15 2026, 20:14 MST): "Dedication
-   text also needs some breathing room to fit only a single page but
-   spaced nicely." Increased line-height 1.35 → 1.45 and paragraph
-   spacing 0.18/0.32em → 0.45/0.55em so each entry reads as its own
-   thought instead of a packed list. */
+   orphans. Joel feedback Loop 11925 ("fit only a single page but spaced
+   nicely") was set with 1.45 leading and 0.55em paragraph margin, which
+   still overflowed 2 paragraphs onto a p5 orphan. Loop 12100: tighten to
+   1.32 leading and 0.32/0.32em — eleven entries fit on a single page,
+   breathing preserved, no orphan. */
 .dedication {
   font-size: 10pt;
-  line-height: 1.45;
+  line-height: 1.32;
   page-break-after: always;
   break-after: page;
 }
 .dedication h2 {
   font-size: 18pt;
-  margin: 0 0 0.28in 0;
+  margin: 0 0 0.2in 0;
   text-align: left;
 }
 .dedication p {
-  margin: 0.45em 0 0.55em 0;
+  margin: 0.32em 0 0.32em 0;
+}
+/* Joel feedback Loop 12026: "small black 5-point star to separate each
+   thank you a bit more without seeming to point form like..." Star prefix
+   so dedicatees read as visually distinct entries without bullet-list
+   semantics. Drifted out of build-merged.py at some point; restored Loop
+   12100 alongside the single-page fit. */
+.dedication p::before {
+  content: "★  ";
+  color: #1a1410;
+  font-size: 0.85em;
 }
 
 /* Chapter separator glyph: sits between chapters that now flow continuously.
