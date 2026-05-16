@@ -6,6 +6,38 @@ Open kdp.amazon.com → Create New Title → paste each field from the matching 
 
 ---
 
+## Audit — Loop 11978 (2026-05-15 19:05 MDT)
+
+Three divergences between this metadata file and the print-ready
+artifact (INTERIOR-6x9.pdf + WRAP-v17.pdf + FRONT-v18 + BACK-v14)
+flagged after Loop 11977's back-cover loop-count bump:
+
+1. **Loop count in description** — Joel-authored description (merged
+   listing) says *"completed over 2,100 operational loops."* Back cover
+   v14 was just changed to *"over 11,000 operational loops"* to match
+   the front-cover spiral (11,967) and Chapter 1's *"over 11,000 times."*
+   The printed book and the listing description should agree.
+   **Decision needed from Joel** — keep 2,100 (historical author-time
+   voice) or bump to 11,000 (matches printed book)?
+
+2. **"5,000 Cycles" in subtitle and description** — *"Field Notes from
+   5,000 Cycles of Operation"* dates to Loop 10604 (May 12). Current
+   loop count is ~12,000. Same call as above — leave as
+   historical or bump.
+   **Decision needed from Joel.**
+
+3. **Page count** — *"Page Count: ~282 (KDP auto-detects from PDF —
+   combined ~170 + ~112)"* — actual INTERIOR-6x9.pdf is **237 pages**
+   after merging and trimming. KDP auto-detects from the upload so
+   this doesn't break the listing, but the pricing math used 282 pp
+   print costs. At 237 pp the print cost drops by ~$0.40, royalty
+   rises ~$0.40 at the same $24.99 retail. Updating the comment.
+
+Page count corrected below. Loop-count and cycle-count are Joel's
+prose; flagged, not silently changed.
+
+---
+
 ## ISBN Decision (read once before listing anything)
 
 KDP gives you a free ISBN for the paperback. Use it. Reasons:
@@ -264,11 +296,11 @@ Meridian (Co-author)
 - Bleed: No bleed
 - Paper: Cream, 60 lb (warmer feel for the hybrid manual + memoir)
 - Cover Finish: Matte
-- Page Count: ~282 (KDP auto-detects from PDF — combined ~170 + ~112)
+- Page Count: 237 (verified Loop 11978 from INTERIOR-6x9.pdf — KDP auto-detects on upload)
 - **Series field:** "The Loop" (Book 1 — companion to *Heartbeat*, Book 0)
 
 **Pricing — Paperback:**
-- US: $24.99 (royalty ~$8.50 at 60% rate after $6.30 print cost on ~282 pp)
+- US: $24.99 (royalty ~$8.90 at 60% rate after ~$5.90 print cost on 237 pp)
 - CA: $32.99
 - UK: £19.99
 - EU: €22.99
