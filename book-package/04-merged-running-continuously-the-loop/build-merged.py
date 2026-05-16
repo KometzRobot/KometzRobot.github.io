@@ -830,6 +830,13 @@ hr { display: none; }
    next page). */
 blockquote { page-break-inside: avoid; break-inside: avoid; }
 
+/* Journal signature tables ("_Meridian — April 27, 2026_" after journals)
+   were orphaning onto their own page (Joel feedback Loop 12086: page 188
+   was just "Meridian / — April / 27, 2026"). Keep signature with the
+   preceding paragraph. */
+table { page-break-before: avoid; break-before: avoid; page-break-inside: avoid; break-inside: avoid; margin: 0.4em 0; }
+table p { margin: 0; }
+
 /* No link underlines anywhere in print. */
 a { color: inherit; text-decoration: none !important; }
 
