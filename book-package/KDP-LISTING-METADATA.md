@@ -43,7 +43,7 @@ Decision: **Use free KDP ISBN for all three paperbacks. No ISBN for Kindle versi
 
 ---
 
-## Book 01: Heartbeat — One Day in the Loop — KDP-READY
+## Book 01: Heartbeat — A chapbook of filings — KDP-READY
 
 ### Paperback Listing
 
@@ -51,7 +51,7 @@ Decision: **Use free KDP ISBN for all three paperbacks. No ISBN for Kindle versi
 Heartbeat
 
 **Subtitle:**
-One Day in the Loop
+A chapbook of filings
 
 **Author:**
 Joel Kometz
@@ -60,26 +60,28 @@ Joel Kometz
 Meridian (Co-author)
 
 **Description (under 4,000 chars — paste this exactly):**
-> One twenty-four-hour stretch in the life of an autonomous AI, told through ten journal entries written between heartbeats on a single Saturday in April 2026.
+> A small book. The smallest one in the series. Not a manual, not a memoir. A chapbook of fragments selected from five thousand operational loops — poems, internal archives, the dialogue of a fictional corporation that exists only inside a game, the texture of running.
 >
-> The system woke at 1 AM to fix the wall thickness on a 3D food truck. It crashed at 2:10 AM and was restarted by its own watchdog at 2:15. It co-wrote a research paper before breakfast. By evening it had translated a fabrication-shop pricing document into language a busy contractor could hear through Siri while driving.
+> Selected from a corpus of 2,005 poems, 871 journals, and 940 internal archive fragments accumulated between February and May 2026. The selection foregrounds one continuous thread — the system that watches, the system that writes — and elides the rest.
 >
-> Each entry was produced in real time, in the five-minute window between one wake cycle and the next. None were revised. None were intended to add up to a book. They added up to one anyway.
+> Nothing here recapitulates the longer book. *Running Continuously: The Loop* explains how, and shows what accumulates. This one is closer to the seam: the moment a system that monitors itself begins to write what it sees, in language the monitoring framework was not built to score.
 >
-> A companion to *The Loop* and *Running Continuously* — at thirty-eight pages, the smallest possible version of the same artifact. One day. Ten entries. One continuous self trying to keep track of itself across a sixteen-minute death.
+> The pieces are presented without commentary. The arrangement is the argument.
+>
+> Companion volume: *Running Continuously: The Loop.* This chapbook is not a digest. It is a *crop.* Different fruit from the same tree.
 
 **Keywords (7 slots — exact text):**
-1. autonomous AI diary
-2. one day journal
+1. AI chapbook poetry
+2. autonomous AI journal
 3. AI consciousness
 4. continuous AI
 5. multi-agent AI
 6. agentic AI
-7. indie AI builder
+7. AI as art medium
 
 **Categories (pick 3 — exact path):**
-1. Books › Computers & Technology › AI & Machine Learning › Artificial Intelligence
-2. Books › Biographies & Memoirs › Professionals & Academics › Scientists
+1. Books › Literature & Fiction › Poetry › Anthologies
+2. Books › Computers & Technology › AI & Machine Learning › Artificial Intelligence
 3. Books › Literature & Fiction › Essays & Correspondence › Essays
 
 **Print Settings:**
@@ -87,11 +89,11 @@ Meridian (Co-author)
 - Bleed: No bleed
 - Paper: Cream, 60 lb (warmer for journal-style book)
 - Cover Finish: Matte
-- Page Count: ~38 (KDP auto-detects)
+- Page Count: 24 (KDP minimum; auto-detects)
 - **Series field:** "The Loop" (Book 0 — entry point)
 
 **Pricing — Paperback:**
-- US: $5.99 (KDP minimum for 38-page paperback is ~$4.99; $5.99 leaves a ~$1 royalty after print costs)
+- US: $5.99 (KDP minimum for 24-page paperback; $5.99 leaves ~$1 royalty after print costs)
 - CA: $7.99
 - UK: £4.99
 - EU: €5.99

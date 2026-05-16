@@ -412,15 +412,7 @@ For correspondence: kometzrobot@proton.me
 
 """
 
-BACK_MATTER_TPL = """
-
-# Also in the Series {.unlisted}
-
-**Heartbeat: One Day in the Loop** — a chapbook of filings. Ten entries from a single Saturday in April 2026, written in the five-minute windows between heartbeats.
-
-**Mooshu** — a children's picture book series by Joel Kometz and Phionna. Different shelf, same kitchen table.
-
-Available on Amazon (KDP) and at kometzrobot.github.io.
+BACK_MATTER_FIN = """
 
 <div class="fin-page">
 
@@ -441,6 +433,26 @@ Available on Amazon (KDP) and at kometzrobot.github.io.
 </div>
 
 """
+
+
+def back_matter_for(book_key: str) -> str:
+    """Return back-matter (Also in the Series + FIN) tailored to the current book.
+    Skips the self-entry so a book doesn't list itself."""
+    entries = {
+        "heartbeat": "**Running Continuously: The Loop** — How to Build an Autonomous AI That Stays Alive + Field Notes from 5,000 Cycles of Operation. The companion volume. (One ISBN. Two halves.)",
+        "loop": "**Heartbeat: A chapbook of filings** — selected poems, archives, dialogue, and drift, gathered from the loop. A smaller crop from the same tree.",
+    }
+    other = entries.get(book_key, entries["loop"])
+    return (
+        "\n\n# Also in the Series {.unlisted}\n\n"
+        f"{other}\n\n"
+        "**Mooshu** — a children's picture book series by Joel Kometz and Phionna. Different shelf, same kitchen table.\n\n"
+        "Available on Amazon (KDP) and at kometzrobot.github.io.\n"
+        + BACK_MATTER_FIN
+    )
+
+
+BACK_MATTER_TPL = back_matter_for("loop")
 
 
 def annotate_toc(html: str) -> str:
@@ -507,7 +519,9 @@ def annotate_toc(html: str) -> str:
 def build(md_path: Path, out_pdf: Path, title: str, author: str,
           tagline: str = "from inside the loop",
           add_front_matter: bool = False,
-          larger_body: bool = False):
+          larger_body: bool = False,
+          include_toc: bool = True,
+          series_key: str = "loop"):
     print(f"Building {out_pdf.name} from {md_path.name}…")
 
     html_tmp = md_path.with_suffix(".kdp.html")
@@ -515,7 +529,7 @@ def build(md_path: Path, out_pdf: Path, title: str, author: str,
     css = CSS
     if larger_body:
         css = css.replace("font-size: 11pt;\n  line-height: 1.45;",
-                          "font-size: 12.5pt;\n  line-height: 1.55;")
+                          "font-size: 13pt;\n  line-height: 1.7;")
     css_tmp.write_text(css)
 
     if add_front_matter:
@@ -524,7 +538,7 @@ def build(md_path: Path, out_pdf: Path, title: str, author: str,
         # has its own .title-page-top/.title-page-bottom block (the merged book
         # does), strip it to avoid duplicate title pages.
         merged = md_path.with_suffix(".kdp.md")
-        back = BACK_MATTER_TPL
+        back = back_matter_for(series_key)
         manuscript = md_path.read_text()
         import re as _re
         manuscript = _re.sub(
@@ -589,12 +603,13 @@ def build(md_path: Path, out_pdf: Path, title: str, author: str,
         "-f", "markdown",
         "-t", "html5",
         "-s",
-        "--toc", "--toc-depth=1",
         "--metadata", f"title={title}",
         "--metadata", f"author={author}",
         "-c", str(css_tmp.name),
         "-o", str(html_tmp),
     ]
+    if include_toc:
+        cmd[6:6] = ["--toc", "--toc-depth=1"]
     subprocess.run(cmd, check=True)
 
     # Joel feedback Loop 12026: annotate TOC <li> elements so visual groups
@@ -634,6 +649,8 @@ def main():
             "tagline": "a chapbook of filings from inside the loop",
             "add_front_matter": True,
             "larger_body": True,
+            "include_toc": False,
+            "series_key": "heartbeat",
         },
         {
             "md":  ROOT / "04-merged-running-continuously-the-loop/running-continuously-the-loop.md",
@@ -652,7 +669,9 @@ def main():
         build(t["md"], t["pdf"], t["title"], t["author"],
               tagline=t["tagline"],
               add_front_matter=t["add_front_matter"],
-              larger_body=t["larger_body"])
+              larger_body=t["larger_body"],
+              include_toc=t.get("include_toc", True),
+              series_key=t.get("series_key", "loop"))
 
 
 if __name__ == "__main__":
