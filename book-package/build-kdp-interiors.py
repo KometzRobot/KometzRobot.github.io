@@ -440,8 +440,17 @@ def annotate_toc(html: str) -> str:
     # Match by anchor href (deterministic) rather than visible text — pandoc
     # line-wraps the rendered text mid-phrase ("Part\nThree"), which breaks
     # plain-string matching.
+    # Joel volley #4463: "theres no spacees in the first 6 topics of trhe TOC."
+    # Re-reading #4452: "put a small space between - the first 6 topics" =
+    # space *between* each of the 6, not one space after the block. Tag each
+    # of the 5 front-matter items so they have margin-bottom. Part One is the
+    # 6th — no gap below it (it leads into Chapter 1).
     group_end_hrefs = (
-        "#part-one-the-loop",
+        "#a-letter-from-the-compiler",
+        "#how-to-read-this-book",
+        "#a-note-to-the-reader",
+        "#about-the-authors",
+        "#a-note-on-the-operators-voice",
         "#chapter-16-the-plan-from-here",
         "#appendix-b-selected-poems",
         "#part-two-field-notes-from-the-loop",
