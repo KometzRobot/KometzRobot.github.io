@@ -316,6 +316,28 @@ p + p { orphans: 2; widows: 2; }
   margin: 0;
 }
 
+/* Chapter separator glyph between flowing chapters. The merged manuscript
+   inserts <div class="chapter-sep">※ · ※ · ※</div> before each chapter
+   heading (build-merged.py CHAPTER_END). Without this rule the 6x9 builder
+   left-aligns it and gives no breathing room, so the next page's chapter
+   heading lands awkwardly. Joel feedback Loop 12044 (May 16 2026): "stars
+   not being centered on many pages and causing the next page to be much
+   lower at a chapter start." */
+.chapter-sep {
+  text-align: center;
+  margin: 2em 0 1.4em 0;
+  font-size: 14pt;
+  color: #777;
+  letter-spacing: 0.6em;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  text-indent: 0;
+}
+.chapter-sep + h1, .chapter-sep + h2 {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
 /* Pandoc-generated Table of Contents.
    Joel feedback Loop 11736:
      - "The TOC is underlined again" → text-decoration: none, !important on
@@ -523,6 +545,34 @@ def build(md_path: Path, out_pdf: Path, title: str, author: str,
         # would otherwise render as an orphan scene-break before the signing
         # page; drop it along with the title blocks above.
         manuscript = _re.sub(r'^\s*---\s*\n', '', manuscript, count=1)
+        # Joel feedback Loop 12044 (May 16 2026): "didnt correct and remove
+        # the duplicate 'Fin and Glyph' ending page." Root cause: the merged
+        # manuscript (build-merged.py BACK_MATTER) already appends its own
+        # fin-page + final-glyph, and this builder then appends "Also in the
+        # Series" + another fin-page. Result: two closings. Strip the merged
+        # manuscript's closing blocks so BACK_MATTER_TPL provides the only
+        # FIN page in the 6x9 book.
+        manuscript = _re.sub(
+            r'<div class="fin-page">.*?</div>\s*',
+            '',
+            manuscript,
+            count=1,
+            flags=_re.DOTALL,
+        )
+        manuscript = _re.sub(
+            r'<div class="final-glyph">.*?</div>\s*',
+            '',
+            manuscript,
+            count=1,
+            flags=_re.DOTALL,
+        )
+        # Drop any trailing pagebreak HTML comment + isolated --- left over
+        # from removing the closing blocks above.
+        manuscript = _re.sub(
+            r'(<!--\s*pagebreak\s*-->\s*)+\s*$',
+            '',
+            manuscript,
+        )
         merged.write_text(
             FRONT_MATTER_TPL.format(title=title, author=author,
                                     tagline=tagline)

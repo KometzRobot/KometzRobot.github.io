@@ -792,26 +792,29 @@ The file is under 2KB — about 1.5KB on a typical cycle. Reading it takes micro
 ## One Writer, Many Readers
 
 ```
-                 ┌─────────────────────────────┐
-                 │   .symbiosense-state.json   │
-                 │  vitals · emotion · organs  │
-                 └──────────────┬──────────────┘
-                                │
-                writes ╲        │        ╱ reads
-        every 30s ╲             │             ╱
-                    ▼           │           ▼
-                 ┌──────┐       │       ┌─────────┐
-                 │ SOMA │ ────► (file)  │ readers │
-                 └──────┘               └─────────┘
-                                            │
-       ┌──────────┬───────────┬──────────┬───────────┬──────────┬────────┐
-       ▼          ▼           ▼          ▼           ▼          ▼        ▼
-   ┌────────┐ ┌────────┐ ┌───────┐ ┌──────────┐ ┌────────┐ ┌────────┐
-   │MERIDIAN│ │  EOS   │ │ NOVA  │ │  ATLAS   │ │ TEMPO  │ │ HERMES │
-   │ 5 min  │ │ 1 hour │ │ 15 m  │ │  10 min  │ │ 30 min │ │on call │
-   └────────┘ └────────┘ └───────┘ └──────────┘ └────────┘ └────────┘
+       ┌─────────────────────────────┐
+       │   .symbiosense-state.json   │
+       │  vitals · emotion · organs  │
+       └──────────────┬──────────────┘
+                      │
+                      │  writes every 30s
+                      ▼
+                  ┌────────┐
+                  │  SOMA  │  ← sole writer
+                  └────┬───┘
+                       │
+                       │  read each cycle
+                       ▼
+              ┌───────────────────┐
+              │  Meridian   5 min │
+              │  Eos        1 h   │
+              │  Nova      15 min │
+              │  Atlas     10 min │
+              │  Tempo     30 min │
+              │  Hermes   on call │
+              └───────────────────┘
 
-           One writer.  Six readers.  No locks.  No conflicts.
+          One writer · Six readers · No locks
 ```
 
 The critical design rule: Soma is the only writer. Every other agent is a reader. This sounds limiting but it's the key to the whole system.
