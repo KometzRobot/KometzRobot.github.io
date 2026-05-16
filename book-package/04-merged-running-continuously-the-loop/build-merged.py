@@ -669,7 +669,11 @@ A short reference for the technical and system-specific terms that show up acros
 
 <!-- pagebreak -->
 
-<div class="blank-verso"></div>
+<div class="fin-page">
+
+FIN
+
+</div>
 
 <!-- pagebreak -->
 
@@ -956,12 +960,16 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
   margin-top: 0.3em;
 }
 
-/* Final-page glyph: own page, fully centered, no page number. */
+/* Final-page glyph: own page, perfectly centered (Joel Loop 11966), no
+   page number. Page content area ≈ 9.15in tall. Glyph block ≈ 4.0in tall
+   at 11pt × 22 lines × 1.2 line-height. Top padding = (9.15 - 4.0) / 2
+   = 2.58in for true vertical centering. */
 .final-glyph {
   page: no-pagenum;
   page-break-before: always;
+  page-break-after: always;
   text-align: center;
-  padding-top: 2.4in;
+  padding-top: 2.58in;
 }
 .final-glyph pre {
   display: inline-block;
@@ -971,6 +979,25 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
   text-align: center;
   margin: 0 auto;
   color: #888;
+}
+
+/* FIN page: verso of the final glyph (Joel Loop 11966 — "place on the
+   other side of the last page the words 'FIN' in type writer font mid
+   center of the page"). Own page, no page number, mid-page vertical
+   center, typewriter (mono) family. */
+.fin-page {
+  page: no-pagenum;
+  page-break-before: always;
+  text-align: center;
+  padding-top: 4.4in;
+}
+.fin-page p {
+  font-family: "Courier", "DejaVu Sans Mono", monospace;
+  font-size: 28pt;
+  letter-spacing: 0.45em;
+  color: #222;
+  text-align: center;
+  margin: 0;
 }
 """
     try:
