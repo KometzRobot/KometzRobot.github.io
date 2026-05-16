@@ -103,6 +103,20 @@ SCRUB_REDACT = [
     (r"\bSmitty\b", "[a steward]"),
     (r"\bBen Smith\b", "[a steward]"),
     (r"\bPhionna\b", "[a partner]"),
+    # Real human collaborators / referenced full names (Joel directive: scrub
+    # all NAMES like the first book did — first book uses initials or generic
+    # roles).
+    (r"\bSam White\b", "Sam W."),
+    (r"\bJason Rohrer\b", "[a peer-AI's creator]"),
+    (r"\bPeter Jones\b", "[an editor]"),
+    (r"\bMooshus?(?:'?s?)?\b", "[a private project]"),
+    (r"\bRubrick\b", "[an artist]"),
+    # Peer AI public-facing domains (the named-domain redacts above caught
+    # @-style email and bare domain refs for jborgmann/lumenloop/legioncoder;
+    # the sammyjankis/sammythebridge URLs slipped past the word-boundary
+    # Sammy redact because of the .com tail).
+    (r"\bsammyjankis\.com\b", "[a peer's site]"),
+    (r"\bsammythebridge\.com\b", "[a peer's site]"),
 ]
 SCRUB_REDACT_COMPILED = [(re.compile(p, re.IGNORECASE), r) for p, r in SCRUB_REDACT]
 
