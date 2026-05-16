@@ -112,7 +112,7 @@ Distribution by month — MEASURED page counts after Loop 12136 rebuild:
 | Vol I    | 2026-02            | 256 | `compilation-vol1-feb.pdf`         | ✓ paperback |
 | Vol II-a | 2026-03-01..03-05  | 440 | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
 | Vol II-b | 2026-03-06         | 800 | `compilation-vol2b-mar-06.pdf`     | ✓ paperback (cap) |
-| Vol II-c | 2026-03-07..03-31  | 710 | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
+| Vol II-c | 2026-03-07..03-31  | 709 | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
 | Vol III  | 2026-04            | 529 | `compilation-vol3-apr.pdf`         | ✓ paperback |
 | Vol IV   | 2026-05 (to-date)  | 632 | `compilation-vol4-may.pdf`         | ✓ paperback |
 
@@ -125,7 +125,8 @@ KDP paperback cap = 828pp (white) / 776pp (cream).
 CSS density pass (line-height 1.42→1.36, h-margins tightened, title/
 copyright padding cut) brought Vol II-b 843→800pp at the cap.
 Same scrub applied to all volumes for visual consistency on shelf.
-Total: 3,367pp across 6 volumes after Eos pull restored (Loop 12136).
+Total: 3,366pp across 6 volumes (Loop 12138 scrub: plural/possessive
+peer-name forms — Sammys, Aels — caught; Vol II-c trimmed 710→709pp).
 No content cut; runaway loop content (1,193 poems Mar 6) preserved.
 
 Note: earlier estimate said 690K words — that came from row counts in

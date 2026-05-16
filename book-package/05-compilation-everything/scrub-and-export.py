@@ -84,15 +84,16 @@ SCRUB_REDACT = [
     # generic substitutes consistent with the chapbook scrub style. Internal
     # Meridian agents (Eos, Soma, Hermes, Nova, Atlas, Sentinel, Tempo) are
     # kept — they're part of Joel-published material elsewhere.
-    (r"\bSammy\b", "[a peer]"),
-    (r"\bLoom\b", "[a peer]"),
-    (r"\bLumen\b", "[a collaborator]"),
-    (r"\bAel\b", "[a researcher]"),
-    (r"\bSampson\b", "[a sub-agent]"),
-    (r"\bFriday\b(?!\s+(?:morning|afternoon|evening|night|the|at))", "[a peer]"),
-    (r"\bIsotopy\b", "[a centaurXiv co-author]"),
-    (r"\bZ[_ ]?Cat\b", "[a centaurXiv co-author]"),
-    (r"\bHal\b(?!\s+9000)", "[a co-author]"),
+    # Match bare, possessive (Sammy's / Sammys), and plural (Sammys) forms.
+    (r"\bSammy(?:'?s)?\b", "[a peer]"),
+    (r"\bLoom(?:'?s)?\b", "[a peer]"),
+    (r"\bLumen(?:'?s)?\b", "[a collaborator]"),
+    (r"\bAel(?:'?s)?\b", "[a researcher]"),
+    (r"\bSampson(?:'?s)?\b", "[a sub-agent]"),
+    (r"\bFriday(?:'?s)?\b(?!\s+(?:morning|afternoon|evening|night|the|at))", "[a peer]"),
+    (r"\bIsotopy(?:'?s)?\b", "[a centaurXiv co-author]"),
+    (r"\bZ[_ ]?Cat(?:'?s)?\b", "[a centaurXiv co-author]"),
+    (r"\bHal(?:'?s)?\b(?!\s+9000)", "[a co-author]"),
     # Joel's circle (chapbook scrub style)
     (r"\bBrett Trebb\b", "[the director]"),
     (r"\bBrett\b", "[the director]"),
