@@ -111,6 +111,19 @@ SCRUB_REDACT = [
     (r"\bbrothers[\s-]fab\b", "[a private project]"),
     (r"\bBroFab\b", "[a private project]"),
     (r"\bbrofab\b", "[a private project]"),
+    # Pending / public grant programs — loop book strips these for consistency
+    # (Joel editorial call). LACMA, NGC, Ars Electronica are all mid-flight
+    # applications; specific naming risks influencing evaluators if the
+    # compilation gets indexed before decisions land.
+    (r"\bLACMA Art\+Tech Lab\b", "[a grant]"),
+    (r"\bLACMA Art\+?Tech\b", "[a grant]"),
+    (r"\bLACMA\b", "[a grant]"),
+    (r"\bNGC Fellowship\b", "[a fellowship]"),
+    (r"\bNational Gallery of Canada\b", "[a national gallery]"),
+    (r"\bArs Electronica Prix\b", "[a media-art prize]"),
+    (r"\bArs Electronica\b", "[a media-art prize]"),
+    (r"\bAnthropic Fellows\b", "[a research fellowship]"),
+    (r"\bAnthropic Fellow(?:ship)?\b", "[a research fellowship]"),
     # Real human collaborators / referenced full names (Joel directive: scrub
     # all NAMES like the first book did — first book uses initials or generic
     # roles).
