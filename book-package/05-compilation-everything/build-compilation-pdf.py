@@ -25,7 +25,7 @@ SOURCE = PKG / 'SOURCE-CHRONOLOGICAL.md'
 CSS = """
 @page {
   size: 6in 9in;
-  margin: 0.75in 0.6in 0.75in 0.6in;
+  margin: 0.65in 0.55in 0.65in 0.55in;
   @bottom-center { content: counter(page); font-family: "DejaVu Serif", serif; font-size: 9pt; color: #555; }
 }
 /* Pandoc -s emits a <header><h1 class="title">…</h1></header> at the top of
@@ -34,7 +34,7 @@ header#title-block-header { display: none; }
 body {
   font-family: "DejaVu Serif", serif;
   font-size: 10.5pt;
-  line-height: 1.28;
+  line-height: 1.22;
   text-align: justify;
   hyphens: auto;
   color: #111;
@@ -57,9 +57,9 @@ h2 {
   page-break-before: always;
 }
 h3 {
-  font-size: 11.5pt;
-  margin-top: 0.35em;
-  margin-bottom: 0.05em;
+  font-size: 11pt;
+  margin-top: 0.1em;
+  margin-bottom: 0.02em;
   font-weight: bold;
   text-align: left;
   hyphens: none;
@@ -69,14 +69,14 @@ h3 {
 h3 + p em,
 h3 + p > em:first-child {
   display: block;
-  font-size: 8.75pt;
+  font-size: 8.5pt;
   color: #666;
   margin-top: 0;
-  margin-bottom: 0.3em;
+  margin-bottom: 0.15em;
   font-style: italic;
 }
 p {
-  margin: 0 0 0.28em 0;
+  margin: 0 0 0.18em 0;
   text-indent: 1.0em;
   orphans: 2;
   widows: 2;
@@ -89,13 +89,14 @@ h3 + p, h3 + p + p {
 hr {
   border: none;
   text-align: center;
-  margin: 0.45em 0;
+  margin: 0.15em 0;
+  height: 0.6em;
 }
 hr::after {
   content: "·  ·  ·";
-  letter-spacing: 0.5em;
+  letter-spacing: 0.4em;
   color: #888;
-  font-size: 10pt;
+  font-size: 9pt;
 }
 blockquote {
   font-style: italic;
