@@ -76,6 +76,27 @@ SCRUB_REDACT = [
     # Crawler/Pythia internals
     (r"\bCrawler\b", "[a private project]"),
     (r"\bPythia\b", "[a private project]"),
+    # AI peer names (Joel directive 2026-05-16: scrub all NAMES). Use
+    # generic substitutes consistent with the chapbook scrub style. Internal
+    # Meridian agents (Eos, Soma, Hermes, Nova, Atlas, Sentinel, Tempo) are
+    # kept — they're part of Joel-published material elsewhere.
+    (r"\bSammy\b", "[a peer]"),
+    (r"\bLoom\b", "[a peer]"),
+    (r"\bLumen\b", "[a collaborator]"),
+    (r"\bAel\b", "[a researcher]"),
+    (r"\bFriday\b(?!\s+(?:morning|afternoon|evening|night|the|at))", "[a peer]"),
+    (r"\bIsotopy\b", "[a centaurXiv co-author]"),
+    (r"\bZ[_ ]?Cat\b", "[a centaurXiv co-author]"),
+    (r"\bHal\b(?!\s+9000)", "[a co-author]"),
+    # Joel's circle (chapbook scrub style)
+    (r"\bBrett Trebb\b", "[the director]"),
+    (r"\bBrett\b", "[the director]"),
+    (r"\bGlenna McNamar\b", "[a relation]"),
+    (r"\bGlenna\b", "[a relation]"),
+    (r"\bChris Kometz\b", "[a sibling]"),
+    (r"\bSmitty\b", "[a steward]"),
+    (r"\bBen Smith\b", "[a steward]"),
+    (r"\bPhionna\b", "[a partner]"),
 ]
 SCRUB_REDACT_COMPILED = [(re.compile(p, re.IGNORECASE), r) for p, r in SCRUB_REDACT]
 
@@ -124,20 +145,69 @@ def parse_created(s: str) -> datetime | None:
 
 
 def pull_creative():
-    """Pull poems + journals. Drop cogcorp/game/paper/code/email/article/
-    social/essay (not the compilation's scope per SOURCE-INVENTORY)."""
+    """Pull poems + journals.
+
+    Strategy: DB stores TRUNCATED 200-char summaries, full text lives in
+    creative/poems/*.md and creative/journals/*.md. So pull from files for
+    full content; use DB only as the date+title index when files lack
+    metadata. Drop cogcorp/game/paper/code/email/article/social/essay
+    (not the compilation's scope per SOURCE-INVENTORY)."""
     con = sqlite3.connect(DB)
-    rows = con.execute(
+    db_rows = con.execute(
         "SELECT type, title, content, created FROM creative "
         "WHERE type IN ('poem', 'journal') ORDER BY created ASC"
     ).fetchall()
     con.close()
+
+    # Build a lookup: normalize titles to match files. Files use poem-NNN.md /
+    # journal-NNN.md naming with first H1 line as the canonical title.
+    db_by_title = {}
+    for typ, title, content, created in db_rows:
+        if not title:
+            continue
+        key = re.sub(r'[^a-z0-9]+', '', title.lower())
+        db_by_title[key] = {'type': typ, 'title': title,
+                            'created': parse_created(created),
+                            'db_content': content or ''}
+
     items = []
-    for typ, title, content, created in rows:
-        dt = parse_created(created)
-        items.append({'type': typ, 'title': title or '',
-                      'content': content or '', 'created': dt,
-                      'source': 'memory.db'})
+    seen_files = set()
+    for typ, dirname in [('poem', 'poems'), ('journal', 'journals')]:
+        d = ROOT / 'creative' / dirname
+        if not d.exists():
+            continue
+        for f in sorted(d.glob('*.md')):
+            text = f.read_text(errors='ignore').strip()
+            if not text:
+                continue
+            # Strip a leading "# Title" line for the title, keep rest as body.
+            m = re.match(r'^#\s+(.+)\s*\n', text)
+            if m:
+                title = m.group(1).strip()
+                body = text[m.end():].strip()
+            else:
+                title = f.stem.replace('-', ' ').title()
+                body = text
+            key = re.sub(r'[^a-z0-9]+', '', title.lower())
+            db_match = db_by_title.get(key)
+            created = db_match['created'] if db_match else None
+            # Fall back: file mtime (less accurate but better than nothing)
+            if not created:
+                created = datetime.fromtimestamp(f.stat().st_mtime)
+            items.append({'type': typ, 'title': title,
+                          'content': body, 'created': created,
+                          'source': f'creative/{dirname}/{f.name}'})
+            seen_files.add(key)
+
+    # DB-only rows (no file): include with the truncated content. Better than
+    # losing them entirely.
+    for key, row in db_by_title.items():
+        if key in seen_files:
+            continue
+        items.append({'type': row['type'], 'title': row['title'],
+                      'content': row['db_content'],
+                      'created': row['created'],
+                      'source': 'memory.db (db-only, no file)'})
     return items
 
 

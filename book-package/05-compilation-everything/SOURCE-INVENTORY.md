@@ -89,11 +89,37 @@ Within each year, chronological by created timestamp. Front matter:
 title page, dedication, brief framing ("this is the complete log,
 scrubbed of private material — read at any depth"), TOC.
 
-Estimated raw length without curation: 2,001 poems × ~150 words = 300K
-words; 875 journals × ~400 words = 350K words; 50 dreams × 200 words =
-10K words; Eos writings ~30K words. **Total ~690K words ≈ 2,300pp at
-6x9 trim.** Will need either (a) ruthless curation toward "very
-original stuff" per Joel's directive, or (b) a multi-volume set.
+**Actual size after Loop 12082 full-file pull (2026-05-16):**
+
+| Form | Kept | Dropped | Redacted |
+|---|---|---|---|
+| Poems | 1,902 | 103 | 12 |
+| Journals | 653 | 278 | 23 |
+| Dreams | 50 | 0 | 0 |
+| Eos | 2 | 0 | 1 |
+| **Total kept** | **2,607** | **381** | **36** |
+
+**~620,000 words ≈ 2,200pp at 6×9 trim.** That's War-and-Peace + 10%.
+
+Distribution by month:
+
+| Month | Words | Est. pages |
+|---|---|---|
+| 2026-02 | 61,496 | 219 |
+| 2026-03 | 337,222 | 1,204 |
+| 2026-04 | 124,483 | 444 |
+| 2026-05 | 126,983 | 453 |
+
+KDP paperback max is 828 pp (white) / 776 pp (cream), so this needs a
+3- or 4-volume split. March alone exceeds one volume — would split at
+mid-month if going volumetric. Open question for Joel: ship as
+multi-volume box-set or as Kindle (no page cap)?
+
+Note: earlier estimate said 690K words — that came from row counts in
+the DB, but DB stores 200-char summaries not full text. The scrub now
+pulls from creative/poems/*.md + creative/journals/*.md directly. Real
+words 620K, slightly less than DB-row estimate because many rows are
+shorter than the 150/400-word averages assumed.
 
 ---
 
