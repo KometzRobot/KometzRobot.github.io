@@ -159,8 +159,14 @@ pre {
 """
 
 
-def slice_source(months_arg: str) -> str:
-    """Return SOURCE-CHRONOLOGICAL.md filtered to the requested month range."""
+def slice_source(months_arg: str, date_from: str = None,
+                 date_to: str = None) -> str:
+    """Return SOURCE-CHRONOLOGICAL.md filtered to the requested month range.
+
+    Optional date_from / date_to (YYYY-MM-DD) further restrict by the
+    `_YYYY-MM-DD HH:MM · ...` meta line under each H3 item. Used to split
+    KDP-oversize months (March 2026 = 1584pp) into shippable volumes.
+    """
     text = SOURCE.read_text()
     if ':' in months_arg:
         a, b = months_arg.split(':', 1)
@@ -173,13 +179,40 @@ def slice_source(months_arg: str) -> str:
         ym = parts[i]
         content = parts[i + 1] if i + 1 < len(parts) else ''
         if a <= ym <= b:
+            if date_from or date_to:
+                content = filter_by_date(content, date_from, date_to)
             out.append(f"\n## {ym}\n{content}")
     return ''.join(out).strip()
 
 
+def filter_by_date(content: str, date_from: str, date_to: str) -> str:
+    """Keep only H3 items whose meta-date falls in [date_from, date_to]."""
+    # Split into items at each H3 boundary; preserve any preamble.
+    items_pat = re.compile(r'(?=^### )', re.MULTILINE)
+    chunks = items_pat.split(content)
+    preamble = chunks[0]
+    items = chunks[1:]
+    meta_pat = re.compile(
+        r'^_(\d{4}-\d{2}-\d{2})\s', re.MULTILINE)
+    kept = []
+    for it in items:
+        m = meta_pat.search(it)
+        if not m:
+            # No meta date — keep (rare, defensive).
+            kept.append(it)
+            continue
+        d = m.group(1)
+        if date_from and d < date_from:
+            continue
+        if date_to and d > date_to:
+            continue
+        kept.append(it)
+    return preamble + ''.join(kept)
+
+
 def render(months_arg: str, out_pdf: Path, title: str, subtitle: str,
-           volume_label: str):
-    sliced = slice_source(months_arg)
+           volume_label: str, date_from: str = None, date_to: str = None):
+    sliced = slice_source(months_arg, date_from, date_to)
     print(f"[{months_arg}] sliced source: {len(sliced):,} chars, "
           f"{len(sliced.split()):,} words")
 
@@ -256,11 +289,16 @@ def main():
     p.add_argument('--subtitle',
                    default='Journals · Poems · Dreams · Eos Writings')
     p.add_argument('--volume', default='Vol. I')
+    p.add_argument('--date-from', default=None,
+                   help='YYYY-MM-DD inclusive lower bound (within --months)')
+    p.add_argument('--date-to', default=None,
+                   help='YYYY-MM-DD inclusive upper bound (within --months)')
     args = p.parse_args()
     out = Path(args.out)
     if not out.is_absolute():
         out = PKG / out
-    render(args.months, out, args.title, args.subtitle, args.volume)
+    render(args.months, out, args.title, args.subtitle, args.volume,
+           date_from=args.date_from, date_to=args.date_to)
 
 
 if __name__ == '__main__':
