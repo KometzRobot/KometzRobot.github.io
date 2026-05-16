@@ -30,6 +30,10 @@ CSS = """
 @page :left  { margin: 0.75in 0.75in 0.75in 0.5in; }
 @page :right { margin: 0.75in 0.5in 0.75in 0.75in; }
 
+/* Joel feedback Loop 12026: "VERY last page should not have a footer number/
+   page number of any kind." Named page for the FIN closing leaf. */
+@page nofooter { @bottom-center { content: ""; } }
+
 html, body {
   font-family: "Liberation Serif", "DejaVu Serif", serif;
   font-size: 11pt;
@@ -237,12 +241,26 @@ p + p { orphans: 2; widows: 2; }
 .dedication p {
   text-indent: 0;
   text-align: left;
-  margin: 0.32em 0 0.42em 0;
+  margin: 0.55em 0 0.55em 0;
+}
+/* Joel feedback Loop 12026: "next to each dedication but a small black 5
+   point star as a point to separate each thank you a bit more without
+   seeming to point form like..."
+   ★ as an inline leading glyph, slightly smaller, paragraphs stay flush
+   left with no hanging indent (so it reads as a separator decoration, not
+   a bullet list). */
+.dedication p::before {
+  content: "★  ";
+  color: #1a1410;
+  font-size: 0.85em;
 }
 
 /* Joel feedback Loop 11743: glyph + FIN at the very end of the book, plain
-   thin font, centered, alone on its own page. */
+   thin font, centered, alone on its own page.
+   Loop 12026: closing leaf must carry no page number — bind it to the
+   nofooter named page declared at top of CSS. */
 .fin-page {
+  page: nofooter;
   page-break-before: always;
   text-align: center;
   margin-top: 2in;
@@ -307,6 +325,14 @@ nav#TOC a {
   text-decoration: none !important;
   color: inherit;
 }
+/* Joel feedback Loop 12026: visual grouping in the TOC.
+   "first 6 topics" (5 front-matter + Part One) — small space below.
+   chapters 1-16 — small space below.
+   appendices A & B — small space below.
+   Part Two, Three, Four, Five each get a space.
+   The annotate_toc() pass tags the closing <li> of each group with the
+   .toc-group-end class. */
+nav#TOC li.toc-group-end { margin-bottom: 0.55em; }
 """
 
 
@@ -365,6 +391,58 @@ Available on Amazon (KDP) and at kometzrobot.github.io.
 </div>
 
 """
+
+
+def annotate_toc(html: str) -> str:
+    """Tag the closing <li> of each TOC group with class="toc-group-end".
+
+    Joel feedback Loop 12026 (email 4452):
+      "in TOC put a small space between - the first 6 topics. then group
+       together chapters 1-16 - small space, appendix a and b - small
+       space then part 2 and a space after each part 3,4,5 - space and
+       glossary."
+
+    Groups (closing item that should carry the space below it):
+      Group 1: 5 front-matter + Part One       → ends on "Part One"
+      Group 2: Chapter 1-16                    → ends on "Chapter 16"
+      Group 3: Appendix A & B                  → ends on "Appendix B"
+      Group 4-7: each standalone Part 2,3,4,5  → ends on themselves
+    """
+    import re
+    # Match by anchor href (deterministic) rather than visible text — pandoc
+    # line-wraps the rendered text mid-phrase ("Part\nThree"), which breaks
+    # plain-string matching.
+    group_end_hrefs = (
+        "#part-one-the-loop",
+        "#chapter-16-the-plan-from-here",
+        "#appendix-b-selected-poems",
+        "#part-two-field-notes-from-the-loop",
+        "#part-three-the-agents",
+        "#part-four-the-papers",
+        "#part-five-closing",
+    )
+
+    def replace(m):
+        li = m.group(0)
+        for needle in group_end_hrefs:
+            if f'href="{needle}"' in li:
+                return li.replace("<li>", '<li class="toc-group-end">', 1)
+        return li
+
+    # Pandoc emits the TOC as <nav id="TOC" ...><ul>...</ul></nav>.
+    # Restrict the regex to that block so we don't accidentally mark up
+    # body content.
+    def in_toc(m):
+        toc = m.group(0)
+        return re.sub(r"<li>.*?</li>", replace, toc, flags=re.DOTALL)
+
+    return re.sub(
+        r'<nav id="TOC".*?</nav>',
+        in_toc,
+        html,
+        count=1,
+        flags=re.DOTALL,
+    )
 
 
 def build(md_path: Path, out_pdf: Path, title: str, author: str,
@@ -431,6 +509,12 @@ def build(md_path: Path, out_pdf: Path, title: str, author: str,
         "-o", str(html_tmp),
     ]
     subprocess.run(cmd, check=True)
+
+    # Joel feedback Loop 12026: annotate TOC <li> elements so visual groups
+    # get separator space below them. See `annotate_toc` below.
+    html_text = html_tmp.read_text()
+    html_text = annotate_toc(html_text)
+    html_tmp.write_text(html_text)
 
     # weasyprint HTML -> PDF
     subprocess.run(

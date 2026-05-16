@@ -35,11 +35,19 @@ KRAFT_DIM = (110, 100, 90)
 
 
 def font(size, family="serif"):
+    # P052 = URW Palatino clone. Joel approved P052 on back cover v15.
+    # Loop 12026: use it on the spine too — DejaVu Serif Bold ("font sucks").
     paths = {
         "serif": [
+            "/usr/share/fonts/opentype/urw-base35/P052-Bold.otf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         ],
+        "serif_regular": [
+            "/usr/share/fonts/opentype/urw-base35/P052-Roman.otf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        ],
         "mono": [
+            "/usr/share/fonts/opentype/urw-base35/NimbusMonoPS-Regular.otf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
         ],
     }
@@ -79,17 +87,24 @@ def render_pdf_page(pdf_path: Path, out_png: Path, page=1, dpi=DPI):
 
 def make_spine(width_px, height_px, title_top, title_main, author,
                kraft=False):
-    """Vertical spine.
+    """Vertical spine — single-line title, P052, conventional book layout.
 
-    Joel feedback Loop 11744: previous spine "design is terrible".
+    Joel feedback Loop 12022 reject of v17: "font sucks/too big/cut off."
+    Joel feedback Loop 12026: "i was not talking about the back cover at all
+    i was only talking about the design and typography and overall layout
+    of the SPINE!"
+
     Redesign:
-      - Three clean text zones (top → middle → bottom) instead of three
-        fonts crammed onto one centred baseline.
-      - Series mark at the top in small caps mono.
-      - Title set in two lines stacked (RUNNING / CONTINUOUSLY) so a
-        narrow spine doesn't have to fit one giant string.
-      - Author and small accent rule at the bottom.
-      - Hairline accent rules between zones for visual rhythm.
+      - Single-line title set in P052 Bold (the serif Joel approved on the
+        back cover), reads top-to-bottom along the spine length when the
+        book sits on a shelf — standard book-spine orientation.
+      - Title automatically sized to fit within the printable spine length
+        with a generous margin from head and foot. No more "cut off".
+      - Series mark near the spine head, author near the foot, both in
+        Nimbus Mono — quiet metadata, no fighting the title.
+      - Hairline accent rules flank the title block; nothing else.
+      - Type sized PROPORTIONALLY to the spine width, never bigger than
+        the spine can carry. Less ink, more breath.
     """
     if kraft:
         bg = KRAFT_PAPER
@@ -106,7 +121,6 @@ def make_spine(width_px, height_px, title_top, title_main, author,
     d = ImageDraw.Draw(img)
 
     if kraft:
-        # Subtle paper noise for kraft
         px = img.load()
         rng = random.Random(11)
         for y in range(0, height_px, 2):
@@ -117,7 +131,6 @@ def make_spine(width_px, height_px, title_top, title_main, author,
                             max(0, min(255, g + n)),
                             max(0, min(255, b + n)))
     else:
-        # Radial burgundy underglow (original behavior, dark spines only)
         cx, cy = width_px // 2, height_px // 2
         max_d = math.hypot(width_px, height_px) * 0.6
         for y in range(0, height_px, 2):
@@ -133,70 +146,77 @@ def make_spine(width_px, height_px, title_top, title_main, author,
     if width_px < text_min_in * DPI:
         return img.convert("RGB")
 
-    # Compose spine text on a horizontal canvas (height_px wide x width_px tall),
-    # then rotate -90 so the result reads top-to-bottom along the bound spine.
+    # Strip is sized as a horizontal canvas (length × width); rotated -90°
+    # so the result reads naturally with the book on a shelf.
     strip = Image.new("RGBA", (height_px, width_px), (0, 0, 0, 0))
     sd = ImageDraw.Draw(strip)
 
-    # Sizing — cap title font so it doesn't fight the narrow spine.
-    fsize_title = max(34, min(width_px - 30, 72))
-    fsize_meta = max(14, fsize_title // 3)
-
-    f_title = font(fsize_title, "serif")
-    f_meta = font(fsize_meta, "mono")
-    f_meta_small = font(max(11, fsize_meta - 2), "mono")
-
-    # Helpers
     def text_size(text, fnt):
         b = sd.textbbox((0, 0), text, font=fnt)
         return b[2] - b[0], b[3] - b[1]
 
-    pad_end = 80  # gap from spine head/foot
-    cy_spine = width_px // 2  # vertical centre of the spine strip
+    # Margins from the spine head / foot (LEFT and RIGHT of the unrotated
+    # strip). Generous so the title can never reach trim.
+    pad_end = int(0.5 * DPI)  # 0.5" each end
+    cy_spine = width_px // 2
 
-    # ── Series mark, set as small caps mono near the spine HEAD ──────────
+    # Title clear-zone height: keep title under ~70% of spine width so the
+    # caps never touch the spine edges after trim.
+    title_max_h = int(width_px * 0.62)
+
+    # Auto-size title to fill the available run while staying within the
+    # height cap. Start large, shrink until both constraints satisfied.
+    title_text = title_main.upper()
+    avail_length = height_px - 2 * pad_end - int(0.8 * DPI)  # reserve for meta/rules
+    fsize_title = min(int(width_px * 0.78), 96)
+    while fsize_title >= 22:
+        f_title = font(fsize_title, "serif")
+        tw, th = text_size(title_text, f_title)
+        if tw <= avail_length and th <= title_max_h:
+            break
+        fsize_title -= 2
+    f_title = font(fsize_title, "serif")
+    tw, th = text_size(title_text, f_title)
+
+    # Meta font scaled relative to title (about a quarter of its size,
+    # floored so it's always legible at print).
+    fsize_meta = max(13, fsize_title // 4)
+    f_meta = font(fsize_meta, "mono")
+
+    # Place title CENTERED along the spine length, vertically centred.
+    title_x = (height_px - tw) // 2
+    title_y = cy_spine - th // 2 - max(2, fsize_title // 18)
+    sd.text((title_x, title_y), title_text,
+            font=f_title, fill=(*ink_main, 255))
+
+    # Hairline rules flanking the title block.
+    rule_gap = int(0.18 * DPI)
+    rule_len = int(0.45 * DPI)
+    rule_y = cy_spine
+    rule_thick = max(2, width_px // 60)
+    # Left rule (head-side)
+    rule_left_end = title_x - rule_gap
+    rule_left_start = rule_left_end - rule_len
+    if rule_left_start > pad_end + int(0.9 * DPI):
+        sd.line([(rule_left_start, rule_y), (rule_left_end, rule_y)],
+                fill=(*ink_top, 230), width=rule_thick)
+    # Right rule (foot-side)
+    rule_right_start = title_x + tw + rule_gap
+    rule_right_end = rule_right_start + rule_len
+    if rule_right_end < height_px - pad_end - int(0.9 * DPI):
+        sd.line([(rule_right_start, rule_y), (rule_right_end, rule_y)],
+                fill=(*ink_top, 230), width=rule_thick)
+
+    # Series mark near spine HEAD (left end of unrotated strip).
     series_text = title_top.upper()
-    sw, sh = text_size(series_text, f_meta_small)
+    sw, sh = text_size(series_text, f_meta)
     sd.text((pad_end, cy_spine), series_text,
-            font=f_meta_small, fill=(*ink_top, 230), anchor="lm")
-    # Hairline rule after series mark
-    rule_x = pad_end + sw + 28
-    sd.line([(rule_x, cy_spine), (rule_x + 80, cy_spine)],
-            fill=(*ink_top, 230), width=2)
+            font=f_meta, fill=(*ink_top, 230), anchor="lm")
 
-    # ── Title block at centre — TWO LINES, stacked across spine width ───
-    line1 = "RUNNING"
-    line2 = "CONTINUOUSLY"
-    w1, h1 = text_size(line1, f_title)
-    w2, h2 = text_size(line2, f_title)
-    title_x = (height_px - max(w1, w2)) // 2
-    # The two title words sit on a shared baseline but at slightly different
-    # vertical offsets so they don't crowd in a narrow spine.
-    sd.text(((height_px - w1) // 2, cy_spine - h1 // 2 - 6),
-            line1, font=f_title, fill=(*ink_main, 255))
-    # Small accent dot between the two title lines (visual breath)
-    dot_x = height_px // 2
-    dot_y = cy_spine + h1 // 2 + 4
-    sd.ellipse([dot_x - 4, dot_y - 4, dot_x + 4, dot_y + 4],
-               fill=(*ink_top, 255))
-    sd.text(((height_px - w2) // 2, cy_spine + h1 // 2 + 12),
-            line2, font=f_title, fill=(*ink_main, 255))
-
-    # ── "THE LOOP" subtitle to the right of the title block ─────────────
-    sub_text = "·  THE LOOP"
-    sw2, sh2 = text_size(sub_text, f_meta)
-    sub_x = max(((height_px - max(w1, w2)) // 2) + max(w1, w2) + 24,
-                height_px - pad_end - sw2 - 240)
-    if sub_x + sw2 < height_px - pad_end - 280:
-        sd.text((sub_x, cy_spine), sub_text,
-                font=f_meta, fill=(*ink_meta, 230), anchor="lm")
-
-    # ── Author at FOOT of spine ─────────────────────────────────────────
-    aw, ah = text_size(author, f_meta)
-    sd.line([(height_px - pad_end - aw - 28 - 80, cy_spine),
-             (height_px - pad_end - aw - 28, cy_spine)],
-            fill=(*ink_top, 230), width=2)
-    sd.text((height_px - pad_end, cy_spine), author,
+    # Author near spine FOOT (right end of unrotated strip).
+    author_text = author.upper()
+    aw, ah = text_size(author_text, f_meta)
+    sd.text((height_px - pad_end, cy_spine), author_text,
             font=f_meta, fill=(*ink_meta, 230), anchor="rm")
 
     spine_text = strip.rotate(-90, expand=True)
@@ -365,7 +385,7 @@ def main():
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v18.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v19.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
