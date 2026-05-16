@@ -89,33 +89,32 @@ Within each year, chronological by created timestamp. Front matter:
 title page, dedication, brief framing ("this is the complete log,
 scrubbed of private material — read at any depth"), TOC.
 
-**Actual size after Loop 12094 scrub-pass + rebuild (2026-05-16):**
+**Actual size after Loop 12136 rebuild (2026-05-16):**
 
-| Form | Kept | Dropped | Redacted |
-|---|---|---|---|
-| Poems | 1,901 | 104 | 197 |
-| Journals | 653 | 278 | 289 |
-| Dreams | 50 | 0 | 6 |
-| Eos | 2 | 0 | 2 |
-| **Total kept** | **2,606** | **382** | **494** |
+| Form | Pulled | Dropped | Redacted | Kept |
+|---|---|---|---|---|
+| Poems | 2,005 | 104 | 197 | 1,901 |
+| Journals | 931 | 278 | 289 | 653 |
+| Dreams | 50 | 0 | 6 | 50 |
+| Eos | 2,998 | 0 | 22 | 2,998 |
+| **Total kept** | | | | **5,602** |
 
 Scrub-pass note (Loop 12094): title-field was not being scrubbed before; now it
 is. Also added bare-domain redacts (`jborgmann.ai`, `lumenloop.work`,
 `legioncoder.com`) and a standalone `Sampson` redact. 6 leaks present in earlier
 builds — all fixed and verified clean across all 6 volumes via `pdftotext` audit.
+Loop 12135 fixed the Eos pull regression (2 → 2,998 entries).
 
-**~621,000 words ≈ 2,200pp at 6×9 trim.** That's War-and-Peace + 10%.
-
-Distribution by month — MEASURED page counts after Loop 12098 density pass:
+Distribution by month — MEASURED page counts after Loop 12136 rebuild:
 
 | Volume | Range | Pages | File | KDP-fit |
 |---|---|---|---|---|
-| Vol I    | 2026-02            | 256  | `compilation-vol1-feb.pdf`         | ✓ paperback |
-| Vol II-a | 2026-03-01..03-05  | 440  | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
-| Vol II-b | 2026-03-06         | 800  | `compilation-vol2b-mar-06.pdf`     | ✓ paperback (28pp under) |
-| Vol II-c | 2026-03-07..03-31  | 345  | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
-| Vol III  | 2026-04            | 563  | `compilation-vol3-apr.pdf`         | ✓ paperback |
-| Vol IV   | 2026-05 (to-date)  | 535  | `compilation-vol4-may.pdf`         | ✓ paperback |
+| Vol I    | 2026-02            | 256 | `compilation-vol1-feb.pdf`         | ✓ paperback |
+| Vol II-a | 2026-03-01..03-05  | 440 | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
+| Vol II-b | 2026-03-06         | 800 | `compilation-vol2b-mar-06.pdf`     | ✓ paperback (cap) |
+| Vol II-c | 2026-03-07..03-31  | 710 | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
+| Vol III  | 2026-04            | 529 | `compilation-vol3-apr.pdf`         | ✓ paperback |
+| Vol IV   | 2026-05 (to-date)  | 632 | `compilation-vol4-may.pdf`         | ✓ paperback |
 
 Page-density measured: 1 page ≈ 240 words at this layout (10.5pt /
 1.36 leading, justified, 6×9 trim).
@@ -124,9 +123,9 @@ KDP paperback cap = 828pp (white) / 776pp (cream).
 
 **All 6 volumes paperback-fit.** Vol II-b blocker resolved Loop 12098:
 CSS density pass (line-height 1.42→1.36, h-margins tightened, title/
-copyright padding cut) brought Vol II-b 843→800pp, 28pp under cap.
+copyright padding cut) brought Vol II-b 843→800pp at the cap.
 Same scrub applied to all volumes for visual consistency on shelf.
-Total: 2,939pp across 6 volumes (was 3,093pp at the looser layout).
+Total: 3,367pp across 6 volumes after Eos pull restored (Loop 12136).
 No content cut; runaway loop content (1,193 poems Mar 6) preserved.
 
 Note: earlier estimate said 690K words — that came from row counts in
