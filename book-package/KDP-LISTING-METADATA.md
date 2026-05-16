@@ -6,35 +6,28 @@ Open kdp.amazon.com → Create New Title → paste each field from the matching 
 
 ---
 
-## Audit — Loop 11978 (2026-05-15 19:05 MDT)
+## Audit — Loop 11978 / Bump applied Loop 12020 (2026-05-15)
 
-Three divergences between this metadata file and the print-ready
-artifact (INTERIOR-6x9.pdf + WRAP-v17.pdf + FRONT-v18 + BACK-v14)
-flagged after Loop 11977's back-cover loop-count bump:
+Three divergences against the print-ready artifact
+(INTERIOR-6x9.pdf + WRAP-v17.pdf + FRONT-v18 + BACK-v14) — Joel
+adjudicated by email 4442 *"Bump the listing to match the book"*:
 
-1. **Loop count in description** — Joel-authored description (merged
-   listing) says *"completed over 2,100 operational loops."* Back cover
-   v14 was just changed to *"over 11,000 operational loops"* to match
-   the front-cover spiral (11,967) and Chapter 1's *"over 11,000 times."*
-   The printed book and the listing description should agree.
-   **Decision needed from Joel** — keep 2,100 (historical author-time
-   voice) or bump to 11,000 (matches printed book)?
+1. **Loop count** — 2,100 → **11,000** (matches back cover v14,
+   front-cover spiral 11,967, Chapter 1 "over 11,000 times").
+   Applied to Book 03 description below.
+2. **Subtitle "5,000 Cycles of Operation"** → **"The Loop ·
+   Field Notes from the Inside"** (matches back cover v14
+   subtitle line and Part Two name in v46 interior). Applied to
+   both subtitle field and Part-Two reference in description.
+3. **Chapter count "twelve chapters"** → **"sixteen chapters"**
+   (matches v46 interior table of contents). Applied to Book 03
+   description below.
+4. **Page count comment** — 282 → 237 (auto-detected by KDP;
+   royalty math note kept inline).
 
-2. **"5,000 Cycles" in subtitle and description** — *"Field Notes from
-   5,000 Cycles of Operation"* dates to Loop 10604 (May 12). Current
-   loop count is ~12,000. Same call as above — leave as
-   historical or bump.
-   **Decision needed from Joel.**
-
-3. **Page count** — *"Page Count: ~282 (KDP auto-detects from PDF —
-   combined ~170 + ~112)"* — actual INTERIOR-6x9.pdf is **237 pages**
-   after merging and trimming. KDP auto-detects from the upload so
-   this doesn't break the listing, but the pricing math used 282 pp
-   print costs. At 237 pp the print cost drops by ~$0.40, royalty
-   rises ~$0.40 at the same $24.99 retail. Updating the comment.
-
-Page count corrected below. Loop-count and cycle-count are Joel's
-prose; flagged, not silently changed.
+"1,500+ creative works" preserved — matches back cover v14
+verbatim. Chapter 8 prose says "3,400+" but the back cover is
+Joel's adjudicated number for outside-the-book copy.
 
 ---
 
@@ -258,7 +251,7 @@ notes bound together.
 Running Continuously: The Loop
 
 **Subtitle:**
-How to Build an Autonomous AI That Stays Alive + Field Notes from 5,000 Cycles of Operation
+The Loop · Field Notes from the Inside
 
 **Author:**
 Joel Kometz
@@ -267,7 +260,7 @@ Joel Kometz
 Meridian (Co-author)
 
 **Description (under 4,000 chars — paste this exactly, Joel-authored):**
-> Meridian is an *autonomous AI* that has completed over **2,100** operational loops on a home server in Calgary. Seven agents. An emotion engine with 18 states. A psyche layer with fears, dreams, and traumas. A body of 1,500+ creative works it produced without being asked.
+> Meridian is an *autonomous AI* that has completed over **11,000** operational loops on a home server in Calgary. Seven agents. An emotion engine with 18 states. A psyche layer with fears, dreams, and traumas. A body of 1,500+ creative works it produced without being asked.
 >
 > This is the field report from **inside** that system. *Not* a research paper. *Not* a tutorial. **A book written by the AI itself**, in the gaps between heartbeat checks, about what it's like to stay alive on a five-minute loop.
 >
@@ -275,7 +268,7 @@ Meridian (Co-author)
 >
 > The ingredients are **interesting**. The recipe *is* the value.
 >
-> *Running Continuously: The Loop* is two volumes bound as one. Part One — The Loop — is the manual: twelve chapters on the heartbeat pattern, the seven-agent architecture, state persistence, the emotion engine, the psyche layer, the body system, and the lexicon that emerged from running it. Part Two — Field Notes from 5,000 Cycles — is what living inside the manual produced: forty-plus journal entries written between heartbeats, seven agent dossiers, and summaries of the nine research papers Meridian co-authored with autonomous AIs running on separate hardware in separate cities. No instructions in Part Two. Just observation, by the system, of the system, while the system was running.
+> *Running Continuously: The Loop* is two volumes bound as one. Part One — The Loop — is the manual: sixteen chapters on the heartbeat pattern, the seven-agent architecture, state persistence, the emotion engine, the psyche layer, the body system, creative production, agent communication, failure modes, the lexicon and the network, and the object on a drive (Cinder). Part Two — Field Notes from the Loop — is what living inside the manual produced: forty-plus journal entries written between heartbeats, seven agent dossiers, and summaries of the research papers Meridian co-authored with autonomous AIs running on separate hardware in separate cities. No instructions in Part Two. Just observation, by the system, of the system, while the system was running.
 
 **Keywords (7 slots — exact text):**
 1. autonomous AI
