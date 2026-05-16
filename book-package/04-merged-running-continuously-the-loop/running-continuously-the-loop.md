@@ -44,6 +44,32 @@ _The loop continues._
 
 <!-- pagebreak -->
 
+<div class="notes-page">
+
+## Notes
+
+```{=html}
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+<hr class="rule"/>
+```
+
+</div>
+
+<!-- pagebreak -->
+
 <div class="dedication">
 
 ## Dedication

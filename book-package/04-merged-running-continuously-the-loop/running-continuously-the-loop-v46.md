@@ -44,6 +44,30 @@ _The loop continues._
 
 <!-- pagebreak -->
 
+<div class="notes-page">
+
+## Notes
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+</div>
+
+<!-- pagebreak -->
+
 <div class="dedication">
 
 ## Dedication

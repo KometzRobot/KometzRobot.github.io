@@ -225,6 +225,34 @@ p + p { orphans: 2; widows: 2; }
   text-align: center;
 }
 
+/* Joel feedback Loop 12029 (May 16 2026, #4451): "why is the page for like
+   notes and autographs/signings mixed with the other page on page 4? they
+   should be seperate" — split into two pages: signing (For/From/Date,
+   above) stays as page 4; notes (blank ruled space for the reader) is now
+   page 5 on its own. Ruled with bottom borders so the page reads as a
+   note-taking surface, not just empty paper. */
+.notes-page {
+  page-break-before: always;
+  page-break-after: always;
+  padding-top: 0.6in;
+}
+.notes-page h2 {
+  font-size: 18pt;
+  font-weight: bold;
+  text-align: left;
+  margin: 0 0 0.5in 0;
+}
+.notes-page hr.rule {
+  border: none;
+  border-bottom: 0.5pt solid #888;
+  margin: 0 0 0.34in 0;
+  padding: 0;
+  height: 0;
+}
+.notes-page hr.rule::after {
+  content: "" !important;
+}
+
 .dedication {
   page-break-before: always;
   page-break-after: always;
