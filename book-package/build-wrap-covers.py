@@ -343,8 +343,8 @@ def main():
         # Prefer the newest pair, fall back through older versions if missing.
         # v18 FRONT = MERIDIAN AI big red (Joel ask Loop 11963).
         # v14 BACK = 2,100 -> 11,000 loops (Loop 11977 fix).
-        front_candidates = [f"v{n}" for n in range(20, 8, -1)]
-        back_candidates = [f"v{n}" for n in range(16, 8, -1)]
+        front_candidates = [f"v{n}" for n in range(22, 8, -1)]
+        back_candidates = [f"v{n}" for n in range(20, 8, -1)]
         front_pdf = None
         for v in front_candidates:
             p = rc_dir / f"COVER-running-continuously-the-loop-FRONT-{v}.pdf"
@@ -365,7 +365,7 @@ def main():
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v17.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v18.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
