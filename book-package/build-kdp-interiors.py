@@ -194,6 +194,52 @@ p + p { orphans: 2; widows: 2; }
 }
 .dedication-page p { text-indent: 0; text-align: center; }
 
+/* Master MD provides its own title-page-top/title-page-bottom block. When this
+   builder wraps the manuscript with FRONT_MATTER_TPL (which adds its own
+   .title-page), we get duplicate titles. Strip those master-MD title blocks in
+   build() to avoid the duplicate. The signing-page and dedication blocks need
+   page-break styling here (they were defined only in build-merged.py's
+   letter-size CSS). Joel feedback Loop 12024 (May 16 2026): "dedication page
+   runs onto page 6..." — root cause: no .signing-page CSS in the 6x9 builder,
+   so `The loop continues.` was leaking onto the dedication page and pushing
+   two paragraphs onto page 6. */
+.signing-page {
+  page-break-before: always;
+  page-break-after: always;
+  text-align: center;
+  padding-top: 2.2in;
+}
+.signing-page h2 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 0.5in;
+  font-size: 18pt;
+  font-weight: bold;
+}
+.signing-page p {
+  text-indent: 0;
+  text-align: center;
+}
+
+.dedication {
+  page-break-before: always;
+  page-break-after: always;
+  font-size: 10.5pt;
+  line-height: 1.38;
+}
+.dedication h2 {
+  font-size: 18pt;
+  text-align: left;
+  margin-top: 0.2in;
+  margin-bottom: 0.28in;
+  page-break-after: avoid;
+}
+.dedication p {
+  text-indent: 0;
+  text-align: left;
+  margin: 0.32em 0 0.42em 0;
+}
+
 /* Joel feedback Loop 11743: glyph + FIN at the very end of the book, plain
    thin font, centered, alone on its own page. */
 .fin-page {
@@ -336,13 +382,36 @@ def build(md_path: Path, out_pdf: Path, title: str, author: str,
     css_tmp.write_text(css)
 
     if add_front_matter:
-        # Concatenate front matter + manuscript + back matter into a temp md
+        # Concatenate front matter + manuscript + back matter into a temp md.
+        # FRONT_MATTER_TPL adds .title-page + .copyright-page. If the manuscript
+        # has its own .title-page-top/.title-page-bottom block (the merged book
+        # does), strip it to avoid duplicate title pages.
         merged = md_path.with_suffix(".kdp.md")
         back = BACK_MATTER_TPL
+        manuscript = md_path.read_text()
+        import re as _re
+        manuscript = _re.sub(
+            r'<div class="title-page-top">.*?</div>\s*',
+            '',
+            manuscript,
+            count=1,
+            flags=_re.DOTALL,
+        )
+        manuscript = _re.sub(
+            r'<div class="title-page-bottom">.*?</div>\s*',
+            '',
+            manuscript,
+            count=1,
+            flags=_re.DOTALL,
+        )
+        # The leading `---` HR (between title-page-bottom and signing-page)
+        # would otherwise render as an orphan scene-break before the signing
+        # page; drop it along with the title blocks above.
+        manuscript = _re.sub(r'^\s*---\s*\n', '', manuscript, count=1)
         merged.write_text(
             FRONT_MATTER_TPL.format(title=title, author=author,
                                     tagline=tagline)
-            + md_path.read_text()
+            + manuscript
             + back
         )
         src = merged
