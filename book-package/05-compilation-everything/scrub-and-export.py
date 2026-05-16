@@ -198,6 +198,32 @@ def parse_created(s: str) -> datetime | None:
     return None
 
 
+# Burst filter: drop poems generated in tight time-clusters (loop artifact,
+# not writing). Joel flagged March 6 (1,193 poems in 24h, median 10s gap).
+# Same pattern hit Feb 26, March 4, March 7. Rule: drop a poem if both its
+# prev-poem gap AND its next-poem gap are under BURST_GAP_SEC.
+BURST_GAP_SEC = 60
+BURST_TYPES = {'poem'}
+
+
+def apply_burst_filter(items, stats):
+    """Drop poems caught in machine-cadence bursts. Items with non-poem type or
+    no timestamp pass through. Returns filtered list. Mutates `stats`."""
+    typed = sorted(
+        [(i, x) for i, x in enumerate(items)
+         if x['type'] in BURST_TYPES and x['created']],
+        key=lambda t: t[1]['created']
+    )
+    drop_indices = set()
+    for k, (orig_idx, it) in enumerate(typed):
+        prev_gap = (it['created'] - typed[k-1][1]['created']).total_seconds() if k > 0 else 9999
+        next_gap = (typed[k+1][1]['created'] - it['created']).total_seconds() if k < len(typed)-1 else 9999
+        if prev_gap < BURST_GAP_SEC and next_gap < BURST_GAP_SEC:
+            drop_indices.add(orig_idx)
+            stats['burst_dropped'][it['type']] += 1
+    return [x for i, x in enumerate(items) if i not in drop_indices]
+
+
 def pull_creative():
     """Pull poems + journals.
 
@@ -385,6 +411,7 @@ def main():
         'redacted': defaultdict(int),
         'no_date': defaultdict(int),
         'kept': defaultdict(int),
+        'burst_dropped': defaultdict(int),
     }
 
     for source_fn, label in [(pull_creative, 'creative'),
@@ -412,6 +439,13 @@ def main():
                 stats['no_date'][it['type']] += 1
             stats['kept'][it['type']] += 1
             all_items.append(it)
+
+    # Burst filter: drop poems caught in machine-cadence loops. Re-tally kept.
+    pre_burst = len(all_items)
+    all_items = apply_burst_filter(all_items, stats)
+    for t, n in stats['burst_dropped'].items():
+        stats['kept'][t] -= n
+    print(f"burst filter dropped {pre_burst - len(all_items)} of {pre_burst}")
 
     # Sort: items with dates first (chronological), undated at end (typed).
     dated = sorted([x for x in all_items if x['created']],
