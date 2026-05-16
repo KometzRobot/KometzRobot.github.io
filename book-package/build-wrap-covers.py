@@ -339,13 +339,12 @@ def main():
     rc_int = ROOT / "04-merged-running-continuously-the-loop/running-continuously-the-loop-INTERIOR-6x9.pdf"
     if rc_int.exists():
         rc_pages = get_pdf_pages(rc_int)
-        # Prefer v13 front (Joel May 14 23:00 — top fade fixed, hood reads
-        # clearly, (Joel Kometz) byline) + v12 back (Joel May 14 — honest
-        # 3-month framing). Fall back through earlier versions if missing.
         rc_dir = ROOT / "04-merged-running-continuously-the-loop"
         # Prefer the newest pair, fall back through older versions if missing.
-        front_candidates = [f"v{n}" for n in range(17, 8, -1)]
-        back_candidates = [f"v{n}" for n in range(13, 8, -1)]
+        # v18 FRONT = MERIDIAN AI big red (Joel ask Loop 11963).
+        # v14 BACK = 2,100 -> 11,000 loops (Loop 11977 fix).
+        front_candidates = [f"v{n}" for n in range(20, 8, -1)]
+        back_candidates = [f"v{n}" for n in range(16, 8, -1)]
         front_pdf = None
         for v in front_candidates:
             p = rc_dir / f"COVER-running-continuously-the-loop-FRONT-{v}.pdf"
@@ -366,7 +365,7 @@ def main():
             front_pdf=front_pdf,
             back_pdf=back_pdf,
             page_count=rc_pages,
-            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v16.pdf",
+            out_pdf=rc_dir / "COVER-running-continuously-the-loop-WRAP-v17.pdf",
             spine_title_top="the loop · book 1+2",
             spine_title_main="RUNNING CONTINUOUSLY: THE LOOP",
             spine_author="Meridian · Kometz",
