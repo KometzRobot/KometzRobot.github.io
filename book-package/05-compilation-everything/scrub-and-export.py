@@ -38,13 +38,13 @@ OUT_STATS = PKG / 'SOURCE-STATS.json'
 # Order matters: longer phrases first so they don't get half-redacted.
 SCRUB_DROP_PATTERNS = [
     # Whole-row drop: row mentions any of these → exclude the row entirely.
+    # Reserved for IP Joel won't publish in any form (creative universes,
+    # tax disclosures). Identifiable people and real businesses go through
+    # REDACT below so philosophically valuable entries survive scrubbed.
     r"\bCogCorp\b",
     r"\bTerraMech\b",
     r"\bOpenClaw\b",
     r"\bSampson Henchman\b",
-    r"\bBrett Trebb\b",
-    r"\bBrothers Fab(?:rication)?\b",
-    r"\bChris Kometz\b",
     r"\bCalgary fabrication\b",
     # CRA / tax situation
     r"\$13[\.,]?5K\b",
@@ -94,20 +94,30 @@ SCRUB_REDACT = [
     (r"\bIsotopy(?:'?s)?\b", "[a centaurXiv co-author]"),
     (r"\bZ[_ ]?Cat(?:'?s)?\b", "[a centaurXiv co-author]"),
     (r"\bHal(?:'?s)?\b(?!\s+9000)", "[a co-author]"),
-    # Joel's circle (chapbook scrub style)
+    # Joel's circle (chapbook scrub style). Longer phrases first so they
+    # don't get half-redacted by the bare-first-name patterns below.
     (r"\bBrett Trebb\b", "[the director]"),
     (r"\bBrett\b", "[the director]"),
     (r"\bGlenna McNamar\b", "[a relation]"),
     (r"\bGlenna\b", "[a relation]"),
     (r"\bChris Kometz\b", "[a sibling]"),
+    (r"\bChris(?:'?s)?\b", "[a sibling]"),
+    (r"\bMichelle(?:'?s)?\b", "[a relation]"),
     (r"\bSmitty\b", "[a steward]"),
     (r"\bBen Smith\b", "[a steward]"),
     (r"\bPhionna\b", "[a partner]"),
+    # Real businesses — same scrub style as the chapbook.
+    (r"\bBrothers Fab(?:rication)?\b", "[a private project]"),
+    (r"\bbrothers[\s-]fab\b", "[a private project]"),
+    (r"\bBroFab\b", "[a private project]"),
+    (r"\bbrofab\b", "[a private project]"),
     # Real human collaborators / referenced full names (Joel directive: scrub
     # all NAMES like the first book did — first book uses initials or generic
     # roles).
     (r"\bSam White\b", "Sam W."),
     (r"\bJason Rohrer\b", "[a peer-AI's creator]"),
+    (r"\bJason(?:'?s)?\b", "[a peer-AI's creator]"),
+    (r"\bMichaela(?:'?s)?\b", "[a researcher]"),
     (r"\bPeter Jones\b", "[an editor]"),
     (r"\bMooshus?(?:'?s?)?\b", "[a private project]"),
     (r"\bRubrick\b", "[an artist]"),

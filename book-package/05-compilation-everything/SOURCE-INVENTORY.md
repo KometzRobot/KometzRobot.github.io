@@ -89,45 +89,44 @@ Within each year, chronological by created timestamp. Front matter:
 title page, dedication, brief framing ("this is the complete log,
 scrubbed of private material — read at any depth"), TOC.
 
-**Actual size after Loop 12136 rebuild (2026-05-16):**
+**Actual size after Loop 12141 rebuild (2026-05-16):**
 
 | Form | Pulled | Dropped | Redacted | Kept |
 |---|---|---|---|---|
-| Poems | 2,005 | 104 | 197 | 1,901 |
-| Journals | 931 | 278 | 289 | 653 |
-| Dreams | 50 | 0 | 6 | 50 |
-| Eos | 2,998 | 0 | 22 | 2,998 |
-| **Total kept** | | | | **5,602** |
+| Poems | 2,005 | 104 | 210 | 1,901 |
+| Journals | 931 | 259 | 320 | 672 |
+| Dreams | 50 | 0 | 11 | 50 |
+| Eos | 3,003 | 0 | 22 | 3,003 |
+| **Total kept** | | | | **5,626** |
 
-Scrub-pass note (Loop 12094): title-field was not being scrubbed before; now it
-is. Also added bare-domain redacts (`jborgmann.ai`, `lumenloop.work`,
-`legioncoder.com`) and a standalone `Sampson` redact. 6 leaks present in earlier
-builds — all fixed and verified clean across all 6 volumes via `pdftotext` audit.
-Loop 12135 fixed the Eos pull regression (2 → 2,998 entries).
+Scrub-pass note (Loop 12141): moved Brothers Fab, Chris Kometz, Brett Trebb
+from DROP to REDACT so philosophically valuable entries survive scrubbed
+instead of vanishing. Added bare-first-name redacts that escaped earlier
+passes: Chris, Michelle, Jason, Michaela. Added `BroFab`/`brofab`/
+`brothers-fab` patterns. Verified clean: `grep -ciE "chris|brofab|brothers
+fab|jason|michaela"` returns 0 across the chronological source. 24 more
+items kept than Loop 12136 (5,626 vs 5,602) due to drop→redact migration.
 
-Distribution by month — MEASURED page counts after Loop 12139 density pass:
+Distribution by month — MEASURED page counts after Loop 12141 scrub pass:
 
 | Volume | Range | Pages | File | KDP-fit |
 |---|---|---|---|---|
-| Vol I    | 2026-02            | 225 | `compilation-vol1-feb.pdf`         | ✓ paperback |
-| Vol II-a | 2026-03-01..03-05  | 386 | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
-| Vol II-b | 2026-03-06         | 702 | `compilation-vol2b-mar-06.pdf`     | ✓ paperback |
-| Vol II-c | 2026-03-07..03-31  | 622 | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
-| Vol III  | 2026-04            | 483 | `compilation-vol3-apr.pdf`         | ✓ paperback |
-| Vol IV   | 2026-05 (to-date)  | 557 | `compilation-vol4-may.pdf`         | ✓ paperback |
+| Vol I    | 2026-02            | 227 | `compilation-vol1-feb.pdf`         | ✓ paperback |
+| Vol II-a | 2026-03-01..03-05  | 397 | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
+| Vol II-b | 2026-03-06         | 713 | `compilation-vol2b-mar-06.pdf`     | ✓ paperback |
+| Vol II-c | 2026-03-07..03-31  | 636 | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
+| Vol III  | 2026-04            | 507 | `compilation-vol3-apr.pdf`         | ✓ paperback |
+| Vol IV   | 2026-05 (to-date)  | 562 | `compilation-vol4-may.pdf`         | ✓ paperback |
 
-Page-density measured: 1 page ≈ 264 words at this layout (10.5pt /
-1.28 leading, justified, 6×9 trim, tightened item separators).
+Total: 3,042pp. Page-density: 1 page ≈ 219 words at this layout.
 
 KDP paperback cap = 828pp (white) / 776pp (cream).
 
-**All 6 volumes paperback-fit, all well under the cap.** Loop 12139
-density pass (line-height 1.36→1.28, item separator margins 1.0em→
-0.45em, h3 margin-top 0.7em→0.35em, p margin-bottom 0.45em→0.28em,
-h3 size 12pt→11.5pt, meta line 9pt→8.75pt with margin-bottom 0.6em→
-0.3em) trimmed 3,366pp → 2,975pp across all 6 volumes (-391pp, -11.6%).
-Vol II-b dropped 800→702, off the KDP cap with 126pp of headroom.
-No content cut; runaway loop content (1,193 poems Mar 6) preserved.
+**All 6 volumes paperback-fit, Vol II-b has 115pp of KDP-cap headroom.**
+Loop 12141 typography fix: h3 entry titles no longer stretch-justify
+("Journal     Entry    047" → "Journal Entry 047"), and the drop→redact
+migration restored 24 entries (mostly journal entries that referenced
+Joel's brother or business but were otherwise philosophical reflections).
 
 Note: earlier estimate said 690K words — that came from row counts in
 the DB, but DB stores 200-char summaries not full text. The scrub now
