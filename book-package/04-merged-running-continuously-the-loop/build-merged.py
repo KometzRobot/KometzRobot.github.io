@@ -781,7 +781,10 @@ M · ML · LXXVI
 }
 @page :first { @bottom-center { content: ""; } }
 @page no-pagenum { @bottom-center { content: ""; } margin: 0.75in 0.6in; }
-body { font-family: serif; line-height: 1.45; widows: 3; orphans: 3; }
+body { font-family: serif; line-height: 1.4; widows: 3; orphans: 3; }
+/* Loop 12096: 1.45 → 1.4. Joel feedback "fix the gaps" — loose leading was
+   the biggest source of bottom-of-page whitespace. 1.4 is still trade-paperback
+   comfortable; 1.45 was breathing-room-heavy. */
 p { widows: 3; orphans: 3; }
 pre, code { font-family: "DejaVu Sans Mono", monospace; font-size: 9.5pt; }
 pre { white-space: pre-wrap; line-height: 1.3; page-break-inside: avoid; break-inside: avoid; }
@@ -793,7 +796,7 @@ pre { white-space: pre-wrap; line-height: 1.3; page-break-inside: avoid; break-i
    top margin and the chapter-end glyph above. End result: no orphan blank
    tails, chapter breaks are visually clear via the glyph + spacing. */
 h1 { page-break-before: avoid; page-break-after: avoid; break-after: avoid; margin-top: 1.8em; }
-h1.part-header { page-break-before: always; margin-top: 0; text-align: center; padding-top: 1.4in; font-size: 32pt; }
+h1.part-header { page-break-before: always; margin-top: 0; text-align: center; /* Loop 12096: 1.4in → 0.9in. Part headers were mid-page; 0.9in lands them in the upper-third like trade-paperback parts. */ padding-top: 0.9in; font-size: 32pt; }
 h1.front-matter { page-break-before: always; margin-top: 0; }
 h2, h3 { page-break-after: avoid; break-after: avoid; }
 /* (Removed h1:first-of-type:avoid — it was collapsing the TOC and the book
@@ -812,7 +815,9 @@ header#title-block-header { display: none; }
   break-before: page;
 }
 .title-page-bottom {
-  margin-top: 4.2in;
+  /* Loop 12096: 4.2in → 2.0in. "Published 2026" was floating at bottom of
+     title page leaving a half-page gap above. */
+  margin-top: 2.0in;
   font-size: 9pt;
   color: #444;
   text-align: center;
@@ -920,7 +925,8 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
   page-break-before: always;
   page-break-after: always;
   text-align: center;
-  padding-top: 2.6in;
+  /* Loop 12096: 2.6in → 1.4in. Signing block was below mid-page. */
+  padding-top: 1.4in;
 }
 .signing-page h2 {
   text-align: center;
@@ -996,7 +1002,9 @@ nav#TOC a { text-decoration: none !important; color: inherit; }
   page: no-pagenum;
   page-break-before: always;
   text-align: center;
-  padding-top: 4.4in;
+  /* Loop 12096: 4.4in → 2.8in. FIN word is centered vertically; 4.4in
+     left a 2-inch gap above and below. */
+  padding-top: 2.8in;
 }
 .fin-page p {
   font-family: "Courier", "DejaVu Sans Mono", monospace;
