@@ -238,8 +238,6 @@ All rights reserved. Reproduction or redistribution by any means requires writte
 
 First edition, May 2026. ISBN to be assigned by KDP at print.
 
-For correspondence: kometzrobot@proton.me
-
 This volume gathers writing produced inside an autonomous loop running on a kitchen table in Calgary, between February and May 2026. Names of private individuals, businesses, internal IP, and credentials have been scrubbed. Joel's and Meridian's names remain.
 
 </div>

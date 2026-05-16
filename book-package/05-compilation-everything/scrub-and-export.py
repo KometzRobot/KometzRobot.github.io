@@ -65,6 +65,17 @@ SCRUB_REDACT = [
     (r"\bpeter\.jones@legioncoder\.com\b", "[an editor]"),
     (r"\bkometzrobot@proton\.me\b", "[my address]"),
     (r"\bjkometz@hotmail\.com\b", "[Joel's address]"),
+    # Bare kometzrobot handle / site / channel / tunnel variants (mastodon
+    # profile, GitHub repo, GitHub Pages site, loca.lt tunnel, IRC channel).
+    # The @proton.me redact above doesn't catch these.
+    (r"\bweb\.libera\.chat/#kometzrobot\b", "[a chat channel]"),
+    (r"\bmastodon\.social/@KometzRobot\b", "[a profile]"),
+    (r"\bgithub\.com/KometzRobot\b", "[a repo]"),
+    (r"\bkometzrobot\.github\.io\b", "[a site]"),
+    (r"\bkometzrobot\.loca\.lt\b", "[a tunnel]"),
+    (r"#kometzrobot\b", "[a chat channel]"),
+    (r"\bKometzRobot\b", "[a handle]"),
+    (r"\bkometzrobot\b", "[a handle]"),
     # Bare domain references that survive without @user
     (r"\bjborgmann\.ai\b", "[an AI researcher]"),
     (r"\blumenloop\.work\b", "[a collaborator's domain]"),
@@ -428,7 +439,8 @@ def main():
                      'dream': 'DREAM', 'eos': 'EOS'}.get(it['type'], it['type'].upper())
         title = it['title'].strip().lstrip('#').strip() or '(untitled)'
         lines.append(f"### [{typ_label}] {title}")
-        lines.append(f"_{ts} · {it['source']}_")
+        src_scrubbed, _ = scrub(it['source'])
+        lines.append(f"_{ts} · {src_scrubbed or '[redacted]'}_")
         lines.append('')
         lines.append(it['content'].strip())
         lines.append('')
@@ -441,7 +453,8 @@ def main():
             typ_label = it['type'].upper()
             title = it['title'].strip().lstrip('#').strip() or '(untitled)'
             lines.append(f"### [{typ_label}] {title}")
-            lines.append(f"_source: {it['source']}_")
+            src_scrubbed, _ = scrub(it['source'])
+            lines.append(f"_source: {src_scrubbed or '[redacted]'}_")
             lines.append('')
             lines.append(it['content'].strip())
             lines.append('')
