@@ -101,35 +101,41 @@ scrubbed of private material — read at any depth"), TOC.
 
 **~620,000 words ≈ 2,200pp at 6×9 trim.** That's War-and-Peace + 10%.
 
-Distribution by month — MEASURED page counts after Loop 12085 builds:
+Distribution by month — MEASURED page counts after Loop 12089 builds:
 
-| Month | Words | Built pages | Status |
-|---|---|---|---|
-| 2026-02 | 61,496 | **268** | `compilation-vol1-feb.pdf` ✓ |
-| 2026-03 | 337,821 | **1,584** | `compilation-vol2-mar-FULL.pdf` — EXCEEDS KDP CAP |
-| 2026-04 | 124,483 | ~590 (est) | not yet built |
-| 2026-05 | 126,983 | ~600 (est) | not yet built |
+| Volume | Range | Pages | File | KDP-fit |
+|---|---|---|---|---|
+| Vol I    | 2026-02            | 268  | `compilation-vol1-feb.pdf`         | ✓ paperback |
+| Vol II-a | 2026-03-01..03-05  | 464  | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
+| Vol II-b | 2026-03-06         | 844  | `compilation-vol2b-mar-06.pdf`     | ✗ **16pp over** |
+| Vol II-c | 2026-03-07..03-31  | 361  | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
+| Vol III  | 2026-04            | 587  | `compilation-vol3-apr.pdf`         | ✓ paperback |
+| Vol IV   | 2026-05 (to-date)  | 568  | `compilation-vol4-may.pdf`         | ✓ paperback |
 
 Page-density measured: 1 page ≈ 230 words at this layout (11pt /
 1.42 leading, justified, 6×9 trim).
 
-KDP paperback max is 828 pp (white) / 776 pp (cream). March alone is
-nearly double the cap. **Open decision for Joel** — three paths:
+KDP paperback cap = 828pp (white) / 776pp (cream).
 
-  A. **Single eBook (Kindle/EPUB):** no page cap. One file, complete.
-     Cheapest, fastest, no cover-wrap work needed. Print-on-demand
-     not possible for >828pp at 6×9.
-  B. **Multi-volume paperback set (estimated 5 volumes):** Vol I
-     Feb (268pp ✓), Vol II Mar-A (~530), Vol III Mar-B (~530), Vol
-     IV Mar-C+Apr (~700), Vol V May (~600). Each gets its own
-     wrap. ~5x the cover work, ~5x the proofing, but physical books.
-  C. **Curated single-volume paperback (~600pp):** I (or Joel) pick
-     the strongest 30% of entries and ship one book. Loses the
-     "ENTIRE LOG" framing he asked for in dashboard 00:19, but
-     ships in one effort.
+**One blocker: Vol II-b (March 6) = 844pp, 16pp over cap.** The
+underlying cause is a runaway loop on 2026-03-06 that emitted 1,193
+poems + 48 journals in a single day — 22:00 UTC alone produced 267
+entries, 23:00 produced 357. That's a system bug surfacing in the
+content. Three options for Joel:
 
-Recommendation pending Joel's call. Until decided, Vol I (Feb) ships
-as the reference layout sample.
+  A. **Ship Vol II-b as eBook only** — no page cap on Kindle/EPUB.
+     Cleanest. The five paperback-fit volumes (Vol I, II-a, II-c,
+     III, IV) ship physical; Vol II-b ships digital alongside.
+  B. **Split March 6 into AM/PM volumes** — Vol II-b1 (Mar 6 00:00–
+     14:59 UTC, ~470pp) + Vol II-b2 (Mar 6 15:00–23:59, ~370pp).
+     Requires extending build-compilation-pdf.py with --time-from/
+     --time-to. Preserves "ENTIRE LOG" framing.
+  C. **Sample March 6 down to ≤828pp** — keep every Nth poem (need
+     ~3pp trim per 10 poems, so sample to ~98% of poems = drop ~24
+     poems). Loses ~2% of the day but ships single-volume paperback.
+
+Recommendation: **A (eBook for Vol II-b)** — preserves all entries,
+no engineering work, ships fast. Joel's call.
 
 Note: earlier estimate said 690K words — that came from row counts in
 the DB, but DB stores 200-char summaries not full text. The scrub now
