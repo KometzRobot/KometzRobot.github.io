@@ -29,7 +29,7 @@ ROOT = Path('/home/joel/autonomous-ai')
 PKG = ROOT / 'book-package' / '05-compilation-everything'
 DB = ROOT / 'memory.db'
 DREAM_JOURNAL = ROOT / '.dream-journal.json'
-EOS_MEM = ROOT / 'infrastructure' / 'metadata' / 'eos-memory.json'
+EOS_MEM = ROOT / 'eos-memory.json'
 
 OUT_MD = PKG / 'SOURCE-CHRONOLOGICAL.md'
 OUT_STATS = PKG / 'SOURCE-STATS.json'
@@ -245,34 +245,84 @@ def pull_dreams():
 
 def pull_eos():
     items = []
-    # eos-memory.json learnings
+    seen = set()  # dedupe key: (date, first 80 chars of content)
+    # eos-memory.json learnings + creative_output
     if EOS_MEM.exists():
         try:
             data = json.loads(EOS_MEM.read_text())
             for l in data.get('learnings', []):
                 dt = parse_created(l.get('timestamp', ''))
+                content = l.get('content', '') or l.get('text', '') or ''
+                if not content.strip():
+                    continue
+                key = (dt.date() if dt else None, content[:80])
+                if key in seen:
+                    continue
+                seen.add(key)
                 items.append({'type': 'eos', 'title': 'Eos reflection',
-                              'content': l.get('content', ''),
+                              'content': content,
+                              'created': dt, 'source': 'eos-memory.json'})
+            co = data.get('creative_output', [])
+            co_iter = co if isinstance(co, list) else (co.values() if isinstance(co, dict) else [])
+            for c in co_iter:
+                if not isinstance(c, dict):
+                    continue
+                dt = parse_created(c.get('timestamp', ''))
+                content = c.get('content', '') or c.get('text', '') or ''
+                if not content.strip():
+                    continue
+                key = (dt.date() if dt else None, content[:80])
+                if key in seen:
+                    continue
+                seen.add(key)
+                items.append({'type': 'eos', 'title': c.get('title') or 'Eos creative',
+                              'content': content,
                               'created': dt, 'source': 'eos-memory.json'})
         except Exception as e:
             print(f"eos-memory parse failed: {e}", file=sys.stderr)
-    # Eos creative log + observations (plain text)
-    for fname in ['eos-creative-log.md', 'eos-observations.md']:
-        p = ROOT / fname
-        if p.exists():
-            txt = p.read_text(errors='ignore')
-            # Split on H2 timestamp headers if present, else one block
-            blocks = re.split(r'\n##\s+', '\n' + txt)
-            for blk in blocks:
-                blk = blk.strip()
-                if not blk:
-                    continue
-                # Try to extract ISO date from first line
-                m = re.search(r'(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})', blk[:120])
-                dt = parse_created(m.group(1)) if m else None
-                items.append({'type': 'eos', 'title': 'Eos log entry',
-                              'content': blk, 'created': dt,
-                              'source': fname})
+    # Eos creative log + observations (plain text). The files use H3 markers
+    # like '### [2026-05-03 07:24] Observation' — one entry per H3. Older
+    # snapshot copies live under docs/ and logs/; pull all four to maximize
+    # coverage, dedupe by (date, content-prefix).
+    eos_files = [
+        ROOT / 'eos-creative-log.md',
+        ROOT / 'logs' / 'eos-creative-log.md',
+        ROOT / 'logs' / 'eos-observations.md',
+        ROOT / 'docs' / 'eos-observations.md',
+        ROOT / 'docs' / 'eos-creative-log.md',
+    ]
+    for p in eos_files:
+        if not p.exists():
+            continue
+        txt = p.read_text(errors='ignore')
+        # Split on H3 timestamped headers. Each entry starts with
+        # '### [YYYY-MM-DD HH:MM] <Kind>' on its own line.
+        blocks = re.split(r'(?m)^###\s+', txt)
+        for blk in blocks:
+            blk = blk.strip()
+            if not blk:
+                continue
+            # Skip blocks that are just preamble / not an entry
+            first_line = blk.split('\n', 1)[0]
+            m = re.match(r'\[(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2})?)\]\s+(.+)', first_line)
+            if not m:
+                continue
+            date_s, time_s, kind = m.group(1), m.group(2), m.group(3).strip()
+            if len(time_s) == 5:
+                time_s += ':00'
+            dt = parse_created(f"{date_s} {time_s}")
+            # Body = everything after the header line
+            body = blk.split('\n', 1)[1].strip() if '\n' in blk else ''
+            if not body:
+                continue
+            # Dedupe across files (newer root file overlaps older docs/logs)
+            key = (dt.date() if dt else None, body[:80])
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append({'type': 'eos', 'title': f'Eos {kind.lower()}',
+                          'content': body, 'created': dt,
+                          'source': str(p.relative_to(ROOT))})
     return items
 
 
