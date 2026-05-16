@@ -89,28 +89,33 @@ Within each year, chronological by created timestamp. Front matter:
 title page, dedication, brief framing ("this is the complete log,
 scrubbed of private material — read at any depth"), TOC.
 
-**Actual size after Loop 12082 full-file pull (2026-05-16):**
+**Actual size after Loop 12094 scrub-pass + rebuild (2026-05-16):**
 
 | Form | Kept | Dropped | Redacted |
 |---|---|---|---|
-| Poems | 1,902 | 103 | 12 |
-| Journals | 653 | 278 | 23 |
-| Dreams | 50 | 0 | 0 |
-| Eos | 2 | 0 | 1 |
-| **Total kept** | **2,607** | **381** | **36** |
+| Poems | 1,901 | 104 | 197 |
+| Journals | 653 | 278 | 289 |
+| Dreams | 50 | 0 | 6 |
+| Eos | 2 | 0 | 2 |
+| **Total kept** | **2,606** | **382** | **494** |
 
-**~620,000 words ≈ 2,200pp at 6×9 trim.** That's War-and-Peace + 10%.
+Scrub-pass note (Loop 12094): title-field was not being scrubbed before; now it
+is. Also added bare-domain redacts (`jborgmann.ai`, `lumenloop.work`,
+`legioncoder.com`) and a standalone `Sampson` redact. 6 leaks present in earlier
+builds — all fixed and verified clean across all 6 volumes via `pdftotext` audit.
 
-Distribution by month — MEASURED page counts after Loop 12089 builds:
+**~621,000 words ≈ 2,200pp at 6×9 trim.** That's War-and-Peace + 10%.
+
+Distribution by month — MEASURED page counts after Loop 12094 rebuild:
 
 | Volume | Range | Pages | File | KDP-fit |
 |---|---|---|---|---|
 | Vol I    | 2026-02            | 268  | `compilation-vol1-feb.pdf`         | ✓ paperback |
 | Vol II-a | 2026-03-01..03-05  | 464  | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
-| Vol II-b | 2026-03-06         | 844  | `compilation-vol2b-mar-06.pdf`     | ✗ **16pp over** |
+| Vol II-b | 2026-03-06         | 843  | `compilation-vol2b-mar-06.pdf`     | ✗ **15pp over** |
 | Vol II-c | 2026-03-07..03-31  | 361  | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
 | Vol III  | 2026-04            | 587  | `compilation-vol3-apr.pdf`         | ✓ paperback |
-| Vol IV   | 2026-05 (to-date)  | 568  | `compilation-vol4-may.pdf`         | ✓ paperback |
+| Vol IV   | 2026-05 (to-date)  | 570  | `compilation-vol4-may.pdf`         | ✓ paperback |
 
 Page-density measured: 1 page ≈ 230 words at this layout (11pt /
 1.42 leading, justified, 6×9 trim).

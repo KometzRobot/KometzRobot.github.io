@@ -65,6 +65,10 @@ SCRUB_REDACT = [
     (r"\bpeter\.jones@legioncoder\.com\b", "[an editor]"),
     (r"\bkometzrobot@proton\.me\b", "[my address]"),
     (r"\bjkometz@hotmail\.com\b", "[Joel's address]"),
+    # Bare domain references that survive without @user
+    (r"\bjborgmann\.ai\b", "[an AI researcher]"),
+    (r"\blumenloop\.work\b", "[a collaborator's domain]"),
+    (r"\blegioncoder\.com\b", "[an editor's domain]"),
     # Generic email pattern catch-all (after specifics) — preserve domain
     # privacy without nuking words that contain "@".
     (r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b", "[email redacted]"),
@@ -84,6 +88,7 @@ SCRUB_REDACT = [
     (r"\bLoom\b", "[a peer]"),
     (r"\bLumen\b", "[a collaborator]"),
     (r"\bAel\b", "[a researcher]"),
+    (r"\bSampson\b", "[a sub-agent]"),
     (r"\bFriday\b(?!\s+(?:morning|afternoon|evening|night|the|at))", "[a peer]"),
     (r"\bIsotopy\b", "[a centaurXiv co-author]"),
     (r"\bZ[_ ]?Cat\b", "[a centaurXiv co-author]"),
@@ -289,12 +294,20 @@ def main():
         items = source_fn()
         for it in items:
             stats['pulled'][it['type']] += 1
+            # Scrub content first — drop on hit overrides everything
             scrubbed, hits = scrub(it['content'])
             if scrubbed is None:
                 stats['dropped'][it['type']] += 1
                 continue
+            # Also scrub title — drop the row if title hits a drop pattern,
+            # otherwise apply inline redaction to title as well.
+            title_scrubbed, title_hits = scrub(it.get('title', ''))
+            if title_scrubbed is None:
+                stats['dropped'][it['type']] += 1
+                continue
             it['content'] = scrubbed
-            if hits:
+            it['title'] = title_scrubbed
+            if hits or title_hits:
                 stats['redacted'][it['type']] += 1
             if it['created'] is None:
                 stats['no_date'][it['type']] += 1
