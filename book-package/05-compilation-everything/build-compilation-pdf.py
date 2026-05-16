@@ -34,7 +34,7 @@ header#title-block-header { display: none; }
 body {
   font-family: "DejaVu Serif", serif;
   font-size: 10.5pt;
-  line-height: 1.42;
+  line-height: 1.36;
   text-align: justify;
   hyphens: auto;
   color: #111;
@@ -42,7 +42,7 @@ body {
 h1 {
   font-size: 22pt;
   text-align: center;
-  margin-top: 2.2in;
+  margin-top: 1.6in;
   page-break-before: always;
   page-break-after: avoid;
   font-weight: bold;
@@ -50,16 +50,16 @@ h1 {
 h2 {
   font-size: 16pt;
   text-align: center;
-  margin-top: 2em;
-  margin-bottom: 1.2em;
+  margin-top: 1.2em;
+  margin-bottom: 0.9em;
   font-weight: bold;
   letter-spacing: 0.15em;
   page-break-before: always;
 }
 h3 {
   font-size: 12pt;
-  margin-top: 1.2em;
-  margin-bottom: 0.15em;
+  margin-top: 0.7em;
+  margin-bottom: 0.1em;
   font-weight: bold;
   page-break-after: avoid;
 }
@@ -116,7 +116,7 @@ pre {
 .title-page {
   text-align: center;
   page-break-after: always;
-  padding-top: 2.0in;
+  padding-top: 1.3in;
 }
 .title-page h1 {
   font-size: 26pt;
@@ -149,7 +149,7 @@ pre {
   page-break-after: always;
   font-size: 9.5pt;
   color: #333;
-  padding-top: 4.5in;
+  padding-top: 2.4in;
   text-align: left;
 }
 .copyright-page p {

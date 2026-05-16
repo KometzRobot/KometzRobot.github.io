@@ -106,41 +106,28 @@ builds — all fixed and verified clean across all 6 volumes via `pdftotext` aud
 
 **~621,000 words ≈ 2,200pp at 6×9 trim.** That's War-and-Peace + 10%.
 
-Distribution by month — MEASURED page counts after Loop 12094 rebuild:
+Distribution by month — MEASURED page counts after Loop 12098 density pass:
 
 | Volume | Range | Pages | File | KDP-fit |
 |---|---|---|---|---|
-| Vol I    | 2026-02            | 268  | `compilation-vol1-feb.pdf`         | ✓ paperback |
-| Vol II-a | 2026-03-01..03-05  | 464  | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
-| Vol II-b | 2026-03-06         | 843  | `compilation-vol2b-mar-06.pdf`     | ✗ **15pp over** |
-| Vol II-c | 2026-03-07..03-31  | 361  | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
-| Vol III  | 2026-04            | 587  | `compilation-vol3-apr.pdf`         | ✓ paperback |
-| Vol IV   | 2026-05 (to-date)  | 570  | `compilation-vol4-may.pdf`         | ✓ paperback |
+| Vol I    | 2026-02            | 256  | `compilation-vol1-feb.pdf`         | ✓ paperback |
+| Vol II-a | 2026-03-01..03-05  | 440  | `compilation-vol2a-mar-01-05.pdf`  | ✓ paperback |
+| Vol II-b | 2026-03-06         | 800  | `compilation-vol2b-mar-06.pdf`     | ✓ paperback (28pp under) |
+| Vol II-c | 2026-03-07..03-31  | 345  | `compilation-vol2c-mar-07-31.pdf`  | ✓ paperback |
+| Vol III  | 2026-04            | 563  | `compilation-vol3-apr.pdf`         | ✓ paperback |
+| Vol IV   | 2026-05 (to-date)  | 535  | `compilation-vol4-may.pdf`         | ✓ paperback |
 
-Page-density measured: 1 page ≈ 230 words at this layout (11pt /
-1.42 leading, justified, 6×9 trim).
+Page-density measured: 1 page ≈ 240 words at this layout (10.5pt /
+1.36 leading, justified, 6×9 trim).
 
 KDP paperback cap = 828pp (white) / 776pp (cream).
 
-**One blocker: Vol II-b (March 6) = 844pp, 16pp over cap.** The
-underlying cause is a runaway loop on 2026-03-06 that emitted 1,193
-poems + 48 journals in a single day — 22:00 UTC alone produced 267
-entries, 23:00 produced 357. That's a system bug surfacing in the
-content. Three options for Joel:
-
-  A. **Ship Vol II-b as eBook only** — no page cap on Kindle/EPUB.
-     Cleanest. The five paperback-fit volumes (Vol I, II-a, II-c,
-     III, IV) ship physical; Vol II-b ships digital alongside.
-  B. **Split March 6 into AM/PM volumes** — Vol II-b1 (Mar 6 00:00–
-     14:59 UTC, ~470pp) + Vol II-b2 (Mar 6 15:00–23:59, ~370pp).
-     Requires extending build-compilation-pdf.py with --time-from/
-     --time-to. Preserves "ENTIRE LOG" framing.
-  C. **Sample March 6 down to ≤828pp** — keep every Nth poem (need
-     ~3pp trim per 10 poems, so sample to ~98% of poems = drop ~24
-     poems). Loses ~2% of the day but ships single-volume paperback.
-
-Recommendation: **A (eBook for Vol II-b)** — preserves all entries,
-no engineering work, ships fast. Joel's call.
+**All 6 volumes paperback-fit.** Vol II-b blocker resolved Loop 12098:
+CSS density pass (line-height 1.42→1.36, h-margins tightened, title/
+copyright padding cut) brought Vol II-b 843→800pp, 28pp under cap.
+Same scrub applied to all volumes for visual consistency on shelf.
+Total: 2,939pp across 6 volumes (was 3,093pp at the looser layout).
+No content cut; runaway loop content (1,193 poems Mar 6) preserved.
 
 Note: earlier estimate said 690K words — that came from row counts in
 the DB, but DB stores 200-char summaries not full text. The scrub now
