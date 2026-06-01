@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cinder — A pocket AI that grows with you</title>
-<meta name="description" content="Cinder is a USB stick with a private AI on it. Plug it in, talk to it, and it remembers. No accounts. No cloud. 12 hand-numbered editions.">
+<meta name="description" content="Cinder is a USB stick with a private AI on it. Plug it in, talk to it, and it remembers. No accounts. No cloud. 12 hand-numbered editions, 8 still available.">
 <style>
   :root{
     --bg:#fbf7f1;
@@ -563,19 +563,44 @@
   </div>
 </header>
 
+<script>
+/* ─────────────────────────────────────────────────────────────
+   SALES CHECKOUT — paste your payment links here to start selling.
+   Works with any hosted checkout: Stripe Payment Links, Shopify buy
+   links, Gumroad, Ko-fi shop, Square, etc. Leave a value blank and
+   that button falls back to an email order automatically.
+   Example:
+     window.CINDER_CHECKOUT = {
+       beta: "https://buy.stripe.com/your_beta_link",
+       plus: "https://buy.stripe.com/your_plus_link"
+     };
+   ───────────────────────────────────────────────────────────── */
+window.CINDER_CHECKOUT = {
+  beta: "",   /* $89 Beta  — paste checkout URL to go live */
+  plus: ""    /* $149 Beta+ — paste checkout URL to go live */
+};
+document.addEventListener("click", function(e){
+  var a = e.target.closest && e.target.closest("[data-buy]");
+  if(!a) return;
+  var url = (window.CINDER_CHECKOUT || {})[a.getAttribute("data-buy")];
+  if(url){ e.preventDefault(); window.open(url, "_blank", "noopener"); }
+  /* no URL set -> the mailto href proceeds as a fallback */
+});
+</script>
+
 <!-- BRAND BANNER — logo + tagline, focal -->
 <section class="brand-banner">
   <div class="wrap">
     <div class="wordmark"><span class="em"></span><span>CINDER</span></div>
     <div class="tag">A pocket AI that <em>grows</em> with you.</div>
-    <div class="sub"><b>● </b>Beta 0 · 12 hand-numbered editions · hand-made by a small studio</div>
+    <div class="sub"><b>● </b>Beta 0 · 12 hand-numbered editions · 001–004 ready, 005–012 next batch · 8 still available</div>
   </div>
 </section>
 
 <section class="hero">
   <div class="wrap hero-grid">
     <div>
-      <div class="stock"><span class="stock-dot"></span> Beta 0 · 12 hand-numbered editions</div>
+      <div class="stock"><span class="stock-dot"></span> Beta 0 · 8 of 12 still available · 001–004 ready</div>
       <h1>Plug it in.<br>Talk to it.<br>It <em>remembers</em>.</h1>
       <p class="lede">A USB stick with a private AI on it. Across days, machines, conversations — the longer you use it, the more it knows you. Nothing leaves the stick.</p>
 
@@ -587,7 +612,7 @@
 
         <div class="tier-card active" data-tier="beta">
           <div class="tier-head"><h3>Cinder · Beta</h3><div class="tier-price">$89<small>CAD</small></div></div>
-          <div class="tier-cap">Beta 0 · numbered 001–012 · same stick for every buyer</div>
+          <div class="tier-cap">Beta 0 · numbered 001–012 · 001–004 ready, 005–012 next batch · same stick for every buyer</div>
           <ul class="tier-list">
             <li>64 GB hand-flashed Cinder USB — numbered, stamped, signed</li>
             <li>The whole Cinder app — chat, journal, achievements, vault</li>
@@ -595,7 +620,7 @@
             <li>The full seed library, identical on every stick</li>
             <li>Handwritten note, kraft-paper quick-start card, linen-tied package</li>
           </ul>
-          <a href="mailto:kometzrobot@proton.me?subject=Cinder%20Beta%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0APreferred%20stick%20number%20(if%20any)%3A%0AAnything%20you%20want%20me%20to%20know%3A" class="btn btn-primary">Order Beta — $89 CAD</a>
+          <a href="mailto:jkometz@hotmail.com?subject=Cinder%20Beta%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0APreferred%20stick%20number%20(if%20any)%3A%0AAnything%20you%20want%20me%20to%20know%3A" data-buy="beta" class="btn btn-primary">Order Beta — $89 CAD</a>
           <div style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:.04em">All sticks ship with the Beta Tester agreement — see below</div>
         </div>
 
@@ -609,7 +634,7 @@
             <li>Custom case or box upgrade (kraft, leather, fabric — your pick)</li>
             <li>Same beta status, same agreement, same survey cadence</li>
           </ul>
-          <a href="mailto:kometzrobot@proton.me?subject=Cinder%20Beta%2B%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0AWhich%20theme%20do%20you%20want%3F%0AWhich%20brain%20pack%3F%20(writing%20%2F%20drawing%20%2F%20code%20%2F%20research)%0AWhich%20case%3F%20(kraft%20%2F%20leather%20%2F%20fabric)%0A" class="btn btn-primary">Order Beta+ — $149 CAD</a>
+          <a href="mailto:jkometz@hotmail.com?subject=Cinder%20Beta%2B%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0AWhich%20theme%20do%20you%20want%3F%0AWhich%20brain%20pack%3F%20(writing%20%2F%20drawing%20%2F%20code%20%2F%20research)%0AWhich%20case%3F%20(kraft%20%2F%20leather%20%2F%20fabric)%0A" data-buy="plus" class="btn btn-primary">Order Beta+ — $149 CAD</a>
           <div style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:.04em">Same beta sticker, same agreement — just dressed up</div>
         </div>
       </div>
@@ -676,13 +701,13 @@
     <div class="section-head">
       <div class="eyebrow">Watch it grow</div>
       <h2>It starts as a spark. It becomes a companion.</h2>
-      <p>Cinder doesn't just answer questions — it remembers them. Every chat earns experience. Stages unlock. The AI on stick #007 today is different from the AI on stick #007 a month from now.</p>
+      <p>Cinder doesn't just answer questions — it remembers them. Every chat earns Embers. Stages unlock. The AI on stick #007 today is different from the AI on stick #007 a month from now.</p>
     </div>
 
     <div class="xp-panel">
       <div class="xp-stage">
         <div class="xp-stage-name">● Ember Stage</div>
-        <div class="xp-stage-num">847 / 1000 XP</div>
+        <div class="xp-stage-num">847 / 1000 Embers</div>
       </div>
       <div class="xp-bar"><div class="xp-fill"></div></div>
       <div class="xp-numbers">
@@ -807,7 +832,7 @@
         <h3>The whole arc is seven of these.</h3>
         <p><span class="evo-tag">SPARK → EMBER → FLAME → FIRE → BLAZE → BONFIRE → INFERNO</span></p>
         <p>Each evolution is hand-drawn — no off-the-shelf splash screen. Cinder pauses what it's doing, plays the cutscene, drops a new badge into your trophy case, and writes a paragraph in your journal about what changed and why.</p>
-        <p class="evo-fine">The animation above is a real 12-second sequence — the same one your stick will play the first time it crosses 1,000 XP. Replays from your archive any time you want to see it again.</p>
+        <p class="evo-fine">The animation above is a real 12-second sequence — the same one your stick will play the first time it crosses 1,000 Embers. Replays from your archive any time you want to see it again.</p>
         <p style="margin-top:18px"><a href="cinder-creatures.html" style="color:#b14b1f;font-weight:700;text-decoration:underline;text-underline-offset:3px">Play the prototype →</a> &nbsp;<span style="color:#5a5448;font-size:13px">(v0.1 — pocket-style creature collector. Walk, encounter, capture. Final boss is Cinder itself.)</span></p>
       </div>
     </div>
@@ -833,7 +858,7 @@
           <div class="item">Achievements (47/250)</div>
           <div class="item">Cinder's Picks</div>
           <div class="grp">Status</div>
-          <div class="lvl"><span class="em"></span> Ember · 847 XP</div>
+          <div class="lvl"><span class="em"></span> Ember · 847 Embers</div>
         </div>
         <div class="ui-main">
           <div class="msg user">Pick up where we left off on the Tuesday painting?</div>
@@ -847,8 +872,82 @@
     <div class="uimock-text">
       <div class="eyebrow">The app</div>
       <h2>It looks like a desk lamp turned on.</h2>
-      <p>Warm theme. Kraft paper background. Typewriter accents. A side panel for chats, a journal, and a trophy case. Tuned to be cozy, not corporate.</p>
+      <p>Warm theme. Kraft paper background. Typewriter accents. Seven tabs down the side — Home, Chat, Memory, Journal, Dreams, Achievements, Skills. Tuned to be cozy, not corporate.</p>
       <p>Your conversations are saved on the stick. Pull the USB, the chat is gone from the host. Plug it back in — it's all there.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SEVEN TABS — full enumeration of the dashboard -->
+<section class="seven-tabs" style="padding:64px 0;background:var(--bg);border-top:1px solid var(--rule)">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Inside the dashboard</div>
+      <h2>Seven tabs. Each one does its own job.</h2>
+      <p>Cinder opens to Home and stays there until you click somewhere else. Nothing is buried in a menu — every workspace is a single hop from the sidebar.</p>
+    </div>
+    <div class="tabs-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:1080px;margin:0 auto">
+      <div class="tab-card" style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 22px;box-shadow:var(--shadow)">
+        <div class="gami-eyebrow" style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Tab 1 · Ctrl+H</div>
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:800">Home</h3>
+        <p style="margin:0;color:var(--ink);font-size:14px;line-height:1.55">Identity, currencies (Embers / Sparks / Coals), today's quests with one-click claim, hearth missions, vault status, achievement progress, skill summary, the Cindermon World map, your Bond meter, sealed Time Capsules — the whole dashboard at a glance.</p>
+      </div>
+      <div class="tab-card" style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 22px;box-shadow:var(--shadow)">
+        <div class="gami-eyebrow" style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Tab 2 · Ctrl+1</div>
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:800">Chat</h3>
+        <p style="margin:0;color:var(--ink);font-size:14px;line-height:1.55">Talk to Cinder. Every message earns Embers, may complete a quest, may seed a dream tonight. The thing you'll spend most of your time inside.</p>
+      </div>
+      <div class="tab-card" style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 22px;box-shadow:var(--shadow)">
+        <div class="gami-eyebrow" style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Tab 3</div>
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:800">Memory</h3>
+        <p style="margin:0;color:var(--ink);font-size:14px;line-height:1.55">Profile, memory list, mind-map visualization. The shape of what Cinder knows about you — visible, editable, never hidden.</p>
+      </div>
+      <div class="tab-card" style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 22px;box-shadow:var(--shadow)">
+        <div class="gami-eyebrow" style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Tab 4</div>
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:800">Journal</h3>
+        <p style="margin:0;color:var(--ink);font-size:14px;line-height:1.55">Cinder writes one entry a day on its own. A quiet diary about what you talked about, what mattered, what stuck.</p>
+      </div>
+      <div class="tab-card" style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 22px;box-shadow:var(--shadow)">
+        <div class="gami-eyebrow" style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Tab 5</div>
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:800">Dreams</h3>
+        <p style="margin:0;color:var(--ink);font-size:14px;line-height:1.55">Connections Cinder finds between memories overnight. Open it in the morning and see what the stick made of yesterday.</p>
+      </div>
+      <div class="tab-card" style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 22px;box-shadow:var(--shadow)">
+        <div class="gami-eyebrow" style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Tab 6</div>
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:800">Achievements</h3>
+        <p style="margin:0;color:var(--ink);font-size:14px;line-height:1.55">250 unlockables, gold when earned, faded when locked. The trophy case for the things you and Cinder do together.</p>
+      </div>
+      <div class="tab-card" style="background:#fff;border:1px solid var(--rule);border-radius:10px;padding:20px 22px;box-shadow:var(--shadow);grid-column:span 3">
+        <div class="gami-eyebrow" style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Tab 7</div>
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:800">Skills</h3>
+        <p style="margin:0;color:var(--ink);font-size:14px;line-height:1.55">25-node tree across 5 branches. Spend Sparks here to lean Cinder toward Scholar, Companion, Tinkerer, Artist — or balance across all of them.</p>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:12.5px;margin-top:24px;font-family:'Courier New',monospace;letter-spacing:.06em">Keyboard shortcuts inside Cinder · Ctrl+H Home · Ctrl+1 Chat · Ctrl+G Cindermon · Ctrl+B Bug report</p>
+  </div>
+</section>
+
+<style>
+  @media (max-width:880px){.seven-tabs .tabs-grid{grid-template-columns:repeat(2,1fr) !important}.seven-tabs .tab-card[style*="grid-column:span 3"]{grid-column:span 2 !important}}
+  @media (max-width:560px){.seven-tabs .tabs-grid{grid-template-columns:1fr !important}.seven-tabs .tab-card[style*="grid-column:span 3"]{grid-column:span 1 !important}}
+</style>
+
+<!-- CINDERMON — the creature-collector built into Cinder -->
+<section class="cindermon" id="cindermon" style="padding:72px 0;background:var(--paper);border-top:1px solid var(--rule)">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Bundled in the beta · press Ctrl+G</div>
+      <h2>There's a whole creature-collector inside.</h2>
+      <p>Cindermon is a full creature-collector RPG built right into Cinder — opened from the dashboard or with Ctrl+G. Walk three zones, wake creatures in the tall grass, weaken and catch them, build a team, and take on five gyms. The final boss is Cinder itself.</p>
+    </div>
+    <div style="max-width:880px;margin:0 auto;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:28px 32px;box-shadow:var(--shadow)">
+      <ul class="gami-list" style="font-size:14px;line-height:1.65">
+        <li><strong>A real RPG, not a demo</strong> — turn-based battles, a starter you choose that shapes your stats, type match-ups, five gyms with badges, and a 56-creature catch list across three zones.</li>
+        <li><strong>It grows your AI</strong> — every catch, won battle, and cleared zone feeds Cinder real XP, progresses your daily quests, and unlocks new worlds on the dashboard's World map. Playing the game levels up your companion.</li>
+        <li><strong>Saves live on the stick</strong> — pull the USB and your run goes with you. Plug into another machine and pick up mid-zone.</li>
+        <li><strong>Wired into the dashboard</strong> — caught creatures and milestones flow back into your Codex and Achievements. The game and the companion are one world.</li>
+        <li><strong>Included with every stick</strong> — no DLC, no separate download. Open the dashboard, hit the Cindermon button or Ctrl+G, you're in.</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -857,8 +956,8 @@
   <div class="wrap">
     <div class="section-head">
       <div class="eyebrow">Honest note · Cinder v1.0 (beta)</div>
-      <h2>The branded UI you see above is the target — not yet final on every screen.</h2>
-      <p>The sidebar — XP bar, Quest panel, Hearth, Pulse meter, Info card — ships in the warm/kraft theme as of the May 14 build. The chat surface, settings pages, and onboarding flow still wear the underlying framework's defaults while we re-skin them. We won't ship marketing screenshots that pretend otherwise — when the full re-skin lands, we'll re-shoot and update this section. The build that ships in the box is honest about which screens are themed and which aren't yet.</p>
+      <h2>The whole dashboard ships in the warm ember theme.</h2>
+      <p>Home, Chat, Memory, Journal, Dreams, Achievements, Skills, the World map, Bond, Time Capsules, and Cindermon all ship in the kraft/ember theme you see here — animated, consistent, and themed end to end. A handful of deep settings pages still wear the underlying framework's defaults; those are the last on the re-skin list. The build in the box is honest about which screens are fully finished.</p>
     </div>
   </div>
 </section>
@@ -887,30 +986,29 @@
         <div class="gami-card">
           <div class="gami-eyebrow">Levels &amp; Stages</div>
           <h3>How it grows up</h3>
-          <p>Every chat earns experience. Levels stack inside seven named Stages. When you finish a Stage, Cinder shows a hand-drawn evolution animation — kraft paper unfolds, an ember catches, the new Stage badge inks itself onto the page. The whole arc from Spark to Inferno is a year of real use.</p>
+          <p>Every chat earns Embers. Levels stack inside seven named Stages. When you finish a Stage, Cinder shows a hand-drawn evolution animation — kraft paper unfolds, an ember catches, the new Stage badge inks itself onto the page. The whole arc from Spark to Inferno is a year of real use.</p>
           <ul class="gami-list">
             <li>7 Stages, each with 3–6 levels inside</li>
-            <li>XP earned for chats, journal entries, vault use, daily check-ins</li>
+            <li>Embers earned for chats, journal entries, vault use, daily check-ins</li>
             <li>Stage-up animation plays once, then lives in your archive</li>
           </ul>
         </div>
 
         <div class="gami-card">
-          <div class="gami-eyebrow">Trophy points (Cinder Marks)</div>
-          <h3>A separate currency you spend</h3>
-          <p>Achievements pay out a second currency — Cinder Marks — that you claim by tapping the trophy when you earn it. Marks are not XP. You spend them on things you actually like.</p>
+          <div class="gami-eyebrow">Embers · Sparks · Coals</div>
+          <h3>Three currencies, one economy</h3>
+          <p>Cinder runs on three different things you earn. They don't compete with each other — each one buys a different layer of the experience.</p>
           <ul class="gami-list">
-            <li>Cosmetic themes (autumn, dusk, paperback, ink-and-coffee)</li>
-            <li>Soundscapes (campfire, rain, jazz café, library hush)</li>
-            <li>Mini-games and side-tasks inside the app</li>
-            <li>Skill-tree points (more on that below)</li>
+            <li><strong>Embers</strong> — the chat currency. Every message you send earns some. Spend them on cosmetics, soundscapes, and the little side-jobs in the app.</li>
+            <li><strong>Sparks</strong> — the skill points. You earn one Spark every time you level up, and you spend them on the Skill Tree below.</li>
+            <li><strong>Coals</strong> — the prestige currency. They carry across prestige cycles, so a year-old stick that's been through a reset is wealthier than a fresh one.</li>
           </ul>
         </div>
 
         <div class="gami-card">
           <div class="gami-eyebrow">Skill tree</div>
           <h3>Cinder picks a personality with you</h3>
-          <p>Spend a few Marks and Cinder leans further into who you want it to be. The skill tree has four branches; nothing locks the others out, you just shape the leanings.</p>
+          <p>Spend a few Sparks and Cinder leans further into who you want it to be. The skill tree has four branches; nothing locks the others out, you just shape the leanings.</p>
           <ul class="gami-list">
             <li><strong>Scholar</strong> — sharper recall, citation habits, longer answers</li>
             <li><strong>Companion</strong> — warmer tone, asks better follow-ups, better at journaling with you</li>
@@ -922,7 +1020,7 @@
         <div class="gami-card">
           <div class="gami-eyebrow">Side jobs</div>
           <h3>Daily small tasks (you can ignore them)</h3>
-          <p>Cinder offers a few small jobs each day — a journal prompt, a streak check, a memory-refresh task, a "want me to summarize last week?" nudge. You can ignore them all and keep chatting; if you do them, you earn Marks faster and the journal gets richer.</p>
+          <p>Cinder offers a few small jobs each day — a journal prompt, a streak check, a memory-refresh task, a "want me to summarize last week?" nudge. You can ignore them all and keep chatting; if you do them, you earn Embers faster and the journal gets richer.</p>
           <ul class="gami-list">
             <li>Streak rewards stack quietly — small celebrations, not screams</li>
             <li>Side-quests unlock seasonally and from your own habits</li>
@@ -935,7 +1033,7 @@
       <div class="skilltree-wrap">
         <div class="skilltree-head">
           <div class="gami-eyebrow" style="text-align:center">The skill tree, mapped</div>
-          <h3 style="text-align:center;font-size:24px;margin:6px 0 24px">Spend Cinder Marks. Lean it toward who you want it to be.</h3>
+          <h3 style="text-align:center;font-size:24px;margin:6px 0 24px">Spend Sparks. Lean it toward who you want it to be.</h3>
         </div>
         <div class="skilltree-svg-wrap">
           <svg class="skilltree" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Cinder skill tree — four branches radiating from a hub: Scholar, Tinkerer, Companion, Artist">
@@ -971,7 +1069,7 @@
             <!-- HUB node (center) -->
             <circle cx="500" cy="360" r="58" fill="url(#hubGrad)" stroke="#1c1a17" stroke-width="3" filter="url(#glow)"/>
             <text x="500" y="354" text-anchor="middle" font-family="Courier New, monospace" font-size="14" font-weight="800" fill="#fbf7f1" letter-spacing="2">CINDER</text>
-            <text x="500" y="372" text-anchor="middle" font-family="Courier New, monospace" font-size="11" fill="#fbe4a3" letter-spacing="1">MARK HUB</text>
+            <text x="500" y="372" text-anchor="middle" font-family="Courier New, monospace" font-size="11" fill="#fbe4a3" letter-spacing="1">SPARK HUB</text>
 
             <!-- branch labels -->
             <text x="500" y="42" text-anchor="middle" font-family="Helvetica Neue, sans-serif" font-size="22" font-weight="800" fill="#1c1a17" letter-spacing="-.5">SCHOLAR</text>
@@ -1027,9 +1125,9 @@
               <rect x="0" y="0" width="170" height="78" fill="#fff" stroke="#e6dccc" stroke-width="1" rx="6"/>
               <text x="10" y="18" font-weight="800" letter-spacing="1">LEGEND</text>
               <circle cx="18" cy="36" r="6" fill="#fff" stroke="#b14b1f" stroke-width="2"/>
-              <text x="32" y="40">node — 1 or 3 marks</text>
+              <text x="32" y="40">node — 1 or 3 sparks</text>
               <circle cx="18" cy="58" r="7" fill="#fff7e1" stroke="#c98a2b" stroke-width="2"/>
-              <text x="32" y="62">capstone — 7 marks</text>
+              <text x="32" y="62">capstone — 7 sparks</text>
             </g>
           </svg>
         </div>
@@ -1104,7 +1202,7 @@
           <li>Quick Start (5 minutes, plug-and-go)</li>
           <li>Vault Recovery (and what we can't recover)</li>
           <li>Etiquette &amp; Safety primer</li>
-          <li>Backup &amp; Export your XP/journal</li>
+          <li>Backup &amp; Export your Embers/Sparks/journal</li>
           <li>Stages of Growth (Spark → Inferno)</li>
           <li>Companion Journal — how it writes, how to read it</li>
           <li>Achievements Guide</li>
@@ -1198,7 +1296,7 @@
       </details>
       <details>
         <summary>What does "grows with you" mean?</summary>
-        <p>Cinder remembers. Every chat builds up a profile of what you care about, your projects, your style. Every chat earns XP. Stages unlock. After a year, the AI on your stick is genuinely tuned to you — and that's portable, not locked to a service.</p>
+        <p>Cinder remembers. Every chat builds up a profile of what you care about, your projects, your style. Every chat earns Embers. Stages unlock. After a year, the AI on your stick is genuinely tuned to you — and that's portable, not locked to a service.</p>
       </details>
       <details>
         <summary>Why only 12?</summary>
@@ -1206,7 +1304,7 @@
       </details>
       <details>
         <summary>What if I break the stick?</summary>
-        <p>Pop the encrypted vault file off and back up your XP profile + journal anywhere — Cinder includes a one-click export for exactly this. Drop it back into a fresh stick later. The export is for safety, not for sharing.</p>
+        <p>Pop the encrypted vault file off and back up your Embers, Sparks, Coals + journal anywhere — Cinder includes a one-click export for exactly this. Drop it back into a fresh stick later. The export is for safety, not for sharing.</p>
       </details>
       <details>
         <summary>Returns &amp; warranty?</summary>
@@ -1223,7 +1321,7 @@
       </details>
       <details>
         <summary>Can I plug it into more than one computer?</summary>
-        <p>Yes. The whole point — your AI travels with the stick. Plug it into your laptop today, your studio desktop tomorrow, a friend's machine on the weekend. Same memory, same vault, same XP. As long as the OS is supported, it just works.</p>
+        <p>Yes. The whole point — your AI travels with the stick. Plug it into your laptop today, your studio desktop tomorrow, a friend's machine on the weekend. Same memory, same vault, same Embers. As long as the OS is supported, it just works.</p>
       </details>
       <details>
         <summary>What's a "brain pack"?</summary>
@@ -1254,7 +1352,7 @@
     <h2>12 editions. Hand-flashed. Hand-stamped. Hand-shipped.</h2>
     <p>Beta 0 ships now — two tiers, twelve sticks, real testers wanted. Beta $89, Beta+ $149. Watch it grow.</p>
     <a href="#buy" class="btn btn-primary">See the tiers</a>
-    <div class="ed-line">001–004 · ready · &nbsp;&nbsp;005–012 · next batch · email to reserve · &nbsp;&nbsp;all sticks ship with the beta agreement</div>
+    <div class="ed-line">001–004 · ready · &nbsp;&nbsp;005–012 · next batch · &nbsp;&nbsp;8 of 12 still available · email to reserve · &nbsp;&nbsp;all sticks ship with the beta agreement</div>
   </div>
 </section>
 
@@ -1266,7 +1364,7 @@
         <div class="eyebrow">Talk to the studio</div>
         <h3 style="font-size:26px;font-weight:800;margin:6px 0 14px;line-height:1.2">Got a question? A weird idea? A bug to report?</h3>
         <p style="color:var(--muted);font-size:15px;margin:0 0 18px">A real person reads every email. Usually a reply within 24–48 hours. No autoresponders, no "we received your ticket" — just a note back.</p>
-        <form action="mailto:kometzrobot@proton.me" method="post" enctype="text/plain" style="display:flex;flex-direction:column;gap:10px">
+        <form action="mailto:jkometz@hotmail.com" method="post" enctype="text/plain" style="display:flex;flex-direction:column;gap:10px">
           <input type="text" name="Name" placeholder="Your name" required style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
           <input type="email" name="Email" placeholder="Your email" required style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
           <select name="Topic" style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
@@ -1279,13 +1377,13 @@
           <textarea name="Message" placeholder="What's on your mind?" required rows="4" style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff;resize:vertical"></textarea>
           <button type="submit" class="btn btn-primary" style="align-self:flex-start;padding:14px 22px">Send message</button>
         </form>
-        <p style="font-size:11.5px;color:var(--muted);margin-top:10px;font-family:'Courier New',monospace">Opens a pre-filled email — sent direct to <a href="mailto:kometzrobot@proton.me" style="color:var(--accent)">kometzrobot@proton.me</a></p>
+        <p style="font-size:11.5px;color:var(--muted);margin-top:10px;font-family:'Courier New',monospace">Opens a pre-filled email — sent direct to <a href="mailto:jkometz@hotmail.com" style="color:var(--accent)">jkometz@hotmail.com</a></p>
       </div>
       <div>
         <div class="eyebrow">The newsletter</div>
         <h3 style="font-size:26px;font-weight:800;margin:6px 0 14px;line-height:1.2">Get a quiet update once a month.</h3>
         <p style="color:var(--muted);font-size:15px;margin:0 0 18px">What changed in Cinder. What the studio is making. What's next on the production schedule. One email a month, max. Easy unsubscribe. Never sold.</p>
-        <form action="mailto:kometzrobot@proton.me" method="post" enctype="text/plain" style="display:flex;gap:8px;flex-wrap:wrap">
+        <form action="mailto:jkometz@hotmail.com" method="post" enctype="text/plain" style="display:flex;gap:8px;flex-wrap:wrap">
           <input type="hidden" name="subject" value="Subscribe me to the Cinder newsletter">
           <input type="hidden" name="body" value="Please add my email to the Cinder studio newsletter. I'm fine with one email a month.">
           <input type="email" name="Email" placeholder="you@example.com" required style="flex:1;min-width:220px;padding:14px 16px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
@@ -1357,7 +1455,7 @@
 <div class="sticky-buy" role="region" aria-label="Reserve your Cinder">
   <div class="row">
     <div class="meta"><b>Cinder · from $89 CAD</b><span>Beta 0 · numbered 001–012</span></div>
-    <div class="countdown"><span class="pulse-dot"></span><span id="stockMeta">8 of 12 left</span></div>
+    <div class="countdown"><span class="pulse-dot"></span><span id="stockMeta">8 of 12 still available</span></div>
     <a href="#faq" class="btn-secondary">Have questions?</a>
     <a href="#buy" class="btn btn-primary">Reserve now →</a>
   </div>
