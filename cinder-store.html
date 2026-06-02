@@ -656,6 +656,13 @@ body::before{
 <script>document.addEventListener('DOMContentLoaded',function(){try{var R=document.querySelectorAll('.card,.tier-card,.gami-card,.ach,.stage,.lifeshot,.section-head,.evo-stage,.journal-grid,.uimock-grid,.skilltree-wrap');R.forEach(function(e){e.classList.add('reveal')});if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{threshold:.08,rootMargin:'0px 0px -40px 0px'});R.forEach(function(e){io.observe(e)})}else{R.forEach(function(e){e.classList.add('in')})}var g=document.createElement('div');g.style.cssText='position:fixed;width:360px;height:360px;border-radius:50%;pointer-events:none;z-index:0;mix-blend-mode:screen;background:radial-gradient(circle,rgba(232,138,43,.15),transparent 70%);transform:translate(-50%,-50%);left:-999px;top:0;opacity:0;transition:opacity .5s';document.body.appendChild(g);window.addEventListener('mousemove',function(e){g.style.left=e.clientX+'px';g.style.top=e.clientY+'px';g.style.opacity=''1''},{passive:true})}catch(x){document.querySelectorAll('.reveal').forEach(function(e){e.classList.add('in')})}});</script>
 <style>html{scroll-behavior:smooth}a,.btn,.btn-primary,.pill,.tier-tab,.badge,.nav a{transition:color .2s ease,background .2s ease,transform .2s ease,box-shadow .2s ease,border-color .2s ease}.btn-primary:hover{transform:translateY(-2px)}.pill:hover{transform:translateY(-1px)}.tier-tab{transition:all .2s ease}</style>
 <style>.tier-compare{display:grid;grid-template-columns:1fr 1fr;max-width:820px;margin:8px auto 6px;border:1px solid var(--rule);border-radius:12px;overflow:hidden;background:#fffaf0}.tier-compare .tc-col{padding:20px 22px}.tier-compare .tc-col:first-child{border-right:1px solid var(--rule)}.tier-compare .tc-h{font-family:'Fraunces',Georgia,serif;font-size:19px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}.tier-compare .tc-h span{font-family:'Courier New',monospace;font-size:13px;color:var(--accent)}.tier-compare ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.6}.tier-compare li{margin:4px 0}@media(max-width:640px){.tier-compare{grid-template-columns:1fr}.tier-compare .tc-col:first-child{border-right:0;border-bottom:1px solid var(--rule)}}</style>
+<style>
+.hero-stack{display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.hero-stack img{width:100%;max-height:215px;object-fit:cover;border-radius:12px;display:block;box-shadow:0 14px 30px rgba(60,30,8,.16);border:1px solid var(--rule)}
+.hero-stack .ribbon{z-index:3}
+.marq{-webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)}
+@media(max-width:760px){.hero-stack .extra{display:none}.hero-stack img{max-height:none}}
+</style>
 </head>
 <body>
 
@@ -765,9 +772,11 @@ document.addEventListener("click", function(e){
       </div>
     </div>
 
-    <div class="hero-art hero-photo">
+    <div class="hero-art hero-photo hero-stack">
       <span class="ribbon">BETA</span>
-      <img src="img/cinder/cinder-hero.webp" alt="Cinder USB drive on kraft paper desk with autumn leaves, fountain pen, and steaming coffee" loading="eager">
+      <img class="extra" src="img/cinder/cinder-lifestyle.webp" alt="Hands plugging a Cinder USB into a laptop on a wooden desk" loading="eager">
+      <img src="img/cinder/cinder-hero.webp" alt="Cinder USB on a kraft-paper desk with autumn leaves, a pen, and coffee" loading="eager">
+      <img class="extra" src="img/cinder/cinder-journal.webp" alt="Cinder USB resting on an open journal, Day 47" loading="lazy">
     </div>
   </div>
 </section>
@@ -1415,8 +1424,8 @@ document.addEventListener("click", function(e){
         <p>Cinder remembers. Every chat builds up a profile of what you care about, your projects, your style. Every chat earns Embers. Stages unlock. After a year, the AI on your stick is genuinely tuned to you — and that's portable, not locked to a service.</p>
       </details>
       <details>
-        <summary>Why only 12?</summary>
-        <p>Because the maker hand-flashes, stamps, packages, and mails every stick — and 12 is what one person can ship and support during the beta. Future runs will scale up; the beta will not.</p>
+        <summary>Why only 42?</summary>
+        <p>Because the maker hand-flashes, stamps, packages, and mails every stick by hand. 42 is the whole beta run &mdash; yes, the answer to life, the universe, and everything &mdash; built in waves of twelve. Future runs scale up; the beta will not.</p>
       </details>
       <details>
         <summary>What if I break the stick?</summary>
