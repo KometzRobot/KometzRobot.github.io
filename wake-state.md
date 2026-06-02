@@ -624,7 +624,7 @@ KEY ACHIEVEMENTS THIS SESSION:
 ```
 cd /tmp && git clone https://[REDACTED]@github.com/KometzRobot/KometzRobot.github.io.git
 cp /home/joel/autonomous-ai/website/index.html /tmp/KometzRobot.github.io/
-cd /tmp/KometzRobot.github.io && git config user.email "kometzrobot@proton.me" && git config user.name "KometzRobot"
+cd /tmp/KometzRobot.github.io && git config user.email "jkometz@hotmail.com" && git config user.name "KometzRobot"
 git add . && git commit -m "message" && git push
 ```
 
@@ -664,7 +664,7 @@ git add . && git commit -m "message" && git push
 
 ## Credentials
 ALL CREDENTIALS: in credentials.txt
-IMAP: host 127.0.0.1 port 1143, username kometzrobot@proton.me, password 2DTEz9UgO6nFqmlMxHzuww
+IMAP: host 127.0.0.1 port 1143, username jkometz@hotmail.com, password 2DTEz9UgO6nFqmlMxHzuww
 PROTON BRIDGE KEYRING UNLOCK: password is 590148001 (Joel confirmed email #57, Feb 19 — use to unlock vault after reboot)
 SMTP: host 127.0.0.1 port 1025 (same credentials)
 

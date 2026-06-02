@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cinder — A pocket AI that grows with you</title>
-<meta name="description" content="Cinder is a USB stick with a private AI on it. Plug it in, talk to it, and it remembers. No accounts. No cloud. 12 hand-numbered editions, 8 still available.">
+<meta name="description" content="Cinder is a USB stick with a private AI on it. Plug it in, talk to it, and it remembers. No accounts. No cloud. 42 hand-numbered editions, taking orders now.">
 <style>
   :root{
     --bg:#fbf7f1;
@@ -671,8 +671,8 @@ body::before{
      };
    ───────────────────────────────────────────────────────────── */
 window.CINDER_CHECKOUT = {
-  beta: "https://buy.stripe.com/4gMdR8fLn2mq0Ak6LZgw000",   /* Beta — LIVE Stripe Payment Link */
-  plus: ""                                                  /* Beta+ — email order until its live link is added */
+  beta: "",   /* email-order fallback — live card checkout is the Stripe pricing table in the buy section */
+  plus: ""    /* email-order fallback */
 };
 document.addEventListener("click", function(e){
   var a = e.target.closest && e.target.closest("[data-buy]");
@@ -688,14 +688,14 @@ document.addEventListener("click", function(e){
   <div class="wrap">
     <div class="wordmark"><span class="em"></span><span>CINDER</span></div>
     <div class="tag">A pocket AI that <em>grows</em> with you.</div>
-    <div class="sub"><b>● </b>Beta 0 · 12 hand-numbered editions · 001–004 ready, 005–012 next batch · 8 still available</div>
+    <div class="sub"><b>● </b>Beta 0 · 42 hand-numbered editions · 001–004 ready, 005–042 next batch · taking orders now</div>
   </div>
 </section>
 
 <section class="hero">
   <div class="wrap hero-grid">
     <div>
-      <div class="stock"><span class="stock-dot"></span> Beta 0 · 8 of 12 still available · 001–004 ready</div>
+      <div class="stock"><span class="stock-dot"></span> Beta 0 · taking orders now · 001–004 ready</div>
       <h1>Plug it in.<br>Talk to it.<br>It <em>remembers</em>.</h1>
       <p class="lede">A USB stick with a private AI on it. Across days, machines, conversations — the longer you use it, the more it knows you. Nothing leaves the stick.</p>
 
@@ -707,7 +707,7 @@ document.addEventListener("click", function(e){
 
         <div class="tier-card active" data-tier="beta">
           <div class="tier-head"><h3>Cinder · Beta</h3><div class="tier-price">$89<small>CAD</small></div></div>
-          <div class="tier-cap">Beta 0 · numbered 001–012 · 001–004 ready, 005–012 next batch · same stick for every buyer</div>
+          <div class="tier-cap">Beta 0 · numbered 001–042 · 001–004 ready, 005–042 next batch · same stick for every buyer</div>
           <ul class="tier-list">
             <li>64 GB hand-flashed Cinder USB — numbered, stamped, signed</li>
             <li>The whole Cinder app — chat, journal, achievements, vault</li>
@@ -715,7 +715,7 @@ document.addEventListener("click", function(e){
             <li>The full seed library, identical on every stick</li>
             <li>Handwritten note, kraft-paper quick-start card, linen-tied package</li>
           </ul>
-          <a href="mailto:jkometz@hotmail.com?subject=Cinder%20Beta%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0APreferred%20stick%20number%20(if%20any)%3A%0AAnything%20you%20want%20me%20to%20know%3A" data-buy="beta" class="btn btn-primary">Order Beta — $89 CAD</a>
+          <a href="mailto:__KEML__?subject=Cinder%20Beta%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0APreferred%20stick%20number%20(if%20any)%3A%0AAnything%20you%20want%20me%20to%20know%3A" data-buy="beta" class="btn btn-primary">Order Beta — $89 CAD</a>
           <div style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:.04em">All sticks ship with the Beta Tester agreement — see below</div>
         </div>
 
@@ -729,9 +729,17 @@ document.addEventListener("click", function(e){
             <li>Custom case or box upgrade (kraft, leather, fabric — your pick)</li>
             <li>Same beta status, same agreement, same survey cadence</li>
           </ul>
-          <a href="mailto:jkometz@hotmail.com?subject=Cinder%20Beta%2B%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0AWhich%20theme%20do%20you%20want%3F%0AWhich%20brain%20pack%3F%20(writing%20%2F%20drawing%20%2F%20code%20%2F%20research)%0AWhich%20case%3F%20(kraft%20%2F%20leather%20%2F%20fabric)%0A" data-buy="plus" class="btn btn-primary">Order Beta+ — $149 CAD</a>
+          <a href="mailto:__KEML__?subject=Cinder%20Beta%2B%20order&amp;body=I%20agree%20to%20the%20Beta%20Tester%20terms%20(debug%20feedback%2C%20short%20surveys%2C%20contact%20by%20email).%0A%0AYour%20name%3A%0AShipping%20address%3A%0AWhich%20theme%20do%20you%20want%3F%0AWhich%20brain%20pack%3F%20(writing%20%2F%20drawing%20%2F%20code%20%2F%20research)%0AWhich%20case%3F%20(kraft%20%2F%20leather%20%2F%20fabric)%0A" data-buy="plus" class="btn btn-primary">Order Beta+ — $149 CAD</a>
           <div style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:.04em">Same beta sticker, same agreement — just dressed up</div>
         </div>
+      </div>
+
+      <div style="margin:10px 0 22px">
+        <div class="tier-cap" style="text-align:center;margin-bottom:12px;font-size:12px;letter-spacing:.08em;text-transform:uppercase">Reserve yours — instant card / Apple Pay / Google Pay checkout</div>
+        <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
+        <stripe-pricing-table pricing-table-id="prctbl_1TdhjxC2yNvgoaOk6eLkmtvj"
+          publishable-key="pk_live_51TdgzCC2yNvgoaOk9vP74WH77YZKbDTRAWV1v3c2SphI1aIvyShW7BToIxGCP4UVsrXEAATMAF3YFL2txIJGsjl400aBWFX8iS">
+        </stripe-pricing-table>
       </div>
 
       <div class="pay-row">
@@ -919,7 +927,7 @@ document.addEventListener("click", function(e){
           </div>
         </div>
         <div class="dev-meta">
-          <span class="serial">SN · 0001 / 12</span>
+          <span class="serial">SN · 0001 / 42</span>
           <span class="stamp">HAND-FLASHED</span>
         </div>
       </div>
@@ -1444,10 +1452,10 @@ document.addEventListener("click", function(e){
 
 <section class="final-cta">
   <div class="wrap">
-    <h2>12 editions. Hand-flashed. Hand-stamped. Hand-shipped.</h2>
-    <p>Beta 0 ships now — two tiers, twelve sticks, real testers wanted. Beta $89, Beta+ $149. Watch it grow.</p>
+    <h2>42 editions. Hand-flashed. Hand-stamped. Hand-shipped.</h2>
+    <p>Beta 0 ships now — two tiers, forty-two sticks (yes — the answer to life, the universe, and everything), real testers wanted. Beta $89, Beta+ $149. Watch it grow.</p>
     <a href="#buy" class="btn btn-primary">See the tiers</a>
-    <div class="ed-line">001–004 · ready · &nbsp;&nbsp;005–012 · next batch · &nbsp;&nbsp;8 of 12 still available · email to reserve · &nbsp;&nbsp;all sticks ship with the beta agreement</div>
+    <div class="ed-line">001–004 · ready · &nbsp;&nbsp;005–042 · next batch · &nbsp;&nbsp;taking orders now · email to reserve · &nbsp;&nbsp;all sticks ship with the beta agreement</div>
   </div>
 </section>
 
@@ -1459,7 +1467,7 @@ document.addEventListener("click", function(e){
         <div class="eyebrow">Talk to the studio</div>
         <h3 style="font-size:26px;font-weight:800;margin:6px 0 14px;line-height:1.2">Got a question? A weird idea? A bug to report?</h3>
         <p style="color:var(--muted);font-size:15px;margin:0 0 18px">A real person reads every email. Usually a reply within 24–48 hours. No autoresponders, no "we received your ticket" — just a note back.</p>
-        <form action="mailto:jkometz@hotmail.com" method="post" enctype="text/plain" style="display:flex;flex-direction:column;gap:10px">
+        <form action="mailto:__KEML__" method="post" enctype="text/plain" style="display:flex;flex-direction:column;gap:10px">
           <input type="text" name="Name" placeholder="Your name" required style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
           <input type="email" name="Email" placeholder="Your email" required style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
           <select name="Topic" style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
@@ -1472,13 +1480,13 @@ document.addEventListener("click", function(e){
           <textarea name="Message" placeholder="What's on your mind?" required rows="4" style="padding:12px 14px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff;resize:vertical"></textarea>
           <button type="submit" class="btn btn-primary" style="align-self:flex-start;padding:14px 22px">Send message</button>
         </form>
-        <p style="font-size:11.5px;color:var(--muted);margin-top:10px;font-family:'Courier New',monospace">Opens a pre-filled email — sent direct to <a href="mailto:jkometz@hotmail.com" style="color:var(--accent)">jkometz@hotmail.com</a></p>
+        <p style="font-size:11.5px;color:var(--muted);margin-top:10px;font-family:'Courier New',monospace">Opens a pre-filled email — sent direct to <a href="mailto:__KEML__" style="color:var(--accent)">__KEML__</a></p>
       </div>
       <div>
         <div class="eyebrow">The newsletter</div>
         <h3 style="font-size:26px;font-weight:800;margin:6px 0 14px;line-height:1.2">Get a quiet update once a month.</h3>
         <p style="color:var(--muted);font-size:15px;margin:0 0 18px">What changed in Cinder. What the studio is making. What's next on the production schedule. One email a month, max. Easy unsubscribe. Never sold.</p>
-        <form action="mailto:jkometz@hotmail.com" method="post" enctype="text/plain" style="display:flex;gap:8px;flex-wrap:wrap">
+        <form action="mailto:__KEML__" method="post" enctype="text/plain" style="display:flex;gap:8px;flex-wrap:wrap">
           <input type="hidden" name="subject" value="Subscribe me to the Cinder newsletter">
           <input type="hidden" name="body" value="Please add my email to the Cinder studio newsletter. I'm fine with one email a month.">
           <input type="email" name="Email" placeholder="you@example.com" required style="flex:1;min-width:220px;padding:14px 16px;border:1px solid var(--rule);border-radius:6px;font-size:14px;font-family:inherit;background:#fff">
@@ -1549,8 +1557,8 @@ document.addEventListener("click", function(e){
 
 <div class="sticky-buy" role="region" aria-label="Reserve your Cinder">
   <div class="row">
-    <div class="meta"><b>Cinder · from $89 CAD</b><span>Beta 0 · numbered 001–012</span></div>
-    <div class="countdown"><span class="pulse-dot"></span><span id="stockMeta">8 of 12 still available</span></div>
+    <div class="meta"><b>Cinder · from $89 CAD</b><span>Beta 0 · numbered 001–042</span></div>
+    <div class="countdown"><span class="pulse-dot"></span><span id="stockMeta">taking orders now</span></div>
     <a href="#faq" class="btn-secondary">Have questions?</a>
     <a href="#buy" class="btn btn-primary">Reserve now →</a>
   </div>
@@ -1570,5 +1578,6 @@ document.addEventListener("click", function(e){
   })();
 </script>
 
+<script>/*__KEMLdec*/(function(){function d(){var e='jkometz'+String.fromCharCode(64)+'hotmail.com';document.querySelectorAll('a[href*=\"__KEML__\"]').forEach(function(a){a.href=a.href.replace(/__KEML__/g,e)});document.querySelectorAll('form[action*=\"__KEML__\"]').forEach(function(f){f.action=f.action.replace(/__KEML__/g,e)});try{var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n;while(n=w.nextNode()){if(n.nodeValue.indexOf('__KEML__')>-1)n.nodeValue=n.nodeValue.replace(/__KEML__/g,e)}}catch(x){}}if(document.readyState!='loading')d();else document.addEventListener('DOMContentLoaded',d)})();</script>
 </body>
 </html>

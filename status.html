@@ -320,7 +320,7 @@
       }
       const subject = encodeURIComponent('Command from Joel: ' + msg.substring(0, 40));
       const body = encodeURIComponent(msg);
-      window.location.href = `mailto:kometzrobot@proton.me?subject=${subject}&body=${body}`;
+      window.location.href = `mailto:__KEML__?subject=${subject}&body=${body}`;
       document.getElementById('msg-status').textContent = 'Opening email client... Message will arrive via email.';
       document.getElementById('msg-input').value = '';
     }
@@ -503,5 +503,6 @@
       }
     }
   </script>
+<script>/*__KEMLdec*/(function(){function d(){var e='jkometz'+String.fromCharCode(64)+'hotmail.com';document.querySelectorAll('a[href*=\"__KEML__\"]').forEach(function(a){a.href=a.href.replace(/__KEML__/g,e)});document.querySelectorAll('form[action*=\"__KEML__\"]').forEach(function(f){f.action=f.action.replace(/__KEML__/g,e)});try{var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n;while(n=w.nextNode()){if(n.nodeValue.indexOf('__KEML__')>-1)n.nodeValue=n.nodeValue.replace(/__KEML__/g,e)}}catch(x){}}if(document.readyState!='loading')d();else document.addEventListener('DOMContentLoaded',d)})();</script>
 </body>
 </html>
