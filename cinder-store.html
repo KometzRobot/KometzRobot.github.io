@@ -673,7 +673,7 @@ body::before{
       <li><a href="#faq">FAQ</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul></nav>
-    <div class="cart"><a href="#buy" class="pill">Buy · from $89</a></div>
+    <div class="cart"><a href="#buy" class="pill">BUY NOW</a></div>
   </div>
 </header>
 
@@ -707,7 +707,7 @@ document.addEventListener("click", function(e){
   <div class="wrap">
     <div class="wordmark"><span class="em"></span><span>CINDER</span></div>
     <div class="tag">A pocket AI that <em>grows</em> with you.</div>
-    <div class="sub"><b>● </b>BETA · 42 hand-built editions, released in waves of 12 · wave one open · 4 spoken for</div>
+    <div class="sub"><b>● </b>BETA · 42 hand-built editions, released in waves of 12 · wave one open</div>
   </div>
 </section>
 
@@ -742,20 +742,18 @@ document.addEventListener("click", function(e){
       </div>
 
       <div style="margin:16px auto 26px;max-width:780px;text-align:center">
-        <div class="tier-cap" style="text-align:center;margin-bottom:12px;font-size:12px;letter-spacing:.08em;text-transform:uppercase">Claim your edition — instant card / Apple Pay / Google Pay</div>
+        <div class="tier-cap" style="text-align:center;margin-bottom:12px;font-size:12px;letter-spacing:.08em;text-transform:uppercase">Claim your edition &rarr;</div>
         <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
         <stripe-pricing-table pricing-table-id="prctbl_1TdhjxC2yNvgoaOk6eLkmtvj"
           publishable-key="pk_live_51TdgzCC2yNvgoaOk9vP74WH77YZKbDTRAWV1v3c2SphI1aIvyShW7BToIxGCP4UVsrXEAATMAF3YFL2txIJGsjl400aBWFX8iS">
         </stripe-pricing-table>
       </div>
-
-      <!-- WAVES: 42 total, hand-built in waves of 12. When a wave sells out, flip #nextwave display:none -> block to surface the reserve button. -->
-      <div style="margin:10px auto 0;max-width:780px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.6">
-        Hand-built in waves of twelve &mdash; forty-two in all. Wave one is live, four already spoken for.
-        When a wave sells out, <a href="mailto:__KEML__?subject=Cinder next wave" style="color:var(--accent);text-decoration:underline">reserve the next one &rarr;</a>
-      </div>
+      <!-- WAVES: counts come from CINDER_STOCK below; #nextwave auto-shows when a wave sells out. -->
+      <p style="margin:12px auto 0;max-width:760px;text-align:center;font-size:13px;color:var(--muted);line-height:1.7">
+        Hand-built in waves of twelve &mdash; <b data-stock="total">42</b> in all. <span data-stock="availline">Wave one is open now.</span>
+      </p>
       <div id="nextwave" style="display:none;margin:14px auto 0;text-align:center">
-        <a href="mailto:__KEML__?subject=Cinder next wave&amp;body=Put me on the next wave of 12." class="btn btn-primary">Reserve the next wave &rarr;</a>
+        <a href="mailto:__KEML__?subject=Cinder%20next%20wave&amp;body=Put%20me%20on%20the%20list%20for%20the%20next%20wave%20of%2012." class="btn btn-primary">Reserve the next wave &rarr;</a>
       </div>
       <div class="pay-row">
         <span>Pay how you like —</span>
@@ -1573,7 +1571,7 @@ document.addEventListener("click", function(e){
     <div class="meta"><b>Cinder · from $89 CAD</b><span>BETA · numbered 001–042</span></div>
     <div class="countdown"><span class="pulse-dot"></span><span id="stockMeta">38 of 42 still available</span></div>
     <a href="#faq" class="btn-secondary">Have questions?</a>
-    <a href="#buy" class="btn btn-primary">Reserve now →</a>
+    <a href="#buy" class="btn btn-primary">BUY NOW &rarr;</a>
   </div>
 </div>
 
@@ -1592,5 +1590,14 @@ document.addEventListener("click", function(e){
 </script>
 
 <script>/*__KEMLdec*/(function(){function d(){var e='jkometz'+String.fromCharCode(64)+'hotmail.com';document.querySelectorAll('a[href*=\"__KEML__\"]').forEach(function(a){a.href=a.href.replace(/__KEML__/g,e)});document.querySelectorAll('form[action*=\"__KEML__\"]').forEach(function(f){f.action=f.action.replace(/__KEML__/g,e)});try{var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n;while(n=w.nextNode()){if(n.nodeValue.indexOf('__KEML__')>-1)n.nodeValue=n.nodeValue.replace(/__KEML__/g,e)}}catch(x){}}if(document.readyState!='loading')d();else document.addEventListener('DOMContentLoaded',d)})();</script>
+<script>
+window.CINDER_STOCK={total:42,claimed:4,waveSize:12};
+(function(){var s=window.CINDER_STOCK,left=Math.max(0,s.total-s.claimed),wave=Math.min(Math.ceil(s.total/s.waveSize),Math.floor(s.claimed/s.waveSize)+1);
+function A(q,t){document.querySelectorAll(q).forEach(function(e){e.textContent=t});}
+function go(){A('[data-stock=total]',s.total);A('[data-stock=claimed]',s.claimed);A('[data-stock=left]',left);A('[data-stock=wave]',wave);
+document.querySelectorAll('[data-stock=availline]').forEach(function(e){e.textContent=left>0?(left+' of '+s.total+' still available — wave '+wave+' open.'):'This wave is sold out — join the next one below.';});
+if(left<=0){var nw=document.getElementById('nextwave');if(nw)nw.style.display='block';}}
+if(document.readyState!='loading')go();else document.addEventListener('DOMContentLoaded',go);})();
+</script>
 </body>
 </html>
